@@ -1,0 +1,64 @@
+package it.pixelbox.cmwatch.crypto
+
+import java.math.BigInteger
+import java.security.KeyFactory
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.PrivateKey
+import java.security.interfaces.XECPublicKey
+import java.security.spec.NamedParameterSpec
+import java.security.spec.XECPublicKeySpec
+import java.util.Base64
+import javax.crypto.KeyAgreement
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+
+/**
+ * Pairing con il PC: X25519 (JCA "XDH", Android 33+ e JDK 17), chiave di sessione = HKDF-SHA256(shared,
+ * info "claude-master-relay-v1", salt vuoto, 32 byte); chiavi pubbliche grezze (32 byte little-endian) in base64,
+ * come `public_bytes(Raw)` di `cryptography` in cm-relay-crypto.py.
+ */
+object Pairing {
+    private const val INFO = "claude-master-relay-v1"
+
+    fun newKeyPair(): KeyPair = KeyPairGenerator.getInstance("XDH").apply { initialize(NamedParameterSpec.X25519) }.generateKeyPair()
+
+    fun publicB64(kp: KeyPair): String = publicB64FromRaw(uToRaw((kp.public as XECPublicKey).u))
+    fun publicB64FromRaw(raw: ByteArray): String = Base64.getEncoder().encodeToString(raw)
+    fun rawFromB64(b64: String): ByteArray = Base64.getDecoder().decode(b64)
+
+    fun sharedKey(priv: PrivateKey, peerPubB64: String): ByteArray {
+        val raw = rawFromB64(peerPubB64)
+        require(raw.size == 32) { "peer public key must be 32 bytes" }
+        val u = BigInteger(1, raw.reversedArray())
+        val pub = KeyFactory.getInstance("XDH").generatePublic(XECPublicKeySpec(NamedParameterSpec.X25519, u))
+        val ka = KeyAgreement.getInstance("XDH").apply { init(priv); doPhase(pub, true) }
+        return hkdf(ka.generateSecret(), INFO.toByteArray(), 32)
+    }
+
+    fun checkCode(key: ByteArray, code: String): String =
+        hmac(key, code.toByteArray()).joinToString("") { "%02x".format(it) }.substring(0, 16)
+
+    private fun uToRaw(u: BigInteger): ByteArray {
+        val be = u.toByteArray().let { if (it.size > 32 && it[0] == 0.toByte()) it.copyOfRange(1, it.size) else it }
+        val out = ByteArray(32)
+        be.copyInto(out, 32 - be.size)
+        return out.reversedArray()
+    }
+
+    private fun hmac(key: ByteArray, data: ByteArray): ByteArray =
+        Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(key, "HmacSHA256")) }.doFinal(data)
+
+    /** HKDF-SHA256 (RFC 5869), salt vuoto. */
+    private fun hkdf(ikm: ByteArray, info: ByteArray, len: Int): ByteArray {
+        val prk = hmac(ByteArray(32), ikm)
+        var t = ByteArray(0)
+        val out = ArrayList<Byte>(len)
+        var i = 1
+        while (out.size < len) {
+            t = hmac(prk, t + info + byteArrayOf(i.toByte()))
+            out.addAll(t.toList()); i++
+        }
+        return out.take(len).toByteArray()
+    }
+}
