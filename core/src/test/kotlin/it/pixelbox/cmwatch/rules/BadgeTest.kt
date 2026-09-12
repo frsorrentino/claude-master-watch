@@ -18,11 +18,18 @@ class BadgeTest {
 
     @Test fun iconEmojiGivesShapeAndColourWhenColorIsMissing() {
         val sq = Badge.of("personale", null, SessionState.IDLE, icon = "🟦")
-        assertEquals(Badge.Shape.SQUARE, sq.shape); assertEquals(0xFF3B82F6.toInt(), sq.fill)
+        assertEquals(Badge.Shape.CIRCLE, sq.shape); assertEquals(0xFF3B82F6.toInt(), sq.fill)     // forma dall'account, non dall'emoji
         val ci = Badge.of("agenzia", null, SessionState.IDLE, icon = "🟢")
-        assertEquals(Badge.Shape.CIRCLE, ci.shape); assertEquals(0xFF2ECC71.toInt(), ci.fill)
+        assertEquals(Badge.Shape.SQUARE, ci.shape); assertEquals(0xFF2ECC71.toInt(), ci.fill)
         assertEquals(0xFFE74C3C.toInt(), Badge.of("personale", "#E74C3C", SessionState.IDLE, icon = "🟢").fill)   // color vince sull'emoji
         assertEquals(Badge.Shape.SQUARE, Badge.of("professionale", null, SessionState.IDLE).shape)
+    }
+
+    @Test fun contractFixturesCarryIconAndColour() {
+        val s = it.pixelbox.cmwatch.contract.ContractJson.decodeState(it.pixelbox.cmwatch.Fixtures.stateQuestion)
+        assertEquals("🟦", s.sessions[0].icon); assertEquals("#3B82F6", s.sessions[0].color)
+        assertEquals(0xFF3B82F6.toInt(), Badge.of(s.sessions[0].account, s.sessions[0].color, s.sessions[0].state, s.sessions[0].icon).fill)
+        assertEquals(Badge.Shape.SQUARE, Badge.of(s.sessions[0].account, s.sessions[0].color, s.sessions[0].state).shape)   // agenzia
     }
 
     @Test fun glyphPerState() {

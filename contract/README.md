@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1)
+# Contratto PC ↔ orologio (v1, aggiunte 1.1)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -19,3 +19,8 @@ Regole che i test verificano: `state` ≤ 8 KB; `outcome.short` ≤ 60; `outcome
 `question.text` intero (mai troncato); `options[].n` da 1 senza buchi; `tier` ∈ low|medium|high;
 `state` ∈ waiting|busy|idle|awaiting|gone; ordine delle sessioni: waiting, busy e awaiting (stesso rango:
 awaiting lavora a un prompt partito dal polso), idle, gone, poi alfabetico.
+
+Contratto 1.1 (12/09/2026, solo aggiunte): ogni sessione porta `icon` (emoji del badge della scheda del PC, stabile per la
+vita della sessione; per una gone l'ultima nota o null) e `color` («#RRGGBB» del solo colore: 🟠🟧🧡 #F5A623 · 🟡🟨💛 #F4D03F ·
+🔴🟥❤️ #E74C3C · 🟢🟩💚 #2ECC71 · 🔵🟦💙 #3B82F6 · 🟣🟪💜 #9B59B6 · ⚪⬜🤍 #BDC3C7 · 🟤🟫🤎 #8D6E63); forma dall'account
+(tondo personale, quadrato gli altri); assenti o null = grigio #9B9B9B. `v` resta 1.

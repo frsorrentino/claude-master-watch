@@ -35,11 +35,8 @@ object Badge {
             SessionState.GONE -> Glyph.CROSS
         }
         val glyphColor = if (contrast(BLACK, fill) >= 4.5) BLACK else WHITE
-        val square = when {
-            emoji != null && emoji in SQUARES -> true
-            emoji != null && emoji in EMOJI_COLOR -> false
-            else -> account.lowercase() in setOf("agenzia", "professionale", "pixelfarm", "azienda")
-        }
+        // Forma dall'account (contratto 1.1): tondo = personale, quadrato = qualunque altro account.
+        val square = account.lowercase() != "personale"
         return Spec(if (square) Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
     }
 
