@@ -5,6 +5,11 @@ on:
     branches: [main, master, feature/**]
     paths: ['core/**', 'wear/**', 'mobile/**', 'gradle/**', 'contract/**', '*.gradle.kts', 'gradle.properties', '.github/workflows/build-android.yml']
   workflow_dispatch:
+    inputs:
+      record:
+        description: "Registra gli snapshot Paparazzi (wear/src/test/snapshots) e li carica come artifact"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -23,9 +28,19 @@ jobs:
           restore-keys: gradle-
       - name: Unit tests
         run: ./gradlew :core:testDebugUnitTest --console=plain
-      - name: Screenshot tests (Paparazzi)
-        if: hashFiles('wear/src/test/snapshots/**') != ''
+      - name: Screenshot tests (Paparazzi, verify)
+        if: hashFiles('wear/src/test/snapshots/**') != '' && github.event.inputs.record != 'true'
         run: ./gradlew :wear:verifyPaparazziDebug --console=plain
+      - name: Screenshot tests (Paparazzi, record)
+        if: github.event.inputs.record == 'true'
+        run: ./gradlew :wear:recordPaparazziDebug --console=plain
+      - name: Upload snapshots
+        if: github.event.inputs.record == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: paparazzi-snapshots
+          path: wear/src/test/snapshots
+          retention-days: 30
       - name: Debug APKs
         run: ./gradlew :wear:assembleDebug :mobile:assembleDebug --console=plain
       - name: Restore keystore

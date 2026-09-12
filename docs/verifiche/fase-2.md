@@ -20,3 +20,8 @@ Quello che si prova senza orologio, sul `Transport` finto (fixture del contratto
 
 Unit test (`./gradlew :core:testDebugUnitTest`): 57 verdi il 12/09/2026 — contratto sulle fixture, ordine, freschezza,
 blob AES-GCM, X25519/HKDF, KeyVault, FakeTransport, Repo (Room finto, ottimismo, timeout 20 s, coda offline), ViewState, testi.
+
+Screenshot test (Paparazzi 1.3.5, `wear/src/test/kotlin/…/ScreensSnapshotTest.kt`, 456×456 tondo): su questa macchina
+(linux-aarch64) il layoutlib nativo non si carica («Failed to init Bridge»), quindi si registrano in GitHub Actions
+(`workflow_dispatch` con `record = true`, artifact `paparazzi-snapshots` da committare in `wear/src/test/snapshots/`) e da lì
+in poi il workflow li verifica a ogni push. In locale: `./gradlew :core:testDebugUnitTest` (i test di `:wear` sono solo Paparazzi).
