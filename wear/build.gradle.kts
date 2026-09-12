@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    implementation(libs.fragment)   // lintVital: registerForActivityResult vuole fragment ≥ 1.3
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.process)
