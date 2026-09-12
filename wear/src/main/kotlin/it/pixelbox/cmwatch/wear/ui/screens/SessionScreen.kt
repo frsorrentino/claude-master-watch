@@ -18,10 +18,10 @@ import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.CardText
+import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 
 /** Scheda: riga nome · account · stato · durata; → prossimo; esito; Rispondi / Scrivi / Terminale / Segui. */
 @Composable
@@ -40,11 +40,6 @@ fun SessionScreen(
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val enabled = snapshot.freshness is Freshness.Fresh
-    val labels = mapOf(
-        SessionState.WAITING to stringResource(R.string.state_waiting), SessionState.BUSY to stringResource(R.string.state_busy),
-        SessionState.IDLE to stringResource(R.string.state_idle), SessionState.AWAITING to stringResource(R.string.state_idle),
-        SessionState.GONE to stringResource(R.string.state_gone),
-    )
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null) {
@@ -53,9 +48,7 @@ fun SessionScreen(
                 return@TransformingLazyColumn
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.transformedHeight(this, spec)) } }
-            item {
-                Text(CardText.header(s, now, labels), style = MonoStyle, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec))
-            }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.transformedHeight(this, spec)) }
             CardText.next(s)?.let { next ->
                 item { Text(next, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
             }

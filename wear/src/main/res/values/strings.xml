@@ -16,4 +16,11 @@
     <string name="card_unfollow">Smetti di seguire</string>
     <string name="card_missing">Sessione non più presente</string>
     <string name="write_hint">Messaggio per %1$s</string>
+    <string name="question_hold">Tieni premuto per confermare</string>
+    <string name="question_write">Scrivi</string>
+    <string name="question_allow_all">Consenti sempre</string>
+    <string name="question_answered_elsewhere">Già risposta da un altro canale</string>
+    <string name="question_sent">Inviato</string>
+    <string name="question_not_delivered">Non consegnato</string>
+    <string name="question_retry">Riprova</string>
 </resources>

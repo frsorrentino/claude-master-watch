@@ -3,7 +3,9 @@ package it.pixelbox.cmwatch.wear
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,11 +22,15 @@ import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.rules.Screen
 import it.pixelbox.cmwatch.rules.ViewState
 import it.pixelbox.cmwatch.settings.Settings
+import it.pixelbox.cmwatch.wear.haptics.Haptics
+import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
+import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
@@ -57,6 +63,18 @@ class MainActivity : ComponentActivity() {
         }
         // Domande già viste (chiuse senza rispondere): non si riaprono da sole.
         var seen by rememberSaveable { mutableStateOf(setOf<String>()) }
+        var sentId by rememberSaveable { mutableStateOf<String?>(null) }
+        var hapticFor by rememberSaveable { mutableStateOf<String?>(null) }
+        // Tastiera di sistema: il testo libero va alla sessione scelta come «prompt».
+        var writeTarget by rememberSaveable { mutableStateOf<String?>(null) }
+        val keyboard = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            val text = Keyboard.result(res.data); val target = writeTarget
+            if (text != null && target != null) scope.launch { sentId = app.repo.prompt(target, text); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }
+        }
+        fun write(name: String) { writeTarget = name; keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
+        LaunchedEffect(Unit) {
+            app.repo.results.collect { r -> Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR) }
+        }
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 
@@ -76,7 +94,7 @@ class MainActivity : ComponentActivity() {
                 SessionScreen(
                     snapshot, name, now,
                     onReply = { nav.go(Screen.Question(name)) },
-                    onWrite = { },
+                    onWrite = { write(name) },
                     onTerminal = { nav.go(Screen.Terminal(name)) },
                     onFollow = { follow -> scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
                     onOutcome = { nav.go(Screen.Outcome(name)) },
@@ -85,7 +103,19 @@ class MainActivity : ComponentActivity() {
             }
             composable(Routes.QUESTION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
-                SessionScreen(snapshot, name, now, onReply = {}, onWrite = {}, onTerminal = {}, onFollow = {}, onOutcome = {}, onBackToSessions = { nav.go(Screen.Sessions) })
+                val qid = snapshot.state?.sessions?.firstOrNull { it.name == name }?.question?.id
+                LaunchedEffect(qid) {
+                    if (qid != null && hapticFor != qid) { hapticFor = qid; Haptics.play(this@MainActivity, Haptics.Kind.QUESTION) }
+                }
+                QuestionScreen(
+                    snapshot, name, now, sentId,
+                    onAnswer = { n -> if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.answer(name, n); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
+                    onFreeText = { if (qid != null) seen = seen + qid; write(name) },
+                    onAllowAll = { if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.command(CmdOp.ALLOW_ALL, name, null) } },
+                    onRetry = { id -> scope.launch { app.repo.retry(id) } },
+                    onAnsweredElsewhere = { Haptics.play(this@MainActivity, Haptics.Kind.OUTCOME) },
+                    onDone = { sentId = null; nav.go(Screen.Sessions) },
+                )
             }
             composable(Routes.SETTINGS) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
             composable(Routes.PAIRING) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
