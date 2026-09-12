@@ -17,6 +17,12 @@ class OrderTest {
         assertEquals(listOf("alpha", "zeta"), Order.sessions(listOf(a, b)).map { it.name })
     }
 
+    @Test fun awaitingRanksWithBusy() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val awaiting = s.sessions[2].copy(name = "aaa-await", state = SessionState.AWAITING)
+        assertEquals(listOf("ledger-api", "aaa-await", "atlas-shop", "field-notes", "orbit-docs"), Order.sessions(s.sessions + awaiting).map { it.name })
+    }
+
     @Test fun freshnessThreeMinutes() {
         assertEquals(Freshness.Fresh, Freshness.of(1000, 1000 + 179))
         assertEquals(Freshness.Stale(3), Freshness.of(1000, 1000 + 180))

@@ -1,10 +1,11 @@
 package it.pixelbox.cmwatch.contract
 
 object Order {
-    // waiting, busy, idle, gone, poi alfabetico (contract/README.md); awaiting sta con idle.
+    // waiting, busy e awaiting, idle, gone, poi alfabetico (contract/README.md): awaiting = lavora a un prompt
+    // partito dal polso, quindi «busy» per l'orologio (relay, order_sessions()).
     private fun rank(s: SessionState) = when (s) {
-        SessionState.WAITING -> 0; SessionState.BUSY -> 1; SessionState.IDLE -> 2
-        SessionState.AWAITING -> 2; SessionState.GONE -> 3
+        SessionState.WAITING -> 0; SessionState.BUSY -> 1; SessionState.AWAITING -> 1
+        SessionState.IDLE -> 2; SessionState.GONE -> 3
     }
     fun sessions(list: List<Session>): List<Session> =
         list.sortedWith(compareBy<Session> { rank(it.state) }.thenBy { it.name.lowercase() })

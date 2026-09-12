@@ -26,6 +26,21 @@ class PairingTest {
         assertArrayEquals(raw, Pairing.rawFromB64(b64))
     }
 
+    @Test fun vectorsFromCmRelayCryptoPy() {
+        // Vettori deterministici del relay (12/09/2026 13:21): scalari 0..31 e 32..63, chiavi pubbliche, HKDF, check.
+        val aPriv = Pairing.privateFromRaw((0 until 32).map { it.toByte() }.toByteArray())
+        val bPriv = Pairing.privateFromRaw((32 until 64).map { it.toByte() }.toByteArray())
+        val aPub = "j0DFrbaPJWJK5bIU6nZ6bslNgp09e14a0bpvPiE4KF8="
+        val bPub = "NYBy1jZYgNGu6jKa35EhODhR7SGijjt16WXQ0s0WYlQ="
+        val expected = "dd9f775d5fbdd918e727cb41c05452189759ccc0d87798791eff22474e278b5c"
+        fun hex(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
+        assertEquals(expected, hex(Pairing.sharedKey(aPriv, bPub)))
+        assertEquals(expected, hex(Pairing.sharedKey(bPriv, aPub)))
+        val key = expected.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        assertEquals("efcd032555a52bcf", Pairing.checkCode(key, "123456"))
+        assertEquals("140090a8c7a1c707", Pairing.checkCode(key, "123456:pc"))
+    }
+
     @Test fun checkCodeIs16HexAndKeyBound() {
         val k1 = ByteArray(32) { 1 }; val k2 = ByteArray(32) { 2 }
         val c = Pairing.checkCode(k1, "123456")

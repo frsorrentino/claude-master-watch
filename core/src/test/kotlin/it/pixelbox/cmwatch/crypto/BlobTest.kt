@@ -29,6 +29,13 @@ class BlobTest {
         Blob.open("""{"v":2,"enc":"AAAA"}""", key)
     }
 
+    @Test fun vectorFromCmRelayCryptoPy() {
+        // Vettore deterministico generato da cm-relay-crypto.py (sessione claude-master, 12/09/2026 13:21).
+        val k = (0 until 32).map { it.toByte() }.toByteArray()
+        val doc = """{"v": 1, "enc": "LsUcOebANJv+OpQUp4JpE4+Ve3og4eeI90xHn+wzs9q4uYSCzfhImK97/PibO1e5gQdpryvIx3Zn1Jdpnw=="}"""
+        assertEquals("""{"hello":"watch","n":1,"it":"è"}""", Blob.open(doc, k))
+    }
+
     @Test fun pythonLayoutIsNonceThenCiphertext() {
         // Stesso layout di cm-relay-crypto.py: base64(nonce12 ‖ ct‖tag), AAD claude-master-relay-v1.
         val doc = Blob.seal("hi", key)

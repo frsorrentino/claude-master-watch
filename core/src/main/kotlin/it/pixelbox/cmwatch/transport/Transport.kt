@@ -6,7 +6,8 @@ import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.contract.State
 import kotlinx.coroutines.flow.Flow
 
-data class PairingInfo(val uid: String, val host: String)
+/** `key` = chiave di sessione derivata (null con il Transport finto: il chiamante ne genera una). */
+data class PairingInfo(val uid: String, val host: String, val key: ByteArray? = null)
 
 sealed class TransportException(msg: String) : Exception(msg) {
     class Timeout(id: String) : TransportException("no result for $id")

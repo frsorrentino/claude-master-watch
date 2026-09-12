@@ -17,5 +17,5 @@ cifrato è il JSON di questi file. Schema per campo in
 
 Regole che i test verificano: `state` ≤ 8 KB; `outcome.short` ≤ 60; `outcome.full` ≤ 600;
 `question.text` intero (mai troncato); `options[].n` da 1 senza buchi; `tier` ∈ low|medium|high;
-`state` ∈ waiting|busy|idle|awaiting|gone; ordine delle sessioni: waiting, busy, idle, gone,
-poi alfabetico.
+`state` ∈ waiting|busy|idle|awaiting|gone; ordine delle sessioni: waiting, busy e awaiting (stesso rango:
+awaiting lavora a un prompt partito dal polso), idle, gone, poi alfabetico.

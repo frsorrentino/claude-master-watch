@@ -7,6 +7,7 @@ import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.interfaces.XECPublicKey
 import java.security.spec.NamedParameterSpec
+import java.security.spec.XECPrivateKeySpec
 import java.security.spec.XECPublicKeySpec
 import java.util.Base64
 import javax.crypto.KeyAgreement
@@ -24,6 +25,10 @@ object Pairing {
     fun newKeyPair(): KeyPair = KeyPairGenerator.getInstance("XDH").apply { initialize(NamedParameterSpec.X25519) }.generateKeyPair()
 
     fun publicB64(kp: KeyPair): String = publicB64FromRaw(uToRaw((kp.public as XECPublicKey).u))
+    /** Chiave privata da scalare grezzo (32 byte): per i vettori di prova condivisi con il relay. */
+    fun privateFromRaw(raw: ByteArray): PrivateKey =
+        KeyFactory.getInstance("XDH").generatePrivate(XECPrivateKeySpec(NamedParameterSpec.X25519, raw))
+
     fun publicB64FromRaw(raw: ByteArray): String = Base64.getEncoder().encodeToString(raw)
     fun rawFromB64(b64: String): ByteArray = Base64.getDecoder().decode(b64)
 
