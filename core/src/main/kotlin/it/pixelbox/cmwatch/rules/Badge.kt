@@ -16,8 +16,18 @@ object Badge {
     const val BLACK = 0xFF000000.toInt()
     const val WHITE = 0xFFF2F4F7.toInt()
 
-    fun of(account: String, color: String?, state: SessionState): Spec {
-        val fill = parse(color) ?: GREY
+    /** Tabella emoji → colore del contratto 1.1 (claude-master, 12/09 16:46); l'emoji dice anche la forma. */
+    private val EMOJI_COLOR = mapOf(
+        "🟠" to "#F5A623", "🟧" to "#F5A623", "🧡" to "#F5A623", "🟡" to "#F4D03F", "🟨" to "#F4D03F", "💛" to "#F4D03F",
+        "🔴" to "#E74C3C", "🟥" to "#E74C3C", "❤️" to "#E74C3C", "🟢" to "#2ECC71", "🟩" to "#2ECC71", "💚" to "#2ECC71",
+        "🔵" to "#3B82F6", "🟦" to "#3B82F6", "💙" to "#3B82F6", "🟣" to "#9B59B6", "🟪" to "#9B59B6", "💜" to "#9B59B6",
+        "⚪" to "#BDC3C7", "⬜" to "#BDC3C7", "🤍" to "#BDC3C7", "🟤" to "#8D6E63", "🟫" to "#8D6E63", "🤎" to "#8D6E63",
+    )
+    private val SQUARES = setOf("🟧", "🟨", "🟥", "🟩", "🟦", "🟪", "⬜", "🟫")
+
+    fun of(account: String, color: String?, state: SessionState, icon: String? = null): Spec {
+        val emoji = icon?.trim()?.takeIf { it.isNotEmpty() }
+        val fill = parse(color) ?: parse(EMOJI_COLOR[emoji]) ?: GREY
         val glyph = when (state) {
             SessionState.BUSY, SessionState.AWAITING -> Glyph.PLAY
             SessionState.IDLE -> Glyph.CHECK
@@ -25,7 +35,12 @@ object Badge {
             SessionState.GONE -> Glyph.CROSS
         }
         val glyphColor = if (contrast(BLACK, fill) >= 4.5) BLACK else WHITE
-        return Spec(if (account == "agenzia") Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
+        val square = when {
+            emoji != null && emoji in SQUARES -> true
+            emoji != null && emoji in EMOJI_COLOR -> false
+            else -> account.lowercase() in setOf("agenzia", "professionale", "pixelfarm", "azienda")
+        }
+        return Spec(if (square) Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
     }
 
     fun parse(color: String?): Int? {

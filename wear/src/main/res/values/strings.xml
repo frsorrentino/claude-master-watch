@@ -85,4 +85,7 @@
     <string name="notif_confirmed">confermato</string>
     <string name="notif_quota_body">Quota quasi esaurita</string>
     <string name="settings_notifications_off">Notifiche spente: apri le impostazioni</string>
+    <string name="tile_label_question">Domanda aperta</string>
+    <string name="tile_label_last">Ultima sessione</string>
+    <string name="tile_stale_short">PC fermo</string>
 </resources>

@@ -1,6 +1,8 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
@@ -30,13 +32,15 @@ fun SessionRow(
     transformation: SurfaceTransformation?,
     modifier: Modifier = Modifier,
 ) {
+    // Look da selettore app di Wear OS (Franz, 12/09 20:03): badge grande a sinistra, riga alta, angoli pieni, sfondo chiaro.
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
+        shape = RoundedCornerShape(32.dp),
+        contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         transformation = transformation,
         colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text, secondaryContentColor = CmColors.text2),
-        border = BorderStroke(1.dp, CmColors.line),
-        icon = { SessionBadge(s) },
+        icon = { SessionBadge(s, size = 40.dp) },
         label = {
             val row = SessionsText.row(s, now)
             Text(

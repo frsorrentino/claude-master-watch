@@ -20,7 +20,7 @@ import it.pixelbox.cmwatch.rules.Badge
 /** Il badge della sessione (Franz, 12/09 16:27): forma = account, riempimento = colore della sessione, glifo di stato dentro. */
 @Composable
 fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier) {
-    val spec = Badge.of(s.account, s.color, s.state)
+    val spec = Badge.of(s.account, s.color, s.state, s.icon)
     Canvas(modifier.size(size)) { drawBadge(spec, this.size.minDimension) }
 }
 

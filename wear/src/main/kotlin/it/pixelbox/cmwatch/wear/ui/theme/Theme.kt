@@ -14,7 +14,7 @@ import it.pixelbox.cmwatch.contract.SessionState
 /** Token del design (sezione 3): tema scuro unico, cobalto solo su bottone pieno, scroll bar, chip «seguita», anello quota. */
 object CmColors {
     val bg = Color(0xFF000000)
-    val surface = Color(0xFF121417)
+    val surface = Color(0xFF23272E)   // più chiaro (Franz, 12/09 20:03): come i tasti del selettore app di Wear OS
     val line = Color(0xFF2A2E35)
     val text = Color(0xFFF2F4F7)
     val text2 = Color(0xFF9AA3B2)

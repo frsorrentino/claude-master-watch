@@ -69,7 +69,7 @@ class Notifier(private val ctx: Context) {
         return PendingIntent.getBroadcast(ctx, code, i, (if (mutable) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE) or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    private fun badge(s: Session) = BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(s.account, s.color, s.state))
+    private fun badge(s: Session) = BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(s.account, s.color, s.state, s.icon))
 
     private fun person(name: String, s: Session?, state: SessionState?): Person =
         Person.Builder().setName(name).setKey(name).setIcon(IconCompat.createWithBitmap(s?.let { badge(it) } ?: Glyphs.state(ctx, state))).setImportant(true).build()

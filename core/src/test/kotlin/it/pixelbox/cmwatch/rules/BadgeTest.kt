@@ -16,6 +16,15 @@ class BadgeTest {
         assertEquals(0xFF9B9B9B.toInt(), Badge.of("personale", "rosso", SessionState.IDLE).fill)   // valore non valido → grigio
     }
 
+    @Test fun iconEmojiGivesShapeAndColourWhenColorIsMissing() {
+        val sq = Badge.of("personale", null, SessionState.IDLE, icon = "🟦")
+        assertEquals(Badge.Shape.SQUARE, sq.shape); assertEquals(0xFF3B82F6.toInt(), sq.fill)
+        val ci = Badge.of("agenzia", null, SessionState.IDLE, icon = "🟢")
+        assertEquals(Badge.Shape.CIRCLE, ci.shape); assertEquals(0xFF2ECC71.toInt(), ci.fill)
+        assertEquals(0xFFE74C3C.toInt(), Badge.of("personale", "#E74C3C", SessionState.IDLE, icon = "🟢").fill)   // color vince sull'emoji
+        assertEquals(Badge.Shape.SQUARE, Badge.of("professionale", null, SessionState.IDLE).shape)
+    }
+
     @Test fun glyphPerState() {
         assertEquals(Badge.Glyph.PLAY, Badge.of("personale", null, SessionState.BUSY).glyph)
         assertEquals(Badge.Glyph.PLAY, Badge.of("personale", null, SessionState.AWAITING).glyph)

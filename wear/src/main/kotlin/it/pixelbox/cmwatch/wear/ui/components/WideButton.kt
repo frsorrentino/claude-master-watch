@@ -1,6 +1,5 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
@@ -31,7 +30,7 @@ fun WideButton(
     onLongClick: (() -> Unit)? = null,
     transformation: SurfaceTransformation? = null,
 ) {
-    val m = modifier.fillMaxWidth().heightIn(min = 52.dp)
+    val m = modifier.fillMaxWidth().heightIn(min = 56.dp)
     // Sul pieno chiaro (ambra) il testo è nero, sul pieno scuro (cobalto, rosso) bianco: regola del tema, non del bottone.
     val onFill = if (fill.luminance() > 0.4f) Color.Black else CmColors.text
     if (primary) {
@@ -43,7 +42,6 @@ fun WideButton(
         FilledTonalButton(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
             colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text),
-            border = BorderStroke(1.dp, CmColors.line),
         ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
     }
 }
