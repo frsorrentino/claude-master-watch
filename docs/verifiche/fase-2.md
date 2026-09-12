@@ -12,7 +12,7 @@ Quello che si prova senza orologio, sul `Transport` finto (fixture del contratto
 | 3 | Scheda con → prossimo, esito, Rispondi / Scrivi / Terminale / Segui | tap su una riga | ✅ ARC, `fase2-scheda-arc.png` |
 | 4 | Domanda a schermo intero: testo intero, bottoni larghi uno sotto l'altro, ambra per tier medium | apertura automatica all'avvio | ✅ ARC, `fase2-domanda-arc.png` |
 | 5 | Risposta «1» → domanda sparita, sessione ▶, vibrazione «inviato» + «confermato» | tap su «1 · yes» | ✅ ARC (vibrazione non verificabile su ARC), `fase2-dopo-risposta-arc.png` |
-| 6 | Fixture 3 → chip «PC fermo da N min», comandi disabilitati | Impostazioni → Demo → 3-stale | ✅ ARC, `fase2-pc-fermo-arc.png` (vedi sotto) |
+| 6 | Fixture 3 → chip «PC fermo da N min», comandi disabilitati | Impostazioni → Demo → 3-stale | ✅ ARC, `fase2-pc-fermo-arc.png` |
 | 7 | «Scrivi» apre la tastiera di sistema e manda un `prompt` | Scheda → Scrivi | solo sul polso (ARC non ha la tastiera Wear) |
 | 8 | Pairing con codice a 6 cifre (finto: qualsiasi) | avvio pulito → Inserisci codice | ✅ schermata su ARC (`fase2-pairing-arc.png`); tastiera solo sul polso |
 | 9 | Tier high: pressione lunga obbligatoria | fixture con `tier: high` (da aggiungere quando il relay la produce) | da provare |
