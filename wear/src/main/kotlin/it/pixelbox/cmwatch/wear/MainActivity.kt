@@ -38,6 +38,17 @@ import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SettingsScreen
+import it.pixelbox.cmwatch.wear.ui.screens.OutcomeScreen
+import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
+import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
+import it.pixelbox.cmwatch.wear.ui.screens.LaunchScreen
+import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
+import it.pixelbox.cmwatch.wear.ui.screens.RecapScreen
+import it.pixelbox.cmwatch.wear.ui.screens.NightScreen
+import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.data.PendingStatus
+import it.pixelbox.cmwatch.contract.Night
+import it.pixelbox.cmwatch.contract.Recap
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
@@ -133,7 +144,7 @@ class MainActivity : ComponentActivity() {
 
         SwipeDismissableNavHost(navController = nav, startDestination = Routes.SESSIONS) {
             composable(Routes.SESSIONS) {
-                SessionsScreen(snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) })
+                SessionsScreen(snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) })
             }
             composable(Routes.SESSION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
@@ -180,8 +191,36 @@ class MainActivity : ComponentActivity() {
                     onRetry = { pairing = PairingStatus.Idle },
                 )
             }
-            composable(Routes.OUTCOME) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
-            composable(Routes.TERMINAL) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
+            composable(Routes.OUTCOME) { back ->
+                val name = back.arguments?.getString("name").orEmpty()
+                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                OutcomeScreen(
+                    snapshot, name, now, settings?.ttsMinChars ?: 120, speaking,
+                    onSpeak = { text -> if (speaking) app.speaker.stop() else app.speaker.speak(text) },
+                    onReadAll = { nav.go(Screen.Terminal(name)) }, onBack = { nav.go(Screen.Sessions) },
+                )
+            }
+            composable(Routes.TERMINAL) { back ->
+                val name = back.arguments?.getString("name").orEmpty()
+                var text by remember { mutableStateOf<String?>(null) }
+                var error by remember { mutableStateOf<String?>(null) }
+                var cmdId by remember { mutableStateOf<String?>(null) }
+                fun ask() { text = null; error = null; scope.launch { cmdId = app.repo.command(CmdOp.SCREEN, name, null) } }
+                LaunchedEffect(name) { ask() }
+                LaunchedEffect(cmdId) {
+                    val id = cmdId ?: return@LaunchedEffect
+                    app.repo.results.collect { r -> if (r.id == id) { if (r.ok) text = r.text else error = r.text } }
+                }
+                val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
+                TerminalScreen(name, text, loading = text == null && error == null && !failed, error = error ?: if (failed) getString(R.string.question_not_delivered) else null, onRefresh = { ask() })
+            }
+            composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
+            composable(Routes.LAUNCH) {
+                LaunchScreen(snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh) { path -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; nav.go(Screen.Sessions) }
+            }
+            composable(Routes.QUOTA) { QuotaScreen(snapshot.state?.quota.orEmpty()) }
+            composable(Routes.RECAP) { RecapScreen(snapshot.state?.recap ?: Recap()) }
+            composable(Routes.NIGHT) { NightScreen(snapshot.state?.night ?: Night()) }
         }
     }
 }

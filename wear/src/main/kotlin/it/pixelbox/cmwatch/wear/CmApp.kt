@@ -21,6 +21,8 @@ import it.pixelbox.cmwatch.transport.Rtdb
 import it.pixelbox.cmwatch.transport.SwitchableTransport
 import it.pixelbox.cmwatch.transport.Transport
 import it.pixelbox.cmwatch.wear.complication.CmComplicationService
+import it.pixelbox.cmwatch.wear.follow.FollowOngoing
+import it.pixelbox.cmwatch.wear.tts.Speaker
 import it.pixelbox.cmwatch.wear.push.Notifier
 import it.pixelbox.cmwatch.wear.tile.CmTileService
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +37,8 @@ class CmApp : Application() {
     lateinit var transport: SwitchableTransport
     lateinit var repo: Repo
     lateinit var notifier: Notifier
+    lateinit var follow: FollowOngoing
+    val speaker: Speaker by lazy { Speaker(this) }
     val fake: FakeTransport by lazy { FakeTransport(load = { assets.open("contract/$it.json").bufferedReader().readText() }) }
 
     override fun onCreate() {
@@ -46,6 +50,8 @@ class CmApp : Application() {
         val store = RoomStore.open(this)
         repo = Repo(store, transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, settings.deviceName)
         repo.start()
+        follow = FollowOngoing(this)
+        scope.launch { repo.snapshot.collect { follow.update(it.state, System.currentTimeMillis() / 1000) } }
         subscribeTopic()
     }
 

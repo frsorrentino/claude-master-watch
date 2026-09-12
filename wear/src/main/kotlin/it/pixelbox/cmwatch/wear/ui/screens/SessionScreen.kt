@@ -62,7 +62,7 @@ fun SessionScreen(
             }
             if (s.state != SessionState.GONE) {
                 item { WideButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
-                item { WideButton(stringResource(R.string.card_terminal), onClick = onTerminal, enabled = false, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+                item { WideButton(stringResource(R.string.card_terminal), onClick = onTerminal, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 item {
                     WideButton(
                         stringResource(if (s.followed) R.string.card_unfollow else R.string.card_follow),

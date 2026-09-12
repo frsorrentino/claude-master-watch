@@ -53,4 +53,27 @@
     <string name="tile_sessions">Sessioni</string>
     <string name="tile_quota">Quota</string>
     <string name="tile_stale">PC fermo da %d min</string>
+    <string name="tts_play">Leggi a voce</string>
+    <string name="tts_stop">Ferma la lettura</string>
+    <string name="outcome_none">Nessun esito</string>
+    <string name="outcome_read_all">Leggi tutto</string>
+    <string name="terminal_loading">Chiedo al PC</string>
+    <string name="terminal_refresh">Aggiorna</string>
+    <string name="timeline_title">Timeline</string>
+    <string name="timeline_all">Tutte le sessioni</string>
+    <string name="timeline_empty">Nessun evento</string>
+    <string name="launch_title">Lancia</string>
+    <string name="launch_empty">Nessun progetto pubblicato</string>
+    <string name="launch_confirm">Lancia %1$s</string>
+    <string name="quota_title">Quota</string>
+    <string name="quota_week">settimana</string>
+    <string name="quota_reset">reset</string>
+    <string name="quota_stale">dato vecchio</string>
+    <string name="quota_none">—</string>
+    <string name="recap_title">Recap %1$s</string>
+    <string name="recap_short">Recap</string>
+    <string name="recap_empty">Niente da riassumere</string>
+    <string name="night_title">Notte</string>
+    <string name="night_queued">In coda: %1$d</string>
+    <string name="night_running">In corso: %1$s</string>
 </resources>

@@ -1,0 +1,56 @@
+package it.pixelbox.cmwatch.wear.ui.screens
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
+import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.data.Snapshot
+import it.pixelbox.cmwatch.rules.SpeakRules
+import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
+import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
+import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+
+/** Esito: `short` grande, `full`, ▶ per leggerlo, «Leggi tutto» chiede al PC (terminale). */
+@Composable
+fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int, speaking: Boolean, onSpeak: (String) -> Unit, onReadAll: () -> Unit, onBack: () -> Unit) {
+    val listState = rememberTransformingLazyColumnState()
+    val spec = rememberTransformationSpec()
+    val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
+    val o = s?.outcome
+    ScreenScaffold(scrollState = listState) { padding ->
+        TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+            if (s == null || o == null) {
+                item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+                item { WideButton(stringResource(R.string.sessions_title), onClick = onBack, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+                return@TransformingLazyColumn
+            }
+            item { SessionHeader(s, now, true, modifier = Modifier.transformedHeight(this, spec)) }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) {
+                    Text(o.short, style = MaterialTheme.typography.displaySmall, color = CmColors.text, modifier = Modifier.weight(1f))
+                    if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
+                        Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(o.full) })
+                    }
+                }
+            }
+            item { Text(o.full, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+            item { WideButton(stringResource(R.string.outcome_read_all), onClick = onReadAll, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+        }
+    }
+}
