@@ -37,4 +37,20 @@
     <string name="settings_complication_account">Account della complication</string>
     <string name="settings_repair">Nuovo pairing</string>
     <string name="settings_demo">Demo (fixture)</string>
+    <string name="notif_open">Apri</string>
+    <string name="notif_reply">Rispondi</string>
+    <string name="notif_reset_week">reset settimana</string>
+    <string name="notif_window_5h">finestra 5 h</string>
+    <string name="channel_questions">Domande</string>
+    <string name="channel_outcomes">Esiti</string>
+    <string name="channel_gone">Sessioni sparite</string>
+    <string name="channel_quota">Quota</string>
+    <string name="channel_follow">Sessione seguita</string>
+    <string name="complication_stale">PC fermo</string>
+    <string name="complication_name">Claude Master</string>
+    <string name="tile_name">Sessioni Claude</string>
+    <string name="tile_open">Apri</string>
+    <string name="tile_sessions">Sessioni</string>
+    <string name="tile_quota">Quota</string>
+    <string name="tile_stale">PC fermo da %d min</string>
 </resources>

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Button
@@ -31,10 +32,12 @@ fun WideButton(
     transformation: SurfaceTransformation? = null,
 ) {
     val m = modifier.fillMaxWidth().heightIn(min = 52.dp)
+    // Sul pieno chiaro (ambra) il testo è nero, sul pieno scuro (cobalto, rosso) bianco: regola del tema, non del bottone.
+    val onFill = if (fill.luminance() > 0.4f) Color.Black else CmColors.text
     if (primary) {
         Button(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
-            colors = ButtonDefaults.buttonColors(containerColor = fill, contentColor = CmColors.text),
+            colors = ButtonDefaults.buttonColors(containerColor = fill, contentColor = onFill),
         ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
     } else {
         FilledTonalButton(

@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.MaterialTheme
@@ -82,9 +83,7 @@ fun QuestionScreen(
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.transformedHeight(this, spec)) } }
             item { SessionHeader(s, now, enabled, modifier = Modifier.transformedHeight(this, spec)) }
-            item {
-                Text(q.text, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec))
-            }
+            item { QuestionText(q.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
             if (holdHint) {
                 item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
             }
@@ -108,4 +107,20 @@ fun QuestionScreen(
             }
         }
     }
+}
+
+/** Corpo della domanda a 18 sp; se l'ultima riga resterebbe con una parola sola, scende di uno scatto fino a 15 sp (master, 12/09). */
+@Composable
+private fun QuestionText(text: String, modifier: Modifier = Modifier) {
+    var size by rememberSaveable(text) { mutableStateOf(18) }
+    Text(
+        text, color = CmColors.text, modifier = modifier,
+        style = MaterialTheme.typography.titleLarge.copy(fontSize = size.sp, lineHeight = (size + 5).sp),
+        onTextLayout = { r ->
+            if (r.lineCount > 1 && size > 15) {
+                val last = text.substring(r.getLineStart(r.lineCount - 1), r.getLineEnd(r.lineCount - 1)).trim()
+                if (!last.contains(' ')) size -= 1
+            }
+        },
+    )
 }

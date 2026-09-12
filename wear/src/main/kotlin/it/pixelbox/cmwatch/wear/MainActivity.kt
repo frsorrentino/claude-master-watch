@@ -46,11 +46,16 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val deepLink = mutableStateOf<Screen?>(null)
+    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private fun link(intent: Intent?): Screen? =
+        Routes.fromDeepLink(intent?.data ?: intent?.getStringExtra(EXTRA_URI)?.let(android.net.Uri::parse))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        deepLink.value = Routes.fromDeepLink(intent?.data)
+        deepLink.value = link(intent)
         val app = application as CmApp
+        askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         // Solo debug: `adb shell am start … --ez demo_paired true` salta il pairing dove non c'è la tastiera Wear (ARC).
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo_paired", false) == true) {
             app.scope.launch { app.prefs.update { it.copy(paired = true, host = "demo") } }
@@ -60,8 +65,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        deepLink.value = Routes.fromDeepLink(intent.data)
+        deepLink.value = link(intent)
     }
+
+    companion object { const val EXTRA_URI = "cmwatch_uri" }
 
     @Composable
     private fun App(app: CmApp) {
@@ -96,8 +103,9 @@ class MainActivity : ComponentActivity() {
             scope.launch {
                 pairing = try {
                     val info = app.transport.pair(code, settings?.deviceName ?: "watch-pixel5")
-                    val wrapped = KeyVault.wrap(KeyVault.newSessionKey(), KeyVault.keystoreKek())
+                    val wrapped = KeyVault.wrap(info.key ?: KeyVault.newSessionKey(), KeyVault.keystoreKek())
                     app.prefs.update { it.copy(paired = true, uid = info.uid, host = info.host, wrappedKey = wrapped) }
+                    app.reconfigure()
                     Haptics.play(this@MainActivity, Haptics.Kind.CONFIRMED)
                     PairingStatus.Done(info.host)
                 } catch (e: Exception) {
@@ -108,7 +116,7 @@ class MainActivity : ComponentActivity() {
         // Demo: la fixture scelta nelle impostazioni (solo con il Transport finto).
         LaunchedEffect(settings?.demoFixture) {
             val fx = settings?.demoFixture ?: return@LaunchedEffect
-            (app.transport as? FakeTransport)?.useFixture(fx)
+            (app.transport.active as? FakeTransport)?.useFixture(fx)
         }
         LaunchedEffect(Unit) {
             app.repo.results.collect { r -> Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR) }
@@ -159,7 +167,7 @@ class MainActivity : ComponentActivity() {
                 SettingsScreen(
                     settings ?: Settings(),
                     onChange = { s -> scope.launch { app.prefs.update { s } } },
-                    onRepair = { scope.launch { app.prefs.update { it.copy(paired = false, uid = null, host = null, wrappedKey = null) }; pairing = PairingStatus.Idle } },
+                    onRepair = { scope.launch { app.prefs.update { it.copy(paired = false, uid = null, host = null, wrappedKey = null) }; pairing = PairingStatus.Idle; app.reconfigure() } },
                 )
             }
             composable(Routes.PAIRING) {
