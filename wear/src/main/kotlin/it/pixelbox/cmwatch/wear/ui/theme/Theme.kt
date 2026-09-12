@@ -53,13 +53,16 @@ private val scheme = ColorScheme(
 
 val Mono = FontFamily.Monospace
 
+/** Nomi di sessione e terminale: mono 14 sp (design, sezione 3). */
+val MonoStyle = TextStyle(fontSize = 14.sp, fontFamily = Mono, fontWeight = FontWeight.Medium)
+
 private val typography = Typography(
     displaySmall = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
     titleLarge = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
     titleMedium = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
     titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
     labelLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-    labelMedium = TextStyle(fontSize = 14.sp, fontFamily = Mono),
+    labelMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontSize = 13.sp),
     bodyLarge = TextStyle(fontSize = 16.sp),
     bodyMedium = TextStyle(fontSize = 15.sp),

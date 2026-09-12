@@ -34,6 +34,7 @@ class RepoTest {
         val store = MemoryStore()
         store.saveState(ContractJson.decodeState(Fixtures.stateIdle), clock - 10)
         val repo = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.loadFromStore()
         assertEquals(1, repo.snapshot.value.state!!.sessions.size)     // da Room, subito
         repo.start(); idle()
         assertEquals(4, repo.snapshot.value.state!!.sessions.size)     // poi dal transport

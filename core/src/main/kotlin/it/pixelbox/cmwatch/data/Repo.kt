@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.UUID
 
@@ -46,20 +45,21 @@ class Repo(
     val notices: SharedFlow<Notice> = _notices
     private val jobs = HashMap<String, Job>()
 
-    init {
-        // Apertura immediata da Room: l'ultimo stato è leggibile anche senza rete (una riga ≤ 8 KB).
-        runBlocking {
-            store.loadState()?.let { (s, _) -> _snapshot.value = Snapshot(s, Freshness.of(s.ts, now())) }
-            _events.value = store.loadEvents()
-            _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
-        }
+    /** Apertura da Room: l'ultimo stato è leggibile anche senza rete, prima che il Transport risponda. */
+    suspend fun loadFromStore() {
+        store.loadState()?.let { (s, _) -> _snapshot.update { it.copy(state = s, freshness = Freshness.of(s.ts, now())) } }
+        _events.value = store.loadEvents()
+        _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
     }
 
     fun start() {
-        scope.launch { transport.state.collect { s -> accept(s) } }
         scope.launch {
-            transport.events.collect { ev ->
-                store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
+            loadFromStore()
+            launch { transport.state.collect { s -> accept(s) } }
+            launch {
+                transport.events.collect { ev ->
+                    store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
+                }
             }
         }
         if (freshnessTickMs > 0) scope.launch {

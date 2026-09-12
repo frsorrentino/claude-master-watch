@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
@@ -16,6 +18,7 @@ import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 
 /** Una riga a tutta larghezza: icona di stato, pallino dell'account, «nome · durata»; sotto, la domanda se c'è. */
 @Composable
@@ -37,7 +40,14 @@ fun SessionRow(
         label = {
             AccountDot(s.account)
             Spacer(Modifier.width(6.dp))
-            Text(SessionsText.row(s, now), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+            val row = SessionsText.row(s, now)
+            Text(
+                buildAnnotatedString {
+                    withStyle(MonoStyle.toSpanStyle()) { append(s.name) }
+                    append(row.removePrefix(s.name))
+                },
+                maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge,
+            )
         },
         secondaryLabel = s.question?.let { q -> { Text(q.text, maxLines = 1, overflow = TextOverflow.Ellipsis, color = CmColors.text2) } },
     )
