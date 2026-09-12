@@ -23,6 +23,7 @@ import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import it.pixelbox.cmwatch.BuildConfig
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.rules.Screen
@@ -50,6 +51,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         deepLink.value = Routes.fromDeepLink(intent?.data)
         val app = application as CmApp
+        // Solo debug: `adb shell am start … --ez demo_paired true` salta il pairing dove non c'è la tastiera Wear (ARC).
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo_paired", false) == true) {
+            app.scope.launch { app.prefs.update { it.copy(paired = true, host = "demo") } }
+        }
         setContent { CmTheme { AppScaffold(timeText = { TimeText() }) { App(app) } } }
     }
 
