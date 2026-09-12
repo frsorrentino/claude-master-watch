@@ -2,4 +2,11 @@
     <string name="app_name">Claude Master</string>
     <string name="sessions_title">Sessioni</string>
     <string name="sessions_empty">Nessuna sessione</string>
+    <string name="sessions_label">sessioni</string>
+    <string name="settings_title">Impostazioni</string>
+    <string name="pc_stale">PC fermo da %1$d min</string>
+    <string name="state_waiting">In attesa di risposta</string>
+    <string name="state_busy">Lavora</string>
+    <string name="state_idle">Ferma</string>
+    <string name="state_gone">Sparita</string>
 </resources>
