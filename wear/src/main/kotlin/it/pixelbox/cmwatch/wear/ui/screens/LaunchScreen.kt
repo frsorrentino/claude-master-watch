@@ -21,6 +21,7 @@ import it.pixelbox.cmwatch.contract.Project
 import it.pixelbox.cmwatch.rules.LaunchRules
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Lancia: solo i progetti pubblicati dal PC; tap → il bottone pieno «Lancia nome» conferma. */
 @Composable
@@ -28,10 +29,10 @@ fun LaunchScreen(projects: List<Project>, enabled: Boolean, onLaunch: (String) -
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     var chosen by rememberSaveable { mutableStateOf<String?>(null) }
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.launch_title)) } }
-            if (projects.isEmpty()) item { Text(stringResource(R.string.launch_empty), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+            if (projects.isEmpty()) item { Text(stringResource(R.string.launch_empty), color = CmColors.text2, modifier = Modifier) }
             for (p in projects) item {
                 val selected = chosen == p.path
                 WideButton(

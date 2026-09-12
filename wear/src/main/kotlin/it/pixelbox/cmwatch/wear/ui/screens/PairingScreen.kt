@@ -17,13 +17,14 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Pairing: il PC mostra un codice a 6 cifre (`claude-master relay pair`), l'orologio lo scrive con la tastiera di sistema. */
 @Composable
 fun PairingScreen(status: PairingStatus, onEnterCode: () -> Unit, onRetry: () -> Unit) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.pairing_title)) } }
             item {
@@ -34,7 +35,7 @@ fun PairingScreen(status: PairingStatus, onEnterCode: () -> Unit, onRetry: () ->
                     is PairingStatus.Failed -> stringResource(R.string.pairing_failed)
                 }
                 val color = if (status is PairingStatus.Failed) CmColors.gone else CmColors.text2
-                Text(text, style = MaterialTheme.typography.bodyMedium, color = color, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec))
+                Text(text, style = MaterialTheme.typography.bodyMedium, color = color, modifier = Modifier.fillMaxWidth())
             }
             item {
                 if (status is PairingStatus.Failed) {

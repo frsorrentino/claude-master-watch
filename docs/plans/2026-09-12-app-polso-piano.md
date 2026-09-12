@@ -1978,6 +1978,8 @@ Commit: `feat(complication): short text, ranged quota ring, long text — one so
 
 ### Task 15: tile ProtoLayout M3
 
+> Ridisegnata il 12/09 15:00 su richiesta di Franz («cosa serve davvero a colpo d'occhio, come le tile di Google»): `primaryLayout` con etichetta dei conteggi in alto («1 ❓ · 1 ▶ · 1 ✓»), al centro la sessione che conta (nome in grande nel colore dello stato + domanda intera o «▶ tool · età» / esito breve), un solo bottone curvo sul bordo (**Rispondi** con domanda, **Sessioni** altrimenti), «PC fermo da N min» in grigio. Regola pura `TileTexts.glance` (test `TileGlanceTest`). Sostituisce i due bottoni Apri/Sessioni · Sessioni/Quota del design.
+
 **Files:** `tile/CmTileService.kt` (`TileService`, `onTileRequest` → `materialScope(ctx, deviceParameters) { primaryLayout(titleSlot = text(header), mainSlot = …, bottomSlot = buttonGroup(...)) }`), `tile/TileTexts.kt`, manifest (`androidx.wear.tiles.action.BIND_TILE_PROVIDER`, preview `@drawable/tile_preview`), `res/values/strings.xml`.
 
 `TileTexts.header(state)` («5 sessioni · 1? · 1✗»), `TileTexts.line(state)` = la sessione ferma con la domanda su una riga intera, altrimenti la seguita o la più recente («▶ atlas-shop · 1 m»); stale → «PC fermo da N min». Bottoni: con domanda **Apri** (`LaunchAction` su `cmwatch://question/<name>`) · **Sessioni**; senza **Sessioni** · **Quota**. `freshnessIntervalMillis` = 30 s con domande, 15 min senza. Test: `TileTextsTest` sulle tre fixture.

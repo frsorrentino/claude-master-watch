@@ -22,6 +22,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Scheda: riga nome · account · stato · durata; → prossimo; esito; Rispondi / Scrivi / Terminale / Segui. */
 @Composable
@@ -40,17 +41,17 @@ fun SessionScreen(
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val enabled = snapshot.freshness is Freshness.Fresh
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null) {
-                item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+                item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier) }
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBackToSessions, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 return@TransformingLazyColumn
             }
-            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.transformedHeight(this, spec)) } }
-            item { SessionHeader(s, now, enabled, modifier = Modifier.transformedHeight(this, spec)) }
+            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
+            item { SessionHeader(s, now, enabled, modifier = Modifier) }
             CardText.next(s)?.let { next ->
-                item { Text(next, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+                item { Text(next, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
             }
             s.outcome?.let { o ->
                 item {

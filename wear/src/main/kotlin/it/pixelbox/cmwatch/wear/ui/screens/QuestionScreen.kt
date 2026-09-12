@@ -30,6 +30,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import kotlinx.coroutines.delay
 
 /**
@@ -65,7 +66,7 @@ fun QuestionScreen(
         }
     }
 
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null || q == null) {
                 item {
@@ -74,18 +75,18 @@ fun QuestionScreen(
                         sentId != null -> stringResource(R.string.question_sent)
                         else -> stringResource(R.string.question_answered_elsewhere)
                     }
-                    Text(text, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec))
+                    Text(text, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth())
                 }
                 if (sentId != null && pending?.status == PendingStatus.FAILED) {
                     item { WideButton(stringResource(R.string.question_retry), onClick = { onRetry(sentId) }, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 }
                 return@TransformingLazyColumn
             }
-            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.transformedHeight(this, spec)) } }
-            item { SessionHeader(s, now, enabled, modifier = Modifier.transformedHeight(this, spec)) }
-            item { QuestionText(q.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
+            item { SessionHeader(s, now, enabled, modifier = Modifier) }
+            item { QuestionText(q.text, modifier = Modifier.fillMaxWidth()) }
             if (holdHint) {
-                item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+                item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth()) }
             }
             q.options.forEachIndexed { i, opt ->
                 item {

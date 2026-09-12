@@ -1,12 +1,42 @@
 package it.pixelbox.cmwatch.rules
 
+import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 
 /** Testi della tile (design, sezione 2): conteggi, la sessione ferma su una riga intera, bottoni, freschezza adattiva. */
 object TileTexts {
-    enum class Button { OPEN, SESSIONS, QUOTA }
+    enum class Button { OPEN, SESSIONS, QUOTA, REPLY }
+    enum class Accent { QUESTION, BUSY, IDLE, STALE }
+    data class Labels(val none: String, val stale: String, val works: String)
+
+    /** Cosa mostra la tile a colpo d'occhio: etichetta dei conteggi, sessione in evidenza, corpo, un solo bottone di bordo. */
+    data class Glance(val counts: String, val name: String?, val body: String, val button: Button, val accent: Accent, val target: String)
+
+    fun counts(state: State): String {
+        val q = state.sessions.count { it.question != null }
+        val busy = state.sessions.count { it.question == null && (it.state == SessionState.BUSY || it.state == SessionState.AWAITING) }
+        val idle = state.sessions.count { it.state == SessionState.IDLE }
+        val gone = state.sessions.count { it.state == SessionState.GONE }
+        return listOf(q to "❓", busy to "▶", idle to "✓", gone to "✗").filter { it.first > 0 }.joinToString(" · ") { "${it.first} ${it.second}" }
+    }
+
+    fun glance(state: State?, freshness: Freshness, now: Long, l: Labels): Glance {
+        if (state == null) return Glance("", null, l.none, Button.SESSIONS, Accent.IDLE, "cmwatch://sessions")
+        if (freshness is Freshness.Stale) return Glance("", null, staleLine(freshness, l.stale), Button.SESSIONS, Accent.STALE, "cmwatch://sessions")
+        val counts = counts(state)
+        state.sessions.firstOrNull { it.question != null }?.let {
+            return Glance(counts, it.name, it.question!!.text, Button.REPLY, Accent.QUESTION, "cmwatch://question/${it.name}")
+        }
+        val s = state.sessions.firstOrNull { it.followed && it.state != SessionState.GONE }
+            ?: state.sessions.filter { it.state != SessionState.GONE }.maxByOrNull { maxOf(it.since, it.turnStarted ?: 0, it.outcome?.at ?: 0) }
+            ?: return Glance(counts, null, l.none, Button.SESSIONS, Accent.IDLE, "cmwatch://sessions")
+        val busy = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
+        val age = Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now)
+        val body = if (busy) "▶ ${s.tool ?: l.works} · $age" else s.outcome?.short ?: "✓ · $age"
+        return Glance(counts, s.name, body, Button.SESSIONS, if (busy) Accent.BUSY else Accent.IDLE, "cmwatch://session/${s.name}")
+    }
 
     fun header(state: State, sessionsLabel: String): String {
         val q = state.sessions.count { it.question != null }

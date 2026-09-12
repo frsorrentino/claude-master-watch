@@ -25,6 +25,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Esito: `short` grande, `full`, ▶ per leggerlo, «Leggi tutto» chiede al PC (terminale). */
 @Composable
@@ -33,23 +34,23 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val o = s?.outcome
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null || o == null) {
-                item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+                item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier) }
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBack, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 return@TransformingLazyColumn
             }
-            item { SessionHeader(s, now, true, modifier = Modifier.transformedHeight(this, spec)) }
+            item { SessionHeader(s, now, true, modifier = Modifier) }
             item {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text(o.short, style = MaterialTheme.typography.displaySmall, color = CmColors.text, modifier = Modifier.weight(1f))
                     if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
                         Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(o.full) })
                     }
                 }
             }
-            item { Text(o.full, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+            item { Text(o.full, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
             item { WideButton(stringResource(R.string.outcome_read_all), onClick = onReadAll, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }

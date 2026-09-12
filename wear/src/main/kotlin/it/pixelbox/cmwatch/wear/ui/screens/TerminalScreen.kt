@@ -18,6 +18,7 @@ import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.rules.TerminalText
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 
 /** Terminale: 30 righe mono, una per riga, scorrimento orizzontale per non spezzarle. */
@@ -26,14 +27,14 @@ fun TerminalScreen(name: String, text: String?, loading: Boolean, error: String?
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val h = rememberScrollState()
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            item { Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+            item { Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
             when {
-                loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
-                error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier.transformedHeight(this, spec)) }
+                loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier) }
+                error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier) }
                 text != null -> for (line in TerminalText.lines(text)) {
-                    item { Text(line, style = MonoStyle, color = CmColors.text, maxLines = 1, modifier = Modifier.fillMaxWidth().horizontalScroll(h).transformedHeight(this, spec)) }
+                    item { Text(line, style = MonoStyle, color = CmColors.text, maxLines = 1, modifier = Modifier.fillMaxWidth().horizontalScroll(h)) }
                 }
             }
             item { WideButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, primary = true, enabled = !loading, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }

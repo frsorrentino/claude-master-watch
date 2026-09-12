@@ -16,6 +16,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.BuildConfig
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
@@ -25,7 +26,7 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.settings_title)) } }
             item {

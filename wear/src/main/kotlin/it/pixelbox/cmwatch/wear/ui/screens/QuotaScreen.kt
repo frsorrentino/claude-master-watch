@@ -24,6 +24,7 @@ import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.QuotaAccount
 import it.pixelbox.cmwatch.rules.QuotaText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import java.time.ZoneId
 
 /** Quota: per ogni account un anello 5 h e la riga della settimana con il reset; grigio se il dato è vecchio. */
@@ -35,12 +36,12 @@ fun QuotaScreen(quota: Map<String, QuotaAccount>) {
         week = stringResource(R.string.quota_week), reset = stringResource(R.string.quota_reset),
         stale = stringResource(R.string.quota_stale), none = stringResource(R.string.quota_none),
     )
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.quota_title)) } }
             for ((account, q) in quota) {
                 item {
-                    Box(Modifier.fillMaxWidth().transformedHeight(this, spec), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
                             progress = { QuotaText.fraction(q.h5) }, modifier = Modifier.size(96.dp), strokeWidth = 8.dp,
                             colors = ProgressIndicatorDefaults.colors(indicatorColor = if (q.stale) CmColors.stale else CmColors.accent, trackColor = CmColors.line),
@@ -48,7 +49,7 @@ fun QuotaScreen(quota: Map<String, QuotaAccount>) {
                         Text(QuotaText.h5Line(account, q, labels), style = MaterialTheme.typography.bodySmall, color = CmColors.text)
                     }
                 }
-                item { Text(QuotaText.w7Line(q, labels, ZoneId.systemDefault()), style = MaterialTheme.typography.bodyMedium, color = if (q.stale) CmColors.stale else CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+                item { Text(QuotaText.w7Line(q, labels, ZoneId.systemDefault()), style = MaterialTheme.typography.bodyMedium, color = if (q.stale) CmColors.stale else CmColors.text2, modifier = Modifier.fillMaxWidth()) }
             }
         }
     }

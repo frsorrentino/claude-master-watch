@@ -19,6 +19,7 @@ import it.pixelbox.cmwatch.contract.Night
 import it.pixelbox.cmwatch.contract.Recap
 import it.pixelbox.cmwatch.rules.RecapText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Recap del giorno: «progetto · fatto» e «→ prossimo». */
 @Composable
@@ -26,13 +27,13 @@ fun RecapScreen(recap: Recap) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val rows = RecapText.rows(recap)
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.recap_title, recap.date)) } }
-            if (rows.isEmpty()) item { Text(stringResource(R.string.recap_empty), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+            if (rows.isEmpty()) item { Text(stringResource(R.string.recap_empty), color = CmColors.text2, modifier = Modifier) }
             for (r in rows) {
-                item { Text(r.done, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
-                r.next?.let { n -> item { Text(n, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) } }
+                item { Text(r.done, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+                r.next?.let { n -> item { Text(n, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) } }
             }
         }
     }
@@ -43,11 +44,11 @@ fun RecapScreen(recap: Recap) {
 fun NightScreen(night: Night) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.night_title)) } }
-            item { Text(stringResource(R.string.night_queued, night.queued), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
-            item { Text(stringResource(R.string.night_running, night.running ?: stringResource(R.string.quota_none)), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+            item { Text(stringResource(R.string.night_queued, night.queued), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+            item { Text(stringResource(R.string.night_running, night.running ?: stringResource(R.string.quota_none)), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
         }
     }
 }

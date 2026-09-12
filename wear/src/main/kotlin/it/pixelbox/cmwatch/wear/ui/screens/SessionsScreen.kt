@@ -21,6 +21,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SessionRow
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
 @Composable
@@ -29,7 +30,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
     val spec = rememberTransformationSpec()
     val sessions = snapshot.state?.sessions.orEmpty()
     val fresh = snapshot.freshness is Freshness.Fresh
-    ScreenScaffold(scrollState = listState) { padding ->
+    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
@@ -37,10 +38,10 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 }
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
-                item { StaleChip(st.minutes, Modifier.transformedHeight(this, spec)) }
+                item { StaleChip(st.minutes, Modifier) }
             }
             if (sessions.isEmpty()) {
-                item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier.transformedHeight(this, spec)) }
+                item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier) }
             }
             items(sessions, key = { it.id }) { s ->
                 SessionRow(s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
