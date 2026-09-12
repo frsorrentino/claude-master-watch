@@ -19,6 +19,7 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.Screen
 import it.pixelbox.cmwatch.wear.ui.components.SessionRow
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
+import it.pixelbox.cmwatch.wear.ui.components.MenuButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
@@ -46,16 +47,8 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
             items(sessions, key = { it.id }) { s ->
                 SessionRow(s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
             }
-            val menu = listOf(
-                R.string.timeline_title to Screen.Timeline, R.string.launch_title to Screen.Launch, R.string.quota_title to Screen.Quota,
-                R.string.recap_short to Screen.Recap, R.string.night_title to Screen.Night,
-            )
-            for ((label, screen) in menu) item {
-                WideButton(stringResource(label), onClick = { onMenu(screen) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
-            }
-            item {
-                WideButton(stringResource(R.string.settings_title), onClick = onSettings, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
-            }
+            // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35).
+            item { MenuButton(onClick = { onMenu(Screen.Menu) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }
 }

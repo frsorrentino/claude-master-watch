@@ -17,6 +17,7 @@ object Routes {
     const val QUOTA = "quota"
     const val RECAP = "recap"
     const val NIGHT = "night"
+    const val MENU = "menu"
 
     fun of(screen: Screen): String = when (screen) {
         Screen.Sessions -> SESSIONS
@@ -31,6 +32,7 @@ object Routes {
         Screen.Quota -> QUOTA
         Screen.Recap -> RECAP
         Screen.Night -> NIGHT
+        Screen.Menu -> MENU
     }
 
     /** Dalla rotta corrente (con argomenti risolti) alla Screen. */
@@ -46,6 +48,7 @@ object Routes {
         QUOTA -> Screen.Quota
         RECAP -> Screen.Recap
         NIGHT -> Screen.Night
+        MENU -> Screen.Menu
         else -> Screen.Sessions
     }
 
@@ -65,6 +68,7 @@ object Routes {
             "launch" -> Screen.Launch
             "recap" -> Screen.Recap
             "night" -> Screen.Night
+            "menu" -> Screen.Menu
             else -> null
         }
     }

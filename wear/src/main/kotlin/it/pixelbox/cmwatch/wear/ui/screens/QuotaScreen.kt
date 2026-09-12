@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
@@ -23,11 +24,15 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.QuotaAccount
 import it.pixelbox.cmwatch.rules.QuotaText
+import it.pixelbox.cmwatch.wear.ui.components.AccountDot
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import java.time.ZoneId
 
-/** Quota: per ogni account un anello 5 h e la riga della settimana con il reset; grigio se il dato è vecchio. */
+/**
+ * Quota (ridisegnata il 12/09 su richiesta di Franz): per ogni account un'intestazione con il pallino, un anello grande
+ * con dentro SOLO la percentuale delle 5 ore, poi due righe intere sotto (5 h, settimana + reset). Grigio se il dato è vecchio.
+ */
 @Composable
 fun QuotaScreen(quota: Map<String, QuotaAccount>) {
     val listState = rememberTransformingLazyColumnState()
@@ -40,16 +45,25 @@ fun QuotaScreen(quota: Map<String, QuotaAccount>) {
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.quota_title)) } }
             for ((account, q) in quota) {
+                val color = if (q.stale) CmColors.stale else CmColors.accent
+                val textColor = if (q.stale) CmColors.stale else CmColors.text
+                item {
+                    ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
+                        AccountDot(account); Text("  $account")
+                    }
+                }
                 item {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
-                            progress = { QuotaText.fraction(q.h5) }, modifier = Modifier.size(96.dp), strokeWidth = 8.dp,
-                            colors = ProgressIndicatorDefaults.colors(indicatorColor = if (q.stale) CmColors.stale else CmColors.accent, trackColor = CmColors.line),
+                            progress = { QuotaText.fraction(q.h5) }, modifier = Modifier.size(110.dp), strokeWidth = 10.dp,
+                            colors = ProgressIndicatorDefaults.colors(indicatorColor = color, trackColor = CmColors.line),
                         )
-                        Text(QuotaText.h5Line(account, q, labels), style = MaterialTheme.typography.bodySmall, color = CmColors.text)
+                        Text(q.h5?.let { "$it %" } ?: labels.none, style = MaterialTheme.typography.displaySmall, color = textColor)
                     }
                 }
-                item { Text(QuotaText.w7Line(q, labels, ZoneId.systemDefault()), style = MaterialTheme.typography.bodyMedium, color = if (q.stale) CmColors.stale else CmColors.text2, modifier = Modifier.fillMaxWidth()) }
+                item { Text(stringResource(R.string.quota_5h_line, q.h5?.let { "$it %" } ?: labels.none), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                item { Text(QuotaText.w7Line(q, labels, ZoneId.systemDefault()), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                if (q.stale) item { Text(labels.stale, style = MaterialTheme.typography.bodySmall, color = CmColors.stale, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
             }
         }
     }

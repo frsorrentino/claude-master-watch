@@ -45,6 +45,7 @@ import it.pixelbox.cmwatch.wear.ui.screens.LaunchScreen
 import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
 import it.pixelbox.cmwatch.wear.ui.screens.RecapScreen
 import it.pixelbox.cmwatch.wear.ui.screens.NightScreen
+import it.pixelbox.cmwatch.wear.ui.screens.MenuScreen
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.contract.Night
@@ -57,6 +58,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val deepLink = mutableStateOf<Screen?>(null)
+    private val pairCodeFromIntent = mutableStateOf<String?>(null)
     private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     private fun link(intent: Intent?): Screen? =
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         deepLink.value = link(intent)
+        pairCodeFromIntent.value = intent?.getStringExtra(EXTRA_PAIR_CODE)?.takeIf { it.matches(Regex("\\d{6}")) }
         val app = application as CmApp
         askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         // Solo debug: `adb shell am start … --ez demo_paired true` salta il pairing dove non c'è la tastiera Wear (ARC).
@@ -77,9 +80,10 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         deepLink.value = link(intent)
+        pairCodeFromIntent.value = intent.getStringExtra(EXTRA_PAIR_CODE)?.takeIf { it.matches(Regex("\\d{6}")) }
     }
 
-    companion object { const val EXTRA_URI = "cmwatch_uri" }
+    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code" }
 
     @Composable
     private fun App(app: CmApp) {
@@ -107,9 +111,9 @@ class MainActivity : ComponentActivity() {
             runCatching { keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
                 .onFailure { Haptics.play(this@MainActivity, Haptics.Kind.ERROR) }   // nessuna tastiera Wear (es. ARC)
         }
-        // Codice di pairing dalla tastiera di sistema.
-        val codeInput = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-            val code = Keyboard.result(res.data) ?: return@rememberLauncherForActivityResult
+        // Codice di pairing: dalla tastiera di sistema o dall'extra d'intent `pair_code` (adb / automazioni).
+        fun startPairing(code: String) {
+            android.util.Log.i("cmwatch", "pairing with code of ${code.length} digits")
             pairing = PairingStatus.Working
             scope.launch {
                 pairing = try {
@@ -120,9 +124,22 @@ class MainActivity : ComponentActivity() {
                     Haptics.play(this@MainActivity, Haptics.Kind.CONFIRMED)
                     PairingStatus.Done(info.host)
                 } catch (e: Exception) {
+                    android.util.Log.w("cmwatch", "pairing failed", e)
                     Haptics.play(this@MainActivity, Haptics.Kind.ERROR); PairingStatus.Failed(e.message ?: "")
                 }
             }
+        }
+        val codeInput = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            android.util.Log.i("cmwatch", "remote input result code=${res.resultCode} extras=${res.data?.extras?.keySet()?.joinToString()}")
+            val code = Keyboard.result(res.data)
+            if (code == null) { android.util.Log.w("cmwatch", "remote input: no text"); return@rememberLauncherForActivityResult }
+            startPairing(code)
+        }
+        // Attenzione: startPairing PRIMA di azzerare la chiave, altrimenti l'effetto viene cancellato a metà.
+        LaunchedEffect(pairCodeFromIntent.value) {
+            val code = pairCodeFromIntent.value ?: return@LaunchedEffect
+            startPairing(code)
+            pairCodeFromIntent.value = null
         }
         // Demo: la fixture scelta nelle impostazioni (solo con il Transport finto).
         LaunchedEffect(settings?.demoFixture) {
@@ -222,6 +239,7 @@ class MainActivity : ComponentActivity() {
             composable(Routes.QUOTA) { QuotaScreen(snapshot.state?.quota.orEmpty()) }
             composable(Routes.RECAP) { RecapScreen(snapshot.state?.recap ?: Recap()) }
             composable(Routes.NIGHT) { NightScreen(snapshot.state?.night ?: Night()) }
+            composable(Routes.MENU) { MenuScreen(onOpen = { nav.go(it) }) }
         }
     }
 }

@@ -76,4 +76,6 @@
     <string name="night_title">Notte</string>
     <string name="night_queued">In coda: %1$d</string>
     <string name="night_running">In corso: %1$s</string>
+    <string name="menu_title">Menu</string>
+    <string name="quota_5h_line">5 ore: %1$s</string>
 </resources>
