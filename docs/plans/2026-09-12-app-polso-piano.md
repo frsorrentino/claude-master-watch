@@ -6,7 +6,7 @@
 
 **Architecture:** C+ del design: modello di dominio = contratto `contract/*.json` decodificato con kotlinx.serialization; un `Repo` che tiene l'ultimo `/state` in Room e lo espone come `StateFlow`; un'interfaccia `Transport` con due implementazioni (`FakeTransport` sulle fixture, `FirebaseTransport` REST+SSE); UI Wear Compose Material 3 con un solo `ViewState` a priorità `offline > domanda > schermata scelta`; tile, complication e notifiche leggono lo stesso `Repo`.
 
-**Tech Stack:** Kotlin 2.3.21 · AGP 8.13.2 · Gradle 9.0.0 · Wear Compose Material 3 1.6.2 (`TransformingLazyColumn`, `ScreenScaffold`, `TimeText`) · ProtoLayout M3 1.4.2 + Tiles 1.6.2 · `watchface-complications-data-source-ktx` 1.3.0 · Room 2.8.5 (KSP 2.3.12) · kotlinx.serialization 1.11.0 · OkHttp 5.5.0 (REST + SSE) · Firebase BoM 34.19.0 (messaging, auth anonima) · DataStore 1.2.1 · `wear-ongoing` 1.1.0 · `wear-input` 1.1.0 · JUnit 4 · Paparazzi 1.3.5 (solo in Actions).
+**Tech Stack:** Kotlin 2.3.21 · AGP 8.13.2 · Gradle 9.0.0 · Compose BOM 2026.06.01 · Wear Compose Material 3 1.6.2 (`TransformingLazyColumn`, `ScreenScaffold`, `TimeText`) · ProtoLayout M3 1.4.2 + Tiles 1.6.2 · `watchface-complications-data-source-ktx` 1.3.0 · Room 2.8.5 (KSP 2.3.12) · kotlinx.serialization 1.11.0 · OkHttp 5.4.0 (REST + SSE) · Firebase BoM 34.19.0 (messaging, auth anonima) · DataStore 1.2.1 · `wear-ongoing` 1.1.0 · `wear-input` 1.1.0 · JUnit 4 · Paparazzi 1.3.5 (solo in Actions).
 
 ## Global Constraints
 
@@ -25,7 +25,7 @@
 - Macchina aarch64 (Crostini), 6 GB, niente `/dev/kvm`: **nessun emulatore Wear OS può girare qui**. `emulator-5554` in `adb devices` è ARC (Android di ChromeOS, API 33, 1920×1080, telefono), non un orologio. Quindi il «dimostrabile in emulatore» diventa: (a) test unit JVM su contratto, repo e riduttori; (b) installazione dell'APK debug su ARC come prova di fumo (Wear Compose gira anche su un telefono; tile e complication no); (c) screenshot test Paparazzi in GitHub Actions (x86_64; il layoutlib nativo non esiste per linux-aarch64); (d) il Pixel Watch reale via `adb` wireless quando Franz c'è.
 - `aapt2` è x86_64: la build locale usa `~/android-sdk/aapt2-qemu/aapt2` tramite `android.aapt2FromMavenOverride` già in `~/.gradle/gradle.properties`. `adb` idem sotto qemu, vedi `scripts/install-watch.sh`.
 - Gradle 9.0.0 è già in `~/.gradle/wrapper/dists`; AGP 8.13.2 richiede Gradle ≥ 8.13. Se la combinazione 9.0.0 + 8.13.2 non passa, ripiego: `gradle-8.14.3-bin.zip` nel wrapper, resto invariato.
-- Versioni verificate il 12/09/2026 su `dl.google.com/dl/android/maven2` e Maven Central (stabili più recenti): compose-material3 wear 1.6.2, protolayout 1.4.2, tiles 1.6.2, room 2.8.5, compose-bom 2026.09.00, activity-compose 1.13.0, core-ktx 1.19.0, lifecycle 2.11.0, datastore 1.2.1, firebase-bom 34.19.0, google-services 4.5.0, wear-ongoing 1.1.0, wear-input 1.1.0, AGP 8.13.2, Kotlin 2.3.21, KSP 2.3.12, kotlinx-serialization 1.11.0, okhttp 5.5.0, paparazzi 1.3.5.
+- Versioni verificate il 12/09/2026 su `dl.google.com/dl/android/maven2` e Maven Central: compose-material3 wear 1.6.2, protolayout 1.4.2, tiles 1.6.2, room 2.8.5, compose-bom 2026.06.01 (Compose 1.11.4), activity-compose 1.13.0, core-ktx 1.18.0, lifecycle 2.10.0, datastore 1.2.1, firebase-bom 34.19.0, google-services 4.5.0, wear-ongoing 1.1.0, wear-input 1.1.0, AGP 8.13.2, Kotlin 2.3.21, KSP 2.3.12, kotlinx-serialization 1.11.0, okhttp 5.4.0, paparazzi 1.3.5. Le ultimissime (Compose 1.12 / BOM 2026.08+, core 1.19, lifecycle 2.11, okhttp 5.5) pretendono compileSdk 37 e AGP 9.1 (`aar-metadata` letti dagli AAR): fuori dal design (SDK 35/36), quindi escluse finché non si passa ad AGP 9.
 
 ## Struttura dei file
 
@@ -156,10 +156,10 @@ kotlin = "2.3.21"
 ksp = "2.3.12"
 serialization = "1.11.0"
 coroutines = "1.10.2"
-coreKtx = "1.19.0"
+coreKtx = "1.18.0"
 activityCompose = "1.13.0"
-lifecycle = "2.11.0"
-composeBom = "2026.09.00"
+lifecycle = "2.10.0"
+composeBom = "2026.06.01"
 wearCompose = "1.6.2"
 protolayout = "1.4.2"
 tiles = "1.6.2"
@@ -170,7 +170,7 @@ wearOngoing = "1.1.0"
 wearInput = "1.1.0"
 firebaseBom = "34.19.0"
 googleServices = "4.5.0"
-okhttp = "5.5.0"
+okhttp = "5.4.0"
 junit = "4.13.2"
 
 [libraries]

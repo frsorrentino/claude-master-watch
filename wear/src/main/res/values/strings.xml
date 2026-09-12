@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Claude Master</string>
+    <string name="sessions_title">Sessioni</string>
+    <string name="sessions_empty">Nessuna sessione</string>
+</resources>
