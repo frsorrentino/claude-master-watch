@@ -36,10 +36,8 @@ fun SessionRow(
         transformation = transformation,
         colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text, secondaryContentColor = CmColors.text2),
         border = BorderStroke(1.dp, CmColors.line),
-        icon = { StateIcon(s.state, fresh) },
+        icon = { SessionBadge(s) },
         label = {
-            AccountDot(s.account)
-            Spacer(Modifier.width(6.dp))
             val row = SessionsText.row(s, now)
             Text(
                 buildAnnotatedString {

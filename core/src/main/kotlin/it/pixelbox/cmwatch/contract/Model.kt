@@ -44,6 +44,10 @@ enum class CmdOp {
     val tool: String? = null, val link: String = "",
     val attached: Boolean = false, val followed: Boolean = false,
     val question: Question? = null, val outcome: Outcome? = null, val next: String? = null,
+    /** Contratto 1.1: colore della sessione «#RRGGBB» per il badge; assente → grigio. */
+    val color: String? = null,
+    /** Contratto 1.1: emoji del badge come su Telegram (es. 🟠 / 🟧); l'app disegna il badge da account + color. */
+    val icon: String? = null,
 )
 
 @Serializable data class QuotaAccount(

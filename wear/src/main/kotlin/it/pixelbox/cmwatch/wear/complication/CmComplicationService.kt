@@ -21,6 +21,7 @@ import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.ComplicationTexts
 import it.pixelbox.cmwatch.wear.CmApp
+import it.pixelbox.cmwatch.wear.push.BadgeBitmap
 
 /** Tre tipi, una sorgente (design, sezione 2): SHORT_TEXT «1?», RANGED_VALUE anello quota 5 h, LONG_TEXT «❓ ledger-api · Deploy now?». */
 class CmComplicationService : SuspendingComplicationDataSourceService() {
@@ -38,7 +39,9 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
     }
 
     private fun build(type: ComplicationType, state: State?, fresh: Boolean, account: String, seen: Set<String>): ComplicationData? {
-        val icon = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_notification)).build()
+        val first = state?.sessions?.firstOrNull { s -> s.question?.let { q -> q.id !in seen } == true } ?: state?.sessions?.firstOrNull()
+        val icon = if (first != null) MonochromaticImage.Builder(Icon.createWithBitmap(BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(first.account, first.color, first.state), mono = true))).build()
+        else MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_notification)).build()
         val stale = getString(R.string.complication_stale)
         return when (type) {
             ComplicationType.SHORT_TEXT -> ShortTextComplicationData.Builder(text(ComplicationTexts.short(state, fresh, seen)), text(ComplicationTexts.long(state, fresh, stale, seen = seen)))

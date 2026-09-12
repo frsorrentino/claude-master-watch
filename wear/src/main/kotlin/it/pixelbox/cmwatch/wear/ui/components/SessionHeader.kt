@@ -23,10 +23,8 @@ import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            StateIcon(s.state, fresh)
-            Spacer(Modifier.width(6.dp))
-            AccountDot(s.account)
-            Spacer(Modifier.width(6.dp))
+            SessionBadge(s, size = 32.dp)
+            Spacer(Modifier.width(8.dp))
             val row = SessionsText.row(s, now)
             val tail = row.removePrefix(s.name)
             Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

@@ -69,8 +69,10 @@ class Notifier(private val ctx: Context) {
         return PendingIntent.getBroadcast(ctx, code, i, (if (mutable) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE) or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    private fun person(name: String, state: SessionState?): Person =
-        Person.Builder().setName(name).setKey(name).setIcon(IconCompat.createWithBitmap(Glyphs.state(ctx, state))).setImportant(true).build()
+    private fun badge(s: Session) = BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(s.account, s.color, s.state))
+
+    private fun person(name: String, s: Session?, state: SessionState?): Person =
+        Person.Builder().setName(name).setKey(name).setIcon(IconCompat.createWithBitmap(s?.let { badge(it) } ?: Glyphs.state(ctx, state))).setImportant(true).build()
 
     private fun shortcut(session: String, state: SessionState?, person: Person) {
         runCatching {
@@ -108,13 +110,13 @@ class Notifier(private val ctx: Context) {
         val plan = NotificationPlan.question(s, labels, history[s.name].orEmpty())
         lastQuestion[s.name] = q.id to q.text
         val me = Person.Builder().setName(ctx.getString(R.string.notif_me)).setKey("me").build()
-        val them = person(plan.person ?: s.name, SessionState.WAITING)
+        val them = person(plan.person ?: s.name, s, SessionState.WAITING)
         shortcut(s.name, SessionState.WAITING, them)
         val style = NotificationCompat.MessagingStyle(me).setConversationTitle(plan.title)
         val hist = history[s.name].orEmpty()
         hist.forEach { style.addMessage("❓ ${it.question}", it.at * 1000, them).addMessage(it.answer, it.at * 1000 + 1, me) }
         style.addMessage(q.text, q.askedAt * 1000, them)
-        val b = base(plan).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE).setShortcutId(s.name)
+        val b = base(plan).setLargeIcon(badge(s)).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE).setShortcutId(s.name)
             .setContentText(q.text)
             .setContentIntent(open("cmwatch://question/${s.name}", id(s.name)))
             .setDeleteIntent(broadcast(ReplyReceiver.ACTION_SEEN, s.name, id(s.name) * 10 + 8) { putExtra(ReplyReceiver.QUESTION_ID, q.id) })
@@ -164,7 +166,7 @@ class Notifier(private val ctx: Context) {
 
     fun outcome(s: Session) {
         val plan = NotificationPlan.outcome(s, labels)
-        val b = base(plan).setContentText(plan.messages.first()).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
+        val b = base(plan).setLargeIcon(badge(s)).setContentText(plan.messages.first()).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
             .setContentIntent(open("cmwatch://outcome/${s.name}", id(s.name)))
             .addAction(0, labels.read, PendingIntent.getService(ctx, id(s.name) * 10 + 3, Intent(ctx, SpeakService::class.java).putExtra(SpeakService.TEXT, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             .addAction(NotificationCompat.Action.Builder(0, labels.write, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
