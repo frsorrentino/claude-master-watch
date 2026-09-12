@@ -59,6 +59,12 @@ object Routes {
             "question" -> name?.let { Screen.Question(it) }
             "quota" -> Screen.Quota
             "settings" -> Screen.Settings
+            "outcome" -> name?.let { Screen.Outcome(it) }
+            "terminal" -> name?.let { Screen.Terminal(it) }
+            "timeline" -> Screen.Timeline
+            "launch" -> Screen.Launch
+            "recap" -> Screen.Recap
+            "night" -> Screen.Night
             else -> null
         }
     }
