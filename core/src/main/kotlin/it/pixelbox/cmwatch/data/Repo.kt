@@ -1,0 +1,160 @@
+package it.pixelbox.cmwatch.data
+
+import it.pixelbox.cmwatch.contract.*
+import it.pixelbox.cmwatch.transport.Transport
+import it.pixelbox.cmwatch.transport.TransportException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import java.util.UUID
+
+enum class PendingStatus { SENDING, QUEUED, FAILED }
+data class Pending(val cmd: Cmd, val status: PendingStatus)
+data class Snapshot(val state: State?, val freshness: Freshness, val pending: List<Pending> = emptyList())
+
+/**
+ * La verità sull'orologio: ultimo /state (subito da Room, poi dal Transport), comandi ottimistici con
+ * /result entro 20 s, coda offline (10 comandi, 10 minuti). Un solo punto letto da app, tile, complication.
+ */
+class Repo(
+    private val store: Store,
+    private val transport: Transport,
+    private val scope: CoroutineScope,
+    private val now: () -> Long,
+    private val online: () -> Boolean,
+    private val by: String,
+    private val freshnessTickMs: Long = FRESHNESS_TICK_MS,
+) {
+    private val _snapshot = MutableStateFlow(Snapshot(null, Freshness.Stale(0)))
+    val snapshot: StateFlow<Snapshot> = _snapshot
+    private val _events = MutableStateFlow<List<Event>>(emptyList())
+    val events: StateFlow<List<Event>> = _events
+    private val _results = MutableSharedFlow<CmdResult>(extraBufferCapacity = 16)
+    /** Ogni /result arrivato: per aptica e avvisi. */
+    val results: SharedFlow<CmdResult> = _results
+    private val _notices = MutableSharedFlow<Notice>(extraBufferCapacity = 16)
+    val notices: SharedFlow<Notice> = _notices
+    private val jobs = HashMap<String, Job>()
+
+    init {
+        // Apertura immediata da Room: l'ultimo stato è leggibile anche senza rete (una riga ≤ 8 KB).
+        runBlocking {
+            store.loadState()?.let { (s, _) -> _snapshot.value = Snapshot(s, Freshness.of(s.ts, now())) }
+            _events.value = store.loadEvents()
+            _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
+        }
+    }
+
+    fun start() {
+        scope.launch { transport.state.collect { s -> accept(s) } }
+        scope.launch {
+            transport.events.collect { ev ->
+                store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
+            }
+        }
+        if (freshnessTickMs > 0) scope.launch {
+            while (isActive) {
+                delay(freshnessTickMs)
+                _snapshot.update { it.copy(freshness = it.state?.let { s -> Freshness.of(s.ts, now()) } ?: Freshness.Stale(0)) }
+            }
+        }
+    }
+
+    private suspend fun accept(s: State) {
+        val ordered = s.copy(sessions = Order.sessions(s.sessions))
+        store.saveState(ordered, now())
+        _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered.ts, now())) }
+    }
+
+    /** Un GET (sveglia FCM). Vero se lo stato è arrivato. */
+    suspend fun refresh(): Boolean = runCatching { accept(transport.fetchState()) }.isSuccess
+
+    suspend fun answer(session: String, n: Int) = command(CmdOp.ANSWER, session, n.toString())
+    suspend fun prompt(session: String, text: String) = command(CmdOp.PROMPT, session, text)
+
+    /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
+    suspend fun command(op: CmdOp, session: String?, arg: String?): String {
+        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by)
+        if (!online()) { enqueue(cmd); return cmd.id }
+        dispatch(cmd)
+        return cmd.id
+    }
+
+    private suspend fun enqueue(cmd: Cmd) {
+        val queued = _snapshot.value.pending.filter { it.status == PendingStatus.QUEUED }.map { it.cmd }
+        if (queued.size >= MAX_QUEUE) { _notices.tryEmit(Notice.QueueFull); return }
+        _snapshot.update { it.copy(pending = it.pending + Pending(cmd, PendingStatus.QUEUED)) }
+        store.savePending(queued + cmd)
+    }
+
+    private fun dispatch(cmd: Cmd) {
+        _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id } + Pending(cmd, PendingStatus.SENDING)) }
+        if (cmd.op == CmdOp.ANSWER || cmd.op == CmdOp.PROMPT) optimistic(cmd)
+        jobs[cmd.id]?.cancel()
+        jobs[cmd.id] = scope.launch {
+            val r = try {
+                withTimeout(Transport.RESULT_TIMEOUT_MS) { transport.send(cmd) }
+            } catch (e: TimeoutCancellationException) { null } catch (e: TransportException) { null }
+            if (r == null) {
+                _snapshot.update { it.copy(pending = it.pending.map { p -> if (p.cmd.id == cmd.id) p.copy(status = PendingStatus.FAILED) else p }) }
+            } else {
+                _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id }) }
+                _results.emit(r)
+            }
+        }
+    }
+
+    /** La domanda sparisce subito dallo schermo; la verità torna con /state. */
+    private fun optimistic(cmd: Cmd) {
+        _snapshot.update { snap ->
+            val s = snap.state ?: return@update snap
+            snap.copy(state = s.copy(sessions = s.sessions.map {
+                if (it.name == cmd.session) it.copy(question = null, state = SessionState.BUSY) else it
+            }))
+        }
+    }
+
+    /** Riprova un comando «non consegnato» con lo stesso uuid. */
+    suspend fun retry(id: String) {
+        val p = _snapshot.value.pending.firstOrNull { it.cmd.id == id } ?: return
+        dispatch(p.cmd)
+    }
+
+    fun forget(id: String) {
+        _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != id }) }
+    }
+
+    /** Al ritorno della rete: i comandi in coda partono; quelli più vecchi di 10 minuti si scartano con avviso. */
+    suspend fun flushQueue() {
+        if (!online()) return
+        val queued = _snapshot.value.pending.filter { it.status == PendingStatus.QUEUED }.map { it.cmd }
+        if (queued.isEmpty()) return
+        store.savePending(emptyList())
+        _snapshot.update { it.copy(pending = it.pending.filter { p -> p.status != PendingStatus.QUEUED }) }
+        val (fresh, old) = queued.partition { now() - it.issued <= MAX_QUEUE_AGE_S }
+        if (old.isNotEmpty()) _notices.tryEmit(Notice.Dropped(old.size))
+        fresh.forEach { dispatch(it) }
+    }
+
+    sealed class Notice {
+        data object QueueFull : Notice()
+        data class Dropped(val n: Int) : Notice()
+    }
+
+    companion object {
+        const val MAX_QUEUE = 10
+        const val MAX_QUEUE_AGE_S = 600L
+        const val EVENTS_KEEP_S = 30L * 86400
+        const val FRESHNESS_TICK_MS = 30_000L
+    }
+}
