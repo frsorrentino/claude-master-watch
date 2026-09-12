@@ -23,4 +23,18 @@
     <string name="question_sent">Inviato</string>
     <string name="question_not_delivered">Non consegnato</string>
     <string name="question_retry">Riprova</string>
+    <string name="pairing_title">Associa il PC</string>
+    <string name="pairing_hint">Sul PC: claude-master relay pair. Poi scrivi qui il codice a 6 cifre.</string>
+    <string name="pairing_enter_code">Inserisci codice</string>
+    <string name="pairing_code_label">Codice a 6 cifre</string>
+    <string name="pairing_working">Associazione in corso</string>
+    <string name="pairing_done">Associato con %1$s</string>
+    <string name="pairing_failed">Codice non accettato</string>
+    <string name="settings_tts_threshold">Soglia lettura vocale: %1$d caratteri</string>
+    <string name="settings_haptic_question">Vibra per le domande</string>
+    <string name="settings_haptic_outcome">Vibra per gli esiti</string>
+    <string name="settings_haptic_gone">Vibra se una sessione sparisce</string>
+    <string name="settings_complication_account">Account della complication</string>
+    <string name="settings_repair">Nuovo pairing</string>
+    <string name="settings_demo">Demo (fixture)</string>
 </resources>

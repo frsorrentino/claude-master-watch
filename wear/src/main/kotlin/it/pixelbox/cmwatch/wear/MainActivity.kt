@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -30,7 +31,12 @@ import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.wear.haptics.Haptics
 import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
+import it.pixelbox.cmwatch.crypto.KeyVault
+import it.pixelbox.cmwatch.transport.FakeTransport
+import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
+import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
+import it.pixelbox.cmwatch.wear.ui.screens.SettingsScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
@@ -57,7 +63,9 @@ class MainActivity : ComponentActivity() {
         val nav = rememberSwipeDismissableNavController()
         val scope = rememberCoroutineScope()
         val snapshot by app.repo.snapshot.collectAsStateWithLifecycle()
-        val settings by app.prefs.flow.collectAsStateWithLifecycle(Settings(paired = true))
+        val settings by app.prefs.flow.collectAsStateWithLifecycle(null)
+        val paired = settings?.paired ?: true   // finché le preferenze non sono lette, nessun salto al pairing
+        var pairing by remember { mutableStateOf<PairingStatus>(PairingStatus.Idle) }
         val now by produceState(System.currentTimeMillis() / 1000) {
             while (true) { delay(30_000); value = System.currentTimeMillis() / 1000 }
         }
@@ -71,7 +79,32 @@ class MainActivity : ComponentActivity() {
             val text = Keyboard.result(res.data); val target = writeTarget
             if (text != null && target != null) scope.launch { sentId = app.repo.prompt(target, text); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }
         }
-        fun write(name: String) { writeTarget = name; keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
+        fun write(name: String) {
+            writeTarget = name
+            runCatching { keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
+                .onFailure { Haptics.play(this@MainActivity, Haptics.Kind.ERROR) }   // nessuna tastiera Wear (es. ARC)
+        }
+        // Codice di pairing dalla tastiera di sistema.
+        val codeInput = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            val code = Keyboard.result(res.data) ?: return@rememberLauncherForActivityResult
+            pairing = PairingStatus.Working
+            scope.launch {
+                pairing = try {
+                    val info = app.transport.pair(code, settings?.deviceName ?: "watch-pixel5")
+                    val wrapped = KeyVault.wrap(KeyVault.newSessionKey(), KeyVault.keystoreKek())
+                    app.prefs.update { it.copy(paired = true, uid = info.uid, host = info.host, wrappedKey = wrapped) }
+                    Haptics.play(this@MainActivity, Haptics.Kind.CONFIRMED)
+                    PairingStatus.Done(info.host)
+                } catch (e: Exception) {
+                    Haptics.play(this@MainActivity, Haptics.Kind.ERROR); PairingStatus.Failed(e.message ?: "")
+                }
+            }
+        }
+        // Demo: la fixture scelta nelle impostazioni (solo con il Transport finto).
+        LaunchedEffect(settings?.demoFixture) {
+            val fx = settings?.demoFixture ?: return@LaunchedEffect
+            (app.transport as? FakeTransport)?.useFixture(fx)
+        }
         LaunchedEffect(Unit) {
             app.repo.results.collect { r -> Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR) }
         }
@@ -79,9 +112,9 @@ class MainActivity : ComponentActivity() {
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 
         // Un solo ViewState: non accoppiato > domanda > schermata scelta.
-        LaunchedEffect(snapshot.state, settings.paired, seen, deepLink.value) {
+        LaunchedEffect(snapshot.state, paired, seen, deepLink.value) {
             val chosen = deepLink.value?.also { deepLink.value = null } ?: current
-            val target = ViewState.reduce(snapshot, paired = true, chosen = chosen, seen = seen)
+            val target = ViewState.reduce(snapshot, paired = paired, chosen = chosen, seen = seen)
             if (target != current) nav.go(target)
         }
 
@@ -117,8 +150,23 @@ class MainActivity : ComponentActivity() {
                     onDone = { sentId = null; nav.go(Screen.Sessions) },
                 )
             }
-            composable(Routes.SETTINGS) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
-            composable(Routes.PAIRING) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    settings ?: Settings(),
+                    onChange = { s -> scope.launch { app.prefs.update { s } } },
+                    onRepair = { scope.launch { app.prefs.update { it.copy(paired = false, uid = null, host = null, wrappedKey = null) }; pairing = PairingStatus.Idle } },
+                )
+            }
+            composable(Routes.PAIRING) {
+                PairingScreen(
+                    pairing,
+                    onEnterCode = {
+                        runCatching { codeInput.launch(Keyboard.intent(getString(R.string.pairing_code_label))) }
+                            .onFailure { pairing = PairingStatus.Failed("no keyboard") }
+                    },
+                    onRetry = { pairing = PairingStatus.Idle },
+                )
+            }
             composable(Routes.OUTCOME) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
             composable(Routes.TERMINAL) { SessionsScreen(snapshot, now, onOpen = {}, onSettings = {}) }
         }
