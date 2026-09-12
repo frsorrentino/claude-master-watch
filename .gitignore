@@ -1,0 +1,19 @@
+# Build / locali
+*.apk
+*.aab
+*.keystore
+*.jks
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+release-keystore-credentials.txt
+google-services.json
+.kotlin/
+captures/
+
+# Screenshot dal polso (vanno in docs/screenshots solo se rinominati)
+*.jpg
+*.jpeg
