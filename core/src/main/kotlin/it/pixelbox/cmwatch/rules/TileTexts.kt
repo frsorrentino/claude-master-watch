@@ -22,11 +22,11 @@ object TileTexts {
         return listOf(q to "❓", busy to "▶", idle to "✓", gone to "✗").filter { it.first > 0 }.joinToString(" · ") { "${it.first} ${it.second}" }
     }
 
-    fun glance(state: State?, freshness: Freshness, now: Long, l: Labels): Glance {
+    fun glance(state: State?, freshness: Freshness, now: Long, l: Labels, seen: Set<String> = emptySet()): Glance {
         if (state == null) return Glance("", null, l.none, Button.SESSIONS, Accent.IDLE, "cmwatch://sessions")
         if (freshness is Freshness.Stale) return Glance("", null, staleLine(freshness, l.stale), Button.SESSIONS, Accent.STALE, "cmwatch://sessions")
         val counts = counts(state)
-        state.sessions.firstOrNull { it.question != null }?.let {
+        state.sessions.firstOrNull { it.question != null && it.question.id !in seen }?.let {
             return Glance(counts, it.name, it.question!!.text, Button.REPLY, Accent.QUESTION, "cmwatch://question/${it.name}")
         }
         val s = state.sessions.firstOrNull { it.followed && it.state != SessionState.GONE }

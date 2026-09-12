@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,6 +25,7 @@ data class Settings(
     val hapticGone: Boolean = true,
     val complicationAccount: String = "personale",
     val demoFixture: String = "state-1-question",
+    val seenQuestions: Set<String> = emptySet(),
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("cmwatch")
@@ -36,6 +38,7 @@ class Prefs(private val ctx: Context) {
         val hapticQuestion = booleanPreferencesKey("hapticQuestion"); val hapticOutcome = booleanPreferencesKey("hapticOutcome")
         val hapticGone = booleanPreferencesKey("hapticGone"); val complicationAccount = stringPreferencesKey("complicationAccount")
         val demoFixture = stringPreferencesKey("demoFixture")
+        val seenQuestions = stringSetPreferencesKey("seenQuestions")
     }
 
     val flow: Flow<Settings> = ctx.dataStore.data.map { p ->
@@ -48,6 +51,7 @@ class Prefs(private val ctx: Context) {
             hapticGone = p[K.hapticGone] ?: d.hapticGone,
             complicationAccount = p[K.complicationAccount] ?: d.complicationAccount,
             demoFixture = p[K.demoFixture] ?: d.demoFixture,
+            seenQuestions = p[K.seenQuestions] ?: d.seenQuestions,
         )
     }
 
@@ -65,6 +69,7 @@ class Prefs(private val ctx: Context) {
             p[K.hapticQuestion] = s.hapticQuestion; p[K.hapticOutcome] = s.hapticOutcome; p[K.hapticGone] = s.hapticGone
             p[K.complicationAccount] = s.complicationAccount
             p[K.demoFixture] = s.demoFixture
+            p[K.seenQuestions] = s.seenQuestions.toList().takeLast(50).toSet()
         }
     }
 }

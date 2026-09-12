@@ -8,20 +8,20 @@ object ComplicationTexts {
     data class Ranged(val value: Float, val max: Float, val text: String)
 
     /** «1?» / «▶3» / «✓»; «PC» con il PC fermo; «—» senza stato. */
-    fun short(state: State?, fresh: Boolean): String {
+    fun short(state: State?, fresh: Boolean, seen: Set<String> = emptySet()): String {
         state ?: return "—"
         if (!fresh) return "PC"
-        val q = state.sessions.count { it.question != null }
+        val q = state.sessions.count { it.question != null && it.question.id !in seen }
         if (q > 0) return "$q?"
         val busy = state.sessions.count { it.state == SessionState.BUSY || it.state == SessionState.AWAITING }
         return if (busy > 0) "▶$busy" else "✓"
     }
 
     /** «❓ ledger-api · Deploy now?» oppure «▶ 2 · ✓ 3». */
-    fun long(state: State?, fresh: Boolean, staleLabel: String, maxGist: Int = 30): String {
+    fun long(state: State?, fresh: Boolean, staleLabel: String, maxGist: Int = 30, seen: Set<String> = emptySet()): String {
         state ?: return "—"
         if (!fresh) return staleLabel
-        state.sessions.firstOrNull { it.question != null }?.let { return "❓ ${it.name} · ${gist(it.question!!.text, maxGist)}" }
+        state.sessions.firstOrNull { it.question != null && it.question.id !in seen }?.let { return "❓ ${it.name} · ${gist(it.question!!.text, maxGist)}" }
         val busy = state.sessions.count { it.state == SessionState.BUSY || it.state == SessionState.AWAITING }
         val idle = state.sessions.count { it.state == SessionState.IDLE }
         return "▶ $busy · ✓ $idle"

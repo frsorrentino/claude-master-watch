@@ -27,23 +27,23 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
         val preview = ContractJson.decodeState(assets.open("contract/state-1-question.json").bufferedReader().readText())
-        return build(type, preview, fresh = true, account = "personale")
+        return build(type, preview, fresh = true, account = "personale", seen = emptySet())
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         val app = application as CmApp
         val snap = app.repo.snapshot.value
-        val account = app.prefs.current().complicationAccount
-        return build(request.complicationType, snap.state, snap.freshness is Freshness.Fresh, account)
+        val prefs = app.prefs.current()
+        return build(request.complicationType, snap.state, snap.freshness is Freshness.Fresh, prefs.complicationAccount, prefs.seenQuestions)
     }
 
-    private fun build(type: ComplicationType, state: State?, fresh: Boolean, account: String): ComplicationData? {
+    private fun build(type: ComplicationType, state: State?, fresh: Boolean, account: String, seen: Set<String>): ComplicationData? {
         val icon = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_notification)).build()
         val stale = getString(R.string.complication_stale)
         return when (type) {
-            ComplicationType.SHORT_TEXT -> ShortTextComplicationData.Builder(text(ComplicationTexts.short(state, fresh)), text(ComplicationTexts.long(state, fresh, stale)))
+            ComplicationType.SHORT_TEXT -> ShortTextComplicationData.Builder(text(ComplicationTexts.short(state, fresh, seen)), text(ComplicationTexts.long(state, fresh, stale, seen = seen)))
                 .setMonochromaticImage(icon).setTapAction(open(ComplicationTexts.tapTarget(state), 1)).build()
-            ComplicationType.LONG_TEXT -> LongTextComplicationData.Builder(text(ComplicationTexts.long(state, fresh, stale)), text(ComplicationTexts.long(state, fresh, stale)))
+            ComplicationType.LONG_TEXT -> LongTextComplicationData.Builder(text(ComplicationTexts.long(state, fresh, stale, seen = seen)), text(ComplicationTexts.long(state, fresh, stale, seen = seen)))
                 .setMonochromaticImage(icon).setTapAction(open(ComplicationTexts.tapTarget(state), 2)).build()
             ComplicationType.RANGED_VALUE -> {
                 val r = ComplicationTexts.ranged(state, account)

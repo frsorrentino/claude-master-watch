@@ -8,6 +8,7 @@ import it.pixelbox.cmwatch.BuildConfig
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.crypto.KeyVault
 import it.pixelbox.cmwatch.crypto.Pairing
+import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.data.Repo
 import it.pixelbox.cmwatch.data.RoomStore
 import it.pixelbox.cmwatch.rules.TransportChoice
@@ -52,6 +53,14 @@ class CmApp : Application() {
         repo.start()
         follow = FollowOngoing(this)
         scope.launch { repo.snapshot.collect { follow.update(it.state, System.currentTimeMillis() / 1000) } }
+        // Aggiornamento in place delle notifiche: /result → «confermato»; comando fallito → «non consegnato · Riprova».
+        scope.launch { repo.results.collect { r -> if (r.ok) notifier.confirmed(r.id) else notifier.failed(r.id) } }
+        scope.launch {
+            repo.snapshot.collect { snap ->
+                snap.pending.filter { p -> p.status == PendingStatus.FAILED && p.cmd.id in notifier.pendingBySession }
+                    .forEach { notifier.failed(it.cmd.id) }
+            }
+        }
         subscribeTopic()
     }
 
@@ -88,16 +97,18 @@ class CmApp : Application() {
         if (!repo.refresh()) return
         val cur = repo.snapshot.value.state ?: return
         val s = prefs.current()
+        var notified = false
         for (a in Wake.plan(prev, cur)) when (a) {
             is Wake.Action.Notify -> if (notify) when (a.kind) {
-                Wake.NotifyKind.QUESTION -> if (s.hapticQuestion || true) cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.question(it) }
-                Wake.NotifyKind.OUTCOME -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.outcome(it) }
-                Wake.NotifyKind.GONE -> a.session?.let { notifier.gone(it) }
-                Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.let { notifier.quota(acc, it) } }
+                Wake.NotifyKind.QUESTION -> cur.sessions.firstOrNull { it.name == a.session && it.question?.id !in s.seenQuestions }?.let { notifier.question(it); notified = true }
+                Wake.NotifyKind.OUTCOME -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.outcome(it); notified = true }
+                Wake.NotifyKind.GONE -> a.session?.let { notifier.gone(it, prev?.sessions?.firstOrNull { p -> p.name == it }?.account); notified = true }
+                Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.let { notifier.quota(acc, it); notified = true } }
             }
             Wake.Action.RefreshTile -> runCatching { CmTileService.requestUpdate(this) }
             Wake.Action.RefreshComplications -> runCatching { CmComplicationService.requestUpdate(this) }
         }
+        if (notified) notifier.summary(cur)
     }
 
     fun subscribeTopic() {

@@ -23,12 +23,15 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 
 /** Impostazioni: soglia TTS, vibrazioni per tipo, account della complication, nuovo pairing; in debug il selettore delle fixture. */
 @Composable
-fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit) {
+fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.settings_title)) } }
+            if (!notificationsEnabled) item {
+                WideButton(stringResource(R.string.settings_notifications_off), onClick = onNotificationSettings, primary = true, fill = it.pixelbox.cmwatch.wear.ui.theme.CmColors.gone, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
+            }
             item {
                 WideButton(
                     stringResource(R.string.settings_tts_threshold, settings.ttsMinChars),

@@ -1,9 +1,7 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -26,7 +24,6 @@ import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 fun TerminalScreen(name: String, text: String?, loading: Boolean, error: String?, onRefresh: () -> Unit) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    val h = rememberScrollState()
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
@@ -34,7 +31,8 @@ fun TerminalScreen(name: String, text: String?, loading: Boolean, error: String?
                 loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier) }
                 error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier) }
                 text != null -> for (line in TerminalText.lines(text)) {
-                    item { Text(line, style = MonoStyle, color = CmColors.text, maxLines = 1, modifier = Modifier.fillMaxWidth().horizontalScroll(h)) }
+                    // Niente scorrimento orizzontale: intercettava lo swipe di ritorno (Franz, 12/09 16:17). Le righe lunghe vanno a capo.
+                    item { Text(line, style = MonoStyle, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
                 }
             }
             item { WideButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, primary = true, enabled = !loading, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }

@@ -181,6 +181,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(qid) {
                     if (qid != null && hapticFor != qid) { hapticFor = qid; Haptics.play(this@MainActivity, Haptics.Kind.QUESTION) }
                 }
+                // Uscire dalla Domanda senza rispondere (swipe/back) la segna come vista: non si riapre da sola.
+                androidx.compose.runtime.DisposableEffect(qid) { onDispose { if (qid != null) seen = seen + qid } }
                 QuestionScreen(
                     snapshot, name, now, sentId,
                     onAnswer = { n -> if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.answer(name, n); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
@@ -196,6 +198,8 @@ class MainActivity : ComponentActivity() {
                     settings ?: Settings(),
                     onChange = { s -> scope.launch { app.prefs.update { s } } },
                     onRepair = { scope.launch { app.prefs.update { it.copy(paired = false, uid = null, host = null, wrappedKey = null) }; pairing = PairingStatus.Idle; app.reconfigure() } },
+                    notificationsEnabled = app.notifier.enabled(),
+                    onNotificationSettings = { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)) },
                 )
             }
             composable(Routes.PAIRING) {

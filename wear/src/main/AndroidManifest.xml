@@ -40,6 +40,7 @@
         </service>
 
         <receiver android:name=".wear.push.ReplyReceiver" android:exported="false" />
+        <service android:name=".wear.push.SpeakService" android:exported="false" />
 
         <service
             android:name=".wear.complication.CmComplicationService"

@@ -27,7 +27,10 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
             Spacer(Modifier.width(6.dp))
             AccountDot(s.account)
             Spacer(Modifier.width(6.dp))
-            Text(SessionsText.row(s, now), style = MonoStyle, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val row = SessionsText.row(s, now)
+            val tail = row.removePrefix(s.name)
+            Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            if (tail.isNotEmpty()) Text(tail, style = MonoStyle, color = CmColors.text, maxLines = 1, softWrap = false)
         }
         val tool = s.tool
         if (s.state == SessionState.BUSY && tool != null) {

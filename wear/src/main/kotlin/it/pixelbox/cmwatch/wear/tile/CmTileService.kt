@@ -43,7 +43,8 @@ class CmTileService : TileService() {
             val app = application as CmApp
             val snap = app.repo.snapshot.value
             val labels = TileTexts.Labels(none = getString(R.string.sessions_empty), stale = getString(R.string.tile_stale), works = getString(R.string.state_busy).lowercase())
-            val g = TileTexts.glance(snap.state, snap.freshness, System.currentTimeMillis() / 1000, labels)
+            val seen = kotlinx.coroutines.runBlocking { app.prefs.current().seenQuestions }
+            val g = TileTexts.glance(snap.state, snap.freshness, System.currentTimeMillis() / 1000, labels, seen)
             val accent = when (g.accent) {
                 TileTexts.Accent.QUESTION -> 0xFFFFB020; TileTexts.Accent.BUSY -> 0xFF7FA1FF
                 TileTexts.Accent.IDLE -> 0xFF34C759; TileTexts.Accent.STALE -> 0xFF6B7280
