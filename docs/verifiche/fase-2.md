@@ -1,7 +1,10 @@
 # Fase 2 — checklist dal vivo
 
 «Fatto» della fase (design, sezione 6): una domanda reale risposta dal polso, registrata nel ledger.
-Richiede il relay della fase 1 (repo claude-master), il progetto Firebase e il Pixel Watch: **in attesa di Franz**.
+Stato 12/09 16:16: relay reale attivo, Firebase creato (auth anonima), Pixel Watch accoppiato via adb wireless; pairing X25519 reale
+riuscito alle 16:10 (uid ZVp5…, check del PC ok); `/state` vero decifrato e mostrato (`fase2-sessioni-watch.png`); `/cmd screen` →
+`/result` reso nel Terminale (`fase4-terminale-watch.png`); prima domanda reale arrivata (`fase2-domanda-reale-watch.png`) ma con
+testo grezzo e senza opzioni dal relay: risposta «2» dal polso e ledger in attesa della correzione lato relay.
 
 Quello che si prova senza orologio, sul `Transport` finto (fixture del contratto):
 
@@ -14,7 +17,7 @@ Quello che si prova senza orologio, sul `Transport` finto (fixture del contratto
 | 5 | Risposta «1» → domanda sparita, sessione ▶, vibrazione «inviato» + «confermato» | tap su «1 · yes» | ✅ ARC (vibrazione non verificabile su ARC), `fase2-dopo-risposta-arc.png` |
 | 6 | Fixture 3 → chip «PC fermo da N min», comandi disabilitati | Impostazioni → Demo → 3-stale | ✅ ARC, `fase2-pc-fermo-arc.png` |
 | 7 | «Scrivi» apre la tastiera di sistema e manda un `prompt` | Scheda → Scrivi | solo sul polso (ARC non ha la tastiera Wear) |
-| 8 | Pairing con codice a 6 cifre (finto: qualsiasi) | avvio pulito → Inserisci codice | ✅ schermata su ARC (`fase2-pairing-arc.png`); tastiera solo sul polso |
+| 8 | Pairing con codice a 6 cifre | avvio pulito → Inserisci codice | ✅ reale sul Pixel Watch alle 16:10 (via extra `pair_code`; con la tastiera Wear il risultato non torna all'app: da indagare) |
 | 9 | Tier high: pressione lunga obbligatoria | fixture con `tier: high` (da aggiungere quando il relay la produce) | da provare |
 | 10 | Domanda risposta altrove → «Già risposta da un altro canale» e chiusura | serve il relay reale | in attesa |
 
