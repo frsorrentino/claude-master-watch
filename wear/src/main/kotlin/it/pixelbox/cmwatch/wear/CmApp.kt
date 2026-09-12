@@ -29,7 +29,12 @@ import it.pixelbox.cmwatch.wear.tile.CmTileService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.runBlocking
 
 class CmApp : Application() {
@@ -53,6 +58,14 @@ class CmApp : Application() {
         repo.start()
         follow = FollowOngoing(this)
         scope.launch { repo.snapshot.collect { follow.update(it.state, System.currentTimeMillis() / 1000) } }
+        // Il diff che decide le notifiche gira su OGNI nuovo /state (stream o risveglio FCM): con il processo vivo lo stream
+        // arriva prima del worker e il risveglio da solo non vedrebbe nulla di nuovo.
+        scope.launch {
+            repo.snapshot.map { it.state }.filterNotNull().distinctUntilChanged().collect { cur ->
+                val prev = lastState; lastState = cur
+                if (prev != null) react(prev, cur)
+            }
+        }
         // Aggiornamento in place delle notifiche: /result → «confermato»; comando fallito → «non consegnato · Riprova».
         scope.launch { repo.results.collect { r -> if (r.ok) notifier.confirmed(r.id) else notifier.failed(r.id) } }
         scope.launch {
@@ -91,11 +104,17 @@ class CmApp : Application() {
     /** Dopo il pairing o un nuovo pairing: il Transport cambia a caldo. */
     fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())) } }
 
-    /** Sveglia (FCM): un GET, poi ciò che è cambiato → notifiche, tile, complication. */
-    suspend fun onWake(notify: Boolean) {
-        val prev: State? = repo.snapshot.value.state
-        if (!repo.refresh()) return
-        val cur = repo.snapshot.value.state ?: return
+    @Volatile private var lastState: State? = null
+
+    private fun foreground(): Boolean =
+        runCatching { ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) }.getOrDefault(false)
+
+    /** Sveglia (FCM): un GET; le notifiche partono dal diff sullo stream (react). */
+    suspend fun onWake(notify: Boolean) { repo.refresh() }
+
+    /** Ciò che è cambiato fra due /state → notifiche (solo con l'app non in primo piano), tile, complication. */
+    suspend fun react(prev: State?, cur: State) {
+        val notify = !foreground()
         val s = prefs.current()
         var notified = false
         for (a in Wake.plan(prev, cur)) when (a) {
