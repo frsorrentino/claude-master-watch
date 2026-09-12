@@ -207,9 +207,10 @@ class MainActivity : ComponentActivity() {
                 var cmdId by remember { mutableStateOf<String?>(null) }
                 fun ask() { text = null; error = null; scope.launch { cmdId = app.repo.command(CmdOp.SCREEN, name, null) } }
                 LaunchedEffect(name) { ask() }
-                LaunchedEffect(cmdId) {
-                    val id = cmdId ?: return@LaunchedEffect
-                    app.repo.results.collect { r -> if (r.id == id) { if (r.ok) text = r.text else error = r.text } }
+                val results by app.repo.resultsById.collectAsStateWithLifecycle()
+                LaunchedEffect(cmdId, results) {
+                    val r = cmdId?.let { results[it] } ?: return@LaunchedEffect
+                    if (r.ok) text = r.text else error = r.text
                 }
                 val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
                 TerminalScreen(name, text, loading = text == null && error == null && !failed, error = error ?: if (failed) getString(R.string.question_not_delivered) else null, onRefresh = { ask() })

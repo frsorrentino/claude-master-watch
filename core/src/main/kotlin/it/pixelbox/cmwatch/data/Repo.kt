@@ -41,6 +41,9 @@ class Repo(
     private val _results = MutableSharedFlow<CmdResult>(extraBufferCapacity = 16)
     /** Ogni /result arrivato: per aptica e avvisi. */
     val results: SharedFlow<CmdResult> = _results
+    private val _resultsById = MutableStateFlow<Map<String, CmdResult>>(emptyMap())
+    /** Gli ultimi risultati per id: per chi si iscrive dopo l'arrivo (es. il Terminale). */
+    val resultsById: StateFlow<Map<String, CmdResult>> = _resultsById
     private val _notices = MutableSharedFlow<Notice>(extraBufferCapacity = 16)
     val notices: SharedFlow<Notice> = _notices
     private val jobs = HashMap<String, Job>()
@@ -109,6 +112,7 @@ class Repo(
                 _snapshot.update { it.copy(pending = it.pending.map { p -> if (p.cmd.id == cmd.id) p.copy(status = PendingStatus.FAILED) else p }) }
             } else {
                 _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id }) }
+                _resultsById.update { m -> (m + (r.id to r)).entries.toList().takeLast(MAX_RESULTS).associate { e -> e.key to e.value } }
                 _results.emit(r)
             }
         }
@@ -156,5 +160,6 @@ class Repo(
         const val MAX_QUEUE_AGE_S = 600L
         const val EVENTS_KEEP_S = 30L * 86400
         const val FRESHNESS_TICK_MS = 30_000L
+        const val MAX_RESULTS = 32
     }
 }

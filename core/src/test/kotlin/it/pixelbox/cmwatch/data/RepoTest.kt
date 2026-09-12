@@ -56,6 +56,7 @@ class RepoTest {
         assertTrue(repo.snapshot.value.pending.isEmpty())
         assertEquals(1, got.size); assertEquals(id, got[0].id); assertTrue(got[0].ok)
         assertNull(repo.snapshot.value.state!!.sessions.first { it.name == "ledger-api" }.question)
+        assertEquals(got[0], repo.resultsById.value[id])            // leggibile anche da chi si iscrive dopo
     }
 
     @Test fun noResultWithin20sBecomesFailedAndRetryIsSafe() = runTest {
