@@ -113,7 +113,11 @@ class CmApp : Application() {
 
     fun subscribeTopic() {
         if (!BuildConfig.FIREBASE) return
-        runCatching { FirebaseMessaging.getInstance().subscribeToTopic(FCM_TOPIC) }
+        runCatching {
+            val fm = FirebaseMessaging.getInstance()
+            fm.token.addOnCompleteListener { t -> android.util.Log.i("cmwatch", "fcm token: " + (if (t.isSuccessful) "ok (${t.result?.take(12)}…)" else "failed ${t.exception?.message}")) }
+            fm.subscribeToTopic(FCM_TOPIC).addOnCompleteListener { t -> android.util.Log.i("cmwatch", "fcm topic $FCM_TOPIC: " + (if (t.isSuccessful) "subscribed" else "failed ${t.exception?.message}")) }
+        }.onFailure { android.util.Log.w("cmwatch", "fcm: ${it.message}") }
     }
 
     fun isOnline(): Boolean {

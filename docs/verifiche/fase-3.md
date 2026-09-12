@@ -1,8 +1,10 @@
 # Fase 3 — checklist dal vivo
 
 «Fatto» della fase (design, sezione 6): una domanda vista sul quadrante senza aprire l'app.
-Richiede Firebase reale (RTDB + FCM, `google-services.json` in `wear/`), il relay attivo (`claude-master relay serve`)
-e il Pixel Watch: **in attesa di Franz**.
+Stato 12/09 17:00: Firebase reale (auth anonima, RTDB europe-west1, FCM), relay attivo, Pixel Watch accoppiato con chiave X25519
+reale (16:10). Verificato dal vivo: `/state` decifrato e stream, `/cmd screen` → `/result`, domanda reale con tre opzioni risposta
+dal polso e registrata nel ledger (16:23). Lato app: token FCM ottenuto e topic «watch» iscritto (16:57). Nessun risveglio FCM
+ricevuto finora: invio dal relay da verificare (in corso con la sessione claude-master).
 
 | # | Prova | Come | Esito |
 |---|---|---|---|
@@ -17,7 +19,7 @@ e il Pixel Watch: **in attesa di Franz**.
 | 9 | Complication LONG_TEXT «❓ ledger-api · Deploy now?» | quadrante WFF | in attesa |
 | 10 | Tile: «4 sessioni · 1? · 1✗», la domanda su una riga intera, Apri · Sessioni; senza domande Sessioni · Quota; «PC fermo» | tile aggiunta | in attesa (Pixel Watch) |
 | 11 | Nessuna notifica con l'app in primo piano | app aperta + push | in attesa |
-| 12 | Dopo il pairing reale il Transport passa a Firebase senza riavvio | Impostazioni → Nuovo pairing → codice del PC | in attesa (Firebase) |
+| 12 | Dopo il pairing reale il Transport passa a Firebase senza riavvio | Impostazioni → Nuovo pairing → codice del PC | ✅ 16:10, lista con le sessioni vere subito dopo (`fase2-sessioni-watch.png`) |
 
 Provato senza orologio (12/09/2026): unit test `:core` 94 verdi (FirebaseTransport su MockWebServer: stream /state, GET, /cmd → /result,
 timeout, pairing con verifica del PC, chiave errata; regole Wake, testi di notifiche/complication/tile; scelta del Transport);

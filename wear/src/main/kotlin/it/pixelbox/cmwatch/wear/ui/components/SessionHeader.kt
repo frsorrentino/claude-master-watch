@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,7 +22,7 @@ import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */
 @Composable
 fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SessionBadge(s, size = 32.dp)
             Spacer(Modifier.width(8.dp))

@@ -14,6 +14,7 @@ import it.pixelbox.cmwatch.wear.CmApp
 /** Sveglia FCM → lavoro expedited: un GET di /state, diff con Room, notifiche solo per il nuovo, tile e complication. */
 class WakeWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
+        android.util.Log.i("cmwatch", "wake worker")
         val app = applicationContext as CmApp
         val foreground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
         app.onWake(notify = !foreground)

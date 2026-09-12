@@ -2029,6 +2029,15 @@ Commit: `feat(tile): counts, the stuck session on one whole line, Apri / Session
 
 ---
 
+## Deviazioni dal design decise da Franz il 12/09 (pomeriggio, dal vivo sul Pixel Watch)
+
+- **Notifiche (sezione 2 del design)**: sostituite dalla specifica «notifiche native al 100 %» (conversazione `MessagingStyle` per sessione con storico, chip `setChoices` + smart reply, azioni dirette 1/2, aggiornamento in place inviato/confermato/riprova, cronometro, gruppo con `InboxStyle`, canali senza suono, dismiss = visto, `WorkManager` expedited su FCM, Leggi via servizio TTS). Regola pura `NotificationPlan`, checklist `docs/verifiche/fase-3-notifiche.md`.
+- **Badge di sessione**: al posto di icona di stato + pallino account, un badge unico (forma = account, riempimento = `color` del contratto 1.1, glifo di stato con contrasto WCAG calcolato). Regola `Badge`, composable `SessionBadge`, bitmap `BadgeBitmap`.
+- **Menu**: le schermate secondarie stanno in una schermata Menu aperta da un solo tasto contornato sotto la lista.
+- **Tile**: `primaryLayout` in stile Google con un solo bottone di bordo (vedi Task 15).
+- **Icona**: L1 (raggiera Claude centrata su corallo, «peek card» nera con «</>»), `docs/icona/`.
+- **Contratto 1.1**: `sessions[].color` («#RRGGBB») e `sessions[].icon` (emoji Telegram), opzionali; `v` resta 1.
+
 ## Auto-verifica del piano
 
 - Moduli: le regole pure (`rules/*`, `Wake`, `NotificationTexts`, `TileTexts`, `ComplicationTexts`, `SpeakRules`, …) e i loro test stanno in `:core`; i servizi Android (tile, complication, FCM, notifiche, TTS, aptica, ongoing) e le schermate in `:wear`.
