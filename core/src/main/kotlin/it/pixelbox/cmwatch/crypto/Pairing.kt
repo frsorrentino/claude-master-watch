@@ -8,6 +8,7 @@ import java.security.PrivateKey
 import java.security.interfaces.XECPublicKey
 import java.security.spec.NamedParameterSpec
 import java.security.spec.XECPrivateKeySpec
+import java.security.spec.X509EncodedKeySpec
 import java.security.spec.XECPublicKeySpec
 import java.util.Base64
 import javax.crypto.KeyAgreement
@@ -22,9 +23,21 @@ import javax.crypto.spec.SecretKeySpec
 object Pairing {
     private const val INFO = "claude-master-relay-v1"
 
-    fun newKeyPair(): KeyPair = KeyPairGenerator.getInstance("XDH").apply { initialize(NamedParameterSpec.X25519) }.generateKeyPair()
+    /** SubjectPublicKeyInfo DER di X25519 (RFC 8410): prefisso fisso + 32 byte grezzi. Vale su JVM e su Android (Conscrypt). */
+    private val SPKI_PREFIX = byteArrayOf(0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x03, 0x21, 0x00)
 
-    fun publicB64(kp: KeyPair): String = publicB64FromRaw(uToRaw((kp.public as XECPublicKey).u))
+    /** Su Android Conscrypt non accetta NamedParameterSpec: senza parametri il default è X25519. */
+    fun newKeyPair(): KeyPair {
+        val g = KeyPairGenerator.getInstance("XDH")
+        runCatching { g.initialize(NamedParameterSpec.X25519) }
+        return g.generateKeyPair()
+    }
+
+    fun publicB64(kp: KeyPair): String {
+        val enc = kp.public.encoded
+        val raw = if (enc != null && enc.size >= 32) enc.copyOfRange(enc.size - 32, enc.size) else uToRaw((kp.public as XECPublicKey).u)
+        return publicB64FromRaw(raw)
+    }
     /** Chiave privata da scalare grezzo (32 byte): per i vettori di prova condivisi con il relay. */
     fun privateFromRaw(raw: ByteArray): PrivateKey =
         KeyFactory.getInstance("XDH").generatePrivate(XECPrivateKeySpec(NamedParameterSpec.X25519, raw))
@@ -35,8 +48,9 @@ object Pairing {
     fun sharedKey(priv: PrivateKey, peerPubB64: String): ByteArray {
         val raw = rawFromB64(peerPubB64)
         require(raw.size == 32) { "peer public key must be 32 bytes" }
-        val u = BigInteger(1, raw.reversedArray())
-        val pub = KeyFactory.getInstance("XDH").generatePublic(XECPublicKeySpec(NamedParameterSpec.X25519, u))
+        val kf = KeyFactory.getInstance("XDH")
+        val pub = runCatching { kf.generatePublic(X509EncodedKeySpec(SPKI_PREFIX + raw)) }
+            .getOrElse { kf.generatePublic(XECPublicKeySpec(NamedParameterSpec.X25519, BigInteger(1, raw.reversedArray()))) }
         val ka = KeyAgreement.getInstance("XDH").apply { init(priv); doPhase(pub, true) }
         return hkdf(ka.generateSecret(), INFO.toByteArray(), 32)
     }

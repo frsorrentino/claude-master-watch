@@ -69,6 +69,16 @@ class CmApp : Application() {
         }
     }
 
+    /** Il pairing va SEMPRE sul bus reale quando Firebase c'è (il finto accetta qualsiasi codice). */
+    fun pairingTransport(): Transport {
+        val url = if (BuildConfig.FIREBASE) FirebaseAuthToken.databaseUrl() else null
+        return if (url == null) fake else FirebaseTransport(
+            rtdb = Rtdb(url.removeSuffix("/"), token = { FirebaseAuthToken.token() }),
+            key = { null }, uid = { FirebaseAuthToken.uid() }, deviceKeyPair = { Pairing.newKeyPair() },
+            now = { System.currentTimeMillis() / 1000 },
+        )
+    }
+
     /** Dopo il pairing o un nuovo pairing: il Transport cambia a caldo. */
     fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())) } }
 

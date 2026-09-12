@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
             pairing = PairingStatus.Working
             scope.launch {
                 pairing = try {
-                    val info = app.transport.pair(code, settings?.deviceName ?: "watch-pixel5")
+                    val info = app.pairingTransport().pair(code, settings?.deviceName ?: "watch-pixel5")
                     val wrapped = KeyVault.wrap(info.key ?: KeyVault.newSessionKey(), KeyVault.keystoreKek())
                     app.prefs.update { it.copy(paired = true, uid = info.uid, host = info.host, wrappedKey = wrapped) }
                     app.reconfigure()

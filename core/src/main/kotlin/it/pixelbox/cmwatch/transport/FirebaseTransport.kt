@@ -113,7 +113,9 @@ class FirebaseTransport(
      * attende `/pair/<code>/ok` dal PC e ne verifica il check (`code + ":pc"`). La chiave torna in PairingInfo.key.
      */
     override suspend fun pair(code: String, deviceName: String): PairingInfo {
+        android.util.Log.i("cmwatch", "pair: GET /pair/<code>")
         val body = rtdb.get("pair/$code") ?: throw TransportException.Network("no such code")
+        android.util.Log.i("cmwatch", "pair: document found, uid=${uid()}")
         val o = Json.parseToJsonElement(body).jsonObject
         val pcPub = o["pc_pub"]?.jsonPrimitive?.content ?: throw TransportException.Network("bad pairing document")
         val host = o["host"]?.jsonPrimitive?.content ?: ""
@@ -126,6 +128,7 @@ class FirebaseTransport(
             "name" to JsonPrimitive(deviceName), "check" to JsonPrimitive(Pairing.checkCode(shared, code)),
         ))
         rtdb.put("pair/$code/watch", watch.toString())
+        android.util.Log.i("cmwatch", "pair: /watch written, waiting for /ok")
         val ok = withTimeoutOrNull(pairTimeoutMs) {
             while (true) {
                 rtdb.get("pair/$code/ok")?.let { return@withTimeoutOrNull Json.parseToJsonElement(it).jsonObject }
@@ -135,6 +138,7 @@ class FirebaseTransport(
         } ?: throw TransportException.Network("the PC did not confirm")
         val pcCheck = ok["check"]?.jsonPrimitive?.content
         if (pcCheck != Pairing.checkCode(shared, "$code:pc")) throw TransportException.Network("PC check failed")
+        android.util.Log.i("cmwatch", "pair: PC check ok")
         return PairingInfo(uid = myUid, host = ok["host"]?.jsonPrimitive?.content ?: host, key = shared)
     }
 }

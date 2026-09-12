@@ -37,14 +37,14 @@ class Rtdb(
     suspend fun get(path: String, query: Map<String, String> = emptyMap()): String? = withContext(Dispatchers.IO) {
         http.newCall(Request.Builder().url(url(path, query)).get().build()).execute().use { r ->
             val body = r.body.string()
-            if (!r.isSuccessful) throw TransportException.Network("GET $path: HTTP ${r.code}")
+            if (!r.isSuccessful) { android.util.Log.w("cmwatch", "GET $path: HTTP ${r.code} $body"); throw TransportException.Network("GET $path: HTTP ${r.code}") }
             body.takeIf { it != "null" && it.isNotBlank() }
         }
     }
 
     suspend fun put(path: String, body: String): String = withContext(Dispatchers.IO) {
         http.newCall(Request.Builder().url(url(path)).put(body.toRequestBody(json)).build()).execute().use { r ->
-            if (!r.isSuccessful) throw TransportException.Network("PUT $path: HTTP ${r.code}")
+            if (!r.isSuccessful) { android.util.Log.w("cmwatch", "PUT $path: HTTP ${r.code}"); throw TransportException.Network("PUT $path: HTTP ${r.code}") }
             r.body.string()
         }
     }
