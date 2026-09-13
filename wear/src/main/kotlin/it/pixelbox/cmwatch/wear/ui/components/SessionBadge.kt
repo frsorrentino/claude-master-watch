@@ -52,7 +52,9 @@ fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float = 1f, outline: 
         Badge.Shape.SQUARE -> if (outline) drawRoundRect(fill, size = Size(d * 0.92f, d * 0.92f), topLeft = Offset(d * 0.04f, d * 0.04f), cornerRadius = CornerRadius(d * 0.23f), style = stroke)
             else drawRoundRect(fill, size = Size(d, d), cornerRadius = CornerRadius(d * 0.23f))
     }
-    val c = Offset(d / 2f, d / 2f); val r = d * 0.26f; val w = d * 0.11f
+    // Glifo a 0,44 del diametro invece di 0,52 più cappuccio: prima toccava il bordo del cerchio e del quadrato
+    // (Franz, 13/09 21:11). Le stesse proporzioni in `BadgeBitmap`, così lista e notifiche restano identiche.
+    val c = Offset(d / 2f, d / 2f); val r = d * 0.22f; val w = d * 0.095f
     when (spec.glyph) {
         Badge.Glyph.PLAY -> drawPath(Path().apply {
             moveTo(c.x - r * 0.8f, c.y - r); lineTo(c.x + r, c.y); lineTo(c.x - r * 0.8f, c.y + r); close()
