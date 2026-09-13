@@ -18,6 +18,8 @@ import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
+import it.pixelbox.cmwatch.wear.ui.theme.cmMarquee
+import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */
 @Composable
@@ -27,9 +29,11 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
             SessionBadge(s, size = 32.dp)
             Spacer(Modifier.width(8.dp))
             val row = SessionsText.row(s, now)
-            val tail = row.removePrefix(s.name)
-            Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-            if (tail.isNotEmpty()) Text(tail, style = MonoStyle, color = CmColors.text, maxLines = 1, softWrap = false)
+            val tail = row.removePrefix(s.name).removePrefix(" · ")
+            Column(Modifier.weight(1f)) {
+                Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 1, softWrap = false, overflow = TextOverflow.MiddleEllipsis, modifier = Modifier.cmMarquee(!animationsOff()))
+                if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
+            }
         }
         val tool = s.tool
         if (s.state == SessionState.BUSY && tool != null) {

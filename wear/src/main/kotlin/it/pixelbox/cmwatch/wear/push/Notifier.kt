@@ -24,6 +24,11 @@ import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NotificationPlan
 import it.pixelbox.cmwatch.rules.NotificationPlan.Act
 
+/** Wear OS scarta le azioni senza icona: ogni azione ha la sua (Franz, 13/09 09:32: «non mostra le opzioni come tasti»). */
+private fun optionIcon(n: Int) = when (n) {
+    1 -> R.drawable.ic_num_1; 2 -> R.drawable.ic_num_2; else -> R.drawable.ic_num_3
+}
+
 /**
  * Notifiche native al 100 % (specifica di Franz, 12/09): conversazione per sessione (MessagingStyle + shortcut), chip di
  * risposta (RemoteInput.setChoices + smart reply), azioni dirette per le prime due opzioni, aggiornamento in place
@@ -121,12 +126,12 @@ class Notifier(private val ctx: Context) {
             .setContentIntent(open("cmwatch://question/${s.name}", id(s.name)))
             .setDeleteIntent(broadcast(ReplyReceiver.ACTION_SEEN, s.name, id(s.name) * 10 + 8) { putExtra(ReplyReceiver.QUESTION_ID, q.id) })
         for ((i, a) in plan.actions.withIndex()) when (a) {
-            is Act.Option -> b.addAction(NotificationCompat.Action.Builder(0, a.label, broadcast(ReplyReceiver.ACTION_OPTION, s.name, id(s.name) * 10 + i) { putExtra(ReplyReceiver.OPTION, a.n); putExtra(ReplyReceiver.OPTION_LABEL, a.label) })
+            is Act.Option -> b.addAction(NotificationCompat.Action.Builder(optionIcon(a.n), a.label, broadcast(ReplyReceiver.ACTION_OPTION, s.name, id(s.name) * 10 + i) { putExtra(ReplyReceiver.OPTION, a.n); putExtra(ReplyReceiver.OPTION_LABEL, a.label) })
                 .setShowsUserInterface(false).build())
-            Act.Reply -> b.addAction(NotificationCompat.Action.Builder(0, labels.reply, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
+            Act.Reply -> b.addAction(NotificationCompat.Action.Builder(R.drawable.ic_reply, labels.reply, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
                 .addRemoteInput(RemoteInput.Builder(ReplyReceiver.TEXT).setLabel(labels.reply).setChoices(plan.choices.toTypedArray()).setAllowFreeFormInput(plan.freeForm).build())
                 .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).setAllowGeneratedReplies(true).setShowsUserInterface(false).build())
-            Act.Open -> b.addAction(NotificationCompat.Action.Builder(0, labels.open, open("cmwatch://question/${s.name}", id(s.name) * 10 + 9))
+            Act.Open -> b.addAction(NotificationCompat.Action.Builder(R.drawable.ic_open, labels.open, open("cmwatch://question/${s.name}", id(s.name) * 10 + 9))
                 .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).build())
             else -> Unit
         }
@@ -149,7 +154,7 @@ class Notifier(private val ctx: Context) {
     fun failed(cmdId: String) {
         val session = pendingBySession[cmdId] ?: return
         val b = simple(session, NotificationPlan.CH_QUESTIONS, NotificationPlan.failedLine(labels), SessionState.GONE)
-            .addAction(0, labels.retry, broadcast(ReplyReceiver.ACTION_RETRY, session, id(session) * 10 + 6) { putExtra(ReplyReceiver.CMD_ID, cmdId) })
+            .addAction(R.drawable.ic_retry, labels.retry, broadcast(ReplyReceiver.ACTION_RETRY, session, id(session) * 10 + 6) { putExtra(ReplyReceiver.CMD_ID, cmdId) })
         post(id(session), b)
     }
 
@@ -168,17 +173,17 @@ class Notifier(private val ctx: Context) {
         val plan = NotificationPlan.outcome(s, labels)
         val b = base(plan).setLargeIcon(badge(s)).setContentText(plan.messages.first()).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
             .setContentIntent(open("cmwatch://outcome/${s.name}", id(s.name)))
-            .addAction(0, labels.read, PendingIntent.getService(ctx, id(s.name) * 10 + 3, Intent(ctx, SpeakService::class.java).putExtra(SpeakService.TEXT, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
-            .addAction(NotificationCompat.Action.Builder(0, labels.write, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
+            .addAction(R.drawable.ic_play, labels.read, PendingIntent.getService(ctx, id(s.name) * 10 + 3, Intent(ctx, SpeakService::class.java).putExtra(SpeakService.TEXT, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+            .addAction(NotificationCompat.Action.Builder(R.drawable.ic_edit, labels.write, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
                 .addRemoteInput(RemoteInput.Builder(ReplyReceiver.TEXT).setLabel(labels.write).build()).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).build())
-            .addAction(0, labels.open, open("cmwatch://outcome/${s.name}", id(s.name) * 10 + 9))
+            .addAction(R.drawable.ic_open, labels.open, open("cmwatch://outcome/${s.name}", id(s.name) * 10 + 9))
         post(id(s.name), b)
     }
 
     fun gone(name: String, account: String?) {
         val plan = NotificationPlan.gone(name, account, labels)
         post(id(name), base(plan).setContentIntent(open("cmwatch://sessions", id(name)))
-            .addAction(0, labels.resume, broadcast(ReplyReceiver.ACTION_RESUME, name, id(name) * 10 + 5)))
+            .addAction(R.drawable.ic_play, labels.resume, broadcast(ReplyReceiver.ACTION_RESUME, name, id(name) * 10 + 5)))
     }
 
     fun quota(account: String, q: QuotaAccount) {

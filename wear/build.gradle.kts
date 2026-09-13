@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.protolayout.material3)
     implementation(libs.tiles)
     implementation(libs.complications.datasource)
+    implementation(libs.wear.runtime)
     implementation(libs.wear.ongoing)
     implementation(libs.wear.input)
     implementation(libs.coroutines.android)

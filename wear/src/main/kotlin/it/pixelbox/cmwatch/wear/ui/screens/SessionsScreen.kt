@@ -22,15 +22,22 @@ import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.MenuButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.rememberCenterIndex
+import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
 @Composable
-fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}) {
+fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}, ambient: Boolean = false) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val sessions = snapshot.state?.sessions.orEmpty()
     val fresh = snapshot.freshness is Freshness.Fresh
+    // Scorre solo la riga al centro, e solo se il sistema permette le animazioni.
+    val center = rememberCenterIndex(listState)
+    val canScroll = !ambient && !animationsOff()
+    val stale = snapshot.freshness as? Freshness.Stale
+    val firstRow = 1 + (if (stale != null) 1 else 0)
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -44,11 +51,17 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
             if (sessions.isEmpty()) {
                 item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier) }
             }
-            items(sessions, key = { it.id }) { s ->
-                SessionRow(s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
+            val names = sessions.map { it.name }
+            items(count = sessions.size, key = { sessions[it].id }) { i ->
+                val s = sessions[i]
+                SessionRow(
+                    s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec),
+                    modifier = Modifier.transformedHeight(this, spec), siblings = names, ambient = ambient,
+                    marquee = canScroll && center == firstRow + i,
+                )
             }
-            // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35).
-            item { MenuButton(onClick = { onMenu(Screen.Menu) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+            // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.
+            if (!ambient) item { MenuButton(onClick = { onMenu(Screen.Menu) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }
 }

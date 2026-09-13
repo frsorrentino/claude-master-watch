@@ -32,6 +32,7 @@ import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.wear.haptics.Haptics
 import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
+import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.crypto.KeyVault
 import it.pixelbox.cmwatch.transport.FakeTransport
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
@@ -159,9 +160,10 @@ class MainActivity : ComponentActivity() {
             if (target != current) nav.go(target)
         }
 
+        val ambient = rememberAmbient()
         SwipeDismissableNavHost(navController = nav, startDestination = Routes.SESSIONS) {
             composable(Routes.SESSIONS) {
-                SessionsScreen(snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) })
+                SessionsScreen(snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient)
             }
             composable(Routes.SESSION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
