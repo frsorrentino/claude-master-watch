@@ -88,4 +88,9 @@
     <string name="tile_label_question">Domanda aperta</string>
     <string name="tile_label_last">Ultima sessione</string>
     <string name="tile_stale_short">PC fermo</string>
+    <string name="tile_waiting_for">ferma da %s</string>
+    <string name="tile_stale_detail">da %1$s · ultimo contatto %2$s</string>
+    <string name="tile_card_active">attive</string>
+    <string name="tile_card_idle">ferme</string>
+    <string name="tile_card_gone">sparite</string>
 </resources>

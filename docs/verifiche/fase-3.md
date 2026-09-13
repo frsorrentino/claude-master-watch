@@ -25,3 +25,18 @@ Provato senza orologio (12/09/2026): unit test `:core` 94 verdi (FirebaseTranspo
 timeout, pairing con verifica del PC, chiave errata; regole Wake, testi di notifiche/complication/tile; scelta del Transport);
 APK debug installato su ARC, avvio con permesso notifiche e Domanda (`docs/screenshots/fase3-domanda-arc.png`).
 Tile e complication non esistono su ARC: solo compilazione e manifest.
+
+## Tile: tre stati (anatomia Wear OS, 13/09)
+
+`primaryLayout` con i tre slot sempre presenti e un `textEdgeButton` curvo in fondo; margini dal layout, mai aggiunti a mano.
+
+| Stato | titleSlot | mainSlot | bottomSlot | Screenshot |
+|---|---|---|---|---|
+| Domanda aperta | badge (emoji del contratto) + nome, taglio in mezzo | testo della domanda su ≤ 3 righe + «ferma da N m» in ambra | «Rispondi» → `cmwatch://question/<nome>` | da fare |
+| Nessuna domanda | «Claude Master» | `buttonGroup` con fino a tre `textDataCard`: attive · ferme · sparite (solo quelle non a zero) | «Sessioni» | da fare |
+| PC fermo | «Claude Master» | «PC fermo» grande + «da N min · ultimo contatto HH:mm» | «Sessioni» | da fare |
+| Nessuna sessione | «Claude Master» | «Nessuna sessione» | «Sessioni» | da fare |
+
+Colori dai ruoli M3 della tile (`surfaceContainer` per le card, `primary` per l'EdgeButton, `onSurfaceVariant` per le etichette);
+i nostri colori restano solo dove significano qualcosa (ambra dell'attesa, badge della sessione). Regole verificate dai test
+`TileCardsTest` (contatori non a zero, massimo tre, badge dall'emoji o dal glifo, riga dell'attesa).

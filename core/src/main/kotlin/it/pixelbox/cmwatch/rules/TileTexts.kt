@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 
@@ -13,6 +14,23 @@ object TileTexts {
 
     /** Cosa mostra la tile a colpo d'occhio: etichetta dei conteggi, sessione in evidenza, corpo, un solo bottone di bordo. */
     data class Glance(val counts: String, val name: String?, val body: String, val button: Button, val accent: Accent, val target: String)
+
+    /** Contatori della tile: solo quelli non a zero, al massimo tre (Franz via la master, 13/09 10:50). */
+    data class Card(val kind: Kind, val count: Int) { enum class Kind { ACTIVE, IDLE, GONE } }
+
+    fun cards(state: State, seen: Set<String>): List<Card> {
+        val active = state.sessions.count { it.state == SessionState.BUSY || it.state == SessionState.AWAITING || it.state == SessionState.WAITING }
+        val idle = state.sessions.count { it.state == SessionState.IDLE }
+        val gone = state.sessions.count { it.state == SessionState.GONE }
+        return listOf(Card(Card.Kind.ACTIVE, active), Card(Card.Kind.IDLE, idle), Card(Card.Kind.GONE, gone)).filter { it.count > 0 }.take(3)
+    }
+
+    /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
+    fun badge(s: Session): String = s.icon?.takeIf { it.isNotBlank() } ?: if (s.question != null) "❓" else icon(s.state)
+
+    /** «ferma da 5 m» dall'istante della domanda. */
+    fun waitingFor(s: Session, now: Long, pattern: String): String =
+        pattern.format(Durations.since(s.question?.askedAt ?: s.since, now))
 
     fun counts(state: State): String {
         val q = state.sessions.count { it.question != null }
