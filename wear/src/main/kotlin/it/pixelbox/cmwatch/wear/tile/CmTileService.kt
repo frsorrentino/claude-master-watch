@@ -88,11 +88,11 @@ class CmTileService : TileService() {
 
     /** Stato 1: la domanda è l'unica cosa che conta. */
     private fun MaterialScope.questionLayout(s: Session, now: Long): LayoutElement = primaryLayout(
-        titleSlot = { title("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}") },
+        titleSlot = { title("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 20)}") },
         mainSlot = {
             LayoutElementBuilders.Column.Builder().setWidth(expand()).setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                .addContent(text(s.question!!.text.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 3, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
-                .addContent(text(TileTexts.waitingFor(s, now, getString(R.string.tile_waiting_for)).layoutString, typography = Typography.BODY_SMALL, color = 0xFFFFB020.toInt().argb, maxLines = 1))
+                .addContent(text(s.question!!.text.layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 3, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
+                .addContent(text(TileTexts.waitingFor(s, now, getString(R.string.tile_waiting_for)).layoutString, typography = Typography.BODY_MEDIUM, color = 0xFFFFB020.toInt().argb, maxLines = 1))
                 .build()
         },
         bottomSlot = { edge(R.string.card_reply, "cmwatch://question/${s.name}") },
@@ -100,7 +100,7 @@ class CmTileService : TileService() {
 
     /** Stato 2: quante sessioni e in che stato, in card affiancate. */
     private fun MaterialScope.countersLayout(state: State, seen: Set<String>): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.app_name)) },
+        titleSlot = { title(getString(R.string.sessions_title)) },
         mainSlot = {
             val cards = TileTexts.cards(state, seen)
             buttonGroup(width = expand(), height = expand(), spacing = 4f) {
@@ -108,8 +108,8 @@ class CmTileService : TileService() {
                     textDataCard(
                         onClick = clickable(launch("cmwatch://sessions"), id = c.kind.name),
                         width = weight(1f), height = expand(),
-                        title = { text(c.count.toString().layoutString, typography = Typography.NUMERAL_MEDIUM, color = colorScheme.onSurface) },
-                        content = { text(getString(label(c.kind)).layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurfaceVariant, maxLines = 1) },
+                        title = { text(c.count.toString().layoutString, typography = Typography.NUMERAL_LARGE, color = colorScheme.onSurface) },
+                        content = { text(getString(label(c.kind)).layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 1) },
                     )
                 }
             }
@@ -119,20 +119,20 @@ class CmTileService : TileService() {
 
     /** Stato 3: il PC non batte più. */
     private fun MaterialScope.staleLayout(stale: Freshness.Stale, state: State?, now: Long): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.app_name)) },
+        titleSlot = { title(getString(R.string.sessions_title)) },
         mainSlot = {
             val last = state?.ts?.let { DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
             LayoutElementBuilders.Column.Builder().setWidth(expand()).setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                .addContent(text(getString(R.string.tile_stale_short).layoutString, typography = Typography.TITLE_LARGE, color = colorScheme.onSurface, maxLines = 1))
-                .addContent(text(getString(R.string.tile_stale_detail, Durations.since(0, stale.minutes * 60L), last ?: "—").layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
+                .addContent(text(getString(R.string.tile_stale_short).layoutString, typography = Typography.DISPLAY_SMALL, color = colorScheme.onSurface, maxLines = 1))
+                .addContent(text(getString(R.string.tile_stale_detail, Durations.since(0, stale.minutes * 60L), last ?: "—").layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
                 .build()
         },
         bottomSlot = { edge(R.string.tile_sessions, "cmwatch://sessions") },
     )
 
     private fun MaterialScope.emptyLayout(): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.app_name)) },
-        mainSlot = { text(getString(R.string.sessions_empty).layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER) },
+        titleSlot = { title(getString(R.string.sessions_title)) },
+        mainSlot = { text(getString(R.string.sessions_empty).layoutString, typography = Typography.TITLE_LARGE, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER) },
         bottomSlot = { edge(R.string.tile_sessions, "cmwatch://sessions") },
     )
 
@@ -158,7 +158,7 @@ class CmTileService : TileService() {
         CallbackToFutureAdapter.getFuture { c -> c.set(ResourceBuilders.Resources.Builder().setVersion(RESOURCES).build()); "res" }
 
     companion object {
-        const val RESOURCES = "5"
+        const val RESOURCES = "6"
         fun requestUpdate(app: CmApp) = getUpdater(app).requestUpdate(CmTileService::class.java)
     }
 }
