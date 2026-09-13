@@ -76,6 +76,9 @@ val BriefNumber = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium)
 /** Nomi di sessione e terminale: mono 14 sp (design, sezione 3). */
 val MonoStyle = TextStyle(fontSize = 14.sp, fontFamily = Mono, fontWeight = FontWeight.Medium)
 
+/** Terminale: mono 13 sp, così una riga di comando sta in più caratteri e il tondo ne taglia meno (13/09 17:40). */
+val TerminalStyle = TextStyle(fontSize = 13.sp, fontFamily = Mono)
+
 private val typography = Typography(
     displaySmall = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
     titleLarge = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),

@@ -20,14 +20,6 @@ class SpeakRulesTest {
     }
 }
 
-class TerminalTextTest {
-    @Test fun atMostThirtyWholeLines() {
-        val lines = TerminalText.lines((1..40).joinToString("\n") { "riga $it" })
-        assertEquals(30, lines.size); assertEquals("riga 11", lines.first()); assertEquals("riga 40", lines.last())
-        assertEquals(listOf("$ pytest -q tests", "42 passed in 3.1s"), TerminalText.lines("$ pytest -q tests\n42 passed in 3.1s\n"))
-    }
-}
-
 class TimelineTextTest {
     private val ev = ContractJson.decodeEvents(Fixtures.events)
     private val zone = ZoneId.of("Europe/Rome")
@@ -90,5 +82,19 @@ class RecapTextTest {
         assertEquals("→ Rivedere i seed e la pagina admin", r[0].next)
         assertEquals("2 · —", RecapText.night(s.night, "—"))
         assertEquals("0 · atlas-shop", RecapText.night(s.night.copy(queued = 0, running = "atlas-shop"), "—"))
+    }
+}
+
+class LaunchPathForTest {
+    private val s = ContractJson.decodeState(Fixtures.stateQuestion)
+
+    @Test fun trovaIlProgettoDiUnaSessioneChiusa() {
+        val gone = s.sessions.first { it.state == SessionState.GONE }
+        assertEquals("/home/demo/workspaces/work/own/orbit-docs", LaunchRules.pathFor(gone, s.projects))
+    }
+
+    @Test fun senzaProgettoPubblicatoNonSiLancia() {
+        val gone = s.sessions.first { it.state == SessionState.GONE }
+        assertNull(LaunchRules.pathFor(gone.copy(project = "altro/percorso", name = "sconosciuta"), s.projects))
     }
 }

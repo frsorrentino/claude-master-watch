@@ -15,8 +15,11 @@ import java.util.Locale
  * testo; il disegno sta in `BriefCard`. Le card a zero non si mostrano: una card vuota occupa spazio e non dice nulla.
  */
 object BriefCards {
-    /** Tono della pillolina e dell'anello: neutro, buono, da guardare, dato vecchio. */
+    /** Tono della pillolina e del gauge: neutro, buono, da guardare, dato vecchio. */
     enum class Tone { NEUTRAL, GOOD, WARN, STALE }
+
+    /** Simbolo dentro il gauge, come le icone del brief. Il disegno lo scegli in `BriefCard`, qui sta il significato. */
+    enum class Glyph { TIME, SESSIONS, QUESTION, NIGHT, SYNC }
 
     data class Card(
         val key: String,
@@ -27,6 +30,7 @@ object BriefCards {
         val pill: String? = null,
         val tone: Tone = Tone.NEUTRAL,
         val progress: Float? = null,
+        val glyph: Glyph = Glyph.TIME,
     )
 
     data class Labels(
@@ -54,8 +58,10 @@ object BriefCards {
                 unit = if (q.h5 != null) "%" else null,
                 secondary = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
                 pill = if (q.stale) l.stale else l.week.format(q.w7?.let { "$it %" } ?: l.none),
-                tone = if (q.stale) Tone.STALE else Tone.NEUTRAL,
+                // Finestra esaurita: il gauge pieno va in ambra e pulsa, perché da lì non si lavora più.
+                tone = if (q.stale) Tone.STALE else if ((q.h5 ?: 0) >= 100) Tone.WARN else Tone.NEUTRAL,
                 progress = QuotaText.fraction(q.h5),
+                glyph = Glyph.TIME,
             )
         }
     }
@@ -75,11 +81,15 @@ object BriefCards {
             pill = if (questions.isEmpty()) l.noQuestions else l.waitingPill.format(questions.size),
             tone = if (questions.isEmpty()) Tone.GOOD else Tone.WARN,
             progress = if (live.isEmpty()) 0f else active.toFloat() / live.size,
+            glyph = Glyph.SESSIONS,
         )
         questions.minByOrNull { it.askedAt }?.let { oldest ->
             cards += Card(
                 key = "questions", label = l.questions, value = questions.size.toString(),
                 pill = l.oldest.format(Durations.since(oldest.askedAt, now)), tone = Tone.WARN,
+                // Il gauge dice quante delle sessioni vive stanno aspettando te.
+                progress = if (live.isEmpty()) 1f else questions.size.toFloat() / live.size,
+                glyph = Glyph.QUESTION,
             )
         }
         val night = state.night
@@ -88,6 +98,9 @@ object BriefCards {
                 key = "night", label = l.night, value = night.queued.toString(),
                 pill = night.running?.let { l.running.format(it) } ?: l.nothingRunning,
                 tone = if (night.running != null) Tone.NEUTRAL else Tone.GOOD,
+                // Quanta coda è già passata: una in corso su quelle che restano.
+                progress = if (night.running == null) 0f else 1f / (night.queued + 1),
+                glyph = Glyph.NIGHT,
             )
         }
         val age = ((now - state.ts) / 60).toInt()
@@ -99,6 +112,9 @@ object BriefCards {
             secondary = if (freshness is Freshness.Stale) l.stopped else null,
             pill = state.host.takeIf { it.isNotBlank() },
             tone = if (freshness is Freshness.Fresh) Tone.GOOD else Tone.STALE,
+            // Il gauge si riempie mentre il dato invecchia: pieno = PC fermo, e allora pulsa.
+            progress = (((now - state.ts).toFloat() / Freshness.STALE_AFTER_S)).coerceIn(0f, 1f),
+            glyph = Glyph.SYNC,
         )
         return cards
     }

@@ -20,12 +20,6 @@ object SpeakRules {
         text.isNotBlank() && (kind != Kind.PLAIN || text.length > minChars)
 }
 
-/** Terminale: le ultime 30 righe intere del `/result` di `screen`. */
-object TerminalText {
-    const val MAX = 30
-    fun lines(text: String): List<String> = text.trimEnd().lines().takeLast(MAX)
-}
-
 /** Timeline: `/events` per giorno, più recenti prima; riga «HH:mm · titolo · sessione · corpo». */
 object TimelineText {
     data class Group(val day: String, val rows: List<String>)
@@ -51,6 +45,15 @@ object TimelineText {
 /** Lancia: solo percorsi pubblicati dal PC in `projects`, mai percorsi liberi dal polso (design, sezione 5). */
 object LaunchRules {
     fun allowed(path: String, projects: List<Project>): Boolean = path.isNotBlank() && projects.any { it.path == path }
+
+    /**
+     * Percorso da lanciare per far ripartire una sessione chiusa: `resume` non vale per una sessione che non esiste
+     * più, il comando giusto è `launch` sul suo progetto (Franz, 13/09 18:11). Si accoppia per coda del percorso,
+     * perché la sessione porta il percorso relativo e il progetto quello assoluto; in mancanza, per nome.
+     */
+    fun pathFor(s: Session, projects: List<Project>): String? =
+        projects.firstOrNull { it.path.endsWith("/" + s.project) || it.path == s.project }?.path
+            ?: projects.firstOrNull { it.name == s.name }?.path
 }
 
 /** Segui: l'ongoing activity «▶ nome 4 m» esiste solo mentre la sessione seguita lavora. */

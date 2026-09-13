@@ -52,7 +52,6 @@
     <string name="tile_open">Apri</string>
     <string name="tile_sessions">Sessioni</string>
     <string name="tile_quota">Quota</string>
-    <string name="tile_stale">PC fermo da %d min</string>
     <string name="tts_play">Leggi a voce</string>
     <string name="tts_stop">Ferma la lettura</string>
     <string name="outcome_none">Nessun esito</string>
@@ -101,13 +100,17 @@
     <string name="settings_notifications_off">Notifiche spente: apri le impostazioni</string>
     <string name="tile_label_question">Domanda aperta</string>
     <string name="tile_label_last">Ultima sessione</string>
-    <string name="tile_stale_short">PC fermo</string>
     <string name="tile_waiting_for">ferma da %s</string>
     <string name="tile_stale_detail">da %1$s · ultimo contatto %2$s</string>
     <string name="tile_card_active">attive</string>
     <string name="tile_card_idle">ferme</string>
     <string name="tile_card_gone">sparite</string>
     <string name="quota_label">Quota %1$s</string>
+    <string name="card_relaunch">Riavvia</string>
+    <string name="terminal_answer">Risposta</string>
+    <string name="session_closed">chiusa</string>
+    <string name="tile_stale_label">fermo da %1$d min</string>
+    <string name="tile_all_idle">Tutto a riposo</string>
     <string name="tile_quota_pct">%1$d %%</string>
     <string name="quota_reset_at">reset %1$s</string>
     <string name="tile_turn_running">turno in corso</string>

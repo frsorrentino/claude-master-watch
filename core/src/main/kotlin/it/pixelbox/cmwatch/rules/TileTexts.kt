@@ -38,6 +38,60 @@ object TileTexts {
         return if (active > 0) Edge(Edge.Kind.ACTIVE, active) else Edge(Edge.Kind.SESSIONS, 0)
     }
 
+    /**
+     * Cosa mette la tile nella card quando non c'è una domanda. Se nessuna sessione lavora e l'ultimo movimento è
+     * più vecchio di un quarto d'ora, l'esito vecchio non è una notizia: si dice lo stato vero (Franz, 13/09 17:55:
+     * «così com'è mi sembra inutile e datato»).
+     */
+    sealed interface Rest {
+        /** Una sessione da mostrare:  = sta lavorando ora, altrimenti è l'ultima che si è mossa. */
+        data class Live(val session: Session, val busy: Boolean) : Rest
+        /** Nessun movimento recente: quante sessioni ci sono e da quanto tutto è fermo. */
+        data class Calm(val sessions: Int, val since: Long?) : Rest
+    }
+
+    const val REST_FRESH_S = 15 * 60L
+
+    /**
+     * Cosa scrivere nella card della sessione. Prima l'attività di adesso (`tool`), poi la cosa più fresca fra
+     * l'esito e il prossimo passo: `next` non ha una data nel contratto e resta indietro, quindi la card sembrava
+     * congelata con lo stesso testo mentre scorreva solo il minuto (Franz, 13/09 18:23).
+     * Il testo si taglia alla prima frase, così non finisce dentro una parentesi aperta.
+     */
+    fun activity(s: Session, busy: Boolean, running: String, idle: String): String {
+        val tool = s.tool?.trim()?.takeIf { it.isNotEmpty() }
+        val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
+        val prossimo = s.next?.trim()?.takeIf { it.isNotEmpty() }
+        val esitoPiuFresco = (s.outcome?.at ?: 0L) >= (s.turnStarted ?: 0L)
+        val scelto = when {
+            busy && tool != null -> tool
+            busy && esito != null && esitoPiuFresco -> esito
+            busy -> prossimo ?: running
+            else -> esito ?: prossimo ?: idle
+        }
+        return primaFrase(scelto)
+    }
+
+    /** Prima frase, se finisce entro una riga e mezza: meglio un pensiero intero che una coda troncata. */
+    fun primaFrase(text: String, max: Int = 46): String {
+        val punto = text.indexOf(". ")
+        return if (punto in 1..max) text.substring(0, punto + 1) else text
+    }
+
+
+    private fun moved(s: Session): Long = maxOf(s.since, s.turnStarted ?: 0L, s.outcome?.at ?: 0L)
+
+    fun rest(state: State, now: Long): Rest {
+        val live = state.sessions.filter { it.state != SessionState.GONE }
+        val working = live.firstOrNull { it.followed && (it.state == SessionState.BUSY || it.state == SessionState.AWAITING) }
+            ?: live.firstOrNull { it.state == SessionState.BUSY || it.state == SessionState.AWAITING || it.state == SessionState.WAITING }
+        if (working != null) return Rest.Live(working, busy = true)
+        val recente = live.maxByOrNull { moved(it) }
+        val quando = recente?.let { moved(it) }
+        if (recente != null && quando != null && now - quando <= REST_FRESH_S) return Rest.Live(recente, busy = false)
+        return Rest.Calm(sessions = live.size, since = quando)
+    }
+
     /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
     fun badge(s: Session): String = s.icon?.takeIf { it.isNotBlank() } ?: if (s.question != null) "❓" else icon(s.state)
 

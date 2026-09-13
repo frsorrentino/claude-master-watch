@@ -9,9 +9,14 @@ class QuotaBarTest {
         assertEquals(24, s.fill); assertEquals(76, s.track); assertTrue(s.gap)
     }
 
-    @Test fun quasiVuotoMostraSoloLaTraccia() {
-        // Sotto il minimo la pillolina piena sarebbe più piccola del suo stesso raggio: meglio niente.
+    @Test fun percentualePiccolaTieneUnMonconeVisibile() {
+        // All'1 % la pillolina piena sarebbe più piccola del suo raggio: si disegna al minimo, non si nasconde.
         val s = QuotaBar.of(1)
+        assertEquals(3, s.fill); assertEquals(97, s.track); assertTrue(s.gap)
+    }
+
+    @Test fun soloLoZeroMostraLaSolaTraccia() {
+        val s = QuotaBar.of(0)
         assertEquals(0, s.fill); assertEquals(100, s.track); assertFalse(s.gap)
         assertEquals(QuotaBar.of(0), QuotaBar.of(null))
     }

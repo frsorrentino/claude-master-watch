@@ -36,6 +36,7 @@ fun SessionScreen(
     onFollow: (Boolean) -> Unit,
     onOutcome: () -> Unit,
     onBackToSessions: () -> Unit,
+    onRelaunch: (() -> Unit)? = null,
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -60,6 +61,15 @@ fun SessionScreen(
             }
             if (s.question != null) {
                 item { WideButton(stringResource(R.string.card_reply), onClick = onReply, primary = true, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+            }
+            // Una sessione chiusa non si «riprende»: non esiste più. Si rilancia il suo progetto (Franz, 13/09 18:11).
+            if (s.state == SessionState.GONE && onRelaunch != null) {
+                item {
+                    WideButton(
+                        stringResource(R.string.card_relaunch), onClick = onRelaunch, primary = true, enabled = enabled,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
             }
             if (s.state != SessionState.GONE) {
                 item { WideButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }

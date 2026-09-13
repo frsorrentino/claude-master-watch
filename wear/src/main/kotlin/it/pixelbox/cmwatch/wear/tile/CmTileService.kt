@@ -80,15 +80,15 @@ class CmTileService : TileService() {
                 materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
                     primaryLayout(
                         margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN,
-                        titleSlot = if (question != null || state == null || state.sessions.isEmpty()) null else ({
-                            text(getString(R.string.tile_title_count, state.sessions.size).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onBackground, maxLines = 1)
-                        }),
+                        // Niente titolo: «N sessioni» era la riga che valeva meno (il conteggio sta sul bottone di
+                        // bordo e Wear OS scrive già il nome dell'app sopra), e la sua riga serviva alla card della
+                        // quota, che restava tagliata in basso (Franz, 13/09 17:15).
+                        titleSlot = null,
                         mainSlot = {
                             when {
                                 question != null -> questionCard(question, now)
-                                stale != null -> staleCard(stale, state)
                                 state == null || state.sessions.isEmpty() -> emptyCard()
-                                else -> restCards(state, now, prefs.complicationAccount)
+                                else -> restCards(state, now, prefs.complicationAccount, stale)
                             }
                         },
                         bottomSlot = { edgeButton(edge, question?.name) },
@@ -129,33 +129,56 @@ class CmTileService : TileService() {
         colors = cardColors(),
     )
 
-    /** A riposo: l'ultima attività e la quota, due card come le due mail di Gmail. */
-    private fun MaterialScope.restCards(state: State, now: Long, account: String): LayoutElement {
-        val s = state.sessions.firstOrNull { it.followed && it.state != SessionState.GONE }
-            ?: state.sessions.firstOrNull { it.state == SessionState.BUSY || it.state == SessionState.AWAITING }
-            ?: state.sessions.filter { it.state != SessionState.GONE }.maxByOrNull { maxOf(it.since, it.turnStarted ?: 0, it.outcome?.at ?: 0) }
+    /** A riposo: cosa succede adesso e la quota, due card come le due mail di Gmail. */
+    private fun MaterialScope.restCards(state: State, now: Long, account: String, stale: Freshness.Stale?): LayoutElement {
         val q = state.quota[account]
         val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
-        if (s != null) {
-            val busy = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
-            // Mai l'etichetta secca dello stato: quella è già nel badge. Si dice cosa sta facendo o cosa ha fatto.
-            val what = if (busy) s.tool ?: s.next ?: getString(R.string.tile_turn_running)
-            else s.outcome?.short ?: s.next ?: getString(R.string.state_idle)
-            col.addContent(
-                appCard(
-                    onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
-                    label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb) },
-                    time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
-                    // Due righe: la barra della quota è più bassa di una riga di testo e lo spazio guadagnato va qui (Franz, 13/09 16:14).
-                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
-                    colors = cardColors(),
-                )
-            )
-            if (q != null) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
+        // Con il dato vecchio le età si leggono sull'istante della fotografia, non su adesso: altrimenti tutto
+        // sembrerebbe antico. La vecchiaia la dice l'etichetta in ambra (Franz, 13/09 18:27).
+        val quando = if (stale != null) state.ts else now
+        col.addContent(
+            when (val rest = TileTexts.rest(state, quando)) {
+                is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale)
+                is TileTexts.Rest.Calm -> calmCard(rest, quando, stale)
+            }
+        )
+        if (q != null) {
+            col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
+            col.addContent(quotaCard(account, q))
         }
-        if (q != null) col.addContent(quotaCard(account, q))
         return col.build()
     }
+
+    /** La sessione: chi e da quanto sopra, cosa sta facendo o cosa ha fatto sotto. Mai l'etichetta secca dello stato. */
+    private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?): LayoutElement {
+        val what = TileTexts.activity(s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle))
+        return appCard(
+            onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
+            label = {
+                if (stale != null) small(getString(R.string.tile_stale_label, stale.minutes), AMBER.argb)
+                else small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb)
+            },
+            time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
+            // Due righe: la barra della quota è più bassa di una riga di testo e lo spazio guadagnato va qui (Franz, 13/09 16:14).
+            title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
+            colors = cardColors(),
+        )
+    }
+
+    /**
+     * Niente di recente: si dice lo stato vero. Ripescare un esito di ore prima faceva sembrare la tile vecchia e
+     * inutile (Franz, 13/09 17:55).
+     */
+    private fun MaterialScope.calmCard(rest: TileTexts.Rest.Calm, now: Long, stale: Freshness.Stale?): LayoutElement = appCard(
+        onClick = clickable(launch("cmwatch://sessions"), id = "calm"),
+        label = {
+            if (stale != null) small(getString(R.string.tile_stale_label, stale.minutes), AMBER.argb)
+            else small(getString(R.string.tile_title_count, rest.sessions), LABEL.argb)
+        },
+        time = { small(rest.since?.let { Durations.since(it, now) } ?: "", colorScheme.onSurfaceVariant) },
+        title = { text(getString(R.string.tile_all_idle).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
+        colors = cardColors(),
+    )
 
     /**
      * Quota: percentuale grande e barra lineare accanto, come nell'anteprima approvata da Franz (13/09). L'anello
@@ -211,14 +234,6 @@ class CmTileService : TileService() {
                         .build()
                 ).build()
             ).build()
-
-    private fun MaterialScope.staleCard(stale: Freshness.Stale, state: State?): LayoutElement = appCard(
-        onClick = clickable(launch("cmwatch://sessions"), id = "stale"),
-        label = { small(getString(R.string.tile_stale_short), LABEL.argb) },
-        time = { small(state?.ts?.let { DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) } ?: "", colorScheme.onSurfaceVariant) },
-        title = { text(getString(R.string.tile_stale, stale.minutes).layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 2) },
-        colors = cardColors(),
-    )
 
     private fun MaterialScope.emptyCard(): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://sessions"), id = "empty"),

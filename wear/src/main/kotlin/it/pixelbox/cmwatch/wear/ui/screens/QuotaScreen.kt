@@ -21,6 +21,8 @@ import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.BriefCards
+import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
+import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.wear.ui.components.BriefCard
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
@@ -45,6 +47,8 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
         update = stringResource(R.string.brief_update), minutes = stringResource(R.string.brief_minutes),
         now = stringResource(R.string.brief_now), stopped = stringResource(R.string.brief_stopped),
     )
+    // Niente animazioni in ambient né con le animazioni di sistema spente (design, sezione 3).
+    val animate = !rememberAmbient() && !animationsOff()
     val quota = BriefCards.quota(state, labels)
     val work = BriefCards.work(state, freshness, now, labels)
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding(sides = 0.052f)) { padding ->
@@ -55,7 +59,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                 }
             }
             items(quota.size) { i ->
-                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec))
+                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
             }
             if (work.isNotEmpty()) {
                 item {
@@ -64,7 +68,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                     }
                 }
                 items(work.size) { i ->
-                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec))
+                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
                 }
             }
             if (quota.isEmpty() && work.isEmpty()) {

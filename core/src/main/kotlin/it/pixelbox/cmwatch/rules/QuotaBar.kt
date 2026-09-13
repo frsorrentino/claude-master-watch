@@ -14,7 +14,10 @@ object QuotaBar {
     fun of(pct: Int?): Spec {
         val p = (pct ?: 0).coerceIn(0, 100)
         return when {
-            p < MIN -> Spec(fill = 0, track = 100, gap = false)
+            // Zero vero: solo traccia. Una percentuale piccola ma non nulla tiene un moncone visibile, altrimenti
+            // la barra sembra rotta (visto al polso all'1 %, 13/09 17:30).
+            p == 0 -> Spec(fill = 0, track = 100, gap = false)
+            p < MIN -> Spec(fill = MIN, track = 100 - MIN, gap = true)
             p > 100 - MIN -> Spec(fill = 100, track = 0, gap = false)
             else -> Spec(fill = p, track = 100 - p, gap = true)
         }

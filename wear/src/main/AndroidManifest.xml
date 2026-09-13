@@ -58,7 +58,7 @@
         <service
             android:name=".wear.tile.CmTileService"
             android:exported="true"
-            android:icon="@drawable/ic_app_mono"
+            android:icon="@drawable/ic_tile"
             android:label="@string/tile_name"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>

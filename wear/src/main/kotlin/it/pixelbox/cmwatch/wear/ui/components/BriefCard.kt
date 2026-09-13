@@ -38,6 +38,7 @@ fun BriefCard(
     card: BriefCards.Card,
     transformation: SurfaceTransformation?,
     modifier: Modifier = Modifier,
+    animate: Boolean = true,
     onClick: () -> Unit = {},
 ) {
     val ink = if (card.tone == BriefCards.Tone.STALE) CmColors.stale else CmColors.briefBig
@@ -79,15 +80,7 @@ fun BriefCard(
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
-                Box(contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        // 44 dp con tratto da 6: le misure dell'anello del brief, lette sui suoi fotogrammi.
-                        progress = { p }, modifier = Modifier.size(48.dp), strokeWidth = 8.dp,
-                        colors = ProgressIndicatorDefaults.colors(
-                            indicatorColor = ring(card.tone), trackColor = CmColors.briefTrack,
-                        ),
-                    )
-                }
+                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate)
             }
         }
     }
@@ -105,7 +98,8 @@ private fun Pill(text: String, tone: BriefCards.Tone) {
     Box(
         Modifier.background(bg, RoundedCornerShape(percent = 50)).padding(horizontal = 12.dp, vertical = 3.dp)
     ) {
-        Text(text, style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Due righe come le pilloline del brief («1 sopra l'obiettivo»): la card cresce, il testo non si taglia.
+        Text(text, style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 

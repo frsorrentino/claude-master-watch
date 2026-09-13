@@ -26,6 +26,7 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import it.pixelbox.cmwatch.BuildConfig
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.CmdOp
+import it.pixelbox.cmwatch.rules.LaunchRules
 import it.pixelbox.cmwatch.rules.Screen
 import it.pixelbox.cmwatch.rules.ViewState
 import it.pixelbox.cmwatch.settings.Settings
@@ -175,6 +176,11 @@ class MainActivity : ComponentActivity() {
                     onFollow = { follow -> scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
                     onOutcome = { nav.go(Screen.Outcome(name)) },
                     onBackToSessions = { nav.go(Screen.Sessions) },
+                    onRelaunch = snapshot.state?.let { st ->
+                        st.sessions.firstOrNull { it.name == name }
+                            ?.let { LaunchRules.pathFor(it, st.projects) }
+                            ?.let { path -> { scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; Unit } }
+                    },
                 )
             }
             composable(Routes.QUESTION) { back ->
@@ -236,7 +242,15 @@ class MainActivity : ComponentActivity() {
                     if (r.ok) text = r.text else error = r.text
                 }
                 val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
-                TerminalScreen(name, text, loading = text == null && error == null && !failed, error = error ?: if (failed) getString(R.string.question_not_delivered) else null, onRefresh = { ask() })
+                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                TerminalScreen(
+                    name, text, loading = text == null && error == null && !failed,
+                    error = error ?: if (failed) getString(R.string.question_not_delivered) else null,
+                    onRefresh = { ask() },
+                    answer = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full,
+                    speaking = speaking,
+                    onSpeak = { t -> if (speaking) app.speaker.stop() else app.speaker.speak(t) },
+                )
             }
             composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
             composable(Routes.LAUNCH) {

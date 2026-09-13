@@ -14,10 +14,12 @@ import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
+import androidx.compose.ui.res.stringResource
+import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.rules.NameText
+import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.cmMarquee
@@ -39,12 +41,7 @@ fun SessionRow(
     ambient: Boolean = false,
     marquee: Boolean = false,
 ) {
-    val from = when (s.state) {
-        SessionState.WAITING -> s.question?.askedAt ?: s.since
-        SessionState.BUSY, SessionState.AWAITING -> s.turnStarted ?: s.since
-        else -> s.since
-    }
-    val age = if (s.state == SessionState.GONE) null else Durations.since(from, now)
+    val age = SessionsText.sub(s, now, stringResource(R.string.session_closed))
     val overflow = if (NameText.sharesPrefix(s.name, siblings)) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
     FilledTonalButton(
         onClick = onClick,
