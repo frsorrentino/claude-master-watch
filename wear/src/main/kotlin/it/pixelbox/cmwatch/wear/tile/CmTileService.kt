@@ -2,21 +2,19 @@ package it.pixelbox.cmwatch.wear.tile
 
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
-import androidx.wear.protolayout.DimensionBuilders.weight
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
-import androidx.wear.protolayout.material3.CardColors
 import androidx.wear.protolayout.material3.ColorScheme
 import androidx.wear.protolayout.material3.MaterialScope
 import androidx.wear.protolayout.material3.Typography
-import androidx.wear.protolayout.material3.buttonGroup
+import androidx.wear.protolayout.material3.appCard
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
-import androidx.wear.protolayout.material3.textDataCard
 import androidx.wear.protolayout.material3.textEdgeButton
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.types.argb
@@ -28,9 +26,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.QuotaAccount
 import it.pixelbox.cmwatch.contract.Session
+import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NameText
+import it.pixelbox.cmwatch.rules.QuotaText
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.wear.CmApp
 import it.pixelbox.cmwatch.wear.MainActivity
@@ -39,42 +40,51 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Tile con l'anatomia standard di Wear OS (Franz via la master, 13/09 10:50): `primaryLayout` con i tre slot sempre
- * presenti e un `textEdgeButton` curvo in fondo. Tre stati: domanda aperta (badge + nome, testo della domanda, attesa,
- * «Rispondi»); nessuna domanda (contatori in `textDataCard` affiancate, «Sessioni»); PC fermo («Sessioni»).
- * Colori dai ruoli M3 della tile; i nostri restano dove significano qualcosa (ambra della domanda).
+ * Tile costruita sull'anatomia della tile di Gmail (letta dalla sua anteprima, 13/09): card `appCard` da due righe
+ * (chi e quando sopra, cosa sotto) e un `textEdgeButton` pastello con testo scuro che porta anche il conteggio.
+ * Contenuti scelti da Franz: la domanda quando c'è (proposta 1), altrimenti l'ultima attività (3) e la quota (4).
  */
 class CmTileService : TileService() {
 
+    /** Ruoli M3 in tema scuro: il primario è la tinta chiara, il testo sopra è scuro (come l'EdgeButton di Gmail). */
     private val scheme = ColorScheme(
-        primary = 0xFF4C7DFF.toInt().argb, onPrimary = 0xFFFFFFFF.toInt().argb,
+        primary = 0xFFA8C7FA.toInt().argb, onPrimary = 0xFF0A2050.toInt().argb,
         primaryContainer = 0xFF2B4A9E.toInt().argb, onPrimaryContainer = 0xFFDCE6FF.toInt().argb,
-        surfaceContainer = 0xFF23272E.toInt().argb, onSurface = 0xFFF2F4F7.toInt().argb, onSurfaceVariant = 0xFF9AA3B2.toInt().argb,
-        background = 0xFF000000.toInt().argb, onBackground = 0xFFF2F4F7.toInt().argb,
+        surfaceContainer = 0xFF29303D.toInt().argb, surfaceContainerLow = 0xFF23272E.toInt().argb,
+        onSurface = 0xFFEBF1FF.toInt().argb, onSurfaceVariant = 0xFF9AA8BE.toInt().argb,
+        background = 0xFF000000.toInt().argb, onBackground = 0xFFEBF1FF.toInt().argb,
     )
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> =
         CallbackToFutureAdapter.getFuture { completer ->
             val app = application as CmApp
             val snap = app.repo.snapshot.value
-            val seen = kotlinx.coroutines.runBlocking { app.prefs.current().seenQuestions }
+            val prefs = kotlinx.coroutines.runBlocking { app.prefs.current() }
             val state = snap.state
             val stale = snap.freshness as? Freshness.Stale
             val now = System.currentTimeMillis() / 1000
-            val question = if (stale == null) state?.sessions?.firstOrNull { s -> s.question?.let { it.id !in seen } == true } else null
+            val question = if (stale == null) state?.sessions?.firstOrNull { s -> s.question?.let { it.id !in prefs.seenQuestions } == true } else null
+            val edge = TileTexts.edge(state, snap.freshness, prefs.seenQuestions)
 
             val root = try {
                 materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
-                    when {
-                        question != null -> questionLayout(question, now)
-                        stale != null -> staleLayout(stale, state, now)
-                        state == null || state.sessions.isEmpty() -> emptyLayout()
-                        else -> countersLayout(state, seen)
-                    }
+                    primaryLayout(
+                        mainSlot = {
+                            when {
+                                question != null -> questionCard(question, now)
+                                stale != null -> staleCard(stale, state)
+                                state == null || state.sessions.isEmpty() -> emptyCard()
+                                else -> restCards(state, now, prefs.complicationAccount)
+                            }
+                        },
+                        bottomSlot = { edgeButton(edge, question?.name) },
+                    )
                 }
             } catch (e: Exception) {
                 android.util.Log.w("cmwatch", "tile layout failed, fallback", e)
-                materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) { emptyLayout() }
+                materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
+                    primaryLayout(mainSlot = { emptyCard() }, bottomSlot = { edgeButton(TileTexts.Edge(TileTexts.Edge.Kind.SESSIONS, 0), null) })
+                }
             }
 
             completer.set(
@@ -87,67 +97,73 @@ class CmTileService : TileService() {
             "tile"
         }
 
-    /** Stato 1: la domanda è l'unica cosa che conta. */
-    private fun MaterialScope.questionLayout(s: Session, now: Long): LayoutElement = primaryLayout(
-        titleSlot = { title("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 20)}") },
-        mainSlot = {
-            LayoutElementBuilders.Column.Builder().setWidth(expand()).setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                .addContent(text(s.question!!.text.layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 3, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
-                .addContent(text(TileTexts.waitingFor(s, now, getString(R.string.tile_waiting_for)).layoutString, typography = Typography.BODY_MEDIUM, color = 0xFFFFB020.toInt().argb, maxLines = 1))
-                .build()
-        },
-        bottomSlot = { edge(R.string.card_reply, "cmwatch://question/${s.name}") },
+    /** La domanda: chi e da quanto sopra, il testo intero sotto. */
+    private fun MaterialScope.questionCard(s: Session, now: Long): LayoutElement = appCard(
+        onClick = clickable(launch("cmwatch://question/${s.name}"), id = "q"),
+        label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 14)}", colorScheme.onSurfaceVariant) },
+        time = { small(Durations.since(s.question?.askedAt ?: s.since, now), AMBER.argb) },
+        title = { text(s.question!!.text.layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 3) },
+        height = expand(),
     )
 
-    /** Stato 2: quante sessioni e in che stato, in card affiancate. */
-    private fun MaterialScope.countersLayout(state: State, seen: Set<String>): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.sessions_title)) },
-        mainSlot = {
-            val cards = TileTexts.cards(state, seen)
-            buttonGroup(width = expand(), height = expand(), spacing = 4f) {
-                for (c in cards) buttonGroupItem {
-                    textDataCard(
-                        onClick = clickable(launch("cmwatch://sessions"), id = c.kind.name),
-                        width = weight(1f), height = expand(),
-                        colors = CardColors(backgroundColor = colorScheme.surfaceContainer, titleColor = colorScheme.onSurface, contentColor = colorScheme.onSurfaceVariant),
-                        title = { text(c.count.toString().layoutString, typography = Typography.NUMERAL_LARGE, color = colorScheme.onSurface) },
-                        content = { text(getString(label(c.kind)).layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 1) },
-                    )
-                }
-            }
-        },
-        bottomSlot = { edge(R.string.tile_sessions, "cmwatch://sessions") },
+    /** A riposo: l'ultima attività e la quota, due card come le due mail di Gmail. */
+    private fun MaterialScope.restCards(state: State, now: Long, account: String): LayoutElement {
+        val s = state.sessions.firstOrNull { it.followed && it.state != SessionState.GONE }
+            ?: state.sessions.firstOrNull { it.state == SessionState.BUSY || it.state == SessionState.AWAITING }
+            ?: state.sessions.filter { it.state != SessionState.GONE }.maxByOrNull { maxOf(it.since, it.turnStarted ?: 0, it.outcome?.at ?: 0) }
+        val q = state.quota[account]
+        val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
+        if (s != null) {
+            val busy = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
+            val what = if (busy) s.tool ?: getString(R.string.state_busy) else s.outcome?.short ?: getString(R.string.state_idle)
+            col.addContent(
+                appCard(
+                    onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
+                    label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 14)}", colorScheme.onSurfaceVariant) },
+                    time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
+                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
+                )
+            )
+            if (q != null) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(6f)).build())
+        }
+        if (q != null) col.addContent(quotaCard(account, q))
+        return col.build()
+    }
+
+    private fun MaterialScope.quotaCard(account: String, q: QuotaAccount): LayoutElement = appCard(
+        onClick = clickable(launch("cmwatch://quota"), id = "quota"),
+        label = { small(getString(R.string.tile_quota_label, account), colorScheme.onSurfaceVariant) },
+        time = { small(q.resetW7?.let { getString(R.string.quota_reset) + " " + DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) } ?: "", colorScheme.onSurfaceVariant) },
+        title = { text((q.h5?.let { "$it %" } ?: "—").layoutString, typography = Typography.NUMERAL_SMALL, color = colorScheme.onSurface, maxLines = 1) },
     )
 
-    /** Stato 3: il PC non batte più. */
-    private fun MaterialScope.staleLayout(stale: Freshness.Stale, state: State?, now: Long): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.sessions_title)) },
-        mainSlot = {
-            val last = state?.ts?.let { DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
-            LayoutElementBuilders.Column.Builder().setWidth(expand()).setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                .addContent(text(getString(R.string.tile_stale_short).layoutString, typography = Typography.DISPLAY_SMALL, color = colorScheme.onSurface, maxLines = 1))
-                .addContent(text(getString(R.string.tile_stale_detail, Durations.since(0, stale.minutes * 60L), last ?: "—").layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER))
-                .build()
-        },
-        bottomSlot = { edge(R.string.tile_sessions, "cmwatch://sessions") },
+    private fun MaterialScope.staleCard(stale: Freshness.Stale, state: State?): LayoutElement = appCard(
+        onClick = clickable(launch("cmwatch://sessions"), id = "stale"),
+        label = { small(getString(R.string.tile_stale_short), colorScheme.onSurfaceVariant) },
+        time = { small(state?.ts?.let { DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) } ?: "", colorScheme.onSurfaceVariant) },
+        title = { text(getString(R.string.tile_stale, stale.minutes).layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 2) },
+        height = expand(),
     )
 
-    private fun MaterialScope.emptyLayout(): LayoutElement = primaryLayout(
-        titleSlot = { title(getString(R.string.sessions_title)) },
-        mainSlot = { text(getString(R.string.sessions_empty).layoutString, typography = Typography.TITLE_LARGE, color = colorScheme.onSurfaceVariant, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER) },
-        bottomSlot = { edge(R.string.tile_sessions, "cmwatch://sessions") },
+    private fun MaterialScope.emptyCard(): LayoutElement = appCard(
+        onClick = clickable(launch("cmwatch://sessions"), id = "empty"),
+        label = { small(getString(R.string.sessions_title), colorScheme.onSurfaceVariant) },
+        title = { text(getString(R.string.sessions_empty).layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 2) },
+        height = expand(),
     )
 
-    private fun MaterialScope.title(s: String): LayoutElement =
-        text(s.layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 1)
+    private fun MaterialScope.small(s: String, color: androidx.wear.protolayout.types.LayoutColor): LayoutElement =
+        text(s.layoutString, typography = Typography.BODY_SMALL, color = color, maxLines = 1)
 
-    private fun MaterialScope.edge(label: Int, uri: String): LayoutElement =
-        textEdgeButton(onClick = clickable(launch(uri), id = "edge"), labelContent = { text(getString(label).layoutString) })
-
-    private fun label(k: TileTexts.Card.Kind) = when (k) {
-        TileTexts.Card.Kind.ACTIVE -> R.string.tile_card_active
-        TileTexts.Card.Kind.IDLE -> R.string.tile_card_idle
-        TileTexts.Card.Kind.GONE -> R.string.tile_card_gone
+    private fun MaterialScope.edgeButton(edge: TileTexts.Edge, questionSession: String?): LayoutElement {
+        val label = when (edge.kind) {
+            TileTexts.Edge.Kind.REPLY -> getString(R.string.card_reply)
+            TileTexts.Edge.Kind.QUESTIONS -> getString(R.string.tile_edge_questions, edge.count)
+            TileTexts.Edge.Kind.ACTIVE -> getString(R.string.tile_edge_active, edge.count)
+            TileTexts.Edge.Kind.SESSIONS -> getString(R.string.tile_sessions)
+        }
+        val uri = if (edge.kind == TileTexts.Edge.Kind.REPLY && questionSession != null) "cmwatch://question/$questionSession" else "cmwatch://sessions"
+        return textEdgeButton(onClick = clickable(launch(uri), id = "edge"), labelContent = { text(label.layoutString) })
     }
 
     private fun launch(uri: String): ActionBuilders.LaunchAction = ActionBuilders.LaunchAction.Builder()
@@ -160,7 +176,8 @@ class CmTileService : TileService() {
         CallbackToFutureAdapter.getFuture { c -> c.set(ResourceBuilders.Resources.Builder().setVersion(RESOURCES).build()); "res" }
 
     companion object {
-        const val RESOURCES = "7"
+        const val RESOURCES = "8"
+        private const val AMBER = 0xFFFFB020.toInt()
         fun requestUpdate(app: CmApp) = getUpdater(app).requestUpdate(CmTileService::class.java)
     }
 }

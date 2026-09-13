@@ -25,6 +25,19 @@ object TileTexts {
         return listOf(Card(Card.Kind.ACTIVE, active), Card(Card.Kind.IDLE, idle), Card(Card.Kind.GONE, gone)).filter { it.count > 0 }.take(3)
     }
 
+    /** Etichetta del bottone di bordo, che porta anche il conteggio (come «2 new» della tile di Gmail). */
+    data class Edge(val kind: Kind, val count: Int) { enum class Kind { REPLY, QUESTIONS, ACTIVE, SESSIONS } }
+
+    fun edge(state: State?, freshness: Freshness, seen: Set<String>): Edge {
+        if (state == null || freshness is Freshness.Stale) return Edge(Edge.Kind.SESSIONS, 0)
+        val questions = state.sessions.count { s -> s.question?.let { it.id !in seen } == true }
+        if (questions == 1) return Edge(Edge.Kind.REPLY, 1)
+        if (questions > 1) return Edge(Edge.Kind.QUESTIONS, questions)
+        // «attive» ha lo stesso significato delle card: né ferme né sparite (una domanda già vista resta attiva).
+        val active = state.sessions.count { it.state == SessionState.BUSY || it.state == SessionState.AWAITING || it.state == SessionState.WAITING }
+        return if (active > 0) Edge(Edge.Kind.ACTIVE, active) else Edge(Edge.Kind.SESSIONS, 0)
+    }
+
     /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
     fun badge(s: Session): String = s.icon?.takeIf { it.isNotBlank() } ?: if (s.question != null) "❓" else icon(s.state)
 
