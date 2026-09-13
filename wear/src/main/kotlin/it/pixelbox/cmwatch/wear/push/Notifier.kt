@@ -31,7 +31,7 @@ private fun optionIcon(n: Int) = when (n) {
 
 /**
  * Notifiche native al 100 % (specifica di Franz, 12/09): conversazione per sessione (MessagingStyle + shortcut), chip di
- * risposta (RemoteInput.setChoices + smart reply), azioni dirette per le prime due opzioni, aggiornamento in place
+ * risposta (RemoteInput.setChoices, senza risposte generate), azioni dirette per le prime due opzioni, aggiornamento in place
  * («✓ 1 · yes inviato» → «✓ confermato» → chiusa; «✗ non consegnato · Riprova»), cronometro sulla domanda, gruppo con
  * summary, canali solo vibrazione, dismiss = «visto». Una notifica per sessione (id = hash del nome), mai accumulata.
  */
@@ -130,7 +130,9 @@ class Notifier(private val ctx: Context) {
                 .setShowsUserInterface(false).build())
             Act.Reply -> b.addAction(NotificationCompat.Action.Builder(R.drawable.ic_reply, labels.reply, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
                 .addRemoteInput(RemoteInput.Builder(ReplyReceiver.TEXT).setLabel(labels.reply).setChoices(plan.choices.toTypedArray()).setAllowFreeFormInput(plan.freeForm).build())
-                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).setAllowGeneratedReplies(true).setShowsUserInterface(false).build())
+                // Niente risposte generate da Wear OS: su una domanda a opzioni proponeva frasi inventate come «Ok, provo»
+                // e Franz non capiva da dove venissero (13/09 20:02). Le scelte sono quelle vere della domanda.
+                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).setAllowGeneratedReplies(false).setShowsUserInterface(false).build())
             Act.Open -> b.addAction(NotificationCompat.Action.Builder(R.drawable.ic_open, labels.open, open("cmwatch://question/${s.name}", id(s.name) * 10 + 9))
                 .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).build())
             else -> Unit
