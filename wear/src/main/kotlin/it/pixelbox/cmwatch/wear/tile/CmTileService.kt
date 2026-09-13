@@ -74,11 +74,11 @@ class CmTileService : TileService() {
                 g.accent == TileTexts.Accent.QUESTION -> getString(R.string.tile_label_question)
                 else -> getString(R.string.tile_label_last)
             }
-            val root = materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
+            val root = try { materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
                 primaryLayout(
                     titleSlot = {
                         LayoutElementBuilders.Column.Builder().setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                            .addContent(icon(APP_ICON_RES, APP_ICON, dp(22f), dp(22f), colorScheme.onSurface))
+                            .addContent(LayoutElementBuilders.Image.Builder().setResourceId(APP_ICON).setWidth(dp(24f)).setHeight(dp(24f)).build())
                             .addContent(text(getString(R.string.sessions_title).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onSurface, maxLines = 1))
                             .build()
                     },
@@ -107,6 +107,16 @@ class CmTileService : TileService() {
                             .build()
                     },
                 )
+            } } catch (e: Exception) {
+                // Mai una tile nera: layout di riserva testuale e log dell'errore (Franz, 13/09 01:40).
+                android.util.Log.w("cmwatch", "tile layout failed, fallback", e)
+                materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
+                    primaryLayout(
+                        titleSlot = { text(getString(R.string.sessions_title).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onSurface, maxLines = 1) },
+                        mainSlot = { text((g.name ?: g.body).layoutString, typography = Typography.TITLE_MEDIUM, color = accent, maxLines = 3, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER) },
+                        bottomSlot = { text(g.body.layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurface, maxLines = 2, alignment = LayoutElementBuilders.TEXT_ALIGN_CENTER) },
+                    )
+                }
             }
             val tile = TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES)
@@ -141,10 +151,10 @@ class CmTileService : TileService() {
         }
 
     companion object {
-        const val RESOURCES = "3"
+        const val RESOURCES = "4"
         const val APP_ICON = "app"
         val APP_ICON_RES: ResourceBuilders.ImageResource = ResourceBuilders.ImageResource.Builder()
-            .setAndroidResourceByResId(ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_notification).build()).build()
+            .setAndroidResourceByResId(ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_tile).build()).build()
         fun requestUpdate(app: CmApp) = getUpdater(app).requestUpdate(CmTileService::class.java)
     }
 }
