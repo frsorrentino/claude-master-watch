@@ -13,7 +13,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
-import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import it.pixelbox.cmwatch.R
@@ -49,6 +48,7 @@ class Notifier(private val ctx: Context) {
     )
 
     fun ensureChannels() {
+        cleanShortcuts()
         val nm = ctx.getSystemService(NotificationManager::class.java)
         fun ch(id: String, name: Int, importance: Int, pattern: LongArray?) = NotificationChannel(id, ctx.getString(name), importance).apply {
             setSound(null, null)
@@ -79,14 +79,22 @@ class Notifier(private val ctx: Context) {
     private fun person(name: String, s: Session?, state: SessionState?): Person =
         Person.Builder().setName(name).setKey(name).setIcon(IconCompat.createWithBitmap(s?.let { badge(it) } ?: Glyphs.state(ctx, state))).setImportant(true).build()
 
-    private fun shortcut(session: String, state: SessionState?, person: Person) {
+    /**
+     * Le scorciatoie di conversazione (una per sessione) finivano nel carosello «Recenti» di Wear OS come se fossero
+     * app: Franz ne vedeva due, «claude-master» con il badge ambra e «Claude Master» con l'icona vera, e sembrava un
+     * residuo (13/09 20:16). Verificato con `dumpsys shortcut`: erano scorciatoie dinamiche, non un secondo task.
+     * Non se ne registrano più, e quelle vecchie si cancellano all'avvio: lo stile conversazione della notifica resta,
+     * si perde solo il raggruppamento fra le conversazioni di sistema, che al polso non si vede.
+     */
+    private fun cleanShortcuts() {
         runCatching {
-            val info = ShortcutInfoCompat.Builder(ctx, session)
-                .setShortLabel(session).setLongLived(true).setPerson(person)
-                .setIcon(IconCompat.createWithBitmap(Glyphs.state(ctx, state)))
-                .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse("cmwatch://session/$session")).setPackage(ctx.packageName))
-                .build()
-            ShortcutManagerCompat.pushDynamicShortcut(ctx, info)
+            // Le dinamiche si cancellano, ma quelle già usate da una notifica restano in cache («Ic-fStrLiv» nel
+            // dump): per quelle serve togliere il vincolo di durata, altrimenti la voce resta nel carosello.
+            val ids = ShortcutManagerCompat.getShortcuts(
+                ctx, ShortcutManagerCompat.FLAG_MATCH_DYNAMIC or ShortcutManagerCompat.FLAG_MATCH_CACHED,
+            ).map { it.id }
+            if (ids.isNotEmpty()) ShortcutManagerCompat.removeLongLivedShortcuts(ctx, ids)
+            ShortcutManagerCompat.removeAllDynamicShortcuts(ctx)
         }
     }
 
@@ -116,12 +124,11 @@ class Notifier(private val ctx: Context) {
         lastQuestion[s.name] = q.id to q.text
         val me = Person.Builder().setName(ctx.getString(R.string.notif_me)).setKey("me").build()
         val them = person(plan.person ?: s.name, s, SessionState.WAITING)
-        shortcut(s.name, SessionState.WAITING, them)
         val style = NotificationCompat.MessagingStyle(me).setConversationTitle(plan.title)
         val hist = history[s.name].orEmpty()
         hist.forEach { style.addMessage("❓ ${it.question}", it.at * 1000, them).addMessage(it.answer, it.at * 1000 + 1, me) }
         style.addMessage(q.text, q.askedAt * 1000, them)
-        val b = base(plan).setLargeIcon(badge(s)).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE).setShortcutId(s.name)
+        val b = base(plan).setLargeIcon(badge(s)).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentText(q.text)
             .setContentIntent(open("cmwatch://question/${s.name}", id(s.name)))
             .setDeleteIntent(broadcast(ReplyReceiver.ACTION_SEEN, s.name, id(s.name) * 10 + 8) { putExtra(ReplyReceiver.QUESTION_ID, q.id) })
