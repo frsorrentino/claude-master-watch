@@ -14,6 +14,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.Screen
@@ -38,6 +39,13 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
     val canScroll = !ambient && !animationsOff()
     val stale = snapshot.freshness as? Freshness.Stale
     val firstRow = 1 + (if (stale != null) 1 else 0)
+    val tools = ToolText.Labels(
+        run = stringResource(R.string.tool_run), read = stringResource(R.string.tool_read),
+        edit = stringResource(R.string.tool_edit), write = stringResource(R.string.tool_write),
+        search = stringResource(R.string.tool_search), web = stringResource(R.string.tool_web),
+        message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
+        plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
+    )
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -57,7 +65,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 SessionRow(
                     s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec),
                     modifier = Modifier.transformedHeight(this, spec), siblings = names, ambient = ambient,
-                    marquee = canScroll && center == firstRow + i,
+                    marquee = canScroll && center == firstRow + i, tools = tools,
                 )
             }
             // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.
