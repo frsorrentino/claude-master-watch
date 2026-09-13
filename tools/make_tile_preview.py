@@ -56,13 +56,15 @@ def main():
     right("2 m", 76, font(20), SEC, S - 38)
     d.text((38, 112), "Bash pytest -q tests", font=font(24), fill=TXT)
 
-    # card 2: quota
-    d.rounded_rectangle((14, 170, S - 14, 276), radius=40, fill=CARD)
+    # card 2: quota, con la barra lineare (percentuale della finestra di 5 ore)
+    d.rounded_rectangle((14, 170, S - 14, 272), radius=40, fill=CARD)
     d.text((38, 186), "Quota personale", font=font(20), fill=LABEL)
     right("reset 15:20", 186, font(18), SEC, S - 38)
-    d.text((38, 220), "24 %", font=font(30), fill=TXT)
-    d.rounded_rectangle((150, 230, S - 38, 244), radius=7, fill=(60, 68, 82, 255))
-    d.rounded_rectangle((150, 230, 150 + int((S - 188) * 0.24), 244), radius=7, fill=EDGE)
+    d.text((38, 218), "24 %", font=font(28), fill=TXT)
+    bar_x0, bar_x1, gap, pct = 140, S - 38, 6, 0.24
+    fill_w = int((bar_x1 - bar_x0 - gap) * pct)
+    d.rounded_rectangle((bar_x0, 228, bar_x0 + fill_w, 244), radius=8, fill=EDGE)
+    d.rounded_rectangle((bar_x0 + fill_w + gap, 228, bar_x1, 244), radius=8, fill=(60, 68, 82, 255))
 
     # bottone di bordo
     d.ellipse((52, S - 70, S - 52, S + 48), fill=EDGE)

@@ -2,8 +2,11 @@ package it.pixelbox.cmwatch.wear.tile
 
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
+import androidx.wear.protolayout.DimensionBuilders.weight
+import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.ResourceBuilders
@@ -13,14 +16,13 @@ import androidx.wear.protolayout.material3.ColorScheme
 import androidx.wear.protolayout.material3.MaterialScope
 import androidx.wear.protolayout.material3.Typography
 import androidx.wear.protolayout.material3.appCard
-import androidx.wear.protolayout.material3.circularProgressIndicator
-import androidx.wear.protolayout.material3.graphicDataCard
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.PrimaryLayoutMargins
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
 import androidx.wear.protolayout.material3.textEdgeButton
 import androidx.wear.protolayout.modifiers.clickable
+import androidx.wear.protolayout.types.LayoutColor
 import androidx.wear.protolayout.types.argb
 import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders
@@ -35,7 +37,7 @@ import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NameText
-import it.pixelbox.cmwatch.rules.QuotaText
+import it.pixelbox.cmwatch.rules.QuotaBar
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.wear.CmApp
 import it.pixelbox.cmwatch.wear.MainActivity
@@ -144,7 +146,7 @@ class CmTileService : TileService() {
                     onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
                     label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb) },
                     time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
-                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
+                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
                     colors = cardColors(),
                 )
             )
@@ -154,20 +156,60 @@ class CmTileService : TileService() {
         return col.build()
     }
 
-    /** Quota con l'anello, come il disegno approvato: cerchio a sinistra, percentuale e reset accanto. */
-    private fun MaterialScope.quotaCard(account: String, q: QuotaAccount): LayoutElement = graphicDataCard(
+    /**
+     * Quota: percentuale grande e barra lineare accanto, come nell'anteprima approvata da Franz (13/09). L'anello
+     * stava dentro una `graphicDataCard`, più alta della card di Gmail, e faceva tagliare la seconda card.
+     */
+    private fun MaterialScope.quotaCard(account: String, q: QuotaAccount): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://quota"), id = "quota"),
-        graphic = { circularProgressIndicator(staticProgress = QuotaText.fraction(q.h5), size = dp(52f), strokeWidth = 6f) },
-        title = { text((q.h5?.let { "$it %" } ?: "—").layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 1) },
-        content = {
+        label = { small(getString(R.string.tile_quota_label, account), LABEL.argb) },
+        time = {
             small(
-                q.resetW7?.let { DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
-                    ?.let { getString(R.string.tile_quota_reset, account, it) } ?: account,
+                q.resetW7?.let { getString(R.string.tile_quota_reset_at, HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()))) } ?: "",
                 colorScheme.onSurfaceVariant,
             )
         },
+        title = {
+            LayoutElementBuilders.Row.Builder()
+                .setWidth(expand())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                .addContent(
+                    text(
+                        getString(R.string.tile_quota_pct, q.h5 ?: 0).layoutString,
+                        typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 1,
+                    )
+                )
+                .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(10f)).build())
+                .addContent(bar(q.h5))
+                .build()
+        },
         colors = cardColors(),
     )
+
+    /**
+     * Barra lineare della quota. ProtoLayout Material 3 1.4.2 ha solo l'indicatore circolare, quindi la barra è una
+     * riga di due pilloline pesate — riempita e traccia — con lo stacco in mezzo come negli indicatori lineari M3.
+     */
+    private fun MaterialScope.bar(pct: Int?): LayoutElement {
+        val spec = QuotaBar.of(pct)
+        val row = LayoutElementBuilders.Row.Builder().setWidth(expand()).setHeight(dp(BAR_H))
+        if (spec.fill > 0) row.addContent(pill(weight(spec.fill.toFloat()), colorScheme.primary))
+        if (spec.gap) row.addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(4f)).build())
+        if (spec.track > 0) row.addContent(pill(weight(spec.track.toFloat()), TRACK.argb))
+        return row.build()
+    }
+
+    private fun pill(width: DimensionBuilders.ExpandedDimensionProp, color: LayoutColor): LayoutElement =
+        LayoutElementBuilders.Box.Builder()
+            .setWidth(width).setHeight(dp(BAR_H))
+            .setModifiers(
+                ModifiersBuilders.Modifiers.Builder().setBackground(
+                    ModifiersBuilders.Background.Builder()
+                        .setColor(color.prop)
+                        .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(BAR_H / 2f)).build())
+                        .build()
+                ).build()
+            ).build()
 
     private fun MaterialScope.staleCard(stale: Freshness.Stale, state: State?): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://sessions"), id = "stale"),
@@ -208,9 +250,12 @@ class CmTileService : TileService() {
         CallbackToFutureAdapter.getFuture { c -> c.set(ResourceBuilders.Resources.Builder().setVersion(RESOURCES).build()); "res" }
 
     companion object {
-        const val RESOURCES = "12"
+        const val RESOURCES = "14"
         private const val AMBER = 0xFFFFB020.toInt()
         private const val LABEL = 0xFFD3E3FD.toInt()   // mittente di Gmail: 10,1:1 sulla card
+        private const val TRACK = 0xFF3C4452.toInt()   // traccia della barra: visibile sulla card #2A313C
+        private const val BAR_H = 10f
+        private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
         fun requestUpdate(app: CmApp) = getUpdater(app).requestUpdate(CmTileService::class.java)
     }
 }
