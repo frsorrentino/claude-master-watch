@@ -91,7 +91,7 @@ class Notifier(private val ctx: Context) {
     }
 
     private fun base(plan: NotificationPlan.Plan): NotificationCompat.Builder = NotificationCompat.Builder(ctx, plan.channel)
-        .setSmallIcon(R.drawable.ic_notification)
+        .setSmallIcon(R.drawable.ic_app_mono)
         .setColor(0xFF4C7DFF.toInt())
         .setContentTitle(plan.title)
         .setSubText(plan.subText)
@@ -165,7 +165,7 @@ class Notifier(private val ctx: Context) {
     }
 
     private fun simple(session: String, channel: String, text: String, accent: SessionState) = NotificationCompat.Builder(ctx, channel)
-        .setSmallIcon(R.drawable.ic_notification).setColor(0xFF4C7DFF.toInt()).setContentTitle(session).setContentText(text)
+        .setSmallIcon(R.drawable.ic_app_mono).setColor(0xFF4C7DFF.toInt()).setContentTitle(session).setContentText(text)
         .setLargeIcon(Glyphs.state(ctx, accent)).setOnlyAlertOnce(true).setLocalOnly(true).setGroup(NotificationPlan.GROUP).setSound(null)
         .setContentIntent(open("cmwatch://session/$session", id(session)))
 
@@ -196,7 +196,7 @@ class Notifier(private val ctx: Context) {
         val s = NotificationPlan.summary(state, labels)
         val style = NotificationCompat.InboxStyle().setBigContentTitle(s.title)
         s.rows.forEach { style.addLine(it) }
-        post(SUMMARY_ID, NotificationCompat.Builder(ctx, NotificationPlan.CH_OUTCOMES).setSmallIcon(R.drawable.ic_notification).setColor(0xFF4C7DFF.toInt())
+        post(SUMMARY_ID, NotificationCompat.Builder(ctx, NotificationPlan.CH_OUTCOMES).setSmallIcon(R.drawable.ic_app_mono).setColor(0xFF4C7DFF.toInt())
             .setContentTitle(s.title).setStyle(style).setGroup(NotificationPlan.GROUP).setGroupSummary(true).setLocalOnly(true).setOnlyAlertOnce(true).setSound(null)
             .setContentIntent(open("cmwatch://sessions", SUMMARY_ID)))
     }

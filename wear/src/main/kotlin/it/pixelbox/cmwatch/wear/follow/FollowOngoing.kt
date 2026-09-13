@@ -27,10 +27,10 @@ class FollowOngoing(private val ctx: Context) {
         if (promoted(s.name, FollowRules.status(s, now))) { shownFor = s.name; return }
         val tap = PendingIntent.getActivity(ctx, ID, Intent(Intent.ACTION_VIEW, Uri.parse("cmwatch://session/${s.name}")).setPackage(ctx.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val builder = NotificationCompat.Builder(ctx, Notifier.CHANNEL_FOLLOW)
-            .setSmallIcon(R.drawable.ic_notification).setContentTitle(FollowRules.status(s, now)).setOngoing(true).setContentIntent(tap)
+            .setSmallIcon(R.drawable.ic_app_mono).setContentTitle(FollowRules.status(s, now)).setOngoing(true).setContentIntent(tap)
             .setPriority(NotificationCompat.PRIORITY_LOW).setCategory(NotificationCompat.CATEGORY_STATUS)
         OngoingActivity.Builder(ctx, ID, builder)
-            .setStaticIcon(R.drawable.ic_notification)
+            .setStaticIcon(R.drawable.ic_app_mono)
             .setStatus(Status.Builder().addTemplate(FollowRules.status(s, now)).build())
             .setTouchIntent(tap)
             .build().apply(ctx)
@@ -44,7 +44,7 @@ class FollowOngoing(private val ctx: Context) {
         return runCatching {
             val tap = PendingIntent.getActivity(ctx, ID, Intent(Intent.ACTION_VIEW, Uri.parse("cmwatch://session/$session")).setPackage(ctx.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val b = android.app.Notification.Builder(ctx, Notifier.CHANNEL_FOLLOW)
-                .setSmallIcon(R.drawable.ic_notification).setContentTitle(status).setOngoing(true).setContentIntent(tap)
+                .setSmallIcon(R.drawable.ic_app_mono).setContentTitle(status).setOngoing(true).setContentIntent(tap)
             val styleClass = Class.forName("android.app.Notification\$ProgressStyle")
             val style = styleClass.getDeclaredConstructor().newInstance()
             styleClass.getMethod("setProgressIndeterminate", Boolean::class.javaPrimitiveType).invoke(style, true)

@@ -45,7 +45,7 @@
         <service
             android:name=".wear.complication.CmComplicationService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_app_mono"
             android:label="@string/complication_name"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
@@ -58,7 +58,7 @@
         <service
             android:name=".wear.tile.CmTileService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_app_mono"
             android:label="@string/tile_name"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>

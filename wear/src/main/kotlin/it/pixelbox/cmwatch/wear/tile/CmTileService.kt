@@ -8,6 +8,7 @@ import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.material3.CardColors
 import androidx.wear.protolayout.material3.ColorScheme
 import androidx.wear.protolayout.material3.MaterialScope
 import androidx.wear.protolayout.material3.Typography
@@ -108,6 +109,7 @@ class CmTileService : TileService() {
                     textDataCard(
                         onClick = clickable(launch("cmwatch://sessions"), id = c.kind.name),
                         width = weight(1f), height = expand(),
+                        colors = CardColors(backgroundColor = colorScheme.surfaceContainer, titleColor = colorScheme.onSurface, contentColor = colorScheme.onSurfaceVariant),
                         title = { text(c.count.toString().layoutString, typography = Typography.NUMERAL_LARGE, color = colorScheme.onSurface) },
                         content = { text(getString(label(c.kind)).layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = 1) },
                     )
@@ -158,7 +160,7 @@ class CmTileService : TileService() {
         CallbackToFutureAdapter.getFuture { c -> c.set(ResourceBuilders.Resources.Builder().setVersion(RESOURCES).build()); "res" }
 
     companion object {
-        const val RESOURCES = "6"
+        const val RESOURCES = "7"
         fun requestUpdate(app: CmApp) = getUpdater(app).requestUpdate(CmTileService::class.java)
     }
 }

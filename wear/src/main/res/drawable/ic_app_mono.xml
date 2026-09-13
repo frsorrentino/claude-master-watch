@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glifo monocromo dell'app (raggiera Claude): icona della tile, della complication e delle notifiche.
+     Prima c'era ic_notification, che è un punto interrogativo: Wear OS lo mostrava sopra la tile e sembrava un segnaposto. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="48" android:viewportHeight="48">
+    <group android:translateX="24" android:translateY="24">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" />
+        <group android:rotation="30"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="60"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="90"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="120"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="150"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="180"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="210"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="240"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="270"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="300"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <group android:rotation="330"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
+        <path android:fillColor="#FFFFFFFF" android:pathData="M-5,0 A5,5 0 1 1 5,0 A5,5 0 1 1 -5,0 Z" />
+    </group>
+</vector>
