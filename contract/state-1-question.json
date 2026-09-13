@@ -28,6 +28,7 @@
       },
       "outcome": null,
       "next": "Wait for the go",
+      "next_at": 1789171200,
       "icon": "🟦",
       "color": "#3B82F6"
     },
@@ -50,6 +51,7 @@
         "at": 1789210300
       },
       "next": "Rivedere i seed e la pagina admin",
+      "next_at": 1789171200,
       "icon": "🟢",
       "color": "#2ECC71"
     },
@@ -68,6 +70,7 @@
       "question": null,
       "outcome": {"short": "README riscritto", "full": "Esito: README riscritto con le tre sezioni chieste.", "at": 1789121000},
       "next": null,
+      "next_at": null,
       "icon": "🟡",
       "color": "#F4D03F"
     },
@@ -86,6 +89,7 @@
       "question": null,
       "outcome": null,
       "next": "Riprendere la pagina prezzi",
+      "next_at": 1789171200,
       "icon": "🟪",
       "color": "#9B59B6"
     }

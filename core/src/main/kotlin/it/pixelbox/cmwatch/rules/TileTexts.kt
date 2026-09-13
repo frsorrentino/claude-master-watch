@@ -58,10 +58,15 @@ object TileTexts {
      * congelata con lo stesso testo mentre scorreva solo il minuto (Franz, 13/09 18:23).
      * Il testo si taglia alla prima frase, così non finisce dentro una parentesi aperta.
      */
-    fun activity(s: Session, busy: Boolean, running: String, idle: String): String {
+    fun activity(s: Session, busy: Boolean, running: String, idle: String, now: Long = 0L): String {
         val tool = s.tool?.trim()?.takeIf { it.isNotEmpty() }
         val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
-        val prossimo = s.next?.trim()?.takeIf { it.isNotEmpty() }
+        // Contratto 1.2: `next_at` dice di che giorno è il «prossimo». Senza data non si sa, e un piano di tre giorni
+        // prima sulla tile è peggio che niente: vale solo se è recente e non più vecchio dell'ultimo esito.
+        val prossimo = s.next?.trim()?.takeIf {
+            it.isNotEmpty() && s.nextAt != null && (now <= 0L || now - s.nextAt <= NEXT_MAX_AGE_S) &&
+                s.nextAt >= (s.outcome?.at ?: 0L)
+        }
         val esitoPiuFresco = (s.outcome?.at ?: 0L) >= (s.turnStarted ?: 0L)
         val scelto = when {
             busy && tool != null -> tool
@@ -71,6 +76,9 @@ object TileTexts {
         }
         return primaFrase(scelto)
     }
+
+    /** Oltre due giorni un «prossimo» non descrive più la giornata in corso. */
+    const val NEXT_MAX_AGE_S = 2 * 24 * 3600L
 
     /** Prima frase, se finisce entro una riga e mezza: meglio un pensiero intero che una coda troncata. */
     fun primaFrase(text: String, max: Int = 46): String {

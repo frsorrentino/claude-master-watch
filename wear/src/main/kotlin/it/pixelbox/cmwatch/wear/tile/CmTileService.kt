@@ -151,7 +151,7 @@ class CmTileService : TileService() {
 
     /** La sessione: chi e da quanto sopra, cosa sta facendo o cosa ha fatto sotto. Mai l'etichetta secca dello stato. */
     private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?): LayoutElement {
-        val what = TileTexts.activity(s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle))
+        val what = TileTexts.activity(s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now)
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {

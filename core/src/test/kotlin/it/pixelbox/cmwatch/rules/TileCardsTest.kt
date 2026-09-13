@@ -89,3 +89,31 @@ class TileActivityTest {
         assertEquals(lunga, TileTexts.primaFrase(lunga))
     }
 }
+
+class TileNextAtTest {
+    private val q = it.pixelbox.cmwatch.contract.ContractJson.decodeState(it.pixelbox.cmwatch.Fixtures.stateQuestion)
+    private val busy = q.sessions.first { it.state == SessionState.BUSY }
+
+    @Test fun laFixtureDella12PortaLaDataDelProssimo() {
+        assertEquals(1789171200L, busy.nextAt)
+        assertNull(q.sessions.first { it.name == "field-notes" }.nextAt)
+    }
+
+    @Test fun unProssimoVecchioNonSiMostra() {
+        val s = busy.copy(tool = null, next = "rivedere i seed", nextAt = 1789171200L, turnStarted = 1789171300L)
+            .let { it.copy(outcome = null) }
+        val tardi = 1789171200L + TileTexts.NEXT_MAX_AGE_S + 1
+        assertEquals("turno in corso", TileTexts.activity(s, busy = true, running = "turno in corso", idle = "a riposo", now = tardi))
+    }
+
+    @Test fun unProssimoDiOggiSiMostraSeLEsitoEPiuVecchio() {
+        val s = busy.copy(tool = null, next = "rivedere i seed", nextAt = 1789171200L, turnStarted = 1789171300L)
+            .let { it.copy(outcome = it.outcome?.copy(at = 1789000000L)) }
+        assertEquals("rivedere i seed", TileTexts.activity(s, busy = true, running = "turno in corso", idle = "a riposo", now = 1789200000L))
+    }
+
+    @Test fun senzaDataIlProssimoNonSiUsa() {
+        val s = busy.copy(tool = null, next = "rivedere i seed", nextAt = null, outcome = null)
+        assertEquals("turno in corso", TileTexts.activity(s, busy = true, running = "turno in corso", idle = "a riposo", now = 1789200000L))
+    }
+}
