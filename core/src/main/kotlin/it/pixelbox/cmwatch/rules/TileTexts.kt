@@ -58,8 +58,16 @@ object TileTexts {
      * congelata con lo stesso testo mentre scorreva solo il minuto (Franz, 13/09 18:23).
      * Il testo si taglia alla prima frase, così non finisce dentro una parentesi aperta.
      */
-    fun activity(s: Session, busy: Boolean, running: String, idle: String, now: Long = 0L): String {
-        val tool = s.tool?.trim()?.takeIf { it.isNotEmpty() }
+    fun activity(
+        s: Session,
+        busy: Boolean,
+        running: String,
+        idle: String,
+        now: Long = 0L,
+        tools: ToolText.Labels? = null,
+    ): String {
+        // Il nome nudo dello strumento non dice niente: «SendMessage» diventa «scrive a un'altra sessione».
+        val tool = tools?.let { ToolText.phrase(s.tool, it) } ?: s.tool?.trim()?.takeIf { it.isNotEmpty() }
         val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
         // Contratto 1.2: `next_at` dice di che giorno è il «prossimo». Senza data non si sa, e un piano di tre giorni
         // prima sulla tile è peggio che niente: vale solo se è recente e non più vecchio dell'ultimo esito.

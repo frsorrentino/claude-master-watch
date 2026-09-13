@@ -39,6 +39,7 @@ import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NameText
 import it.pixelbox.cmwatch.rules.QuotaBar
 import it.pixelbox.cmwatch.rules.TileTexts
+import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.CmApp
 import it.pixelbox.cmwatch.wear.MainActivity
 import java.time.Instant
@@ -111,6 +112,14 @@ class CmTileService : TileService() {
             "tile"
         }
 
+    /** Frasi per gli strumenti: «SendMessage» da solo non dice niente (Franz, 13/09 20:36). */
+    private fun toolLabels() = ToolText.Labels(
+        run = getString(R.string.tool_run), read = getString(R.string.tool_read), edit = getString(R.string.tool_edit),
+        write = getString(R.string.tool_write), search = getString(R.string.tool_search), web = getString(R.string.tool_web),
+        message = getString(R.string.tool_message), delegate = getString(R.string.tool_delegate),
+        plan = getString(R.string.tool_plan), other = getString(R.string.tool_other),
+    )
+
     /** Come Gmail: fondo sulla superficie, titolo chiaro, etichette e ora in grigio. Il default di appCard usa il primario. */
     private fun MaterialScope.cardColors() = CardColors(
         backgroundColor = colorScheme.surfaceContainer,
@@ -151,7 +160,9 @@ class CmTileService : TileService() {
 
     /** La sessione: chi e da quanto sopra, cosa sta facendo o cosa ha fatto sotto. Mai l'etichetta secca dello stato. */
     private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?): LayoutElement {
-        val what = TileTexts.activity(s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now)
+        val what = TileTexts.activity(
+            s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now, toolLabels(),
+        )
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {

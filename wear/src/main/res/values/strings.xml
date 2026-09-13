@@ -110,6 +110,16 @@
     <string name="terminal_answer">Risposta</string>
     <string name="session_closed">chiusa</string>
     <string name="tile_stale_label">fermo da %1$d min</string>
+    <string name="tool_run">esegue %1$s</string>
+    <string name="tool_read">legge %1$s</string>
+    <string name="tool_edit">modifica %1$s</string>
+    <string name="tool_write">scrive %1$s</string>
+    <string name="tool_search">cerca %1$s</string>
+    <string name="tool_web">cerca sul web</string>
+    <string name="tool_message">scrive a un\'altra sessione</string>
+    <string name="tool_delegate">delega a un agente</string>
+    <string name="tool_plan">aggiorna il piano</string>
+    <string name="tool_other">usa %1$s</string>
     <string name="tile_all_idle">Tutto a riposo</string>
     <string name="tile_quota_pct">%1$d %%</string>
     <string name="quota_reset_at">reset %1$s</string>
