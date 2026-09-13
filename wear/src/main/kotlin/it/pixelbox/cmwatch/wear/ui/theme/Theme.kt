@@ -45,6 +45,9 @@ object CmColors {
     val briefGoodInk = Color(0xFF072510)
     val briefWarn = Color(0xFFFFC46B)
     val briefWarnInk = Color(0xFF2A1A00)
+    val briefAlert = Color(0xFFF2B8B5)
+    val briefAlertInk = Color(0xFF5F1412)
+    val briefAlertRing = Color(0xFFE5736B)
 }
 
 fun stateColor(s: SessionState, fresh: Boolean = true): Color = if (!fresh) CmColors.stale else when (s) {

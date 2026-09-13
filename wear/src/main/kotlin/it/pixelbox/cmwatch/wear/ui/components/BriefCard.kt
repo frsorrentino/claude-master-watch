@@ -92,6 +92,7 @@ private fun Pill(text: String, tone: BriefCards.Tone) {
     val (bg, ink) = when (tone) {
         BriefCards.Tone.GOOD -> CmColors.briefGood to CmColors.briefGoodInk
         BriefCards.Tone.WARN -> CmColors.briefWarn to CmColors.briefWarnInk
+        BriefCards.Tone.ALERT -> CmColors.briefAlert to CmColors.briefAlertInk
         BriefCards.Tone.STALE -> CmColors.line to CmColors.text2
         BriefCards.Tone.NEUTRAL -> CmColors.briefChip to CmColors.briefChipInk
     }
@@ -101,11 +102,4 @@ private fun Pill(text: String, tone: BriefCards.Tone) {
         // Due righe come le pilloline del brief («1 sopra l'obiettivo»): la card cresce, il testo non si taglia.
         Text(text, style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
-}
-
-private fun ring(tone: BriefCards.Tone) = when (tone) {
-    BriefCards.Tone.GOOD -> CmColors.briefGood
-    BriefCards.Tone.WARN -> CmColors.briefWarn
-    BriefCards.Tone.STALE -> CmColors.stale
-    BriefCards.Tone.NEUTRAL -> CmColors.briefRing
 }

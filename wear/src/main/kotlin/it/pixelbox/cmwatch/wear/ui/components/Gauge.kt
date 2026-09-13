@@ -95,6 +95,7 @@ private const val END = 74.5f
 private fun colour(tone: BriefCards.Tone): Color = when (tone) {
     BriefCards.Tone.GOOD -> CmColors.briefGood
     BriefCards.Tone.WARN -> CmColors.briefWarn
+    BriefCards.Tone.ALERT -> CmColors.briefAlertRing
     BriefCards.Tone.STALE -> CmColors.stale
     BriefCards.Tone.NEUTRAL -> CmColors.briefRing
 }

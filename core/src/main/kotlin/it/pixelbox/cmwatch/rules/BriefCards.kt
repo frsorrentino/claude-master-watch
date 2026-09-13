@@ -15,8 +15,8 @@ import java.util.Locale
  * testo; il disegno sta in `BriefCard`. Le card a zero non si mostrano: una card vuota occupa spazio e non dice nulla.
  */
 object BriefCards {
-    /** Tono della pillolina e del gauge: neutro, buono, da guardare, dato vecchio. */
-    enum class Tone { NEUTRAL, GOOD, WARN, STALE }
+    /** Tono della pillolina e del gauge: neutro, buono, da guardare, allarme, dato vecchio. */
+    enum class Tone { NEUTRAL, GOOD, WARN, ALERT, STALE }
 
     /** Simbolo dentro il gauge, come le icone del brief. Il disegno lo scegli in `BriefCard`, qui sta il significato. */
     enum class Glyph { TIME, SESSIONS, QUESTION, NIGHT, SYNC }
@@ -58,8 +58,14 @@ object BriefCards {
                 unit = if (q.h5 != null) "%" else null,
                 secondary = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
                 pill = if (q.stale) l.stale else l.week.format(q.w7?.let { "$it %" } ?: l.none),
-                // Finestra esaurita: il gauge pieno va in ambra e pulsa, perché da lì non si lavora più.
-                tone = if (q.stale) Tone.STALE else if ((q.h5 ?: 0) >= 100) Tone.WARN else Tone.NEUTRAL,
+                // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,
+                // perché da lì non si lavora più (review UX, 13/09).
+                tone = when {
+                    q.stale -> Tone.STALE
+                    (q.h5 ?: 0) >= 100 -> Tone.ALERT
+                    (q.h5 ?: 0) >= 90 -> Tone.WARN
+                    else -> Tone.NEUTRAL
+                },
                 progress = QuotaText.fraction(q.h5),
                 glyph = Glyph.TIME,
             )

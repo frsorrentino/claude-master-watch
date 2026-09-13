@@ -81,3 +81,26 @@ class BriefCardsTest {
         assertEquals("3", c.value); assertEquals("in corso atlas-shop", c.pill)
     }
 }
+
+class BriefQuotaAlertTest {
+    private val state = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val labels = BriefCards.Labels(
+        quota = "Quota %s", week = "settimana %s", resetAt = "reset %s", stale = "dato vecchio", none = "—",
+        active = "Sessioni attive", waitingPill = "%d in attesa", noQuestions = "nessuna domanda",
+        questions = "Domande aperte", oldest = "più vecchia %s",
+        night = "Coda notte", running = "in corso %s", nothingRunning = "nessuna in corso",
+        update = "Aggiornato", minutes = "min", now = "ora", stopped = "PC fermo",
+    )
+
+    private fun tono(pct: Int): BriefCards.Tone {
+        val s = state.copy(quota = mapOf("personale" to state.quota.getValue("personale").copy(h5 = pct, stale = false)))
+        return BriefCards.quota(s, labels).first().tone
+    }
+
+    @Test fun scalaDiAllarmeSullaFinestraDiCinqueOre() {
+        assertEquals(BriefCards.Tone.NEUTRAL, tono(50))
+        assertEquals(BriefCards.Tone.NEUTRAL, tono(89))
+        assertEquals(BriefCards.Tone.WARN, tono(90))
+        assertEquals(BriefCards.Tone.ALERT, tono(100))
+    }
+}
