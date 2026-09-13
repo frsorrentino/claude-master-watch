@@ -14,7 +14,10 @@ import it.pixelbox.cmwatch.contract.SessionState
 /** Token del design (sezione 3): tema scuro unico, cobalto solo su bottone pieno, scroll bar, chip «seguita», anello quota. */
 object CmColors {
     val bg = Color(0xFF000000)
+    /** Tre gradini di superficie, non uno: sfondo, riga, card. Senza il gradino la profondità non si vede. */
+    val surfaceLow = Color(0xFF1B1F26)
     val surface = Color(0xFF23272E)   // più chiaro (Franz, 12/09 20:03): come i tasti del selettore app di Wear OS
+    val surfaceHigh = Color(0xFF292F3A)   // card in stile brief, misurata sui suoi fotogrammi
     val line = Color(0xFF2A2E35)
     val text = Color(0xFFF2F4F7)
     val text2 = Color(0xFF9AA3B2)
@@ -24,12 +27,13 @@ object CmColors {
     val busy = Color(0xFF7FA1FF)
     val idle = Color(0xFF34C759)
     val gone = Color(0xFFFF453A)
-    val stale = Color(0xFF6B7280)
+    // 5:1 sulla superficie: il grigio di prima stava a 3:1 e al sole spariva (review UX, 13/09).
+    val stale = Color(0xFF98A2B3)
     val accountAgenzia = Color(0xFFE53935)
     val accountPersonale = Color(0xFF43A047)
 
     // Stile del «brief mattutino» di Wear OS, misurato sui fotogrammi della sua schermata (13/09 16:25).
-    val briefCard = Color(0xFF292F3A)
+    val briefCard = surfaceHigh
     val briefLabel = Color(0xFFBCE4C7)
     val briefBig = Color(0xFFF4F4F4)
     val briefSecondary = Color(0xFFBCC0CB)
@@ -57,7 +61,7 @@ private val scheme = ColorScheme(
     onSecondary = CmColors.bg, onSecondaryContainer = CmColors.text,
     tertiary = CmColors.busy, tertiaryDim = CmColors.busy, tertiaryContainer = CmColors.surface,
     onTertiary = CmColors.bg, onTertiaryContainer = CmColors.text,
-    surfaceContainerLow = CmColors.surface, surfaceContainer = CmColors.surface, surfaceContainerHigh = CmColors.surface,
+    surfaceContainerLow = CmColors.surfaceLow, surfaceContainer = CmColors.surface, surfaceContainerHigh = CmColors.surfaceHigh,
     onSurface = CmColors.text, onSurfaceVariant = CmColors.text2,
     outline = CmColors.line, outlineVariant = CmColors.line,
     background = CmColors.bg, onBackground = CmColors.text,
