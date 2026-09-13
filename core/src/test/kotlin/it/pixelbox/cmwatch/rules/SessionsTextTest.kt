@@ -5,7 +5,7 @@ import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.SessionState
 
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Test
 
 class SessionsTextTest {
@@ -30,5 +30,39 @@ class SessionsSubTest {
     @Test fun leAltreDannoSoloLEta() {
         val waiting = s.sessions.first { it.state == SessionState.WAITING }
         assertEquals(Durations.since(waiting.question!!.askedAt, waiting.since + 600), SessionsText.sub(waiting, waiting.since + 600, "chiusa"))
+    }
+}
+
+class SessionsCellTest {
+    private val st = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val tools = ToolText.Labels(
+        run = "esegue %1\$s", read = "legge %1\$s", edit = "modifica %1\$s", write = "scrive %1\$s",
+        search = "cerca %1\$s", web = "cerca sul web", message = "scrive a un'altra sessione",
+        delegate = "delega a un agente", plan = "aggiorna il piano", other = "usa %1\$s",
+    )
+
+    @Test fun chiAspettaMostraLaDomandaComeTitolo() {
+        val w = st.sessions.first { it.question != null }
+        val c = SessionsText.cell(w, st.ts, "turno in corso", "a riposo", tools)
+        assertEquals(w.question!!.text, c.title); assertNull(c.detail)
+    }
+
+    @Test fun chiLavoraMostraAttivitaEProssimoPasso() {
+        val b = st.sessions.first { it.state == SessionState.BUSY }
+        val c = SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools)
+        assertEquals(ToolText.phrase(b.tool, tools), c.title)
+        assertEquals(b.next, c.detail)
+    }
+
+    @Test fun chiEFermaMostraLEsitoEIlProssimoPasso() {
+        val i = st.sessions.first { it.state == SessionState.IDLE }
+        val c = SessionsText.cell(i, st.ts, "turno in corso", "a riposo", tools)
+        assertEquals(i.outcome?.short ?: "a riposo", c.title)
+    }
+
+    @Test fun unaSessioneChiusaNonHaNienteDaDire() {
+        val g = st.sessions.first { it.state == SessionState.GONE }
+        val c = SessionsText.cell(g, st.ts, "turno in corso", "a riposo", tools)
+        assertNull(c.title); assertNull(c.detail)
     }
 }

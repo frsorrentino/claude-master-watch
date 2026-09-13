@@ -1,12 +1,10 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,7 +22,6 @@ import androidx.compose.ui.res.stringResource
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.rules.NameText
 import it.pixelbox.cmwatch.rules.SessionsText
-import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.SessionNameStyle
@@ -50,53 +47,48 @@ fun SessionRow(
 ) {
     val age = SessionsText.sub(s, now, stringResource(R.string.session_closed))
     val overflow = if (NameText.sharesPrefix(s.name, siblings)) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
-    // Anatomia di Gmail (Franz, 13/09 20:54): badge, nome con l'età a destra, poi cosa fa o cosa ha fatto su due
-    // righe. Le stesse parole della tile, così le due superfici non dicono cose diverse.
-    val what = if (ambient) null else when {
-        s.question != null -> s.question?.text
-        s.state == SessionState.GONE -> null
-        else -> TileTexts.activity(
-            s,
-            busy = s.state == SessionState.BUSY || s.state == SessionState.AWAITING,
-            running = stringResource(R.string.tile_turn_running),
-            idle = stringResource(R.string.state_idle),
-            now = now,
-            tools = tools,
-        )
-    }
+    val cell = if (ambient) SessionsText.Cell(null, null) else SessionsText.cell(
+        s, now, stringResource(R.string.tile_turn_running), stringResource(R.string.state_idle), tools,
+    )
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
+        // Misure prese sulle celle di notifica di Wear OS (13/09 21:32): raggio 20 dp, badge 16 dp in linea con il
+        // nome, non un bollo da 36 a tutta altezza, e quattro righe di testo sotto.
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (ambient) CmColors.bg else CmColors.surface,
             contentColor = CmColors.text,
         ),
-        contentPadding = PaddingValues(start = 8.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+        contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
         transformation = transformation,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
-            SessionBadge(s, size = 36.dp, ambient = ambient)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            SessionBadge(s, size = 16.dp, ambient = ambient)
             Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        // Mono 13 sp nella lista: con il badge e l'età, a 14 sp «claude-master» finiva troncato.
-                        s.name, style = SessionNameStyle, color = CmColors.text, maxLines = 1, overflow = overflow,
-                        softWrap = false, modifier = Modifier.weight(1f, fill = false).cmMarquee(marquee),
-                    )
-                    age?.let {
-                        Spacer(Modifier.width(8.dp))
-                        Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
-                    }
-                }
-                what?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
-                }
+            Text(
+                s.name, style = SessionNameStyle, color = CmColors.text2, maxLines = 1, overflow = overflow,
+                softWrap = false, modifier = Modifier.weight(1f).cmMarquee(marquee),
+            )
+            age?.let {
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    it, style = MaterialTheme.typography.bodySmall,
+                    color = if (s.question != null) CmColors.waiting else CmColors.text2, maxLines = 1,
+                )
             }
+        }
+        cell.title?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                it, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        cell.detail?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

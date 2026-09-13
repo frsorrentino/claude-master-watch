@@ -55,7 +55,12 @@ fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float = 1f, outline: 
     // Glifo a 0,44 del diametro invece di 0,52 più cappuccio: prima toccava il bordo del cerchio e del quadrato
     // (Franz, 13/09 21:11). Le stesse proporzioni in `BadgeBitmap`, così lista e notifiche restano identiche.
     val c = Offset(d / 2f, d / 2f); val r = d * 0.22f; val w = d * 0.095f
-    when (spec.glyph) {
+    glyph(spec.glyph, c, r, w, ink)
+}
+
+/** I quattro glifi di stato, con lo stesso disegno dovunque vadano: badge, riga della lista, notifica. */
+private fun DrawScope.glyph(g: Badge.Glyph, c: Offset, r: Float, w: Float, ink: Color) {
+    when (g) {
         Badge.Glyph.PLAY -> drawPath(Path().apply {
             moveTo(c.x - r * 0.8f, c.y - r); lineTo(c.x + r, c.y); lineTo(c.x - r * 0.8f, c.y + r); close()
         }, ink)
