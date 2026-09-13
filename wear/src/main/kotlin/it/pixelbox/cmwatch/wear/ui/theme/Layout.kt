@@ -10,9 +10,9 @@ import androidx.compose.ui.unit.dp
  * lati 7 %, alto 16 %, basso 21 % dell'altezza, così la prima e l'ultima riga stanno dentro la corda del cerchio.
  */
 @Composable
-fun roundListPadding(): PaddingValues {
+fun roundListPadding(sides: Float = 0.07f): PaddingValues {
     val c = LocalConfiguration.current
     val w = c.screenWidthDp.dp
     val h = c.screenHeightDp.dp
-    return PaddingValues(start = w * 0.07f, end = w * 0.07f, top = h * 0.16f, bottom = h * 0.21f)
+    return PaddingValues(start = w * sides, end = w * sides, top = h * 0.16f, bottom = h * 0.21f)
 }

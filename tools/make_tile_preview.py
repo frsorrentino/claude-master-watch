@@ -48,23 +48,24 @@ def main():
         w = d.textbbox((0, 0), text, font=f)[2]
         d.text(((S - w) / 2, y), text, font=f, fill=fill)
 
-    # card 1: ultima attività
-    d.rounded_rectangle((14, 52, S - 14, 158), radius=40, fill=CARD)
-    d.ellipse((40, 70, 70, 100), fill=YEL)
-    d.polygon([(51, 77), (62, 85), (51, 93)], fill=(0, 0, 0, 255))
-    d.text((80, 76), "master", font=font(20), fill=LABEL)
-    right("2 m", 76, font(20), SEC, S - 38)
-    d.text((38, 112), "Bash pytest -q tests", font=font(24), fill=TXT)
+    # card 1: ultima attività, su due righe (lo spazio lo libera la barra della quota)
+    d.rounded_rectangle((14, 44, S - 14, 166), radius=40, fill=CARD)
+    d.ellipse((40, 60, 70, 90), fill=YEL)
+    d.polygon([(51, 67), (62, 75), (51, 83)], fill=(0, 0, 0, 255))
+    d.text((80, 66), "master", font=font(20), fill=LABEL)
+    right("2 m", 66, font(20), SEC, S - 38)
+    d.text((38, 100), "dal polso: «Pubblica».", font=font(24), fill=TXT)
+    d.text((38, 130), "Release 0.4.0 avviata", font=font(24), fill=TXT)
 
     # card 2: quota, con la barra lineare (percentuale della finestra di 5 ore)
-    d.rounded_rectangle((14, 170, S - 14, 272), radius=40, fill=CARD)
-    d.text((38, 186), "Quota personale", font=font(20), fill=LABEL)
-    right("reset 15:20", 186, font(18), SEC, S - 38)
-    d.text((38, 218), "24 %", font=font(28), fill=TXT)
+    d.rounded_rectangle((14, 174, S - 14, 272), radius=40, fill=CARD)
+    d.text((38, 188), "Quota personale", font=font(20), fill=LABEL)
+    right("reset 15:20", 188, font(18), SEC, S - 38)
+    d.text((38, 220), "24 %", font=font(28), fill=TXT)
     bar_x0, bar_x1, gap, pct = 140, S - 38, 6, 0.24
     fill_w = int((bar_x1 - bar_x0 - gap) * pct)
-    d.rounded_rectangle((bar_x0, 228, bar_x0 + fill_w, 244), radius=8, fill=EDGE)
-    d.rounded_rectangle((bar_x0 + fill_w + gap, 228, bar_x1, 244), radius=8, fill=(60, 68, 82, 255))
+    d.rounded_rectangle((bar_x0, 230, bar_x0 + fill_w, 246), radius=8, fill=EDGE)
+    d.rounded_rectangle((bar_x0 + fill_w + gap, 230, bar_x1, 246), radius=8, fill=(60, 68, 82, 255))
 
     # bottone di bordo
     d.ellipse((52, S - 70, S - 52, S + 48), fill=EDGE)

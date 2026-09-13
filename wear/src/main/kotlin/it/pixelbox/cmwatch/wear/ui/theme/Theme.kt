@@ -27,6 +27,20 @@ object CmColors {
     val stale = Color(0xFF6B7280)
     val accountAgenzia = Color(0xFFE53935)
     val accountPersonale = Color(0xFF43A047)
+
+    // Stile del «brief mattutino» di Wear OS, misurato sui fotogrammi della sua schermata (13/09 16:25).
+    val briefCard = Color(0xFF292F3A)
+    val briefLabel = Color(0xFFBCE4C7)
+    val briefBig = Color(0xFFF4F4F4)
+    val briefSecondary = Color(0xFFBCC0CB)
+    val briefRing = Color(0xFF8BB4F7)
+    val briefTrack = Color(0xFF455165)
+    val briefChip = Color(0xFF7DCCFB)
+    val briefChipInk = Color(0xFF001C33)
+    val briefGood = Color(0xFF65C581)
+    val briefGoodInk = Color(0xFF072510)
+    val briefWarn = Color(0xFFFFC46B)
+    val briefWarnInk = Color(0xFF2A1A00)
 }
 
 fun stateColor(s: SessionState, fresh: Boolean = true): Color = if (!fresh) CmColors.stale else when (s) {
@@ -52,6 +66,12 @@ private val scheme = ColorScheme(
 )
 
 val Mono = FontFamily.Monospace
+
+/**
+ * Numero grande della card in stile brief: 26 sp. Misurato sulla schermata vera (altezza delle maiuscole 18 dp a
+ * densità 2,0); i token `numeral*` di Wear M3 sono molto più grandi e sfondavano la card.
+ */
+val BriefNumber = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium)
 
 /** Nomi di sessione e terminale: mono 14 sp (design, sezione 3). */
 val MonoStyle = TextStyle(fontSize = 14.sp, fontFamily = Mono, fontWeight = FontWeight.Medium)

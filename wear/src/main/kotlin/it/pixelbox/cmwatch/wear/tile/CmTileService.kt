@@ -146,11 +146,12 @@ class CmTileService : TileService() {
                     onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
                     label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb) },
                     time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
-                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
+                    // Due righe: la barra della quota è più bassa di una riga di testo e lo spazio guadagnato va qui (Franz, 13/09 16:14).
+                    title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
                     colors = cardColors(),
                 )
             )
-            if (q != null) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(6f)).build())
+            if (q != null) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
         }
         if (q != null) col.addContent(quotaCard(account, q))
         return col.build()
@@ -162,10 +163,10 @@ class CmTileService : TileService() {
      */
     private fun MaterialScope.quotaCard(account: String, q: QuotaAccount): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://quota"), id = "quota"),
-        label = { small(getString(R.string.tile_quota_label, account), LABEL.argb) },
+        label = { small(getString(R.string.quota_label, account), LABEL.argb) },
         time = {
             small(
-                q.resetW7?.let { getString(R.string.tile_quota_reset_at, HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()))) } ?: "",
+                q.resetW7?.let { getString(R.string.quota_reset_at, HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()))) } ?: "",
                 colorScheme.onSurfaceVariant,
             )
         },

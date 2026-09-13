@@ -242,7 +242,7 @@ class MainActivity : ComponentActivity() {
             composable(Routes.LAUNCH) {
                 LaunchScreen(snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh) { path -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; nav.go(Screen.Sessions) }
             }
-            composable(Routes.QUOTA) { QuotaScreen(snapshot.state?.quota.orEmpty()) }
+            composable(Routes.QUOTA) { QuotaScreen(snapshot.state, snapshot.freshness) }
             composable(Routes.RECAP) { RecapScreen(snapshot.state?.recap ?: Recap()) }
             composable(Routes.NIGHT) { NightScreen(snapshot.state?.night ?: Night()) }
             composable(Routes.MENU) { MenuScreen(onOpen = { nav.go(it) }) }
