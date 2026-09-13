@@ -27,6 +27,7 @@ object CmColors {
     val busy = Color(0xFF7FA1FF)
     val idle = Color(0xFF34C759)
     val gone = Color(0xFFFF453A)
+    val goneDim = Color(0xFFC2554D)   // rosso desaturato: una sessione chiusa non deve urlare
     // 5:1 sulla superficie: il grigio di prima stava a 3:1 e al sole spariva (review UX, 13/09).
     val stale = Color(0xFF98A2B3)
     val accountAgenzia = Color(0xFFE53935)
@@ -50,11 +51,16 @@ object CmColors {
     val briefAlertRing = Color(0xFFE5736B)
 }
 
+/**
+ * Il colore segnala ciò che chiede attenzione, il resto resta neutro (review UX, 13/09): ambra a chi aspetta te,
+ * cobalto a chi lavora, grigio chiaro alle ferme, rosso desaturato alle chiuse. Quattro tinte sature insieme
+ * appiattivano la gerarchia e il verde acceso su «ferma» attirava quanto l'ambra di «aspetta te».
+ */
 fun stateColor(s: SessionState, fresh: Boolean = true): Color = if (!fresh) CmColors.stale else when (s) {
     SessionState.WAITING -> CmColors.waiting
-    SessionState.BUSY -> CmColors.busy
-    SessionState.IDLE, SessionState.AWAITING -> CmColors.idle
-    SessionState.GONE -> CmColors.gone
+    SessionState.BUSY, SessionState.AWAITING -> CmColors.accent
+    SessionState.IDLE -> CmColors.text2
+    SessionState.GONE -> CmColors.goneDim
 }
 
 private val scheme = ColorScheme(
@@ -89,17 +95,22 @@ val SessionNameStyle = TextStyle(fontSize = 13.sp, fontFamily = Mono, fontWeight
 /** Terminale: mono 13 sp, così una riga di comando sta in più caratteri e il tondo ne taglia meno (13/09 17:40). */
 val TerminalStyle = TextStyle(fontSize = 13.sp, fontFamily = Mono)
 
+/**
+ * Scala più vicina a quella delle app di sistema del Pixel Watch (review UX, 13/09): la frase protagonista, cioè
+ * l'esito, passa da 20 a 26 sp; titoli di riga 18, corpo 16, secondario 15, minuto 13. I nomi restano in mono e
+ * fuori da questa scala, perché nella lista devono starci interi.
+ */
 private val typography = Typography(
-    displaySmall = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+    displaySmall = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium),
     titleLarge = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
-    titleMedium = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-    titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-    labelLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+    titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium),
+    titleSmall = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+    labelLarge = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
     labelMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontSize = 13.sp),
     bodyLarge = TextStyle(fontSize = 16.sp),
     bodyMedium = TextStyle(fontSize = 15.sp),
-    bodySmall = TextStyle(fontSize = 13.sp),
+    bodySmall = TextStyle(fontSize = 15.sp),
 )
 
 @Composable

@@ -29,6 +29,7 @@ import it.pixelbox.cmwatch.rules.QuestionRules
 import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import kotlinx.coroutines.delay
@@ -66,7 +67,12 @@ fun QuestionScreen(
         }
     }
 
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(
+        scrollState = listState,
+        contentPadding = roundListPadding(),
+        // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi».
+        edgeButton = { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) },
+    ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null || q == null) {
                 item {
@@ -102,7 +108,6 @@ fun QuestionScreen(
                     )
                 }
             }
-            item { WideButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
             if (QuestionRules.allowAllVisible(q)) {
                 item { WideButton(stringResource(R.string.question_allow_all), onClick = onAllowAll, enabled = enabled && pending == null, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
             }

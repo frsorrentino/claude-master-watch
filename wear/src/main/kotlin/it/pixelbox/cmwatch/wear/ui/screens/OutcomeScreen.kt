@@ -24,6 +24,7 @@ import it.pixelbox.cmwatch.rules.SpeakRules
 import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
@@ -34,7 +35,11 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val o = s?.outcome
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(
+        scrollState = listState,
+        contentPadding = roundListPadding(),
+        edgeButton = { CmEdgeButton(stringResource(R.string.outcome_read_all), onClick = onReadAll) },
+    ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null || o == null) {
                 item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier) }
@@ -51,7 +56,6 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
                 }
             }
             item { Text(o.full, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
-            item { WideButton(stringResource(R.string.outcome_read_all), onClick = onReadAll, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }
 }

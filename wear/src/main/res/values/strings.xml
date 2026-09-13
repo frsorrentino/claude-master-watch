@@ -107,6 +107,7 @@
     <string name="tile_card_gone">sparite</string>
     <string name="quota_label">Quota %1$s</string>
     <string name="card_relaunch">Riavvia</string>
+    <string name="card_outcome">Esito</string>
     <string name="terminal_answer">Risposta</string>
     <string name="session_closed">chiusa</string>
     <string name="tile_stale_label">fermo da %1$d min</string>

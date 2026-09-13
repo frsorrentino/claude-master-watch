@@ -20,7 +20,21 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.CardText
 import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
+import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.CardDefaults
+import androidx.wear.compose.material3.SwitchButton
+import it.pixelbox.cmwatch.rules.SessionsText
+import it.pixelbox.cmwatch.rules.ToolText
+import it.pixelbox.cmwatch.wear.ui.components.IconAction
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
@@ -38,11 +52,33 @@ fun SessionScreen(
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
 ) {
+    val running = stringResource(R.string.tile_turn_running)
+    val idleLabel = stringResource(R.string.state_idle)
+    val tools = ToolText.Labels(
+        run = stringResource(R.string.tool_run), read = stringResource(R.string.tool_read),
+        edit = stringResource(R.string.tool_edit), write = stringResource(R.string.tool_write),
+        search = stringResource(R.string.tool_search), web = stringResource(R.string.tool_web),
+        message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
+        plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
+    )
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val enabled = snapshot.freshness is Freshness.Fresh
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(
+        scrollState = listState,
+        contentPadding = roundListPadding(),
+        // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi».
+        edgeButton = {
+            when {
+                s?.question != null -> CmEdgeButton(stringResource(R.string.card_reply), onClick = onReply, enabled = enabled)
+                s?.state == SessionState.GONE && onRelaunch != null ->
+                    CmEdgeButton(stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled)
+                s != null -> CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled)
+                else -> CmEdgeButton(stringResource(R.string.sessions_title), onClick = onBackToSessions)
+            }
+        },
+    ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null) {
                 item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier) }
@@ -50,36 +86,62 @@ fun SessionScreen(
                 return@TransformingLazyColumn
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
+            // Scheda rifatta (review UX, scelta da Franz il 13/09): intestazione, UNA card con quello che sta
+            // facendo, «Segui» come interruttore, poi le azioni con la loro icona. Prima erano quattro bottoni
+            // larghi identici che davano lo stesso peso a tutto, con l'informazione in due righe minuscole.
             item { SessionHeader(s, now, enabled, modifier = Modifier) }
-            CardText.next(s)?.let { next ->
-                item { Text(next, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
-            }
-            s.outcome?.let { o ->
+            val cell = SessionsText.cell(s, now, running, idleLabel, tools)
+            if (cell.title != null || cell.detail != null) {
                 item {
-                    WideButton(o.short, onClick = onOutcome, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
-                }
-            }
-            if (s.question != null) {
-                item { WideButton(stringResource(R.string.card_reply), onClick = onReply, primary = true, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
-            }
-            // Una sessione chiusa non si «riprende»: non esiste più. Si rilancia il suo progetto (Franz, 13/09 18:11).
-            if (s.state == SessionState.GONE && onRelaunch != null) {
-                item {
-                    WideButton(
-                        stringResource(R.string.card_relaunch), onClick = onRelaunch, primary = true, enabled = enabled,
-                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
-                    )
+                    Card(
+                        onClick = if (s.outcome != null) onOutcome else ({}),
+                        modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
+                        shape = RoundedCornerShape(21.dp),
+                        colors = CardDefaults.cardColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.text),
+                        contentPadding = PaddingValues(14.dp),
+                        transformation = SurfaceTransformation(spec),
+                    ) {
+                        cell.title?.let {
+                            Text(
+                                it, style = MaterialTheme.typography.titleMedium, color = CmColors.text,
+                                maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        cell.detail?.let {
+                            Text(
+                                it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                 }
             }
             if (s.state != SessionState.GONE) {
-                item { WideButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
-                item { WideButton(stringResource(R.string.card_terminal), onClick = onTerminal, enabled = enabled, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 item {
-                    WideButton(
-                        stringResource(if (s.followed) R.string.card_unfollow else R.string.card_follow),
-                        onClick = { onFollow(!s.followed) }, enabled = enabled,
+                    SwitchButton(
+                        checked = s.followed,
+                        onCheckedChange = { onFollow(it) },
+                        enabled = enabled,
+                        label = { Text(stringResource(R.string.card_follow), maxLines = 1) },
+                        modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
+                        transformation = SurfaceTransformation(spec),
+                    )
+                }
+                item {
+                    IconAction(
+                        label = stringResource(R.string.card_terminal), icon = Icons.Rounded.Terminal,
+                        onClick = onTerminal, enabled = enabled,
                         transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                     )
+                }
+                if (s.outcome != null) {
+                    item {
+                        IconAction(
+                            label = stringResource(R.string.card_outcome), icon = Icons.Rounded.Check,
+                            onClick = onOutcome, enabled = true,
+                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                        )
+                    }
                 }
             }
         }

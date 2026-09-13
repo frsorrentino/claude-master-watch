@@ -20,8 +20,8 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.Screen
 import it.pixelbox.cmwatch.wear.ui.components.SessionRow
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
-import it.pixelbox.cmwatch.wear.ui.components.MenuButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.rememberCenterIndex
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
@@ -46,7 +46,12 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
         message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
         plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
     )
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding(sides = 0.052f)) { padding ->
+    ScreenScaffold(
+        scrollState = listState,
+        contentPadding = roundListPadding(sides = 0.052f),
+        // L'azione principale è curva in fondo: prima era un bottone in lista identico alle righe delle sessioni.
+        edgeButton = { if (!ambient) CmEdgeButton(stringResource(R.string.menu_title), onClick = { onMenu(Screen.Menu) }) },
+    ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
@@ -69,7 +74,6 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 )
             }
             // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.
-            if (!ambient) item { MenuButton(onClick = { onMenu(Screen.Menu) }, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }
 }

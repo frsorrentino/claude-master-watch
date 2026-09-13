@@ -55,7 +55,7 @@ fun SessionRow(
         modifier = modifier.fillMaxWidth(),
         // Misure prese sulle celle di notifica di Wear OS (13/09 21:32): raggio 20 dp, badge 16 dp in linea con il
         // nome, non un bollo da 36 a tutta altezza, e quattro righe di testo sotto.
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(21.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (ambient) CmColors.bg else CmColors.surface,
             contentColor = CmColors.text,

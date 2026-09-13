@@ -24,6 +24,7 @@ import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.rules.TerminalText
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
+import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
@@ -43,7 +44,11 @@ fun TerminalScreen(
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding(sides = 0.10f)) { padding ->
+    ScreenScaffold(
+        scrollState = listState,
+        contentPadding = roundListPadding(sides = 0.10f),
+        edgeButton = { CmEdgeButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, enabled = !loading) },
+    ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
             // La risposta finale della sessione, che nella cattura del terminale spesso non c'è più: sta in cima, in
@@ -86,7 +91,6 @@ fun TerminalScreen(
                     }
                 }
             }
-            item { WideButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, primary = true, enabled = !loading, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
         }
     }
 }
