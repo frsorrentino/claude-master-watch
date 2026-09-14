@@ -28,7 +28,7 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
         val preview = ContractJson.decodeState(assets.open("contract/state-1-question.json").bufferedReader().readText())
-        return build(type, preview, fresh = true, account = "personale", seen = emptySet())
+        return build(type, preview, fresh = true, chosen = "personale", seen = emptySet())
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
