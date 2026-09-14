@@ -1,5 +1,11 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -23,13 +29,19 @@ import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Recap del giorno: «progetto · fatto» e «→ prossimo». */
 @Composable
-fun RecapScreen(recap: Recap) {
+fun RecapScreen(recap: Recap, speaking: Boolean = false, onSpeak: () -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val rows = RecapText.rows(recap)
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.recap_title, recap.date)) } }
+            if (rows.isNotEmpty()) item {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.recap_listen), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeak)
+                }
+            }
             if (rows.isEmpty()) item { Text(stringResource(R.string.recap_empty), color = CmColors.text2, modifier = Modifier) }
             for (r in rows) {
                 item { Text(r.done, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }

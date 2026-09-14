@@ -1,5 +1,7 @@
 package it.pixelbox.cmwatch.wear
 
+import it.pixelbox.cmwatch.rules.SpeechText
+import it.pixelbox.cmwatch.wear.push.SpeakService
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -168,6 +170,8 @@ class MainActivity : ComponentActivity() {
             }
             composable(Routes.SESSION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
+                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 SessionScreen(
                     snapshot, name, now,
                     onReply = { nav.go(Screen.Question(name)) },
@@ -176,6 +180,8 @@ class MainActivity : ComponentActivity() {
                     onFollow = { follow -> scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
                     onOutcome = { nav.go(Screen.Outcome(name)) },
                     onBackToSessions = { nav.go(Screen.Sessions) },
+                    speaking = speaking || preparing,
+                    onListen = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.let { o -> { SpeakService.last(this@MainActivity, name, o.full) } },
                     onRelaunch = snapshot.state?.let { st ->
                         st.sessions.firstOrNull { it.name == name }
                             ?.let { LaunchRules.pathFor(it, st.projects) }
@@ -191,6 +197,8 @@ class MainActivity : ComponentActivity() {
                 }
                 // Uscire dalla Domanda senza rispondere (swipe/back) la segna come vista: non si riapre da sola.
                 androidx.compose.runtime.DisposableEffect(qid) { onDispose { if (qid != null) seen = seen + qid } }
+                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 QuestionScreen(
                     snapshot, name, now, sentId,
                     onAnswer = { n -> if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.answer(name, n); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
@@ -199,6 +207,8 @@ class MainActivity : ComponentActivity() {
                     onRetry = { id -> scope.launch { app.repo.retry(id) } },
                     onAnsweredElsewhere = { Haptics.play(this@MainActivity, Haptics.Kind.OUTCOME) },
                     onDone = { sentId = null; nav.go(Screen.Sessions) },
+                    speaking = speaking || preparing,
+                    onSpeak = { snapshot.state?.sessions?.firstOrNull { it.name == name }?.question?.let { q -> SpeakService.text(this@MainActivity, SpeechText.question(q, getString(R.string.tts_option))) } },
                 )
             }
             composable(Routes.SETTINGS) {
@@ -223,9 +233,11 @@ class MainActivity : ComponentActivity() {
             composable(Routes.OUTCOME) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
                 val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 OutcomeScreen(
-                    snapshot, name, now, settings?.ttsMinChars ?: 120, speaking,
-                    onSpeak = { text -> if (speaking) app.speaker.stop() else app.speaker.speak(text) },
+                    snapshot, name, now, settings?.ttsMinChars ?: 120, speaking || preparing,
+                    // Il testo intero lo chiede al PC; `text`, cioè outcome.full, è il ripiego.
+                    onSpeak = { text -> SpeakService.last(this@MainActivity, name, text) },
                     onReadAll = { nav.go(Screen.Terminal(name)) }, onBack = { nav.go(Screen.Sessions) },
                 )
             }
@@ -243,13 +255,14 @@ class MainActivity : ComponentActivity() {
                 }
                 val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
                 val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 TerminalScreen(
                     name, text, loading = text == null && error == null && !failed,
                     error = error ?: if (failed) getString(R.string.question_not_delivered) else null,
                     onRefresh = { ask() },
                     answer = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full,
-                    speaking = speaking,
-                    onSpeak = { t -> if (speaking) app.speaker.stop() else app.speaker.speak(t) },
+                    speaking = speaking || preparing,
+                    onSpeak = { t -> SpeakService.last(this@MainActivity, name, t) },
                 )
             }
             composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
@@ -257,7 +270,12 @@ class MainActivity : ComponentActivity() {
                 LaunchScreen(snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh) { path -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; nav.go(Screen.Sessions) }
             }
             composable(Routes.QUOTA) { QuotaScreen(snapshot.state, snapshot.freshness) }
-            composable(Routes.RECAP) { RecapScreen(snapshot.state?.recap ?: Recap()) }
+            composable(Routes.RECAP) {
+                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
+                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
+                val recap = snapshot.state?.recap ?: Recap()
+                RecapScreen(recap, speaking || preparing, onSpeak = { SpeakService.text(this@MainActivity, SpeechText.recap(recap, getString(R.string.tts_recap_next))) })
+            }
             composable(Routes.NIGHT) { NightScreen(snapshot.state?.night ?: Night()) }
             composable(Routes.MENU) { MenuScreen(onOpen = { nav.go(it) }) }
         }

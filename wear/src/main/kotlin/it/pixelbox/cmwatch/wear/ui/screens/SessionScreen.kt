@@ -1,5 +1,7 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -52,6 +54,8 @@ fun SessionScreen(
     onOutcome: () -> Unit,
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
+    speaking: Boolean = false,
+    onListen: (() -> Unit)? = null,
 ) {
     val running = stringResource(R.string.tile_turn_running)
     val idleLabel = stringResource(R.string.state_idle)
@@ -134,6 +138,17 @@ fun SessionScreen(
                         onClick = onTerminal, enabled = enabled,
                         transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                     )
+                }
+                if (onListen != null) {
+                    item {
+                        // ▶ sulla scheda: la risposta intera chiesta al PC, letta a voce (Franz, 14/09 12:17).
+                        IconAction(
+                            label = stringResource(if (speaking) R.string.tts_stop else R.string.card_listen),
+                            icon = if (speaking) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                            onClick = onListen, enabled = true,
+                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                        )
+                    }
                 }
                 if (s.outcome != null) {
                     item {

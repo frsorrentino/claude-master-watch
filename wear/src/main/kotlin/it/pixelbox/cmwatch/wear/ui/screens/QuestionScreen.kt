@@ -1,5 +1,11 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -51,6 +57,8 @@ fun QuestionScreen(
     onRetry: (String) -> Unit,
     onAnsweredElsewhere: () -> Unit,
     onDone: () -> Unit,
+    speaking: Boolean = false,
+    onSpeak: () -> Unit = {},
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -91,7 +99,13 @@ fun QuestionScreen(
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
             item { SessionHeader(s, now, enabled, modifier = Modifier) }
-            item { QuestionText(q.text, modifier = Modifier.fillMaxWidth()) }
+            item {
+                // ▶ accanto alla domanda: la legge con le opzioni numerate, per rispondere senza guardare (14/09).
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    QuestionText(q.text, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeak)
+                }
+            }
             if (holdHint) {
                 item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth()) }
             }
