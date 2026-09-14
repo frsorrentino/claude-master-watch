@@ -25,7 +25,9 @@ enum class EventKind {
 enum class CmdOp {
     @SerialName("answer") ANSWER, @SerialName("prompt") PROMPT, @SerialName("launch") LAUNCH,
     @SerialName("follow") FOLLOW, @SerialName("unfollow") UNFOLLOW, @SerialName("resume") RESUME,
-    @SerialName("screen") SCREEN, @SerialName("allow_all") ALLOW_ALL
+    @SerialName("screen") SCREEN, @SerialName("allow_all") ALLOW_ALL,
+    /** Contratto 1.4: l'ultima risposta intera della sessione, per la lettura a voce. */
+    @SerialName("last") LAST
 }
 
 @Serializable data class Option(val n: Int, val label: String)

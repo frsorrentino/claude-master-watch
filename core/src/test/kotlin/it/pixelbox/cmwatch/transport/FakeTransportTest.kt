@@ -48,6 +48,16 @@ class FakeTransportTest {
         assertFalse(tr.state.first().sessions.first { it.name == "ledger-api" }.followed)
     }
 
+    @Test fun lastReadsTheWholeReplyOrSaysThereIsNone() = runTest {
+        // Contratto 1.4: il finto PC risponde a «last» con l'esito intero della sessione, come fa il relay col transcript.
+        val tr = t()
+        val s = tr.fetchState().sessions.first { it.outcome != null }
+        val r = tr.send(Cmd("u6", CmdOp.LAST, s.name, null, clock, "test"))
+        assertTrue(r.ok); assertEquals(s.outcome!!.full, r.text)
+        val none = tr.send(Cmd("u7", CmdOp.LAST, "nope", null, clock, "test"))
+        assertFalse(none.ok); assertEquals("nope: nessun messaggio da leggere", none.text)
+    }
+
     @Test fun duplicateIdReturnsSameResult() = runTest {
         val tr = t(); val c = Cmd("dup", CmdOp.ANSWER, "ledger-api", "2", clock, "test")
         assertEquals(tr.send(c), tr.send(c))

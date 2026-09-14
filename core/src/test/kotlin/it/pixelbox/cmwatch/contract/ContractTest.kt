@@ -75,11 +75,22 @@ class ContractTest {
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
-        assertEquals(7, results.size); assertEquals(2, results.count { !it.ok })
+        assertEquals(8, results.size); assertEquals(2, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
         assertEquals(results[3], ContractJson.decodeResult(ContractJson.json.encodeToString(CmdResult.serializer(), results[3])))
+    }
+
+    @Test fun lastAsksForTheWholeReply() {
+        // Contratto 1.4: «last» chiede al PC l'ultima risposta intera della sessione, per la lettura a voce.
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val last = cmds.single { ContractJson.encode(it).contains("\"op\":\"last\"") }
+        val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+            .single { it.id == last.id }
+        assertTrue(res.ok); assertTrue(res.text.isNotBlank())
+        assertEquals(last, ContractJson.json.decodeFromString(Cmd.serializer(), ContractJson.encode(last)))
     }
 
     @Test fun unknownKeysAreIgnored() {

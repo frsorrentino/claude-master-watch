@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte 1.1, 1.2 e 1.3)
+# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.4)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -32,6 +32,9 @@ solo per le `busy`, e resta null per `idle` e `gone`. `v` resta 1.
 
 Contratto 1.3 (14/09/2026, solo aggiunte): `quota.<account>.reset_h5`, quando riparte la finestra di 5 ore (epoch in
 secondi, null se assente); `reset_w7` resta il reset settimanale. `v` resta 1.
+
+Contratto 1.4 (14/09/2026, solo aggiunte): comando `last` — ultimo messaggio della sessione, intero fino a 4000
+caratteri, tagliato a fine frase. `v` resta 1.
 
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
