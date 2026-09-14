@@ -26,6 +26,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.TerminalStyle
@@ -46,7 +47,7 @@ fun TerminalScreen(
     val spec = rememberTransformationSpec()
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = roundListPadding(sides = 0.10f),
+        contentPadding = edgeListPadding(sides = 0.10f),
         edgeButton = { CmEdgeButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, enabled = !loading) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {

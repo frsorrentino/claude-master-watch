@@ -25,6 +25,7 @@ import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.rememberCenterIndex
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
+import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
@@ -48,9 +49,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
     )
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = roundListPadding(sides = 0.052f),
-        // L'azione principale è curva in fondo: prima era un bottone in lista identico alle righe delle sessioni.
-        edgeButton = { if (!ambient) CmEdgeButton(stringResource(R.string.menu_title), onClick = { onMenu(Screen.Menu) }) },
+        contentPadding = edgeListPadding(),
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -74,6 +73,9 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 )
             }
             // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.
+            // Curvo come ultimo elemento della lista: lo slot `edgeButton` dello scaffold, in questa versione della
+            // libreria, non disegnava niente (provato al polso, 14/09 07:49).
+            if (!ambient) item { CmEdgeButton(stringResource(R.string.menu_title), onClick = { onMenu(Screen.Menu) }) }
         }
     }
 }

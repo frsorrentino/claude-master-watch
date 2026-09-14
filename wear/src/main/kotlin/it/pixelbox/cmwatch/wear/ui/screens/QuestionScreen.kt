@@ -31,6 +31,7 @@ import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 import kotlinx.coroutines.delay
 
@@ -69,7 +70,7 @@ fun QuestionScreen(
 
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = roundListPadding(),
+        contentPadding = edgeListPadding(sides = 0.07f),
         // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi».
         edgeButton = { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) },
     ) { padding ->

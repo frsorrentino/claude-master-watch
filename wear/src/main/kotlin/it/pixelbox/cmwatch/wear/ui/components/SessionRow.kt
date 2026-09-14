@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,16 +82,20 @@ fun SessionRow(
                 )
             }
         }
+        // Quattro righe in tutto: se il titolo sta su una riga, al testo sotto ne restano tre (Franz, 14/09 08:10).
+        var righeTitolo by remember(cell.title) { mutableIntStateOf(1) }
         cell.title?.takeIf { it.isNotBlank() }?.let {
             Text(
                 it, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                onTextLayout = { righeTitolo = it.lineCount },
             )
         }
         cell.detail?.takeIf { it.isNotBlank() }?.let {
             Text(
                 it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
-                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                maxLines = if (righeTitolo <= 1) 3 else 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

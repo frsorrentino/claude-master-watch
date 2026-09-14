@@ -108,6 +108,18 @@ object TileTexts {
         return Rest.Calm(sessions = live.size, since = quando)
     }
 
+    /**
+     * Quote da mettere sulla tile: una riga per account, `personale` per prima, al massimo due (Franz, 14/09 08:28:
+     * «se volessimo mostrare sia la personale che quella di lavoro»). Niente etichetta: l'account lo dice il pallino
+     * del suo colore, e così la card sta in due righe strette invece di essere tagliata dal bordo tondo.
+     */
+    data class QuotaRow(val account: String, val pct: Int?, val personale: Boolean)
+
+    fun quotas(state: State, max: Int = 2): List<QuotaRow> = state.quota.keys
+        .sortedWith(compareBy({ if (it.lowercase() == "personale") 0 else 1 }, { it.lowercase() }))
+        .take(max)
+        .map { QuotaRow(it, state.quota.getValue(it).h5, it.lowercase() == "personale") }
+
     /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
     fun badge(s: Session): String = s.icon?.takeIf { it.isNotBlank() } ?: if (s.question != null) "❓" else icon(s.state)
 

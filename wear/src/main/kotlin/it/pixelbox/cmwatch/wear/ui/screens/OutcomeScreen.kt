@@ -26,6 +26,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Esito: `short` grande, `full`, ▶ per leggerlo, «Leggi tutto» chiede al PC (terminale). */
@@ -37,7 +38,7 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
     val o = s?.outcome
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = roundListPadding(),
+        contentPadding = edgeListPadding(sides = 0.07f),
         edgeButton = { CmEdgeButton(stringResource(R.string.outcome_read_all), onClick = onReadAll) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {

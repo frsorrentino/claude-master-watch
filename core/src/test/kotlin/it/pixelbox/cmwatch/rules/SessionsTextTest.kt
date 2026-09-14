@@ -60,9 +60,14 @@ class SessionsCellTest {
         assertEquals(i.outcome?.short ?: "a riposo", c.title)
     }
 
-    @Test fun unaSessioneChiusaNonHaNienteDaDire() {
+    @Test fun unaChiusaMostraLUltimaCosaFatta() {
         val g = st.sessions.first { it.state == SessionState.GONE }
         val c = SessionsText.cell(g, st.ts, "turno in corso", "a riposo", tools)
-        assertNull(c.title); assertNull(c.detail)
+        assertEquals(g.outcome?.short ?: g.project, c.title); assertNull(c.detail)
+    }
+
+    @Test fun unaChiusaSenzaEsitoMostraIlProgetto() {
+        val g = st.sessions.first { it.state == SessionState.GONE }.copy(outcome = null)
+        assertEquals(g.project, SessionsText.cell(g, st.ts, "turno in corso", "a riposo", tools).title)
     }
 }

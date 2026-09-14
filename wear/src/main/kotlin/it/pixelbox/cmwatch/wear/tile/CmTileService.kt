@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.wear.tile
 
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
@@ -69,8 +70,16 @@ class CmTileService : TileService() {
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> =
         CallbackToFutureAdapter.getFuture { completer ->
             val app = application as CmApp
-            val snap = app.repo.snapshot.value
             val prefs = kotlinx.coroutines.runBlocking { app.prefs.current() }
+            // La tile può essere disegnata con l'app spenta: la fotografia arriva da Room e può essere di ore prima
+            // (Franz, 14/09 08:10: «mostra sempre la stessa sessione di ieri»). Se è vecchia la si richiede al PC e
+            // si aspetta al massimo due secondi e mezzo, dentro il tempo che il sistema concede alla tile.
+            val snap = kotlinx.coroutines.runBlocking {
+                val cur = app.repo.snapshot.value
+                val vecchia = cur.state == null || (System.currentTimeMillis() / 1000 - cur.state!!.ts) > 60
+                if (vecchia) kotlinx.coroutines.withTimeoutOrNull(2500) { app.repo.refresh() }
+                app.repo.snapshot.value
+            }
             val state = snap.state
             val stale = snap.freshness as? Freshness.Stale
             val now = System.currentTimeMillis() / 1000
@@ -81,10 +90,8 @@ class CmTileService : TileService() {
                 materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
                     primaryLayout(
                         margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN,
-                        // Niente titolo: «N sessioni» era la riga che valeva meno (il conteggio sta sul bottone di
-                        // bordo e Wear OS scrive già il nome dell'app sopra), e la sua riga serviva alla card della
-                        // quota, che restava tagliata in basso (Franz, 13/09 17:15).
-                        titleSlot = null,
+                        // Il titolo come nelle altre tile di sistema (Franz, 14/09 08:10): «Sessioni Claude».
+                        titleSlot = { text(getString(R.string.tile_title).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onBackground, maxLines = 1) },
                         mainSlot = {
                             when {
                                 question != null -> questionCard(question, now)
@@ -140,7 +147,6 @@ class CmTileService : TileService() {
 
     /** A riposo: cosa succede adesso e la quota, due card come le due mail di Gmail. */
     private fun MaterialScope.restCards(state: State, now: Long, account: String, stale: Freshness.Stale?): LayoutElement {
-        val q = state.quota[account]
         val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
         // Con il dato vecchio le età si leggono sull'istante della fotografia, non su adesso: altrimenti tutto
         // sembrerebbe antico. La vecchiaia la dice l'etichetta in ambra (Franz, 13/09 18:27).
@@ -151,9 +157,9 @@ class CmTileService : TileService() {
                 is TileTexts.Rest.Calm -> calmCard(rest, quando, stale)
             }
         )
-        if (q != null) {
+        if (state.quota.isNotEmpty()) {
             col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
-            col.addContent(quotaCard(account, q))
+            col.addContent(quotaCard(state))
         }
         return col.build()
     }
@@ -192,39 +198,54 @@ class CmTileService : TileService() {
     )
 
     /**
-     * Quota: percentuale grande e barra lineare accanto, come nell'anteprima approvata da Franz (13/09). L'anello
-     * stava dentro una `graphicDataCard`, più alta della card di Gmail, e faceva tagliare la seconda card.
+     * Quota senza etichetta, una riga per account (Franz, 14/09 08:28): col titolo della tile rimesso non ci stava
+     * più, e il nome dell'account lo dice il pallino del suo colore, come su Telegram. Personale per prima.
      */
-    private fun MaterialScope.quotaCard(account: String, q: QuotaAccount): LayoutElement = appCard(
-        onClick = clickable(launch("cmwatch://quota"), id = "quota"),
-        label = { small(getString(R.string.quota_label, account), LABEL.argb) },
-        time = {
-            small(
-                q.resetW7?.let { getString(R.string.quota_reset_at, HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()))) } ?: "",
-                colorScheme.onSurfaceVariant,
-            )
-        },
-        title = {
-            LayoutElementBuilders.Row.Builder()
-                .setWidth(expand())
-                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                .addContent(
-                    text(
-                        getString(R.string.tile_quota_pct, q.h5 ?: 0).layoutString,
-                        typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 1,
-                    )
+    private fun MaterialScope.quotaCard(state: State): LayoutElement {
+        val righe = TileTexts.quotas(state)
+        val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
+        for ((i, r) in righe.withIndex()) {
+            if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(6f)).build())
+            col.addContent(quotaRow(r))
+        }
+        return appCard(
+            onClick = clickable(launch("cmwatch://quota"), id = "quota"),
+            title = { col.build() },
+            colors = cardColors(),
+        )
+    }
+
+    private fun MaterialScope.quotaRow(r: TileTexts.QuotaRow): LayoutElement =
+        LayoutElementBuilders.Row.Builder()
+            .setWidth(expand())
+            .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+            .addContent(accountMark(r.personale))
+            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
+            .addContent(
+                text(
+                    getString(R.string.tile_quota_pct, r.pct ?: 0).layoutString,
+                    typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1,
                 )
-                .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(10f)).build())
-                .addContent(bar(q.h5))
-                .build()
-        },
-        colors = cardColors(),
-    )
+            )
+            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(8f)).build())
+            .addContent(bar(r.pct))
+            .build()
 
     /**
-     * Barra lineare della quota. ProtoLayout Material 3 1.4.2 ha solo l'indicatore circolare, quindi la barra è una
-     * riga di due pilloline pesate — riempita e traccia — con lo stacco in mezzo come negli indicatori lineari M3.
+     * Segno dell'account: la forma, non il colore (contratto 1.1, ricordato da Franz il 14/09 08:39) — cerchio per
+     * `personale`, quadratino per gli altri, nello stesso grigio.
      */
+    private fun MaterialScope.accountMark(personale: Boolean): LayoutElement = LayoutElementBuilders.Box.Builder()
+        .setWidth(dp(10f)).setHeight(dp(10f))
+        .setModifiers(
+            ModifiersBuilders.Modifiers.Builder().setBackground(
+                ModifiersBuilders.Background.Builder()
+                    .setColor(colorScheme.onSurfaceVariant.prop)
+                    .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(if (personale) 5f else 2f)).build())
+                    .build()
+            ).build()
+        ).build()
+
     private fun MaterialScope.bar(pct: Int?): LayoutElement {
         val spec = QuotaBar.of(pct)
         val row = LayoutElementBuilders.Row.Builder().setWidth(expand()).setHeight(dp(BAR_H))

@@ -117,3 +117,20 @@ class TileNextAtTest {
         assertEquals("turno in corso", TileTexts.activity(s, busy = true, running = "turno in corso", idle = "a riposo", now = 1789200000L))
     }
 }
+
+class TileQuotasTest {
+    private val q = it.pixelbox.cmwatch.contract.ContractJson.decodeState(it.pixelbox.cmwatch.Fixtures.stateQuestion)
+
+    @Test fun personalePerPrimaEAlMassimoDue() {
+        val r = TileTexts.quotas(q)
+        assertEquals("personale", r.first().account)
+        assertTrue(r.first().personale)
+        assertTrue(r.size <= 2)
+        assertEquals(q.quota.getValue("personale").h5, r.first().pct)
+    }
+
+    @Test fun unSoloAccountDaUnaSolaRiga() {
+        val uno = q.copy(quota = mapOf("personale" to q.quota.getValue("personale")))
+        assertEquals(1, TileTexts.quotas(uno).size)
+    }
+}

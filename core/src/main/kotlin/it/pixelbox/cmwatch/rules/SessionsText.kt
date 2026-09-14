@@ -46,7 +46,9 @@ object SessionsText {
         return when {
             // Chi aspetta: la domanda occupa il posto d'onore, il resto lo dice la schermata.
             s.question != null -> Cell(title = s.question?.text, detail = null)
-            s.state == SessionState.GONE -> Cell(title = null, detail = null)
+            // Una chiusa ha comunque una cosa da dire: l'ultima che ha fatto, altrimenti il suo progetto (Franz,
+            // 14/09 08:00: «ci sarebbe lo spazio per un'altra riga»).
+            s.state == SessionState.GONE -> Cell(title = esito ?: s.project, detail = null)
             s.state == SessionState.BUSY || s.state == SessionState.AWAITING -> {
                 val t = TileTexts.activity(s, busy = true, running = running, idle = idle, now = now, tools = tools)
                 Cell(title = t, detail = next?.takeIf { it != t })

@@ -36,6 +36,7 @@ import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.components.IconAction
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
 import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
 
 /** Scheda: riga nome · account · stato · durata; → prossimo; esito; Rispondi / Scrivi / Terminale / Segui. */
@@ -67,7 +68,7 @@ fun SessionScreen(
     val enabled = snapshot.freshness is Freshness.Fresh
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = roundListPadding(),
+        contentPadding = edgeListPadding(sides = 0.07f),
         // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi».
         edgeButton = {
             when {
