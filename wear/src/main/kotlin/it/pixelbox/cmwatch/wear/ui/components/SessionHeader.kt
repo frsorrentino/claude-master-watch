@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
@@ -22,8 +21,6 @@ import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
-import it.pixelbox.cmwatch.wear.ui.theme.cmMarquee
-import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */
 @Composable
@@ -36,7 +33,8 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
             val row = SessionsText.row(s, now)
             val tail = row.removePrefix(s.name).removePrefix(" · ")
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 1, softWrap = false, overflow = TextOverflow.MiddleEllipsis, modifier = Modifier.cmMarquee(!animationsOff()))
+                // Il nome va a capo invece di scorrere (S07): lo scorrimento fermo a metà lasciava una «h» isolata.
+                Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 2)
                 if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
             }
         }

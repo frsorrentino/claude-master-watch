@@ -24,7 +24,7 @@ import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.rules.TimelineText
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 import java.time.ZoneId
 
 /** Timeline: /events per giorno, filtro sessione a scelta ciclica (tutte → una → …). */
@@ -36,7 +36,7 @@ fun TimelineScreen(events: List<Event>) {
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     // Giorni nella lingua delle risorse, come nella Quota: con l'inglese niente nomi italiani (14/09 23:43).
     val groups = TimelineText.groups(events, ZoneId.systemDefault(), filter, locale = LocalConfiguration.current.locales[0])
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.timeline_title)) } }
             if (sessions.isNotEmpty()) item {
@@ -46,10 +46,10 @@ fun TimelineScreen(events: List<Event>) {
                     transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                 )
             }
-            if (groups.isEmpty()) item { Text(stringResource(R.string.timeline_empty), color = CmColors.text2, modifier = Modifier) }
+            if (groups.isEmpty()) item { Text(stringResource(R.string.timeline_empty), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
             for (g in groups) {
                 item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(g.day) } }
-                for (row in g.rows) item { Text(row, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+                for (row in g.rows) item { Text(row, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             }
         }
     }

@@ -33,6 +33,8 @@ tasks.named("preBuild") { dependsOn(copyContract) }
 // task «aggiornato», i test non ripartivano e restavano i risultati vecchi (un verde falso il 14/09 alle 23:15).
 tasks.withType<Test>().configureEach {
     inputs.dir(rootProject.file("contract")).withPropertyName("contractFixtures").withPathSensitivity(PathSensitivity.RELATIVE)
+    // Stesso motivo per le stringhe dell'app, che il test della tile legge da wear/src/main/res (S07).
+    inputs.dir(rootProject.file("wear/src/main/res")).withPropertyName("wearStrings").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 dependencies {

@@ -25,8 +25,7 @@ import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.rememberCenterIndex
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
-import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
 @Composable
@@ -47,10 +46,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
         message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
         plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
     )
-    ScreenScaffold(
-        scrollState = listState,
-        contentPadding = edgeListPadding(),
-    ) { padding ->
+    ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
@@ -58,10 +54,10 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 }
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
-                item { StaleChip(st.minutes, Modifier) }
+                item { StaleChip(st.minutes, Modifier.morph(this, spec)) }
             }
             if (sessions.isEmpty()) {
-                item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier) }
+                item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
             }
             val names = sessions.map { it.name }
             items(count = sessions.size, key = { sessions[it].id }) { i ->

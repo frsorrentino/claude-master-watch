@@ -37,8 +37,7 @@ import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 import kotlinx.coroutines.delay
 
 /**
@@ -78,7 +77,6 @@ fun QuestionScreen(
 
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = edgeListPadding(sides = 0.07f),
         // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi».
         edgeButton = { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) },
     ) { padding ->
@@ -90,24 +88,24 @@ fun QuestionScreen(
                         sentId != null -> stringResource(R.string.question_sent)
                         else -> stringResource(R.string.question_answered_elsewhere)
                     }
-                    Text(text, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth())
+                    Text(text, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec))
                 }
                 if (sentId != null && pending?.status == PendingStatus.FAILED) {
                     item { WideButton(stringResource(R.string.question_retry), onClick = { onRetry(sentId) }, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 }
                 return@TransformingLazyColumn
             }
-            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
-            item { SessionHeader(s, now, enabled, modifier = Modifier) }
+            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.morph(this, spec)) } }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec)) }
             item {
                 // ▶ accanto alla domanda: la legge con le opzioni numerate, per rispondere senza guardare (14/09).
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     QuestionText(q.text, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeak)
                 }
             }
             if (holdHint) {
-                item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth()) }
+                item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             }
             q.options.forEachIndexed { i, opt ->
                 item {

@@ -26,8 +26,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Esito: `short` grande, `full`, ▶ per leggerlo, «Leggi tutto» chiede al PC (terminale). */
 @Composable
@@ -38,31 +37,30 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
     val o = s?.outcome
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = edgeListPadding(sides = 0.07f),
         edgeButton = { CmEdgeButton(stringResource(R.string.outcome_read_all), onClick = onReadAll) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null || o == null) {
-                item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier) }
+                item { Text(stringResource(R.string.outcome_none), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBack, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 return@TransformingLazyColumn
             }
             // Niente riga del comando in corso: la schermata dice com'è finito il turno (Franz, 14/09 17:40).
-            item { SessionHeader(s, now, true, modifier = Modifier, showTool = false) }
+            item { SessionHeader(s, now, true, modifier = Modifier.morph(this, spec), showTool = false) }
             // La frase intera dell'esito: grande se è breve, più piccola se è lunga (contratto 1.6, fino a 200 caratteri).
             // Il ▶ sta su una riga sua: accanto a un titolo lungo copriva il testo (Franz, 14/09 17:40).
             val titolo = OutcomeText.headline(o)
             item {
                 Text(
-                    titolo, color = CmColors.text, modifier = Modifier.fillMaxWidth(),
+                    titolo, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec),
                     style = if (OutcomeText.bigTitle(titolo)) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
                 )
             }
             if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
-                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { SpeakButton(speaking, onToggle = { onSpeak(SpeechText.outcome(o)) }) } }
+                item { Box(Modifier.fillMaxWidth().morph(this, spec), contentAlignment = Alignment.Center) { SpeakButton(speaking, onToggle = { onSpeak(SpeechText.outcome(o)) }) } }
             }
             // Sotto, solo quello che il titolo non dice già (Franz, 14/09 14:09).
-            OutcomeText.body(o)?.let { b -> item { Text(b, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) } }
+            OutcomeText.body(o)?.let { b -> item { Text(b, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) } }
         }
     }
 }

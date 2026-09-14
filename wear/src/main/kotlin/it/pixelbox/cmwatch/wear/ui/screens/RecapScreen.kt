@@ -25,7 +25,7 @@ import it.pixelbox.cmwatch.contract.Night
 import it.pixelbox.cmwatch.contract.Recap
 import it.pixelbox.cmwatch.rules.RecapText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Recap del giorno: «progetto · fatto» e «→ prossimo». */
 @Composable
@@ -33,19 +33,19 @@ fun RecapScreen(recap: Recap, speaking: Boolean = false, onSpeak: () -> Unit = {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val rows = RecapText.rows(recap)
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.recap_title, recap.date)) } }
             if (rows.isNotEmpty()) item {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     Text(stringResource(R.string.recap_listen), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeak)
                 }
             }
-            if (rows.isEmpty()) item { Text(stringResource(R.string.recap_empty), color = CmColors.text2, modifier = Modifier) }
+            if (rows.isEmpty()) item { Text(stringResource(R.string.recap_empty), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
             for (r in rows) {
-                item { Text(r.done, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
-                r.next?.let { n -> item { Text(n, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) } }
+                item { Text(r.done, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
+                r.next?.let { n -> item { Text(n, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.fillMaxWidth().morph(this, spec)) } }
             }
         }
     }
@@ -56,11 +56,11 @@ fun RecapScreen(recap: Recap, speaking: Boolean = false, onSpeak: () -> Unit = {
 fun NightScreen(night: Night) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
+    ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.night_title)) } }
-            item { Text(stringResource(R.string.night_queued, night.queued), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
-            item { Text(stringResource(R.string.night_running, night.running ?: stringResource(R.string.quota_none)), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
+            item { Text(stringResource(R.string.night_queued, night.queued), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
+            item { Text(stringResource(R.string.night_running, night.running ?: stringResource(R.string.quota_none)), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
         }
     }
 }

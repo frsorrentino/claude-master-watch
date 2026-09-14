@@ -20,7 +20,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import it.pixelbox.cmwatch.R
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
@@ -38,7 +42,15 @@ fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier, am
             animationSpec = infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "alpha",
         )
     } else remember { mutableStateOf(1f) }
-    Canvas(modifier.size(size)) { drawBadge(spec, this.size.minDimension, alpha = alpha, outline = ambient) }
+    // Il badge è solo disegno: a TalkBack diciamo lo stato del glifo e l'account della forma (S07).
+    val labels = Badge.Labels(
+        waiting = stringResource(R.string.state_waiting), busy = stringResource(R.string.state_busy),
+        idle = stringResource(R.string.state_idle), gone = stringResource(R.string.state_gone),
+        awaiting = stringResource(R.string.state_awaiting_prompt),
+        personal = stringResource(R.string.badge_personal), work = stringResource(R.string.badge_work),
+    )
+    val description = Badge.description(s.account, s.accountKind, s.state, labels)
+    Canvas(modifier.size(size).semantics { contentDescription = description }) { drawBadge(spec, this.size.minDimension, alpha = alpha, outline = ambient) }
 }
 
 fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float = 1f, outline: Boolean = false) {

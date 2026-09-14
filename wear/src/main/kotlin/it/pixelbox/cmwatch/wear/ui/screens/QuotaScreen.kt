@@ -26,7 +26,7 @@ import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.wear.ui.components.BriefCard
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /**
  * Quota e stato del lavoro nello stile del «brief mattutino» di Wear OS, che Franz vuole identico (13/09 16:16):
@@ -53,7 +53,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
     // Giorni della settimana nella lingua delle risorse: con l'inglese «reset Thu 02:00», non «gio» (14/09 23:43).
     val quota = BriefCards.quota(state, labels, locale = LocalConfiguration.current.locales[0])
     val work = BriefCards.work(state, freshness, now, labels)
-    ScreenScaffold(scrollState = listState, contentPadding = roundListPadding(sides = 0.052f)) { padding ->
+    ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
@@ -77,7 +77,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                 item {
                     Text(
                         stringResource(R.string.quota_none), style = MaterialTheme.typography.bodyMedium,
-                        color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                        color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().morph(this, spec),
                     )
                 }
             }

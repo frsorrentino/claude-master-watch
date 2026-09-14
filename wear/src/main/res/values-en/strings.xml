@@ -134,6 +134,8 @@
     <string name="tool_plan">updates the plan</string>
     <string name="tool_other">uses %1$s</string>
     <string name="state_awaiting_prompt">prompt from the watch in progress</string>
+    <string name="badge_personal">personal account</string>
+    <string name="badge_work">work account</string>
     <string name="tile_title">Claude Master</string>
     <string name="tile_all_idle">All idle</string>
     <string name="tile_quota_pct">%1$d%%</string>

@@ -40,8 +40,7 @@ import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.components.IconAction
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Scheda: riga nome · account · stato · durata; → prossimo; esito; Rispondi / Scrivi / Terminale / Segui. */
 @Composable
@@ -74,7 +73,6 @@ fun SessionScreen(
     val enabled = snapshot.freshness is Freshness.Fresh
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = edgeListPadding(sides = 0.07f),
         // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi».
         edgeButton = {
             when {
@@ -88,15 +86,15 @@ fun SessionScreen(
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             if (s == null) {
-                item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier) }
+                item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBackToSessions, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 return@TransformingLazyColumn
             }
-            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier) } }
+            (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.morph(this, spec)) } }
             // Scheda rifatta (review UX, scelta da Franz il 13/09): intestazione, UNA card con quello che sta
             // facendo, «Segui» come interruttore, poi le azioni con la loro icona. Prima erano quattro bottoni
             // larghi identici che davano lo stesso peso a tutto, con l'informazione in due righe minuscole.
-            item { SessionHeader(s, now, enabled, modifier = Modifier) }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec)) }
             val cell = SessionsText.cell(s, now, running, idleLabel, tools)
             if (cell.title != null || cell.detail != null) {
                 item {

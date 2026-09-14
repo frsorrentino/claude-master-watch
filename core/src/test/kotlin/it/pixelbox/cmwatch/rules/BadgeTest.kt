@@ -53,6 +53,19 @@ class BadgeTest {
         assertFalse(Badge.breathes(SessionState.IDLE)); assertFalse(Badge.breathes(SessionState.WAITING)); assertFalse(Badge.breathes(SessionState.GONE))
     }
 
+    // S07: il badge è solo disegno, TalkBack deve sentire cosa dice: lo stato del glifo e l'account della forma.
+    @Test fun descrizionePerTalkBackStatoEAccount() {
+        val l = Badge.Labels(
+            waiting = "In attesa di risposta", busy = "Lavora", idle = "Ferma", gone = "Sparita",
+            awaiting = "prompt dal polso in corso", personal = "account personale", work = "account di lavoro",
+        )
+        assertEquals("In attesa di risposta, account personale", Badge.description("personale", null, SessionState.WAITING, l))
+        assertEquals("Lavora, account di lavoro", Badge.description("agenzia", null, SessionState.BUSY, l))
+        assertEquals("prompt dal polso in corso, account personale", Badge.description("home", "personal", SessionState.AWAITING, l))
+        assertEquals("Sparita, account di lavoro", Badge.description("personale", "work", SessionState.GONE, l))
+        assertEquals("Ferma, account personale", Badge.description("personale", null, SessionState.IDLE, l))
+    }
+
     @Test fun glyphColourByContrastNotByTable() {
         assertEquals(Badge.BLACK, Badge.of("personale", "#FFB020", SessionState.WAITING).glyphColor)   // ambra chiara → nero
         assertEquals(Badge.WHITE, Badge.of("personale", "#1A237E", SessionState.WAITING).glyphColor)   // blu scuro → bianco

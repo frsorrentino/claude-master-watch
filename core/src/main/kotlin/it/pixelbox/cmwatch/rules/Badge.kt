@@ -40,6 +40,23 @@ object Badge {
         return Spec(if (square) Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
     }
 
+    data class Labels(
+        val waiting: String, val busy: String, val idle: String, val gone: String, val awaiting: String,
+        val personal: String, val work: String,
+    )
+
+    /** Quello che il badge dice a chi guarda, detto a TalkBack (S07): lo stato del glifo e l'account della forma. */
+    fun description(account: String, kind: String?, state: SessionState, l: Labels): String {
+        val stato = when (state) {
+            SessionState.WAITING -> l.waiting
+            SessionState.BUSY -> l.busy
+            SessionState.AWAITING -> l.awaiting
+            SessionState.IDLE -> l.idle
+            SessionState.GONE -> l.gone
+        }
+        return "$stato, ${if (Accounts.personal(account, kind)) l.personal else l.work}"
+    }
+
     /**
      * Il badge respira mentre la sessione lavora, come il pallino dell'app Claude (Franz, 14/09 16:24): ogni sessione
      * al lavoro, non più solo la seguita, che nella lista ha il suo bordo e la campanella.

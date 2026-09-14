@@ -173,6 +173,19 @@ class TileQuotasTest {
         val r = TileTexts.quotaLine(q, "personale")!!.copy(resetH5 = null)
         assertEquals("11 %", TileTexts.quotaSuffix(r, "%1\$d %%", "%1\$d %% · %2\$s", ZoneId.of("Europe/Rome")))
     }
+
+    // S07: «0 % · 17:30» non diceva che 17:30 è il reset delle cinque ore. Letto dalle stringhe vere dell'app.
+    @Test fun laTileDiceCheLOraEIlReset() {
+        val r = TileTexts.quotaLine(q, "personale")!!
+        val rome = ZoneId.of("Europe/Rome")
+        assertEquals("11 % · reset 18:00", TileTexts.quotaSuffix(r, res("values", "tile_quota_pct"), res("values", "tile_quota_pct_reset"), rome))
+        assertEquals("11% · reset 18:00", TileTexts.quotaSuffix(r, res("values-en", "tile_quota_pct"), res("values-en", "tile_quota_pct_reset"), rome))
+    }
+
+    private fun res(dir: String, name: String): String {
+        val xml = java.io.File("../wear/src/main/res/$dir/strings.xml").readText()
+        return Regex("<string name=\"$name\">(.*?)</string>").find(xml)!!.groupValues[1]
+    }
 }
 
 class TileAwaitingTest {

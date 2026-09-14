@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Card
@@ -77,18 +78,20 @@ fun BriefCard(
                     Spacer(Modifier.height(8.dp))
                     Pill(it, card.tone)
                 }
-                card.note?.let {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        it, style = MaterialTheme.typography.bodySmall, color = CmColors.briefSecondary,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
                 Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate)
             }
+        }
+        // La ripartenza settimanale centrata sotto tutta la card (S07): a sinistra, in fondo a una card alta, il bordo
+        // tondo la tagliava («reset Thu 02:00» nello snapshot della Quota); al centro resta dentro la corda del cerchio.
+        card.note?.let {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                it, style = MaterialTheme.typography.bodySmall, color = CmColors.briefSecondary,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

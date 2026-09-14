@@ -27,8 +27,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
-import it.pixelbox.cmwatch.wear.ui.theme.edgeListPadding
-import it.pixelbox.cmwatch.wear.ui.theme.roundListPadding
+import it.pixelbox.cmwatch.wear.ui.theme.morph
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.TerminalStyle
 
@@ -48,7 +47,6 @@ fun TerminalScreen(
     val spec = rememberTransformationSpec()
     ScreenScaffold(
         scrollState = listState,
-        contentPadding = edgeListPadding(sides = 0.10f),
         edgeButton = { CmEdgeButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, enabled = !loading) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
@@ -56,7 +54,7 @@ fun TerminalScreen(
             // (Franz, 14/09 15:20, «ok la tua proposta»).
             val parlato = text?.let { SpeechText.terminal(it) }?.takeIf { it.isNotBlank() }
             item {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
                     if (parlato != null) { Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(parlato) }) }
                 }
@@ -67,15 +65,15 @@ fun TerminalScreen(
                 item {
                     Text(
                         stringResource(R.string.terminal_answer), style = MaterialTheme.typography.labelMedium,
-                        color = CmColors.briefLabel, modifier = Modifier.fillMaxWidth(),
+                        color = CmColors.briefLabel, modifier = Modifier.fillMaxWidth().morph(this, spec),
                     )
                 }
-                item { Text(risposta, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+                item { Text(risposta, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
                 item { Spacer(Modifier.height(10.dp)) }
             }
             when {
-                loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier) }
-                error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier) }
+                loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
+                error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier.morph(this, spec)) }
                 text != null -> for (row in TerminalText.rows(text)) {
                     // Niente scorrimento orizzontale: intercettava lo swipe di ritorno (Franz, 12/09 16:17). Le righe lunghe vanno a capo.
                     // Le teste di blocco (prompt, strumenti, elenchi, titoli) sono colorate e in grassetto: la gerarchia
@@ -85,10 +83,10 @@ fun TerminalScreen(
                         row.head -> item {
                             Text(
                                 row.text, style = TerminalStyle.copy(fontWeight = FontWeight.Bold),
-                                color = CmColors.busy, modifier = Modifier.fillMaxWidth(),
+                                color = CmColors.busy, modifier = Modifier.fillMaxWidth().morph(this, spec),
                             )
                         }
-                        else -> item { Text(row.text, style = TerminalStyle, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+                        else -> item { Text(row.text, style = TerminalStyle, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
                     }
                 }
             }
