@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.wear.tts
 
+import android.util.Log
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -17,6 +18,10 @@ class Speaker(ctx: Context) {
     private var pending: List<String>? = null
     @Volatile private var lastId: String? = null
     private var batch = 0
+    private var voiceName: String? = null
+    private val _voices = MutableStateFlow<List<String>>(emptyList())
+    /** Voci italiane del motore, prima quelle installate sul polso e poi quelle di rete: si provano dalle impostazioni. */
+    val voices: StateFlow<List<String>> = _voices
     private val _speaking = MutableStateFlow(false)
     val speaking: StateFlow<Boolean> = _speaking
 
@@ -27,6 +32,9 @@ class Speaker(ctx: Context) {
             ready = status == TextToSpeech.SUCCESS
             if (ready) {
                 if (tts.isLanguageAvailable(Locale.ITALIAN) >= TextToSpeech.LANG_AVAILABLE) tts.language = Locale.ITALIAN
+                _voices.value = italian()
+                Log.i("cmwatch-tts", "voci italiane: ${_voices.value}")
+                applyVoice()
                 pending?.let { speakAll(it) }; pending = null
             }
         }
@@ -52,6 +60,22 @@ class Speaker(ctx: Context) {
             tts.speak(p, if (i == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, id)
         }
     }
+
+    /** Voce scelta nelle impostazioni (Franz, 14/09 13:28: «una voce maschile»); null = la predefinita. */
+    fun setVoice(name: String?) { voiceName = name; if (ready) applyVoice() }
+
+    private fun applyVoice() {
+        val v = voiceName?.let { n -> runCatching { tts.voices }.getOrNull()?.firstOrNull { it.name == n } }
+        if (v != null) tts.voice = v
+        else if (tts.isLanguageAvailable(Locale.ITALIAN) >= TextToSpeech.LANG_AVAILABLE) tts.language = Locale.ITALIAN
+    }
+
+    private fun italian(): List<String> = runCatching {
+        tts.voices.orEmpty()
+            .filter { it.locale.language == "it" && TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features }
+            .sortedWith(compareBy({ it.isNetworkConnectionRequired }, { it.name }))
+            .map { it.name }
+    }.getOrDefault(emptyList())
 
     fun stop() { pending = null; tts.stop(); _speaking.value = false }
     fun release() { tts.shutdown() }

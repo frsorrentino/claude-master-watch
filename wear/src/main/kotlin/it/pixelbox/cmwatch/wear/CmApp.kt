@@ -76,6 +76,7 @@ class CmApp : Application() {
                     .forEach { notifier.failed(it.cmd.id) }
             }
         }
+        scope.launch { prefs.flow.map { it.ttsVoice }.distinctUntilChanged().collect { speaker.setVoice(it) } }
         subscribeTopic()
     }
 

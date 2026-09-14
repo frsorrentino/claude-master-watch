@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import it.pixelbox.cmwatch.rules.VoiceRules
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -23,7 +24,7 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 
 /** Impostazioni: soglia TTS, vibrazioni per tipo, account della complication, nuovo pairing; in debug il selettore delle fixture. */
 @Composable
-fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}) {
+fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}, voices: List<String> = emptyList(), onVoice: (String?) -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
@@ -36,6 +37,16 @@ fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: (
                 WideButton(
                     stringResource(R.string.settings_tts_threshold, settings.ttsMinChars),
                     onClick = { onChange(settings.copy(ttsMinChars = if (settings.ttsMinChars >= 300) 40 else settings.ttsMinChars + 20)) },
+                    transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                )
+            }
+            item {
+                // Android non dice se una voce è maschile: si provano a orecchio, ogni tocco passa alla successiva e la fa sentire.
+                val pos = VoiceRules.position(voices, settings.ttsVoice)
+                WideButton(
+                    if (pos == 0) stringResource(R.string.settings_tts_voice_default) else stringResource(R.string.settings_tts_voice, pos, voices.size),
+                    onClick = { onVoice(VoiceRules.next(voices, settings.ttsVoice)) },
+                    enabled = voices.isNotEmpty(),
                     transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                 )
             }

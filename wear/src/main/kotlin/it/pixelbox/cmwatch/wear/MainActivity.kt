@@ -212,12 +212,15 @@ class MainActivity : ComponentActivity() {
                 )
             }
             composable(Routes.SETTINGS) {
+                val voices by app.speaker.voices.collectAsStateWithLifecycle()
                 SettingsScreen(
                     settings ?: Settings(),
                     onChange = { s -> scope.launch { app.prefs.update { s } } },
                     onRepair = { scope.launch { app.prefs.update { it.copy(paired = false, uid = null, host = null, wrappedKey = null) }; pairing = PairingStatus.Idle; app.reconfigure() } },
                     notificationsEnabled = app.notifier.enabled(),
                     onNotificationSettings = { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)) },
+                    voices = voices,
+                    onVoice = { v -> scope.launch { app.prefs.update { it.copy(ttsVoice = v) } }; app.speaker.setVoice(v); app.speaker.speak(getString(R.string.tts_voice_sample)) },
                 )
             }
             composable(Routes.PAIRING) {

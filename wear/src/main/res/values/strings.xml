@@ -60,6 +60,9 @@
     <string name="tts_recap_next">Prossimo: %1$s.</string>
     <string name="card_listen">Ascolta la risposta</string>
     <string name="recap_listen">Ascolta il recap</string>
+    <string name="settings_tts_voice">Voce %1$d di %2$d</string>
+    <string name="settings_tts_voice_default">Voce predefinita</string>
+    <string name="tts_voice_sample">Questa voce leggerà le risposte.</string>
     <string name="outcome_none">Nessun esito</string>
     <string name="outcome_read_all">Leggi tutto</string>
     <string name="terminal_loading">Chiedo al PC</string>

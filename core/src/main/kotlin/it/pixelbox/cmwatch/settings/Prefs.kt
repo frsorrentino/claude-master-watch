@@ -20,6 +20,8 @@ data class Settings(
     val deviceName: String = "watch-pixel5",
     val wrappedKey: String? = null,
     val ttsMinChars: Int = 120,
+    /** Voce della lettura scelta nelle impostazioni; null = la predefinita del motore. */
+    val ttsVoice: String? = null,
     val hapticQuestion: Boolean = true,
     val hapticOutcome: Boolean = true,
     val hapticGone: Boolean = true,
@@ -35,6 +37,7 @@ class Prefs(private val ctx: Context) {
         val paired = booleanPreferencesKey("paired"); val uid = stringPreferencesKey("uid"); val host = stringPreferencesKey("host")
         val deviceName = stringPreferencesKey("deviceName"); val wrappedKey = stringPreferencesKey("wrappedKey")
         val ttsMinChars = intPreferencesKey("ttsMinChars")
+        val ttsVoice = stringPreferencesKey("ttsVoice")
         val hapticQuestion = booleanPreferencesKey("hapticQuestion"); val hapticOutcome = booleanPreferencesKey("hapticOutcome")
         val hapticGone = booleanPreferencesKey("hapticGone"); val complicationAccount = stringPreferencesKey("complicationAccount")
         val demoFixture = stringPreferencesKey("demoFixture")
@@ -47,6 +50,7 @@ class Prefs(private val ctx: Context) {
             paired = p[K.paired] ?: d.paired, uid = p[K.uid], host = p[K.host],
             deviceName = p[K.deviceName] ?: d.deviceName, wrappedKey = p[K.wrappedKey],
             ttsMinChars = p[K.ttsMinChars] ?: d.ttsMinChars,
+            ttsVoice = p[K.ttsVoice],
             hapticQuestion = p[K.hapticQuestion] ?: d.hapticQuestion, hapticOutcome = p[K.hapticOutcome] ?: d.hapticOutcome,
             hapticGone = p[K.hapticGone] ?: d.hapticGone,
             complicationAccount = p[K.complicationAccount] ?: d.complicationAccount,
@@ -66,6 +70,7 @@ class Prefs(private val ctx: Context) {
             p[K.deviceName] = s.deviceName
             s.wrappedKey?.let { p[K.wrappedKey] = it } ?: p.remove(K.wrappedKey)
             p[K.ttsMinChars] = s.ttsMinChars
+            s.ttsVoice?.let { p[K.ttsVoice] = it } ?: p.remove(K.ttsVoice)
             p[K.hapticQuestion] = s.hapticQuestion; p[K.hapticOutcome] = s.hapticOutcome; p[K.hapticGone] = s.hapticGone
             p[K.complicationAccount] = s.complicationAccount
             p[K.demoFixture] = s.demoFixture
