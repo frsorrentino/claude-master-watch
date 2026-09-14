@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.5)
+# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.6)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -15,7 +15,7 @@ cifrato è il JSON di questi file. Schema per campo in
 - `events-sample.json` — un evento per tipo.
 - `cmd-result-sample.json` — un comando per `op` e il suo risultato, compresi due errori.
 
-Regole che i test verificano: `state` ≤ 8 KB; `outcome.short` ≤ 60; `outcome.full` ≤ 600;
+Regole che i test verificano: `state` ≤ 8 KB; `outcome.short` ≤ 200; `outcome.full` ≤ 600;
 `question.text` intero (mai troncato); `options[].n` da 1 senza buchi; `tier` ∈ low|medium|high;
 `state` ∈ waiting|busy|idle|awaiting|gone; ordine delle sessioni: waiting, busy e awaiting (stesso rango:
 awaiting lavora a un prompt partito dal polso), idle, gone, poi alfabetico.
@@ -38,6 +38,12 @@ caratteri, tagliato a fine frase. `v` resta 1.
 
 Contratto 1.5 (14/09/2026, solo aggiunte): ogni sessione porta `tool_note`, la description che Claude scrive accanto al
 comando Bash, null se non c'è; i percorsi di Read, Edit e Write in `tool` sono assoluti. `v` resta 1.
+
+Contratto 1.6 (14/09/2026, solo allargamenti): `outcome.short` fino a 200 caratteri (era 60), la riga «Esito:» o
+«Watch:» intera tagliata a fine parola, senza «…»; `full` è la coda vera del messaggio, fino a 600. Quando lo stato
+supera 8 KB il relay taglia in quest'ordine: voci del recap, sessioni finite più vecchie (restano le 3 più recenti; una
+gone che esce dallo stato non genera eventi), progetti oltre il decimo; solo dopo `full` scende a 300 caratteri a fine
+parola, e per ultimo `full` = `short`. Le fixture non cambiano. `v` resta 1.
 
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di

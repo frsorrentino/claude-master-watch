@@ -6,7 +6,7 @@ import it.pixelbox.cmwatch.contract.Outcome
  * Titolo e testo della schermata Esito (Franz, 14/09 13:20 e 14:09): un titolo di senso compiuto in carattere più
  * piccolo, e sotto solo quello che il titolo non dice già. Il titolo è la riga «Esito:» o «Watch:» intera presa dalla
  * coda del messaggio in `full`; se quella riga non c'è ma `full` comincia come `short`, la prima frase intera di `full`;
- * altrimenti `short`, che il PC taglia a 60 caratteri.
+ * altrimenti `short`, che il PC taglia a 200 caratteri a fine parola (contratto 1.6).
  */
 object OutcomeText {
     private val RIGA = Regex("^[\\s*_>-]*(?:Esito|Watch)\\s*:\\s*[*_]*\\s*(.+?)[*_\\s]*$", RegexOption.IGNORE_CASE)

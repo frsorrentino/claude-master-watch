@@ -45,7 +45,7 @@ class ContractTest {
             assertTrue("state ≤ 8 KB", raw.toByteArray().size <= 8 * 1024)
             val s = ContractJson.decodeState(raw)
             for (ses in s.sessions) {
-                ses.outcome?.let { assertTrue(it.short.length <= 60); assertTrue(it.full.length <= 600) }
+                ses.outcome?.let { assertTrue(it.short.length <= 200); assertTrue(it.full.length <= 600) }
                 ses.question?.let { q ->
                     assertFalse(q.text.endsWith("…")); assertTrue(q.text.isNotBlank())
                     assertEquals((1..q.options.size).toList(), q.options.map { it.n })
