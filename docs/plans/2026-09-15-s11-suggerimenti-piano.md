@@ -39,6 +39,9 @@ Franz lo preferisce.
 Proposta: A. Il suggerimento di Claude Code è spesso il passo successivo giusto, e il riconoscimento del grigio esiste
 già nel relay.
 
+Decisione della notte (master, 15/09/2026 00:55): strada A, da confermare con Franz al rapporto del mattino. Stanotte
+niente implementazione.
+
 ## Passi successivi, dopo la decisione
 
 1. Richiesta a claude-master: contratto 1.9 con `outcome.suggestions` (al massimo 3, 40 caratteri ciascuno, senza
