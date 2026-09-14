@@ -7,10 +7,10 @@
 | 1 | Margini del tondo: nessun testo tagliato dal cerchio in alto e in basso | tutte le liste usano `roundListPadding()` (lati 7 %, alto 16 %, basso 21 %) | ✅ dal vivo 12/09, dopo due correzioni (`fase2-domanda-watch.png`) |
 | 2 | Nessuna sovrapposizione fra righe | `transformedHeight` solo dove c'è `SurfaceTransformation` | ✅ dal vivo 12/09 |
 | 3 | Contrasto sui pieni: nero su ambra, bianco su cobalto | luminanza calcolata in `WideButton`, WCAG in `Badge` | ✅ dal vivo (`fase2-domanda-watch.png`) |
-| 4 | Nomi distinguibili: due sessioni con lo stesso prefisso non sembrano la stessa | marquee sulla riga centrale + taglio in mezzo da fermo (`NameText`) | da riguardare sul polso |
+| 4 | Nomi distinguibili: due sessioni con lo stesso prefisso non sembrano la stessa | marquee sulla riga centrale + taglio in mezzo da fermo (`NameText`) | ✅ cattura adb 14/09 18:14 (`fase5-sessioni-nomi-seguita.png`): «claude…-watch» accanto a «claude-master», la coda distintiva resta; da confermare da Franz |
 | 5 | Testi lunghi scorrono dopo 2 s, tre giri, poi fermi | `cmMarquee`, solo la riga al centro | da provare |
 | 6 | Ambient: badge a contorno, niente riempimenti, niente seconda riga, niente tasto Menu | `rememberAmbient` | da provare (coprire lo schermo) |
-| 7 | Respiro di 3 s sul badge di ogni sessione che lavora, come il pallino dell'app Claude (Franz, 14/09 16:24; prima solo la seguita) | `Badge.breathes`, `SessionBadge` | da provare |
+| 7 | Respiro di 3 s sul badge di ogni sessione che lavora, come il pallino dell'app Claude (Franz, 14/09 16:24; prima solo la seguita) | `Badge.breathes`, `SessionBadge` | ✅ due catture adb a 4 s (14/09 18:14): il badge di `master`, al lavoro e non seguita, passa da tenue a pieno; da confermare da Franz |
 | 8 | Niente animazioni con le animazioni di sistema spente | `animationsOff()` | da provare |
 | 9 | Icona nel launcher e nella lista app | icona adattiva L1 | ✅ 12/09 (`fase5-icona-launcher-watch.png`) |
 | 11 | Tile: orologio davanti alla barra della quota, quota dell'account della sessione mostrata sopra | `quotaAccount`, risorsa `ic_tile_clock` | ✅ dal vivo 14/09 15:51 (`59e6525`) |
