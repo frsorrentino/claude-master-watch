@@ -28,6 +28,8 @@ object BriefCards {
         val unit: String? = null,
         val secondary: String? = null,
         val pill: String? = null,
+        /** Riga sotto la pillolina: la ripartenza settimanale nella card della quota. */
+        val note: String? = null,
         val tone: Tone = Tone.NEUTRAL,
         val progress: Float? = null,
         val glyph: Glyph = Glyph.TIME,
@@ -60,12 +62,10 @@ object BriefCards {
                 // Sotto la percentuale delle 5 ore la sua ripartenza (contratto 1.3); la settimanale sta con la settimana,
                 // altrimenti «gio 04:00» sotto il 7 % sembrava il reset delle 5 ore (Franz, 14/09 10:38).
                 secondary = q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
-                pill = if (q.stale) l.stale else l.week.format(
-                    listOfNotNull(
-                        q.w7?.let { "$it %" } ?: l.none,
-                        q.resetW7?.let { RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone)) },
-                    ).joinToString(" · ")
-                ),
+                pill = if (q.stale) l.stale else l.week.format(q.w7?.let { "$it %" } ?: l.none),
+                // La ripartenza settimanale su una riga sua sotto la pillolina: dentro andava a capo e il bordo tondo
+                // la tagliava (visto al polso, 14/09 11:33).
+                note = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
                 // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,
                 // perché da lì non si lavora più (review UX, 13/09).
                 tone = when {

@@ -35,8 +35,9 @@ class BriefCardsTest {
         // Sotto la percentuale delle 5 ore va la ripartenza delle 5 ore (`reset_h5`, le 18:00 a Roma), non quella
         // settimanale: lì «gio 04:00» sembrava il reset delle 5 ore (Franz, 14/09 10:38: «dovrebbe essere 12:30»).
         assertEquals("reset 18:00", c.secondary)
-        // La ripartenza settimanale sta con la settimana, nella pillolina.
-        assertEquals("settimana ${q.w7} % · gio 04:00", c.pill)
+        // La ripartenza settimanale sta sotto la pillolina, su una riga sua: dentro andava a capo (14/09 11:33).
+        assertEquals("settimana ${q.w7} %", c.pill)
+        assertEquals("reset gio 04:00", c.note)
         assertEquals(BriefCards.Tone.NEUTRAL, c.tone)
     }
 

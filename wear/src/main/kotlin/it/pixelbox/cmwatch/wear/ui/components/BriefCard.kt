@@ -77,6 +77,13 @@ fun BriefCard(
                     Spacer(Modifier.height(8.dp))
                     Pill(it, card.tone)
                 }
+                card.note?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        it, style = MaterialTheme.typography.bodySmall, color = CmColors.briefSecondary,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
