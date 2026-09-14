@@ -109,7 +109,8 @@ fun SessionRow(
         }
         cell.detail?.takeIf { it.isNotBlank() }?.let {
             Text(
-                TileTexts.fitTile(it, max = if (righeTitolo <= 1) 90 else 60), style = MaterialTheme.typography.bodySmall,
+                // Misurato sulla cattura del 14/09 20:19: una riga ne tiene circa 22, quindi tre righe 60 e due 40.
+                TileTexts.fitTile(it, max = if (righeTitolo <= 1) 60 else 40), style = MaterialTheme.typography.bodySmall,
                 color = CmColors.text2, maxLines = if (righeTitolo <= 1) 3 else 2, modifier = Modifier.fillMaxWidth(),
             )
         }
