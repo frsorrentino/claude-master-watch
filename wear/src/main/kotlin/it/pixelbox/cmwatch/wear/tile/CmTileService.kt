@@ -157,9 +157,9 @@ class CmTileService : TileService() {
                 is TileTexts.Rest.Calm -> calmCard(rest, quando, stale)
             }
         )
-        if (state.quota.isNotEmpty()) {
+        TileTexts.quotaLine(state, account)?.let {
             col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
-            col.addContent(quotaCard(state))
+            col.addContent(quotaCard(it))
         }
         return col.build()
     }
@@ -199,38 +199,26 @@ class CmTileService : TileService() {
     )
 
     /**
-     * Quota senza etichetta, una riga per account (Franz, 14/09 08:28): col titolo della tile rimesso non ci stava
-     * più, e il nome dell'account lo dice il pallino del suo colore, come su Telegram. Personale per prima.
+     * Quota in una riga sola, dell'account scelto nelle impostazioni: segno dell'account, barra delle 5 ore e in coda
+     * percentuale e ripartenza, «8 % · 12:30» (Franz, 14/09 11:33: con due righe la seconda era tagliata dal fondo).
      */
-    private fun MaterialScope.quotaCard(state: State): LayoutElement {
-        val righe = TileTexts.quotas(state)
-        val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
-        for ((i, r) in righe.withIndex()) {
-            if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(6f)).build())
-            col.addContent(quotaRow(r))
-        }
+    private fun MaterialScope.quotaCard(line: TileTexts.QuotaLine): LayoutElement {
+        val suffix = TileTexts.quotaSuffix(line, getString(R.string.tile_quota_pct), getString(R.string.tile_quota_pct_reset))
+        val row = LayoutElementBuilders.Row.Builder()
+            .setWidth(expand())
+            .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+            .addContent(accountMark(line.personale))
+            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
+            .addContent(bar(line.pct))
+            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(8f)).build())
+            .addContent(text(suffix.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1))
+            .build()
         return appCard(
             onClick = clickable(launch("cmwatch://quota"), id = "quota"),
-            title = { col.build() },
+            title = { row },
             colors = cardColors(),
         )
     }
-
-    private fun MaterialScope.quotaRow(r: TileTexts.QuotaRow): LayoutElement =
-        LayoutElementBuilders.Row.Builder()
-            .setWidth(expand())
-            .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-            .addContent(accountMark(r.personale))
-            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
-            .addContent(
-                text(
-                    getString(R.string.tile_quota_pct, r.pct ?: 0).layoutString,
-                    typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1,
-                )
-            )
-            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(8f)).build())
-            .addContent(bar(r.pct))
-            .build()
 
     /**
      * Segno dell'account: la forma, non il colore (contratto 1.1, ricordato da Franz il 14/09 08:39) — cerchio per

@@ -5,6 +5,9 @@ import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /** Testi della tile (design, sezione 2): conteggi, la sessione ferma su una riga intera, bottoni, freschezza adattiva. */
 object TileTexts {
@@ -113,16 +116,28 @@ object TileTexts {
     }
 
     /**
-     * Quote da mettere sulla tile: una riga per account, `personale` per prima, al massimo due (Franz, 14/09 08:28:
-     * «se volessimo mostrare sia la personale che quella di lavoro»). Niente etichetta: l'account lo dice il pallino
-     * del suo colore, e così la card sta in due righe strette invece di essere tagliata dal bordo tondo.
+     * La quota sulla tile in una riga sola, dell'account scelto nelle impostazioni (Franz, 14/09 11:33, «ok proposta»:
+     * con due righe la seconda era tagliata dal fondo della card). Se l'account scelto non c'è, `personale`, poi il
+     * primo in ordine. L'account lo dice la forma del segno, non un'etichetta.
      */
-    data class QuotaRow(val account: String, val pct: Int?, val personale: Boolean)
+    data class QuotaLine(val account: String, val pct: Int?, val personale: Boolean, val resetH5: Long?)
 
-    fun quotas(state: State, max: Int = 2): List<QuotaRow> = state.quota.keys
-        .sortedWith(compareBy({ if (it.lowercase() == "personale") 0 else 1 }, { it.lowercase() }))
-        .take(max)
-        .map { QuotaRow(it, state.quota.getValue(it).h5, it.lowercase() == "personale") }
+    fun quotaLine(state: State, account: String): QuotaLine? {
+        val key = state.quota.keys.firstOrNull { it.equals(account, ignoreCase = true) }
+            ?: state.quota.keys.firstOrNull { it.equals("personale", ignoreCase = true) }
+            ?: state.quota.keys.minOrNull()
+            ?: return null
+        val q = state.quota.getValue(key)
+        return QuotaLine(key, q.h5, key.equals("personale", ignoreCase = true), q.resetH5)
+    }
+
+    private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+
+    /** In coda alla barra delle 5 ore: «8 % · 12:30»; senza ripartenza nel dato, solo «8 %». */
+    fun quotaSuffix(line: QuotaLine, pct: String, pctReset: String, zone: ZoneId = ZoneId.systemDefault()): String {
+        val p = line.pct ?: 0
+        return line.resetH5?.let { pctReset.format(p, HHMM.format(Instant.ofEpochSecond(it).atZone(zone))) } ?: pct.format(p)
+    }
 
     /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
     fun badge(s: Session): String = s.icon?.takeIf { it.isNotBlank() } ?: if (s.question != null) "❓" else icon(s.state)

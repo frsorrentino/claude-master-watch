@@ -4,6 +4,7 @@ import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.rules.TileTexts.Card
+import java.time.ZoneId
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -121,17 +122,29 @@ class TileNextAtTest {
 class TileQuotasTest {
     private val q = it.pixelbox.cmwatch.contract.ContractJson.decodeState(it.pixelbox.cmwatch.Fixtures.stateQuestion)
 
-    @Test fun personalePerPrimaEAlMassimoDue() {
-        val r = TileTexts.quotas(q)
-        assertEquals("personale", r.first().account)
-        assertTrue(r.first().personale)
-        assertTrue(r.size <= 2)
-        assertEquals(q.quota.getValue("personale").h5, r.first().pct)
+    // Una riga sola, dell'account scelto nelle impostazioni (Franz, 14/09 11:33: con due righe la seconda era tagliata).
+    @Test fun laRigaDellaQuotaEDellAccountScelto() {
+        val idle = ContractJson.decodeState(Fixtures.stateIdle)
+        val r = TileTexts.quotaLine(idle, "agenzia")!!
+        assertEquals("agenzia", r.account); assertFalse(r.personale)
+        assertEquals(idle.quota.getValue("agenzia").h5, r.pct)
     }
 
-    @Test fun unSoloAccountDaUnaSolaRiga() {
-        val uno = q.copy(quota = mapOf("personale" to q.quota.getValue("personale")))
-        assertEquals(1, TileTexts.quotas(uno).size)
+    @Test fun unAccountCheNonCeRipiegaSuPersonale() {
+        val r = TileTexts.quotaLine(q, "lavoro")!!
+        assertEquals("personale", r.account); assertTrue(r.personale)
+    }
+
+    @Test fun senzaQuoteNienteRiga() = assertNull(TileTexts.quotaLine(q.copy(quota = emptyMap()), "personale"))
+
+    @Test fun inCodaPercentualeERipartenzaDelleCinqueOre() {
+        val r = TileTexts.quotaLine(q, "personale")!!
+        assertEquals("11 % · 18:00", TileTexts.quotaSuffix(r, "%1\$d %%", "%1\$d %% · %2\$s", ZoneId.of("Europe/Rome")))
+    }
+
+    @Test fun senzaRipartenzaSoloLaPercentuale() {
+        val r = TileTexts.quotaLine(q, "personale")!!.copy(resetH5 = null)
+        assertEquals("11 %", TileTexts.quotaSuffix(r, "%1\$d %%", "%1\$d %% · %2\$s", ZoneId.of("Europe/Rome")))
     }
 }
 
