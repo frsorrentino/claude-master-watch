@@ -1,5 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
+import java.time.Instant
+import java.time.ZoneId
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
@@ -40,8 +42,14 @@ object SessionsText {
         running: String,
         idle: String,
         tools: ToolText.Labels? = null,
+        zone: ZoneId = ZoneId.systemDefault(),
     ): Cell {
-        val next = s.next?.trim()?.takeIf { it.isNotEmpty() && s.nextAt != null }
+        // `next_at` è la mezzanotte del giorno della riga di recap: una riga che non è di oggi è stantia e la scheda la
+        // tace, anche come titolo di ripiego (Franz, 14/09 10:42: «anche queste info sono stantie»).
+        val oggi = Instant.ofEpochSecond(now).atZone(zone).toLocalDate()
+        val fresca = s.nextAt?.let { Instant.ofEpochSecond(it).atZone(zone).toLocalDate() == oggi } == true
+        val f = if (fresca) s else s.copy(next = null, nextAt = null)
+        val next = f.next?.trim()?.takeIf { it.isNotEmpty() && f.nextAt != null }
         val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
         return when {
             // Chi aspetta: la domanda occupa il posto d'onore, il resto lo dice la schermata.
@@ -50,7 +58,7 @@ object SessionsText {
             // 14/09 08:00: «ci sarebbe lo spazio per un'altra riga»).
             s.state == SessionState.GONE -> Cell(title = esito ?: s.project, detail = null)
             s.state == SessionState.BUSY || s.state == SessionState.AWAITING -> {
-                val t = TileTexts.activity(s, busy = true, running = running, idle = idle, now = now, tools = tools)
+                val t = TileTexts.activity(f, busy = true, running = running, idle = idle, now = now, tools = tools)
                 Cell(title = t, detail = next?.takeIf { it != t })
             }
             else -> Cell(title = esito ?: next ?: idle, detail = next?.takeIf { it != esito })

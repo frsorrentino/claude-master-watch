@@ -5,6 +5,8 @@ import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.SessionState
 
+import java.time.Instant
+import java.time.ZoneId
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -47,11 +49,35 @@ class SessionsCellTest {
         assertEquals(w.question!!.text, c.title); assertNull(c.detail)
     }
 
+    // `next_at` è la mezzanotte del giorno della riga di recap (contratto 1.2): la scheda mostra il prossimo solo se
+    // la riga è di oggi, altrimenti niente (Franz, 14/09 10:42: «anche queste info sono stantie»).
+    private val zone = ZoneId.of("Europe/Rome")
+    private val oggi = Instant.ofEpochSecond(st.ts).atZone(zone).toLocalDate()
+    private val mezzanotteOggi = oggi.atStartOfDay(zone).toEpochSecond()
+    private val mezzanotteIeri = oggi.minusDays(1).atStartOfDay(zone).toEpochSecond()
+
     @Test fun chiLavoraMostraAttivitaEProssimoPasso() {
-        val b = st.sessions.first { it.state == SessionState.BUSY }
-        val c = SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools)
+        val b = st.sessions.first { it.state == SessionState.BUSY }.copy(next = "rifinire la tile", nextAt = mezzanotteOggi)
+        val c = SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools, zone)
         assertEquals(ToolText.phrase(b.tool, tools), c.title)
-        assertEquals(b.next, c.detail)
+        assertEquals("rifinire la tile", c.detail)
+    }
+
+    @Test fun ilProssimoDiIeriNonStaSottoLAttivita() {
+        val b = st.sessions.first { it.state == SessionState.BUSY }.copy(next = "rifinire la tile", nextAt = mezzanotteIeri)
+        assertNull(SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools, zone).detail)
+    }
+
+    @Test fun ilProssimoDiIeriNonFaDaTitoloAChiLavoraSenzaStrumento() {
+        val b = st.sessions.first { it.state == SessionState.BUSY }
+            .copy(tool = null, outcome = null, next = "rifinire la tile", nextAt = mezzanotteIeri)
+        assertEquals("turno in corso", SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools, zone).title)
+    }
+
+    @Test fun ilProssimoDiIeriNonFaDaTitoloAChiEFerma() {
+        val i = st.sessions.first { it.state == SessionState.IDLE }
+            .copy(outcome = null, next = "rifinire la tile", nextAt = mezzanotteIeri)
+        assertEquals("a riposo", SessionsText.cell(i, st.ts, "turno in corso", "a riposo", tools, zone).title)
     }
 
     @Test fun chiEFermaMostraLEsitoEIlProssimoPasso() {

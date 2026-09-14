@@ -42,6 +42,7 @@ object BriefCards {
     )
 
     private val RESET = DateTimeFormatter.ofPattern("EEE HH:mm")
+    private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
 
     /** `personale` per primo, poi gli altri account in ordine: è l'account di Franz e lo guarda per primo. */
     fun quota(state: State?, l: Labels, zone: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.ITALIAN): List<Card> {
@@ -56,8 +57,15 @@ object BriefCards {
                 label = account,
                 value = q.h5?.toString() ?: l.none,
                 unit = if (q.h5 != null) "%" else null,
-                secondary = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
-                pill = if (q.stale) l.stale else l.week.format(q.w7?.let { "$it %" } ?: l.none),
+                // Sotto la percentuale delle 5 ore la sua ripartenza (contratto 1.3); la settimanale sta con la settimana,
+                // altrimenti «gio 04:00» sotto il 7 % sembrava il reset delle 5 ore (Franz, 14/09 10:38).
+                secondary = q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
+                pill = if (q.stale) l.stale else l.week.format(
+                    listOfNotNull(
+                        q.w7?.let { "$it %" } ?: l.none,
+                        q.resetW7?.let { RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone)) },
+                    ).joinToString(" · ")
+                ),
                 // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,
                 // perché da lì non si lavora più (review UX, 13/09).
                 tone = when {

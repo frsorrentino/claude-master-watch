@@ -32,9 +32,17 @@ class BriefCardsTest {
         // Etichetta = solo l'account: «Quota» è l'intestazione della sezione e la colonna è strappa (13/09 16:41).
         assertEquals("personale", c.label)
         assertEquals(q.h5.toString(), c.value); assertEquals("%", c.unit)
-        assertTrue(c.secondary!!.startsWith("reset "))
-        assertEquals("settimana ${q.w7} %", c.pill)
+        // Sotto la percentuale delle 5 ore va la ripartenza delle 5 ore (`reset_h5`, le 18:00 a Roma), non quella
+        // settimanale: lì «gio 04:00» sembrava il reset delle 5 ore (Franz, 14/09 10:38: «dovrebbe essere 12:30»).
+        assertEquals("reset 18:00", c.secondary)
+        // La ripartenza settimanale sta con la settimana, nella pillolina.
+        assertEquals("settimana ${q.w7} % · gio 04:00", c.pill)
         assertEquals(BriefCards.Tone.NEUTRAL, c.tone)
+    }
+
+    @Test fun senzaRipartenzaDelleCinqueOreLaRigaDelResetNonSiDisegna() {
+        val s = state.copy(quota = mapOf("personale" to state.quota.getValue("personale").copy(resetH5 = null)))
+        assertNull(BriefCards.quota(s, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first().secondary)
     }
 
     @Test fun quotaVecchiaDiceDatoVecchioEDiventaGrigia() {
