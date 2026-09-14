@@ -19,7 +19,7 @@ Cause, due:
 | 4 | Tile: conteggio e bottone «Rispondi» | ricalcolo dallo stato, `RefreshTile` | `QuestionClosedTest` (tile) | |
 | 5 | Complication | ricalcolo dallo stato, `RefreshComplications` | `QuestionClosedTest` (complication) | |
 | 6 | Vibrazione e lettura | una domanda chiusa non genera `Notify(QUESTION)` | `WakeTest.sameQuestionDoesNotNotifyTwice` | |
-| 7 | PC: flag, `claude-master sessions`, relay, bot Telegram | claude-master | relay-verify (suo) | |
+| 7 | PC: flag, `claude-master sessions`, relay, bot Telegram | claude-master `5be7112` (0.4.7): PostToolUse toglie `waiting/<sid>` e fa il push, l'evento `answered` sveglia l'orologio via FCM, Telegram perde i bottoni | H5c, R7, A4d (suoi, 28/28) | dopo il rilascio della 0.4.7 e il riavvio delle sessioni |
 
 Prova dal vivo, quando la correzione del relay è attiva: una domanda da questa sessione, risposta dal terminale;
 entro pochi secondi sul polso nessuna notifica, nessun ❓ in lista, tile e complication.

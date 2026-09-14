@@ -20,6 +20,7 @@ Relay `2e0a2df` (ritardo degli eventi) dal vivo, 14/09: domanda 20:29:57, push c
 notifica 20:30:38, push con «answered» 20:30:44, 6 s dopo (prima aspettava il prompt successivo, circa 3 minuti).
 Esito: stop 20:31:56 (`outcome.at`), push con l'esito 20:32:04, 8 s dopo. ✅ entrambe le metà della correzione.
 
-Lint vital: ✅ in CI (`42867a4`, run 34893744588, `:wear:lintVitalRelease`, BUILD SUCCESSFUL 20:42 UTC), dopo la
+Lint vital: ✅ in CI anche con le stringhe inglesi (`b6c92d7`, run 34894981374, BUILD SUCCESSFUL 20:51 UTC).
+Prima: ✅ in CI (`42867a4`, run 34893744588, `:wear:lintVitalRelease`, BUILD SUCCESSFUL 20:42 UTC), dopo la
 correzione di `setup-android` (il pacchetto «tools» sparito dall'SDK rompeva ogni run dalle 20:29 UTC); comprende
 `fe99eff` (domanda chiusa altrove) e `fa5ecc5`; prima su `15d80a4`, `c32a946`, `0725313`, `41adb72`, `a83a0ad`, `544623e`, `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.

@@ -10,6 +10,7 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
+import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
@@ -34,4 +35,6 @@ class ScreensSnapshotTest {
     @Test fun question() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun stale() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
     @Test fun pairing() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, {}, {}) } }
+    // Per le card del README (Franz, 14/09 22:47): i due account della fixture, uno fresco e uno con il dato vecchio.
+    @Test fun quota() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now) } }
 }
