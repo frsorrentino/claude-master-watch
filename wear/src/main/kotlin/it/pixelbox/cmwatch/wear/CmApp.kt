@@ -136,6 +136,8 @@ class CmApp : Application() {
                 Wake.NotifyKind.GONE -> a.session?.let { notifier.gone(it, prev?.sessions?.firstOrNull { p -> p.name == it }?.account); notified = true }
                 Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.let { notifier.quota(acc, it); notified = true } }
             }
+            // Anche con l'app in primo piano: una domanda chiusa altrove non deve restare nell'elenco delle notifiche.
+            is Wake.Action.CloseQuestion -> notifier.closeQuestion(a.session)
             Wake.Action.RefreshTile -> runCatching { CmTileService.requestUpdate(this) }
             Wake.Action.RefreshComplications -> runCatching { CmComplicationService.requestUpdate(this) }
         }

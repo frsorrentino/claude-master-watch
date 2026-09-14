@@ -239,6 +239,16 @@ class Notifier(private val ctx: Context) {
 
     fun cancel(session: String) = NotificationManagerCompat.from(ctx).cancel(id(session))
 
+    /**
+     * La domanda è stata risposta altrove: si chiude la sua notifica, ma solo se è ancora quella della domanda. Una
+     * sessione ha una notifica sola (stesso id), e un esito arrivato nel frattempo non va cancellato.
+     */
+    fun closeQuestion(session: String) {
+        val attiva = runCatching { ctx.getSystemService(NotificationManager::class.java).activeNotifications.firstOrNull { it.id == id(session) } }.getOrNull()
+        if (attiva?.notification?.channelId == NotificationPlan.CH_QUESTIONS) cancel(session)
+        lastQuestion.remove(session)
+    }
+
     private fun post(id: Int, b: NotificationCompat.Builder) {
         if (!canPost()) return
         runCatching { NotificationManagerCompat.from(ctx).notify(id, b.build()) }

@@ -9,6 +9,8 @@ object Wake {
 
     sealed class Action {
         data class Notify(val kind: NotifyKind, val session: String?) : Action()
+        /** La domanda di questa sessione è sparita (risposta dal terminale, dal telefono o dal polso): via la sua notifica. */
+        data class CloseQuestion(val session: String) : Action()
         data object RefreshTile : Action()
         data object RefreshComplications : Action()
     }
@@ -22,6 +24,8 @@ object Wake {
             s.outcome?.let { o -> if (s.followed && p?.outcome?.at != o.at) out += Action.Notify(NotifyKind.OUTCOME, s.name) }
             if (s.state == SessionState.GONE && p != null && p.state != SessionState.GONE) out += Action.Notify(NotifyKind.GONE, s.name)
         }
+        // Risposta data altrove (Franz, 14/09 22:10): la domanda non c'è più, e la notifica non deve restare aperta.
+        for (p in before.values) if (p.question != null && cur.sessions.firstOrNull { it.name == p.name }?.question == null) out += Action.CloseQuestion(p.name)
         val names = cur.sessions.map { it.name }.toSet()
         for (p in before.values) if (p.name !in names && p.state != SessionState.GONE) out += Action.Notify(NotifyKind.GONE, p.name)
         for ((account, q) in cur.quota) {

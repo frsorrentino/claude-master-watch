@@ -44,6 +44,15 @@ class WakeTest {
         assertTrue(Wake.plan(q, vanished).contains(Action.Notify(NotifyKind.GONE, "field-notes")))
     }
 
+    // Risposta data dal terminale o dal telefono (Franz, 14/09 22:10): la domanda sparisce dallo stato e la sua
+    // notifica sull'orologio si chiude, anche con l'app in primo piano.
+    @Test fun aQuestionAnsweredElsewhereClosesItsNotification() {
+        val answered = q.copy(sessions = q.sessions.map { if (it.name == "ledger-api") it.copy(state = SessionState.BUSY, question = null) else it })
+        assertTrue(Wake.plan(q, answered).contains(Action.CloseQuestion("ledger-api")))
+        assertTrue(Wake.plan(q, q).none { it is Action.CloseQuestion })
+        assertTrue(Wake.plan(idle, answered).none { it is Action.CloseQuestion })
+    }
+
     @Test fun quotaThresholdCrossedOnce() {
         val hot = idle.copy(quota = idle.quota + ("personale" to QuotaAccount(h5 = 96, w7 = 38, resetW7 = 1L)))
         assertTrue(Wake.plan(idle, hot).contains(Action.Notify(NotifyKind.QUOTA, "personale")))
