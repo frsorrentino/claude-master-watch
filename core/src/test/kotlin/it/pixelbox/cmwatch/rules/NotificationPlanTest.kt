@@ -10,7 +10,7 @@ import org.junit.Test
 
 class NotificationPlanTest {
     private val s = ContractJson.decodeState(Fixtures.stateQuestion)
-    private val l = NotificationPlan.Labels(open = "Apri", reply = "Rispondi", retry = "Riprova", read = "Leggi", write = "Scrivi", resume = "Riprendi", sent = "inviato", confirmed = "confermato", notDelivered = "non consegnato", sessions = "sessioni")
+    private val l = NotificationPlan.Labels(open = "Apri", reply = "Rispondi", retry = "Riprova", read = "Leggi", stop = "Ferma", write = "Scrivi", resume = "Riprendi", sent = "inviato", confirmed = "confermato", notDelivered = "non consegnato", sessions = "sessioni")
     private val ledger = s.sessions[0]
 
     @Test fun questionMediumHasTwoDirectActionsReplyWithChoicesAndOpen() {
@@ -41,6 +41,12 @@ class NotificationPlanTest {
         assertEquals("✓ 1 · yes inviato", NotificationPlan.sentLine(1, "yes", l))
         assertEquals("✓ confermato", NotificationPlan.confirmedLine(l))
         assertEquals("✗ non consegnato · Riprova", NotificationPlan.failedLine(l))
+    }
+
+    // Mentre legge, il «Leggi» della notifica che ha fatto partire la voce dice «Ferma» (Franz, 14/09 16:08).
+    @Test fun ilTastoLeggiDiventaFermaMentreLegge() {
+        assertEquals("Ferma", NotificationPlan.readLabel(reading = true, l))
+        assertEquals("Leggi", NotificationPlan.readLabel(reading = false, l))
     }
 
     @Test fun outcomeGoneQuota() {

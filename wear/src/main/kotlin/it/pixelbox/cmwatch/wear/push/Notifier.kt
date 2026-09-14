@@ -41,9 +41,32 @@ class Notifier(private val ctx: Context) {
     /** Comandi inviati dalla notifica: id comando → sessione, per l'aggiornamento in place al /result. */
     val pendingBySession = HashMap<String, String>()
 
+    /**
+     * Sessione la cui notifica ha fatto partire la lettura: lì «Leggi» diventa «Ferma» finché la voce va (Franz, 14/09
+     * 16:08). La notifica «Lettura in corso» non serve a questo: Wear OS non mostra le notifiche in corso nell'elenco.
+     */
+    private var reading: String? = null
+
+    /** Segna (o toglie) la lettura e ridisegna le notifiche toccate, solo se sono ancora visibili: mai resuscitarle. */
+    fun reading(session: String?, sessions: List<Session>) {
+        val prima = reading
+        reading = session
+        val attive = runCatching { ctx.getSystemService(NotificationManager::class.java).activeNotifications.toList() }.getOrDefault(emptyList())
+        for (name in setOfNotNull(prima, session)) {
+            val s = sessions.firstOrNull { it.name == name } ?: continue
+            when (attive.firstOrNull { it.id == id(name) }?.notification?.channelId) {
+                NotificationPlan.CH_QUESTIONS -> if (s.question != null) question(s)
+                NotificationPlan.CH_OUTCOMES -> if (s.outcome != null) outcome(s)
+            }
+        }
+    }
+
+    private fun readIcon(session: String) = if (reading == session) R.drawable.ic_stop else R.drawable.ic_play
+    private fun readLabel(session: String) = NotificationPlan.readLabel(reading == session, labels)
+
     private val labels get() = NotificationPlan.Labels(
         open = ctx.getString(R.string.notif_open), reply = ctx.getString(R.string.notif_reply), retry = ctx.getString(R.string.question_retry),
-        read = ctx.getString(R.string.notif_read), write = ctx.getString(R.string.card_write), resume = ctx.getString(R.string.notif_resume),
+        read = ctx.getString(R.string.notif_read), stop = ctx.getString(R.string.notif_stop), write = ctx.getString(R.string.card_write), resume = ctx.getString(R.string.notif_resume),
         sent = ctx.getString(R.string.notif_sent), confirmed = ctx.getString(R.string.notif_confirmed), notDelivered = ctx.getString(R.string.question_not_delivered),
         sessions = ctx.getString(R.string.sessions_label),
     )
@@ -146,8 +169,8 @@ class Notifier(private val ctx: Context) {
             else -> Unit
         }
         // «Leggi»: la domanda con le opzioni numerate, senza aprire l'app (Franz, 14/09 12:17).
-        b.addAction(R.drawable.ic_play, labels.read, PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 4,
-            SpeakService.textIntent(ctx, SpeechText.question(q, ctx.getString(R.string.tts_option))), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        b.addAction(readIcon(s.name), readLabel(s.name), PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 4,
+            SpeakService.textIntent(ctx, SpeechText.question(q, ctx.getString(R.string.tts_option)), from = s.name), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         post(id(s.name), b)
     }
 
@@ -186,7 +209,7 @@ class Notifier(private val ctx: Context) {
         val plan = NotificationPlan.outcome(s, labels)
         val b = base(plan).setLargeIcon(badge(s)).setContentText(plan.messages.first()).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
             .setContentIntent(open("cmwatch://outcome/${s.name}", id(s.name)))
-            .addAction(R.drawable.ic_play, labels.read, PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 3, SpeakService.lastIntent(ctx, s.name, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+            .addAction(readIcon(s.name), readLabel(s.name), PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 3, SpeakService.lastIntent(ctx, s.name, plan.bigText, from = s.name), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             .addAction(NotificationCompat.Action.Builder(R.drawable.ic_edit, labels.write, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
                 .addRemoteInput(RemoteInput.Builder(ReplyReceiver.TEXT).setLabel(labels.write).build()).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).build())
             .addAction(R.drawable.ic_open, labels.open, open("cmwatch://outcome/${s.name}", id(s.name) * 10 + 9))

@@ -18,7 +18,7 @@ object NotificationPlan {
     const val GROUP = "cm"
 
     data class Labels(
-        val open: String, val reply: String, val retry: String, val read: String, val write: String, val resume: String,
+        val open: String, val reply: String, val retry: String, val read: String, val stop: String, val write: String, val resume: String,
         val sent: String, val confirmed: String, val notDelivered: String, val sessions: String,
     )
 
@@ -62,6 +62,12 @@ object NotificationPlan {
             autoCancel = false, timeoutMs = null, progress = null, accent = SessionState.WAITING,
         )
     }
+
+    /**
+     * Il tasto di lettura della notifica: «Leggi», e «Ferma» mentre la voce legge quello che ha fatto partire (Franz,
+     * 14/09 16:08: «rimane leggi mentre è in riproduzione»). Un secondo tocco ferma già; così si vede.
+     */
+    fun readLabel(reading: Boolean, l: Labels) = if (reading) l.stop else l.read
 
     fun sentLine(n: Int, label: String, l: Labels) = "✓ $n · $label ${l.sent}"
     fun confirmedLine(l: Labels) = "✓ ${l.confirmed}"

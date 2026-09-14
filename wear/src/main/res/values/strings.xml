@@ -102,6 +102,7 @@
     <string name="brief_stopped">PC fermo</string>
     <string name="notif_me">Io</string>
     <string name="notif_read">Leggi</string>
+    <string name="notif_stop">Ferma</string>
     <string name="notif_resume">Riprendi</string>
     <string name="notif_sent">inviato</string>
     <string name="notif_confirmed">confermato</string>

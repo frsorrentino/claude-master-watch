@@ -7,12 +7,12 @@ Build con il contratto 1.4 (`last`) e `SpeakService` in primo piano. Prova al po
 | 1 | Esito: il ▶ legge solo la frase d'esito, il titolo | Scheda, Esito, ▶ | ✅ 14/09 15:51, build `59e6525` |
 | 2 | Terminale: il ▶ accanto al nome legge gli ultimi tre blocchi sopra il prompt, senza comandi di shell né statusline | Scheda, Terminale, ▶ | ✅ 14/09 15:51 |
 | 3 | Scheda: «Ascolta la risposta» legge la risposta intera dal PC, oltre i 600 caratteri, e mentre legge dice «Ferma la lettura» | Scheda, Ascolta | ✅ «Ferma» 14/09 14:59, fermate da Franz; letture arrivate in fondo 15:15, voce scelta in Impostazioni |
-| 4 | Domanda: il ▶ accanto al testo legge domanda e opzioni numerate | una domanda aperta | |
+| 4 | Domanda: il ▶ accanto al testo legge domanda e opzioni numerate | una domanda aperta | ✅ 14/09 16:02, lettura di 31 s finita da sola, poi risposta dal polso (relay 16:02:44, «answered 1») |
 | 5 | Recap: «Ascolta il recap» legge per progetto cosa ha fatto e il prossimo passo | Menu, Recap | |
 | 6 | Notifica di esito: «Leggi» legge la risposta intera senza aprire l'app | notifica di un esito | |
-| 7 | Notifica di domanda: «Leggi» legge domanda e opzioni | notifica di una domanda | |
-| 8 | A schermo spento la lettura continua fino in fondo | ▶, poi polso giù | |
-| 9 | «Ferma» nella notifica «Lettura in corso» ferma subito | durante una lettura | |
+| 7 | Notifica di domanda: «Leggi» legge domanda e opzioni | notifica di una domanda | ✅ 14/09 16:01, notifica 16:00:25, lettura di 31 s finita da sola |
+| 8 | A schermo spento la lettura continua fino in fondo | ▶, poi polso giù | ✅ 14/09 16:06, 80 s di voce con lo schermo spento o in ambient, confermato da Franz |
+| 9 | Nella notifica da cui è partita la lettura, «Leggi» diventa «Ferma» e un tocco ferma subito | «Leggi» su una notifica di esito o di domanda | Riformulata il 14/09 16:08: «Lettura in corso» è una notifica in corso e Wear OS non la mostra nell'elenco |
 | 10 | PC spento: dopo 5 s legge il testo corto che l'orologio ha già | relay fermo, ▶ su un esito | |
 | 11 | Markdown e codice non si leggono a simboli; il codice si annuncia | una risposta con codice | ✅ 14/09 15:51, «Ascolta la risposta» su una risposta con un blocco Kotlin |
 

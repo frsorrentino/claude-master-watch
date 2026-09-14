@@ -37,6 +37,8 @@ class SpeakService : Service() {
         }
         watch?.cancel()
         if (!app.reader.busy) { finish(); return START_NOT_STICKY }
+        // Partita da una notifica: lì «Leggi» diventa «Ferma» finché la voce va (Franz, 14/09 16:08).
+        intent?.getStringExtra(FROM)?.let { app.notifier.reading(it, app.repo.snapshot.value.state?.sessions.orEmpty()) }
         watch = app.scope.launch {
             combine(app.reader.preparing, app.speaker.speaking) { p, s -> p || s }.first { !it }
             finish()
@@ -45,6 +47,8 @@ class SpeakService : Service() {
     }
 
     private fun finish() {
+        val app = application as CmApp
+        app.notifier.reading(null, app.repo.snapshot.value.state?.sessions.orEmpty())
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -67,11 +71,14 @@ class SpeakService : Service() {
         const val ACTION_STOP = "it.pixelbox.cmwatch.speak.STOP"
         private const val NOTIF_ID = 7301
 
-        fun lastIntent(ctx: Context, session: String, fallback: String?): Intent =
-            Intent(ctx, SpeakService::class.java).setAction(ACTION_LAST).putExtra(SESSION, session).putExtra(TEXT, fallback)
+        /** Sessione della notifica da cui parte la lettura; null se parte dall'app. */
+        const val FROM = "from"
 
-        fun textIntent(ctx: Context, text: String): Intent =
-            Intent(ctx, SpeakService::class.java).setAction(ACTION_TEXT).putExtra(TEXT, text)
+        fun lastIntent(ctx: Context, session: String, fallback: String?, from: String? = null): Intent =
+            Intent(ctx, SpeakService::class.java).setAction(ACTION_LAST).putExtra(SESSION, session).putExtra(TEXT, fallback).putExtra(FROM, from)
+
+        fun textIntent(ctx: Context, text: String, from: String? = null): Intent =
+            Intent(ctx, SpeakService::class.java).setAction(ACTION_TEXT).putExtra(TEXT, text).putExtra(FROM, from)
 
         fun last(ctx: Context, session: String, fallback: String?) = ContextCompat.startForegroundService(ctx, lastIntent(ctx, session, fallback))
         fun text(ctx: Context, text: String) = ContextCompat.startForegroundService(ctx, textIntent(ctx, text))
