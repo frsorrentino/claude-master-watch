@@ -19,6 +19,7 @@ import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.rules.SessionsText
+import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.cmMarquee
@@ -26,7 +27,7 @@ import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */
 @Composable
-fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier) {
+fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier, showTool: Boolean = true) {
     Column(modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // 16 dp come nella lista (misura sulle celle di notifica di Wear OS): da 32 il tondo lo tagliava (Franz, 14/09 17:20).
@@ -41,8 +42,9 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
         }
         // Cosa sta facendo, detto per esteso: la description del comando (contratto 1.5) o la frase dallo strumento.
         val tool = ToolText.describe(s.toolNote, s.tool, toolLabels())
-        if (s.state == SessionState.BUSY && tool != null) {
-            Text(tool, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Due righe e un pensiero intero, mai «…» (Franz, 14/09 17:40): la stessa regola della card della tile.
+        if (showTool && s.state == SessionState.BUSY && tool != null) {
+            Text(TileTexts.fitTile(tool, max = 56), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 2)
         }
     }
 }

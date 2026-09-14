@@ -15,5 +15,7 @@
 | 9 | Icona nel launcher e nella lista app | icona adattiva L1 | ✅ 12/09 (`fase5-icona-launcher-watch.png`) |
 | 11 | Tile: orologio davanti alla barra della quota, quota dell'account della sessione mostrata sopra | `quotaAccount`, risorsa `ic_tile_clock` | ✅ dal vivo 14/09 15:51 (`59e6525`) |
 | 12 | Tile: il testo della card sta in due righe senza «…», un pensiero intero | `TileTexts.fitTile` | ✅ dal vivo 14/09 17:18 (`544623e`) |
+| 14 | Testata di Scheda, Domanda ed Esito: badge a 16 dp come nella lista, non tagliato dal tondo | `SessionHeader` | ✅ dal vivo 14/09 17:35 (`a83a0ad`) |
+| 15 | Batteria: stream RTDB solo con l'app in primo piano; ad app chiusa niente riconnessioni continue | `Repo.live`, `ProcessLifecycleOwner` | in misura: base 17:33 (92,4 mAh, di cui 43,1 ad app chiusa; prima 2,7 mAh/h ad app chiusa) |
 | 13 | Lista: la sessione seguita ha il bordo giallino e la campanella accanto al nome | `SessionRow`, `CmColors.followed` | ✅ dal vivo 14/09 16:58 (`472868f`), su `gardenclubnorth-eu` e `claude-master-watch` |
-| 10 | Screenshot delle 8 schermate approvati | Sessioni, Scheda, Domanda, Esito, Terminale, Timeline, Quota, Impostazioni | 5 su 8 fatti, mancano Esito, Timeline e Impostazioni dal polso |
+| 10 | Screenshot delle 8 schermate approvati | Sessioni, Scheda, Domanda, Esito, Terminale, Timeline, Quota, Impostazioni | 7 su 8: Timeline e Impostazioni approvate da Franz il 14/09 17:40 (`fase5-timeline.png`, `fase5-impostazioni.png`); l'Esito si rifà (titolo lungo, ▶ sul testo) |

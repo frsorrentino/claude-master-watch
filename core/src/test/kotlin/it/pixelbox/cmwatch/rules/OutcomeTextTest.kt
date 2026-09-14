@@ -2,7 +2,9 @@ package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Outcome
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Il titolo dell'Esito è la riga «Esito:» intera, non i suoi primi 60 caratteri (Franz, 14/09 13:20). */
@@ -37,4 +39,10 @@ class OutcomeTextTest {
 
     @Test fun senzaRigaDiEsitoRestaIlTestoCorto() =
         assertEquals(corto, OutcomeText.headline(Outcome(corto, "solo testo senza riga finale", 0)))
+
+    // Contratto 1.6: la riga d'esito arriva fino a 200 caratteri e in titleMedium riempiva lo schermo (Franz, 14/09 17:40).
+    @Test fun ilTitoloGrandeSoloSeLaFraseEBreve() {
+        assertTrue(OutcomeText.bigTitle("tile rifatta, quota su una riga."))
+        assertFalse(OutcomeText.bigTitle("lavoro del relay chiuso e attivo, in attesa della prova dal vivo di Franz al polso."))
+    }
 }

@@ -16,5 +16,5 @@ Build con il contratto 1.4 (`last`) e `SpeakService` in primo piano. Prova al po
 | 10 | PC spento: dopo 5 s legge il testo corto che l'orologio ha già | relay fermo, ▶ su un esito | |
 | 11 | Markdown e codice non si leggono a simboli; il codice si annuncia | una risposta con codice | ✅ 14/09 15:51, «Ascolta la risposta» su una risposta con un blocco Kotlin |
 
-Lint vital: ✅ in CI sul codice installato (`544623e`, run 34861007559, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
-15:21 UTC; prima su `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.
+Lint vital: ✅ in CI sul codice installato (`a83a0ad`, run 34862789008, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
+15:37 UTC; prima su `544623e`, `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.

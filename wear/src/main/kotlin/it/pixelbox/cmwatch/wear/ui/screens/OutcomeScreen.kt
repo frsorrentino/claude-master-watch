@@ -2,11 +2,9 @@ package it.pixelbox.cmwatch.wear.ui.screens
 
 import it.pixelbox.cmwatch.rules.OutcomeText
 import it.pixelbox.cmwatch.rules.SpeechText
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,15 +47,19 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBack, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
                 return@TransformingLazyColumn
             }
-            item { SessionHeader(s, now, true, modifier = Modifier) }
+            // Niente riga del comando in corso: la schermata dice com'è finito il turno (Franz, 14/09 17:40).
+            item { SessionHeader(s, now, true, modifier = Modifier, showTool = false) }
+            // La frase intera dell'esito: grande se è breve, più piccola se è lunga (contratto 1.6, fino a 200 caratteri).
+            // Il ▶ sta su una riga sua: accanto a un titolo lungo copriva il testo (Franz, 14/09 17:40).
+            val titolo = OutcomeText.headline(o)
             item {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    // La frase intera dell'esito, in un carattere che la fa stare (Franz, 14/09 13:20).
-                    Text(OutcomeText.headline(o), style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
-                    if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
-                        Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(SpeechText.outcome(o)) })
-                    }
-                }
+                Text(
+                    titolo, color = CmColors.text, modifier = Modifier.fillMaxWidth(),
+                    style = if (OutcomeText.bigTitle(titolo)) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+                )
+            }
+            if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
+                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { SpeakButton(speaking, onToggle = { onSpeak(SpeechText.outcome(o)) }) } }
             }
             // Sotto, solo quello che il titolo non dice già (Franz, 14/09 14:09).
             OutcomeText.body(o)?.let { b -> item { Text(b, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) } }

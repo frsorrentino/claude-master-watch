@@ -13,6 +13,12 @@ object OutcomeText {
     private val FINE = Regex("[.!?…](\\s|$)")
     private const val MAX = 220
 
+    /** Oltre questa lunghezza il titolo dell'Esito scende a `bodyLarge`: in `titleMedium` una frase lunga riempiva lo schermo. */
+    private const val BIG_MAX = 60
+
+    /** Titolo grande solo per la frase breve (Franz, 14/09 17:40): dal contratto 1.6 la riga d'esito arriva a 200 caratteri. */
+    fun bigTitle(title: String): Boolean = title.length <= BIG_MAX
+
     fun headline(o: Outcome): String {
         riga(o)?.let { return it }
         val base = o.short.trimEnd('…', ' ')
