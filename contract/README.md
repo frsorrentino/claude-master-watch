@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.6)
+# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.7)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -44,6 +44,12 @@ Contratto 1.6 (14/09/2026, solo allargamenti): `outcome.short` fino a 200 caratt
 supera 8 KB il relay taglia in quest'ordine: voci del recap, sessioni finite più vecchie (restano le 3 più recenti; una
 gone che esce dallo stato non genera eventi), progetti oltre il decimo; solo dopo `full` scende a 300 caratteri a fine
 parola, e per ultimo `full` = `short`. Le fixture non cambiano. `v` resta 1.
+
+Contratto 1.7 (14/09/2026, solo l'ordine dei tagli): sopra gli 8 KB il relay non toglie più per primo il recap (al
+polso arrivava sempre vuoto con molte sessioni). Nuovo ordine: sessioni finite più vecchie (restano le 3 più recenti),
+progetti oltre il decimo, `done` e `next` del recap tagliati a 80 caratteri a fine parola, `full` degli esiti a 300 e
+poi = `short`, voci del recap dal fondo (ne resta sempre almeno una), sessioni dal fondo. La forma di `/state` non
+cambia; le fixture nemmeno. `v` resta 1.
 
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
