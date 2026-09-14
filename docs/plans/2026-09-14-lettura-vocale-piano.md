@@ -106,3 +106,21 @@ parla, così continua a schermo spento.
   Recap, notifiche di esito e di domanda leggono; a schermo spento la lettura continua; «Ferma» nella notifica
   «Lettura in corso»; PC spento: dopo 8 s legge il testo corto che ha già.
 - [ ] Push dopo la verifica.
+
+## Ripresa (14/09/2026 13:35, Franz in movimento)
+
+Sul polso: build delle 13:24, con il ▶ del testo intero verificato (servizio in primo piano, «last» in meno di un secondo).
+Richieste arrivate dopo il piano: frase intera dell'esito in carattere più piccolo, description del comando sulla tile
+(contratto 1.5, `tool_note`), voce maschile scelta a orecchio. Da fare, in quest'ordine:
+
+1. Già su disco: fixture 1.5 copiate, `Session.toolNote`, `Settings.ttsVoice` con la sua chiave in `Prefs`,
+   `OutcomeText.headline` implementato, stub `ToolText.describe` e `VoiceRules`, test `OutcomeTextTest`, `ToolNoteTest`,
+   `VoiceRulesTest`. Lanciare quelle tre classi più `ContractTest`: rossi solo `ToolNoteTest` e `VoiceRulesTest`.
+2. Implementare `describe` (la nota se non è vuota, altrimenti `phrase`), `TileTexts.activity` che la usa,
+   `VoiceRules.next` (predefinita, poi le voci in ordine, poi di nuovo la predefinita) e `position` (0 = predefinita).
+3. Lato polso, non ancora applicato: Esito con `OutcomeText.headline` in `titleMedium`; `SessionHeader` con `describe`;
+   `Speaker.voices` e `setVoice`; riga «Voce N di M» nelle Impostazioni con un campione a ogni tocco; voce salvata
+   applicata in `CmApp`; stringhe `settings_tts_voice`, `settings_tts_voice_default`, `tts_voice_sample`.
+4. Suite core intera; build release senza lint vital, che su questa VM si blocca per memoria; installazione con
+   l'orologio su questa rete e la pagina Debug wireless aperta.
+5. Prova dal vivo con Franz e checklist `docs/verifiche/fase-5-lettura.md`; un commit per pezzo; push.
