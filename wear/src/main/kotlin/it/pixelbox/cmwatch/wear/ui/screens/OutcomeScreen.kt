@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import it.pixelbox.cmwatch.rules.OutcomeText
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,13 +51,15 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
             item { SessionHeader(s, now, true, modifier = Modifier) }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text(o.short, style = MaterialTheme.typography.displaySmall, color = CmColors.text, modifier = Modifier.weight(1f))
+                    // La frase intera dell'esito, in un carattere che la fa stare (Franz, 14/09 13:20).
+                    Text(OutcomeText.headline(o), style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
                     if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
                         Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(o.full) })
                     }
                 }
             }
-            item { Text(o.full, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
+            // Sotto, solo quello che il titolo non dice già (Franz, 14/09 14:09).
+            OutcomeText.body(o)?.let { b -> item { Text(b, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth()) } }
         }
     }
 }
