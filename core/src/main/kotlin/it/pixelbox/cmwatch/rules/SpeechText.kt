@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.CmdResult
+import it.pixelbox.cmwatch.contract.Outcome
 import it.pixelbox.cmwatch.contract.Question
 import it.pixelbox.cmwatch.contract.Recap
 
@@ -66,6 +67,12 @@ object SpeechText {
         val fatto = "${item.project}: ${item.done.trim().trimEnd('.')}."
         item.next?.trim()?.takeIf { it.isNotEmpty() }?.let { "$fatto ${next.format(it.trimEnd('.'))}" } ?: fatto
     }
+
+    /**
+     * L'Esito come si vede: il titolo, poi il testo sotto. Il ▶ legge quello che ha accanto, non la risposta intera,
+     * che è di «Ascolta la risposta» sulla Scheda (Franz, 14/09 15:01: «tutti e 3 i punti leggono lo stesso testo»).
+     */
+    fun outcome(o: Outcome): String = listOfNotNull(OutcomeText.headline(o), OutcomeText.body(o)).joinToString("\n")
 
     /** Dopo aver chiesto il testo intero al PC: la sua risposta se è arrivata e dice qualcosa, altrimenti il ripiego. */
     fun pick(result: CmdResult?, fallback: String?): String? =

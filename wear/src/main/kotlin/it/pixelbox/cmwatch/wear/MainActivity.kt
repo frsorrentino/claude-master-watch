@@ -239,8 +239,8 @@ class MainActivity : ComponentActivity() {
                 val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 OutcomeScreen(
                     snapshot, name, now, settings?.ttsMinChars ?: 120, speaking || preparing,
-                    // Il testo intero lo chiede al PC; `text`, cioè outcome.full, è il ripiego.
-                    onSpeak = { text -> SpeakService.last(this@MainActivity, name, text) },
+                    // Il ▶ legge quello che si vede accanto, non la risposta intera: quella è della Scheda (Franz, 14/09 15:01).
+                    onSpeak = { text -> SpeakService.text(this@MainActivity, text) },
                     onReadAll = { nav.go(Screen.Terminal(name)) }, onBack = { nav.go(Screen.Sessions) },
                 )
             }
@@ -265,7 +265,7 @@ class MainActivity : ComponentActivity() {
                     onRefresh = { ask() },
                     answer = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full,
                     speaking = speaking || preparing,
-                    onSpeak = { t -> SpeakService.last(this@MainActivity, name, t) },
+                    onSpeak = { t -> SpeakService.text(this@MainActivity, t) },
                 )
             }
             composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }

@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
 import it.pixelbox.cmwatch.rules.OutcomeText
+import it.pixelbox.cmwatch.rules.SpeechText
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,7 +55,7 @@ fun OutcomeScreen(snapshot: Snapshot, name: String, now: Long, ttsMinChars: Int,
                     // La frase intera dell'esito, in un carattere che la fa stare (Franz, 14/09 13:20).
                     Text(OutcomeText.headline(o), style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
                     if (SpeakRules.showButton(o.full, SpeakRules.Kind.OUTCOME, ttsMinChars)) {
-                        Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(o.full) })
+                        Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(SpeechText.outcome(o)) })
                     }
                 }
             }

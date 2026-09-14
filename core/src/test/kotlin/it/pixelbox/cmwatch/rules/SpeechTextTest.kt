@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.CmdResult
 import it.pixelbox.cmwatch.contract.ContractJson
+import it.pixelbox.cmwatch.contract.Outcome
 import it.pixelbox.cmwatch.contract.Recap
 import it.pixelbox.cmwatch.contract.RecapItem
 import org.junit.Assert.*
@@ -57,6 +58,14 @@ class SpeechTextTest {
         val r = Recap("14/09", listOf(RecapItem("atlas-shop", "deploy fatto", "test e2e"), RecapItem("orbit-docs", "indice rifatto.", null)))
         assertEquals("atlas-shop: deploy fatto. Prossimo: test e2e. orbit-docs: indice rifatto.", SpeechText.recap(r, "Prossimo: %1\$s."))
     }
+
+    @Test fun lEsitoSiLeggeComeSiVedeTitoloPoiTestoSotto() {
+        val o = Outcome("relay aggiornato", "Ho cambiato fit_state.\nEsito: relay aggiornato alla 1.6, short fino a 200.", 0)
+        assertEquals("relay aggiornato alla 1.6, short fino a 200.\nHo cambiato fit_state.", SpeechText.outcome(o))
+    }
+
+    @Test fun unEsitoSenzaTestoSottoSiLeggeSoloIlTitolo() =
+        assertEquals("Fatto.", SpeechText.outcome(Outcome("Fatto.", "Fatto.", 0)))
 
     @Test fun siLeggeLaRispostaDelPcQuandoCe() =
         assertEquals("intero", SpeechText.pick(CmdResult("1", true, "intero", 0), "coda"))
