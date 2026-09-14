@@ -13,4 +13,5 @@
 | 7 | Respiro di 3 s sul badge della sessione seguita mentre lavora | `SessionBadge` | da provare |
 | 8 | Niente animazioni con le animazioni di sistema spente | `animationsOff()` | da provare |
 | 9 | Icona nel launcher e nella lista app | icona adattiva L1 | ✅ 12/09 (`fase5-icona-launcher-watch.png`) |
+| 11 | Tile: orologio davanti alla barra della quota, quota dell'account della sessione mostrata sopra | `quotaAccount`, risorsa `ic_tile_clock` | ✅ dal vivo 14/09 15:51 (`59e6525`) |
 | 10 | Screenshot delle 8 schermate approvati | Sessioni, Scheda, Domanda, Esito, Terminale, Timeline, Quota, Impostazioni | 5 su 8 fatti, mancano Esito, Timeline e Impostazioni dal polso |
