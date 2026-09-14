@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.wear.push
 
+import it.pixelbox.cmwatch.rules.SpeechText
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -144,6 +145,9 @@ class Notifier(private val ctx: Context) {
                 .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).build())
             else -> Unit
         }
+        // «Leggi»: la domanda con le opzioni numerate, senza aprire l'app (Franz, 14/09 12:17).
+        b.addAction(R.drawable.ic_play, labels.read, PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 4,
+            SpeakService.textIntent(ctx, SpeechText.question(q, ctx.getString(R.string.tts_option))), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         post(id(s.name), b)
     }
 
@@ -182,7 +186,7 @@ class Notifier(private val ctx: Context) {
         val plan = NotificationPlan.outcome(s, labels)
         val b = base(plan).setLargeIcon(badge(s)).setContentText(plan.messages.first()).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
             .setContentIntent(open("cmwatch://outcome/${s.name}", id(s.name)))
-            .addAction(R.drawable.ic_play, labels.read, PendingIntent.getService(ctx, id(s.name) * 10 + 3, Intent(ctx, SpeakService::class.java).putExtra(SpeakService.TEXT, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+            .addAction(R.drawable.ic_play, labels.read, PendingIntent.getForegroundService(ctx, id(s.name) * 10 + 3, SpeakService.lastIntent(ctx, s.name, plan.bigText), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             .addAction(NotificationCompat.Action.Builder(R.drawable.ic_edit, labels.write, broadcast(ReplyReceiver.ACTION_REPLY, s.name, id(s.name) * 10 + 7, mutable = true))
                 .addRemoteInput(RemoteInput.Builder(ReplyReceiver.TEXT).setLabel(labels.write).build()).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).build())
             .addAction(R.drawable.ic_open, labels.open, open("cmwatch://outcome/${s.name}", id(s.name) * 10 + 9))
