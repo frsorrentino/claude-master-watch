@@ -46,7 +46,7 @@ class TimelineTextTest {
 class LaunchRulesTest {
     private val s = ContractJson.decodeState(Fixtures.stateQuestion)
     @Test fun onlyPublishedPaths() {
-        assertTrue(LaunchRules.allowed("/home/demo/workspaces/personal/atlas-shop", s.projects))
+        assertTrue(LaunchRules.allowed("/home/demo/workspaces/personali/atlas-shop", s.projects))
         assertFalse(LaunchRules.allowed("/tmp/evil", s.projects))
         assertFalse(LaunchRules.allowed("", s.projects))
     }

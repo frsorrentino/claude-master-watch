@@ -7,7 +7,7 @@
       "id": "9e9c87fb-edcd-4c51-8c62-328c0146019b",
       "name": "ledger-api",
       "account": "agenzia",
-      "project": "work/clients/ledger-api",
+      "project": "agenzia/clienti/ledger-api",
       "state": "waiting",
       "since": 1789210500,
       "turn_started": 1789210380,
@@ -81,7 +81,7 @@
       "id": "3d1b2c4e-0000-4000-8000-000000000004",
       "name": "orbit-docs",
       "account": "agenzia",
-      "project": "work/own/orbit-docs",
+      "project": "agenzia/nostri/orbit-docs",
       "state": "gone",
       "since": 1789200000,
       "turn_started": null,
@@ -103,7 +103,7 @@
     "agenzia": {"h5": null, "w7": 75, "reset_w7": 1789444800, "reset_h5": 1789225200, "stale": true}
   },
   "projects": [
-    {"path": "/home/demo/workspaces/personal/atlas-shop", "name": "atlas-shop", "account": "personale"},
+    {"path": "/home/demo/workspaces/personali/atlas-shop", "name": "atlas-shop", "account": "personale"},
     {"path": "/home/demo/workspaces/work/clients/ledger-api", "name": "ledger-api", "account": "agenzia"},
     {"path": "/home/demo/workspaces/work/own/orbit-docs", "name": "orbit-docs", "account": "agenzia"}
   ],

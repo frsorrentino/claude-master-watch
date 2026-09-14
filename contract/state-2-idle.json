@@ -29,7 +29,7 @@
     "agenzia": {"h5": 3, "w7": 75, "reset_w7": 1789444800, "reset_h5": 1789225200, "stale": false}
   },
   "projects": [
-    {"path": "/home/demo/workspaces/personal/atlas-shop", "name": "atlas-shop", "account": "personale"}
+    {"path": "/home/demo/workspaces/personali/atlas-shop", "name": "atlas-shop", "account": "personale"}
   ],
   "night": {"queued": 0, "running": null},
   "recap": {"date": "2026-09-12", "items": []}
