@@ -28,7 +28,7 @@ class TimelineTextTest {
         val g = TimelineText.groups(ev, zone)
         assertEquals(listOf("12 set"), g.map { it.day })
         assertEquals(6, g[0].rows.size)
-        assertEquals("13:01 · 1 yes · ledger-api · risposto da watch-pixel5", g[0].rows[0])
+        assertEquals("13:01 · 1 yes · ledger-api · answered from watch-pixel5", g[0].rows[0])
         assertEquals("12:55 · ❓ ledger-api · Deploy ready, waiting for the client's ok. Deploy now?", g[0].rows[1])
     }
 
@@ -46,7 +46,7 @@ class TimelineTextTest {
 class LaunchRulesTest {
     private val s = ContractJson.decodeState(Fixtures.stateQuestion)
     @Test fun onlyPublishedPaths() {
-        assertTrue(LaunchRules.allowed("/home/demo/workspaces/personali/atlas-shop", s.projects))
+        assertTrue(LaunchRules.allowed("/home/demo/workspaces/personal/atlas-shop", s.projects))
         assertFalse(LaunchRules.allowed("/tmp/evil", s.projects))
         assertFalse(LaunchRules.allowed("", s.projects))
     }
@@ -78,8 +78,8 @@ class RecapTextTest {
     private val s = ContractJson.decodeState(Fixtures.stateQuestion)
     @Test fun rows() {
         val r = RecapText.rows(s.recap)
-        assertEquals("atlas-shop · Migrazioni 008-011 applicate, test verdi", r[0].done)
-        assertEquals("→ Rivedere i seed e la pagina admin", r[0].next)
+        assertEquals("atlas-shop · Migrations 008-011 applied, tests green", r[0].done)
+        assertEquals("→ Review the seeds and the admin page", r[0].next)
         assertEquals("2 · —", RecapText.night(s.night, "—"))
         assertEquals("0 · atlas-shop", RecapText.night(s.night.copy(queued = 0, running = "atlas-shop"), "—"))
     }

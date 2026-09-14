@@ -51,6 +51,15 @@ progetti oltre il decimo, `done` e `next` del recap tagliati a 80 caratteri a fi
 poi = `short`, voci del recap dal fondo (ne resta sempre almeno una), sessioni dal fondo. La forma di `/state` non
 cambia; le fixture nemmeno. `v` resta 1.
 
+Contratto 1.8 (14/09/2026, solo aggiunte): quale account è personale lo dice il tipo, non il nome (decisione di Franz
+delle 22:55; serve anche alla beta pubblica, dove gli account hanno nomi qualunque). Ogni sessione porta
+`account_kind` e ogni voce della quota `kind`, entrambi «personal» o «work». Il relay li ricava da `accounts.<nome>.kind`
+nella sua configurazione; se manca, l'account di default è «personal» e gli altri «work», e un account solo è
+«personal» (claude-master `4e2968f`). Le fixture usano gli account `personal` e `work`, con testi e cartelle in inglese
+(i marcatori «Esito:» e «prossimo:» restano, perché l'app li riconosce così). L'orologio usa il tipo per il
+badge (tondo = personal), il colore delle notifiche, il ripiego e l'ordine della quota; se il campo manca, un relay
+precedente, ripiega sul nome «personale». `v` resta 1.
+
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna

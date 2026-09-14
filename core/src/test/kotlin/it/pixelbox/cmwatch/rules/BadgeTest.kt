@@ -40,6 +40,13 @@ class BadgeTest {
         assertEquals(Badge.Glyph.CROSS, Badge.of("personale", null, SessionState.GONE).glyph)
     }
 
+    // Contratto 1.8: la forma la decide il tipo dell'account, non il nome (tondo = personal).
+    @Test fun formaDalTipoDellAccount() {
+        assertEquals(Badge.Shape.CIRCLE, Badge.of("home", null, SessionState.BUSY, kind = "personal").shape)
+        assertEquals(Badge.Shape.SQUARE, Badge.of("personale", null, SessionState.BUSY, kind = "work").shape)
+        assertEquals(Badge.Shape.CIRCLE, Badge.of("personale", null, SessionState.BUSY).shape)   // relay vecchio, senza tipo
+    }
+
     // Respira ogni sessione che lavora, come il pallino dell'app Claude (Franz, 14/09 16:24), non solo la seguita.
     @Test fun respiranoLeSessioniCheLavorano() {
         assertTrue(Badge.breathes(SessionState.BUSY)); assertTrue(Badge.breathes(SessionState.AWAITING))

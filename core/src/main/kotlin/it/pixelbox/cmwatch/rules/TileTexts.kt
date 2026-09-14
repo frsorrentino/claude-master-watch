@@ -151,12 +151,10 @@ object TileTexts {
     fun quotaAccount(rest: Rest, chosen: String): String = (rest as? Rest.Live)?.session?.account ?: chosen
 
     fun quotaLine(state: State, account: String): QuotaLine? {
-        val key = state.quota.keys.firstOrNull { it.equals(account, ignoreCase = true) }
-            ?: state.quota.keys.firstOrNull { it.equals("personale", ignoreCase = true) }
-            ?: state.quota.keys.minOrNull()
-            ?: return null
+        // Dal contratto 1.8 il ripiego e il segno dell'account seguono il tipo, non il nome «personale».
+        val key = Accounts.resolve(state, account) ?: return null
         val q = state.quota.getValue(key)
-        return QuotaLine(key, q.h5, key.equals("personale", ignoreCase = true), q.resetH5)
+        return QuotaLine(key, q.h5, Accounts.isPersonalQuota(key, q), q.resetH5)
     }
 
     private val HHMM = DateTimeFormatter.ofPattern("HH:mm")

@@ -22,15 +22,15 @@ class BriefCardsTest {
 
     @Test fun personaleVienePrimaDegliAltriAccount() {
         val keys = BriefCards.quota(state, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).map { it.key }
-        assertEquals("quota-personale", keys.first())
+        assertEquals("quota-personal", keys.first())
         assertEquals(state.quota.size, keys.size)
     }
 
     @Test fun laCardDellaQuotaPortaPercentualeResetESettimana() {
         val c = BriefCards.quota(state, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first()
-        val q = state.quota.getValue("personale")
+        val q = state.quota.getValue("personal")
         // Etichetta = solo l'account: «Quota» è l'intestazione della sezione e la colonna è strappa (13/09 16:41).
-        assertEquals("personale", c.label)
+        assertEquals("personal", c.label)
         assertEquals(q.h5.toString(), c.value); assertEquals("%", c.unit)
         // Sotto la percentuale delle 5 ore va la ripartenza delle 5 ore (`reset_h5`, le 18:00 a Roma), non quella
         // settimanale: lì «gio 04:00» sembrava il reset delle 5 ore (Franz, 14/09 10:38: «dovrebbe essere 12:30»).
@@ -42,7 +42,7 @@ class BriefCardsTest {
     }
 
     @Test fun senzaRipartenzaDelleCinqueOreLaRigaDelResetNonSiDisegna() {
-        val s = state.copy(quota = mapOf("personale" to state.quota.getValue("personale").copy(resetH5 = null)))
+        val s = state.copy(quota = mapOf("personal" to state.quota.getValue("personal").copy(resetH5 = null)))
         assertNull(BriefCards.quota(s, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first().secondary)
     }
 
@@ -102,7 +102,7 @@ class BriefQuotaAlertTest {
     )
 
     private fun tono(pct: Int): BriefCards.Tone {
-        val s = state.copy(quota = mapOf("personale" to state.quota.getValue("personale").copy(h5 = pct, stale = false)))
+        val s = state.copy(quota = mapOf("personal" to state.quota.getValue("personal").copy(h5 = pct, stale = false)))
         return BriefCards.quota(s, labels).first().tone
     }
 

@@ -24,7 +24,7 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 
 /** Impostazioni: soglia TTS, vibrazioni per tipo, account della complication, nuovo pairing; in debug il selettore delle fixture. */
 @Composable
-fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}, voices: List<String> = emptyList(), onVoice: (String?) -> Unit = {}) {
+fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}, voices: List<String> = emptyList(), onVoice: (String?) -> Unit = {}, accounts: List<String> = emptyList()) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
@@ -60,7 +60,8 @@ fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: (
                 SwitchButton(checked = settings.hapticGone, onCheckedChange = { onChange(settings.copy(hapticGone = it)) }, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec), transformation = SurfaceTransformation(spec), label = { Text(stringResource(R.string.settings_haptic_gone)) })
             }
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.settings_complication_account)) } }
-            for (account in listOf("personale", "agenzia")) {
+            // Gli account veri dello stato (contratto 1.8: i nomi sono liberi); senza stato, almeno quello scelto.
+            for (account in accounts.ifEmpty { listOf(settings.complicationAccount) }) {
                 item {
                     RadioButton(selected = settings.complicationAccount == account, onSelect = { onChange(settings.copy(complicationAccount = account)) }, modifier = Modifier.fillMaxWidth().transformedHeight(this, spec), transformation = SurfaceTransformation(spec), label = { Text(account) })
                 }

@@ -44,7 +44,8 @@ object NotificationPlan {
 
     data class Summary(val title: String, val rows: List<String>)
 
-    private fun dot(account: String) = if (account == "agenzia") "🔴" else "🟢"
+    /** 🟢 personale, 🔴 lavoro: dal contratto 1.8 lo dice il tipo dell'account, non il nome. */
+    private fun dot(s: Session) = if (Accounts.isPersonal(s)) "🟢" else "🔴"
     private fun optionLabel(n: Int, label: String) = "$n $label"
 
     fun question(s: Session, l: Labels, history: List<Qa>): Plan {
@@ -55,7 +56,7 @@ object NotificationPlan {
             add(Act.Open)
         }
         return Plan(
-            session = s.name, title = "❓ ${s.name}", person = "${dot(s.account)} ${s.name}",
+            session = s.name, title = "❓ ${s.name}", person = "${dot(s)} ${s.name}",
             messages = history.map { "❓ ${it.question} → ${it.answer}" } + q.text, bigText = null,
             actions = actions, choices = if (high) emptyList() else q.options.map { optionLabel(it.n, it.label) },
             freeForm = !high, channel = CH_QUESTIONS, whenS = q.askedAt, chronometer = true, subText = s.account,

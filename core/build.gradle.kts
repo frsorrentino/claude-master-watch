@@ -29,6 +29,12 @@ val copyContract by tasks.registering(Copy::class) {
 android.sourceSets["main"].assets.srcDir(contractAssets)
 tasks.named("preBuild") { dependsOn(copyContract) }
 
+// I test leggono le fixture da ../contract mentre girano: senza questo input, una modifica alle sole fixture lasciava il
+// task «aggiornato», i test non ripartivano e restavano i risultati vecchi (un verde falso il 14/09 alle 23:15).
+tasks.withType<Test>().configureEach {
+    inputs.dir(rootProject.file("contract")).withPropertyName("contractFixtures").withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.room.runtime)

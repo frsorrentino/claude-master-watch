@@ -26,7 +26,7 @@ class NotificationTextsTest {
 
     @Test fun outcome() {
         val n = NotificationTexts.outcome(s.sessions[1], labels)
-        assertEquals("✓ atlas-shop", n.title); assertEquals("Migrazioni 008-011 applicate, test verdi", n.body)
+        assertEquals("✓ atlas-shop", n.title); assertEquals("Migrations 008-011 applied, tests green", n.body)
         assertEquals(NotificationTexts.CHANNEL_OUTCOMES, n.channel)
     }
 

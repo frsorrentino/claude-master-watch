@@ -25,7 +25,7 @@ object Badge {
     )
     private val SQUARES = setOf("🟧", "🟨", "🟥", "🟩", "🟦", "🟪", "⬜", "🟫")
 
-    fun of(account: String, color: String?, state: SessionState, icon: String? = null): Spec {
+    fun of(account: String, color: String?, state: SessionState, icon: String? = null, kind: String? = null): Spec {
         val emoji = icon?.trim()?.takeIf { it.isNotEmpty() }
         val fill = parse(color) ?: parse(EMOJI_COLOR[emoji]) ?: GREY
         val glyph = when (state) {
@@ -35,8 +35,8 @@ object Badge {
             SessionState.GONE -> Glyph.CROSS
         }
         val glyphColor = if (contrast(BLACK, fill) >= 4.5) BLACK else WHITE
-        // Forma dall'account (contratto 1.1): tondo = personale, quadrato = qualunque altro account.
-        val square = account.lowercase() != "personale"
+        // Forma dall'account: tondo = personale, quadrato = lavoro. Dal contratto 1.8 lo dice il tipo, non il nome.
+        val square = !Accounts.personal(account, kind)
         return Spec(if (square) Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
     }
 

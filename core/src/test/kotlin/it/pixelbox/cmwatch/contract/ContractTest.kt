@@ -21,8 +21,8 @@ class ContractTest {
         assertEquals(listOf(1, 2), q.options.map { it.n }); assertEquals("yes", q.options[0].label)
         val atlas = s.sessions[1]
         assertEquals("Bash pytest -q tests", atlas.tool); assertEquals(1789210300L, atlas.outcome!!.at)
-        assertNull(s.quota.getValue("agenzia").h5); assertTrue(s.quota.getValue("agenzia").stale)
-        assertEquals(11, s.quota.getValue("personale").h5)
+        assertNull(s.quota.getValue("work").h5); assertTrue(s.quota.getValue("work").stale)
+        assertEquals(11, s.quota.getValue("personal").h5)
         assertEquals(3, s.projects.size); assertEquals(2, s.night.queued); assertNull(s.night.running)
         assertEquals("2026-09-12", s.recap.date); assertEquals(2, s.recap.items.size)
     }
@@ -30,9 +30,9 @@ class ContractTest {
     @Test fun quotaCarriesTheFiveHourReset() {
         // Contratto 1.3: `reset_h5` è la ripartenza della finestra di 5 ore; `reset_w7` resta quella settimanale.
         val q = ContractJson.decodeState(Fixtures.stateQuestion).quota
-        assertEquals(1789228800L, q.getValue("personale").resetH5)
-        assertEquals(1789225200L, q.getValue("agenzia").resetH5)
-        assertEquals(1789610400L, q.getValue("personale").resetW7)
+        assertEquals(1789228800L, q.getValue("personal").resetH5)
+        assertEquals(1789225200L, q.getValue("work").resetH5)
+        assertEquals(1789610400L, q.getValue("personal").resetW7)
     }
 
     @Test fun staleFixtureHasNoSessions() {

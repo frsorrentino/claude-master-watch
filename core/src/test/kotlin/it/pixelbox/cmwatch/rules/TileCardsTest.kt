@@ -142,14 +142,15 @@ class TileQuotasTest {
     // Una riga sola, dell'account scelto nelle impostazioni (Franz, 14/09 11:33: con due righe la seconda era tagliata).
     @Test fun laRigaDellaQuotaEDellAccountScelto() {
         val idle = ContractJson.decodeState(Fixtures.stateIdle)
-        val r = TileTexts.quotaLine(idle, "agenzia")!!
-        assertEquals("agenzia", r.account); assertFalse(r.personale)
-        assertEquals(idle.quota.getValue("agenzia").h5, r.pct)
+        val r = TileTexts.quotaLine(idle, "work")!!
+        assertEquals("work", r.account); assertFalse(r.personale)
+        assertEquals(idle.quota.getValue("work").h5, r.pct)
     }
 
     @Test fun unAccountCheNonCeRipiegaSuPersonale() {
         val r = TileTexts.quotaLine(q, "lavoro")!!
-        assertEquals("personale", r.account); assertTrue(r.personale)
+        // Contratto 1.8: il ripiego va sull'account di tipo personal, qualunque sia il suo nome.
+        assertEquals("personal", r.account); assertTrue(r.personale)
     }
 
     // La quota segue la sessione mostrata sopra (Franz, 14/09 15:26): sessione di lavoro, quota di lavoro.

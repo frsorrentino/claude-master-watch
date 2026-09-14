@@ -228,6 +228,7 @@ class MainActivity : ComponentActivity() {
                     notificationsEnabled = app.notifier.enabled(),
                     onNotificationSettings = { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)) },
                     voices = voices,
+                    accounts = snapshot.state?.quota?.keys?.sorted().orEmpty(),
                     onVoice = { v -> scope.launch { app.prefs.update { it.copy(ttsVoice = v) } }; app.speaker.setVoice(v); app.speaker.speak(getString(R.string.tts_voice_sample)) },
                 )
             }

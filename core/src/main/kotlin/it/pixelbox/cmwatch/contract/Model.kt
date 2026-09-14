@@ -54,6 +54,8 @@ enum class CmdOp {
     val color: String? = null,
     /** Contratto 1.1: emoji del badge come su Telegram (es. 🟠 / 🟧); l'app disegna il badge da account + color. */
     val icon: String? = null,
+    /** Contratto 1.8: «personal» o «work»; assente con un relay precedente (si ripiega sul nome «personale»). */
+    @SerialName("account_kind") val accountKind: String? = null,
 )
 
 @Serializable data class QuotaAccount(
@@ -61,6 +63,8 @@ enum class CmdOp {
     @SerialName("reset_w7") val resetW7: Long? = null, val stale: Boolean = false,
     /** Contratto 1.3: quando riparte la finestra di 5 ore (epoch in secondi); `reset_w7` resta il reset settimanale. */
     @SerialName("reset_h5") val resetH5: Long? = null,
+    /** Contratto 1.8: «personal» o «work»; assente con un relay precedente. */
+    val kind: String? = null,
 )
 
 @Serializable data class Project(val path: String, val name: String, val account: String)

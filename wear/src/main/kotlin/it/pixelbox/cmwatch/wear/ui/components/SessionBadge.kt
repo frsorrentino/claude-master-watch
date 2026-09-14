@@ -29,7 +29,7 @@ import it.pixelbox.cmwatch.rules.Badge
 /** Il badge della sessione (Franz, 12/09 16:27): forma = account, riempimento = colore della sessione, glifo di stato dentro. */
 @Composable
 fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier, ambient: Boolean = false, animate: Boolean = true) {
-    val spec = Badge.of(s.account, s.color, s.state, s.icon)
+    val spec = Badge.of(s.account, s.color, s.state, s.icon, s.accountKind)
     // Respiro di 3 s su ogni sessione che lavora (Franz, 14/09 16:24); fermo in ambient o con le animazioni spente.
     val breathing = animate && !ambient && Badge.breathes(s.state)
     val alpha by if (breathing) {

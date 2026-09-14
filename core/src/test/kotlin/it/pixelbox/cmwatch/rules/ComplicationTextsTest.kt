@@ -32,9 +32,9 @@ class ComplicationTextsTest {
     }
 
     @Test fun ranged() {
-        val r = ComplicationTexts.ranged(q, "personale")
+        val r = ComplicationTexts.ranged(q, "personal")
         assertEquals(11f, r.value); assertEquals(100f, r.max); assertEquals("11 %", r.text)
-        val none = ComplicationTexts.ranged(q, "agenzia")
+        val none = ComplicationTexts.ranged(q, "work")
         assertEquals(0f, none.value); assertEquals("—", none.text)
     }
 

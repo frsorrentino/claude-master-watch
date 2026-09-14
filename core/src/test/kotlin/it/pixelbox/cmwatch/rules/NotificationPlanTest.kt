@@ -21,7 +21,7 @@ class NotificationPlanTest {
         assertEquals(listOf(Act.Option(1, "1 yes"), Act.Option(2, "2 no"), Act.Reply, Act.Open), p.actions)
         assertEquals(listOf("1 yes", "2 no"), p.choices)
         assertTrue(p.freeForm); assertTrue(p.chronometer); assertEquals(1789210500L, p.whenS)
-        assertEquals(NotificationPlan.CH_QUESTIONS, p.channel); assertEquals("agenzia", p.subText)
+        assertEquals(NotificationPlan.CH_QUESTIONS, p.channel); assertEquals("work", p.subText)
         assertFalse(p.autoCancel)
     }
 
@@ -51,8 +51,8 @@ class NotificationPlanTest {
 
     @Test fun outcomeGoneQuota() {
         val o = NotificationPlan.outcome(s.sessions[1], l)
-        assertEquals("✓ atlas-shop", o.title); assertEquals("Migrazioni 008-011 applicate, test verdi", o.messages.first())
-        assertEquals("Esito: migrazioni 008-011 applicate, test verdi.\nRestano da rivedere i seed di prova e la pagina admin.", o.bigText)
+        assertEquals("✓ atlas-shop", o.title); assertEquals("Migrations 008-011 applied, tests green", o.messages.first())
+        assertEquals("Esito: migrations 008-011 applied, tests green.\nThe test seeds and the admin page are still to review.", o.bigText)
         assertEquals(listOf(Act.Read, Act.Write, Act.Open), o.actions); assertTrue(o.autoCancel); assertEquals(12 * 3600_000L, o.timeoutMs)
         val g = NotificationPlan.gone("orbit-docs", "agenzia", l)
         assertEquals("✗ orbit-docs", g.title); assertEquals(listOf(Act.Resume), g.actions)

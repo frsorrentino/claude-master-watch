@@ -25,7 +25,7 @@ class TileGlanceTest {
     @Test fun withoutQuestionsTheFollowedOrMostRecentSession() {
         val g = TileTexts.glance(idle, Freshness.Fresh, 1789214000L + 360, l)
         assertEquals("1 ✓", g.counts); assertEquals("atlas-shop", g.name)
-        assertEquals("Seed e pagina admin rivisti", g.body)                  // idle: l'esito breve
+        assertEquals("Seeds and admin page reviewed", g.body)                  // idle: l'esito breve
         assertEquals(TileTexts.Button.SESSIONS, g.button); assertEquals(TileTexts.Accent.IDLE, g.accent)
         assertEquals("cmwatch://session/atlas-shop", g.target)
         val busy = q.copy(sessions = q.sessions.map { it.copy(question = null, state = if (it.name == "ledger-api") SessionState.BUSY else it.state, tool = if (it.name == "ledger-api") "Bash pytest -q" else it.tool) })

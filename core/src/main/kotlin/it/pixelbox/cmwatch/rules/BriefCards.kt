@@ -49,7 +49,8 @@ object BriefCards {
     /** `personale` per primo, poi gli altri account in ordine: è l'account di Franz e lo guarda per primo. */
     fun quota(state: State?, l: Labels, zone: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.ITALIAN): List<Card> {
         val quota = state?.quota ?: return emptyList()
-        val order = quota.keys.sortedWith(compareBy({ if (it.lowercase() == "personale") 0 else 1 }, { it.lowercase() }))
+        // Dal contratto 1.8 l'account personale lo dice il tipo, non il nome.
+        val order = quota.keys.sortedWith(compareBy({ if (Accounts.isPersonalQuota(it, quota.getValue(it))) 0 else 1 }, { it.lowercase() }))
         return order.map { account ->
             val q = quota.getValue(account)
             Card(

@@ -38,9 +38,11 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
         return build(request.complicationType, snap.state, snap.freshness is Freshness.Fresh, prefs.complicationAccount, prefs.seenQuestions)
     }
 
-    private fun build(type: ComplicationType, state: State?, fresh: Boolean, account: String, seen: Set<String>): ComplicationData? {
+    private fun build(type: ComplicationType, state: State?, fresh: Boolean, chosen: String, seen: Set<String>): ComplicationData? {
+        // Contratto 1.8: se l'account scelto non c'è, l'anello mostra quello personale (per tipo, non per nome).
+        val account = state?.let { st -> it.pixelbox.cmwatch.rules.Accounts.resolve(st, chosen) } ?: chosen
         val first = state?.sessions?.firstOrNull { s -> s.question?.let { q -> q.id !in seen } == true } ?: state?.sessions?.firstOrNull()
-        val icon = if (first != null) MonochromaticImage.Builder(Icon.createWithBitmap(BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(first.account, first.color, first.state, first.icon), mono = true))).build()
+        val icon = if (first != null) MonochromaticImage.Builder(Icon.createWithBitmap(BadgeBitmap.draw(it.pixelbox.cmwatch.rules.Badge.of(first.account, first.color, first.state, first.icon, first.accountKind), mono = true))).build()
         else MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
         val stale = getString(R.string.complication_stale)
         return when (type) {
