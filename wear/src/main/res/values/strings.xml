@@ -121,6 +121,7 @@
     <string name="tool_delegate">delega a un agente</string>
     <string name="tool_plan">aggiorna il piano</string>
     <string name="tool_other">usa %1$s</string>
+    <string name="state_awaiting_prompt">prompt dal polso in corso</string>
     <string name="tile_title">Claude Master</string>
     <string name="tile_all_idle">Tutto a riposo</string>
     <string name="tile_quota_pct">%1$d %%</string>

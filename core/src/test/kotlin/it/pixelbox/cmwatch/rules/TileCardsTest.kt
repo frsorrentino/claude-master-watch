@@ -134,3 +134,16 @@ class TileQuotasTest {
         assertEquals(1, TileTexts.quotas(uno).size)
     }
 }
+
+class TileAwaitingTest {
+    private val q = it.pixelbox.cmwatch.contract.ContractJson.decodeState(it.pixelbox.cmwatch.Fixtures.stateQuestion)
+
+    @Test fun unaSessioneInAttesaDiRispostaLoDice() {
+        val a = q.sessions.first { it.state == SessionState.BUSY }
+            .copy(state = SessionState.AWAITING, tool = null, next = null, outcome = null)
+        assertEquals(
+            "prompt dal polso in corso",
+            TileTexts.activity(a, busy = true, running = "turno in corso", idle = "a riposo", awaiting = "prompt dal polso in corso"),
+        )
+    }
+}

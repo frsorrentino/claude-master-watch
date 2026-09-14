@@ -168,6 +168,7 @@ class CmTileService : TileService() {
     private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?): LayoutElement {
         val what = TileTexts.activity(
             s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now, toolLabels(),
+            awaiting = getString(R.string.state_awaiting_prompt),
         )
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),

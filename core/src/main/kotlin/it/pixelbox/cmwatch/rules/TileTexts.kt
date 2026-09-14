@@ -65,6 +65,7 @@ object TileTexts {
         idle: String,
         now: Long = 0L,
         tools: ToolText.Labels? = null,
+        awaiting: String = running,
     ): String {
         // Il nome nudo dello strumento non dice niente: «SendMessage» diventa «scrive a un'altra sessione».
         val tool = tools?.let { ToolText.phrase(s.tool, it) } ?: s.tool?.trim()?.takeIf { it.isNotEmpty() }
@@ -79,6 +80,9 @@ object TileTexts {
         val scelto = when {
             busy && tool != null -> tool
             busy && esito != null && esitoPiuFresco -> esito
+            // `awaiting` = sta lavorando a un prompt partito dal polso: dirlo, perché un blocco su quel canale
+            // altrimenti è indistinguibile da un turno normale (suggerito dal relay, 14/09 08:31).
+            s.state == SessionState.AWAITING -> prossimo ?: awaiting
             busy -> prossimo ?: running
             else -> esito ?: prossimo ?: idle
         }
