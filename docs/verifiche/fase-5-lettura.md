@@ -20,5 +20,5 @@ Relay `2e0a2df` (ritardo degli eventi) dal vivo, 14/09: domanda 20:29:57, push c
 notifica 20:30:38, push con «answered» 20:30:44, 6 s dopo (prima aspettava il prompt successivo, circa 3 minuti).
 Esito: stop 20:31:56 (`outcome.at`), push con l'esito 20:32:04, 8 s dopo. ✅ entrambe le metà della correzione.
 
-Lint vital: ✅ in CI sul codice installato (`15d80a4`, run 34882159855, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
-18:45 UTC; prima su `c32a946`, `0725313`, `41adb72`, `a83a0ad`, `544623e`, `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.
+Lint vital: ✅ in CI sul codice installato (`fa5ecc5`, run 34889947097, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
+20:02 UTC; prima su `15d80a4`, `c32a946`, `0725313`, `41adb72`, `a83a0ad`, `544623e`, `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.
