@@ -35,6 +35,8 @@ import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.wear.haptics.Haptics
 import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
+import it.pixelbox.cmwatch.wear.ui.ambient.LocalAmbient
+import it.pixelbox.cmwatch.wear.ui.ambient.ambientState
 import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.crypto.KeyVault
 import it.pixelbox.cmwatch.transport.FakeTransport
@@ -78,7 +80,13 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo_paired", false) == true) {
             app.scope.launch { app.prefs.update { it.copy(paired = true, host = "demo") } }
         }
-        setContent { CmTheme { AppScaffold(timeText = { TimeText() }) { App(app) } } }
+        // L'ambient si registra qui, prima dell'interfaccia: così Wear OS tratta l'app come capace di ambient (14/09 21:46).
+        val ambient = ambientState()
+        setContent {
+            androidx.compose.runtime.CompositionLocalProvider(LocalAmbient provides ambient.value) {
+                CmTheme { AppScaffold(timeText = { TimeText() }) { App(app) } }
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
