@@ -28,7 +28,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Terminal
+import androidx.wear.compose.material3.Icon
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Card
@@ -128,6 +130,8 @@ fun SessionScreen(
                         onCheckedChange = { onFollow(it) },
                         enabled = enabled,
                         label = { Text(stringResource(R.string.card_follow), maxLines = 1) },
+                        // La campanella della lista (Franz, 14/09 20:32): giallina se seguita, grigia se no.
+                        icon = { Icon(Icons.Rounded.Notifications, contentDescription = null, tint = if (s.followed) CmColors.followed else CmColors.text2) },
                         modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                         transformation = SurfaceTransformation(spec),
                     )
