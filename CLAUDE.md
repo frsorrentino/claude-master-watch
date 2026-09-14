@@ -26,6 +26,21 @@ App nativa Wear OS per claude-master: le sessioni Claude Code del PC sul Pixel W
   e lo sviluppa la sessione `claude-master`. Parlale con `SendMessage` (nome `claude-master`)
   o `claude-master talk claude-master "…"`: contratto, pairing, fixture. Mai modificare quel repo da qui.
 
+## Chi conduce (Franz, 14/09/2026)
+
+Tre sessioni toccavano l'app e il progetto non procedeva in modo lineare. Regola:
+
+- **claude-master-watch (questa) conduce l'app.** Decide, pianifica, prova sul polso. Franz parla
+  solo con lei per l'app.
+- **claude-master è il fornitore del relay.** Cambia `cm-relay.py` e il contratto solo su richiesta
+  di questa sessione; non propone funzioni all'app e non scrive in questo repo.
+- **master è fuori dal progetto.** Non manda messaggi alle due sessioni e non segue lo stato dell'app.
+- L'unico canale tra app e relay è il contratto. Questa sessione manda una richiesta per volta,
+  claude-master la implementa e alza la versione, questa sessione aggiorna test e fixture. Durante
+  una release del plugin non si mandano richieste.
+- Priorità: prima si chiude la v1 (checklist `docs/verifiche/fase-5-lettura.md` dal vivo, poi lint
+  vital); le funzioni nuove vengono dopo.
+
 ## Stack fisso (dal design, sezione «Decisioni fisse»)
 
 Kotlin · Wear Compose Material 3 (`TransformingLazyColumn`, `ScreenScaffold`, `TimeText`) ·
