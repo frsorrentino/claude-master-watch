@@ -34,7 +34,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.runBlocking
 
@@ -57,7 +59,14 @@ class CmApp : Application() {
         transport = SwitchableTransport(choose(settings))
         val store = RoomStore.open(this)
         repo = Repo(store, transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, settings.deviceName)
-        repo.start()
+        // Batteria (Franz, 14/09 17:18): gli stream RTDB solo con l'app in primo piano. Aperti ad app chiusa costavano
+        // 40 mAh in 15 ore e, senza Wi-Fi, riprovavano ogni 30 s; chiusa, la sveglia è FCM e la tile rilegge da sé.
+        // Si parte spenti: il processo può nascere in background (FCM, tile) e allora non riceverebbe mai onStop.
+        repo.start(live = false)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) = repo.live(true)
+            override fun onStop(owner: LifecycleOwner) = repo.live(false)
+        })
         follow = FollowOngoing(this)
         scope.launch { repo.snapshot.collect { follow.update(it.state, System.currentTimeMillis() / 1000) } }
         // Il diff che decide le notifiche gira su OGNI nuovo /state (stream o risveglio FCM): con il processo vivo lo stream

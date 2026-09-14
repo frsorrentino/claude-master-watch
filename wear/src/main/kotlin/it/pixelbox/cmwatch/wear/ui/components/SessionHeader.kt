@@ -29,7 +29,8 @@ import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SessionBadge(s, size = 32.dp)
+            // 16 dp come nella lista (misura sulle celle di notifica di Wear OS): da 32 il tondo lo tagliava (Franz, 14/09 17:20).
+            SessionBadge(s, size = 16.dp)
             Spacer(Modifier.width(8.dp))
             val row = SessionsText.row(s, now)
             val tail = row.removePrefix(s.name).removePrefix(" · ")

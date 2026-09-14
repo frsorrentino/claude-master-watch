@@ -14,6 +14,6 @@
 | 8 | Niente animazioni con le animazioni di sistema spente | `animationsOff()` | da provare |
 | 9 | Icona nel launcher e nella lista app | icona adattiva L1 | ✅ 12/09 (`fase5-icona-launcher-watch.png`) |
 | 11 | Tile: orologio davanti alla barra della quota, quota dell'account della sessione mostrata sopra | `quotaAccount`, risorsa `ic_tile_clock` | ✅ dal vivo 14/09 15:51 (`59e6525`) |
-| 12 | Tile: il testo della card sta in due righe senza «…», un pensiero intero | `TileTexts.fitTile` | da provare |
+| 12 | Tile: il testo della card sta in due righe senza «…», un pensiero intero | `TileTexts.fitTile` | ✅ dal vivo 14/09 17:18 (`544623e`) |
 | 13 | Lista: la sessione seguita ha il bordo giallino e la campanella accanto al nome | `SessionRow`, `CmColors.followed` | ✅ dal vivo 14/09 16:58 (`472868f`), su `gardenclubnorth-eu` e `claude-master-watch` |
 | 10 | Screenshot delle 8 schermate approvati | Sessioni, Scheda, Domanda, Esito, Terminale, Timeline, Quota, Impostazioni | 5 su 8 fatti, mancano Esito, Timeline e Impostazioni dal polso |

@@ -9,12 +9,12 @@ Build con il contratto 1.4 (`last`) e `SpeakService` in primo piano. Prova al po
 | 3 | Scheda: «Ascolta la risposta» legge la risposta intera dal PC, oltre i 600 caratteri, e mentre legge dice «Ferma la lettura» | Scheda, Ascolta | ✅ «Ferma» 14/09 14:59, fermate da Franz; letture arrivate in fondo 15:15, voce scelta in Impostazioni |
 | 4 | Domanda: il ▶ accanto al testo legge domanda e opzioni numerate | una domanda aperta | ✅ 14/09 16:02, lettura di 31 s finita da sola, poi risposta dal polso (relay 16:02:44, «answered 1») |
 | 5 | Recap: «Ascolta il recap» legge per progetto cosa ha fatto e il prossimo passo | Menu, Recap | |
-| 6 | Notifica di esito: «Leggi» legge la risposta intera senza aprire l'app | notifica di un esito | |
+| 6 | Notifica di esito: «Leggi» legge la risposta intera senza aprire l'app | notifica di un esito | ✅ 14/09 17:18, confermato da Franz |
 | 7 | Notifica di domanda: «Leggi» legge domanda e opzioni | notifica di una domanda | ✅ 14/09 16:01, notifica 16:00:25, lettura di 31 s finita da sola |
 | 8 | A schermo spento la lettura continua fino in fondo | ▶, poi polso giù | ✅ 14/09 16:06, 80 s di voce con lo schermo spento o in ambient, confermato da Franz |
-| 9 | Nella notifica da cui è partita la lettura, «Leggi» diventa «Ferma» e un tocco ferma subito | «Leggi» su una notifica di esito o di domanda | Riformulata il 14/09 16:08: «Lettura in corso» è una notifica in corso e Wear OS non la mostra nell'elenco |
+| 9 | Nella notifica da cui è partita la lettura, «Leggi» diventa «Ferma» e un tocco ferma subito | «Leggi» su una notifica di esito o di domanda | ✅ 14/09 17:18 (`114dbd4`), confermato da Franz. Riformulata alle 16:08: «Lettura in corso» è una notifica in corso e Wear OS non la mostra nell'elenco |
 | 10 | PC spento: dopo 5 s legge il testo corto che l'orologio ha già | relay fermo, ▶ su un esito | |
 | 11 | Markdown e codice non si leggono a simboli; il codice si annuncia | una risposta con codice | ✅ 14/09 15:51, «Ascolta la risposta» su una risposta con un blocco Kotlin |
 
-Lint vital: ✅ in CI sul codice installato (`472868f`, run 34857377530, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
-14:48 UTC; prima su `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.
+Lint vital: ✅ in CI sul codice installato (`544623e`, run 34861007559, `:wear:lintVitalRelease`, BUILD SUCCESSFUL
+15:21 UTC; prima su `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.

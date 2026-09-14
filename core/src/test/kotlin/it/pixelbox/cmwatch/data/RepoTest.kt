@@ -4,6 +4,10 @@ import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.transport.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +45,34 @@ class RepoTest {
         assertEquals(Freshness.Fresh, repo.snapshot.value.freshness)
         assertEquals(4, store.loadState()!!.first.sessions.size)
         assertEquals(6, repo.events.value.size)
+    }
+
+    /** Conta chi sta ascoltando gli stream del transport: con l'app chiusa devono essere zero. */
+    private class Counting(base: FakeTransport) : Transport by base {
+        val listening = MutableStateFlow(0)
+        override val state: Flow<State> = base.state.onStart { listening.value++ }.onCompletion { listening.value-- }
+        override val events: Flow<List<Event>> = base.events.onStart { listening.value++ }.onCompletion { listening.value-- }
+    }
+
+    // Batteria (Franz, 14/09 17:18): gli stream aperti ad app chiusa costavano 40 mAh in 15 ore; chiusa, la sveglia è FCM.
+    @Test fun conLAppChiusaGliStreamSiChiudonoEAllAperturaSiRiaprono() = runTest {
+        val tr = Counting(fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        assertEquals(2, tr.listening.value)
+        repo.live(false); idle()
+        assertEquals(0, tr.listening.value)
+        repo.live(true); idle()
+        assertEquals(2, tr.listening.value)
+    }
+
+    @Test fun partendoInBackgroundNessunoStreamMaIlGetDellaSveglia() = runTest {
+        val tr = Counting(fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(live = false); idle()
+        assertEquals(0, tr.listening.value)
+        assertTrue(repo.refresh())
+        assertEquals(4, repo.snapshot.value.state!!.sessions.size)
     }
 
     @Test fun staleStateIsFlagged() = runTest {

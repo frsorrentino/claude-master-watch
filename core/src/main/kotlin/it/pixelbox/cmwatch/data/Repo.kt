@@ -4,6 +4,7 @@ import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.transport.Transport
 import it.pixelbox.cmwatch.transport.TransportException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -55,20 +56,41 @@ class Repo(
         _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
     }
 
-    fun start() {
+    private val loaded = CompletableDeferred<Unit>()
+    private var streams: Job? = null
+
+    /**
+     * `live` = stream del transport aperti. L'app li apre solo in primo piano (Franz, 14/09 17:18, batteria): chiusa, lo
+     * stato arriva dal GET della sveglia FCM e dalla tile. Il ciclo di freschezza resta: non usa la rete.
+     */
+    fun start(live: Boolean = true) {
         scope.launch {
             loadFromStore()
-            launch { transport.state.collect { s -> accept(s) } }
-            launch {
-                transport.events.collect { ev ->
-                    store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
-                }
-            }
+            loaded.complete(Unit)
+            if (live) live(true)
         }
         if (freshnessTickMs > 0) scope.launch {
             while (isActive) {
                 delay(freshnessTickMs)
                 _snapshot.update { it.copy(freshness = it.state?.let { s -> Freshness.of(s.ts, now()) } ?: Freshness.Stale(0)) }
+            }
+        }
+    }
+
+    /**
+     * Apre o chiude gli stream di /state e /events; idempotente, lo chiama il ciclo di vita del processo. Gli stream
+     * partono dopo il caricamento da Room: uno stream aperto prima verrebbe sovrascritto dallo stato vecchio salvato.
+     */
+    @Synchronized fun live(on: Boolean) {
+        if (!on) { streams?.cancel(); streams = null; return }
+        if (streams?.isActive == true) return
+        streams = scope.launch {
+            loaded.await()
+            launch { transport.state.collect { s -> accept(s) } }
+            launch {
+                transport.events.collect { ev ->
+                    store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
+                }
             }
         }
     }
