@@ -103,6 +103,26 @@ object TileTexts {
         return if (punto in 1..max) text.substring(0, punto + 1) else text
     }
 
+    /** Due righe della card della tile: nella cattura del 14/09 16:42 una riga contiene 23-26 caratteri. */
+    const val TILE_MAX = 42
+
+    private val FINE_FRASE = Regex("[.!?](?=\\s|$)")
+    private val PAUSA = Regex("[,;:](?=\\s)| — ")
+
+    /**
+     * Il testo della card della tile, che sta nelle due righe da sé (Franz, 14/09 16:58): altrimenti la tile tronca
+     * con «…», vietato nel corpo dei testi. In ordine: il testo intero, la frase più lunga che finisce entro il limite,
+     * il pezzo fino all'ultima virgola o punto e virgola, e solo alla fine un taglio a fine parola, senza puntini.
+     */
+    fun fitTile(text: String, max: Int = TILE_MAX): String {
+        val t = text.trim().trimEnd('…').trim()
+        if (t.length <= max) return t
+        FINE_FRASE.findAll(t).lastOrNull { it.range.last < max }?.let { return t.substring(0, it.range.last + 1) }
+        PAUSA.findAll(t).lastOrNull { it.range.first in 1..max }?.let { return t.substring(0, it.range.first).trim() }
+        val spazio = t.lastIndexOf(' ', max).takeIf { it > 0 } ?: max
+        return t.substring(0, spazio).trim()
+    }
+
 
     private fun moved(s: Session): Long = maxOf(s.since, s.turnStarted ?: 0L, s.outcome?.at ?: 0L)
 

@@ -90,6 +90,22 @@ class TileActivityTest {
         val lunga = "una frase molto lunga che supera la riga e mezza prima del punto. coda"
         assertEquals(lunga, TileTexts.primaFrase(lunga))
     }
+
+    // Nella tile due righe e mai «…» (Franz, 14/09 16:58): un pensiero intero, non una coda troncata.
+    @Test fun nellaTileUnTestoCortoResta() = assertEquals("build installata", TileTexts.fitTile("build installata"))
+
+    @Test fun nellaTileLaFraseCheFinisceEntroIlLimite() =
+        assertEquals("Build installata alle 16:42.", TileTexts.fitTile("Build installata alle 16:42. Poi lint vital in CI su 472868f."))
+
+    @Test fun nellaTileSenzaPuntoSiFermaAllaVirgola() = assertEquals(
+        "nessun errore",
+        TileTexts.fitTile("nessun errore, il bordo arriva con la build in corso; lo stato del relay segna la sessione"),
+    )
+
+    @Test fun nellaTileMaiPuntiniEMaiOltreIlLimite() {
+        val t = TileTexts.fitTile((1..30).joinToString(" ") { "parola$it" })
+        assertFalse(t.contains("…")); assertTrue(t.length <= TileTexts.TILE_MAX); assertTrue(t.startsWith("parola1 parola2"))
+    }
 }
 
 class TileNextAtTest {

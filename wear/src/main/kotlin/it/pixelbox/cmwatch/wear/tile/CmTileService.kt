@@ -180,7 +180,8 @@ class CmTileService : TileService() {
             },
             time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
             // Due righe: la barra della quota è più bassa di una riga di testo e lo spazio guadagnato va qui (Franz, 13/09 16:14).
-            title = { text(what.layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
+            // Il testo sta nelle due righe da sé, un pensiero intero: mai la coda troncata con «…» (Franz, 14/09 16:58).
+            title = { text(TileTexts.fitTile(what).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 2) },
             colors = cardColors(),
         )
     }
