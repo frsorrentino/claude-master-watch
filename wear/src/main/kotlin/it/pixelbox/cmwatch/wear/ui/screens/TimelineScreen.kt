@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
@@ -33,7 +34,8 @@ fun TimelineScreen(events: List<Event>) {
     val spec = rememberTransformationSpec()
     val sessions = events.mapNotNull { it.session }.distinct()
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
-    val groups = TimelineText.groups(events, ZoneId.systemDefault(), filter)
+    // Giorni nella lingua delle risorse, come nella Quota: con l'inglese niente nomi italiani (14/09 23:43).
+    val groups = TimelineText.groups(events, ZoneId.systemDefault(), filter, locale = LocalConfiguration.current.locales[0])
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding()) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.timeline_title)) } }

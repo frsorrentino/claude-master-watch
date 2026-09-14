@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
@@ -49,7 +50,8 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
     )
     // Niente animazioni in ambient né con le animazioni di sistema spente (design, sezione 3).
     val animate = !rememberAmbient() && !animationsOff()
-    val quota = BriefCards.quota(state, labels)
+    // Giorni della settimana nella lingua delle risorse: con l'inglese «reset Thu 02:00», non «gio» (14/09 23:43).
+    val quota = BriefCards.quota(state, labels, locale = LocalConfiguration.current.locales[0])
     val work = BriefCards.work(state, freshness, now, labels)
     ScreenScaffold(scrollState = listState, contentPadding = roundListPadding(sides = 0.052f)) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
