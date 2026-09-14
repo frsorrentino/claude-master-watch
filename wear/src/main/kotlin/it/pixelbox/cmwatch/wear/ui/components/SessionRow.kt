@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.rules.NameText
 import it.pixelbox.cmwatch.rules.SessionsText
+import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.SessionNameStyle
@@ -99,17 +100,17 @@ fun SessionRow(
         // Quattro righe in tutto: se il titolo sta su una riga, al testo sotto ne restano tre (Franz, 14/09 08:10).
         var righeTitolo by remember(cell.title) { mutableIntStateOf(1) }
         cell.title?.takeIf { it.isNotBlank() }?.let {
+            // Un pensiero intero nelle due righe, mai «…» (Franz, 14/09 18:16): la stessa regola della tile.
             Text(
-                it, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
-                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                TileTexts.fitTile(it), style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
+                maxLines = 2, modifier = Modifier.fillMaxWidth(),
                 onTextLayout = { righeTitolo = it.lineCount },
             )
         }
         cell.detail?.takeIf { it.isNotBlank() }?.let {
             Text(
-                it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
-                maxLines = if (righeTitolo <= 1) 3 else 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
+                TileTexts.fitTile(it, max = if (righeTitolo <= 1) 90 else 60), style = MaterialTheme.typography.bodySmall,
+                color = CmColors.text2, maxLines = if (righeTitolo <= 1) 3 else 2, modifier = Modifier.fillMaxWidth(),
             )
         }
     }
