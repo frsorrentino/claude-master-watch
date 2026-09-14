@@ -1,8 +1,13 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.wear.compose.material3.Icon
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,6 +69,8 @@ fun SessionRow(
             containerColor = if (ambient) CmColors.bg else CmColors.surface,
             contentColor = CmColors.text,
         ),
+        // La seguita è «accesa»: bordo giallino e campanella accanto al nome (Franz, 14/09 16:27, «entrambe»).
+        border = if (s.followed) BorderStroke(1.5.dp, CmColors.followed) else null,
         contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
         transformation = transformation,
     ) {
@@ -74,6 +81,13 @@ fun SessionRow(
                 s.name, style = SessionNameStyle, color = CmColors.text2, maxLines = 1, overflow = overflow,
                 softWrap = false, modifier = Modifier.weight(1f).cmMarquee(marquee),
             )
+            if (s.followed) {
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    Icons.Rounded.Notifications, contentDescription = stringResource(R.string.session_followed),
+                    tint = CmColors.followed, modifier = Modifier.size(14.dp),
+                )
+            }
             age?.let {
                 Spacer(Modifier.width(6.dp))
                 Text(

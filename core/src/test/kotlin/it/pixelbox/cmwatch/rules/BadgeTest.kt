@@ -40,6 +40,12 @@ class BadgeTest {
         assertEquals(Badge.Glyph.CROSS, Badge.of("personale", null, SessionState.GONE).glyph)
     }
 
+    // Respira ogni sessione che lavora, come il pallino dell'app Claude (Franz, 14/09 16:24), non solo la seguita.
+    @Test fun respiranoLeSessioniCheLavorano() {
+        assertTrue(Badge.breathes(SessionState.BUSY)); assertTrue(Badge.breathes(SessionState.AWAITING))
+        assertFalse(Badge.breathes(SessionState.IDLE)); assertFalse(Badge.breathes(SessionState.WAITING)); assertFalse(Badge.breathes(SessionState.GONE))
+    }
+
     @Test fun glyphColourByContrastNotByTable() {
         assertEquals(Badge.BLACK, Badge.of("personale", "#FFB020", SessionState.WAITING).glyphColor)   // ambra chiara → nero
         assertEquals(Badge.WHITE, Badge.of("personale", "#1A237E", SessionState.WAITING).glyphColor)   // blu scuro → bianco

@@ -24,6 +24,8 @@ object CmColors {
     val accent = Color(0xFF4C7DFF)
     val accentPressed = Color(0xFF3457D5)
     val waiting = Color(0xFFFFB020)
+    // Giallino della sessione seguita, «come se fosse accesa» (Franz, 14/09 16:27): più chiaro dell'ambra di attesa.
+    val followed = Color(0xFFFFE08A)
     val busy = Color(0xFF7FA1FF)
     val idle = Color(0xFF34C759)
     val gone = Color(0xFFFF453A)

@@ -30,8 +30,8 @@ import it.pixelbox.cmwatch.rules.Badge
 @Composable
 fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier, ambient: Boolean = false, animate: Boolean = true) {
     val spec = Badge.of(s.account, s.color, s.state, s.icon)
-    // Respiro di 3 s sulla sessione seguita che lavora (design, sezione 3); fermo in ambient o con le animazioni spente.
-    val breathing = animate && !ambient && s.followed && (s.state == SessionState.BUSY || s.state == SessionState.AWAITING)
+    // Respiro di 3 s su ogni sessione che lavora (Franz, 14/09 16:24); fermo in ambient o con le animazioni spente.
+    val breathing = animate && !ambient && Badge.breathes(s.state)
     val alpha by if (breathing) {
         rememberInfiniteTransition(label = "respiro").animateFloat(
             initialValue = 1f, targetValue = 0.55f,
