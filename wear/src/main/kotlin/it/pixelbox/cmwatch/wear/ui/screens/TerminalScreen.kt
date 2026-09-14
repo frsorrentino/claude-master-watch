@@ -21,6 +21,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.rules.SpeechText
 import it.pixelbox.cmwatch.rules.TerminalText
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
@@ -51,7 +52,15 @@ fun TerminalScreen(
         edgeButton = { CmEdgeButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, enabled = !loading) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            item { Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.fillMaxWidth()) }
+            // Il ▶ del Terminale legge le ultime righe del terminale, non la risposta: quella è dell'Esito e della Scheda
+            // (Franz, 14/09 15:20, «ok la tua proposta»).
+            val parlato = text?.let { SpeechText.terminal(it) }?.takeIf { it.isNotBlank() }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
+                    if (parlato != null) { Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(parlato) }) }
+                }
+            }
             // La risposta finale della sessione, che nella cattura del terminale spesso non c'è più: sta in cima, in
             // carattere proporzionale e più grande, così si riconosce dalla lavorazione (Franz, 13/09 18:11).
             answer?.takeIf { it.isNotBlank() }?.let { risposta ->
@@ -61,16 +70,7 @@ fun TerminalScreen(
                         color = CmColors.briefLabel, modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            risposta, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        SpeakButton(speaking, onToggle = { onSpeak(risposta) })
-                    }
-                }
+                item { Text(risposta, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(Modifier.height(10.dp)) }
             }
             when {

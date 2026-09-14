@@ -59,13 +59,38 @@ class SpeechTextTest {
         assertEquals("atlas-shop: deploy fatto. Prossimo: test e2e. orbit-docs: indice rifatto.", SpeechText.recap(r, "Prossimo: %1\$s."))
     }
 
-    @Test fun lEsitoSiLeggeComeSiVedeTitoloPoiTestoSotto() {
+    @Test fun lEsitoLeggeSoloLaFraseDEsito() {
         val o = Outcome("relay aggiornato", "Ho cambiato fit_state.\nEsito: relay aggiornato alla 1.6, short fino a 200.", 0)
-        assertEquals("relay aggiornato alla 1.6, short fino a 200.\nHo cambiato fit_state.", SpeechText.outcome(o))
+        assertEquals("relay aggiornato alla 1.6, short fino a 200.", SpeechText.outcome(o))
     }
 
-    @Test fun unEsitoSenzaTestoSottoSiLeggeSoloIlTitolo() =
+    @Test fun unEsitoSenzaRigaDEsitoLeggeIlTitolo() =
         assertEquals("Fatto.", SpeechText.outcome(Outcome("Fatto.", "Fatto.", 0)))
+
+    private val cattura = listOf(
+        "● Mi mancano ancora il meccanismo di caricamento config in cm-lib.sh e i",
+        "  nomi delle chiavi: procedo.",
+        "● Running 1 shell command…",
+        "  ⎿  \$ cd /home/demo; sed -n",
+        "     1,20p CHANGELOG.md",
+        "✻ Waiting for API response · will retry in 2m 40s",
+        "──────────────────────────── claude-master ─",
+        "❯ ",
+        "────────────────────────────────────────────",
+        "  Opus 5 · quota 8%, resets 17:30 · context 8% │ [CAVEMAN]",
+        "  └ weekly quota 60% used, resets 17 Sep",
+    ).joinToString("\n")
+
+    @Test fun ilTerminaleLeggeGliUltimiBlocchiSopraIlPromptSenzaComandi() = assertEquals(
+        "Mi mancano ancora il meccanismo di caricamento config in cm-lib.sh e i nomi delle chiavi: procedo.\n" +
+            "Running 1 shell command…\nWaiting for API response · will retry in 2m 40s",
+        SpeechText.terminal(cattura),
+    )
+
+    @Test fun delTerminaleSiLeggonoAlPiuTreBlocchi() {
+        val t = (1..6).joinToString("\n") { "● blocco $it" } + "\n❯ "
+        assertEquals("blocco 4\nblocco 5\nblocco 6", SpeechText.terminal(t))
+    }
 
     @Test fun siLeggeLaRispostaDelPcQuandoCe() =
         assertEquals("intero", SpeechText.pick(CmdResult("1", true, "intero", 0), "coda"))

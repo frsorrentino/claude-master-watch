@@ -69,10 +69,35 @@ object SpeechText {
     }
 
     /**
-     * L'Esito come si vede: il titolo, poi il testo sotto. Il ▶ legge quello che ha accanto, non la risposta intera,
-     * che è di «Ascolta la risposta» sulla Scheda (Franz, 14/09 15:01: «tutti e 3 i punti leggono lo stesso testo»).
+     * Tre profondità, tre testi (Franz, 14/09 15:20, «ok la tua proposta»): l'Esito legge solo la frase d'esito, la
+     * Scheda la risposta intera, il Terminale le sue ultime righe. Prima tutti e tre leggevano la stessa risposta.
      */
-    fun outcome(o: Outcome): String = listOfNotNull(OutcomeText.headline(o), OutcomeText.body(o)).joinToString("\n")
+    fun outcome(o: Outcome): String = OutcomeText.headline(o)
+
+    /** Riga di cornice sopra il prompt, con il nome della sessione in mezzo: `──── claude-master ─`. */
+    private val CORNICE = Regex("─{3,}")
+
+    /** Segni di apertura dei blocchi di Claude Code: alla voce non dicono niente. */
+    private val SEGNI = charArrayOf('●', '⏺', '✻', '✳', '•', '·', '>', ' ')
+
+    /**
+     * Le ultime righe del terminale da leggere a voce. Sotto il prompt `❯` ci sono solo il riquadro di input e la
+     * statusline; le righe spezzate dal terminale si riuniscono nel blocco, così la voce non fa pause a metà frase;
+     * i comandi di shell (`$ …`) letti a voce sono rumore e si saltano.
+     */
+    fun terminal(text: String, blocks: Int = 3): String {
+        val righe = text.lines()
+        val prompt = righe.indexOfLast { it.trimStart().startsWith('❯') }
+        val sopra = if (prompt >= 0) righe.subList(0, prompt).dropLastWhile { it.isBlank() || CORNICE.containsMatchIn(it) } else righe
+        val blocchi = mutableListOf<String>()
+        for (r in TerminalText.rows(sopra.joinToString("\n"))) when {
+            r.text.isEmpty() -> Unit
+            // `●` è il segno di blocco di Claude Code oggi; `TerminalText` conosce ancora solo `⏺`.
+            r.head || r.text[0] in SEGNI || blocchi.isEmpty() -> blocchi += r.text
+            else -> blocchi[blocchi.lastIndex] = blocchi.last() + " " + r.text
+        }
+        return blocchi.filterNot { it.startsWith("$") }.takeLast(blocks).joinToString("\n") { it.trimStart(*SEGNI) }
+    }
 
     /** Dopo aver chiesto il testo intero al PC: la sua risposta se è arrivata e dice qualcosa, altrimenti il ripiego. */
     fun pick(result: CmdResult?, fallback: String?): String? =
