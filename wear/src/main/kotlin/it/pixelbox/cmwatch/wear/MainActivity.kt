@@ -36,7 +36,8 @@ import it.pixelbox.cmwatch.wear.haptics.Haptics
 import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
 import it.pixelbox.cmwatch.wear.ui.ambient.LocalAmbient
-import it.pixelbox.cmwatch.wear.ui.ambient.ambientState
+import androidx.wear.compose.foundation.AmbientMode
+import androidx.wear.compose.foundation.rememberAmbientModeManager
 import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.crypto.KeyVault
 import it.pixelbox.cmwatch.transport.FakeTransport
@@ -80,10 +81,11 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo_paired", false) == true) {
             app.scope.launch { app.prefs.update { it.copy(paired = true, host = "demo") } }
         }
-        // L'ambient si registra qui, prima dell'interfaccia: così Wear OS tratta l'app come capace di ambient (14/09 21:46).
-        val ambient = ambientState()
         setContent {
-            androidx.compose.runtime.CompositionLocalProvider(LocalAmbient provides ambient.value) {
+            // Ambient dal gestore di Wear Compose (handoff 14/09): il nostro `AmbientLifecycleObserver`, anche registrato
+            // in onCreate, non riceveva eventi e Wear OS si limitava a scurire l'app («not eligible for ambient lite»).
+            val ambientManager = rememberAmbientModeManager()
+            androidx.compose.runtime.CompositionLocalProvider(LocalAmbient provides (ambientManager.currentAmbientMode is AmbientMode.Ambient)) {
                 CmTheme { AppScaffold(timeText = { TimeText() }) { App(app) } }
             }
         }
