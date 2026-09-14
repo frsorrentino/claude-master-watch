@@ -71,7 +71,9 @@ object TileTexts {
         awaiting: String = running,
     ): String {
         // Il nome nudo dello strumento non dice niente: «SendMessage» diventa «scrive a un'altra sessione».
-        val tool = tools?.let { ToolText.phrase(s.tool, it) } ?: s.tool?.trim()?.takeIf { it.isNotEmpty() }
+        // Contratto 1.5: la description del comando vince sul comando grezzo, ma solo con uno strumento in corso.
+        val grezzo = s.tool?.trim()?.takeIf { it.isNotEmpty() }
+        val tool = if (tools != null) ToolText.describe(s.toolNote, s.tool, tools) else grezzo?.let { s.toolNote?.trim()?.takeIf { n -> n.isNotEmpty() } ?: it }
         val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
         // Contratto 1.2: `next_at` dice di che giorno è il «prossimo». Senza data non si sa, e un piano di tre giorni
         // prima sulla tile è peggio che niente: vale solo se è recente e non più vecchio dell'ultimo esito.

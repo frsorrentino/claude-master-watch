@@ -69,7 +69,8 @@ class TileActivityTest {
     private val busy = q.sessions.first { it.state == SessionState.BUSY }
 
     @Test fun mentreLavoraValeLAttivitaDiAdesso() {
-        assertEquals(busy.tool, TileTexts.activity(busy, busy = true, running = "turno in corso", idle = "a riposo"))
+        // Contratto 1.5: la description del comando, se c'è, vince sul comando grezzo.
+        assertEquals(busy.toolNote ?: busy.tool, TileTexts.activity(busy, busy = true, running = "turno in corso", idle = "a riposo"))
     }
 
     @Test fun senzaAttivitaValeLEsitoSePiuFrescoDelTurno() {

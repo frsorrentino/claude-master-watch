@@ -44,6 +44,8 @@ enum class CmdOp {
     val state: SessionState, val since: Long,
     @SerialName("turn_started") val turnStarted: Long? = null,
     val tool: String? = null, val link: String = "",
+    /** Contratto 1.5: la description che Claude scrive accanto al comando Bash, null se non c'è. */
+    @SerialName("tool_note") val toolNote: String? = null,
     val attached: Boolean = false, val followed: Boolean = false,
     val question: Question? = null, val outcome: Outcome? = null, val next: String? = null,
     /** Contratto 1.2: data della riga di recap che ha prodotto `next` (mezzanotte locale), assente se non c'è. */

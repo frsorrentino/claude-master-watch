@@ -1,5 +1,8 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
+import androidx.compose.ui.res.stringResource
+import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.rules.ToolText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,9 +38,19 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
                 if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
             }
         }
-        val tool = s.tool
+        // Cosa sta facendo, detto per esteso: la description del comando (contratto 1.5) o la frase dallo strumento.
+        val tool = ToolText.describe(s.toolNote, s.tool, toolLabels())
         if (s.state == SessionState.BUSY && tool != null) {
             Text(tool, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
+
+@Composable
+private fun toolLabels() = ToolText.Labels(
+    run = stringResource(R.string.tool_run), read = stringResource(R.string.tool_read),
+    edit = stringResource(R.string.tool_edit), write = stringResource(R.string.tool_write),
+    search = stringResource(R.string.tool_search), web = stringResource(R.string.tool_web),
+    message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
+    plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
+)

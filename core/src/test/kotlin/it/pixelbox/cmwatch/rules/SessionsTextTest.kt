@@ -59,7 +59,8 @@ class SessionsCellTest {
     @Test fun chiLavoraMostraAttivitaEProssimoPasso() {
         val b = st.sessions.first { it.state == SessionState.BUSY }.copy(next = "rifinire la tile", nextAt = mezzanotteOggi)
         val c = SessionsText.cell(b, st.ts, "turno in corso", "a riposo", tools, zone)
-        assertEquals(ToolText.phrase(b.tool, tools), c.title)
+        // Contratto 1.5: la description del comando, se c'è, vince sulla frase dallo strumento.
+        assertEquals(ToolText.describe(b.toolNote, b.tool, tools), c.title)
         assertEquals("rifinire la tile", c.detail)
     }
 

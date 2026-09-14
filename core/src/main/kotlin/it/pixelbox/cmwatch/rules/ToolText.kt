@@ -40,6 +40,14 @@ object ToolText {
         }
     }
 
+    /**
+     * Cosa sta facendo, detto per esteso: la description che Claude scrive accanto al comando (contratto 1.5) dice
+     * «Run the plugin test suite» dove il comando grezzo dice «cd ~/Desktop/…» (Franz, 14/09 13:00); senza, la frase
+     * dallo strumento. Senza uno strumento in corso la nota è vecchia e non si mostra.
+     */
+    fun describe(note: String?, tool: String?, l: Labels): String? =
+        if (tool.isNullOrBlank()) null else note?.trim()?.takeIf { it.isNotEmpty() } ?: phrase(tool, l)
+
     /** Un percorso si riduce al nome del file: «core/src/main/.../TileTexts.kt» → «TileTexts.kt». */
     private fun breve(arg: String): String {
         if (arg.isEmpty()) return ""
