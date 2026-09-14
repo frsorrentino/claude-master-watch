@@ -20,7 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
-      - uses: android-actions/setup-android@v3
+      # v3 chiedeva a sdkmanager il pacchetto «tools», sparito dall'archivio dell'SDK il 14/09/2026 sera
+      # («Failed to find package 'tools'»); v4 gira su Node 24 e non lo chiede più.
+      - uses: android-actions/setup-android@v4
       - uses: actions/cache@v4
         with:
           path: |
