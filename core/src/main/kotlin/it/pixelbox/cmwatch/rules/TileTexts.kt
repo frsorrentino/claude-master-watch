@@ -124,6 +124,12 @@ object TileTexts {
      */
     data class QuotaLine(val account: String, val pct: Int?, val personale: Boolean, val resetH5: Long?)
 
+    /**
+     * Di quale account è la quota sulla tile: quello della sessione mostrata nella card sopra (Franz, 14/09 15:26:
+     * «se viene mostrata una sessione personale si vede la quota personale»); senza sessione, quello delle impostazioni.
+     */
+    fun quotaAccount(rest: Rest, chosen: String): String = (rest as? Rest.Live)?.session?.account ?: chosen
+
     fun quotaLine(state: State, account: String): QuotaLine? {
         val key = state.quota.keys.firstOrNull { it.equals(account, ignoreCase = true) }
             ?: state.quota.keys.firstOrNull { it.equals("personale", ignoreCase = true) }

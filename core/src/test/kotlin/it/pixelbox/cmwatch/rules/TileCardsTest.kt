@@ -136,6 +136,15 @@ class TileQuotasTest {
         assertEquals("personale", r.account); assertTrue(r.personale)
     }
 
+    // La quota segue la sessione mostrata sopra (Franz, 14/09 15:26): sessione di lavoro, quota di lavoro.
+    @Test fun laQuotaEDellAccountDellaSessioneMostrata() {
+        val s = q.sessions.first { it.state == SessionState.BUSY }
+        assertEquals(s.account, TileTexts.quotaAccount(TileTexts.Rest.Live(s, busy = true), "un-altro"))
+    }
+
+    @Test fun senzaSessioneMostrataLaQuotaDelleImpostazioni() =
+        assertEquals("agenzia", TileTexts.quotaAccount(TileTexts.Rest.Calm(sessions = 2, since = null), "agenzia"))
+
     @Test fun senzaQuoteNienteRiga() = assertNull(TileTexts.quotaLine(q.copy(quota = emptyMap()), "personale"))
 
     @Test fun inCodaPercentualeERipartenzaDelleCinqueOre() {

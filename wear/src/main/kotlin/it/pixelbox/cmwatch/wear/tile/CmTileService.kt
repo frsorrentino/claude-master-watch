@@ -151,13 +151,15 @@ class CmTileService : TileService() {
         // Con il dato vecchio le età si leggono sull'istante della fotografia, non su adesso: altrimenti tutto
         // sembrerebbe antico. La vecchiaia la dice l'etichetta in ambra (Franz, 13/09 18:27).
         val quando = if (stale != null) state.ts else now
+        val rest = TileTexts.rest(state, quando)
         col.addContent(
-            when (val rest = TileTexts.rest(state, quando)) {
+            when (rest) {
                 is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale)
                 is TileTexts.Rest.Calm -> calmCard(rest, quando, stale)
             }
         )
-        TileTexts.quotaLine(state, account)?.let {
+        // La quota è dell'account della sessione mostrata sopra (Franz, 14/09 15:26); senza sessione, quella scelta.
+        TileTexts.quotaLine(state, TileTexts.quotaAccount(rest, account))?.let {
             col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
             col.addContent(quotaCard(it))
         }
@@ -199,7 +201,7 @@ class CmTileService : TileService() {
     )
 
     /**
-     * Quota in una riga sola, dell'account scelto nelle impostazioni: segno dell'account, barra delle 5 ore e in coda
+     * Quota in una riga sola, dell'account della sessione mostrata sopra: orologio, barra delle 5 ore e in coda
      * percentuale e ripartenza, «8 % · 12:30» (Franz, 14/09 11:33: con due righe la seconda era tagliata dal fondo).
      */
     private fun MaterialScope.quotaCard(line: TileTexts.QuotaLine): LayoutElement {
@@ -207,7 +209,7 @@ class CmTileService : TileService() {
         val row = LayoutElementBuilders.Row.Builder()
             .setWidth(expand())
             .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-            .addContent(accountMark(line.personale))
+            .addContent(clock())
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
             .addContent(bar(line.pct))
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(8f)).build())
@@ -220,20 +222,11 @@ class CmTileService : TileService() {
         )
     }
 
-    /**
-     * Segno dell'account: la forma, non il colore (contratto 1.1, ricordato da Franz il 14/09 08:39) — cerchio per
-     * `personale`, quadratino per gli altri, nello stesso grigio.
-     */
-    private fun MaterialScope.accountMark(personale: Boolean): LayoutElement = LayoutElementBuilders.Box.Builder()
-        .setWidth(dp(10f)).setHeight(dp(10f))
-        .setModifiers(
-            ModifiersBuilders.Modifiers.Builder().setBackground(
-                ModifiersBuilders.Background.Builder()
-                    .setColor(colorScheme.onSurfaceVariant.prop)
-                    .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(if (personale) 5f else 2f)).build())
-                    .build()
-            ).build()
-        ).build()
+    /** Orologio in testa alla quota (Franz, 14/09 15:26): l'account lo dice la sessione sopra, non un segno. */
+    private fun MaterialScope.clock(): LayoutElement = LayoutElementBuilders.Image.Builder()
+        .setResourceId(CLOCK).setWidth(dp(14f)).setHeight(dp(14f))
+        .setColorFilter(LayoutElementBuilders.ColorFilter.Builder().setTint(colorScheme.onSurfaceVariant.prop).build())
+        .build()
 
     private fun MaterialScope.bar(pct: Int?): LayoutElement {
         val spec = QuotaBar.of(pct)
@@ -284,10 +277,22 @@ class CmTileService : TileService() {
         ).build()
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> =
-        CallbackToFutureAdapter.getFuture { c -> c.set(ResourceBuilders.Resources.Builder().setVersion(RESOURCES).build()); "res" }
+        CallbackToFutureAdapter.getFuture { c ->
+            c.set(
+                ResourceBuilders.Resources.Builder().setVersion(RESOURCES)
+                    .addIdToImageMapping(
+                        CLOCK,
+                        ResourceBuilders.ImageResource.Builder().setAndroidResourceByResId(
+                            ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_tile_clock).build()
+                        ).build(),
+                    )
+                    .build()
+            ); "res"
+        }
 
     companion object {
-        const val RESOURCES = "14"
+        const val RESOURCES = "15"
+        const val CLOCK = "clock"
         private const val AMBER = 0xFFFFB020.toInt()
         private const val LABEL = 0xFFD3E3FD.toInt()   // mittente di Gmail: 10,1:1 sulla card
         private const val TRACK = 0xFF3C4452.toInt()   // traccia della barra: visibile sulla card #2A313C
