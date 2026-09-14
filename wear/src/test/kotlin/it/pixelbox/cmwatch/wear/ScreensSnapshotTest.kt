@@ -21,7 +21,8 @@ import java.io.File
 class ScreensSnapshotTest {
     @get:Rule
     val paparazzi = Paparazzi(
-        deviceConfig = DeviceConfig.WEAR_OS_SMALL_ROUND.copy(screenWidth = 456, screenHeight = 456, density = Density.XHIGH, screenRound = ScreenRound.ROUND),
+        // In inglese, per le card del README pubblico (Franz, 14/09 22:39); sul polso l'app resta in italiano.
+        deviceConfig = DeviceConfig.WEAR_OS_SMALL_ROUND.copy(screenWidth = 456, screenHeight = 456, density = Density.XHIGH, screenRound = ScreenRound.ROUND, locale = "en"),
         theme = "android:Theme.DeviceDefault.NoActionBar",
     )
     private val now = 1789210800L

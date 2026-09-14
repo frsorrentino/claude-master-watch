@@ -18,6 +18,12 @@ Claude Code propone spesso l'input successivo, in grigio dopo `❯`. Al polso di
   risponde con un errore invece di inviare un suggerimento vecchio.
 - Poi: lo stesso bottone nella notifica di esito.
 
+## S08: lingua di default per la beta pubblica (da decidere nel piano di S08)
+
+Dal 14/09 l'app ha le stringhe inglesi in `values-en/` (card del README); il default resta l'italiano in `values/`.
+Chi ha l'orologio in una terza lingua oggi vedrebbe l'italiano. Per una beta pubblica probabilmente conviene
+l'inglese come default e l'italiano in `values-it/`: da decidere con il piano di S08, non prima.
+
 ## Progetto dedotto dai percorsi (proposta del 14/09, rimandata da Franz)
 
 Con i percorsi assoluti del contratto 1.5 in `tool`, dire quale progetto sta toccando una sessione confrontandoli
