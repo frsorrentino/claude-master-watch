@@ -55,6 +55,8 @@ enum class CmdOp {
 @Serializable data class QuotaAccount(
     val h5: Int? = null, val w7: Int? = null,
     @SerialName("reset_w7") val resetW7: Long? = null, val stale: Boolean = false,
+    /** Contratto 1.3: quando riparte la finestra di 5 ore (epoch in secondi); `reset_w7` resta il reset settimanale. */
+    @SerialName("reset_h5") val resetH5: Long? = null,
 )
 
 @Serializable data class Project(val path: String, val name: String, val account: String)

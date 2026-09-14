@@ -24,8 +24,8 @@
     }
   ],
   "quota": {
-    "personale": {"h5": 24, "w7": 38, "reset_w7": 1789610400, "stale": false},
-    "agenzia": {"h5": 3, "w7": 75, "reset_w7": 1789444800, "stale": false}
+    "personale": {"h5": 24, "w7": 38, "reset_w7": 1789610400, "reset_h5": 1789228800, "stale": false},
+    "agenzia": {"h5": 3, "w7": 75, "reset_w7": 1789444800, "reset_h5": 1789225200, "stale": false}
   },
   "projects": [
     {"path": "/home/demo/workspaces/personal/atlas-shop", "name": "atlas-shop", "account": "personale"}

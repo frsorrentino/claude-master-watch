@@ -27,6 +27,14 @@ class ContractTest {
         assertEquals("2026-09-12", s.recap.date); assertEquals(2, s.recap.items.size)
     }
 
+    @Test fun quotaCarriesTheFiveHourReset() {
+        // Contratto 1.3: `reset_h5` è la ripartenza della finestra di 5 ore; `reset_w7` resta quella settimanale.
+        val q = ContractJson.decodeState(Fixtures.stateQuestion).quota
+        assertEquals(1789228800L, q.getValue("personale").resetH5)
+        assertEquals(1789225200L, q.getValue("agenzia").resetH5)
+        assertEquals(1789610400L, q.getValue("personale").resetW7)
+    }
+
     @Test fun staleFixtureHasNoSessions() {
         val s = ContractJson.decodeState(Fixtures.stateStale)
         assertTrue(s.sessions.isEmpty()); assertEquals(1789200000L, s.ts)

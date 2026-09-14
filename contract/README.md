@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte 1.1 e 1.2)
+# Contratto PC ↔ orologio (v1, aggiunte 1.1, 1.2 e 1.3)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -29,6 +29,9 @@ Contratto 1.2 (13/09/2026, solo aggiunte): `next_at` accanto a `next` (epoch del
 «prossimo», mezzanotte locale di quel giorno; null se non c'è un prossimo), così l'orologio sa se il piano è di oggi o
 di tre giorni fa e lo può ordinare rispetto a `outcome.at`; `tool` è valorizzato anche per le sessioni `awaiting`, non
 solo per le `busy`, e resta null per `idle` e `gone`. `v` resta 1.
+
+Contratto 1.3 (14/09/2026, solo aggiunte): `quota.<account>.reset_h5`, quando riparte la finestra di 5 ore (epoch in
+secondi, null se assente); `reset_w7` resta il reset settimanale. `v` resta 1.
 
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
