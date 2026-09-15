@@ -6,11 +6,11 @@ Claude Code sessions of your machine on your wrist — the one waiting for an an
 <table>
   <tr>
     <td align="center"><img src="docs/readme/sessions.png" width="220" alt="Sessions list: the session waiting for an answer first, with its question in full"><br>Sessions</td>
-    <td align="center"><img src="docs/readme/question.png" width="220" alt="A question full screen, read aloud with ▶, the options as wide buttons"><br>Question</td>
-    <td align="center"><img src="docs/readme/card.png" width="220" alt="A session's card: what it is doing, follow, terminal, outcome"><br>Session</td>
+    <td align="center"><img src="docs/readme/question.png" width="220" alt="A question full screen, ▶ next to the session's name to read it aloud, the options as wide buttons"><br>Question</td>
+    <td align="center"><img src="docs/readme/card.png" width="220" alt="A working session's card: what it is doing and what comes next; a tap opens the whole answer"><br>Session</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/readme/outcome.png" width="220" alt="The outcome of a turn, big when short, read aloud on demand"><br>Outcome</td>
+    <td align="center"><img src="docs/readme/card-idle.png" width="220" alt="A stopped session's card with its outcome in full, no extra tap"><br>Outcome</td>
     <td align="center"><img src="docs/readme/quota.png" width="220" alt="Quota in the style of the Wear OS morning brief: 5-hour window, week, resets"><br>Quota</td>
     <td align="center"><img src="docs/readme/complication.png" width="220" alt="The quota ring complication on a watch face, with the app symbol and the percentage"><br>Complication</td>
   </tr>
@@ -22,12 +22,14 @@ App screens are rendered from the app's code by the Paparazzi snapshot tests, on
 - **Tile**: the session in focus with what it is doing and, under a running tool, its latest step;
   three lines and the quota bar, or two lines and two bars (5 hours and week) when the text leaves
   room. Room decides, not a threshold.
-- **Complication**: the quota ring with the app symbol and the percentage; short and long text with
-  the sessions waiting or working.
+- **Complication**: the quota ring with the percentage and its window drawn below, 5h or 7d; when the
+  5-hour window is empty (nights, weekends) the ring shows the week. Short and long text with the
+  sessions waiting or working.
 - **Notifications**: one conversation per session, the first two options as direct actions, reply
   with choices or dictation, the question closed on the wrist when it is answered elsewhere.
-- **App**: sessions of every account, the session card, the question full screen with wide buttons,
-  the outcome read aloud on demand, the terminal tail, the timeline, launch, follow, the quota
+- **App**: sessions of every account, a closed one reopened in its conversation from its row; the
+  session card with the outcome in full; the whole answer in paragraphs, read aloud block by block,
+  above the terminal tail; the question full screen with wide buttons, the timeline, launch, follow, the quota
   cards, the day's recap, the night queue. Margins follow the round screen, texts are read by
   TalkBack and grow with the system font size.
 - **Transport**: Firebase RTDB + FCM behind a `Transport` interface, every document an end-to-end
