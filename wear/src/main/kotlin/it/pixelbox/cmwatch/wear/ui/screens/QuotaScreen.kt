@@ -47,6 +47,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
         running = stringResource(R.string.brief_running), nothingRunning = stringResource(R.string.brief_nothing_running),
         update = stringResource(R.string.brief_update), minutes = stringResource(R.string.brief_minutes),
         now = stringResource(R.string.brief_now), stopped = stringResource(R.string.brief_stopped),
+        weekOnly = stringResource(R.string.quota_week),
     )
     // Niente animazioni in ambient né con le animazioni di sistema spente (design, sezione 3).
     val animate = !rememberAmbient() && !animationsOff()

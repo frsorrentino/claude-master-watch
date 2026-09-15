@@ -46,6 +46,26 @@ class BriefCardsTest {
         assertNull(BriefCards.quota(s, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first().secondary)
     }
 
+    // Franz, 15/09 15:34: senza lettura delle 5 ore (`h5: null`) la card mostrava solo «—». Il numero grande diventa la
+    // settimana, con il suo reset sotto; la pillolina dice che è la settimana, senza ripetere il numero.
+    @Test fun senzaCinqueOreIlNumeroGrandeELaSettimana() {
+        val q = state.quota.getValue("personal")
+        val s = state.copy(quota = mapOf("personal" to q.copy(h5 = null, resetH5 = null)))
+        val c = BriefCards.quota(s, labels.copy(weekOnly = "settimana"), ZoneId.of("Europe/Rome"), Locale.ITALIAN).first()
+        assertEquals(q.w7.toString(), c.value); assertEquals("%", c.unit)
+        assertEquals("reset gio 04:00", c.secondary)
+        assertEquals("settimana", c.pill)
+        assertNull(c.note)
+        assertEquals(BriefCards.Tone.NEUTRAL, c.tone)
+    }
+
+    @Test fun senzaCinqueOreLaSettimanaAllOttantaPerCentoEDaGuardare() {
+        val q = state.quota.getValue("personal")
+        val s = state.copy(quota = mapOf("personal" to q.copy(h5 = null, resetH5 = null, w7 = 85)))
+        val c = BriefCards.quota(s, labels.copy(weekOnly = "settimana"), ZoneId.of("Europe/Rome"), Locale.ITALIAN).first()
+        assertEquals(BriefCards.Tone.WARN, c.tone)
+    }
+
     @Test fun quotaVecchiaDiceDatoVecchioEDiventaGrigia() {
         val stale = state.copy(quota = state.quota.mapValues { it.value.copy(stale = true) })
         val c = BriefCards.quota(stale, labels).first()

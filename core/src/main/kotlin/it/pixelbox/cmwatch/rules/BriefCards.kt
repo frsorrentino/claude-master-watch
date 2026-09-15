@@ -41,6 +41,8 @@ object BriefCards {
         val questions: String, val oldest: String,
         val night: String, val running: String, val nothingRunning: String,
         val update: String, val minutes: String, val now: String, val stopped: String,
+        /** «settimana»: la pillolina quando il numero grande è già la settimana, senza lettura delle 5 ore. */
+        val weekOnly: String = "",
     )
 
     private val RESET = DateTimeFormatter.ofPattern("EEE HH:mm")
@@ -53,29 +55,39 @@ object BriefCards {
         val order = quota.keys.sortedWith(compareBy({ if (Accounts.isPersonalQuota(it, quota.getValue(it))) 0 else 1 }, { it.lowercase() }))
         return order.map { account ->
             val q = quota.getValue(account)
+            // Senza lettura delle 5 ore (`h5: null`) il numero grande è la settimana, con il suo reset sotto: prima la
+            // card mostrava solo «—» (Franz, 15/09 15:34).
+            val soloSettimana = q.h5 == null && q.w7 != null
+            val big = if (soloSettimana) q.w7 else q.h5
+            val weekReset = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) }
             Card(
                 key = "quota-$account",
                 // L'etichetta è il solo nome dell'account: «Quota» lo dice già l'intestazione della sezione, e con
                 // l'anello a destra la colonna è larga una quindicina di caratteri (misurato al polso, 13/09 16:41).
                 label = account,
-                value = q.h5?.toString() ?: l.none,
-                unit = if (q.h5 != null) "%" else null,
+                value = big?.toString() ?: l.none,
+                unit = if (big != null) "%" else null,
                 // Sotto la percentuale delle 5 ore la sua ripartenza (contratto 1.3); la settimanale sta con la settimana,
                 // altrimenti «gio 04:00» sotto il 7 % sembrava il reset delle 5 ore (Franz, 14/09 10:38).
-                secondary = q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
-                pill = if (q.stale) l.stale else l.week.format(q.w7?.let { "$it %" } ?: l.none),
+                secondary = if (soloSettimana) weekReset else q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
+                pill = when {
+                    q.stale -> l.stale
+                    soloSettimana -> l.weekOnly
+                    else -> l.week.format(q.w7?.let { "$it %" } ?: l.none)
+                },
                 // La ripartenza settimanale su una riga sua sotto la pillolina: dentro andava a capo e il bordo tondo
-                // la tagliava (visto al polso, 14/09 11:33).
-                note = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
+                // la tagliava (visto al polso, 14/09 11:33). Se il numero grande è la settimana, sta già sotto di lui.
+                note = if (soloSettimana) null else weekReset,
                 // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,
-                // perché da lì non si lavora più (review UX, 13/09).
+                // perché da lì non si lavora più (review UX, 13/09). Per la settimana, l'ambra dall'80 %, la soglia di stop.
                 tone = when {
                     q.stale -> Tone.STALE
-                    (q.h5 ?: 0) >= 100 -> Tone.ALERT
+                    (big ?: 0) >= 100 -> Tone.ALERT
+                    soloSettimana && (big ?: 0) >= 80 -> Tone.WARN
                     (q.h5 ?: 0) >= 90 -> Tone.WARN
                     else -> Tone.NEUTRAL
                 },
-                progress = QuotaText.fraction(q.h5),
+                progress = QuotaText.fraction(big),
                 glyph = Glyph.TIME,
             )
         }
