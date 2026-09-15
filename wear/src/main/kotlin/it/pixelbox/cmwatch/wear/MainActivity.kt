@@ -60,8 +60,12 @@ import it.pixelbox.cmwatch.contract.Recap
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
+import it.pixelbox.cmwatch.rules.TerminalLive
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class MainActivity : ComponentActivity() {
     private val deepLink = mutableStateOf<Screen?>(null)
@@ -302,6 +306,7 @@ class MainActivity : ComponentActivity() {
                 var cmdId by remember { mutableStateOf<String?>(null) }
                 var answer by remember { mutableStateOf<String?>(null) }
                 var lastId by remember { mutableStateOf<String?>(null) }
+                var capturedAt by remember { mutableStateOf<Long?>(null) }
                 val fallback = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full
                 // Due richieste al PC: le righe del terminale e la risposta intera (contratto 1.4, `last`), che in cima si
                 // legge a paragrafi (Franz, 15/09 17:19). Se il PC tace per 5 s resta la coda che l'orologio ha già.
@@ -313,13 +318,44 @@ class MainActivity : ComponentActivity() {
                 val results by app.repo.resultsById.collectAsStateWithLifecycle()
                 LaunchedEffect(cmdId, results) {
                     val r = cmdId?.let { results[it] } ?: return@LaunchedEffect
-                    if (r.ok) text = r.text else error = r.text
+                    // Una cattura dal vivo che fallisce non cancella quella che si vede: l'errore conta solo senza testo.
+                    if (r.ok) { text = r.text; capturedAt = System.currentTimeMillis() } else if (text == null) error = r.text
                 }
                 LaunchedEffect(lastId, results) {
                     val r = lastId?.let { results[it] } ?: return@LaunchedEffect
                     answer = SpeechText.pick(r, fallback).orEmpty()
                 }
                 LaunchedEffect(lastId) { if (lastId != null) { kotlinx.coroutines.delay(5_000L); if (answer == null) answer = fallback.orEmpty() } }
+                // Dal vivo (design 15/09): a ogni cambio della sessione nello stato, che arriva già in streaming, si chiede
+                // di nuovo la cattura senza cancellare quella che si vede; una richiesta alla volta, almeno 3 s fra due, e a
+                // fine turno anche la risposta intera. Aggiorna a mano passa di qui, con la risposta.
+                val session = snapshot.state?.sessions?.firstOrNull { it.name == name }
+                var prev by remember { mutableStateOf(session) }
+                var alsoLast by remember { mutableStateOf(false) }
+                val wake = remember { Channel<Unit>(Channel.CONFLATED) }
+                LaunchedEffect(session) {
+                    when (TerminalLive.next(prev, session)) {
+                        TerminalLive.Ask.SCREEN -> wake.trySend(Unit)
+                        TerminalLive.Ask.SCREEN_AND_LAST -> { alsoLast = true; wake.trySend(Unit) }
+                        null -> Unit
+                    }
+                    prev = session
+                }
+                LaunchedEffect(name) {
+                    var lastAt = 0L
+                    while (true) {
+                        wake.receive()
+                        val wait = 3_000L - (System.currentTimeMillis() - lastAt)
+                        if (wait > 0) delay(wait)
+                        val withLast = alsoLast
+                        alsoLast = false
+                        val id = app.repo.command(CmdOp.SCREEN, name, null)
+                        cmdId = id
+                        if (withLast) lastId = app.repo.command(CmdOp.LAST, name, null)
+                        lastAt = System.currentTimeMillis()
+                        withTimeoutOrNull(10_000L) { app.repo.resultsById.first { it.containsKey(id) } }
+                    }
+                }
                 val blocks = remember(answer) { answer?.let { AnswerText.blocks(it) } }
                 val block by app.speaker.block.collectAsStateWithLifecycle()
                 val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
@@ -327,8 +363,9 @@ class MainActivity : ComponentActivity() {
                 val preparing by app.reader.preparing.collectAsStateWithLifecycle()
                 TerminalScreen(
                     name, text, loading = text == null && error == null && !failed,
-                    error = error ?: if (failed) getString(R.string.question_not_delivered) else null,
-                    onRefresh = { ask() },
+                    error = if (text != null) null else error ?: if (failed) getString(R.string.question_not_delivered) else null,
+                    onRefresh = { alsoLast = true; wake.trySend(Unit) },
+                    capturedAt = capturedAt,
                     answer = blocks,
                     current = if (speaking) block else null,
                     speaking = speaking || preparing,

@@ -24,3 +24,14 @@ Lint vital: ✅ in CI anche con le stringhe inglesi (`b6c92d7`, run 34894981374,
 Prima: ✅ in CI (`42867a4`, run 34893744588, `:wear:lintVitalRelease`, BUILD SUCCESSFUL 20:42 UTC), dopo la
 correzione di `setup-android` (il pacchetto «tools» sparito dall'SDK rompeva ogni run dalle 20:29 UTC); comprende
 `fe99eff` (domanda chiusa altrove) e `fa5ecc5`; prima su `15d80a4`, `c32a946`, `0725313`, `41adb72`, `a83a0ad`, `544623e`, `472868f`, `114dbd4`, `59e6525`, `586a9bd` e `03d4305`). In locale non gira: `lintVitalAnalyzeRelease` si blocca oltre 10 minuti sulla VM da 6 GB.
+
+## Terminale copione e dal vivo (design 15/09, `docs/plans/2026-09-15-terminale-copione-design.md`)
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| T1 | Le tue righe (prompt, risposte a una domanda) hanno il filo azzurro e il testo azzurro chiaro; la prosa di Claude è in chiaro; strumenti e output in mono grigio; niente bolle | Scheda, Terminale, su una sessione con un prompt recente | |
+| T2 | Il divisore dice «Terminale · HH:mm» con l'ora dell'ultima cattura | come T1 | |
+| T3 | Con il Terminale aperto su una sessione che lavora, le righe nuove arrivano senza toccare nulla, al massimo una cattura ogni 3 s | Terminale aperto, polso fermo | |
+| T4 | Sceso in fondo, la vista segue le righe nuove; risalito, resta dov'è | scroll durante T3 | |
+| T5 | A fine turno la Risposta in cima si aggiorna da sola | T3 fino allo stop della sessione | |
+| T6 | Aggiorna non cancella il testo: niente «Chiedo al PC» sopra una cattura già vista | icona Aggiorna | |

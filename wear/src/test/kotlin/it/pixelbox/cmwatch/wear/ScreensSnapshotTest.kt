@@ -9,6 +9,7 @@ import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
+import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
 import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
@@ -41,6 +42,14 @@ class ScreensSnapshotTest {
     // S07: la Scheda di una sessione ferma, con l'esito intero (era la schermata Esito), e la Timeline.
     @Test fun cardIdle() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
     @Test fun timeline() = paparazzi.snapshot { CmTheme { TimelineScreen(ContractJson.decodeEvents(File("../contract/events-sample.json").readText())) } }
+    // Design 15/09: il Terminale come un copione — il prompt sul filo azzurro, la prosa di Claude, strumento e output in mono.
+    @Test fun terminal() = paparazzi.snapshot {
+        CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, onRefresh = {}, answer = emptyList(), capturedAt = now * 1000) }
+    }
+    private val terminalSample = listOf(
+        "❯ Run the tests, then update", "the changelog", "⏺ Running the suite.",
+        "⏺ Bash(pytest -q)", "⎿ 42 passed in 3.1s", "⏺ All green, moving to the", "changelog.",
+    ).joinToString("\n")
 }
 
 /** S07: le stesse schermate con i caratteri di sistema al massimo di Wear OS (1,24): il testo cresce, non si taglia. */

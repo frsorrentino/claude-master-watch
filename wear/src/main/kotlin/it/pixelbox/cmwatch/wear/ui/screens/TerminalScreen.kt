@@ -7,8 +7,10 @@ import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +19,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,11 +52,16 @@ import it.pixelbox.cmwatch.wear.ui.theme.Mono
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.TerminalStyle
 import it.pixelbox.cmwatch.wear.ui.theme.morph
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Risposta e Terminale (Franz, 15/09 17:19): in cima la risposta intera della sessione (contratto 1.4, `last`) a
- * paragrafi, in carattere normale e ascoltabile per blocchi; sotto le righe del terminale in mono, più piccole.
- * `answer` null = la sta ancora chiedendo; `current` = il paragrafo che la voce sta leggendo.
+ * paragrafi, in carattere normale e ascoltabile per blocchi; sotto il terminale come un copione (design 15/09 21:28):
+ * le tue righe su un filo azzurro, la prosa di Claude in chiaro, strumenti e output in mono grigio, niente bolle.
+ * `answer` null = la sta ancora chiedendo; `current` = il paragrafo che la voce sta leggendo; `capturedAt` = l'ora
+ * dell'ultima cattura arrivata, detta nel divisore perché con l'aggiornamento dal vivo conta quanto è fresca.
  */
 @Composable
 fun TerminalScreen(
@@ -64,11 +76,29 @@ fun TerminalScreen(
     onSpeakAll: () -> Unit = {},
     onBlock: (Int) -> Unit = {},
     onWrite: () -> Unit = {},
+    capturedAt: Long? = null,
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
+    val blocks = remember(text) { text?.let { TerminalText.blocks(it) }.orEmpty() }
     // La lista segue la voce: il paragrafo letto sale in vista (l'elemento 0 è la testata).
     LaunchedEffect(current) { current?.let { listState.animateScrollToItem(it + 1) } }
+    // Dal vivo: chi è sceso in fondo vede arrivare le righe nuove; chi è risalito resta dov'è. Si decide solo mentre
+    // l'utente scorre, così una cattura che allunga la lista non cambia la scelta da sola.
+    var follow by remember { mutableStateOf(false) }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val li = listState.layoutInfo
+            listState.isScrollInProgress to (li.visibleItems.lastOrNull()?.index == li.totalItemsCount - 1)
+        }.collect { (moving, atBottom) -> if (moving) follow = atBottom }
+    }
+    var seen by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(text) {
+        // La prima cattura non sposta la vista: in cima c'è la risposta, che si legge per prima.
+        val total = 1 + (answer?.size ?: 0) + 1 + blocks.size
+        if (text != null && seen != null && text != seen && follow && answer != null) listState.animateScrollToItem(total - 1)
+        if (text != null) seen = text
+    }
     ScreenScaffold(
         scrollState = listState,
         // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15); «Aggiorna» scende a icona in testata.
@@ -96,32 +126,52 @@ fun TerminalScreen(
                 loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
                 error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier.morph(this, spec)) }
                 text != null -> {
-                    if (answer.isNotEmpty()) {
-                        item {
-                            Text(
-                                stringResource(R.string.terminal_lines), style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel,
-                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).morph(this, spec),
-                            )
-                        }
-                    }
-                    for (row in TerminalText.rows(text)) {
-                        // Niente scorrimento orizzontale: intercettava lo swipe di ritorno (Franz, 12/09 16:17). Le righe lunghe vanno a capo.
-                        // Le teste di blocco (prompt, strumenti, elenchi, titoli) sono colorate e in grassetto: la gerarchia
-                        // si vede senza spendere righe, e lo stacco è un filo di spazio, non una riga vuota (13/09 17:46).
-                        when {
-                            row.text.isEmpty() -> item { Spacer(Modifier.height(6.dp)) }
-                            row.head -> item {
-                                Text(
-                                    row.text, style = TerminalStyle.copy(fontWeight = FontWeight.Bold),
-                                    color = CmColors.busy, modifier = Modifier.fillMaxWidth().morph(this, spec),
-                                )
-                            }
-                            else -> item { Text(row.text, style = TerminalStyle, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
-                        }
+                    item { TerminalDivider(capturedAt, Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp).morph(this, spec)) }
+                    // Niente scorrimento orizzontale: intercettava lo swipe di ritorno (Franz, 12/09 16:17). Le righe lunghe
+                    // vanno a capo. Lo stacco fra chi parla è uno spazio di 8 dp, mai una riga vuota.
+                    blocks.forEachIndexed { i, b ->
+                        val top = if (i > 0 && (b.kind == TerminalText.Kind.USER || b.kind == TerminalText.Kind.CLAUDE)) 8.dp else 0.dp
+                        item { TerminalBlock(b, Modifier.fillMaxWidth().padding(top = top).morph(this, spec)) }
                     }
                 }
             }
         }
+    }
+}
+
+private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+
+/** Filo · «Terminale · 21:18» · filo: separa la risposta dalle righe e dice quanto è fresca la cattura. */
+@Composable
+private fun TerminalDivider(capturedAt: Long?, modifier: Modifier = Modifier) {
+    val label = capturedAt?.let { stringResource(R.string.terminal_divider, HHMM.format(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()))) }
+        ?: stringResource(R.string.card_terminal)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefTrack))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 8.dp))
+        Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefTrack))
+    }
+}
+
+/** Righe del terminale: il carattere dice chi parla. Tu e Claude in sans come un testo da leggere, il resto in mono. */
+private val VoiceSize = 15.sp
+private val VoiceLine = 21.sp
+
+@Composable
+private fun TerminalBlock(b: TerminalText.Block, modifier: Modifier = Modifier) {
+    val voice = MaterialTheme.typography.bodyMedium.copy(fontSize = VoiceSize, lineHeight = VoiceLine)
+    when (b.kind) {
+        // Il filo è dentro l'item e alto quanto il blocco: resta continuo anche mentre la lista si deforma.
+        TerminalText.Kind.USER -> Row(modifier.height(IntrinsicSize.Min)) {
+            Box(Modifier.width(3.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(CmColors.accent))
+            Spacer(Modifier.width(8.dp))
+            Text(b.text, style = voice, color = CmColors.actionIcon)
+        }
+        TerminalText.Kind.CLAUDE -> Text(
+            b.text, style = if (b.heading) voice.copy(fontWeight = FontWeight.Bold) else voice, color = CmColors.text, modifier = modifier,
+        )
+        TerminalText.Kind.TOOL -> Text(b.text, style = TerminalStyle.copy(fontWeight = FontWeight.Bold), color = CmColors.text2, modifier = modifier)
+        TerminalText.Kind.OUTPUT -> Text(b.text, style = TerminalStyle, color = CmColors.text2, modifier = modifier)
     }
 }
 
