@@ -22,7 +22,7 @@ EDGE_TXT = (10, 32, 80, 255)      # onPrimary
 YEL = (244, 208, 63, 255)         # badge della sessione (colore del contratto)
 
 FONTS = [
-    "/home/demo/workspaces/personal/watchface/tools/fonts/googlesans_700.ttf",
+    str(pathlib.Path.home() / "Desktop/workspaces/personali/watchface/tools/fonts/googlesans_700.ttf"),
     "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
 ]
 

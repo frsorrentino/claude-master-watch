@@ -17,3 +17,7 @@ captures/
 # Screenshot dal polso (vanno in docs/screenshots solo se rinominati)
 *.jpg
 *.jpeg
+
+# Catture dal polso con sessioni vere e riferimenti con dati personali: restano sul disco, mai nel repo pubblico
+docs/screenshots/
+docs/brief/*.png

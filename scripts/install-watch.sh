@@ -9,7 +9,7 @@
 set -euo pipefail
 
 Q=/usr/bin/qemu-x86_64-static
-A=/home/demo/android-sdk/platform-tools/adb
+A="$HOME/android-sdk/platform-tools/adb"
 adbq() { "$Q" "$A" "$@"; }
 
 if ! adbq version >/dev/null 2>&1 || ! pgrep -f "adb server nodaemon" >/dev/null; then

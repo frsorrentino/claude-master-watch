@@ -26,11 +26,9 @@ claude-master init --yes --shim --shell
 The full quickstart, and everything the plugin does from the terminal, is in
 [its README](https://github.com/frsorrentino/claude-master#quickstart).
 
-**No Wear OS watch?** claude-master works without this app. Its
-[Telegram bot](https://github.com/frsorrentino/claude-master#from-telegram) is written for a
-watch: short messages, one-tap answers, dictated prompts, on any phone, iPhone included.
-On an Apple Watch it arrives as Telegram notifications with dictation (not yet verified on
-real hardware).
+**No Wear OS watch?** claude-master works without this app, from the terminal. watchOS is
+not supported yet. Telegram, if you set it up in the plugin, only sends notifications: long
+texts, and a fallback when the watch is unreachable.
 
 ## Screens
 
