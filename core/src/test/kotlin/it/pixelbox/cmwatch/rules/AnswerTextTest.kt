@@ -45,6 +45,18 @@ class OutcomeTailTest {
     @Test fun unTestoBreveNonSiTaglia() =
         assertEquals("release.sh è fuori dallo zip. Resta così.", OutcomeText.cardBody(Outcome("Fatto", "release.sh è fuori dallo zip. Resta così.", 0)))
 
+    // Franz, 15/09 17:54: «-2 confermato sul ramo redesign;» in cima alla card di master.
+    @Test fun unaCodaCheIniziaConUnNumeroMozzatoSalta() {
+        val t = "-2 confermato sul ramo redesign; nessuna azione nuova da parte mia.\n- Consegne: prima la base bilingue, " +
+            "poi i 17 strumenti." + " Poi il resto del lavoro che segue.".repeat(8)
+        assertEquals(true, OutcomeText.cardBody(Outcome(short, t, 0))!!.startsWith("- Consegne"))
+    }
+
+    @Test fun unaCodaCheIniziaConUnaVoceDiElencoResta() {
+        val t = "- Consegne: prima la base bilingue." + " Poi il resto del lavoro che segue.".repeat(8)
+        assertEquals(t, OutcomeText.cardBody(Outcome(short, t, 0)))
+    }
+
     @Test fun unaCodaCheIniziaConLaMaiuscolaResta() {
         val t = "L" + coda.drop(1)
         assertEquals(t, OutcomeText.cardBody(Outcome(short, t, 0)))

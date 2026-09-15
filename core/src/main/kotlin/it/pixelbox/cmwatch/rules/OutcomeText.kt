@@ -48,8 +48,11 @@ object OutcomeText {
     fun cardBody(o: Outcome): String? {
         val b = body(o) ?: return null
         if (o.full.trim().length < CODA_MIN) return b
-        val primo = b.firstOrNull { it.isLetterOrDigit() } ?: return b
-        if (!primo.isLowerCase()) return b
+        // Comincia da una riga intera (voce d'elenco, titolo) o con la maiuscola: è un inizio vero. Tutto il resto è un
+        // frammento, anche «-2 confermato…» (Franz, 15/09 17:54), e si salta fino alla prima riga o frase intera.
+        if (INIZIO_RIGA.containsMatchIn(b)) return b
+        val primo = b.firstOrNull { !it.isWhitespace() } ?: return b
+        if (primo.isUpperCase()) return b
         val fine = FINE_FRASE.find(b) ?: return b
         return b.substring(fine.range.last + 1).trim().ifEmpty { b }
     }
@@ -57,6 +60,7 @@ object OutcomeText {
     /** Sotto questa lunghezza `full` non è stato tagliato: il PC taglia la coda a 600 o, sotto pressione, a 300. */
     private const val CODA_MIN = 250
     private val FINE_FRASE = Regex("[.!?…]\\s+|\\n")
+    private val INIZIO_RIGA = Regex("^\\s*(?:[-*•]\\s|#{1,6}\\s|\\d+[.)]\\s)")
 
     private fun riga(o: Outcome): String? =
         o.full.lines().mapNotNull { RIGA.find(it.trim())?.groupValues?.get(1)?.trim() }.lastOrNull { it.isNotEmpty() }
