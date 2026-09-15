@@ -50,6 +50,9 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Il renderer delle tile cerca le sue risorse (`androidx.wear.protolayout.renderer.R$style`): senza, in CI
+        // il test della tile cadeva con NoClassDefFoundError (run 34995385643, 15/09 18:35).
+        unitTests.isIncludeAndroidResources = true
         // Traccia intera nel log della CI: Paparazzi gira solo lì (x86_64), e senza questo il NoClassDefFoundError
         // della tile non diceva quale classe mancava (15/09 18:21).
         unitTests.all { it.testLogging { exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL; showCauses = true; showStackTraces = true } }
