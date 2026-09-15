@@ -48,6 +48,7 @@ protolayout = { module = "androidx.wear.protolayout:protolayout", version.ref = 
 protolayout-expression = { module = "androidx.wear.protolayout:protolayout-expression", version.ref = "protolayout" }
 protolayout-material3 = { module = "androidx.wear.protolayout:protolayout-material3", version.ref = "protolayout" }
 tiles = { module = "androidx.wear.tiles:tiles", version.ref = "tiles" }
+tiles-renderer = { module = "androidx.wear.tiles:tiles-renderer", version.ref = "tiles" }
 complications-datasource = { module = "androidx.wear.watchface:watchface-complications-data-source-ktx", version.ref = "complications" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }

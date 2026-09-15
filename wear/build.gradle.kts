@@ -84,4 +84,6 @@ dependencies {
     implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
+    // La tile disegnata dal codice nei test Paparazzi, per il README (Franz, 15/09 14:35).
+    testImplementation(libs.tiles.renderer)
 }

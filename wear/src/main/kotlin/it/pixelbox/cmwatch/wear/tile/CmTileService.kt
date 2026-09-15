@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.wear.tile
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
+import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
@@ -51,8 +52,9 @@ import java.time.format.DateTimeFormatter
  * Tile costruita sull'anatomia della tile di Gmail (letta dalla sua anteprima, 13/09): card `appCard` da due righe
  * (chi e quando sopra, cosa sotto) e un `textEdgeButton` pastello con testo scuro che porta anche il conteggio.
  * Contenuti scelti da Franz: la domanda quando c'è (proposta 1), altrimenti l'ultima attività (3) e la quota (4).
+ * Aperta perché il test Paparazzi la istanzia su un contesto suo e la disegna per il README (15/09 14:35).
  */
-class CmTileService : TileService() {
+open class CmTileService : TileService() {
 
     /**
      * Ruoli M3 in tema scuro con i valori misurati sulla tile di Gmail (13/09): card #2A313C, oggetto #EBF1FF
@@ -81,33 +83,7 @@ class CmTileService : TileService() {
                 app.repo.snapshot.value
             }
             val state = snap.state
-            val stale = snap.freshness as? Freshness.Stale
-            val now = System.currentTimeMillis() / 1000
-            val question = if (stale == null) state?.sessions?.firstOrNull { s -> s.question?.let { it.id !in prefs.seenQuestions } == true } else null
-            val edge = TileTexts.edge(state, snap.freshness, prefs.seenQuestions)
-
-            val root = try {
-                materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
-                    primaryLayout(
-                        margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN,
-                        // Il titolo come nelle altre tile di sistema (Franz, 14/09 08:10): «Sessioni Claude».
-                        titleSlot = { text(getString(R.string.tile_title).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onBackground, maxLines = 1) },
-                        mainSlot = {
-                            when {
-                                question != null -> questionCard(question, now)
-                                state == null || state.sessions.isEmpty() -> emptyCard()
-                                else -> restCards(state, now, prefs.complicationAccount, stale)
-                            }
-                        },
-                        bottomSlot = { edgeButton(edge, question?.name) },
-                    )
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("cmwatch", "tile layout failed, fallback", e)
-                materialScope(this, requestParams.deviceConfiguration, allowDynamicTheme = false, defaultColorScheme = scheme) {
-                    primaryLayout(margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN, mainSlot = { emptyCard() }, bottomSlot = { edgeButton(TileTexts.Edge(TileTexts.Edge.Kind.SESSIONS, 0), null) })
-                }
-            }
+            val root = root(requestParams.deviceConfiguration, state, snap.freshness, prefs.seenQuestions, prefs.complicationAccount, System.currentTimeMillis() / 1000)
 
             completer.set(
                 TileBuilders.Tile.Builder()
@@ -118,6 +94,39 @@ class CmTileService : TileService() {
             )
             "tile"
         }
+
+    /**
+     * Il layout della tile a partire dai dati, senza il repository: lo usa `onTileRequest` e lo usa il test Paparazzi,
+     * che la disegna in inglese sui dati di prova per il README (Franz, 15/09 14:35).
+     */
+    internal fun root(device: DeviceParametersBuilders.DeviceParameters, state: State?, freshness: Freshness, seen: Set<String>, account: String, now: Long): LayoutElement {
+            val stale = freshness as? Freshness.Stale
+            val question = if (stale == null) state?.sessions?.firstOrNull { s -> s.question?.let { it.id !in seen } == true } else null
+            val edge = TileTexts.edge(state, freshness, seen)
+
+            return try {
+                materialScope(this, device, allowDynamicTheme = false, defaultColorScheme = scheme) {
+                    primaryLayout(
+                        margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN,
+                        // Il titolo come nelle altre tile di sistema (Franz, 14/09 08:10): «Sessioni Claude».
+                        titleSlot = { text(getString(R.string.tile_title).layoutString, typography = Typography.LABEL_MEDIUM, color = colorScheme.onBackground, maxLines = 1) },
+                        mainSlot = {
+                            when {
+                                question != null -> questionCard(question, now)
+                                state == null || state.sessions.isEmpty() -> emptyCard()
+                                else -> restCards(state, now, account, stale)
+                            }
+                        },
+                        bottomSlot = { edgeButton(edge, question?.name) },
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("cmwatch", "tile layout failed, fallback", e)
+                materialScope(this, device, allowDynamicTheme = false, defaultColorScheme = scheme) {
+                    primaryLayout(margins = PrimaryLayoutMargins.MIN_PRIMARY_LAYOUT_MARGIN, mainSlot = { emptyCard() }, bottomSlot = { edgeButton(TileTexts.Edge(TileTexts.Edge.Kind.SESSIONS, 0), null) })
+                }
+            }
+    }
 
     /** Frasi per gli strumenti: «SendMessage» da solo non dice niente (Franz, 13/09 20:36). */
     private fun toolLabels() = ToolText.Labels(
@@ -335,7 +344,11 @@ class CmTileService : TileService() {
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> =
         CallbackToFutureAdapter.getFuture { c ->
-            c.set(
+            c.set(tileResources()); "res"
+        }
+
+    /** Le immagini della tile, orologio e segni degli account: servono anche al test Paparazzi. */
+    internal fun tileResources(): ResourceBuilders.Resources =
                 ResourceBuilders.Resources.Builder().setVersion(RESOURCES)
                     .addIdToImageMapping(
                         CLOCK,
@@ -356,8 +369,6 @@ class CmTileService : TileService() {
                         ).build(),
                     )
                     .build()
-            ); "res"
-        }
 
     companion object {
         const val RESOURCES = "16"
