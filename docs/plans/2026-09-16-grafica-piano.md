@@ -74,3 +74,12 @@ reset), barre per ora dagli eventi, banda di stato di una sessione, regole di `R
 
 - 25 e 26 cambiano gesti: provare al polso che non litighino con lo swipe di ritorno.
 - 49: filo di luce sul bordo delle card solo come prova, poi Franz decide.
+
+## Decisioni sul contratto (16/09)
+
+- 00:32, claude-master: `model`, `context`, `effort` si leggono in modo affidabile dalle trascrizioni; `/model` ed `/effort`
+  nel pane riscrivono anche il default dell'account in `~/.claude/settings.json`.
+- 00:33, questa sessione: 1.11 solo con i campi (`context` assente quando non è certo), niente op e niente `choices`.
+- 00:39, Franz: op con ripristino (b) se affidabile, altrimenti (c) con l'effetto sul default detto nel `/result`. Chiesta
+  come 1.12 dopo la 1.11. Condizioni per la (b): riscrittura solo delle chiavi toccate, lock sul file per tutta la
+  sequenza, rilettura di verifica, ripristino anche senza conferma dal pane. Scelta finale e motivo li dà claude-master.
