@@ -48,12 +48,12 @@ real hardware).
   <tr>
     <td align="center"><img src="docs/readme/pairing.png" width="220" alt="Pairing: run claude-master relay pair on the PC, then enter the 6-digit code on the watch"><br>Pairing</td>
     <td align="center"><img src="docs/readme/stale.png" width="220" alt="A list that is no longer fresh says how old it is and never looks live"><br>Stale data</td>
-    <td align="center"><img src="docs/readme/complication.png" width="220" alt="The quota ring complication on a watch face, with the percentage and its window"><br>Complication</td>
+    <td align="center"><img src="docs/readme/complication.png" width="220" alt="The quota ring complication on a watch face: 13 % of the 5-hour window, the window's tag 5h under the number"><br>Complication</td>
   </tr>
 </table>
 
 App screens are rendered from the app's code by the Paparazzi snapshot tests, on the demo set
-of `contract/` (no real project, path or account). The complication is photographed on a
+of `contract/` (no real project, path or account). The complication is a screenshot from a
 Pixel Watch 5. Texts grow with the system font size and are read by TalkBack:
 
 <p align="center"><img src="docs/readme/question-large-font.png" width="220" alt="The same question with the largest system font: whole lines, nothing cut"></p>
