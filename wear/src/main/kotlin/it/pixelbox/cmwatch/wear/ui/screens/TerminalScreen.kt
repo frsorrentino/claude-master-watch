@@ -1,6 +1,10 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.IconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -59,6 +63,7 @@ fun TerminalScreen(
     speaking: Boolean = false,
     onSpeakAll: () -> Unit = {},
     onBlock: (Int) -> Unit = {},
+    onWrite: () -> Unit = {},
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -66,13 +71,17 @@ fun TerminalScreen(
     LaunchedEffect(current) { current?.let { listState.animateScrollToItem(it + 1) } }
     ScreenScaffold(
         scrollState = listState,
-        edgeButton = { CmEdgeButton(stringResource(R.string.terminal_refresh), onClick = onRefresh, enabled = !loading) },
+        // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15); «Aggiorna» scende a icona in testata.
+        edgeButton = { CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
-                    if (!answer.isNullOrEmpty() || text != null) { Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
+                    IconButton(onClick = onRefresh, enabled = !loading) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.terminal_refresh), tint = CmColors.actionIcon)
+                    }
+                    if (!answer.isNullOrEmpty() || text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
                 }
             }
             if (answer == null) {

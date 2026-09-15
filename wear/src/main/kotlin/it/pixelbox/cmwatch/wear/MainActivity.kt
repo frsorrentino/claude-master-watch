@@ -287,6 +287,7 @@ class MainActivity : ComponentActivity() {
                         else text?.let { t -> SpeakService.text(this@MainActivity, SpeechText.terminal(t)) }
                     },
                     onBlock = { i -> blocks?.let { b -> SpeakService.blocks(this@MainActivity, b.map { it.text }, i, all = false) } },
+                    onWrite = { write(name) },
                 )
             }
             composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
