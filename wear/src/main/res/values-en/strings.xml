@@ -138,8 +138,10 @@
     <string name="badge_work">work account</string>
     <string name="tile_title">Claude Master</string>
     <string name="tile_all_idle">All idle</string>
-    <string name="tile_quota_pct">%1$d%%</string>
-    <string name="tile_quota_pct_reset">%1$d%% · reset %2$s</string>
+    <string name="tile_quota_pct">5 h %1$d%%</string>
+    <string name="tile_quota_pct_reset">5 h %1$d%% · reset %2$s</string>
+    <string name="tile_quota_week">week %1$d%%</string>
+    <string name="tile_quota_week_reset">week %1$d%% · reset %2$s</string>
     <string name="quota_reset_at">reset %1$s</string>
     <string name="tile_turn_running">turn in progress</string>
     <string name="tile_title_count">%1$d sessions</string>

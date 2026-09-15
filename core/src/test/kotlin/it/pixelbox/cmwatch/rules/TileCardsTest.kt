@@ -164,23 +164,67 @@ class TileQuotasTest {
 
     @Test fun senzaQuoteNienteRiga() = assertNull(TileTexts.quotaLine(q.copy(quota = emptyMap()), "personale"))
 
+    @Test fun laRigaPortaAncheLaSettimana() {
+        val r = TileTexts.quotaLine(q, "personale")!!
+        val p = q.quota.getValue("personal")
+        assertEquals(p.w7, r.w7); assertEquals(p.resetW7, r.resetW7)
+    }
+
+    // Franz, 15/09 08:21: sotto il 15 % la barra non dice niente e ruba spazio alla sessione. Ma la tile guardava solo
+    // le cinque ore: con la settimana al 66 % e le cinque ore al 2 % l'avrebbe nascosta proprio quando conta.
+    @Test fun sottoSogliaLaQuotaNonSiMostra() {
+        val r = TileTexts.quotaLine(q, "personale")!!.copy(pct = 14, w7 = 79)
+        assertNull(TileTexts.tileQuota(r))
+    }
+
+    @Test fun leCinqueOreDal15PerCento() {
+        val r = TileTexts.quotaLine(q, "personale")!!.copy(pct = 15, w7 = 36)
+        assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 15, r.resetH5), TileTexts.tileQuota(r))
+    }
+
+    @Test fun laSettimanaDall80PerCento() {
+        val r = TileTexts.quotaLine(q, "personale")!!.copy(pct = 2, w7 = 80)
+        assertEquals(TileTexts.TileQuota(TileTexts.Window.WEEK, 80, r.resetW7), TileTexts.tileQuota(r))
+    }
+
+    @Test fun seSonoTutteESopraSogliaVinceLaPiuPiena() {
+        val r = TileTexts.quotaLine(q, "personale")!!
+        assertEquals(TileTexts.Window.WEEK, TileTexts.tileQuota(r.copy(pct = 40, w7 = 85))!!.window)
+        assertEquals(TileTexts.Window.H5, TileTexts.tileQuota(r.copy(pct = 90, w7 = 85))!!.window)
+    }
+
+    private val formati = TileTexts.QuotaLabels(pct = "%1\$d %%", pctReset = "%1\$d %% · %2\$s", week = "settimana %1\$d %%", weekReset = "settimana %1\$d %% · %2\$s")
+    private val rome = ZoneId.of("Europe/Rome")
+
     @Test fun inCodaPercentualeERipartenzaDelleCinqueOre() {
         val r = TileTexts.quotaLine(q, "personale")!!
-        assertEquals("11 % · 18:00", TileTexts.quotaSuffix(r, "%1\$d %%", "%1\$d %% · %2\$s", ZoneId.of("Europe/Rome")))
+        assertEquals("11 % · 18:00", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5), formati, rome))
     }
 
-    @Test fun senzaRipartenzaSoloLaPercentuale() {
-        val r = TileTexts.quotaLine(q, "personale")!!.copy(resetH5 = null)
-        assertEquals("11 %", TileTexts.quotaSuffix(r, "%1\$d %%", "%1\$d %% · %2\$s", ZoneId.of("Europe/Rome")))
-    }
+    @Test fun senzaRipartenzaSoloLaPercentuale() =
+        assertEquals("11 %", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, null), formati, rome))
 
     // S07: «0 % · 17:30» non diceva che 17:30 è il reset delle cinque ore. Letto dalle stringhe vere dell'app.
-    @Test fun laTileDiceCheLOraEIlReset() {
+    // Franz, 15/09 08:27: con la settimana sulla tile anche le cinque ore dicono di essere le cinque ore.
+    @Test fun laTileDiceCheLOraEIlResetDelleCinqueOre() {
         val r = TileTexts.quotaLine(q, "personale")!!
-        val rome = ZoneId.of("Europe/Rome")
-        assertEquals("11 % · reset 18:00", TileTexts.quotaSuffix(r, res("values", "tile_quota_pct"), res("values", "tile_quota_pct_reset"), rome))
-        assertEquals("11% · reset 18:00", TileTexts.quotaSuffix(r, res("values-en", "tile_quota_pct"), res("values-en", "tile_quota_pct_reset"), rome))
+        val t = TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5)
+        assertEquals("5 ore 11 % · reset 18:00", TileTexts.quotaSuffix(t, labels("values"), rome))
+        assertEquals("5 h 11% · reset 18:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
     }
+
+    // La settimana sulla tile non c'era mai stata: deve dire che è la settimana e il giorno del reset.
+    @Test fun laSettimanaLoDiceEHaIlGiorno() {
+        val r = TileTexts.quotaLine(q, "personale")!!
+        val t = TileTexts.TileQuota(TileTexts.Window.WEEK, 82, r.resetW7)
+        assertEquals("settimana 82 % · reset gio 04:00", TileTexts.quotaSuffix(t, labels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("week 82% · reset Thu 04:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
+    }
+
+    private fun labels(dir: String) = TileTexts.QuotaLabels(
+        pct = res(dir, "tile_quota_pct"), pctReset = res(dir, "tile_quota_pct_reset"),
+        week = res(dir, "tile_quota_week"), weekReset = res(dir, "tile_quota_week_reset"),
+    )
 
     private fun res(dir: String, name: String): String {
         val xml = java.io.File("../wear/src/main/res/$dir/strings.xml").readText()

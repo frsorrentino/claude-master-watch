@@ -8,6 +8,7 @@ import it.pixelbox.cmwatch.contract.State
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /** Testi della tile (design, sezione 2): conteggi, la sessione ferma su una riga intera, bottoni, freschezza adattiva. */
 object TileTexts {
@@ -142,7 +143,30 @@ object TileTexts {
      * con due righe la seconda era tagliata dal fondo della card). Se l'account scelto non c'è, `personale`, poi il
      * primo in ordine. L'account lo dice la forma del segno, non un'etichetta.
      */
-    data class QuotaLine(val account: String, val pct: Int?, val personale: Boolean, val resetH5: Long?)
+    data class QuotaLine(
+        val account: String, val pct: Int?, val personale: Boolean, val resetH5: Long?,
+        val w7: Int? = null, val resetW7: Long? = null,
+    )
+
+    enum class Window { H5, WEEK }
+
+    /** Quello che la tile mostra davvero: una finestra sola, con la sua percentuale e il suo reset. */
+    data class TileQuota(val window: Window, val pct: Int, val reset: Long?)
+
+    const val TILE_H5_MIN = 15
+    const val TILE_WEEK_MIN = 80
+
+    /**
+     * La quota sulla tile solo quando dice qualcosa (Franz, 15/09 08:21): le cinque ore dal 15 %, la settimana dall'80 %,
+     * la soglia di stop. La settimana sulla tile prima non c'era: con le cinque ore al 2 % e la settimana al 66 % la regola
+     * sulle sole cinque ore l'avrebbe nascosta proprio quando conta. Se passano tutte e due, la più piena; a pari
+     * percentuale le cinque ore, che fermano prima.
+     */
+    fun tileQuota(line: QuotaLine): TileQuota? {
+        val h5 = line.pct?.takeIf { it >= TILE_H5_MIN }?.let { TileQuota(Window.H5, it, line.resetH5) }
+        val week = line.w7?.takeIf { it >= TILE_WEEK_MIN }?.let { TileQuota(Window.WEEK, it, line.resetW7) }
+        return listOfNotNull(h5, week).maxByOrNull { it.pct }
+    }
 
     /**
      * Di quale account è la quota sulla tile: quello della sessione mostrata nella card sopra (Franz, 14/09 15:26:
@@ -154,15 +178,24 @@ object TileTexts {
         // Dal contratto 1.8 il ripiego e il segno dell'account seguono il tipo, non il nome «personale».
         val key = Accounts.resolve(state, account) ?: return null
         val q = state.quota.getValue(key)
-        return QuotaLine(key, q.h5, Accounts.isPersonalQuota(key, q), q.resetH5)
+        return QuotaLine(key, q.h5, Accounts.isPersonalQuota(key, q), q.resetH5, q.w7, q.resetW7)
     }
 
     private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+    private val WEEKDAY_HHMM = DateTimeFormatter.ofPattern("EEE HH:mm")
 
-    /** In coda alla barra delle 5 ore: «8 % · 12:30»; senza ripartenza nel dato, solo «8 %». */
-    fun quotaSuffix(line: QuotaLine, pct: String, pctReset: String, zone: ZoneId = ZoneId.systemDefault()): String {
-        val p = line.pct ?: 0
-        return line.resetH5?.let { pctReset.format(p, HHMM.format(Instant.ofEpochSecond(it).atZone(zone))) } ?: pct.format(p)
+    data class QuotaLabels(val pct: String, val pctReset: String, val week: String, val weekReset: String)
+
+    /**
+     * In coda alla barra: «42 % · reset 12:30» per le cinque ore, «settimana 82 % · reset gio 04:00» per la settimana,
+     * col giorno nella lingua delle risorse. Senza ripartenza nel dato, solo la percentuale.
+     */
+    fun quotaSuffix(q: TileQuota, l: QuotaLabels, zone: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.ITALIAN): String {
+        val at = q.reset?.let { Instant.ofEpochSecond(it).atZone(zone) }
+        return when (q.window) {
+            Window.H5 -> at?.let { l.pctReset.format(q.pct, HHMM.format(it)) } ?: l.pct.format(q.pct)
+            Window.WEEK -> at?.let { l.weekReset.format(q.pct, WEEKDAY_HHMM.withLocale(locale).format(it)) } ?: l.week.format(q.pct)
+        }
     }
 
     /** Badge della tile: l'emoji del contratto 1.1, altrimenti il glifo dello stato (la tile non disegna, scrive). */
