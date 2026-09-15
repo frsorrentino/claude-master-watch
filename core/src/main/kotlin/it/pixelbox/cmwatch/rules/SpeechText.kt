@@ -60,7 +60,7 @@ object SpeechText {
 
     /** La domanda con le opzioni numerate: «Deploy now? 1, yes. 2, no.» (`option` = «%1$d, %2$s.»). */
     fun question(q: Question, option: String): String =
-        (listOf(q.text.trim()) + q.options.map { option.format(it.n, it.label.trim()) }).joinToString(" ")
+        (listOf(q.text.trim()) + q.options.map { option.format(it.n, QuestionRules.optionText(it.label)) }).joinToString(" ")
 
     /** Il recap del giorno: per ogni progetto cosa ha fatto e il prossimo passo (`next` = «Prossimo: %1$s.»). */
     fun recap(recap: Recap, next: String): String = recap.items.joinToString(" ") { item ->

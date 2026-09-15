@@ -46,7 +46,7 @@ object NotificationPlan {
 
     /** 🟢 personale, 🔴 lavoro: dal contratto 1.8 lo dice il tipo dell'account, non il nome. */
     private fun dot(s: Session) = if (Accounts.isPersonal(s)) "🟢" else "🔴"
-    private fun optionLabel(n: Int, label: String) = "$n $label"
+    private fun optionLabel(n: Int, label: String) = "$n ${QuestionRules.optionText(label)}"
 
     fun question(s: Session, l: Labels, history: List<Qa>): Plan {
         val q = s.question ?: error("no question")

@@ -9,7 +9,20 @@ import it.pixelbox.cmwatch.contract.Tier
 object QuestionRules {
     fun needsLongPress(tier: Tier) = tier == Tier.HIGH
     fun allowAllVisible(q: Question) = q.kind == QuestionKind.PERMISSION && q.tier != Tier.HIGH
-    fun optionLabel(o: Option) = "${o.n} · ${o.label}"
+    /**
+     * «n · etichetta» sulla prima riga che dice qualcosa: l'anteprima dell'opzione arriva disegnata a caratteri
+     * (┌─│) e sul tasto diventava righe vuote e un nome tagliato (Franz, 15/09 16:13).
+     */
+    fun optionLabel(o: Option): String = "${o.n} · ${optionText(o.label)}"
+
+    /** L'etichetta senza il riquadro: la stessa per tasto, notifica e voce. */
+    fun optionText(label: String): String = label.lines()
+        .map { it.replace(DISEGNO, " ").replace(SPAZI, " ").trim() }
+        .firstOrNull { it.isNotEmpty() } ?: label.trim()
+
+    /** Caratteri di riquadro e blocchi (U+2500–U+259F). */
+    private val DISEGNO = Regex("[\\u2500-\\u259F]")
+    private val SPAZI = Regex("\\s+")
     /** Un solo bottone pieno per schermata: la prima opzione. */
     fun isPrimary(index: Int) = index == 0
 }

@@ -21,7 +21,14 @@ class QuestionRulesTest {
         assertFalse(QuestionRules.allowAllVisible(q.copy(kind = QuestionKind.PERMISSION, tier = Tier.HIGH)))
     }
 
-    @Test fun optionLabelKeepsNumber() = assertEquals("1 · yes", QuestionRules.optionLabel(q.options[0]))
+    // Franz, 15/09 16:13: nell'etichetta arrivava anche l'anteprima dell'opzione, un riquadro disegnato a caratteri.
+    @Test fun optionLabelDropsThePreviewBox() {
+        assertEquals("1 · Due binari (Consigliata)", QuestionRules.optionLabel(it.pixelbox.cmwatch.contract.Option(1, "Due binari (Consigliata)\n┌──────────┐\n│ FRANCESCO │\n└──────────┘")))
+        assertEquals("3 · Prima l'e-commerce", QuestionRules.optionLabel(it.pixelbox.cmwatch.contract.Option(3, "Prima l'e-commerce │           │")))
+        assertEquals("2 · Prima il builder", QuestionRules.optionLabel(it.pixelbox.cmwatch.contract.Option(2, "┌───┐\nPrima il builder")))
+    }
+
+    @Test fun optionLabelKeepsNumber() =assertEquals("1 · yes", QuestionRules.optionLabel(q.options[0]))
 
     @Test fun firstOptionIsTheOnlyPrimary() {
         assertTrue(QuestionRules.isPrimary(0)); assertFalse(QuestionRules.isPrimary(1))
