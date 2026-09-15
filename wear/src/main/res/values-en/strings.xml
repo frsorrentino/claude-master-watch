@@ -142,10 +142,12 @@
     <string name="tile_quota_pct_reset">5h %1$d%% · reset %2$s</string>
     <string name="tile_quota_week">7d %1$d%%</string>
     <string name="tile_quota_week_reset">7d %1$d%% · reset %2$s</string>
-    <string name="tile_quota_h5_short">5h %1$d%%</string>
-    <string name="tile_quota_h5_short_reset">5h %1$d%% · %2$s</string>
-    <string name="tile_quota_week_short">7d %1$d%%</string>
-    <string name="tile_quota_week_short_reset">7d %1$d%% · %2$s</string>
+    <string name="tile_quota_h5_short">%1$d%%</string>
+    <string name="tile_quota_h5_short_reset">%1$d%% · %2$s</string>
+    <string name="tile_quota_week_short">%1$d%%</string>
+    <string name="tile_quota_week_short_reset">%1$d%% · %2$s</string>
+    <string name="tile_quota_tag_h5">5h</string>
+    <string name="tile_quota_tag_week">7d</string>
     <string name="quota_reset_at">reset %1$s</string>
     <string name="tile_turn_running">turn in progress</string>
     <string name="tile_title_count">%1$d sessions</string>

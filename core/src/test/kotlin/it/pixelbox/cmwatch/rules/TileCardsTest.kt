@@ -228,10 +228,15 @@ class TileQuotasTest {
         val r = TileTexts.quotaLine(q, "personale")!!
         val h5 = TileTexts.TileQuota(TileTexts.Window.H5, 0, r.resetH5)
         val week = TileTexts.TileQuota(TileTexts.Window.WEEK, 68, r.resetW7)
-        assertEquals("5h 0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("7d 68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("5h 0% · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
-        assertEquals("7d 68% · Thu 04:00", TileTexts.quotaSuffix(week, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
+        // Franz, 15/09 15:03: la sigla a sinistra, subito dopo l'orologio; a destra della barra solo valore e ora.
+        assertEquals("0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("0% · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
+        assertEquals("68% · Thu 04:00", TileTexts.quotaSuffix(week, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
+        for (dir in listOf("values", "values-en")) {
+            assertEquals("5h", TileTexts.quotaTag(h5, res(dir, "tile_quota_tag_h5"), res(dir, "tile_quota_tag_week")))
+            assertEquals("7d", TileTexts.quotaTag(week, res(dir, "tile_quota_tag_h5"), res(dir, "tile_quota_tag_week")))
+        }
     }
 
     private fun shortLabels(dir: String) = TileTexts.QuotaLabels(

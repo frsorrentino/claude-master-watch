@@ -249,10 +249,14 @@ class CmTileService : TileService() {
             week = getString(R.string.tile_quota_week), weekReset = getString(R.string.tile_quota_week_reset),
         )
         val suffix = TileTexts.quotaSuffix(q, labels, locale = resources.configuration.locales[0])
+        // La sigla subito dopo l'orologio, poi la barra, poi valore e ora (Franz, 15/09 15:03).
+        val tag = TileTexts.quotaTag(q, getString(R.string.tile_quota_tag_h5), getString(R.string.tile_quota_tag_week))
         val row = LayoutElementBuilders.Row.Builder()
             .setWidth(expand())
             .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
             .addContent(q.personal?.let { accountMark(it) } ?: clock())
+            .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(4f)).build())
+            .addContent(text(tag.layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurfaceVariant, maxLines = 1))
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
             .addContent(bar(q.pct))
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())

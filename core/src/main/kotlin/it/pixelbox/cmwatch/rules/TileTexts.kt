@@ -300,6 +300,9 @@ object TileTexts {
 
     data class QuotaLabels(val pct: String, val pctReset: String, val week: String, val weekReset: String)
 
+    /** La sigla della finestra, a sinistra della barra subito dopo l'orologio (Franz, 15/09 15:03): «5h» o «7d». */
+    fun quotaTag(q: TileQuota, h5: String, week: String): String = if (q.window == Window.H5) h5 else week
+
     /**
      * In coda alla barra: «42 % · reset 12:30» per le cinque ore, «settimana 82 % · reset gio 04:00» per la settimana,
      * col giorno nella lingua delle risorse. Senza ripartenza nel dato, solo la percentuale.
