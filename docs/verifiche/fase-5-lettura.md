@@ -29,9 +29,9 @@ correzione di `setup-android` (il pacchetto «tools» sparito dall'SDK rompeva o
 
 | # | Cosa | Come | Esito |
 |---|------|------|-------|
-| T1 | Le tue righe (prompt, risposte a una domanda) hanno il filo azzurro e il testo azzurro chiaro; la prosa di Claude è in chiaro; strumenti e output in mono grigio; niente bolle | Scheda, Terminale, su una sessione con un prompt recente | |
-| T2 | Il divisore dice «Terminale · HH:mm» con l'ora dell'ultima cattura | come T1 | |
-| T3 | Con il Terminale aperto su una sessione che lavora, le righe nuove arrivano senza toccare nulla, al massimo una cattura ogni 3 s | Terminale aperto, polso fermo | |
-| T4 | Sceso in fondo, la vista segue le righe nuove; risalito, resta dov'è | scroll durante T3 | |
-| T5 | A fine turno la Risposta in cima si aggiorna da sola | T3 fino allo stop della sessione | |
-| T6 | Niente tasto Aggiorna; ▶ accanto al nome, che non va a capo; la prosa va a capo dove va a capo il polso | Terminale | |
+| T1 | Le tue righe (prompt, risposte a una domanda) hanno il filo azzurro e il testo azzurro chiaro; la prosa di Claude è in chiaro; strumenti e output in mono grigio; niente bolle | Scheda, Terminale, su una sessione con un prompt recente | ✅ 15/09 23:25 (strumenti e output poco contrastati: grigio schiarito da `text2` a `briefSecondary`), build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+| T2 | Il divisore dice «Terminale · HH:mm» con l'ora dell'ultima cattura | come T1 | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+| T3 | Con il Terminale aperto su una sessione che lavora, le righe nuove arrivano senza toccare nulla, al massimo una cattura ogni 3 s | Terminale aperto, polso fermo | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+| T4 | Sceso in fondo, la vista segue le righe nuove; risalito, resta dov'è | scroll durante T3 | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+| T5 | A fine turno la Risposta in cima si aggiorna da sola | T3 fino allo stop della sessione | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+| T6 | Niente tasto Aggiorna; ▶ accanto al nome, che non va a capo; la prosa va a capo dove va a capo il polso | Terminale | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |

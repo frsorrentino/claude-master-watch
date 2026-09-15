@@ -96,7 +96,7 @@ fun TerminalScreen(
     }
     ScreenScaffold(
         scrollState = listState,
-        // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15); «Aggiorna» scende a icona in testata.
+        // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15).
         edgeButton = { CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
@@ -163,8 +163,8 @@ private fun TerminalBlock(b: TerminalText.Block, modifier: Modifier = Modifier) 
         TerminalText.Kind.CLAUDE -> Text(
             b.text, style = if (b.heading) voice.copy(fontWeight = FontWeight.Bold) else voice, color = CmColors.text, modifier = modifier,
         )
-        TerminalText.Kind.TOOL -> Text(b.text, style = TerminalStyle.copy(fontWeight = FontWeight.Bold), color = CmColors.text2, modifier = modifier)
-        TerminalText.Kind.OUTPUT -> Text(b.text, style = TerminalStyle, color = CmColors.text2, modifier = modifier)
+        TerminalText.Kind.TOOL -> Text(b.text, style = TerminalStyle.copy(fontWeight = FontWeight.Bold), color = CmColors.briefSecondary, modifier = modifier)
+        TerminalText.Kind.OUTPUT -> Text(b.text, style = TerminalStyle, color = CmColors.briefSecondary, modifier = modifier)
     }
 }
 
