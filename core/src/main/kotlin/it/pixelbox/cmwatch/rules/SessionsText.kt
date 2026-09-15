@@ -79,8 +79,17 @@ object SessionsText {
         idle: String,
         tools: ToolText.Labels? = null,
         zone: ZoneId = ZoneId.systemDefault(),
+        live: String? = null,
     ): Sheet {
         val c = cell(s, now, running, idle, tools, zone)
+        // Chi lavora senza uno strumento in vista diceva solo «turno in corso» (Franz, 15/09 19:01): il titolo diventa
+        // l'ultimo blocco del suo terminale, se il PC l'ha mandato, e sotto il suo ultimo esito.
+        val lavora = s.question == null && (s.state == SessionState.BUSY || s.state == SessionState.AWAITING)
+        if (lavora && s.tool.isNullOrBlank()) {
+            val t = live?.trim()?.takeIf { it.isNotEmpty() } ?: c.title
+            val esito = s.outcome?.short?.let { TileTexts.plain(it) }?.takeIf { it.isNotEmpty() }
+            return Sheet(t, null, listOfNotNull(esito, c.detail).firstOrNull { !repeats(it, t) })
+        }
         val o = s.outcome
         val ferma = s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING
         if (!ferma || o == null) return Sheet(c.title, null, c.detail)

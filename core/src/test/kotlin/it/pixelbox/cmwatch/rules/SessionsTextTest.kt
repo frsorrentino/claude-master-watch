@@ -211,3 +211,22 @@ class SessionsSheetTest {
     @Test fun chiEFermaSenzaEsitoRestaComeLaCella() =
         assertEquals("a riposo", sheet(idle.copy(outcome = null)).title)
 }
+
+// Franz, 15/09 19:01: «qui devo leggere info utili, non turno in corso».
+class SessionsLiveTest {
+    private val st = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val zone = ZoneId.of("Europe/Rome")
+    private val o = it.pixelbox.cmwatch.contract.Outcome("piano consegna 1 pronto, 15 task", "piano consegna 1 pronto, 15 task", st.ts - 600)
+    private val lavora = st.sessions.first { it.state == SessionState.BUSY }
+        .copy(state = SessionState.AWAITING, tool = null, toolNote = null, next = null, nextAt = null, outcome = o, turnStarted = st.ts - 60)
+
+    @Test fun senzaStrumentoIlTitoloEIlTerminaleESottoLUltimoEsito() {
+        val c = SessionsText.sheet(lavora, st.ts, "turno in corso", "a riposo", null, zone, live = "Scrivo il piano della consegna 2")
+        assertEquals("Scrivo il piano della consegna 2", c.title); assertEquals("piano consegna 1 pronto, 15 task", c.detail)
+    }
+
+    @Test fun senzaIlTerminaleResterebbeTurnoInCorsoMaConLUltimoEsitoSotto() {
+        val c = SessionsText.sheet(lavora, st.ts, "turno in corso", "a riposo", null, zone)
+        assertEquals("turno in corso", c.title); assertEquals("piano consegna 1 pronto, 15 task", c.detail)
+    }
+}

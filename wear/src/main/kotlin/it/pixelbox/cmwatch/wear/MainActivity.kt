@@ -180,18 +180,34 @@ class MainActivity : ComponentActivity() {
                     snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient,
                     // Contratto 1.9: una chiusa si riprende dalla sua riga.
                     onReopen = { n -> scope.launch { app.repo.command(CmdOp.REOPEN, n, null); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
+                    // Pressione lunga sulla riga: segui / smetti, con la vibrazione come conferma (Franz, 15/09 19:04).
+                    onFollow = { n, follow -> Haptics.play(this@MainActivity, Haptics.Kind.SENT); scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, n, null) } },
                 )
             }
             composable(Routes.SESSION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
                 val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
                 val preparing by app.reader.preparing.collectAsStateWithLifecycle()
+                // Chi lavora senza uno strumento in vista: si chiede al PC la coda del terminale e se ne prende l'ultimo
+                // blocco, al posto di «turno in corso» (Franz, 15/09 19:01).
+                val sess = snapshot.state?.sessions?.firstOrNull { it.name == name }
+                val senzaStrumento = sess != null && sess.question == null && sess.tool.isNullOrBlank() &&
+                    (sess.state == it.pixelbox.cmwatch.contract.SessionState.BUSY || sess.state == it.pixelbox.cmwatch.contract.SessionState.AWAITING)
+                var live by remember(name) { mutableStateOf<String?>(null) }
+                var liveId by remember(name) { mutableStateOf<String?>(null) }
+                LaunchedEffect(name, senzaStrumento) { if (senzaStrumento) liveId = app.repo.command(CmdOp.SCREEN, name, null) }
+                val liveResults by app.repo.resultsById.collectAsStateWithLifecycle()
+                LaunchedEffect(liveId, liveResults) {
+                    val r = liveId?.let { liveResults[it] } ?: return@LaunchedEffect
+                    if (r.ok) live = SpeechText.terminal(r.text, blocks = 1).takeIf { it.isNotBlank() }
+                }
                 SessionScreen(
                     snapshot, name, now,
                     onReply = { nav.go(Screen.Question(name)) },
                     onWrite = { write(name) },
                     onTerminal = { nav.go(Screen.Terminal(name)) },
-                    onFollow = { follow -> scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
+                    onFollow = { follow -> Haptics.play(this@MainActivity, Haptics.Kind.SENT); scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
+                    live = live,
                     onBackToSessions = { nav.go(Screen.Sessions) },
                     speaking = speaking || preparing,
                     onListen = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.let { o -> { SpeakService.last(this@MainActivity, name, o.full) } },

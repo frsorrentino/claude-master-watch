@@ -29,7 +29,7 @@ import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
 @Composable
-fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}, ambient: Boolean = false, onReopen: (String) -> Unit = {}) {
+fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}, ambient: Boolean = false, onReopen: (String) -> Unit = {}, onFollow: (String, Boolean) -> Unit = { _, _ -> }) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val sessions = snapshot.state?.sessions.orEmpty()
@@ -67,6 +67,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                     modifier = Modifier.transformedHeight(this, spec), siblings = names, ambient = ambient,
                     marquee = canScroll && center == firstRow + i, tools = tools,
                     onReopen = if (s.state == it.pixelbox.cmwatch.contract.SessionState.GONE) ({ onReopen(s.name) }) else null,
+                    onLongClick = if (s.state != it.pixelbox.cmwatch.contract.SessionState.GONE) ({ onFollow(s.name, !s.followed) }) else null,
                 )
             }
             // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.

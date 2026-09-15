@@ -60,6 +60,7 @@ fun SessionRow(
     marquee: Boolean = false,
     tools: ToolText.Labels? = null,
     onReopen: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val age = SessionsText.sub(s, now, stringResource(R.string.session_closed))
     val overflow = if (NameText.sharesPrefix(s.name, siblings)) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
@@ -68,6 +69,8 @@ fun SessionRow(
     )
     Card(
         onClick = onClick,
+        // Pressione lunga = segui / smetti (Franz, 15/09 18:59), in ambient no.
+        onLongClick = if (ambient) null else onLongClick,
         modifier = modifier.fillMaxWidth(),
         // Misure prese sulle celle di notifica di Wear OS (13/09 21:32): raggio 20 dp, badge 16 dp in linea con il
         // nome, non un bollo da 36 a tutta altezza, e quattro righe di testo sotto.

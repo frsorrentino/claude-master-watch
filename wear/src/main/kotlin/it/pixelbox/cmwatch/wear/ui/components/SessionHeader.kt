@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,8 +40,19 @@ fun SessionHeader(
             Column(Modifier.weight(1f)) {
                 // Il nome va a capo invece di scorrere (S07): lo scorrimento fermo a metà lasciava una «h» isolata.
                 // …e va a capo dopo un trattino, non a metà parola («claude-master-w / atch», Franz 15/09 10:56).
-                Text(TileTexts.breakable(s.name), style = MonoStyle, color = CmColors.text, maxLines = 2)
-                if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
+                // Tre righe: «francescosorrentino-com-2» accanto al ▶ ne prendeva due e perdeva la coda (Franz, 15/09 19:01).
+                Text(TileTexts.breakable(s.name), style = MonoStyle, color = CmColors.text, maxLines = 3)
+                // La campanella gialla accanto all'età quando la sessione è seguita: l'interruttore non c'è più (15/09 19:04).
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
+                    if (s.followed) {
+                        Spacer(Modifier.width(4.dp))
+                        androidx.wear.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Rounded.Notifications, contentDescription = stringResource(R.string.session_followed),
+                            tint = CmColors.followed, modifier = Modifier.size(12.dp),
+                        )
+                    }
+                }
             }
             // Il ▶ della Domanda accanto al nome: sotto rubava la colonna destra al testo (Franz, 15/09 16:13).
             trailing?.let { Spacer(Modifier.width(8.dp)); it() }

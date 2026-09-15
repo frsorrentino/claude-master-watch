@@ -58,6 +58,8 @@ fun SessionScreen(
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
     onReopen: (() -> Unit)? = null,
+    /** L'ultimo blocco del terminale, chiesto al PC quando la sessione lavora senza uno strumento in vista. */
+    live: String? = null,
     speaking: Boolean = false,
     onListen: (() -> Unit)? = null,
 ) {
@@ -101,7 +103,7 @@ fun SessionScreen(
             // facendo, «Segui» come interruttore, poi le azioni con la loro icona. Prima erano quattro bottoni
             // larghi identici che davano lo stesso peso a tutto, con l'informazione in due righe minuscole.
             // La card contiene anche l'Esito: chi è fermo lo mostra intero, senza un tap in più (Franz, 15/09 17:02).
-            val cell = SessionsText.sheet(s, now, running, idleLabel, tools)
+            val cell = SessionsText.sheet(s, now, running, idleLabel, tools, live = live)
             // La riga dello strumento in testata tace se la card sotto la dice già intera (Franz, 15/09 16:00).
             val toolRepeated = cell.says(ToolText.describe(s.toolNote, s.tool, tools))
             // Il ▶ in testata, accanto al nome, come nella Domanda: legge la risposta intera chiesta al PC.
@@ -112,6 +114,7 @@ fun SessionScreen(
                     Card(
                         // Toccare la card apre il Terminale: il livello «tutto», dopo il riassunto (15/09 17:02).
                         onClick = onTerminal,
+                        onLongClick = if (s.state != SessionState.GONE) ({ onFollow(!s.followed) }) else null,
                         modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                         shape = RoundedCornerShape(21.dp),
                         colors = CardDefaults.cardColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.text),
@@ -139,19 +142,8 @@ fun SessionScreen(
                 }
             }
             if (s.state != SessionState.GONE) {
-                item {
-                    SwitchButton(
-                        checked = s.followed,
-                        onCheckedChange = { onFollow(it) },
-                        enabled = enabled,
-                        label = { Text(stringResource(R.string.card_follow), maxLines = 1) },
-                        // Gialla se seguita, come nella lista (14/09 20:32); se no azzurra come le altre icone delle azioni:
-                        // grigia sembrava un bottone spento (Franz, 15/09 13:21).
-                        icon = { Icon(Icons.Rounded.Notifications, contentDescription = null, tint = if (s.followed) CmColors.followed else CmColors.actionIcon) },
-                        modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
-                        transformation = SurfaceTransformation(spec),
-                    )
-                }
+                // Niente interruttore «Segui»: occupava mezzo schermo (Franz, 15/09 19:04). Si segue con la pressione
+                // lunga sulla card o sulla riga della lista; lo stato lo dice la campanella in testata.
                 // Niente bottoni «Terminale» e «Ascolta»: la card apre il Terminale, il ▶ sta in testata (Franz, 15/09 17:02).
             } else if (onReopen != null && onRelaunch != null) {
                 // Se la conversazione non si può riprendere (il relay dice «use launch»), si riparte da capo.
