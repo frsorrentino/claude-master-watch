@@ -329,6 +329,38 @@ class TileBodyTest {
         assertTrue(b.quotas.isEmpty()); assertEquals(2, b.extraLines)
     }
 
+    // Franz, 15/09 14:30: la riga libera. Prima le due barre dello stesso account; se non ci sono, la barra dell'altro
+    // account, e allora ogni riga porta il segno del suo account (tondo personale, quadrato lavoro) al posto dell'orologio.
+    private val lavoro = TileTexts.quotaLine(ContractJson.decodeState(Fixtures.stateIdle), "work")!!
+
+    @Test fun conLeDueFinestreDelloStessoAccountNienteAltroAccount() {
+        val b = TileTexts.tileBody("turno in corso", null, sotto, lavoro)
+        assertEquals(listOf(TileTexts.Window.H5, TileTexts.Window.WEEK), b.quotas.map { it.window })
+        assertTrue(b.quotas.all { it.personal == null })
+    }
+
+    @Test fun senzaLeDueFinestreLaRigaLiberaVaAllAltroAccount() {
+        val b = TileTexts.tileBody("turno in corso", null, sotto.copy(pct = null, w7 = 67), lavoro)
+        assertEquals(
+            listOf(
+                TileTexts.TileQuota(TileTexts.Window.WEEK, 67, sotto.resetW7, personal = true),
+                TileTexts.TileQuota(TileTexts.Window.H5, 3, lavoro.resetH5, personal = false),
+            ),
+            b.quotas,
+        )
+    }
+
+    @Test fun conUnTestoLungoResteUnaBarraSolaDelProprioAccount() {
+        val b = TileTexts.tileBody(lungo, null, sotto.copy(pct = null, w7 = 67), lavoro)
+        assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.WEEK, 67, sotto.resetW7)), b.quotas)
+    }
+
+    @Test fun lAltroAccountELaltraChiaveDellaQuota() {
+        val altro = TileTexts.otherQuotaLine(q, "personale")!!
+        assertEquals("work", altro.account); assertFalse(altro.personale)
+        assertNull(TileTexts.otherQuotaLine(q.copy(quota = q.quota.filterKeys { it == "personal" }), "personale"))
+    }
+
     // Franz, 15/09 13:14: «l'orologio e nuovo tent…» sulla tile. Il conto a caratteri non vedeva gli a capo fra le parole.
     @Test fun leRigheSiContanoComeVaACapoIlTesto() {
         assertEquals(4, TileTexts.wrappedLines("Diagnosi del collegamento con l'orologio e nuovo tentativo"))

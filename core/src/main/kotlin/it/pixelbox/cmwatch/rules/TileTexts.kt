@@ -158,16 +158,26 @@ object TileTexts {
      * c'è lettura. `mainLines` ed `extraLines` sono il
      * massimo concesso; le righe si contano come va a capo lo schermo (`wrappedLines`), mai a caratteri.
      */
-    fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
+    fun tileBody(main: String, extra: String?, line: QuotaLine?, other: QuotaLine? = null): TileBody {
         val h5 = line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
         val week = line?.w7?.let { TileQuota(Window.WEEK, it, line.resetW7) }
         if (h5 != null && week != null) {
             val due = layout(main, extra, TILE_BODY_LINES - 1)
-            if (due.main == main.trim() && (extra == null || due.extra == extra.trim())) return due.copy(quotas = listOf(h5, week))
+            if (fitsWhole(due, main, extra)) return due.copy(quotas = listOf(h5, week))
         }
         // Senza lettura delle cinque ore (`h5: null`, 15/09 12:15) resta la settimana: prima la tile restava senza barre.
-        return layout(main, extra, TILE_BODY_LINES).copy(quotas = listOfNotNull(line?.let { tileQuota(it) } ?: h5 ?: week))
+        val own = line?.let { tileQuota(it) } ?: h5 ?: week
+        // Senza le due finestre dello stesso account, la riga libera va all'altro account, con i segni degli account al
+        // posto dell'orologio (Franz, 15/09 14:30).
+        val altra = other?.let { o -> tileQuota(o) ?: o.pct?.let { TileQuota(Window.H5, it, o.resetH5) } ?: o.w7?.let { TileQuota(Window.WEEK, it, o.resetW7) } }
+        if (line != null && own != null && other != null && altra != null) {
+            val due = layout(main, extra, TILE_BODY_LINES - 1)
+            if (fitsWhole(due, main, extra)) return due.copy(quotas = listOf(own.copy(personal = line.personale), altra.copy(personal = other.personale)))
+        }
+        return layout(main, extra, TILE_BODY_LINES).copy(quotas = listOfNotNull(own))
     }
+
+    private fun fitsWhole(b: TileBody, main: String, extra: String?) = b.main == main.trim() && (extra == null || b.extra == extra.trim())
 
     private fun layout(main: String, extra: String?, lines: Int): TileBody {
         val m = fitLines(main, lines)
@@ -247,7 +257,8 @@ object TileTexts {
     enum class Window { H5, WEEK }
 
     /** Quello che la tile mostra davvero: una finestra sola, con la sua percentuale e il suo reset. */
-    data class TileQuota(val window: Window, val pct: Int, val reset: Long?)
+    /** `personal` c'è solo quando le barre sono di due account: la riga mostra il segno dell'account, non l'orologio. */
+    data class TileQuota(val window: Window, val pct: Int, val reset: Long?, val personal: Boolean? = null)
 
     const val TILE_H5_MIN = 15
     const val TILE_WEEK_MIN = 80
@@ -274,6 +285,13 @@ object TileTexts {
         // Dal contratto 1.8 il ripiego e il segno dell'account seguono il tipo, non il nome «personale».
         val key = Accounts.resolve(state, account) ?: return null
         val q = state.quota.getValue(key)
+        return QuotaLine(key, q.h5, Accounts.isPersonalQuota(key, q), q.resetH5, q.w7, q.resetW7)
+    }
+
+    /** L'altro account con un dato di quota, per la riga libera della tile (Franz, 15/09 14:30); null se non c'è. */
+    fun otherQuotaLine(state: State, account: String): QuotaLine? {
+        val own = Accounts.resolve(state, account)
+        val (key, q) = state.quota.entries.firstOrNull { (k, v) -> k != own && (v.h5 != null || v.w7 != null) } ?: return null
         return QuotaLine(key, q.h5, Accounts.isPersonalQuota(key, q), q.resetH5, q.w7, q.resetW7)
     }
 

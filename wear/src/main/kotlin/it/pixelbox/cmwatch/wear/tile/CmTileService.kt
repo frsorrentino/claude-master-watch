@@ -156,21 +156,23 @@ class CmTileService : TileService() {
         val quando = if (stale != null) state.ts else now
         val rest = TileTexts.rest(state, quando)
         val line = TileTexts.quotaLine(state, TileTexts.quotaAccount(rest, account))
+        // L'altro account per la riga libera, quando le due barre dello stesso account non ci sono (Franz, 15/09 14:30).
+        val other = line?.let { TileTexts.otherQuotaLine(state, it.account) }
         return when (rest) {
-            is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale, line)
-            is TileTexts.Rest.Calm -> calmCard(rest, quando, stale, line)
+            is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale, line, other)
+            is TileTexts.Rest.Calm -> calmCard(rest, quando, stale, line, other)
         }
     }
 
     /** La sessione: chi e da quanto sopra, cosa sta facendo o cosa ha fatto sotto. Mai l'etichetta secca dello stato. */
-    private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?): LayoutElement {
+    private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?, other: TileTexts.QuotaLine?): LayoutElement {
         val what = TileTexts.activity(
             s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now, toolLabels(),
             awaiting = getString(R.string.state_awaiting_prompt),
         )
         // Righe, aggiunta e quota le decide lo spazio (`TileTexts.tileBody`, Franz 15/09 10:56). Il testo sta nelle sue
         // righe da sé, un pensiero intero: mai «…» (Franz, 14/09 16:58).
-        val body = TileTexts.tileBody(what, TileTexts.extra(s, busy, now), line)
+        val body = TileTexts.tileBody(what, TileTexts.extra(s, busy, now), line, other)
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {
@@ -201,7 +203,7 @@ class CmTileService : TileService() {
             .build()
     }
 
-    private fun MaterialScope.calmCard(rest: TileTexts.Rest.Calm, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?): LayoutElement = appCard(
+    private fun MaterialScope.calmCard(rest: TileTexts.Rest.Calm, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?, other: TileTexts.QuotaLine?): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://sessions"), id = "calm"),
         label = {
             if (stale != null) small(getString(R.string.tile_stale_label, stale.minutes), AMBER.argb)
@@ -210,7 +212,7 @@ class CmTileService : TileService() {
         time = { small(rest.since?.let { Durations.since(it, now) } ?: "", colorScheme.onSurfaceVariant) },
         title = { text(getString(R.string.tile_all_idle).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
         // «Tutto a riposo» sta in una riga: lo spazio c'è sempre, quindi la quota anche (Franz, 15/09 10:56).
-        content = TileTexts.tileBody(getString(R.string.tile_all_idle), null, line).quotas.takeIf { it.isNotEmpty() }?.let { qs -> { quotaRows(qs) } },
+        content = TileTexts.tileBody(getString(R.string.tile_all_idle), null, line, other).quotas.takeIf { it.isNotEmpty() }?.let { qs -> { quotaRows(qs) } },
         shape = cardShape(),
         colors = cardColors(),
     )
@@ -220,7 +222,9 @@ class CmTileService : TileService() {
 
     /** Una o due barre in colonna: la settimana sotto le cinque ore quando il testo lascia la riga (Franz, 15/09 11:58). */
     private fun MaterialScope.quotaRows(qs: List<TileTexts.TileQuota>): LayoutElement {
-        if (qs.size == 1) return quotaRow(qs[0])
+        // Etichette corte anche con una barra sola: con «reset» la barra della settimana si riduceva a un puntino
+        // (Franz, 15/09 14:30). «reset» resta nella schermata Quota.
+        if (qs.size == 1) return quotaRow(qs[0], short = true)
         val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
         qs.forEachIndexed { i, q ->
             if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(2f)).build())
@@ -248,7 +252,7 @@ class CmTileService : TileService() {
         val row = LayoutElementBuilders.Row.Builder()
             .setWidth(expand())
             .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-            .addContent(clock())
+            .addContent(q.personal?.let { accountMark(it) } ?: clock())
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
             .addContent(bar(q.pct))
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
@@ -264,6 +268,15 @@ class CmTileService : TileService() {
     /** Orologio in testa alla quota (Franz, 14/09 15:26): l'account lo dice la sessione sopra, non un segno. */
     private fun MaterialScope.clock(): LayoutElement = LayoutElementBuilders.Image.Builder()
         .setResourceId(CLOCK).setWidth(dp(14f)).setHeight(dp(14f))
+        .setColorFilter(LayoutElementBuilders.ColorFilter.Builder().setTint(colorScheme.onSurfaceVariant.prop).build())
+        .build()
+
+    /**
+     * Il segno dell'account al posto dell'orologio quando le due barre sono di account diversi (Franz, 15/09 14:30):
+     * tondo personale, quadrato lavoro, le stesse forme dei badge delle sessioni.
+     */
+    private fun MaterialScope.accountMark(personal: Boolean): LayoutElement = LayoutElementBuilders.Image.Builder()
+        .setResourceId(if (personal) MARK_PERSONAL else MARK_WORK).setWidth(dp(12f)).setHeight(dp(12f))
         .setColorFilter(LayoutElementBuilders.ColorFilter.Builder().setTint(colorScheme.onSurfaceVariant.prop).build())
         .build()
 
@@ -326,13 +339,27 @@ class CmTileService : TileService() {
                             ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_tile_clock).build()
                         ).build(),
                     )
+                    .addIdToImageMapping(
+                        MARK_PERSONAL,
+                        ResourceBuilders.ImageResource.Builder().setAndroidResourceByResId(
+                            ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_tile_mark_personal).build()
+                        ).build(),
+                    )
+                    .addIdToImageMapping(
+                        MARK_WORK,
+                        ResourceBuilders.ImageResource.Builder().setAndroidResourceByResId(
+                            ResourceBuilders.AndroidImageResourceByResId.Builder().setResourceId(R.drawable.ic_tile_mark_work).build()
+                        ).build(),
+                    )
                     .build()
             ); "res"
         }
 
     companion object {
-        const val RESOURCES = "15"
+        const val RESOURCES = "16"
         const val CLOCK = "clock"
+        const val MARK_PERSONAL = "mark_personal"
+        const val MARK_WORK = "mark_work"
         private const val AMBER = 0xFFFFB020.toInt()
         private const val LABEL = 0xFFD3E3FD.toInt()   // mittente di Gmail: 10,1:1 sulla card
         private const val TRACK = 0xFF3C4452.toInt()   // traccia della barra: visibile sulla card #2A313C
