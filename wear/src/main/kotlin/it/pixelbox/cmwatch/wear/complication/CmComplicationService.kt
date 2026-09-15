@@ -64,13 +64,29 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
                 }
                 val app = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
                 RangedValueComplicationData.Builder(r.value, 0f, r.max, text(desc))
-                    .setText(text(r.text)).setTitle(r.title?.let { text(it) }).setMonochromaticImage(app).setTapAction(open("cmwatch://quota", 3)).build()
+                    // La sigla anche come icona sotto il numero: il quadrante di Franz disegna testo e icona, non il titolo
+                    // (15/09 17:28). Senza lettura resta il simbolo dell'app.
+                    .setText(text(r.text)).setTitle(r.title?.let { text(it) }).setMonochromaticImage(r.title?.let { tag(it) } ?: app).setTapAction(open("cmwatch://quota", 3)).build()
             }
             else -> null
         }
     }
 
     private fun text(s: String) = PlainComplicationText.Builder(s).build()
+
+    /** «5h» / «7d» disegnati in bianco su un quadrato trasparente: il quadrante li tinge come ogni icona monocromatica. */
+    private fun tag(s: String): MonochromaticImage {
+        val px = 64
+        val bmp = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            textSize = px * 0.62f
+        }
+        android.graphics.Canvas(bmp).drawText(s, px / 2f, px / 2f - (p.descent() + p.ascent()) / 2f, p)
+        return MonochromaticImage.Builder(Icon.createWithBitmap(bmp)).build()
+    }
 
     private fun open(uri: String, code: Int): PendingIntent =
         PendingIntent.getActivity(this, code, Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
