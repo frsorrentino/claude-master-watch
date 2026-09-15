@@ -12,18 +12,12 @@ Claude Code sessions of your machine on your wrist — the one waiting for an an
   <tr>
     <td align="center"><img src="docs/readme/outcome.png" width="220" alt="The outcome of a turn, big when short, read aloud on demand"><br>Outcome</td>
     <td align="center"><img src="docs/readme/quota.png" width="220" alt="Quota in the style of the Wear OS morning brief: 5-hour window, week, resets"><br>Quota</td>
-    <td align="center"><img src="docs/readme/tile.png" width="220" alt="The tile: the session in focus, what it is doing, the 5-hour and weekly quota bars"><br>Tile</td>
-  </tr>
-  <tr>
     <td align="center"><img src="docs/readme/complication.png" width="220" alt="The quota ring complication on a watch face, with the app symbol and the percentage"><br>Complication</td>
-    <td></td>
-    <td></td>
   </tr>
 </table>
 
 App screens are rendered from the app's code by the Paparazzi snapshot tests, on the demo set of
-`contract/` (in English). Tile and complication are photographed on a Pixel Watch 5, with real
-sessions.
+`contract/` (in English). The complication is photographed on a Pixel Watch 5.
 
 - **Tile**: the session in focus with what it is doing and, under a running tool, its latest step;
   three lines and the quota bar, or two lines and two bars (5 hours and week) when the text leaves
