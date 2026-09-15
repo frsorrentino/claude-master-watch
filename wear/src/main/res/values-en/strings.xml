@@ -68,6 +68,7 @@
     <string name="outcome_read_all">Read all</string>
     <string name="terminal_loading">Asking the PC</string>
     <string name="terminal_refresh">Refresh</string>
+    <string name="terminal_lines">Terminal lines</string>
     <string name="timeline_title">Timeline</string>
     <string name="timeline_all">All sessions</string>
     <string name="timeline_empty">No events</string>
@@ -106,6 +107,7 @@
     <string name="notif_stop">Stop</string>
     <string name="session_followed">Followed</string>
     <string name="notif_resume">Resume</string>
+    <string name="notif_gone_text">Session closed. Tap Resume to reopen it.</string>
     <string name="notif_sent">sent</string>
     <string name="notif_confirmed">confirmed</string>
     <string name="notif_quota_body">Quota almost used up</string>

@@ -67,6 +67,7 @@
     <string name="outcome_read_all">Leggi tutto</string>
     <string name="terminal_loading">Chiedo al PC</string>
     <string name="terminal_refresh">Aggiorna</string>
+    <string name="terminal_lines">Righe del terminale</string>
     <string name="timeline_title">Timeline</string>
     <string name="timeline_all">Tutte le sessioni</string>
     <string name="timeline_empty">Nessun evento</string>
@@ -105,6 +106,7 @@
     <string name="notif_stop">Ferma</string>
     <string name="session_followed">Seguita</string>
     <string name="notif_resume">Riprendi</string>
+    <string name="notif_gone_text">Sessione chiusa. Per riaprirla tocca Riprendi.</string>
     <string name="notif_sent">inviato</string>
     <string name="notif_confirmed">confermato</string>
     <string name="notif_quota_body">Quota quasi esaurita</string>

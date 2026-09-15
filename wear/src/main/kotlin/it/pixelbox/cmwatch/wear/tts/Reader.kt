@@ -41,6 +41,16 @@ class Reader(private val app: CmApp) {
 
     fun toggleText(text: String) { if (busy) stop() else say(text) }
 
+    /**
+     * La Risposta a paragrafi (Franz, 15/09 17:19): `all` è il ▶ in testata, che parte dal primo o ferma; toccare un
+     * paragrafo legge da lì in avanti, ritoccare quello che sta leggendo ferma.
+     */
+    fun toggleBlocks(texts: List<String>, from: Int, all: Boolean) {
+        if (busy && (all || app.speaker.block.value == from)) { stop(); return }
+        val code = app.getString(R.string.tts_code)
+        app.speaker.speakBlocks(texts.map { SpeechText.chunks(SpeechText.clean(it, code)) }, from)
+    }
+
     fun stop() { job?.cancel(); job = null; _preparing.value = false; app.speaker.stop() }
 
     private fun say(text: String) =

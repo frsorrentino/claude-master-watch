@@ -34,6 +34,7 @@ class SpeakService : Service() {
             ACTION_STOP -> app.reader.stop()
             ACTION_LAST -> intent.getStringExtra(SESSION)?.let { app.reader.toggleLast(it, intent.getStringExtra(TEXT)) }
             ACTION_TEXT -> intent.getStringExtra(TEXT)?.let { app.reader.toggleText(it) }
+            ACTION_BLOCKS -> intent.getStringArrayListExtra(TEXTS)?.let { app.reader.toggleBlocks(it, intent.getIntExtra(BLOCK, 0), intent.getBooleanExtra(ALL, false)) }
         }
         watch?.cancel()
         if (!app.reader.busy) { finish(); return START_NOT_STICKY }
@@ -82,5 +83,17 @@ class SpeakService : Service() {
 
         fun last(ctx: Context, session: String, fallback: String?) = ContextCompat.startForegroundService(ctx, lastIntent(ctx, session, fallback))
         fun text(ctx: Context, text: String) = ContextCompat.startForegroundService(ctx, textIntent(ctx, text))
+
+        const val ACTION_BLOCKS = "it.pixelbox.cmwatch.speak.BLOCKS"
+        const val TEXTS = "texts"
+        const val BLOCK = "block"
+        const val ALL = "all"
+
+        /** I paragrafi della Risposta da `from` in avanti; `all` = il ▶ in testata. */
+        fun blocks(ctx: Context, texts: List<String>, from: Int, all: Boolean) = ContextCompat.startForegroundService(
+            ctx,
+            Intent(ctx, SpeakService::class.java).setAction(ACTION_BLOCKS)
+                .putStringArrayListExtra(TEXTS, ArrayList(texts)).putExtra(BLOCK, from).putExtra(ALL, all),
+        )
     }
 }

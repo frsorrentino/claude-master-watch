@@ -85,7 +85,7 @@ object SessionsText {
         val ferma = s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING
         if (!ferma || o == null) return Sheet(c.title, null, c.detail)
         val title = OutcomeText.headline(o)
-        val body = OutcomeText.body(o)
+        val body = OutcomeText.cardBody(o)
         val detail = c.detail?.takeUnless { d -> repeats(d, title) || repeats(d, body) || body?.contains(d.trim()) == true }
         return Sheet(title, body, detail)
     }

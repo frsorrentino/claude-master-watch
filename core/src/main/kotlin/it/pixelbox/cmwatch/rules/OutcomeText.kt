@@ -40,6 +40,24 @@ object OutcomeText {
         return resto.takeIf { it.isNotEmpty() && it != titolo }
     }
 
+    /**
+     * Il corpo della card nella Scheda. `full` è la coda del messaggio (contratto 1.6): quando è lunga quanto un taglio
+     * e comincia con la minuscola è partita a metà frase, e allora si parte dalla prima frase intera (Franz, 15/09 17:18,
+     * «di un'altra versione non blocca.» in cima alla card). Il messaggio intero sta nella Risposta.
+     */
+    fun cardBody(o: Outcome): String? {
+        val b = body(o) ?: return null
+        if (o.full.trim().length < CODA_MIN) return b
+        val primo = b.firstOrNull { it.isLetterOrDigit() } ?: return b
+        if (!primo.isLowerCase()) return b
+        val fine = FINE_FRASE.find(b) ?: return b
+        return b.substring(fine.range.last + 1).trim().ifEmpty { b }
+    }
+
+    /** Sotto questa lunghezza `full` non è stato tagliato: il PC taglia la coda a 600 o, sotto pressione, a 300. */
+    private const val CODA_MIN = 250
+    private val FINE_FRASE = Regex("[.!?…]\\s+|\\n")
+
     private fun riga(o: Outcome): String? =
         o.full.lines().mapNotNull { RIGA.find(it.trim())?.groupValues?.get(1)?.trim() }.lastOrNull { it.isNotEmpty() }
 }

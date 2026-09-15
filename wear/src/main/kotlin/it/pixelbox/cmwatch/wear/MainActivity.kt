@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.wear
 
 import it.pixelbox.cmwatch.rules.SpeechText
+import it.pixelbox.cmwatch.rules.AnswerText
 import it.pixelbox.cmwatch.wear.push.SpeakService
 import android.content.Intent
 import android.os.Bundle
@@ -247,13 +248,28 @@ class MainActivity : ComponentActivity() {
                 var text by remember { mutableStateOf<String?>(null) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var cmdId by remember { mutableStateOf<String?>(null) }
-                fun ask() { text = null; error = null; scope.launch { cmdId = app.repo.command(CmdOp.SCREEN, name, null) } }
+                var answer by remember { mutableStateOf<String?>(null) }
+                var lastId by remember { mutableStateOf<String?>(null) }
+                val fallback = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full
+                // Due richieste al PC: le righe del terminale e la risposta intera (contratto 1.4, `last`), che in cima si
+                // legge a paragrafi (Franz, 15/09 17:19). Se il PC tace per 5 s resta la coda che l'orologio ha già.
+                fun ask() {
+                    text = null; error = null; answer = null
+                    scope.launch { cmdId = app.repo.command(CmdOp.SCREEN, name, null); lastId = app.repo.command(CmdOp.LAST, name, null) }
+                }
                 LaunchedEffect(name) { ask() }
                 val results by app.repo.resultsById.collectAsStateWithLifecycle()
                 LaunchedEffect(cmdId, results) {
                     val r = cmdId?.let { results[it] } ?: return@LaunchedEffect
                     if (r.ok) text = r.text else error = r.text
                 }
+                LaunchedEffect(lastId, results) {
+                    val r = lastId?.let { results[it] } ?: return@LaunchedEffect
+                    answer = SpeechText.pick(r, fallback).orEmpty()
+                }
+                LaunchedEffect(lastId) { if (lastId != null) { kotlinx.coroutines.delay(5_000L); if (answer == null) answer = fallback.orEmpty() } }
+                val blocks = remember(answer) { answer?.let { AnswerText.blocks(it) } }
+                val block by app.speaker.block.collectAsStateWithLifecycle()
                 val failed = snapshot.pending.any { it.cmd.id == cmdId && it.status == PendingStatus.FAILED }
                 val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
                 val preparing by app.reader.preparing.collectAsStateWithLifecycle()
@@ -261,8 +277,16 @@ class MainActivity : ComponentActivity() {
                     name, text, loading = text == null && error == null && !failed,
                     error = error ?: if (failed) getString(R.string.question_not_delivered) else null,
                     onRefresh = { ask() },
+                    answer = blocks,
+                    current = if (speaking) block else null,
                     speaking = speaking || preparing,
-                    onSpeak = { t -> SpeakService.text(this@MainActivity, t) },
+                    // Il ▶ in testata legge la risposta a paragrafi; senza risposta, le ultime righe del terminale.
+                    onSpeakAll = {
+                        val b = blocks.orEmpty()
+                        if (b.isNotEmpty()) SpeakService.blocks(this@MainActivity, b.map { it.text }, 0, all = true)
+                        else text?.let { t -> SpeakService.text(this@MainActivity, SpeechText.terminal(t)) }
+                    },
+                    onBlock = { i -> blocks?.let { b -> SpeakService.blocks(this@MainActivity, b.map { it.text }, i, all = false) } },
                 )
             }
             composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
