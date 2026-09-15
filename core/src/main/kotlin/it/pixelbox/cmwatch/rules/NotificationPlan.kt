@@ -20,6 +20,8 @@ object NotificationPlan {
     data class Labels(
         val open: String, val reply: String, val retry: String, val read: String, val stop: String, val write: String, val resume: String,
         val sent: String, val confirmed: String, val notDelivered: String, val sessions: String,
+        /** «Sessione chiusa. Per riaprirla tocca Riprendi.»: la notifica di chiusura lo dice a parole (Franz, 15/09 17:27). */
+        val goneText: String = "",
     )
 
     sealed class Act {
@@ -85,7 +87,8 @@ object NotificationPlan {
     }
 
     fun gone(name: String, account: String?, l: Labels): Plan = Plan(
-        session = name, title = "✗ $name", person = null, messages = emptyList(), bigText = null,
+        session = name, title = "✗ $name", person = null,
+        messages = listOfNotNull(l.goneText.ifEmpty { null }), bigText = l.goneText.ifEmpty { null },
         actions = listOf(Act.Resume), choices = emptyList(), freeForm = false, channel = CH_GONE,
         whenS = null, chronometer = false, subText = account, autoCancel = true, timeoutMs = null, progress = null, accent = SessionState.GONE,
     )

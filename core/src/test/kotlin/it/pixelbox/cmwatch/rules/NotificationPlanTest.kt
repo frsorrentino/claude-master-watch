@@ -56,6 +56,10 @@ class NotificationPlanTest {
         assertEquals(listOf(Act.Read, Act.Write, Act.Open), o.actions); assertTrue(o.autoCancel); assertEquals(12 * 3600_000L, o.timeoutMs)
         val g = NotificationPlan.gone("orbit-docs", "agenzia", l)
         assertEquals("✗ orbit-docs", g.title); assertEquals(listOf(Act.Resume), g.actions)
+        // Franz, 15/09 17:27: la chiusura detta a parole, con l'azione per riaprirla.
+        val detta = NotificationPlan.gone("orbit-docs", "agenzia", l.copy(goneText = "Sessione chiusa. Per riaprirla tocca Riprendi."))
+        assertEquals(listOf("Sessione chiusa. Per riaprirla tocca Riprendi."), detta.messages)
+        assertEquals("Sessione chiusa. Per riaprirla tocca Riprendi.", detta.bigText)
         val q = NotificationPlan.quota("personale", QuotaAccount(h5 = 95, w7 = 40, resetW7 = 1789610400), l)
         assertEquals("⚠ 95 % personale", q.title); assertEquals(95, q.progress); assertEquals(NotificationPlan.CH_QUOTA, q.channel)
     }

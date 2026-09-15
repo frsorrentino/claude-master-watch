@@ -68,7 +68,7 @@ class Notifier(private val ctx: Context) {
         open = ctx.getString(R.string.notif_open), reply = ctx.getString(R.string.notif_reply), retry = ctx.getString(R.string.question_retry),
         read = ctx.getString(R.string.notif_read), stop = ctx.getString(R.string.notif_stop), write = ctx.getString(R.string.card_write), resume = ctx.getString(R.string.notif_resume),
         sent = ctx.getString(R.string.notif_sent), confirmed = ctx.getString(R.string.notif_confirmed), notDelivered = ctx.getString(R.string.question_not_delivered),
-        sessions = ctx.getString(R.string.sessions_label),
+        sessions = ctx.getString(R.string.sessions_label), goneText = ctx.getString(R.string.notif_gone_text),
     )
 
     fun ensureChannels() {
@@ -218,7 +218,9 @@ class Notifier(private val ctx: Context) {
 
     fun gone(name: String, account: String?) {
         val plan = NotificationPlan.gone(name, account, labels)
-        post(id(name), base(plan).setContentIntent(open("cmwatch://sessions", id(name)))
+        // Oltre al titolo «✗ nome», la chiusura detta a parole con l'azione per riaprirla (Franz, 15/09 17:27).
+        post(id(name), base(plan).setContentText(plan.bigText).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
+            .setContentIntent(open("cmwatch://sessions", id(name)))
             .addAction(R.drawable.ic_play, labels.resume, broadcast(ReplyReceiver.ACTION_RESUME, name, id(name) * 10 + 5)))
     }
 
