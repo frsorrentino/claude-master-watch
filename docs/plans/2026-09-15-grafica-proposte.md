@@ -124,3 +124,77 @@ Stesso metodo: API cercate nelle librerie in cache o nelle note ufficiali; dove 
 
 Priorità suggerita: 17, 19, 21, 26, 25 (valore alto, rischio basso), poi 28 e 29 (nuove superfici), il resto a
 piacere. Colore dinamico (15) e Wear Widget (14) restano nel terzo gruppo.
+
+## Terzo giro: Scheda e Quota con grafici (Franz, 16/09 00:14)
+
+Dati verificati: il contratto non porta il contesto della sessione (niente in `Session`, niente in `cm-relay.py`); la
+quota per account sì; gli eventi (`/events`, 7 giorni) sono già salvati sull'orologio. Nella Quota l'ultima card è
+«Aggiornato» (`BriefCards`, glifo SYNC): ora e nome della macchina, sempre uguali. In questa sessione non avevo scritto
+idee per sostituirla: quelle qui sotto sono nuove.
+
+Da Google Health (maggio 2026, fonti: blog Google, the5krunner) si prende quello che le fonti mostrano: anelli di
+avanzamento verso un obiettivo **settimanale** (il cardio load ha sostituito il traguardo giornaliero), card rettangolari
+arrotondate, grafici del sonno puliti a bande. Si evita quello che le stesse fonti criticano: muri di testo, anelli
+sbilanciati accanto ai rettangoli, grafici sfocati.
+
+32. **Scheda: riquadro «Quota e contesto».** In fondo alla Scheda una card brief: anello del contesto della sessione
+    («62 %», ambra oltre il 75 %, rosso oltre il 90 %) e le due pillole della quota del suo account («5h 13 %»,
+    «7d 36 %»). La quota c'è già; il contesto richiede una richiesta a claude-master (contratto 1.11, campo `context` in
+    percentuale, dal consumo di token della trascrizione).
+33. **Quota, al posto di «Aggiornato» — «Ritmo della finestra».** Linea della quota di 5 ore dall'inizio della finestra a
+    ora, e tratteggiata la proiezione fino al reset: «a questo ritmo 64 % alle 16:00». Il numero grande è la proiezione.
+    Serve la storia della quota, che l'orologio può registrare da sé a ogni stato ricevuto (Room), senza contratto.
+34. **Quota, alternativa — «Oggi».** Barre per ora della giornata: quante sessioni hanno lavorato in ogni ora, dagli
+    eventi già salvati (lanci, esiti, domande). Si legge come le barre dei passi.
+35. **Quota, alternativa — «Settimana».** Sette barre del consumo settimanale giorno per giorno con la linea del limite,
+    come l'obiettivo settimanale di Google Health. Stessa storia registrata dall'orologio.
+36. **Ora e macchina** non spariscono: diventano una riga piccola in fondo alla pagina («aggiornato ora · penguin»),
+    grigia; in rosso solo se il dato è vecchio.
+37. **Scheda: la giornata della sessione.** Una banda orizzontale divisa per stato nelle ultime ore (blu lavora, ambra
+    aspetta, verde ferma), disegnata come le fasi del sonno, dagli eventi della sessione.
+
+Consiglio: 33 al posto di «Aggiornato» (è l'unico dato che la pagina oggi non dà e che cambia una decisione: fermarsi o
+no), più la riga 36; 32 con la richiesta di contratto; 34, 35 e 37 dopo, se 33 funziona.
+
+## Quarto giro: idee dalle app Google e Apple (Franz, 16/09 00:17)
+
+Fonti: articoli su Messages, Calendar, Keep, Gmail, Weather, Maps, Home, YouTube Music e Gemini per Wear OS con M3
+Expressive (Android Authority, 9to5Google, Android Police), watchOS 26 (Apple Newsroom, MacRumors, MacStories), linee
+guida Apple per Watch. Si prende l'idea, non il marchio; dove l'API per un'app di terze parti non è verificata, è scritto.
+
+### Da Google
+
+38. **Messages → il filo del tuo testo nel colore della sessione.** Messages tinge appena le bolle; noi, senza bolle,
+    tingiamo il filo accanto alle tue righe del Terminale con il colore del badge della sessione invece del blu fisso:
+    si riconosce di chi è il terminale anche senza leggere il nome.
+39. **Messages / Maps → tasti con icona e testo.** Le azioni della Scheda (Scrivi, Terminale, Riprendi) con l'icona
+    accanto alla parola, come le opzioni delle liste di Messages e i moduli di Maps.
+40. **Keep → due tasti grandi affiancati nella tile.** Quando una sessione aspetta, la tile mostra «1 · sì» e «2 · no»
+    (o «Rispondi» / «Apri») come i due tasti grandi della tile «Crea nota» di Keep; con più di due opzioni resta «Rispondi».
+41. **Weather → più tile, una per compito.** Come le tre tile del Meteo: tile «Domanda» (solo quando c'è), tile «Quota»
+    (anelli e reset), tile «Sessioni» (quella di oggi). Ognuno mette nel carosello quelle che vuole.
+42. **Maps → moduli colorati per le cose frequenti.** In Avvia, i progetti usati più spesso in cima come moduli
+    colorati con il badge, il resto in lista; nel Menu le voci come moduli, non come righe uguali.
+43. **Home → complicazione per una sessione.** Come Home ha la complicazione del singolo dispositivo: una complicazione
+    con lo stato della sessione seguita (badge e età), che apre la sua Scheda.
+44. **Gemini → il bagliore in basso.** Gemini accende una piccola luce in fondo al quadrante quando ascolta e la allarga
+    quando capisce che parli. Da noi: un bagliore sottile al bordo inferiore della Scheda mentre la sessione lavora, che
+    si allarga per un attimo quando arriva l'esito. Solo in app, spento in ambient.
+45. **YouTube Music → forme espressive.** Il tasto «Sfoglia» a forma di nuvola: M3 Expressive ha forme oltre a tondo e
+    quadrato. Proposta prudente: solo per il tasto di bordo del Menu, non per i badge (tondo e quadrato dicono l'account).
+
+### Da Apple
+
+46. **Anelli concentrici (Attività).** Per ogni account un solo gauge con due anelli: fuori le 5 ore, dentro la
+    settimana. Più compatto delle due righe di oggi, riconoscibile al volo; lo stesso disegno può diventare una
+    complicazione. È l'idea Apple più pertinente.
+47. **Smart Stack → il suggerimento che si apre.** In cima alla lista, quando serve, una card «suggerimento»
+    («ledger-api aspetta da 5 min») che scorrendo si apre nella domanda intera, come i suggerimenti di watchOS 26.
+48. **Glanceable, regola di Apple.** Un giro su ogni schermata: la prima vista risponde a «chi ha bisogno di me» in due
+    secondi. Candidati: Quota (oggi il numero grande è la percentuale, non «quando riparte»), Timeline, Impostazioni.
+49. **Non pertinenti:** Liquid Glass (la trasparenza su sfondo nero OLED non mostra nulla e costa batteria; al massimo un
+    filo di luce sul bordo alto delle card, da provare); il gesto del polso di watchOS (su Wear OS non c'è un'API
+    pubblica equivalente per le app, da verificare); le Live Activities sono le nostre Live Updates (29).
+
+Consiglio: 46 (anelli concentrici, anche come complicazione), 40 (sì/no nella tile), 38 (filo nel colore della
+sessione), 44 (bagliore mentre lavora); poi 41 e 43 come nuove superfici.

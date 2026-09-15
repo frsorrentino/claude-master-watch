@@ -35,3 +35,21 @@ correzione di `setup-android` (il pacchetto «tools» sparito dall'SDK rompeva o
 | T4 | Sceso in fondo, la vista segue le righe nuove; risalito, resta dov'è | scroll durante T3 | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
 | T5 | A fine turno la Risposta in cima si aggiorna da sola | T3 fino allo stop della sessione | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
 | T6 | Niente tasto Aggiorna; ▶ accanto al nome, che non va a capo; la prosa va a capo dove va a capo il polso | Terminale | ✅ 15/09 23:25, build `3a356a5`, confermato da Franz («per il resto tutto ok») |
+
+## Grafica e movimento, primo giro (proposte A1-A7, B8-B11, `docs/plans/2026-09-15-grafica-proposte.md`)
+
+Build `7898035`, installata il 16/09 alle 00:07:35. Da provare con «riduci animazioni» spento e poi acceso.
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| G1 | ▶ si schiaccia al tocco e in lettura diventa un quadrato chiaro con ■ | Domanda o Terminale, ▶ | |
+| G2 | Il nome resta su una riga accanto a ▶ («ledger-api», «atlas-shop»), più piccolo se serve | Domanda, Scheda, Terminale | |
+| G3 | Nel Terminale dal vivo i blocchi nuovi entrano in dissolvenza, i vecchi restano fermi; l'ora del divisore sfuma | Terminale aperto su una sessione che lavora | |
+| G4 | Il paragrafo letto si accende piano | Terminale, ▶ sulla Risposta | |
+| G5 | Nella lista le card scivolano al loro posto quando cambia l'ordine; il badge sfuma da ▶ a ✓ o ❓ | lista, una sessione che finisce o fa una domanda | |
+| G6 | Dopo una risposta o un prompt: spunta «Fatto» (o croce «Non riuscito») e vibrazione; nessuna vibrazione a Terminale aperto | rispondere a una domanda; Terminale aperto 30 s | |
+| G7 | Grigio secondario più leggibile (età, dettagli, Timeline) | lista, Timeline | |
+| G8 | Al posto di «Chiedo al PC» tre righe che luccicano | aprire il Terminale | |
+| G9 | Gli archi della Quota si riempiono con una molla; con il dato vecchio si spengono piano | Quota | |
+| G10 | Accanto all'ora «❓ n» in ambra quando qualcuno aspetta | qualsiasi schermata dell'app con una domanda aperta | |
+| G11 | Nella tile la barra della quota cresce da sinistra quando la tile si carica | scorrere fino alla tile | |
