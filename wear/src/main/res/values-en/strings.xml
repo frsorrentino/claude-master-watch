@@ -157,4 +157,7 @@
     <string name="tile_title_count">%1$d sessions</string>
     <string name="tile_edge_questions">%1$d questions</string>
     <string name="tile_edge_active">%1$d active</string>
+    <!-- Animated confirmation after an action (A6, 15/09) -->
+    <string name="confirm_done">Done</string>
+    <string name="confirm_failed">Failed</string>
 </resources>

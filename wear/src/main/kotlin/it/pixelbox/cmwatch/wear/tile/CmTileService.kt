@@ -299,23 +299,35 @@ open class CmTileService : TileService() {
     private fun MaterialScope.bar(pct: Int?): LayoutElement {
         val spec = QuotaBar.of(pct)
         val row = LayoutElementBuilders.Row.Builder().setWidth(expand()).setHeight(dp(BAR_H))
-        if (spec.fill > 0) row.addContent(pill(weight(spec.fill.toFloat()), colorScheme.primary))
+        // La parte piena cresce da sinistra quando la tile si carica (B11, Franz 15/09 23:40): scala orizzontale da 0 a 1
+        // con un'animazione di ProtoLayout, una volta, niente loop. Il disegno della barra non cambia.
+        if (spec.fill > 0) row.addContent(pill(weight(spec.fill.toFloat()), colorScheme.primary, grow = true))
         if (spec.gap) row.addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(4f)).build())
         if (spec.track > 0) row.addContent(pill(weight(spec.track.toFloat()), TRACK.argb))
         return row.build()
     }
 
-    private fun pill(width: DimensionBuilders.ExpandedDimensionProp, color: LayoutColor): LayoutElement =
-        LayoutElementBuilders.Box.Builder()
-            .setWidth(width).setHeight(dp(BAR_H))
-            .setModifiers(
-                ModifiersBuilders.Modifiers.Builder().setBackground(
-                    ModifiersBuilders.Background.Builder()
-                        .setColor(color.prop)
-                        .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(BAR_H / 2f)).build())
+    /** `grow`: la trasformazione sta sulla pillola stessa, non su un Box intorno, che romperebbe i pesi della riga. */
+    private fun pill(width: DimensionBuilders.ExpandedDimensionProp, color: LayoutColor, grow: Boolean = false): LayoutElement {
+        val mods = ModifiersBuilders.Modifiers.Builder().setBackground(
+            ModifiersBuilders.Background.Builder()
+                .setColor(color.prop)
+                .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(BAR_H / 2f)).build())
+                .build()
+        )
+        // Scala orizzontale da 0 a 1 attorno al bordo sinistro; un renderer senza espressioni dinamiche resta a 1 (piena).
+        if (grow) mods.setTransformation(
+            ModifiersBuilders.Transformation.Builder()
+                .setScaleX(
+                    androidx.wear.protolayout.TypeBuilders.FloatProp.Builder(1f)
+                        .setDynamicValue(androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat.animate(0f, 1f))
                         .build()
-                ).build()
-            ).build()
+                )
+                .setPivotX(DimensionBuilders.BoundingBoxRatio.Builder(androidx.wear.protolayout.TypeBuilders.FloatProp.Builder(0f).build()).build())
+                .build()
+        )
+        return LayoutElementBuilders.Box.Builder().setWidth(width).setHeight(dp(BAR_H)).setModifiers(mods.build()).build()
+    }
 
     private fun MaterialScope.emptyCard(): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://sessions"), id = "empty"),

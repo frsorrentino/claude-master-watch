@@ -41,7 +41,8 @@ fun SessionHeader(
                 // Il nome va a capo invece di scorrere (S07): lo scorrimento fermo a metà lasciava una «h» isolata.
                 // …e va a capo dopo un trattino, non a metà parola («claude-master-w / atch», Franz 15/09 10:56).
                 // Tre righe: «francescosorrentino-com-2» accanto al ▶ ne prendeva due e perdeva la coda (Franz, 15/09 19:01).
-                Text(TileTexts.breakable(s.name), style = MonoStyle, color = CmColors.text, maxLines = 3)
+                // Prima rimpicciolisce fino a 11 sp per stare su una riga, poi va a capo (proposta A2, 15/09 23:40).
+                FitName(s.name, style = MonoStyle, color = CmColors.text, maxLines = 3)
                 // La campanella gialla accanto all'età quando la sessione è seguita: l'interruttore non c'è più (15/09 19:04).
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)

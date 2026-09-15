@@ -64,7 +64,8 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
                 val s = sessions[i]
                 SessionRow(
                     s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec),
-                    modifier = Modifier.transformedHeight(this, spec), siblings = names, ambient = ambient,
+                    // Quando una sessione sale per una domanda o scende a fine lavoro, la card scivola al suo posto (A5, 15/09).
+                    modifier = Modifier.transformedHeight(this, spec).animateItem(), siblings = names, ambient = ambient,
                     marquee = canScroll && center == firstRow + i, tools = tools,
                     onReopen = if (s.state == it.pixelbox.cmwatch.contract.SessionState.GONE) ({ onReopen(s.name) }) else null,
                     reopen = reopenStatus(s.name),

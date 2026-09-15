@@ -20,7 +20,9 @@ object CmColors {
     val surfaceHigh = Color(0xFF292F3A)   // card in stile brief, misurata sui suoi fotogrammi
     val line = Color(0xFF2A2E35)
     val text = Color(0xFFF2F4F7)
-    val text2 = Color(0xFF9AA3B2)
+    // Più chiaro (proposta A7, Franz 15/09 23:28: «un testo che contrasti di più»): da #9AA3B2 a 10:1 sul nero, sempre
+    // sotto il bianco del testo principale e sotto `briefSecondary`, così la gerarchia resta.
+    val text2 = Color(0xFFB0B8C4)
     val accent = Color(0xFF4C7DFF)
     val accentPressed = Color(0xFF3457D5)
     // Azzurro pastello delle icone delle azioni (proposta del 14/09, confermata da Franz il 15/09 10:42): il cobalto

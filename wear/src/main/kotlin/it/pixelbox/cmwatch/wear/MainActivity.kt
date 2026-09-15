@@ -61,6 +61,8 @@ import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
 import it.pixelbox.cmwatch.rules.TerminalLive
+import it.pixelbox.cmwatch.wear.ui.components.CmTimeText
+import androidx.wear.compose.material3.confirmationDialogCurvedText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -90,7 +92,13 @@ class MainActivity : ComponentActivity() {
             // in onCreate, non riceveva eventi e Wear OS si limitava a scurire l'app («not eligible for ambient lite»).
             val ambientManager = rememberAmbientModeManager()
             androidx.compose.runtime.CompositionLocalProvider(LocalAmbient provides (ambientManager.currentAmbientMode is AmbientMode.Ambient)) {
-                CmTheme { AppScaffold(timeText = { TimeText() }) { App(app) } }
+                CmTheme {
+                    AppScaffold(timeText = {
+                        // Accanto all'ora, curvo, quante sessioni aspettano una risposta (B10, 15/09 23:40).
+                        val snap by app.repo.snapshot.collectAsStateWithLifecycle()
+                        CmTimeText(waiting = if (snap.freshness is Freshness.Fresh) snap.state?.sessions?.count { it.question != null } ?: 0 else 0)
+                    }) { App(app) }
+                }
             }
         }
     }
@@ -186,9 +194,25 @@ class MainActivity : ComponentActivity() {
             val fx = settings?.demoFixture ?: return@LaunchedEffect
             (app.transport.active as? FakeTransport)?.useFixture(fx)
         }
+        // Conferma animata delle azioni dell'utente (A6, 15/09 23:40): quando il PC risponde, la spunta che si disegna o la
+        // croce, insieme alla vibrazione. Solo le azioni dell'utente: le catture del Terminale dal vivo vibravano a ogni giro.
+        var conferma by remember { mutableStateOf<Boolean?>(null) }
         LaunchedEffect(Unit) {
-            app.repo.results.collect { r -> Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR) }
+            app.repo.userResults.collect { r ->
+                Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR)
+                conferma = r.ok
+            }
         }
+        // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
+        val curvo = androidx.wear.compose.material3.ConfirmationDialogDefaults.curvedTextStyle
+        androidx.wear.compose.material3.SuccessConfirmationDialog(
+            visible = conferma == true, onDismissRequest = { conferma = null },
+            curvedText = { confirmationDialogCurvedText(getString(R.string.confirm_done), curvo) },
+        )
+        androidx.wear.compose.material3.FailureConfirmationDialog(
+            visible = conferma == false, onDismissRequest = { conferma = null },
+            curvedText = { confirmationDialogCurvedText(getString(R.string.confirm_failed), curvo) },
+        )
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 

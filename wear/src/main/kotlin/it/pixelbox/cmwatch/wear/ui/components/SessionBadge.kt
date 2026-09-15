@@ -1,5 +1,13 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -50,7 +58,16 @@ fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier, am
         personal = stringResource(R.string.badge_personal), work = stringResource(R.string.badge_work),
     )
     val description = Badge.description(s.account, s.accountKind, s.state, labels)
-    Canvas(modifier.size(size).semantics { contentDescription = description }) { drawBadge(spec, this.size.minDimension, alpha = alpha, outline = ambient) }
+    // Il cambio di stato (▶ → ✓, ✓ → ❓) passa con dissolvenza e scala invece di scattare (A5, 15/09 23:40); in ambient no.
+    AnimatedContent(
+        targetState = spec,
+        transitionSpec = {
+            if (ambient) EnterTransition.None togetherWith ExitTransition.None
+            else (fadeIn() + scaleIn(initialScale = 0.6f)) togetherWith (fadeOut() + scaleOut(targetScale = 0.6f))
+        },
+        modifier = modifier.size(size).semantics { contentDescription = description },
+        label = "stato",
+    ) { sp -> Canvas(Modifier.size(size)) { drawBadge(sp, this.size.minDimension, alpha = alpha, outline = ambient) } }
 }
 
 fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float = 1f, outline: Boolean = false) {

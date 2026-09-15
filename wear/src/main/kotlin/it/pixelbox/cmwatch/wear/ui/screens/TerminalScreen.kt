@@ -1,9 +1,21 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.wear.compose.material3.placeholder
+import androidx.wear.compose.material3.placeholderShimmer
+import androidx.wear.compose.material3.rememberPlaceholderState
+import it.pixelbox.cmwatch.wear.ui.components.FitName
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -103,12 +115,12 @@ fun TerminalScreen(
             item {
                 // Niente più Aggiorna (Franz, 15/09 22:54): il Terminale si aggiorna da solo. Resta ▶ accanto al nome.
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
-                    Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
+                    FitName(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
                     if (!answer.isNullOrEmpty() || text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
                 }
             }
             if (answer == null) {
-                item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
+                item { LoadingLines(stringResource(R.string.terminal_loading), Modifier.morph(this, spec)) }
                 return@TransformingLazyColumn
             }
             // Toccare un paragrafo lo legge da lì in avanti; quello letto ha il fondo acceso.
@@ -116,15 +128,20 @@ fun TerminalScreen(
                 item { AnswerBlock(b, active = current == i, onClick = { onBlock(i) }, modifier = Modifier.morph(this, spec)) }
             }
             when {
-                loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
+                loading -> item { LoadingLines(stringResource(R.string.terminal_loading), Modifier.morph(this, spec)) }
                 error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier.morph(this, spec)) }
                 text != null -> {
                     item { TerminalDivider(capturedAt, Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp).morph(this, spec)) }
                     // Niente scorrimento orizzontale: intercettava lo swipe di ritorno (Franz, 12/09 16:17). Le righe lunghe
                     // vanno a capo. Lo stacco fra chi parla è uno spazio di 8 dp, mai una riga vuota.
+                    // Chiave presa dal contenuto (A3, 15/09 23:40): a ogni cattura dal vivo i blocchi già visti restano fermi
+                    // e solo quelli nuovi entrano, con dissolvenza e allungamento, invece di ridisegnare tutto.
+                    val volte = HashMap<String, Int>()
                     blocks.forEachIndexed { i, b ->
                         val top = if (i > 0 && (b.kind == TerminalText.Kind.USER || b.kind == TerminalText.Kind.CLAUDE)) 8.dp else 0.dp
-                        item { TerminalBlock(b, Modifier.fillMaxWidth().padding(top = top).morph(this, spec)) }
+                        val base = "${b.kind}:${b.text.hashCode()}"
+                        val n = volte.merge(base, 1, Int::plus) ?: 1
+                        item(key = "$base#$n") { TerminalBlock(b, Modifier.fillMaxWidth().padding(top = top).morph(this, spec).animateItem()) }
                     }
                 }
             }
@@ -134,6 +151,21 @@ fun TerminalScreen(
 
 private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
 
+/**
+ * Mentre il PC risponde (B8, 15/09 23:40): tre righe con la sagoma del testo che luccicano, al posto di «Chiedo al PC».
+ * La frase resta, detta a TalkBack.
+ */
+@Composable
+private fun LoadingLines(label: String, modifier: Modifier = Modifier) {
+    val state = rememberPlaceholderState(isVisible = true)
+    Column(modifier.fillMaxWidth().padding(vertical = 6.dp).semantics { contentDescription = label }) {
+        listOf(1f, 0.85f, 0.6f).forEach { w ->
+            Box(Modifier.fillMaxWidth(w).height(14.dp).placeholderShimmer(state).placeholder(state))
+            Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
 /** Filo · «Terminale · 21:18» · filo: separa la risposta dalle righe e dice quanto è fresca la cattura. */
 @Composable
 private fun TerminalDivider(capturedAt: Long?, modifier: Modifier = Modifier) {
@@ -141,7 +173,10 @@ private fun TerminalDivider(capturedAt: Long?, modifier: Modifier = Modifier) {
         ?: stringResource(R.string.card_terminal)
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefTrack))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 8.dp))
+        // L'ora nuova entra in dissolvenza a ogni cattura dal vivo (A3, 15/09 23:40): si nota che è cambiata, senza scatti.
+        AnimatedContent(targetState = label, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "ora") {
+            Text(it, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 8.dp))
+        }
         Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefTrack))
     }
 }
@@ -175,9 +210,11 @@ private val AnswerLine = 23.sp
 @Composable
 private fun AnswerBlock(b: AnswerText.Block, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val style = MaterialTheme.typography.bodyLarge.copy(fontSize = AnswerSize, lineHeight = AnswerLine)
+    // Il paragrafo letto si accende piano invece di scattare (proposta A4, 15/09 23:40), con il tempo del motion scheme.
+    val fondo by animateColorAsState(if (active) CmColors.surfaceHigh else Color.Transparent, MaterialTheme.motionScheme.defaultEffectsSpec(), label = "paragrafo")
     Box(
         modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp))
-            .background(if (active) CmColors.surfaceHigh else Color.Transparent)
+            .background(fondo)
             .clickable(onClick = onClick).padding(horizontal = 6.dp, vertical = 4.dp),
     ) {
         when (b.kind) {

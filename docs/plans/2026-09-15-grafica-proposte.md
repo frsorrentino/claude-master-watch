@@ -73,3 +73,54 @@ già c'è.
 
 Ogni proposta approvata: snapshot Paparazzi prima e dopo (in CI), prova al polso con «riduci animazioni» acceso e spento,
 riga nella checklist `docs/verifiche/`. Le animazioni si giudicano solo sul polso: gli snapshot mostrano lo stato finale.
+
+## Stato del primo giro (Franz, 15/09 23:40: «A e B approvate»)
+
+A1-A7 e B8-B11 in lavorazione. B12 non serve: la `TransformingLazyColumn` e lo `ScreenScaffold` della 1.6.2 chiamano già
+`rememberOverscrollEffect` di default (controllato nel bytecode), l'effetto elastico c'è. Trovato lungo la strada: ogni
+risultato di comando faceva vibrare, anche le catture del Terminale dal vivo ogni 3 s; ora vibrano solo le azioni
+dell'utente (`Repo.userResults`, senza `screen` e `last`).
+
+## Secondo giro (15/09 23:50)
+
+Stesso metodo: API cercate nelle librerie in cache o nelle note ufficiali; dove non è verificato, è scritto.
+
+### D. Movimento e dettaglio
+
+17. **Corona che scatta.** La corona del Pixel Watch muove la Domanda un'opzione per volta, con lo scatto aptico del
+    sistema (`RotaryScrollableDefaults.snapBehavior` sulla lista), e le altre liste con il tic aptico a ogni voce.
+18. **Domanda sì/no come coppia.** Con due sole opzioni, i due tasti affiancati in un `ButtonGroup`: quello premuto si
+    allarga e l'altro si stringe, come il tastierino di Wear OS 6. Con tre o più opzioni resta la colonna.
+19. **Numeri che rotolano.** Percentuali della quota, età («5 m» → «6 m»), contatori della tile nell'app: la cifra nuova
+    scorre dall'alto (`AnimatedContent` per cifra), invece di sostituirsi.
+20. **La domanda importante si fa notare una volta.** Il bordo rosso delle domande HIGH fa un solo respiro all'arrivo,
+    poi resta fermo (come il gauge al 100 %).
+21. **Lettura con la barra.** Mentre la voce legge, una sottile `LinearProgressIndicator` sotto ▶ dice a che punto della
+    risposta è; toccare un paragrafo la fa saltare.
+22. **Recap che si scrive.** Il recap delle 20:00 entra riga per riga (`FadingExpandingLabel` / `AnimatedText`, che
+    rispettano «riduci animazioni»).
+23. **Ambient curato.** Un giro su ogni schermata in ambient con `LocalAmbientModeManager` (Wear Compose 1.6): solo
+    contorni, niente riempimenti grandi, testo secondario spento, badge senza respiro; oggi lo fa solo il badge.
+24. **Avvio dell'app.** Icona animata nella splash (SplashScreen con vettore animato, 500 ms) invece del lampo nero.
+
+### E. Funzioni della piattaforma che non usiamo ancora
+
+25. **Scorrere fra le sessioni.** Dalla Scheda, swipe orizzontale alla sessione successiva (`HorizontalPagerScaffold` con
+    indicatore di pagina e `AnimatedPage`), senza tornare alla lista. Lo swipe da sinistra resta «indietro».
+26. **Azioni sotto il dito.** Sulla riga della lista, trascinando a sinistra appaiono «Segui» e «Chiudi»
+    (`SwipeToReveal`, con zona di bordo che non litiga con lo swipe di ritorno); oggi Segui è solo la pressione lunga, che
+    non si scopre.
+27. **Impostazioni con i controlli di Wear.** Soglia di lettura con `Slider` a gradini o `Stepper`, voce con `Picker`,
+    al posto delle righe da toccare più volte.
+28. **Complicazione a segmenti.** Nuovo tipo `WEIGHTED_ELEMENTS`: un anello diviso per stato delle sessioni (ambra chi
+    aspetta, blu chi lavora, verde chi ha finito), oppure la quota come `RANGED_VALUE` con la rampa di colore
+    verde → ambra → rosso. Il quadrante sceglie quale mostrare.
+29. **Live Updates per la sessione seguita** (Wear OS 7, sostituiscono le Ongoing Activity): stato e tempo del turno sul
+    quadrante e nel launcher; con la `ProgressStyle` di Android 16 i segmenti del turno (da verificare sul Pixel Watch 5).
+30. **Tile con piccola animazione Lottie** (ProtoLayout 1.3+): il badge di chi aspetta che pulsa una volta quando la tile
+    diventa visibile; arco della quota con gradiente a spazzata.
+31. **Aptica più parlante.** Vibrazioni diverse per domanda, esito, errore e conferma con le primitive del sistema
+    (`HapticFeedbackConstants.CONFIRM` / `REJECT`, trame composte), provate una per una al polso.
+
+Priorità suggerita: 17, 19, 21, 26, 25 (valore alto, rischio basso), poi 28 e 29 (nuove superfici), il resto a
+piacere. Colore dinamico (15) e Wear Widget (14) restano nel terzo gruppo.

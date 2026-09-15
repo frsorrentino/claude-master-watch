@@ -1,6 +1,9 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.getValue
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -46,10 +49,14 @@ fun Gauge(
 ) {
     val target = progress.coerceIn(0f, 1f)
     val shown = remember { Animatable(if (animate) 0f else target) }
+    // L'arco si riempie con la molla lenta del motion scheme di M3 Expressive, non con una curva fissa (B9, 15/09 23:40).
+    val fill = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
     LaunchedEffect(target, animate) {
-        if (animate) shown.animateTo(target, tween(durationMillis = 700, easing = FastOutSlowInEasing))
+        if (animate) shown.animateTo(target, fill)
         else shown.snapTo(target)
     }
+    // Il dato vecchio si spegne piano: l'arco e l'icona scendono a metà luce invece di cambiare colore di colpo.
+    val light by animateFloatAsState(if (tone == BriefCards.Tone.STALE) 0.5f else 1f, MaterialTheme.motionScheme.slowEffectsSpec(), label = "luce")
     val full = target >= 1f
     val pulse = remember { Animatable(1f) }
     LaunchedEffect(full, animate) {
@@ -72,14 +79,14 @@ fun Gauge(
             endAngle = END,
             strokeWidth = 8.dp,
             colors = ProgressIndicatorDefaults.colors(
-                indicatorColor = ink.copy(alpha = pulse.value),
+                indicatorColor = ink.copy(alpha = pulse.value * light),
                 trackColor = CmColors.briefTrack,
             ),
         )
         Icon(
             imageVector = vector(glyph),
             contentDescription = null,
-            tint = ink,
+            tint = ink.copy(alpha = light),
             modifier = Modifier.size(size * 0.38f).graphicsLayer {
                 val s = 1f + (1f - pulse.value) * 0.18f
                 scaleX = s; scaleY = s

@@ -45,6 +45,12 @@ class Repo(
     private val _resultsById = MutableStateFlow<Map<String, CmdResult>>(emptyMap())
     /** Gli ultimi risultati per id: per chi si iscrive dopo l'arrivo (es. il Terminale). */
     val resultsById: StateFlow<Map<String, CmdResult>> = _resultsById
+    private val _userResults = MutableSharedFlow<CmdResult>(extraBufferCapacity = 16)
+    /**
+     * Solo i risultati delle azioni dell'utente (risposte, prompt, lanci, riaperture): per vibrazione e conferma. Le
+     * catture che il Terminale chiede da solo ogni pochi secondi (`screen`, `last`) restano fuori (15/09 23:45).
+     */
+    val userResults: SharedFlow<CmdResult> = _userResults
     private val _notices = MutableSharedFlow<Notice>(extraBufferCapacity = 16)
     val notices: SharedFlow<Notice> = _notices
     private val jobs = HashMap<String, Job>()
@@ -140,6 +146,7 @@ class Repo(
                 _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id }) }
                 _resultsById.update { m -> (m + (r.id to r)).entries.toList().takeLast(MAX_RESULTS).associate { e -> e.key to e.value } }
                 _results.emit(r)
+                if (cmd.op != CmdOp.SCREEN && cmd.op != CmdOp.LAST) _userResults.emit(r)
             }
         }
     }

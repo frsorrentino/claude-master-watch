@@ -91,6 +91,19 @@ class RepoTest {
         assertEquals(got[0], repo.resultsById.value[id])            // leggibile anche da chi si iscrive dopo
     }
 
+    // Il Terminale dal vivo chiede `screen` e `last` ogni pochi secondi: i loro risultati non sono azioni dell'utente e
+    // non devono vibrare né mostrare la conferma (15/09 23:45). Restano leggibili per id.
+    @Test fun leCattureDelTerminaleNonSonoAzioniDellUtente() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
+        val got = mutableListOf<String>(); bg().launch { repo.userResults.collect { got += it.id } }; idle()
+        val screen = repo.command(CmdOp.SCREEN, "atlas-shop", null)
+        val last = repo.command(CmdOp.LAST, "atlas-shop", null)
+        val answer = repo.answer("ledger-api", 1); idle()
+        assertEquals(listOf(answer), got)
+        assertTrue(repo.resultsById.value.containsKey(screen))
+        assertTrue(repo.resultsById.value.containsKey(last))
+    }
+
     @Test fun noResultWithin20sBecomesFailedAndRetryIsSafe() = runTest {
         val slow = Slow(25_000, fake())
         val repo = Repo(MemoryStore(), slow, bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
