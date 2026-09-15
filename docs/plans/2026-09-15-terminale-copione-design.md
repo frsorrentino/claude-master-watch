@@ -35,7 +35,10 @@ Le righe prima della prima testa sono `OUTPUT`. Titoli `#` restano `CLAUDE` in g
 - Passaggio della sessione a ferma (inattiva o in attesa): anche `last`, così la Risposta si aggiorna.
 - Durante la richiesta resta la cattura precedente (niente «Chiedo al PC» sopra un testo già visto).
 - In fondo alla lista la vista segue le righe nuove; scrollata in su, resta dov'è.
-- Icona Aggiorna invariata. Contratto invariato.
+- Niente più icona Aggiorna (Franz, 15/09 22:54): con l'aggiornamento dal vivo non serve; ▶ resta accanto al nome.
+  Contratto invariato.
+- Prosa (tu e Claude) unita in una riga logica: gli a capo del PC non passano al polso; elenchi e output restano a
+  righe (visto nello snapshot del 15/09 22:51, «update / the changelog»).
 
 ## 4. Verifica
 

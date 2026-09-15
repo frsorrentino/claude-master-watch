@@ -67,7 +67,6 @@
     <string name="outcome_none">No outcome</string>
     <string name="outcome_read_all">Read all</string>
     <string name="terminal_loading">Asking the PC</string>
-    <string name="terminal_refresh">Refresh</string>
     <string name="terminal_divider">Terminal · %1$s</string>
     <string name="timeline_title">Timeline</string>
     <string name="timeline_all">All sessions</string>

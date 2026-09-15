@@ -182,10 +182,21 @@ class TerminalVociTest {
 
     @Test fun blocchiPerVoce() {
         val b = TerminalText.blocks("❯ Lancia i test e poi\naggiorna il changelog\n⏺ Lancio la suite.\n⏺ Bash(pytest -q)\n⎿ 42 passed in 3.1s\n⏺ Tutto verde.")
+        // La prosa (tua e di Claude) va a capo dove va a capo il polso, non dove andava il PC (una riga logica, una fisica).
         assertEquals(listOf(
-            USER to "Lancia i test e poi\naggiorna il changelog", CLAUDE to "Lancio la suite.",
+            USER to "Lancia i test e poi aggiorna il changelog", CLAUDE to "Lancio la suite.",
             TOOL to "Bash(pytest -q)", OUTPUT to "42 passed in 3.1s", CLAUDE to "Tutto verde.",
         ), b.map { it.kind to it.text })
+    }
+
+    @Test fun lElencoRestaARighe() {
+        val b = TerminalText.blocks("⏺ Due cose:\n• prima\n• seconda")
+        assertEquals(listOf(CLAUDE to "Due cose:\n• prima\n• seconda"), b.map { it.kind to it.text })
+    }
+
+    @Test fun loutputRestaARighe() {
+        val b = TerminalText.blocks("⏺ Bash(ls)\n⎿ a.kt\nb.kt")
+        assertEquals(OUTPUT to "a.kt\nb.kt", b.last().kind to b.last().text)
     }
 
     @Test fun ilTitoloEUnBloccoASe() {

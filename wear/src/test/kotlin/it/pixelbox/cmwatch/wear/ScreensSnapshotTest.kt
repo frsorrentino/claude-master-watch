@@ -44,7 +44,7 @@ class ScreensSnapshotTest {
     @Test fun timeline() = paparazzi.snapshot { CmTheme { TimelineScreen(ContractJson.decodeEvents(File("../contract/events-sample.json").readText())) } }
     // Design 15/09: il Terminale come un copione — il prompt sul filo azzurro, la prosa di Claude, strumento e output in mono.
     @Test fun terminal() = paparazzi.snapshot {
-        CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, onRefresh = {}, answer = emptyList(), capturedAt = now * 1000) }
+        CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }
     }
     private val terminalSample = listOf(
         "❯ Run the tests, then update", "the changelog", "⏺ Running the suite.",

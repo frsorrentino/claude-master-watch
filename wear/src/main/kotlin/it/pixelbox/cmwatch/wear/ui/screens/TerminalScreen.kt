@@ -1,10 +1,6 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.IconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -69,7 +65,6 @@ fun TerminalScreen(
     text: String?,
     loading: Boolean,
     error: String?,
-    onRefresh: () -> Unit,
     answer: List<AnswerText.Block>? = null,
     current: Int? = null,
     speaking: Boolean = false,
@@ -106,11 +101,9 @@ fun TerminalScreen(
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
+                // Niente più Aggiorna (Franz, 15/09 22:54): il Terminale si aggiorna da solo. Resta ▶ accanto al nome.
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     Text(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onRefresh, enabled = !loading) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.terminal_refresh), tint = CmColors.actionIcon)
-                    }
                     if (!answer.isNullOrEmpty() || text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
                 }
             }

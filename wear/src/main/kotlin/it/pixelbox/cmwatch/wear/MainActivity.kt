@@ -364,7 +364,6 @@ class MainActivity : ComponentActivity() {
                 TerminalScreen(
                     name, text, loading = text == null && error == null && !failed,
                     error = if (text != null) null else error ?: if (failed) getString(R.string.question_not_delivered) else null,
-                    onRefresh = { alsoLast = true; wake.trySend(Unit) },
                     capturedAt = capturedAt,
                     answer = blocks,
                     current = if (speaking) block else null,

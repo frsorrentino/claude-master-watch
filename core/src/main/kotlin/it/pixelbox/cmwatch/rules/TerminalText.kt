@@ -146,6 +146,17 @@ object TerminalText {
         else -> corrente
     }
 
+    /** Le righe della prosa unite da uno spazio: gli a capo li decide il polso, non la larghezza del PC. Un elenco resta a righe. */
+    private fun prosa(righe: List<String>): String = buildString {
+        righe.forEachIndexed { i, r ->
+            if (i > 0) append(if (r.isNotEmpty() && (r[0] in LIST_MARKS || NUMBERED.containsMatchIn(r))) "\n" else " ")
+            append(r)
+        }
+    }
+
+    private val LIST_MARKS = setOf('•', '·', '-', '*')
+    private val NUMBERED = Regex("^\\d+[.)] ")
+
     /**
      * I blocchi da disegnare: righe non vuote consecutive della stessa voce, spezzate dallo stacco, dal cambio di voce e
      * dai titoli `#` (un blocco a sé, in grassetto, senza i cancelletti).
@@ -157,7 +168,7 @@ object TerminalText {
         var titolo = false
         fun chiudi() {
             val v = voce
-            if (v != null && righe.isNotEmpty()) out += Block(v, righe.joinToString("\n"), titolo)
+            if (v != null && righe.isNotEmpty()) out += Block(v, if (v == Kind.USER || v == Kind.CLAUDE) prosa(righe) else righe.joinToString("\n"), titolo)
             righe = mutableListOf(); voce = null; titolo = false
         }
         for (r in rows(text)) {

@@ -34,4 +34,4 @@ correzione di `setup-android` (il pacchetto «tools» sparito dall'SDK rompeva o
 | T3 | Con il Terminale aperto su una sessione che lavora, le righe nuove arrivano senza toccare nulla, al massimo una cattura ogni 3 s | Terminale aperto, polso fermo | |
 | T4 | Sceso in fondo, la vista segue le righe nuove; risalito, resta dov'è | scroll durante T3 | |
 | T5 | A fine turno la Risposta in cima si aggiorna da sola | T3 fino allo stop della sessione | |
-| T6 | Aggiorna non cancella il testo: niente «Chiedo al PC» sopra una cattura già vista | icona Aggiorna | |
+| T6 | Niente tasto Aggiorna; ▶ accanto al nome, che non va a capo; la prosa va a capo dove va a capo il polso | Terminale | |
