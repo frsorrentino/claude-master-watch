@@ -103,7 +103,7 @@ fun SessionRow(
             // Un pensiero intero, mai «…» (Franz, 14/09 18:16); quattro righe se sotto non c'è il prossimo passo, due se
             // c'è (Franz, 15/09 08:39). Righe e taglio li decide `SessionsText.Cell`.
             Text(
-                it, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
+                TileTexts.breakable(it), style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
                 maxLines = cell.titleLines, modifier = Modifier.fillMaxWidth(),
                 onTextLayout = { righeTitolo = it.lineCount },
             )

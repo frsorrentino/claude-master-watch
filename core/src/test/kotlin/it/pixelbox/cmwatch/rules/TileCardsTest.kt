@@ -244,3 +244,63 @@ class TileAwaitingTest {
         )
     }
 }
+
+// Franz, 15/09 10:56: la quota nascosta sotto soglia lasciava righe vuote. Decide lo spazio: con un testo che sta in
+// due righe la quota c'è sempre; sparisce solo per un testo lungo con la quota sotto soglia, che prende quattro righe.
+class TileBodyTest {
+    private val q = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val busy = q.sessions.first { it.state == SessionState.BUSY }
+    private val sotto = TileTexts.quotaLine(q, "personale")!!.copy(pct = 2, w7 = 36)
+    private val sopra = sotto.copy(pct = 90)
+    private val lungo = "Dal server il file arriva intero e integro: l'ho riscaricato e controllato con la sua impronta."
+
+    @Test fun unTestoCortoLasciaIlPostoAllaQuotaAncheSottoSoglia() {
+        val b = TileTexts.tileBody("modifica watch-install-release-signing.md", null, sotto)
+        assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), b.quota)
+        assertEquals(2, b.mainLines); assertNull(b.extra)
+    }
+
+    @Test fun testoEAggiuntaCortiStannoConLaQuota() {
+        val b = TileTexts.tileBody("modifica Notifier.kt", "rilasciata la 0.4.7", sotto)
+        assertEquals("rilasciata la 0.4.7", b.extra); assertEquals(1, b.extraLines)
+        assertEquals(TileTexts.Window.H5, b.quota?.window)
+    }
+
+    @Test fun unTestoLungoSottoSogliaPrendeLeQuattroRighe() {
+        val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sotto)
+        assertNull(b.quota)
+        assertEquals(1, b.mainLines); assertEquals(3, b.extraLines)
+        assertEquals(TileTexts.fitTile(lungo, 3 * TileTexts.TILE_LINE), b.extra)
+    }
+
+    @Test fun sopraSogliaLaQuotaRestaEIlTestoSiStringe() {
+        val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sopra)
+        assertEquals(TileTexts.Window.H5, b.quota?.window); assertEquals(90, b.quota?.pct)
+        assertEquals(1, b.mainLines); assertEquals(1, b.extraLines)
+        assertTrue(b.extra!!.length <= TileTexts.TILE_LINE)
+    }
+
+    @Test fun senzaQuotaNelDatoIlTestoHaQuattroRighe() {
+        val b = TileTexts.tileBody("modifica Notifier.kt", lungo, null)
+        assertNull(b.quota); assertEquals(3, b.extraLines)
+    }
+
+    @Test fun conUnoStrumentoInCorsoSottoVaLUltimoEsito() {
+        val s = busy.copy(tool = "Edit core/x.kt", toolNote = null, next = null, nextAt = null,
+            outcome = busy.outcome!!.copy(short = "migrazioni applicate, test verdi", at = 100L))
+        assertEquals("migrazioni applicate, test verdi", TileTexts.extra(s, busy = true, now = 200L))
+    }
+
+    @Test fun senzaStrumentoNienteAggiunta() {
+        val s = busy.copy(tool = null, outcome = busy.outcome!!.copy(short = "migrazioni applicate", at = 100L))
+        assertNull(TileTexts.extra(s, busy = true, now = 200L))
+        assertNull(TileTexts.extra(s, busy = false, now = 200L))
+    }
+
+    // «watch-install-release-s» tagliato di lato: un nome senza spazi non andava a capo.
+    @Test fun iNomiLunghiVannoACapoDopoITrattini() {
+        assertEquals("watch-​install-​release-​signing.md", TileTexts.breakable("watch-install-release-signing.md"))
+        assertEquals("claude-​master-​watch", TileTexts.breakable("claude-master-watch"))
+        assertEquals("a - b", TileTexts.breakable("a - b"))
+    }
+}

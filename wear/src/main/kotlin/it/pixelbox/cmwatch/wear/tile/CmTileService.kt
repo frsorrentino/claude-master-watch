@@ -155,22 +155,22 @@ class CmTileService : TileService() {
         // sembrerebbe antico. La vecchiaia la dice l'etichetta in ambra (Franz, 13/09 18:27).
         val quando = if (stale != null) state.ts else now
         val rest = TileTexts.rest(state, quando)
-        val quota = TileTexts.quotaLine(state, TileTexts.quotaAccount(rest, account))?.let { TileTexts.tileQuota(it) }
+        val line = TileTexts.quotaLine(state, TileTexts.quotaAccount(rest, account))
         return when (rest) {
-            is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale, quota)
-            is TileTexts.Rest.Calm -> calmCard(rest, quando, stale, quota)
+            is TileTexts.Rest.Live -> sessionCard(rest.session, rest.busy, quando, stale, line)
+            is TileTexts.Rest.Calm -> calmCard(rest, quando, stale, line)
         }
     }
 
     /** La sessione: chi e da quanto sopra, cosa sta facendo o cosa ha fatto sotto. Mai l'etichetta secca dello stato. */
-    private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?, quota: TileTexts.TileQuota?): LayoutElement {
+    private fun MaterialScope.sessionCard(s: Session, busy: Boolean, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?): LayoutElement {
         val what = TileTexts.activity(
             s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now, toolLabels(),
             awaiting = getString(R.string.state_awaiting_prompt),
         )
-        // Due righe con la quota in coda, quattro senza: lo spazio della quota nascosta va al testo (Franz, 15/09 08:21;
-        // tre erano poche, 10:38). Il testo sta nelle righe da sé, un pensiero intero: mai «…» (Franz, 14/09 16:58).
-        val lines = if (quota == null) 4 else 2
+        // Righe, aggiunta e quota le decide lo spazio (`TileTexts.tileBody`, Franz 15/09 10:56). Il testo sta nelle sue
+        // righe da sé, un pensiero intero: mai «…» (Franz, 14/09 16:58).
+        val body = TileTexts.tileBody(what, TileTexts.extra(s, busy, now), line)
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {
@@ -178,8 +178,8 @@ class CmTileService : TileService() {
                 else small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb)
             },
             time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
-            title = { text(TileTexts.fitTile(what, max = TileTexts.TILE_MAX * lines / 2).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = lines) },
-            content = quota?.let { q -> { quotaRow(q) } },
+            title = { cardText(body) },
+            content = body.quota?.let { q -> { quotaRow(q) } },
             shape = cardShape(),
             colors = cardColors(),
         )
@@ -189,7 +189,19 @@ class CmTileService : TileService() {
      * Niente di recente: si dice lo stato vero. Ripescare un esito di ore prima faceva sembrare la tile vecchia e
      * inutile (Franz, 13/09 17:55).
      */
-    private fun MaterialScope.calmCard(rest: TileTexts.Rest.Calm, now: Long, stale: Freshness.Stale?, quota: TileTexts.TileQuota?): LayoutElement = appCard(
+    /** Il testo della card: l'attività in chiaro e, se c'è spazio, sotto in grigio la cosa più fresca (Franz, 15/09 10:56). */
+    private fun MaterialScope.cardText(b: TileTexts.TileBody): LayoutElement {
+        val main = text(TileTexts.breakable(b.main).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = b.mainLines)
+        val extra = b.extra ?: return main
+        return LayoutElementBuilders.Column.Builder()
+            .setWidth(expand())
+            .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START)
+            .addContent(main)
+            .addContent(text(TileTexts.breakable(extra).layoutString, typography = Typography.BODY_MEDIUM, color = colorScheme.onSurfaceVariant, maxLines = b.extraLines))
+            .build()
+    }
+
+    private fun MaterialScope.calmCard(rest: TileTexts.Rest.Calm, now: Long, stale: Freshness.Stale?, line: TileTexts.QuotaLine?): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://sessions"), id = "calm"),
         label = {
             if (stale != null) small(getString(R.string.tile_stale_label, stale.minutes), AMBER.argb)
@@ -197,7 +209,8 @@ class CmTileService : TileService() {
         },
         time = { small(rest.since?.let { Durations.since(it, now) } ?: "", colorScheme.onSurfaceVariant) },
         title = { text(getString(R.string.tile_all_idle).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
-        content = quota?.let { q -> { quotaRow(q) } },
+        // «Tutto a riposo» sta in una riga: lo spazio c'è sempre, quindi la quota anche (Franz, 15/09 10:56).
+        content = TileTexts.tileBody(getString(R.string.tile_all_idle), null, line).quota?.let { q -> { quotaRow(q) } },
         shape = cardShape(),
         colors = cardColors(),
     )

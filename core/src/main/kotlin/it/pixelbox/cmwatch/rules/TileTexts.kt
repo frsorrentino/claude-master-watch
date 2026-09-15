@@ -78,10 +78,7 @@ object TileTexts {
         val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
         // Contratto 1.2: `next_at` dice di che giorno è il «prossimo». Senza data non si sa, e un piano di tre giorni
         // prima sulla tile è peggio che niente: vale solo se è recente e non più vecchio dell'ultimo esito.
-        val prossimo = s.next?.trim()?.takeIf {
-            it.isNotEmpty() && s.nextAt != null && (now <= 0L || now - s.nextAt <= NEXT_MAX_AGE_S) &&
-                s.nextAt >= (s.outcome?.at ?: 0L)
-        }
+        val prossimo = prossimo(s, now)
         val esitoPiuFresco = (s.outcome?.at ?: 0L) >= (s.turnStarted ?: 0L)
         val scelto = when {
             busy && tool != null -> tool
@@ -94,6 +91,50 @@ object TileTexts {
         }
         return primaFrase(scelto)
     }
+
+    private fun prossimo(s: Session, now: Long): String? = s.next?.trim()?.takeIf {
+        it.isNotEmpty() && s.nextAt != null && (now <= 0L || now - s.nextAt <= NEXT_MAX_AGE_S) &&
+            s.nextAt >= (s.outcome?.at ?: 0L)
+    }
+
+    /**
+     * Cosa scrivere sotto l'attività, se c'è spazio (Franz, 15/09 10:56): con uno strumento in corso la riga dice solo
+     * «modifica X», e sotto va la cosa più fresca fra il prossimo passo recente e l'ultimo esito. Senza strumento
+     * l'attività è già una di quelle due, e non si ripete.
+     */
+    fun extra(s: Session, busy: Boolean, now: Long = 0L): String? {
+        if (!busy || s.tool.isNullOrBlank()) return null
+        return prossimo(s, now) ?: s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    /** Una riga della card della tile, contata per difetto: metà delle due righe di `TILE_MAX`. */
+    const val TILE_LINE = 21
+
+    data class TileBody(val main: String, val mainLines: Int, val extra: String?, val extraLines: Int, val quota: TileQuota?)
+
+    private fun righe(t: String) = maxOf(1, (t.length + TILE_LINE - 1) / TILE_LINE)
+
+    /**
+     * Testo e quota della card: decide lo spazio, non solo la soglia (Franz, 15/09 10:56). Se attività e aggiunta stanno
+     * in due righe, sotto c'è la quota delle cinque ore anche al 2 %. Sopra soglia la quota resta e il testo si ferma a
+     * due righe. Solo un testo lungo, con la quota sotto soglia, prende tutte e quattro le righe.
+     */
+    fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
+        val forced = line?.let { tileQuota(it) }
+        val soft = forced ?: line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
+        val need = righe(main) + (extra?.let { righe(it) } ?: 0)
+        val budget = if (forced != null || (soft != null && need <= 2)) 2 else 4
+        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), budget))
+        val mLines = minOf(righe(m), budget)
+        val left = budget - mLines
+        val e = extra?.takeIf { left > 0 }?.let { fitTile(it, max = TILE_LINE * left) }?.takeIf { it.isNotBlank() }
+        return TileBody(m, mLines, e, if (e != null) left else 0, if (budget == 2) soft else null)
+    }
+
+    private val SPEZZA = Regex("([-_/])(?=[^\\s/_\\-])")
+
+    /** Un nome senza spazi non va a capo e la tile lo taglia di lato: dopo trattini, trattini bassi e barre si può. */
+    fun breakable(t: String): String = t.replace(SPEZZA, "\$1​")
 
     /** Oltre due giorni un «prossimo» non descrive più la giornata in corso. */
     const val NEXT_MAX_AGE_S = 2 * 24 * 3600L

@@ -34,7 +34,8 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
             val tail = row.removePrefix(s.name).removePrefix(" · ")
             Column(Modifier.weight(1f)) {
                 // Il nome va a capo invece di scorrere (S07): lo scorrimento fermo a metà lasciava una «h» isolata.
-                Text(s.name, style = MonoStyle, color = CmColors.text, maxLines = 2)
+                // …e va a capo dopo un trattino, non a metà parola («claude-master-w / atch», Franz 15/09 10:56).
+                Text(TileTexts.breakable(s.name), style = MonoStyle, color = CmColors.text, maxLines = 2)
                 if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
             }
         }

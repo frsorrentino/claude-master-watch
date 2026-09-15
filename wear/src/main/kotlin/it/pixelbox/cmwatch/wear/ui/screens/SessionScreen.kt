@@ -37,6 +37,7 @@ import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.SwitchButton
 import it.pixelbox.cmwatch.rules.SessionsText
+import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.components.IconAction
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
@@ -106,16 +107,17 @@ fun SessionScreen(
                         contentPadding = PaddingValues(14.dp),
                         transformation = SurfaceTransformation(spec),
                     ) {
+                        // Il testo intero: la card cresce e la lista scorre, mai «…» (Franz, 15/09 10:56).
                         cell.title?.let {
                             Text(
-                                it, style = MaterialTheme.typography.titleMedium, color = CmColors.text,
-                                maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                                TileTexts.breakable(it), style = MaterialTheme.typography.titleMedium, color = CmColors.text,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                         cell.detail?.let {
                             Text(
-                                it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
-                                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(),
+                                TileTexts.breakable(it), style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
