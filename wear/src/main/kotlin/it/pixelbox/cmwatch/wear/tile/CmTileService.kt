@@ -87,7 +87,7 @@ open class CmTileService : TileService() {
 
             completer.set(
                 TileBuilders.Tile.Builder()
-                    .setResourcesVersion(RESOURCES)
+                    .setResourcesVersion(resourcesVersion(state))
                     .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(root))
                     .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it) } ?: 15 * 60_000L)
                     .build()
@@ -148,7 +148,7 @@ open class CmTileService : TileService() {
     /** La domanda: chi e da quanto sopra, il testo intero sotto. */
     private fun MaterialScope.questionCard(s: Session, now: Long): LayoutElement = appCard(
         onClick = clickable(launch("cmwatch://question/${s.name}"), id = "q"),
-        label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb) },
+        label = { sessionLabel(s) },
         time = { small(Durations.since(s.question?.askedAt ?: s.since, now), AMBER.argb) },
         title = { text(s.question!!.text.layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 3) },
         shape = cardShape(),
@@ -186,7 +186,7 @@ open class CmTileService : TileService() {
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {
                 if (stale != null) small(getString(R.string.tile_stale_label, stale.minutes), AMBER.argb)
-                else small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb)
+                else sessionLabel(s)
             },
             time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
             title = { cardText(body) },
@@ -202,7 +202,7 @@ open class CmTileService : TileService() {
      */
     /** Il testo della card: l'attività in chiaro e, se c'è spazio, sotto in grigio la cosa più fresca (Franz, 15/09 10:56). */
     private fun MaterialScope.cardText(b: TileTexts.TileBody): LayoutElement {
-        val main = text(TileTexts.breakable(b.main).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = b.mainLines)
+        val main = animated(text(TileTexts.breakable(b.main).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = b.mainLines))
         val extra = b.extra ?: return main
         return LayoutElementBuilders.Column.Builder()
             .setWidth(expand())
@@ -233,8 +233,9 @@ open class CmTileService : TileService() {
     private fun MaterialScope.quotaRows(qs: List<TileTexts.TileQuota>): LayoutElement {
         // Etichette corte anche con una barra sola: con «reset» la barra della settimana si riduceva a un puntino
         // (Franz, 15/09 14:30). «reset» resta nella schermata Quota.
-        if (qs.size == 1) return quotaRow(qs[0], short = true)
+        // Un filo di respiro fra il testo e le barre (stile Codex, Franz 15/09 15:55).
         val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
+            .addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(4f)).build())
         qs.forEachIndexed { i, q ->
             if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(2f)).build())
             col.addContent(quotaRow(q, short = true))
@@ -260,6 +261,8 @@ open class CmTileService : TileService() {
         val suffix = TileTexts.quotaSuffix(q, labels, locale = resources.configuration.locales[0])
         // La sigla subito dopo l'orologio, poi la barra, poi valore e ora (Franz, 15/09 15:03).
         val tag = TileTexts.quotaTag(q, getString(R.string.tile_quota_tag_h5), getString(R.string.tile_quota_tag_week))
+        // Il valore chiaro, l'ora di ripartenza in grigio: «68 %» si legge prima di «· gio 04:00» (stile Codex, 15/09 15:55).
+        val parti = suffix.split(" · ", limit = 2)
         val row = LayoutElementBuilders.Row.Builder()
             .setWidth(expand())
             .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
@@ -269,12 +272,12 @@ open class CmTileService : TileService() {
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
             .addContent(bar(q.pct))
             .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(6f)).build())
-            .addContent(text(suffix.layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurfaceVariant, maxLines = 1))
-            .build()
+            .addContent(text(parti[0].layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurface, maxLines = 1))
+        parti.getOrNull(1)?.let { row.addContent(text(" · $it".layoutString, typography = Typography.BODY_SMALL, color = colorScheme.onSurfaceVariant, maxLines = 1)) }
         return LayoutElementBuilders.Box.Builder()
             .setWidth(expand())
             .setModifiers(ModifiersBuilders.Modifiers.Builder().setClickable(clickable(launch("cmwatch://quota"), id = "quota")).build())
-            .addContent(row)
+            .addContent(row.build())
             .build()
     }
 
@@ -322,6 +325,48 @@ open class CmTileService : TileService() {
         colors = cardColors(),
     )
 
+    /**
+     * Il badge colorato della sessione, lo stesso della lista, al posto dell'emoji; poi il nome, più pesante dell'età
+     * accanto (Franz, 15/09 15:55, stile Codex con il badge).
+     */
+    private fun MaterialScope.sessionLabel(s: Session): LayoutElement = LayoutElementBuilders.Row.Builder()
+        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+        .addContent(LayoutElementBuilders.Image.Builder().setResourceId(badgeId(spec(s))).setWidth(dp(14f)).setHeight(dp(14f)).build())
+        .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(5f)).build())
+        .addContent(text(NameText.shorten(s.name, listOf(s.name), 16).layoutString, typography = Typography.LABEL_SMALL, color = LABEL.argb, maxLines = 1))
+        .build()
+
+    /** Il testo operativo entra in dissolvenza, salendo appena, quando cambia: una volta sola, niente loop (15/09 15:55). */
+    private fun animated(e: LayoutElement): LayoutElement = LayoutElementBuilders.Box.Builder()
+        .setWidth(expand())
+        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START)
+        .setModifiers(
+            ModifiersBuilders.Modifiers.Builder().setContentUpdateAnimation(
+                ModifiersBuilders.AnimatedVisibility.Builder()
+                    .setEnterTransition(ModifiersBuilders.DefaultContentTransitions.fadeInSlideIn(ModifiersBuilders.SLIDE_DIRECTION_BOTTOM_TO_TOP))
+                    .setExitTransition(ModifiersBuilders.DefaultContentTransitions.fadeOut())
+                    .build()
+            ).build()
+        )
+        .addContent(e)
+        .build()
+
+    private fun spec(s: Session) = it.pixelbox.cmwatch.rules.Badge.of(s.account, s.color, s.state, s.icon, s.accountKind)
+
+    /** Id stabile fra un processo e l'altro: forma, colori e glifo scritti per esteso, niente hashCode di enum. */
+    private fun badgeId(b: it.pixelbox.cmwatch.rules.Badge.Spec) =
+        "badge_${b.shape.name}_${b.fill.toUInt().toString(16)}_${b.glyph.name}_${b.glyphColor.toUInt().toString(16)}"
+
+    private fun badgeIds(state: State?): List<String> = state?.sessions.orEmpty().map { badgeId(spec(it)) }.distinct().sorted()
+
+    /** Cambia quando cambia un badge in uso (colore, stato): così il sistema richiede le immagini nuove. */
+    internal fun resourcesVersion(state: State?): String =
+        badgeIds(state).takeIf { it.isNotEmpty() }?.let { "$RESOURCES-${it.joinToString("|").hashCode().toUInt().toString(16)}" } ?: RESOURCES
+
+    private fun badgePng(b: it.pixelbox.cmwatch.rules.Badge.Spec): ByteArray = java.io.ByteArrayOutputStream().also { out ->
+        it.pixelbox.cmwatch.wear.push.BadgeBitmap.draw(b, BADGE_PX).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+    }.toByteArray()
+
     private fun MaterialScope.small(s: String, color: androidx.wear.protolayout.types.LayoutColor): LayoutElement =
         text(s.layoutString, typography = Typography.BODY_SMALL, color = color, maxLines = 1)
 
@@ -344,12 +389,22 @@ open class CmTileService : TileService() {
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> =
         CallbackToFutureAdapter.getFuture { c ->
-            c.set(tileResources()); "res"
+            c.set(tileResources((application as CmApp).repo.snapshot.value.state)); "res"
         }
 
-    /** Le immagini della tile, orologio e segni degli account: servono anche al test Paparazzi. */
-    internal fun tileResources(): ResourceBuilders.Resources =
-                ResourceBuilders.Resources.Builder().setVersion(RESOURCES)
+    /** Le immagini della tile: orologio, segni degli account e badge delle sessioni. Servono anche al test Paparazzi. */
+    internal fun tileResources(state: State? = null): ResourceBuilders.Resources {
+        val r = ResourceBuilders.Resources.Builder().setVersion(resourcesVersion(state))
+        state?.sessions.orEmpty().map { spec(it) }.distinctBy { badgeId(it) }.forEach { b ->
+            r.addIdToImageMapping(
+                badgeId(b),
+                ResourceBuilders.ImageResource.Builder().setInlineResource(
+                    ResourceBuilders.InlineImageResource.Builder().setData(badgePng(b)).setWidthPx(BADGE_PX).setHeightPx(BADGE_PX)
+                        .setFormat(ResourceBuilders.IMAGE_FORMAT_UNDEFINED).build()
+                ).build(),
+            )
+        }
+        return r
                     .addIdToImageMapping(
                         CLOCK,
                         ResourceBuilders.ImageResource.Builder().setAndroidResourceByResId(
@@ -369,9 +424,11 @@ open class CmTileService : TileService() {
                         ).build(),
                     )
                     .build()
+    }
 
     companion object {
-        const val RESOURCES = "16"
+        const val RESOURCES = "17"
+        private const val BADGE_PX = 48
         const val CLOCK = "clock"
         const val MARK_PERSONAL = "mark_personal"
         const val MARK_WORK = "mark_work"
