@@ -131,9 +131,9 @@ fun SessionRow(
             // Subito dopo il tocco «Avvio in corso», spento: il rilancio sul PC dura 30-60 s (Franz, 15/09 19:14).
             val avvio = reopen is it.pixelbox.cmwatch.rules.ReopenText.Status.Starting
             androidx.compose.foundation.layout.Box(
-                Modifier.clip(RoundedCornerShape(percent = 50)).background(if (avvio) CmColors.surfaceHigh else CmColors.accent)
+                Modifier.clip(RoundedCornerShape(percent = 50)).background(if (avvio) CmColors.surfaceHigh else CmColors.primary)
                     .clickable(enabled = !avvio, onClick = onReopen).padding(horizontal = 14.dp, vertical = 6.dp),
-            ) { Text(stringResource(if (avvio) R.string.reopen_starting else R.string.notif_resume), style = MaterialTheme.typography.labelMedium, color = CmColors.text) }
+            ) { Text(stringResource(if (avvio) R.string.reopen_starting else R.string.notif_resume), style = MaterialTheme.typography.labelMedium, color = if (avvio) CmColors.text else CmColors.onPrimary) }
             (reopen as? it.pixelbox.cmwatch.rules.ReopenText.Status.Failed)?.let { f ->
                 Text(
                     stringResource(R.string.reopen_failed, f.text ?: stringResource(R.string.question_not_delivered)),

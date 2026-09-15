@@ -19,7 +19,8 @@ fun CmEdgeButton(label: String, onClick: () -> Unit, enabled: Boolean = true) {
         onClick = onClick,
         enabled = enabled,
         buttonSize = EdgeButtonSize.Medium,
-        colors = ButtonDefaults.buttonColors(containerColor = CmColors.accent, contentColor = CmColors.text),
+        // Primario pastello con testo blu notte, come il tasto di bordo della tile e delle app Google (Franz, 16/09 00:41).
+        colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
     ) {
         Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }

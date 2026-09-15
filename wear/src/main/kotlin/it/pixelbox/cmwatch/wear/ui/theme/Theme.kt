@@ -24,6 +24,11 @@ object CmColors {
     // sotto il bianco del testo principale e sotto `briefSecondary`, così la gerarchia resta.
     val text2 = Color(0xFFB0B8C4)
     val accent = Color(0xFF4C7DFF)
+    // Bottone principale come nelle app Google M3 Expressive e come il tasto di bordo della tile (Franz, 16/09 00:41:
+    // «colore appropriato» al posto del cobalto): azzurro pastello con testo blu notte, 11:1. Il cobalto resta allo stato
+    // «lavora» e ai fili, non ai bottoni.
+    val primary = Color(0xFFD3E3FD)
+    val onPrimary = Color(0xFF0A2050)
     val accentPressed = Color(0xFF3457D5)
     // Azzurro pastello delle icone delle azioni (proposta del 14/09, confermata da Franz il 15/09 10:42): il cobalto
     // resta ai bottoni pieni, sulle icone era un blu acceso.
@@ -71,8 +76,8 @@ fun stateColor(s: SessionState, fresh: Boolean = true): Color = if (!fresh) CmCo
 }
 
 private val scheme = ColorScheme(
-    primary = CmColors.accent, primaryDim = CmColors.accentPressed, primaryContainer = CmColors.accent,
-    onPrimary = CmColors.text, onPrimaryContainer = CmColors.text,
+    primary = CmColors.primary, primaryDim = Color(0xFFA8C7FA), primaryContainer = CmColors.primary,
+    onPrimary = CmColors.onPrimary, onPrimaryContainer = CmColors.onPrimary,
     secondary = CmColors.text2, secondaryDim = CmColors.text2, secondaryContainer = CmColors.surface,
     onSecondary = CmColors.bg, onSecondaryContainer = CmColors.text,
     tertiary = CmColors.busy, tertiaryDim = CmColors.busy, tertiaryContainer = CmColors.surface,

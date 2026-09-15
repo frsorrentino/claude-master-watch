@@ -27,7 +27,7 @@ fun WideButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     primary: Boolean = false,
-    fill: Color = CmColors.accent,
+    fill: Color = CmColors.primary,
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     transformation: SurfaceTransformation? = null,
@@ -35,8 +35,12 @@ fun WideButton(
     border: BorderStroke? = null,
 ) {
     val m = modifier.fillMaxWidth().heightIn(min = 56.dp)
-    // Sul pieno chiaro (ambra) il testo è nero, sul pieno scuro (cobalto, rosso) bianco: regola del tema, non del bottone.
-    val onFill = if (fill.luminance() > 0.4f) Color.Black else CmColors.text
+    // Sul primario il suo blu notte; sugli altri pieni chiari (ambra) nero, sui pieni scuri (rosso) bianco.
+    val onFill = when {
+        fill == CmColors.primary -> CmColors.onPrimary
+        fill.luminance() > 0.4f -> Color.Black
+        else -> CmColors.text
+    }
     if (primary) {
         Button(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
