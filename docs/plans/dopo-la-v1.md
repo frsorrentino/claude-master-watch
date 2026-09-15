@@ -28,3 +28,10 @@ l'inglese come default e l'italiano in `values-it/`: da decidere con il piano di
 
 Con i percorsi assoluti del contratto 1.5 in `tool`, dire quale progetto sta toccando una sessione confrontandoli
 con `projects`. Solo lato orologio, nessun cambio del contratto.
+
+## Quota: la card «Aggiornato» (Franz, 15/09 21:50)
+
+L'ultima card della pagina Quota dice sempre la stessa cosa («Aggiornato ora», pillola con il nome della macchina,
+`penguin`). Da valutare alla ripresa: informazioni utili diverse, disegnate con le card che Google usa già nelle sue
+app Wear OS (brief del mattino, Fit, Meteo). Visto nello stesso scatto: la pillola «più vecchia 1 h 34» va a capo,
+contro la regola «una riga logica, una riga fisica».
