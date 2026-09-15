@@ -224,7 +224,7 @@ class CmTileService : TileService() {
         val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
         qs.forEachIndexed { i, q ->
             if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(2f)).build())
-            col.addContent(quotaRow(q))
+            col.addContent(quotaRow(q, short = true))
         }
         return col.build()
     }
@@ -234,8 +234,13 @@ class CmTileService : TileService() {
      * «settimana 82 % · reset gio 04:00» (Franz, 15/09 08:27: le due finestre si devono distinguere). Un tocco sulla
      * riga apre la Quota; il resto della card apre la sessione.
      */
-    private fun MaterialScope.quotaRow(q: TileTexts.TileQuota): LayoutElement {
-        val labels = TileTexts.QuotaLabels(
+    private fun MaterialScope.quotaRow(q: TileTexts.TileQuota, short: Boolean = false): LayoutElement {
+        // Con due barre le etichette corte, «5 h 0 % · 17:10» e «7 g 68 % · gio 04:00»: quelle intere schiacciavano la
+        // barra della settimana fino a farla sparire (Franz, 15/09 12:29).
+        val labels = if (short) TileTexts.QuotaLabels(
+            pct = getString(R.string.tile_quota_h5_short), pctReset = getString(R.string.tile_quota_h5_short_reset),
+            week = getString(R.string.tile_quota_week_short), weekReset = getString(R.string.tile_quota_week_short_reset),
+        ) else TileTexts.QuotaLabels(
             pct = getString(R.string.tile_quota_pct), pctReset = getString(R.string.tile_quota_pct_reset),
             week = getString(R.string.tile_quota_week), weekReset = getString(R.string.tile_quota_week_reset),
         )
