@@ -179,7 +179,7 @@ class CmTileService : TileService() {
             },
             time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
             title = { cardText(body) },
-            content = body.quota?.let { q -> { quotaRow(q) } },
+            content = body.quotas.takeIf { it.isNotEmpty() }?.let { qs -> { quotaRows(qs) } },
             shape = cardShape(),
             colors = cardColors(),
         )
@@ -210,13 +210,24 @@ class CmTileService : TileService() {
         time = { small(rest.since?.let { Durations.since(it, now) } ?: "", colorScheme.onSurfaceVariant) },
         title = { text(getString(R.string.tile_all_idle).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
         // «Tutto a riposo» sta in una riga: lo spazio c'è sempre, quindi la quota anche (Franz, 15/09 10:56).
-        content = TileTexts.tileBody(getString(R.string.tile_all_idle), null, line).quota?.let { q -> { quotaRow(q) } },
+        content = TileTexts.tileBody(getString(R.string.tile_all_idle), null, line).quotas.takeIf { it.isNotEmpty() }?.let { qs -> { quotaRows(qs) } },
         shape = cardShape(),
         colors = cardColors(),
     )
 
     /** Angoli meno tondi del default delle card M3 (Franz, 15/09 10:38), uguali su tutte le card della tile. */
     private fun cardShape(): ModifiersBuilders.Corner = ModifiersBuilders.Corner.Builder().setRadius(dp(16f)).build()
+
+    /** Una o due barre in colonna: la settimana sotto le cinque ore quando il testo lascia la riga (Franz, 15/09 11:58). */
+    private fun MaterialScope.quotaRows(qs: List<TileTexts.TileQuota>): LayoutElement {
+        if (qs.size == 1) return quotaRow(qs[0])
+        val col = LayoutElementBuilders.Column.Builder().setWidth(expand())
+        qs.forEachIndexed { i, q ->
+            if (i > 0) col.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(2f)).build())
+            col.addContent(quotaRow(q))
+        }
+        return col.build()
+    }
 
     /**
      * La quota in coda alla card, una riga in carattere piccolo: orologio, barra e «5 ore 42 % · reset 12:30» oppure

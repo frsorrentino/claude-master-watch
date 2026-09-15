@@ -110,7 +110,7 @@ object TileTexts {
     /** Una riga della card della tile, contata per difetto: metà delle due righe di `TILE_MAX`. */
     const val TILE_LINE = 21
 
-    data class TileBody(val main: String, val mainLines: Int, val extra: String?, val extraLines: Int, val quota: TileQuota?)
+    data class TileBody(val main: String, val mainLines: Int, val extra: String?, val extraLines: Int, val quotas: List<TileQuota>)
 
     private fun righe(t: String) = maxOf(1, (t.length + TILE_LINE - 1) / TILE_LINE)
 
@@ -118,17 +118,27 @@ object TileTexts {
     const val TILE_BODY_LINES = 3
 
     /**
-     * Testo e quota della card (Franz, 15/09 11:37): tre righe e sotto la barra, sempre. La quota mostrata è quella sopra
-     * soglia se c'è (la settimana dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %. Nelle tre
-     * righe prima l'attività, poi l'aggiunta nelle righe che restano. `mainLines` ed `extraLines` sono il massimo
-     * concesso: il conto a 21 caratteri per riga è per difetto e il testo può occuparne meno.
+     * Testo e barre della quota nella card (Franz, 15/09 11:37 e 11:58). Lo spazio è di tre righe e una barra. Se il testo
+     * con l'aggiunta sta intero in due righe e il dato ha tutte e due le finestre, la riga libera va alla seconda barra:
+     * cinque ore sopra, settimana sotto. Altrimenti tre righe e una barra sola: quella sopra soglia se c'è (la settimana
+     * dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %. `mainLines` ed `extraLines` sono il
+     * massimo concesso: il conto a 21 caratteri per riga è per difetto e il testo può occuparne meno.
      */
     fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
-        val quota = line?.let { tileQuota(it) } ?: line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
-        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), TILE_BODY_LINES))
-        val left = TILE_BODY_LINES - minOf(righe(m), TILE_BODY_LINES)
+        val h5 = line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
+        val week = line?.w7?.let { TileQuota(Window.WEEK, it, line.resetW7) }
+        if (h5 != null && week != null) {
+            val due = layout(main, extra, TILE_BODY_LINES - 1)
+            if (due.main == main.trim() && (extra == null || due.extra == extra.trim())) return due.copy(quotas = listOf(h5, week))
+        }
+        return layout(main, extra, TILE_BODY_LINES).copy(quotas = listOfNotNull(line?.let { tileQuota(it) } ?: h5))
+    }
+
+    private fun layout(main: String, extra: String?, lines: Int): TileBody {
+        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), lines))
+        val left = lines - minOf(righe(m), lines)
         val e = extra?.takeIf { left > 0 }?.let { fitTile(it, max = TILE_LINE * left) }?.takeIf { it.isNotBlank() }
-        return TileBody(m, if (e == null) TILE_BODY_LINES else TILE_BODY_LINES - left, e, if (e != null) left else 0, quota)
+        return TileBody(m, if (e == null) lines else lines - left, e, if (e != null) left else 0, emptyList())
     }
 
     private val LINK = Regex("\\[([^\\]]+)]\\([^)]*\\)")

@@ -254,22 +254,33 @@ class TileBodyTest {
     private val sopra = sotto.copy(pct = 90)
     private val lungo = "Dal server il file arriva intero e integro: l'ho riscaricato e controllato con la sua impronta."
 
-    @Test fun unTestoCortoLasciaIlPostoAllaQuotaAncheSottoSoglia() {
+    // Franz, 15/09 11:58: quando il testo lo consente, sotto anche la barra della settimana.
+    @Test fun unTestoCortoHaLeDueBarre() {
         val b = TileTexts.tileBody("modifica watch-install-release-signing.md", null, sotto)
-        assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), b.quota)
-        assertEquals(3, b.mainLines); assertNull(b.extra)
+        assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), TileTexts.TileQuota(TileTexts.Window.WEEK, 36, sotto.resetW7)), b.quotas)
+        assertEquals(2, b.mainLines); assertNull(b.extra)
+    }
+
+    @Test fun laSettimanaSopraSogliaConTestoCortoHaLeDueBarre() {
+        val b = TileTexts.tileBody("turno in corso", null, sotto.copy(pct = 40, w7 = 85))
+        assertEquals(listOf(TileTexts.Window.H5, TileTexts.Window.WEEK), b.quotas.map { it.window })
+    }
+
+    @Test fun senzaSettimanaNelDatoUnaBarraSola() {
+        val b = TileTexts.tileBody("turno in corso", null, sotto.copy(w7 = null))
+        assertEquals(listOf(TileTexts.Window.H5), b.quotas.map { it.window }); assertEquals(3, b.mainLines)
     }
 
     @Test fun testoEAggiuntaCortiStannoConLaQuota() {
         val b = TileTexts.tileBody("modifica Notifier.kt", "rilasciata la 0.4.7", sotto)
-        assertEquals("rilasciata la 0.4.7", b.extra); assertEquals(2, b.extraLines)
-        assertEquals(TileTexts.Window.H5, b.quota?.window)
+        assertEquals("rilasciata la 0.4.7", b.extra); assertEquals(1, b.extraLines)
+        assertEquals(listOf(TileTexts.Window.H5, TileTexts.Window.WEEK), b.quotas.map { it.window })
     }
 
     // Franz, 15/09 11:37: la quarta riga la tile la taglia; ci stanno tre righe e la barra. La quota c'è sempre.
     @Test fun unTestoLungoStaInTreRigheSopraLaQuota() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sotto)
-        assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), b.quota)
+        assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5)), b.quotas)
         assertEquals(1, b.mainLines); assertEquals(2, b.extraLines)
         assertEquals(TileTexts.fitTile(lungo, 2 * TileTexts.TILE_LINE), b.extra)
     }
@@ -277,18 +288,18 @@ class TileBodyTest {
     @Test fun unEsitoLungoDaSoloPrendeTreRighe() {
         val b = TileTexts.tileBody(lungo, null, sotto)
         assertEquals(3, b.mainLines); assertEquals(TileTexts.fitTile(lungo, 3 * TileTexts.TILE_LINE), b.main)
-        assertNotNull(b.quota)
+        assertEquals(1, b.quotas.size)
     }
 
     @Test fun sopraSogliaLaQuotaRestaConLeStesseTreRighe() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sopra)
-        assertEquals(TileTexts.Window.H5, b.quota?.window); assertEquals(90, b.quota?.pct)
+        assertEquals(listOf(TileTexts.Window.H5), b.quotas.map { it.window }); assertEquals(90, b.quotas[0].pct)
         assertEquals(1, b.mainLines); assertEquals(2, b.extraLines)
     }
 
     @Test fun senzaQuotaNelDatoLeRigheRestanoTre() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, null)
-        assertNull(b.quota); assertEquals(2, b.extraLines)
+        assertTrue(b.quotas.isEmpty()); assertEquals(2, b.extraLines)
     }
 
     // «- [Android Central – Googlebook event in New» sulla tile (Franz, 15/09 11:37): markdown grezzo dall'esito.
