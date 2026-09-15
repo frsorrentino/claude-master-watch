@@ -36,7 +36,9 @@ class ReplyReceiver : BroadcastReceiver() {
                         Haptics.play(context, Haptics.Kind.SENT)
                     }
                     ACTION_RETRY -> intent.getStringExtra(CMD_ID)?.let { app.repo.retry(it); app.notifier.sent(session, null, null, it) }
-                    ACTION_RESUME -> { app.repo.command(CmdOp.RESUME, session, null); app.notifier.cancel(session) }
+                    // «Riprendi» sta sulla notifica di chiusura: la sessione è gone, quindi `reopen` (contratto 1.9);
+                    // `resume` le rispondeva «use launch».
+                    ACTION_RESUME -> { app.repo.command(CmdOp.REOPEN, session, null); app.notifier.cancel(session) }
                     ACTION_SEEN -> {
                         val qid = intent.getStringExtra(QUESTION_ID) ?: return@launch
                         app.prefs.update { it.copy(seenQuestions = it.seenQuestions + qid) }

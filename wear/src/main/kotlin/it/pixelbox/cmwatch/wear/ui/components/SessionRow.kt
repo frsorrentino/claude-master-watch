@@ -3,6 +3,11 @@ package it.pixelbox.cmwatch.wear.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -54,6 +59,7 @@ fun SessionRow(
     ambient: Boolean = false,
     marquee: Boolean = false,
     tools: ToolText.Labels? = null,
+    onReopen: (() -> Unit)? = null,
 ) {
     val age = SessionsText.sub(s, now, stringResource(R.string.session_closed))
     val overflow = if (NameText.sharesPrefix(s.name, siblings)) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
@@ -114,6 +120,14 @@ fun SessionRow(
                 TileTexts.fitTile(it, max = if (righeTitolo <= 1) 60 else 40), style = MaterialTheme.typography.bodySmall,
                 color = CmColors.text2, maxLines = if (righeTitolo <= 1) 3 else 2, modifier = Modifier.fillMaxWidth(),
             )
+        }
+        // Una chiusa si riprende dalla lista, senza aprire la scheda (contratto 1.9, `reopen`). In ambient no.
+        if (onReopen != null && !ambient) {
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.foundation.layout.Box(
+                Modifier.clip(RoundedCornerShape(percent = 50)).background(CmColors.accent).clickable(onClick = onReopen)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            ) { Text(stringResource(R.string.notif_resume), style = MaterialTheme.typography.labelMedium, color = CmColors.text) }
         }
     }
 }

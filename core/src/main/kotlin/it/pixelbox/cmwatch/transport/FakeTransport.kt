@@ -67,6 +67,12 @@ class FakeTransport(
             CmdOp.SCREEN -> if (ses == null) ko("no session ${cmd.session}") else ok("$ pytest -q tests\n42 passed in 3.1s\nEdit app/admin.py\nRead app/seed.py")
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")
+            // Contratto 1.9: i testi del relay, di successo e di rifiuto.
+            CmdOp.REOPEN -> when {
+                ses == null -> ko("${cmd.session} is not a closed session")
+                ses.state != SessionState.GONE -> ko("${ses.name} is already running")
+                else -> ok("reopened ${ses.name} (${ses.account}): last conversation in the folder")
+            }
         }
         results[cmd.id] = r
         return r

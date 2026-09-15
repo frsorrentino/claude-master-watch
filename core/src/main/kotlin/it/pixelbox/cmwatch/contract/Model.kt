@@ -27,7 +27,9 @@ enum class CmdOp {
     @SerialName("follow") FOLLOW, @SerialName("unfollow") UNFOLLOW, @SerialName("resume") RESUME,
     @SerialName("screen") SCREEN, @SerialName("allow_all") ALLOW_ALL,
     /** Contratto 1.4: l'ultima risposta intera della sessione, per la lettura a voce. */
-    @SerialName("last") LAST
+    @SerialName("last") LAST,
+    /** Contratto 1.9: una sessione gone rilanciata nella sua cartella, stessa conversazione se il PC la conosce. */
+    @SerialName("reopen") REOPEN,
 }
 
 @Serializable data class Option(val n: Int, val label: String)

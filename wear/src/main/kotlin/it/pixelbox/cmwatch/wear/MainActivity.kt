@@ -176,7 +176,11 @@ class MainActivity : ComponentActivity() {
         val ambient = rememberAmbient()
         SwipeDismissableNavHost(navController = nav, startDestination = Routes.SESSIONS) {
             composable(Routes.SESSIONS) {
-                SessionsScreen(snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient)
+                SessionsScreen(
+                    snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient,
+                    // Contratto 1.9: una chiusa si riprende dalla sua riga.
+                    onReopen = { n -> scope.launch { app.repo.command(CmdOp.REOPEN, n, null); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
+                )
             }
             composable(Routes.SESSION) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
@@ -191,6 +195,7 @@ class MainActivity : ComponentActivity() {
                     onBackToSessions = { nav.go(Screen.Sessions) },
                     speaking = speaking || preparing,
                     onListen = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.let { o -> { SpeakService.last(this@MainActivity, name, o.full) } },
+                    onReopen = { scope.launch { app.repo.command(CmdOp.REOPEN, name, null); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; Unit },
                     onRelaunch = snapshot.state?.let { st ->
                         st.sessions.firstOrNull { it.name == name }
                             ?.let { LaunchRules.pathFor(it, st.projects) }

@@ -60,6 +60,11 @@ nella sua configurazione; se manca, l'account di default è «personal» e gli a
 badge (tondo = personal), il colore delle notifiche, il ripiego e l'ordine della quota; se il campo manca, un relay
 precedente, ripiega sul nome «personale». `v` resta 1.
 
+Contratto 1.9 (15/09/2026, solo aggiunte): comando `reopen` — una sessione gone rilanciata nella sua cartella, stesso
+account, senza finestra; `--resume` della sua conversazione se l'id è noto e il transcript esiste, altrimenti
+`--continue` solo se nessun'altra sessione è viva nella cartella. Rifiuta un nome vivo, un nome fuori dal registro, una
+cartella sparita. `resume` non cambia. `v` resta 1.
+
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna

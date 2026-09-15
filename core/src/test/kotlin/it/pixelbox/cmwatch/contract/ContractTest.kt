@@ -75,7 +75,7 @@ class ContractTest {
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
-        assertEquals(8, results.size); assertEquals(2, results.count { !it.ok })
+        assertEquals(9, results.size); assertEquals(2, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
@@ -91,6 +91,18 @@ class ContractTest {
             .single { it.id == last.id }
         assertTrue(res.ok); assertTrue(res.text.isNotBlank())
         assertEquals(last, ContractJson.json.decodeFromString(Cmd.serializer(), ContractJson.encode(last)))
+    }
+
+    @Test fun reopenBringsBackAGoneSession() {
+        // Contratto 1.9: «reopen» rilancia una sessione gone nella sua cartella; `resume` resta la spinta a una viva.
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val reopen = cmds.single { it.op == CmdOp.REOPEN }
+        assertEquals("orbit-docs", reopen.session); assertNull(reopen.arg)
+        val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+            .single { it.id == reopen.id }
+        assertTrue(res.ok); assertTrue(res.text.startsWith("reopened orbit-docs"))
+        assertTrue(ContractJson.encode(reopen).contains("\"op\":\"reopen\""))
     }
 
     @Test fun unknownKeysAreIgnored() {

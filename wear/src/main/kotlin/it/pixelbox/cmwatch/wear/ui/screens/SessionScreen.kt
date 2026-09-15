@@ -57,6 +57,7 @@ fun SessionScreen(
     onFollow: (Boolean) -> Unit,
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
+    onReopen: (() -> Unit)? = null,
     speaking: Boolean = false,
     onListen: (() -> Unit)? = null,
 ) {
@@ -79,6 +80,9 @@ fun SessionScreen(
         edgeButton = {
             when {
                 s?.question != null -> CmEdgeButton(stringResource(R.string.card_reply), onClick = onReply, enabled = enabled)
+                // Una chiusa si riprende nella sua conversazione (contratto 1.9); «Riavvia» da capo resta sotto.
+                s?.state == SessionState.GONE && onReopen != null ->
+                    CmEdgeButton(stringResource(R.string.notif_resume), onClick = onReopen, enabled = enabled)
                 s?.state == SessionState.GONE && onRelaunch != null ->
                     CmEdgeButton(stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled)
                 s != null -> CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled)
@@ -149,6 +153,14 @@ fun SessionScreen(
                     )
                 }
                 // Niente bottoni «Terminale» e «Ascolta»: la card apre il Terminale, il ▶ sta in testata (Franz, 15/09 17:02).
+            } else if (onReopen != null && onRelaunch != null) {
+                // Se la conversazione non si può riprendere (il relay dice «use launch»), si riparte da capo.
+                item {
+                    WideButton(
+                        stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
             }
         }
     }
