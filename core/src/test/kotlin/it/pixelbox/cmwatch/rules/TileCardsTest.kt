@@ -266,6 +266,15 @@ class TileBodyTest {
         assertEquals(listOf(TileTexts.Window.H5, TileTexts.Window.WEEK), b.quotas.map { it.window })
     }
 
+    // 15/09 12:15: il relay manda `h5: null` (nessuna lettura delle cinque ore) e la settimana al 67 %: la tile restava
+    // senza nessuna barra. Senza le cinque ore c'è la settimana.
+    @Test fun senzaCinqueOreNelDatoLaBarraDellaSettimana() {
+        val corto = TileTexts.tileBody("turno in corso", null, sotto.copy(pct = null, w7 = 67))
+        assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.WEEK, 67, sotto.resetW7)), corto.quotas)
+        val esteso = TileTexts.tileBody(lungo, null, sotto.copy(pct = null, w7 = 67))
+        assertEquals(listOf(TileTexts.Window.WEEK), esteso.quotas.map { it.window })
+    }
+
     @Test fun senzaSettimanaNelDatoUnaBarraSola() {
         val b = TileTexts.tileBody("turno in corso", null, sotto.copy(w7 = null))
         assertEquals(listOf(TileTexts.Window.H5), b.quotas.map { it.window }); assertEquals(3, b.mainLines)

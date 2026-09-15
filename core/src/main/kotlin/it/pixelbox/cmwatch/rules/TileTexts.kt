@@ -121,7 +121,8 @@ object TileTexts {
      * Testo e barre della quota nella card (Franz, 15/09 11:37 e 11:58). Lo spazio è di tre righe e una barra. Se il testo
      * con l'aggiunta sta intero in due righe e il dato ha tutte e due le finestre, la riga libera va alla seconda barra:
      * cinque ore sopra, settimana sotto. Altrimenti tre righe e una barra sola: quella sopra soglia se c'è (la settimana
-     * dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %. `mainLines` ed `extraLines` sono il
+     * dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %, o la settimana se delle cinque ore non
+     * c'è lettura. `mainLines` ed `extraLines` sono il
      * massimo concesso: il conto a 21 caratteri per riga è per difetto e il testo può occuparne meno.
      */
     fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
@@ -131,7 +132,8 @@ object TileTexts {
             val due = layout(main, extra, TILE_BODY_LINES - 1)
             if (due.main == main.trim() && (extra == null || due.extra == extra.trim())) return due.copy(quotas = listOf(h5, week))
         }
-        return layout(main, extra, TILE_BODY_LINES).copy(quotas = listOfNotNull(line?.let { tileQuota(it) } ?: h5))
+        // Senza lettura delle cinque ore (`h5: null`, 15/09 12:15) resta la settimana: prima la tile restava senza barre.
+        return layout(main, extra, TILE_BODY_LINES).copy(quotas = listOfNotNull(line?.let { tileQuota(it) } ?: h5 ?: week))
     }
 
     private fun layout(main: String, extra: String?, lines: Int): TileBody {
