@@ -315,12 +315,20 @@ open class CmTileService : TileService() {
                 .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(BAR_H / 2f)).build())
                 .build()
         )
-        // Scala orizzontale da 0 a 1 attorno al bordo sinistro; un renderer senza espressioni dinamiche resta a 1 (piena).
+        // Scala orizzontale attorno al bordo sinistro: 0 finché la tile non è visibile, 1 quando lo diventa, con
+        // l'animazione del renderer. G11 (16/09 01:06): `animate(0f, 1f)` partiva quando la tile veniva preparata, prima
+        // dello swipe, e al polso non si vedeva (guida delle tile: le animazioni partono all'inflate). Un renderer senza
+        // espressioni dinamiche resta a 1, cioè piena, come prima.
         if (grow) mods.setTransformation(
             ModifiersBuilders.Transformation.Builder()
                 .setScaleX(
                     androidx.wear.protolayout.TypeBuilders.FloatProp.Builder(1f)
-                        .setDynamicValue(androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat.animate(0f, 1f))
+                        .setDynamicValue(
+                            androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
+                                .onCondition(androidx.wear.protolayout.expression.PlatformEventSources.isLayoutVisible())
+                                .use(1f).elseUse(0f)
+                                .animate()
+                        )
                         .build()
                 )
                 .setPivotX(DimensionBuilders.BoundingBoxRatio.Builder(androidx.wear.protolayout.TypeBuilders.FloatProp.Builder(0f).build()).build())

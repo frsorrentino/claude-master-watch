@@ -52,7 +52,9 @@ fun Gauge(
     // L'arco si riempie con la molla lenta del motion scheme di M3 Expressive, non con una curva fissa (B9, 15/09 23:40).
     val fill = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
     LaunchedEffect(target, animate) {
-        if (animate) shown.animateTo(target, fill)
+        // G9 (16/09 01:04, registrazione dal polso): il riempimento finiva mentre la schermata stava ancora entrando e al
+        // polso non si vedeva. Parte dopo lo scorrimento d'ingresso (~400 ms), solo la prima volta; i cambi dopo, subito.
+        if (animate) { if (shown.value == 0f) kotlinx.coroutines.delay(400); shown.animateTo(target, fill) }
         else shown.snapTo(target)
     }
     // Il dato vecchio si spegne piano: l'arco e l'icona scendono a metà luce invece di cambiare colore di colpo.
