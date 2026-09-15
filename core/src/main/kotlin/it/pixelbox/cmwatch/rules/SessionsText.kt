@@ -34,7 +34,21 @@ object SessionsText {
      * nome, poi un titolo chiaro su cosa sta facendo e un dettaglio grigio su cosa segue. Niente testo inventato: se
      * un campo non c'è, la riga non si disegna.
      */
-    data class Cell(val title: String?, val detail: String?)
+    data class Cell(val title: String?, val detail: String?) {
+        /**
+         * Quattro righe in tutto (Franz, 14/09 08:10). Senza il prossimo passo sotto, il titolo le prende tutte: a 42
+         * caratteri, la misura della tile, «- Passkey Google: il login…» diventava «- Passkey Google» (15/09 08:30).
+         */
+        val titleLines: Int get() = if (detail.isNullOrBlank()) 4 else 2
+
+        /** Il titolo nelle sue righe, un pensiero intero e mai «…»: una riga ne tiene circa 22 caratteri. */
+        val titleText: String? get() = title?.let { TileTexts.fitTile(it, max = if (titleLines == 4) TITLE_MAX_4 else TileTexts.TILE_MAX) }
+    }
+
+    const val TITLE_MAX_4 = 88
+
+    /** «- », «* », «• », «1. » in testa: l'esito breve a volte è la prima voce di un elenco. */
+    private val ELENCO = Regex("^\\s*([-*•]|\\d+[.)])\\s+")
 
     fun cell(
         s: Session,
@@ -50,7 +64,7 @@ object SessionsText {
         val fresca = s.nextAt?.let { Instant.ofEpochSecond(it).atZone(zone).toLocalDate() == oggi } == true
         val f = if (fresca) s else s.copy(next = null, nextAt = null)
         val next = f.next?.trim()?.takeIf { it.isNotEmpty() && f.nextAt != null }
-        val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
+        val esito = s.outcome?.short?.replace(ELENCO, "")?.trim()?.takeIf { it.isNotEmpty() }
         return when {
             // Chi aspetta: la domanda occupa il posto d'onore, il resto lo dice la schermata.
             s.question != null -> Cell(title = s.question?.text, detail = null)

@@ -98,3 +98,38 @@ class SessionsCellTest {
         assertEquals(g.project, SessionsText.cell(g, st.ts, "turno in corso", "a riposo", tools).title)
     }
 }
+
+// Franz, 15/09 08:30: la lista tagliava a 42 caratteri, la misura della tile, anche quando sotto non c'era niente.
+class SessionsTitleTest {
+    private val s = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val now = 1789210800L
+    private val rome = ZoneId.of("Europe/Rome")
+    private val idle = s.sessions.first { it.state == SessionState.IDLE }
+    private val ads = "- Passkey Google: il login Google la rifiuta come \"non compatibile\". Va risolta prima che serva un token Google nuovo, altrimenti il widget si blocca di nuovo."
+
+    private fun cell(short: String, next: String? = null) = SessionsText.cell(
+        idle.copy(outcome = idle.outcome!!.copy(short = short), next = next, nextAt = next?.let { now }),
+        now, "turno in corso", "a riposo", zone = rome,
+    )
+
+    @Test fun senzaProssimoIlTitoloPrendeLeQuattroRighe() {
+        val c = cell(ads)
+        assertEquals(4, c.titleLines)
+        assertEquals("Passkey Google: il login Google la rifiuta come \"non compatibile\".", c.titleText)
+    }
+
+    @Test fun unEsitoCortoSiLeggeIntero() =
+        assertEquals("ricetta rilascio scritta in docs/metodologie", cell("ricetta rilascio scritta in docs/metodologie").titleText)
+
+    @Test fun colProssimoPassoIlTitoloResta2Righe() {
+        val c = cell("ricetta rilascio scritta in docs/metodologie", next = "rivedere i seed")
+        assertEquals(2, c.titleLines)
+        assertEquals("ricetta rilascio scritta in", c.titleText)
+    }
+
+    @Test fun ilSegnoDiElencoNonEntraNelTitolo() {
+        assertEquals("Passkey Google", cell("- Passkey Google").title)
+        assertEquals("Passkey Google", cell("* Passkey Google").title)
+        assertEquals("Passkey Google", cell("1. Passkey Google").title)
+    }
+}

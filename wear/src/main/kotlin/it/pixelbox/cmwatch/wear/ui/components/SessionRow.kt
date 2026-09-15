@@ -99,11 +99,12 @@ fun SessionRow(
         }
         // Quattro righe in tutto: se il titolo sta su una riga, al testo sotto ne restano tre (Franz, 14/09 08:10).
         var righeTitolo by remember(cell.title) { mutableIntStateOf(1) }
-        cell.title?.takeIf { it.isNotBlank() }?.let {
-            // Un pensiero intero nelle due righe, mai «…» (Franz, 14/09 18:16): la stessa regola della tile.
+        cell.titleText?.takeIf { it.isNotBlank() }?.let {
+            // Un pensiero intero, mai «…» (Franz, 14/09 18:16); quattro righe se sotto non c'è il prossimo passo, due se
+            // c'è (Franz, 15/09 08:39). Righe e taglio li decide `SessionsText.Cell`.
             Text(
-                TileTexts.fitTile(it), style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
-                maxLines = 2, modifier = Modifier.fillMaxWidth(),
+                it, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
+                maxLines = cell.titleLines, modifier = Modifier.fillMaxWidth(),
                 onTextLayout = { righeTitolo = it.lineCount },
             )
         }
