@@ -68,6 +68,9 @@ cartella sparita. `resume` non cambia. `v` resta 1.
 Contratto 1.9.1 (15/09/2026, solo comportamento): `reopen` apre la scheda del terminale sul desktop come `launch` (se il
 desktop non c'è, parte senza finestra). Forma e testi invariati. `v` resta 1.
 
+Contratto 1.9.2 (15/09/2026, solo comportamento, decisione di Franz delle 19:39): anche `launch` apre la scheda del
+terminale sul desktop come `reopen` (se il desktop non c'è, parte senza finestra). Forma e testi invariati. `v` resta 1.
+
 Contratto 1.10 (15/09/2026, solo aggiunte): `answer` accetta come arg anche `text:<testo>` («Type something.» con quel
 testo, a capo → spazi) e `chat` («Chat about this»); risultato `answered {n}. {testo}` o `answered {n}. Chat about this`;
 `text:` vuoto → «empty text», altri arg non numerici → «answer <arg>: expected a number, text:<text> or chat». Dopo
