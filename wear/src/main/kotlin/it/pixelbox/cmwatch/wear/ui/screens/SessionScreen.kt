@@ -130,8 +130,9 @@ fun SessionScreen(
                         onCheckedChange = { onFollow(it) },
                         enabled = enabled,
                         label = { Text(stringResource(R.string.card_follow), maxLines = 1) },
-                        // La campanella della lista (Franz, 14/09 20:32): giallina se seguita, grigia se no.
-                        icon = { Icon(Icons.Rounded.Notifications, contentDescription = null, tint = if (s.followed) CmColors.followed else CmColors.text2) },
+                        // Gialla se seguita, come nella lista (14/09 20:32); se no azzurra come le altre icone delle azioni:
+                        // grigia sembrava un bottone spento (Franz, 15/09 13:21).
+                        icon = { Icon(Icons.Rounded.Notifications, contentDescription = null, tint = if (s.followed) CmColors.followed else CmColors.actionIcon) },
                         modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                         transformation = SurfaceTransformation(spec),
                     )
@@ -154,15 +155,7 @@ fun SessionScreen(
                         )
                     }
                 }
-                if (s.outcome != null) {
-                    item {
-                        IconAction(
-                            label = stringResource(R.string.card_outcome), icon = Icons.Rounded.Check,
-                            onClick = onOutcome, enabled = true,
-                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
-                        )
-                    }
-                }
+                // Niente bottone «Esito»: toccare la card in alto apre già l'Esito (Franz, 15/09 13:21, «ridondante»).
             }
         }
     }
