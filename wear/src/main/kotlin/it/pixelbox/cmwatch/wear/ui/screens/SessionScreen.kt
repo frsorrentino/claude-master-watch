@@ -95,8 +95,10 @@ fun SessionScreen(
             // Scheda rifatta (review UX, scelta da Franz il 13/09): intestazione, UNA card con quello che sta
             // facendo, «Segui» come interruttore, poi le azioni con la loro icona. Prima erano quattro bottoni
             // larghi identici che davano lo stesso peso a tutto, con l'informazione in due righe minuscole.
-            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec)) }
             val cell = SessionsText.cell(s, now, running, idleLabel, tools)
+            // La riga dello strumento in testata tace se la card sotto la dice già intera (Franz, 15/09 16:00).
+            val toolRepeated = cell.says(ToolText.describe(s.toolNote, s.tool, tools))
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated) }
             if (cell.title != null || cell.detail != null) {
                 item {
                     Card(

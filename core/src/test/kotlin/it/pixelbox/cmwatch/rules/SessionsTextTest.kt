@@ -136,3 +136,48 @@ class SessionsTitleTest {
     @Test fun unLinkMarkdownDiventaIlSuoTesto() =
         assertEquals("Android Central – Googlebook event in New York", cell("- [Android Central – Googlebook event in New York](https://www.androidcentral.com/x)").title)
 }
+
+// Franz, 15/09 16:00: al tap sulla sessione la testata ripeteva la description che la card mostrava intera. Tre testi
+// sulla scheda devono dire tre cose diverse, altrimenti resta solo quello completo.
+class SessionsRepeatTest {
+    private val st = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val zone = ZoneId.of("Europe/Rome")
+    private val mezzanotteOggi = Instant.ofEpochSecond(st.ts).atZone(zone).toLocalDate().atStartOfDay(zone).toEpochSecond()
+    private val tools = ToolText.Labels(
+        run = "esegue %1\$s", read = "legge %1\$s", edit = "modifica %1\$s", write = "scrive %1\$s",
+        search = "cerca %1\$s", web = "cerca sul web", message = "scrive a un'altra sessione",
+        delegate = "delega a un agente", plan = "aggiorna il piano", other = "usa %1\$s",
+    )
+    private val note = "Fa girare i test nuovi sul codice di oggi (attesi rossi)"
+    private val busy = st.sessions.first { it.state == SessionState.BUSY }.copy(tool = "Bash", toolNote = note)
+
+    @Test fun laTestataTaceLaDescriptionCheLaCardMostraIntera() {
+        val c = SessionsText.cell(busy, st.ts, "turno in corso", "a riposo", tools, zone)
+        assertTrue(c.says(TileTexts.fitTile(note, max = 30)))
+        assertTrue(c.says(note))
+    }
+
+    @Test fun unTestoDiversoRestaInTestata() {
+        val c = SessionsText.cell(busy.copy(toolNote = null, tool = null, next = "rifinire la tile", nextAt = mezzanotteOggi), st.ts, "turno in corso", "a riposo", tools, zone)
+        assertFalse(c.says(note))
+    }
+
+    @Test fun ilProssimoCheRipeteIlTitoloLasciaSoloQuelloCompleto() {
+        val c = SessionsText.cell(busy.copy(next = "fa girare i test nuovi.", nextAt = mezzanotteOggi), st.ts, "turno in corso", "a riposo", tools, zone)
+        assertEquals(note, c.title); assertNull(c.detail)
+    }
+
+    @Test fun ilTitoloCortoCedeIlPostoAlProssimoPiuLungo() {
+        val c = SessionsText.cell(busy.copy(toolNote = "Fa girare i test", next = "Fa girare i test nuovi sul codice di oggi", nextAt = mezzanotteOggi), st.ts, "turno in corso", "a riposo", tools, zone)
+        assertEquals("Fa girare i test nuovi sul codice di oggi", c.title); assertNull(c.detail)
+    }
+
+    @Test fun chiEFermaSenzaEsitoNonRipeteIlProssimo() {
+        val i = st.sessions.first { it.state == SessionState.IDLE }.copy(outcome = null, next = "rifinire la tile", nextAt = mezzanotteOggi)
+        val c = SessionsText.cell(i, st.ts, "turno in corso", "a riposo", tools, zone)
+        assertEquals("rifinire la tile", c.title); assertNull(c.detail)
+    }
+
+    @Test fun unaParolaCheNeIniziaUnAltraNonERipetizione() =
+        assertFalse(SessionsText.repeats("legge", "leggere la tile"))
+}

@@ -43,7 +43,29 @@ object SessionsText {
 
         /** Il titolo nelle sue righe, un pensiero intero e mai «…»: una riga ne tiene circa 22 caratteri. */
         val titleText: String? get() = title?.let { TileTexts.fitTile(it, max = if (titleLines == 4) TITLE_MAX_4 else TileTexts.TILE_MAX) }
+
+        /** La card dice già `text`: la testata della scheda allora non lo ripete. */
+        fun says(text: String?): Boolean = repeats(text, title) || repeats(text, detail)
     }
+
+    /**
+     * Due testi dicono la stessa cosa se, senza maiuscole e punteggiatura finale, uno comincia con l'altro a confine di
+     * parola: la testata taglia la description a 56 caratteri, la card la mostra intera. Tre testi sulla scheda devono
+     * dire tre cose diverse, altrimenti resta solo quello completo (Franz, 15/09 16:00).
+     */
+    fun repeats(a: String?, b: String?): Boolean {
+        val x = norm(a ?: return false)
+        val y = norm(b ?: return false)
+        if (x.isEmpty() || y.isEmpty()) return false
+        val (corto, lungo) = if (x.length <= y.length) x to y else y to x
+        return lungo.startsWith(corto) && (lungo.length == corto.length || !lungo[corto.length].isLetterOrDigit())
+    }
+
+    private fun norm(t: String) = TileTexts.plain(t).lowercase().replace(Regex("\\s+"), " ").trim().trimEnd('.', '…', ':', ';', ',', ' ')
+
+    /** Titolo e dettaglio che ripetono la stessa cosa: resta il più lungo, da solo, con tutte le righe per sé. */
+    private fun pair(title: String?, detail: String?): Cell =
+        if (repeats(title, detail)) Cell(title = listOfNotNull(title, detail).maxBy { it.length }, detail = null) else Cell(title, detail)
 
     const val TITLE_MAX_4 = 88
 
@@ -70,9 +92,9 @@ object SessionsText {
             s.state == SessionState.GONE -> Cell(title = esito ?: s.project, detail = null)
             s.state == SessionState.BUSY || s.state == SessionState.AWAITING -> {
                 val t = TileTexts.activity(f, busy = true, running = running, idle = idle, now = now, tools = tools)
-                Cell(title = t, detail = next?.takeIf { it != t })
+                pair(t, next)
             }
-            else -> Cell(title = esito ?: next ?: idle, detail = next?.takeIf { it != esito })
+            else -> pair(esito ?: next ?: idle, next)
         }
     }
 
