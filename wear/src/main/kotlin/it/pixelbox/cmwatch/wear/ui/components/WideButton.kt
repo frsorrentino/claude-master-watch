@@ -1,5 +1,7 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
+import androidx.compose.foundation.BorderStroke
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
@@ -29,6 +31,8 @@ fun WideButton(
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     transformation: SurfaceTransformation? = null,
+    /** Bordo rosso sulle opzioni delle domande a rischio alto, ora che i tasti sono tutti blu (Franz, 15/09 18:14). */
+    border: BorderStroke? = null,
 ) {
     val m = modifier.fillMaxWidth().heightIn(min = 56.dp)
     // Sul pieno chiaro (ambra) il testo è nero, sul pieno scuro (cobalto, rosso) bianco: regola del tema, non del bottone.
@@ -36,12 +40,12 @@ fun WideButton(
     if (primary) {
         Button(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
-            colors = ButtonDefaults.buttonColors(containerColor = fill, contentColor = onFill),
+            colors = ButtonDefaults.buttonColors(containerColor = fill, contentColor = onFill), border = border,
         ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
     } else {
         FilledTonalButton(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
-            colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text),
+            colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text), border = border,
         ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
     }
 }

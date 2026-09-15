@@ -112,6 +112,8 @@ fun QuestionScreen(
                         onLongClick = if (long) ({ onAnswer(opt.n) }) else null,
                         primary = primary, enabled = enabled && pending == null,
                         transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                        // Il rischio alto si vede anche col colore, non solo con la pressione lunga (Franz, 15/09 18:14).
+                        border = if (q.tier == Tier.HIGH) androidx.compose.foundation.BorderStroke(2.dp, CmColors.gone) else null,
                     )
                 }
             }
