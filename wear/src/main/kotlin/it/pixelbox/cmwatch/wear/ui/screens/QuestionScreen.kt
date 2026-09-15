@@ -105,13 +105,12 @@ fun QuestionScreen(
             q.options.forEachIndexed { i, opt ->
                 item {
                     val primary = QuestionRules.isPrimary(i)
-                    val fill = when (q.tier) { Tier.LOW -> CmColors.accent; Tier.MEDIUM -> CmColors.waiting; Tier.HIGH -> CmColors.gone }
                     val long = QuestionRules.needsLongPress(q.tier)
                     WideButton(
                         QuestionRules.optionLabel(opt),
                         onClick = { if (long) holdHint = true else onAnswer(opt.n) },
                         onLongClick = if (long) ({ onAnswer(opt.n) }) else null,
-                        primary = primary, fill = fill, enabled = enabled && pending == null,
+                        primary = primary, enabled = enabled && pending == null,
                         transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                     )
                 }
