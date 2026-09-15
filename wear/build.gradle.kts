@@ -48,7 +48,12 @@ android {
             }
         }
     }
-    testOptions { unitTests.isReturnDefaultValues = true }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        // Traccia intera nel log della CI: Paparazzi gira solo lì (x86_64), e senza questo il NoClassDefFoundError
+        // della tile non diceva quale classe mancava (15/09 18:21).
+        unitTests.all { it.testLogging { exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL; showCauses = true; showStackTraces = true } }
+    }
 }
 
 dependencies {
