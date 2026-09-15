@@ -148,3 +148,48 @@ class TerminalNoiseVistoDalVivoTest {
         assertEquals(listOf("❯ claude-master relay push", "push fatto"), TerminalText.lines(grezzo))
     }
 }
+
+/** Il terminale come un copione (design 15/09): chi parla si vede dalla voce della riga, non da una bolla. */
+class TerminalVociTest {
+    private val USER = TerminalText.Kind.USER
+    private val CLAUDE = TerminalText.Kind.CLAUDE
+    private val TOOL = TerminalText.Kind.TOOL
+    private val OUTPUT = TerminalText.Kind.OUTPUT
+
+    @Test fun leVociDelTerminale() {
+        val out = TerminalText.rows(listOf(
+            "❯ Lancia i test e poi", "aggiorna il changelog", "⏺ Lancio la suite.",
+            "⏺ Bash(pytest -q)", "⎿ 42 passed in 3.1s", "⏺ Tutto verde, passo al", "changelog.",
+        ).joinToString("\n")).filter { it.text.isNotEmpty() }
+        assertEquals(listOf(USER, USER, CLAUDE, TOOL, OUTPUT, CLAUDE, CLAUDE), out.map { it.kind })
+        assertEquals("Lancia i test e poi", out[0].shown)
+        assertEquals("Bash(pytest -q)", out[3].shown)
+    }
+
+    @Test fun laRispostaAUnaDomandaEDellUtente() {
+        val out = TerminalText.rows("● User answered Claude's questions:\n· Prova dal polso? → Continua\n⏺ Continuo.")
+            .filter { it.text.isNotEmpty() }
+        assertEquals(listOf(USER, USER, CLAUDE), out.map { it.kind })
+    }
+
+    @Test fun ilPromptVuotoInFondoSparisce() {
+        assertEquals(listOf("⏺ Fatto."), TerminalText.lines("⏺ Fatto.\n❯ "))
+    }
+
+    @Test fun primaDellaPrimaTestaEOutput() {
+        assertEquals(OUTPUT, TerminalText.rows("42 passed\n❯ ok").first().kind)
+    }
+
+    @Test fun blocchiPerVoce() {
+        val b = TerminalText.blocks("❯ Lancia i test e poi\naggiorna il changelog\n⏺ Lancio la suite.\n⏺ Bash(pytest -q)\n⎿ 42 passed in 3.1s\n⏺ Tutto verde.")
+        assertEquals(listOf(
+            USER to "Lancia i test e poi\naggiorna il changelog", CLAUDE to "Lancio la suite.",
+            TOOL to "Bash(pytest -q)", OUTPUT to "42 passed in 3.1s", CLAUDE to "Tutto verde.",
+        ), b.map { it.kind to it.text })
+    }
+
+    @Test fun ilTitoloEUnBloccoASe() {
+        val b = TerminalText.blocks("⏺ Fatto:\n# Esito\nTutto verde")
+        assertEquals(listOf(false, true, false), b.map { it.heading })
+    }
+}

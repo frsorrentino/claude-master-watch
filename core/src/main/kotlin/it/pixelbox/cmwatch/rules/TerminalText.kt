@@ -14,14 +14,34 @@ package it.pixelbox.cmwatch.rules
 object TerminalText {
     const val MAX = 30
 
-    /** Riga da disegnare: `head` = apertura di blocco (colore e peso diversi); testo vuoto = stacco fra blocchi. */
-    data class Row(val text: String, val head: Boolean = false)
+    /** Chi parla nella riga (design 15/09, «copione»): tu, Claude che scrive, una chiamata a strumento, il suo output. */
+    enum class Kind { USER, CLAUDE, TOOL, OUTPUT }
+
+    /** Riga da disegnare: `head` = apertura di blocco; testo vuoto = stacco fra blocchi; `kind` = chi parla. */
+    data class Row(val text: String, val head: Boolean = false, val kind: Kind = Kind.OUTPUT) {
+        /** Il testo senza il segno di chi parla: sul polso lo dicono carattere e colore. `text` resta intero per la voce. */
+        val shown: String get() = if (text.isNotEmpty() && text[0] in MARKS) text.drop(1).trimStart() else text
+    }
+
+    /** Righe consecutive della stessa voce in un solo item: così il filo accanto alle righe dell'utente resta continuo. */
+    data class Block(val kind: Kind, val text: String, val heading: Boolean = false)
 
     /** Chiamata a uno strumento come la stampa di Claude Code: `Bash(pytest -q)`, `Read(file.kt)`. */
     private val TOOL = Regex("^[A-Z][A-Za-z]{2,}\\(")
 
     /** Segni di apertura: prompt della shell, punti elenco di Claude Code, titoli markdown. */
-    private val HEAD_CHARS = setOf('❯', '>', '$', '⏺', '✻', '•', '·', '#')
+    private val HEAD_CHARS = setOf('❯', '›', '>', '$', '⏺', '●', '✻', '•', '·', '#')
+
+    /** Segni di chi parla, tolti dal testo disegnato: prompt dell'utente e punto di Claude Code. */
+    private val MARKS = setOf('❯', '›', '>', '⏺', '●')
+    private val USER_MARKS = setOf('❯', '›', '>')
+    private val SPEAKS = setOf('⏺', '●')
+
+    /** Il prompt vuoto in fondo alla cattura: sul polso sarebbe un filo azzurro con niente accanto. */
+    private val BARE_PROMPTS = setOf("❯", "›", ">")
+
+    /** Le risposte alle domande: le stampa Claude Code, ma le ha date l'utente. */
+    private val ANSWERED = Regex("^[⏺●]?\\s*User answered")
 
     /** Codici ANSI: la cattura arriva grezza dal PC e i colori qui sono solo rumore. */
     private val ANSI = Regex("\u001B\\[[0-9;?]*[A-Za-z]")
@@ -94,12 +114,60 @@ object TerminalText {
         while (compatte.isNotEmpty() && compatte.last().isEmpty()) compatte.removeAt(compatte.size - 1)
 
         val out = mutableListOf<Row>()
+        var voce = Kind.OUTPUT
         for (riga in compatte.takeLast(MAX)) {
+            if (riga in BARE_PROMPTS) continue
             val head = riga.isNotEmpty() && (riga[0] in HEAD_CHARS || TOOL.containsMatchIn(riga))
+            voce = voceDi(riga, voce)
             // Stacco solo prima di un blocco nuovo e solo se sopra c'è del corpo: niente vuoti in cima né doppi.
-            if (head && out.isNotEmpty() && out.last().text.isNotEmpty() && !out.last().head) out += Row("")
-            out += Row(riga, head)
+            if (head && out.isNotEmpty() && out.last().text.isNotEmpty() && !out.last().head) out += Row("", kind = voce)
+            out += Row(riga, head, voce)
         }
+        // Tolto il prompt vuoto in fondo, non deve restare lo stacco che lo precedeva.
+        while (out.isNotEmpty() && out.last().text.isEmpty()) out.removeAt(out.size - 1)
+        return out
+    }
+
+    /**
+     * Chi parla: i segni propri della stampa di Claude Code decidono la testa del blocco, il corpo eredita la voce della
+     * sua testa. Sotto una chiamata a strumento il corpo è il suo output; prima della prima testa, output anche lui.
+     */
+    private fun voceDi(riga: String, corrente: Kind): Kind = when {
+        riga.isEmpty() -> corrente
+        ANSWERED.containsMatchIn(riga) -> Kind.USER
+        riga[0] in USER_MARKS -> Kind.USER
+        riga[0] in SPEAKS -> if (TOOL.containsMatchIn(riga.drop(1).trimStart())) Kind.TOOL else Kind.CLAUDE
+        riga[0] == '$' || TOOL.containsMatchIn(riga) -> Kind.TOOL
+        riga[0] == '#' -> Kind.CLAUDE
+        // Un elenco resta di chi lo sta scrivendo: le risposte «· … → …» sono dell'utente, i punti sotto la prosa di Claude.
+        riga[0] == '•' || riga[0] == '·' -> if (corrente == Kind.TOOL || corrente == Kind.OUTPUT) Kind.CLAUDE else corrente
+        riga[0] == '✻' -> Kind.OUTPUT
+        corrente == Kind.TOOL -> Kind.OUTPUT
+        else -> corrente
+    }
+
+    /**
+     * I blocchi da disegnare: righe non vuote consecutive della stessa voce, spezzate dallo stacco, dal cambio di voce e
+     * dai titoli `#` (un blocco a sé, in grassetto, senza i cancelletti).
+     */
+    fun blocks(text: String): List<Block> {
+        val out = mutableListOf<Block>()
+        var righe = mutableListOf<String>()
+        var voce: Kind? = null
+        var titolo = false
+        fun chiudi() {
+            val v = voce
+            if (v != null && righe.isNotEmpty()) out += Block(v, righe.joinToString("\n"), titolo)
+            righe = mutableListOf(); voce = null; titolo = false
+        }
+        for (r in rows(text)) {
+            if (r.text.isEmpty()) { chiudi(); continue }
+            val tit = r.text[0] == '#'
+            if (voce != r.kind || tit || titolo) chiudi()
+            voce = r.kind; titolo = tit
+            righe += if (tit) r.text.trimStart('#').trim() else r.shown
+        }
+        chiudi()
         return out
     }
 }
