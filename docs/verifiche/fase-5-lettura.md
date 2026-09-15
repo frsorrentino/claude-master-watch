@@ -42,14 +42,14 @@ Build `7898035`, installata il 16/09 alle 00:07:35. Da provare con «riduci anim
 
 | # | Cosa | Come | Esito |
 |---|------|------|-------|
-| G1 | ▶ si schiaccia al tocco e in lettura diventa un quadrato chiaro con ■ | Domanda o Terminale, ▶ | |
-| G2 | Il nome resta su una riga accanto a ▶ («ledger-api», «atlas-shop»), più piccolo se serve | Domanda, Scheda, Terminale | |
-| G3 | Nel Terminale dal vivo i blocchi nuovi entrano in dissolvenza, i vecchi restano fermi; l'ora del divisore sfuma | Terminale aperto su una sessione che lavora | |
-| G4 | Il paragrafo letto si accende piano | Terminale, ▶ sulla Risposta | |
-| G5 | Nella lista le card scivolano al loro posto quando cambia l'ordine; il badge sfuma da ▶ a ✓ o ❓ | lista, una sessione che finisce o fa una domanda | |
-| G6 | Dopo una risposta o un prompt: spunta «Fatto» (o croce «Non riuscito») e vibrazione; nessuna vibrazione a Terminale aperto | rispondere a una domanda; Terminale aperto 30 s | |
-| G7 | Grigio secondario più leggibile (età, dettagli, Timeline) | lista, Timeline | |
-| G8 | Al posto di «Chiedo al PC» tre righe che luccicano | aprire il Terminale | |
-| G9 | Gli archi della Quota si riempiono con una molla; con il dato vecchio si spengono piano | Quota | |
-| G10 | Accanto all'ora «❓ n» in ambra quando qualcuno aspetta | qualsiasi schermata dell'app con una domanda aperta | |
-| G11 | Nella tile la barra della quota cresce da sinistra quando la tile si carica | scorrere fino alla tile | |
+| G1 | ▶ si schiaccia al tocco e in lettura diventa un quadrato chiaro con ■ | Domanda o Terminale, ▶ | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G2 | Il nome resta su una riga accanto a ▶ («ledger-api», «atlas-shop»), più piccolo se serve | Domanda, Scheda, Terminale | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G3 | Nel Terminale dal vivo i blocchi nuovi entrano in dissolvenza, i vecchi restano fermi; l'ora del divisore sfuma | Terminale aperto su una sessione che lavora | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G4 | Il paragrafo letto si accende piano | Terminale, ▶ sulla Risposta | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G5 | Nella lista le card scivolano al loro posto quando cambia l'ordine; il badge sfuma da ▶ a ✓ o ❓ | lista, una sessione che finisce o fa una domanda | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G6 | Dopo una risposta o un prompt: spunta «Fatto» (o croce «Non riuscito») e vibrazione; nessuna vibrazione a Terminale aperto | rispondere a una domanda; Terminale aperto 30 s | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G7 | Grigio secondario più leggibile (età, dettagli, Timeline) | lista, Timeline | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G8 | Al posto di «Chiedo al PC» tre righe che luccicano | aprire il Terminale | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G9 | Gli archi della Quota si riempiono con una molla; con il dato vecchio si spengono piano | Quota | ✗ 16/09 01:00: il riempimento finiva mentre la schermata entrava (registrazione dal polso, 7 %). Corretto in `9b806ad` (parte dopo ~400 ms), da riprovare |
+| G10 | Accanto all'ora «❓ n» in ambra quando qualcuno aspetta | qualsiasi schermata dell'app con una domanda aperta | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
+| G11 | Nella tile la barra della quota cresce da sinistra quando la tile si carica | scorrere fino alla tile | ✗ 16/09 01:00: `animate(0,1)` partiva alla preparazione della tile, prima dello swipe. Corretto in `9b806ad` (cresce a tile visibile, `isLayoutVisible`), da riprovare |
