@@ -1,4 +1,6 @@
 name: Build Wear OS APK
+# Repo pubblico dal 15/09/2026 (storia ripulita); i secret di firma KEYSTORE_PASS, KEY_ALIAS, KEY_PASS e
+# RELEASE_KEYSTORE_BASE64 vengono da watchface/release-keystore-credentials.txt e release.jks.
 
 on:
   push:
