@@ -33,10 +33,30 @@ class ComplicationTextsTest {
 
     @Test fun ranged() {
         val r = ComplicationTexts.ranged(q, "personal")
-        assertEquals(11f, r.value); assertEquals(100f, r.max); assertEquals("11 %", r.text)
-        val none = ComplicationTexts.ranged(q, "work")
-        assertEquals(0f, none.value); assertEquals("—", none.text)
+        assertEquals(11f, r.value); assertEquals(100f, r.max); assertEquals("5h 11%", r.text); assertEquals(false, r.week)
+        // `work` nella fixture ha solo la settimana: l'anello la mostra con la sua sigla.
+        assertEquals("7d 75%", ComplicationTexts.ranged(q, "work").text)
+        val none = ComplicationTexts.ranged(q, "nessuno")
+        assertEquals(0f, none.value); assertEquals("—", none.text); assertEquals(null, none.week)
     }
+
+    // Franz, 15/09 16:44: di notte e nel weekend le 5 ore stanno a zero, l'anello passa alla settimana con la sua sigla.
+    private fun withQuota(h5: Int?, w7: Int?) =
+        q.copy(quota = q.quota.mapValues { (k, v) -> if (k == "personal") v.copy(h5 = h5, w7 = w7) else v })
+
+    @Test fun rangedAZeroPassaAllaSettimana() {
+        val r = ComplicationTexts.ranged(withQuota(0, 34), "personal")
+        assertEquals(34f, r.value); assertEquals("7d 34%", r.text); assertEquals(true, r.week)
+    }
+
+    @Test fun rangedSenzaCinqueOrePassaAllaSettimana() =
+        assertEquals("7d 34%", ComplicationTexts.ranged(withQuota(null, 34), "personal").text)
+
+    @Test fun rangedAZeroSenzaSettimanaRestaSulleCinqueOre() =
+        assertEquals("5h 0%", ComplicationTexts.ranged(withQuota(0, null), "personal").text)
+
+    @Test fun rangedSenzaLettureMostraIlTrattino() =
+        assertEquals("—", ComplicationTexts.ranged(withQuota(null, null), "personal").text)
 
     @Test fun tapTargets() {
         assertEquals("cmwatch://question/ledger-api", ComplicationTexts.tapTarget(q))

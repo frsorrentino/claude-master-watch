@@ -54,9 +54,16 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
                 // L'anello parla della quota, non di una sessione: il simbolo dell'app al centro e la percentuale come
                 // testo, senza il nome dell'account che sull'anello piccolo non entra (Franz, 15/09 09:44). Il colore del
                 // simbolo lo decide il quadrante, che tinge l'immagine monocromatica: il bianco non si può imporre.
-                val r = ComplicationTexts.ranged(state, account)
+                // Sigla «5h»/«7d» davanti al numero, le stesse della tile; a TalkBack la finestra detta per esteso.
+                val r = ComplicationTexts.ranged(state, account, getString(R.string.tile_quota_tag_h5), getString(R.string.tile_quota_tag_week))
+                val pct = "${r.value.toInt()}%"
+                val desc = when (r.week) {
+                    true -> getString(R.string.quota_week_chip, pct)
+                    false -> getString(R.string.quota_5h_line, pct)
+                    null -> r.text
+                }
                 val app = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
-                RangedValueComplicationData.Builder(r.value, 0f, r.max, text(r.text))
+                RangedValueComplicationData.Builder(r.value, 0f, r.max, text(desc))
                     .setText(text(r.text)).setMonochromaticImage(app).setTapAction(open("cmwatch://quota", 3)).build()
             }
             else -> null
