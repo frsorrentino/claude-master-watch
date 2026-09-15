@@ -23,6 +23,9 @@ object CmColors {
     val text2 = Color(0xFF9AA3B2)
     val accent = Color(0xFF4C7DFF)
     val accentPressed = Color(0xFF3457D5)
+    // Azzurro pastello delle icone delle azioni (proposta del 14/09, confermata da Franz il 15/09 10:42): il cobalto
+    // resta ai bottoni pieni, sulle icone era un blu acceso.
+    val actionIcon = Color(0xFFA8C7FA)
     val waiting = Color(0xFFFFB020)
     // Giallino della sessione seguita, «come se fosse accesa» (Franz, 14/09 16:27): più chiaro dell'ambra di attesa.
     val followed = Color(0xFFFFE08A)

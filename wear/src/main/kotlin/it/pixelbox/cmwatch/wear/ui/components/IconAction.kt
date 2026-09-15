@@ -37,7 +37,7 @@ fun IconAction(
         contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
         transformation = transformation,
         colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text),
-        icon = { Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
+        icon = { Icon(imageVector = icon, contentDescription = null, tint = CmColors.actionIcon, modifier = Modifier.size(22.dp)) },
         label = { Text(label, maxLines = 1) },
     )
 }

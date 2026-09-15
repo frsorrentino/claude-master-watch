@@ -51,9 +51,13 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
             ComplicationType.LONG_TEXT -> LongTextComplicationData.Builder(text(ComplicationTexts.long(state, fresh, stale, seen = seen)), text(ComplicationTexts.long(state, fresh, stale, seen = seen)))
                 .setMonochromaticImage(icon).setTapAction(open(ComplicationTexts.tapTarget(state), 2)).build()
             ComplicationType.RANGED_VALUE -> {
+                // L'anello parla della quota, non di una sessione: il simbolo dell'app al centro e la percentuale come
+                // testo, senza il nome dell'account che sull'anello piccolo non entra (Franz, 15/09 09:44). Il colore del
+                // simbolo lo decide il quadrante, che tinge l'immagine monocromatica: il bianco non si può imporre.
                 val r = ComplicationTexts.ranged(state, account)
+                val app = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
                 RangedValueComplicationData.Builder(r.value, 0f, r.max, text(r.text))
-                    .setText(text(r.text)).setTitle(text(account)).setMonochromaticImage(icon).setTapAction(open("cmwatch://quota", 3)).build()
+                    .setText(text(r.text)).setMonochromaticImage(app).setTapAction(open("cmwatch://quota", 3)).build()
             }
             else -> null
         }
