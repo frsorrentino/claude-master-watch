@@ -96,14 +96,9 @@ fun QuestionScreen(
                 return@TransformingLazyColumn
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.morph(this, spec)) } }
-            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec)) }
-            item {
-                // ▶ accanto alla domanda: la legge con le opzioni numerate, per rispondere senza guardare (14/09).
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
-                    QuestionText(q.text, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = onSpeak)
-                }
-            }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), trailing = { SpeakButton(speaking, onToggle = onSpeak) }) }
+            // La domanda a tutta larghezza; il ▶ che la legge con le opzioni numerate sta in testata (Franz, 15/09 16:13).
+            item { QuestionText(q.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             if (holdHint) {
                 item { Text(stringResource(R.string.question_hold), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             }

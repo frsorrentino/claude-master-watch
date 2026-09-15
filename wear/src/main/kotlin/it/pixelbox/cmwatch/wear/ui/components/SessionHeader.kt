@@ -24,7 +24,10 @@ import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */
 @Composable
-fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier, showTool: Boolean = true) {
+fun SessionHeader(
+    s: Session, now: Long, fresh: Boolean, modifier: Modifier = Modifier, showTool: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Column(modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // 16 dp come nella lista (misura sulle celle di notifica di Wear OS): da 32 il tondo lo tagliava (Franz, 14/09 17:20).
@@ -38,6 +41,8 @@ fun SessionHeader(s: Session, now: Long, fresh: Boolean, modifier: Modifier = Mo
                 Text(TileTexts.breakable(s.name), style = MonoStyle, color = CmColors.text, maxLines = 2)
                 if (tail.isNotEmpty()) Text(tail, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
             }
+            // Il ▶ della Domanda accanto al nome: sotto rubava la colonna destra al testo (Franz, 15/09 16:13).
+            trailing?.let { Spacer(Modifier.width(8.dp)); it() }
         }
         // Cosa sta facendo, detto per esteso: la description del comando (contratto 1.5) o la frase dallo strumento.
         val tool = ToolText.describe(s.toolNote, s.tool, toolLabels())
