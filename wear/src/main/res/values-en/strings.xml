@@ -108,6 +108,9 @@
     <string name="session_followed">Followed</string>
     <string name="notif_resume">Resume</string>
     <string name="notif_gone_text">Session closed. Tap Resume to reopen it.</string>
+    <string name="reopen_starting">Starting</string>
+    <string name="reopen_failed">Not reopened: %1$s</string>
+    <string name="question_chat">Chat about this</string>
     <string name="notif_sent">sent</string>
     <string name="notif_confirmed">confirmed</string>
     <string name="notif_quota_body">Quota almost used up</string>

@@ -58,6 +58,7 @@ fun SessionScreen(
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
     onReopen: (() -> Unit)? = null,
+    reopen: it.pixelbox.cmwatch.rules.ReopenText.Status? = null,
     /** L'ultimo blocco del terminale, chiesto al PC quando la sessione lavora senza uno strumento in vista. */
     live: String? = null,
     speaking: Boolean = false,
@@ -84,7 +85,9 @@ fun SessionScreen(
                 s?.question != null -> CmEdgeButton(stringResource(R.string.card_reply), onClick = onReply, enabled = enabled)
                 // Una chiusa si riprende nella sua conversazione (contratto 1.9); «Riavvia» da capo resta sotto.
                 s?.state == SessionState.GONE && onReopen != null ->
-                    CmEdgeButton(stringResource(R.string.notif_resume), onClick = onReopen, enabled = enabled)
+                    // «Avvio in corso» spento finché il PC rilancia (30-60 s) e la sessione torna (Franz, 15/09 19:14).
+                    if (reopen is it.pixelbox.cmwatch.rules.ReopenText.Status.Starting) CmEdgeButton(stringResource(R.string.reopen_starting), onClick = {}, enabled = false)
+                    else CmEdgeButton(stringResource(R.string.notif_resume), onClick = onReopen, enabled = enabled)
                 s?.state == SessionState.GONE && onRelaunch != null ->
                     CmEdgeButton(stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled)
                 s != null -> CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled)
@@ -109,6 +112,14 @@ fun SessionScreen(
             // Il ▶ in testata, accanto al nome, come nella Domanda: legge la risposta intera chiesta al PC.
             val listen: (@Composable () -> Unit)? = onListen?.let { l -> { SpeakButton(speaking, onToggle = l) } }
             item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated, trailing = listen) }
+            (reopen as? it.pixelbox.cmwatch.rules.ReopenText.Status.Failed)?.let { f ->
+                item {
+                    Text(
+                        stringResource(R.string.reopen_failed, f.text ?: stringResource(R.string.question_not_delivered)),
+                        style = MaterialTheme.typography.bodySmall, color = CmColors.goneDim, modifier = Modifier.fillMaxWidth().morph(this, spec),
+                    )
+                }
+            }
             if (cell.title != null || cell.detail != null) {
                 item {
                     Card(

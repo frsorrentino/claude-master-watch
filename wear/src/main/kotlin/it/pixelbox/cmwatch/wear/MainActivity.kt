@@ -114,11 +114,33 @@ class MainActivity : ComponentActivity() {
         var seen by rememberSaveable { mutableStateOf(setOf<String>()) }
         var sentId by rememberSaveable { mutableStateOf<String?>(null) }
         var hapticFor by rememberSaveable { mutableStateOf<String?>(null) }
+        // Dopo «Parliamone» la tastiera scrive un messaggio, anche se la domanda risulta ancora aperta per un attimo.
+        var forcePrompt by remember { mutableStateOf(false) }
+        // Sessione → id del `reopen` mandato: «Avvio in corso» finché il PC risponde e la sessione torna (15/09 19:14).
+        var reopening by remember { mutableStateOf(mapOf<String, String>()) }
+        val allResults by app.repo.resultsById.collectAsStateWithLifecycle()
+        fun reopenStatus(n: String): it.pixelbox.cmwatch.rules.ReopenText.Status? = reopening[n]?.let { id ->
+            it.pixelbox.cmwatch.rules.ReopenText.status(
+                allResults[id],
+                gone = snapshot.state?.sessions?.firstOrNull { it.name == n }?.state == it.pixelbox.cmwatch.contract.SessionState.GONE,
+                notDelivered = snapshot.pending.any { it.cmd.id == id && it.status == PendingStatus.FAILED },
+            )
+        }
+        fun reopen(n: String) = scope.launch {
+            reopening = reopening + (n to app.repo.command(CmdOp.REOPEN, n, null))
+            Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+        }
         // Tastiera di sistema: il testo libero va alla sessione scelta come «prompt».
         var writeTarget by rememberSaveable { mutableStateOf<String?>(null) }
         val keyboard = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
             val text = Keyboard.result(res.data); val target = writeTarget
-            if (text != null && target != null) scope.launch { sentId = app.repo.prompt(target, text); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }
+            // Con la domanda aperta il testo va a «Type something.» (contratto 1.10); dopo «Parliamone» è un messaggio.
+            val aperta = !forcePrompt && snapshot.state?.sessions?.firstOrNull { it.name == target }?.question != null
+            forcePrompt = false
+            if (text != null && target != null) scope.launch {
+                sentId = if (aperta) app.repo.answerText(target, text) else app.repo.prompt(target, text)
+                Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+            }
         }
         fun write(name: String) {
             writeTarget = name
@@ -179,7 +201,8 @@ class MainActivity : ComponentActivity() {
                 SessionsScreen(
                     snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient,
                     // Contratto 1.9: una chiusa si riprende dalla sua riga.
-                    onReopen = { n -> scope.launch { app.repo.command(CmdOp.REOPEN, n, null); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
+                    onReopen = { n -> reopen(n) },
+                    reopenStatus = { n -> reopenStatus(n) },
                     // Pressione lunga sulla riga: segui / smetti, con la vibrazione come conferma (Franz, 15/09 19:04).
                     onFollow = { n, follow -> Haptics.play(this@MainActivity, Haptics.Kind.SENT); scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, n, null) } },
                 )
@@ -211,7 +234,8 @@ class MainActivity : ComponentActivity() {
                     onBackToSessions = { nav.go(Screen.Sessions) },
                     speaking = speaking || preparing,
                     onListen = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.let { o -> { SpeakService.last(this@MainActivity, name, o.full) } },
-                    onReopen = { scope.launch { app.repo.command(CmdOp.REOPEN, name, null); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; Unit },
+                    onReopen = { reopen(name); Unit },
+                    reopen = reopenStatus(name),
                     onRelaunch = snapshot.state?.let { st ->
                         st.sessions.firstOrNull { it.name == name }
                             ?.let { LaunchRules.pathFor(it, st.projects) }
@@ -233,6 +257,13 @@ class MainActivity : ComponentActivity() {
                     snapshot, name, now, sentId,
                     onAnswer = { n -> if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.answer(name, n); Haptics.play(this@MainActivity, Haptics.Kind.SENT) } },
                     onFreeText = { if (qid != null) seen = seen + qid; write(name) },
+                    // «Chat about this» (contratto 1.10): la domanda si chiude e la sessione aspetta un messaggio,
+                    // quindi la tastiera si apre subito per scriverlo (consiglio del relay, 15/09 19:27).
+                    onChat = {
+                        if (qid != null) seen = seen + qid
+                        scope.launch { sentId = app.repo.chat(name); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }
+                        forcePrompt = true; write(name)
+                    },
                     onAllowAll = { if (qid != null) seen = seen + qid; scope.launch { sentId = app.repo.command(CmdOp.ALLOW_ALL, name, null) } },
                     onRetry = { id -> scope.launch { app.repo.retry(id) } },
                     onAnsweredElsewhere = { Haptics.play(this@MainActivity, Haptics.Kind.OUTCOME) },

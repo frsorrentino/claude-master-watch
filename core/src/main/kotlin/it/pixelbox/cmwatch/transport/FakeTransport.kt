@@ -49,6 +49,19 @@ class FakeTransport(
                 when {
                     ses == null -> ko("no session ${cmd.session}")
                     q == null -> ko("${ses.name} has no question")
+                    // Contratto 1.10: «Type something.» e «Chat about this», con i testi del relay.
+                    cmd.arg?.startsWith("text:") == true -> {
+                        val t = cmd.arg.removePrefix("text:")
+                        if (t.isBlank()) ko("empty text") else {
+                            replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now()))
+                            ok("answered ${q.options.size + 1}. $t")
+                        }
+                    }
+                    cmd.arg == "chat" -> {
+                        replace(ses.copy(question = null, state = SessionState.IDLE, since = now()))
+                        ok("answered ${q.options.size + 2}. Chat about this")
+                    }
+                    cmd.arg?.toIntOrNull() == null -> ko("answer ${cmd.arg}: expected a number, text:<text> or chat")
                     else -> {
                         replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now()))
                         ok("answered ${cmd.arg}. ${opt?.label ?: cmd.arg}")

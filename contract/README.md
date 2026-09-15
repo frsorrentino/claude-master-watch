@@ -65,6 +65,14 @@ account, senza finestra; `--resume` della sua conversazione se l'id è noto e il
 `--continue` solo se nessun'altra sessione è viva nella cartella. Rifiuta un nome vivo, un nome fuori dal registro, una
 cartella sparita. `resume` non cambia. `v` resta 1.
 
+Contratto 1.9.1 (15/09/2026, solo comportamento): `reopen` apre la scheda del terminale sul desktop come `launch` (se il
+desktop non c'è, parte senza finestra). Forma e testi invariati. `v` resta 1.
+
+Contratto 1.10 (15/09/2026, solo aggiunte): `answer` accetta come arg anche `text:<testo>` («Type something.» con quel
+testo, a capo → spazi) e `chat` («Chat about this»); risultato `answered {n}. {testo}` o `answered {n}. Chat about this`;
+`text:` vuoto → «empty text», altri arg non numerici → «answer <arg>: expected a number, text:<text> or chat». Dopo
+`chat` la sessione rifiuta la domanda e aspetta un messaggio. `v` resta 1.
+
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna

@@ -58,6 +58,7 @@ fun QuestionScreen(
     onDone: () -> Unit,
     speaking: Boolean = false,
     onSpeak: () -> Unit = {},
+    onChat: () -> Unit = {},
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -116,6 +117,13 @@ fun QuestionScreen(
                         border = if (q.tier == Tier.HIGH) androidx.compose.foundation.BorderStroke(2.dp, CmColors.gone) else null,
                     )
                 }
+            }
+            // «Chat about this» come nel terminale: si parla prima di scegliere (Franz, 15/09 18:14; contratto 1.10).
+            item {
+                WideButton(
+                    stringResource(R.string.question_chat), onClick = onChat, enabled = enabled && pending == null,
+                    transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                )
             }
             if (QuestionRules.allowAllVisible(q)) {
                 item { WideButton(stringResource(R.string.question_allow_all), onClick = onAllowAll, enabled = enabled && pending == null, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }

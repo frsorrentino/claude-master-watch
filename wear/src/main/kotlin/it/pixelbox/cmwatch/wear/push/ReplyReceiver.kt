@@ -31,7 +31,13 @@ class ReplyReceiver : BroadcastReceiver() {
                         if (text.isEmpty()) return@launch
                         // Un chip «2 no» (o «2») è un'opzione; tutto il resto è testo libero → prompt.
                         val n = Regex("^(\\d{1,2})(\\s|$)").find(text)?.groupValues?.get(1)?.toInt()
-                        val id = if (n != null) app.repo.answer(session, n) else app.repo.prompt(session, text)
+                        // Con la domanda ancora aperta il testo libero passa da «Type something.» (contratto 1.10).
+                        val aperta = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == session }?.question != null
+                        val id = when {
+                            n != null -> app.repo.answer(session, n)
+                            aperta -> app.repo.answerText(session, text)
+                            else -> app.repo.prompt(session, text)
+                        }
                         app.notifier.sent(session, n, if (n != null) text.substringAfter(' ', "").ifEmpty { null } else null, id)
                         Haptics.play(context, Haptics.Kind.SENT)
                     }

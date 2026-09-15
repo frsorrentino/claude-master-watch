@@ -107,6 +107,9 @@
     <string name="session_followed">Seguita</string>
     <string name="notif_resume">Riprendi</string>
     <string name="notif_gone_text">Sessione chiusa. Per riaprirla tocca Riprendi.</string>
+    <string name="reopen_starting">Avvio in corso</string>
+    <string name="reopen_failed">Non ripresa: %1$s</string>
+    <string name="question_chat">Parliamone</string>
     <string name="notif_sent">inviato</string>
     <string name="notif_confirmed">confermato</string>
     <string name="notif_quota_body">Quota quasi esaurita</string>

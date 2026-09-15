@@ -106,6 +106,10 @@ class Repo(
 
     suspend fun answer(session: String, n: Int) = command(CmdOp.ANSWER, session, n.toString())
     suspend fun prompt(session: String, text: String) = command(CmdOp.PROMPT, session, text)
+    /** Contratto 1.10: testo libero a una domanda aperta, dalla voce «Type something.». */
+    suspend fun answerText(session: String, text: String) = command(CmdOp.ANSWER, session, it.pixelbox.cmwatch.rules.QuestionRules.textArg(text))
+    /** Contratto 1.10: «Chat about this». */
+    suspend fun chat(session: String) = command(CmdOp.ANSWER, session, it.pixelbox.cmwatch.rules.QuestionRules.CHAT_ARG)
 
     /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
     suspend fun command(op: CmdOp, session: String?, arg: String?): String {
