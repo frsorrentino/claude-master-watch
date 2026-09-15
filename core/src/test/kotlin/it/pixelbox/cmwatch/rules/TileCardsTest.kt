@@ -209,16 +209,17 @@ class TileQuotasTest {
     @Test fun laTileDiceCheLOraEIlResetDelleCinqueOre() {
         val r = TileTexts.quotaLine(q, "personale")!!
         val t = TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5)
-        assertEquals("5 ore 11 % · reset 18:00", TileTexts.quotaSuffix(t, labels("values"), rome))
-        assertEquals("5 h 11% · reset 18:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
+        // Franz, 15/09 12:58: «5h» e «7d», le sigle di Claude, uguali nelle due lingue e più corte.
+        assertEquals("5h 11 % · reset 18:00", TileTexts.quotaSuffix(t, labels("values"), rome))
+        assertEquals("5h 11% · reset 18:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
     }
 
     // La settimana sulla tile non c'era mai stata: deve dire che è la settimana e il giorno del reset.
     @Test fun laSettimanaLoDiceEHaIlGiorno() {
         val r = TileTexts.quotaLine(q, "personale")!!
         val t = TileTexts.TileQuota(TileTexts.Window.WEEK, 82, r.resetW7)
-        assertEquals("settimana 82 % · reset gio 04:00", TileTexts.quotaSuffix(t, labels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("week 82% · reset Thu 04:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
+        assertEquals("7d 82 % · reset gio 04:00", TileTexts.quotaSuffix(t, labels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("7d 82% · reset Thu 04:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
     }
 
     // Con due barre «settimana 68 % · reset gio 04:00» non stava accanto alla barra, che spariva (Franz, 15/09 12:29):
@@ -227,10 +228,10 @@ class TileQuotasTest {
         val r = TileTexts.quotaLine(q, "personale")!!
         val h5 = TileTexts.TileQuota(TileTexts.Window.H5, 0, r.resetH5)
         val week = TileTexts.TileQuota(TileTexts.Window.WEEK, 68, r.resetW7)
-        assertEquals("5 h 0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("7 g 68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("5 h 0% · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
-        assertEquals("7 d 68% · Thu 04:00", TileTexts.quotaSuffix(week, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
+        assertEquals("5h 0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("7d 68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("5h 0% · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
+        assertEquals("7d 68% · Thu 04:00", TileTexts.quotaSuffix(week, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
     }
 
     private fun shortLabels(dir: String) = TileTexts.QuotaLabels(

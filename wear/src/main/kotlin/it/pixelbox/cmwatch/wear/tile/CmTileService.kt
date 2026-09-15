@@ -230,12 +230,12 @@ class CmTileService : TileService() {
     }
 
     /**
-     * La quota in coda alla card, una riga in carattere piccolo: orologio, barra e «5 ore 42 % · reset 12:30» oppure
-     * «settimana 82 % · reset gio 04:00» (Franz, 15/09 08:27: le due finestre si devono distinguere). Un tocco sulla
+     * La quota in coda alla card, una riga in carattere piccolo: orologio, barra e «5h 42 % · reset 12:30» oppure
+     * «7d 82 % · reset gio 04:00» (Franz, 15/09 08:27 e 12:58: finestre distinte, con le sigle corte di Claude). Un tocco sulla
      * riga apre la Quota; il resto della card apre la sessione.
      */
     private fun MaterialScope.quotaRow(q: TileTexts.TileQuota, short: Boolean = false): LayoutElement {
-        // Con due barre le etichette corte, «5 h 0 % · 17:10» e «7 g 68 % · gio 04:00»: quelle intere schiacciavano la
+        // Con due barre senza «reset», «5h 0 % · 17:10» e «7d 68 % · gio 04:00»: quelle intere schiacciavano la
         // barra della settimana fino a farla sparire (Franz, 15/09 12:29).
         val labels = if (short) TileTexts.QuotaLabels(
             pct = getString(R.string.tile_quota_h5_short), pctReset = getString(R.string.tile_quota_h5_short_reset),
