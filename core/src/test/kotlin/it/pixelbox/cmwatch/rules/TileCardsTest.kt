@@ -274,7 +274,7 @@ class TileBodyTest {
 
     // Franz, 15/09 11:58: quando il testo lo consente, sotto anche la barra della settimana.
     @Test fun unTestoCortoHaLeDueBarre() {
-        val b = TileTexts.tileBody("modifica watch-install-release-signing.md", null, sotto)
+        val b = TileTexts.tileBody("modifica Notifier.kt", null, sotto)
         assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), TileTexts.TileQuota(TileTexts.Window.WEEK, 36, sotto.resetW7)), b.quotas)
         assertEquals(2, b.mainLines); assertNull(b.extra)
     }
@@ -309,12 +309,12 @@ class TileBodyTest {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sotto)
         assertEquals(listOf(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5)), b.quotas)
         assertEquals(1, b.mainLines); assertEquals(2, b.extraLines)
-        assertEquals(TileTexts.fitTile(lungo, 2 * TileTexts.TILE_LINE), b.extra)
+        assertTrue(lungo.startsWith(b.extra!!)); assertTrue(TileTexts.wrappedLines(b.extra!!) <= 2)
     }
 
     @Test fun unEsitoLungoDaSoloPrendeTreRighe() {
         val b = TileTexts.tileBody(lungo, null, sotto)
-        assertEquals(3, b.mainLines); assertEquals(TileTexts.fitTile(lungo, 3 * TileTexts.TILE_LINE), b.main)
+        assertEquals(3, b.mainLines); assertTrue(lungo.startsWith(b.main)); assertTrue(TileTexts.wrappedLines(b.main) <= 3)
         assertEquals(1, b.quotas.size)
     }
 
@@ -327,6 +327,18 @@ class TileBodyTest {
     @Test fun senzaQuotaNelDatoLeRigheRestanoTre() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, null)
         assertTrue(b.quotas.isEmpty()); assertEquals(2, b.extraLines)
+    }
+
+    // Franz, 15/09 13:14: «l'orologio e nuovo tent…» sulla tile. Il conto a caratteri non vedeva gli a capo fra le parole.
+    @Test fun leRigheSiContanoComeVaACapoIlTesto() {
+        assertEquals(4, TileTexts.wrappedLines("Diagnosi del collegamento con l'orologio e nuovo tentativo"))
+        assertEquals(1, TileTexts.wrappedLines("turno in corso"))
+    }
+
+    @Test fun unTestoDiQuattroRigheSiFermaAllaTerzaSenzaPuntini() {
+        val b = TileTexts.tileBody("Diagnosi del collegamento con l'orologio e nuovo tentativo", null, sotto)
+        assertEquals("Diagnosi del collegamento con l'orologio e nuovo", b.main)
+        assertTrue(TileTexts.wrappedLines(b.main) <= 3)
     }
 
     // «- [Android Central – Googlebook event in New» sulla tile (Franz, 15/09 11:37): markdown grezzo dall'esito.

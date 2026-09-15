@@ -112,7 +112,40 @@ object TileTexts {
 
     data class TileBody(val main: String, val mainLines: Int, val extra: String?, val extraLines: Int, val quotas: List<TileQuota>)
 
-    private fun righe(t: String) = maxOf(1, (t.length + TILE_LINE - 1) / TILE_LINE)
+    /** Caratteri per riga della card, misurati sulla foto del 15/09 13:14 (una riga ne tiene 24), con margine. */
+    const val WRAP = 22
+
+    private val SPACES = Regex("\\s+")
+    private val DOPO_SEGNO = Regex("(?<=[-_/])")
+
+    /**
+     * Quante righe occupa il testo nella card, andando a capo come lo schermo: fra le parole e dopo trattini, trattini
+     * bassi e barre (gli stessi punti di `breakable`). Il conto a caratteri non vedeva lo spazio perso a fine riga e la
+     * terza riga finiva con «…» (Franz, 15/09 13:14: «l'orologio e nuovo tent…»).
+     */
+    fun wrappedLines(text: String): Int {
+        var lines = 1
+        var col = 0
+        for (word in text.trim().split(SPACES).filter { it.isNotEmpty() }) {
+            word.split(DOPO_SEGNO).filter { it.isNotEmpty() }.forEachIndexed { i, piece ->
+                val need = if (i == 0 && col > 0) piece.length + 1 else piece.length
+                if (col > 0 && col + need > WRAP) { lines++; col = 0 }
+                var len = if (col == 0) piece.length else need
+                // Un pezzo più lungo di una riga si spezza dove capita.
+                while (len > WRAP) { lines++; len -= WRAP }
+                col += len
+            }
+        }
+        return lines
+    }
+
+    /** Il testo più lungo, con le regole di `fitTile`, che va a capo in al massimo `lines` righe. */
+    private fun fitLines(text: String, lines: Int): String {
+        var max = lines * WRAP
+        var t = fitTile(text, max)
+        while (wrappedLines(t) > lines && max > WRAP / 2) { max--; t = fitTile(text, max) }
+        return t
+    }
 
     /** Righe di testo della card sopra la barra della quota: la quarta la tile la taglia dal fondo (Franz, 15/09 11:37). */
     const val TILE_BODY_LINES = 3
@@ -123,7 +156,7 @@ object TileTexts {
      * cinque ore sopra, settimana sotto. Altrimenti tre righe e una barra sola: quella sopra soglia se c'è (la settimana
      * dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %, o la settimana se delle cinque ore non
      * c'è lettura. `mainLines` ed `extraLines` sono il
-     * massimo concesso: il conto a 21 caratteri per riga è per difetto e il testo può occuparne meno.
+     * massimo concesso; le righe si contano come va a capo lo schermo (`wrappedLines`), mai a caratteri.
      */
     fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
         val h5 = line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
@@ -137,9 +170,9 @@ object TileTexts {
     }
 
     private fun layout(main: String, extra: String?, lines: Int): TileBody {
-        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), lines))
-        val left = lines - minOf(righe(m), lines)
-        val e = extra?.takeIf { left > 0 }?.let { fitTile(it, max = TILE_LINE * left) }?.takeIf { it.isNotBlank() }
+        val m = fitLines(main, lines)
+        val left = lines - minOf(wrappedLines(m), lines)
+        val e = extra?.takeIf { left > 0 }?.let { fitLines(it, left) }?.takeIf { it.isNotBlank() }
         return TileBody(m, if (e == null) lines else lines - left, e, if (e != null) left else 0, emptyList())
     }
 
