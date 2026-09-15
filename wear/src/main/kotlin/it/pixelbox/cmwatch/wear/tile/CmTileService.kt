@@ -142,6 +142,7 @@ class CmTileService : TileService() {
         label = { small("${TileTexts.badge(s)} ${NameText.shorten(s.name, listOf(s.name), 16)}", LABEL.argb) },
         time = { small(Durations.since(s.question?.askedAt ?: s.since, now), AMBER.argb) },
         title = { text(s.question!!.text.layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 3) },
+        shape = cardShape(),
         colors = cardColors(),
     )
 
@@ -167,9 +168,9 @@ class CmTileService : TileService() {
             s, busy, getString(R.string.tile_turn_running), getString(R.string.state_idle), now, toolLabels(),
             awaiting = getString(R.string.state_awaiting_prompt),
         )
-        // Due righe con la quota in coda, tre senza: lo spazio della quota nascosta va al testo (Franz, 15/09 08:21).
-        // Il testo sta nelle righe da sé, un pensiero intero: mai la coda troncata con «…» (Franz, 14/09 16:58).
-        val lines = if (quota == null) 3 else 2
+        // Due righe con la quota in coda, quattro senza: lo spazio della quota nascosta va al testo (Franz, 15/09 08:21;
+        // tre erano poche, 10:38). Il testo sta nelle righe da sé, un pensiero intero: mai «…» (Franz, 14/09 16:58).
+        val lines = if (quota == null) 4 else 2
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {
@@ -179,6 +180,7 @@ class CmTileService : TileService() {
             time = { small(Durations.since(if (busy) s.turnStarted ?: s.since else s.since, now), colorScheme.onSurfaceVariant) },
             title = { text(TileTexts.fitTile(what, max = TileTexts.TILE_MAX * lines / 2).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = lines) },
             content = quota?.let { q -> { quotaRow(q) } },
+            shape = cardShape(),
             colors = cardColors(),
         )
     }
@@ -196,8 +198,12 @@ class CmTileService : TileService() {
         time = { small(rest.since?.let { Durations.since(it, now) } ?: "", colorScheme.onSurfaceVariant) },
         title = { text(getString(R.string.tile_all_idle).layoutString, typography = Typography.BODY_LARGE, color = colorScheme.onSurface, maxLines = 1) },
         content = quota?.let { q -> { quotaRow(q) } },
+        shape = cardShape(),
         colors = cardColors(),
     )
+
+    /** Angoli meno tondi del default delle card M3 (Franz, 15/09 10:38), uguali su tutte le card della tile. */
+    private fun cardShape(): ModifiersBuilders.Corner = ModifiersBuilders.Corner.Builder().setRadius(dp(16f)).build()
 
     /**
      * La quota in coda alla card, una riga in carattere piccolo: orologio, barra e «5 ore 42 % · reset 12:30» oppure
@@ -257,6 +263,7 @@ class CmTileService : TileService() {
         onClick = clickable(launch("cmwatch://sessions"), id = "empty"),
         label = { small(getString(R.string.sessions_title), LABEL.argb) },
         title = { text(getString(R.string.sessions_empty).layoutString, typography = Typography.TITLE_MEDIUM, color = colorScheme.onSurface, maxLines = 2) },
+        shape = cardShape(),
         colors = cardColors(),
     )
 
