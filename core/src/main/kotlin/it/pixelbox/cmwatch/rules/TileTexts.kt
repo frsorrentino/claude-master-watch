@@ -75,7 +75,7 @@ object TileTexts {
         // Contratto 1.5: la description del comando vince sul comando grezzo, ma solo con uno strumento in corso.
         val grezzo = s.tool?.trim()?.takeIf { it.isNotEmpty() }
         val tool = if (tools != null) ToolText.describe(s.toolNote, s.tool, tools) else grezzo?.let { s.toolNote?.trim()?.takeIf { n -> n.isNotEmpty() } ?: it }
-        val esito = s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
+        val esito = s.outcome?.short?.let { plain(it) }?.takeIf { it.isNotEmpty() }
         // Contratto 1.2: `next_at` dice di che giorno è il «prossimo». Senza data non si sa, e un piano di tre giorni
         // prima sulla tile è peggio che niente: vale solo se è recente e non più vecchio dell'ultimo esito.
         val prossimo = prossimo(s, now)
@@ -92,7 +92,7 @@ object TileTexts {
         return primaFrase(scelto)
     }
 
-    private fun prossimo(s: Session, now: Long): String? = s.next?.trim()?.takeIf {
+    private fun prossimo(s: Session, now: Long): String? = s.next?.let { plain(it) }?.takeIf {
         it.isNotEmpty() && s.nextAt != null && (now <= 0L || now - s.nextAt <= NEXT_MAX_AGE_S) &&
             s.nextAt >= (s.outcome?.at ?: 0L)
     }
@@ -104,7 +104,7 @@ object TileTexts {
      */
     fun extra(s: Session, busy: Boolean, now: Long = 0L): String? {
         if (!busy || s.tool.isNullOrBlank()) return null
-        return prossimo(s, now) ?: s.outcome?.short?.trim()?.takeIf { it.isNotEmpty() }
+        return prossimo(s, now) ?: s.outcome?.short?.let { plain(it) }?.takeIf { it.isNotEmpty() }
     }
 
     /** Una riga della card della tile, contata per difetto: metà delle due righe di `TILE_MAX`. */
@@ -114,22 +114,32 @@ object TileTexts {
 
     private fun righe(t: String) = maxOf(1, (t.length + TILE_LINE - 1) / TILE_LINE)
 
+    /** Righe di testo della card sopra la barra della quota: la quarta la tile la taglia dal fondo (Franz, 15/09 11:37). */
+    const val TILE_BODY_LINES = 3
+
     /**
-     * Testo e quota della card: decide lo spazio, non solo la soglia (Franz, 15/09 10:56). Se attività e aggiunta stanno
-     * in due righe, sotto c'è la quota delle cinque ore anche al 2 %. Sopra soglia la quota resta e il testo si ferma a
-     * due righe. Solo un testo lungo, con la quota sotto soglia, prende tutte e quattro le righe.
+     * Testo e quota della card (Franz, 15/09 11:37): tre righe e sotto la barra, sempre. La quota mostrata è quella sopra
+     * soglia se c'è (la settimana dall'80 %, le cinque ore dal 15 %), altrimenti le cinque ore anche al 2 %. Nelle tre
+     * righe prima l'attività, poi l'aggiunta nelle righe che restano. `mainLines` ed `extraLines` sono il massimo
+     * concesso: il conto a 21 caratteri per riga è per difetto e il testo può occuparne meno.
      */
     fun tileBody(main: String, extra: String?, line: QuotaLine?): TileBody {
-        val forced = line?.let { tileQuota(it) }
-        val soft = forced ?: line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
-        val need = righe(main) + (extra?.let { righe(it) } ?: 0)
-        val budget = if (forced != null || (soft != null && need <= 2)) 2 else 4
-        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), budget))
-        val mLines = minOf(righe(m), budget)
-        val left = budget - mLines
+        val quota = line?.let { tileQuota(it) } ?: line?.pct?.let { TileQuota(Window.H5, it, line.resetH5) }
+        val m = fitTile(main, max = TILE_LINE * minOf(righe(main), TILE_BODY_LINES))
+        val left = TILE_BODY_LINES - minOf(righe(m), TILE_BODY_LINES)
         val e = extra?.takeIf { left > 0 }?.let { fitTile(it, max = TILE_LINE * left) }?.takeIf { it.isNotBlank() }
-        return TileBody(m, mLines, e, if (e != null) left else 0, if (budget == 2) soft else null)
+        return TileBody(m, if (e == null) TILE_BODY_LINES else TILE_BODY_LINES - left, e, if (e != null) left else 0, quota)
     }
+
+    private val LINK = Regex("\\[([^\\]]+)]\\([^)]*\\)")
+    private val ENFASI = Regex("\\*\\*|__|`")
+    private val ELENCO = Regex("^\\s*([-*•]|\\d+[.)])\\s+")
+
+    /**
+     * Il markdown dell'esito diventa testo (Franz, 15/09 11:37: «- [Android Central – …» sulla tile): un link resta il
+     * suo testo, spariscono asterischi, apici inversi e il segno d'elenco in testa.
+     */
+    fun plain(t: String): String = t.replace(LINK, "\$1").replace(ENFASI, "").replace(ELENCO, "").trim()
 
     private val SPEZZA = Regex("([-_/])(?=[^\\s/_\\-])")
 

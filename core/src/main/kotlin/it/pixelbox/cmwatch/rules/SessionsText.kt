@@ -47,9 +47,6 @@ object SessionsText {
 
     const val TITLE_MAX_4 = 88
 
-    /** «- », «* », «• », «1. » in testa: l'esito breve a volte è la prima voce di un elenco. */
-    private val ELENCO = Regex("^\\s*([-*•]|\\d+[.)])\\s+")
-
     fun cell(
         s: Session,
         now: Long,
@@ -64,7 +61,7 @@ object SessionsText {
         val fresca = s.nextAt?.let { Instant.ofEpochSecond(it).atZone(zone).toLocalDate() == oggi } == true
         val f = if (fresca) s else s.copy(next = null, nextAt = null)
         val next = f.next?.trim()?.takeIf { it.isNotEmpty() && f.nextAt != null }
-        val esito = s.outcome?.short?.replace(ELENCO, "")?.trim()?.takeIf { it.isNotEmpty() }
+        val esito = s.outcome?.short?.let { TileTexts.plain(it) }?.takeIf { it.isNotEmpty() }
         return when {
             // Chi aspetta: la domanda occupa il posto d'onore, il resto lo dice la schermata.
             s.question != null -> Cell(title = s.question?.text, detail = null)

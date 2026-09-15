@@ -257,32 +257,51 @@ class TileBodyTest {
     @Test fun unTestoCortoLasciaIlPostoAllaQuotaAncheSottoSoglia() {
         val b = TileTexts.tileBody("modifica watch-install-release-signing.md", null, sotto)
         assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), b.quota)
-        assertEquals(2, b.mainLines); assertNull(b.extra)
+        assertEquals(3, b.mainLines); assertNull(b.extra)
     }
 
     @Test fun testoEAggiuntaCortiStannoConLaQuota() {
         val b = TileTexts.tileBody("modifica Notifier.kt", "rilasciata la 0.4.7", sotto)
-        assertEquals("rilasciata la 0.4.7", b.extra); assertEquals(1, b.extraLines)
+        assertEquals("rilasciata la 0.4.7", b.extra); assertEquals(2, b.extraLines)
         assertEquals(TileTexts.Window.H5, b.quota?.window)
     }
 
-    @Test fun unTestoLungoSottoSogliaPrendeLeQuattroRighe() {
+    // Franz, 15/09 11:37: la quarta riga la tile la taglia; ci stanno tre righe e la barra. La quota c'è sempre.
+    @Test fun unTestoLungoStaInTreRigheSopraLaQuota() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sotto)
-        assertNull(b.quota)
-        assertEquals(1, b.mainLines); assertEquals(3, b.extraLines)
-        assertEquals(TileTexts.fitTile(lungo, 3 * TileTexts.TILE_LINE), b.extra)
+        assertEquals(TileTexts.TileQuota(TileTexts.Window.H5, 2, sotto.resetH5), b.quota)
+        assertEquals(1, b.mainLines); assertEquals(2, b.extraLines)
+        assertEquals(TileTexts.fitTile(lungo, 2 * TileTexts.TILE_LINE), b.extra)
     }
 
-    @Test fun sopraSogliaLaQuotaRestaEIlTestoSiStringe() {
+    @Test fun unEsitoLungoDaSoloPrendeTreRighe() {
+        val b = TileTexts.tileBody(lungo, null, sotto)
+        assertEquals(3, b.mainLines); assertEquals(TileTexts.fitTile(lungo, 3 * TileTexts.TILE_LINE), b.main)
+        assertNotNull(b.quota)
+    }
+
+    @Test fun sopraSogliaLaQuotaRestaConLeStesseTreRighe() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, sopra)
         assertEquals(TileTexts.Window.H5, b.quota?.window); assertEquals(90, b.quota?.pct)
-        assertEquals(1, b.mainLines); assertEquals(1, b.extraLines)
-        assertTrue(b.extra!!.length <= TileTexts.TILE_LINE)
+        assertEquals(1, b.mainLines); assertEquals(2, b.extraLines)
     }
 
-    @Test fun senzaQuotaNelDatoIlTestoHaQuattroRighe() {
+    @Test fun senzaQuotaNelDatoLeRigheRestanoTre() {
         val b = TileTexts.tileBody("modifica Notifier.kt", lungo, null)
-        assertNull(b.quota); assertEquals(3, b.extraLines)
+        assertNull(b.quota); assertEquals(2, b.extraLines)
+    }
+
+    // «- [Android Central – Googlebook event in New» sulla tile (Franz, 15/09 11:37): markdown grezzo dall'esito.
+    @Test fun ilMarkdownDellEsitoDiventaTestoSemplice() {
+        assertEquals("Android Central – Googlebook event in New York", TileTexts.plain("- [Android Central – Googlebook event in New York](https://www.androidcentral.com/x)"))
+        assertEquals("tile rifatta, quotaLine nuova", TileTexts.plain("**tile** rifatta, `quotaLine` nuova"))
+        assertEquals("1 · yes", TileTexts.plain("1 · yes"))
+    }
+
+    @Test fun lEsitoSullaTileEPulito() {
+        val idle = q.sessions.first { it.state == SessionState.IDLE }
+        val s = idle.copy(outcome = idle.outcome!!.copy(short = "- [Googlebook](https://x.y/z) presentato"), next = null)
+        assertEquals("Googlebook presentato", TileTexts.activity(s, busy = false, running = "turno in corso", idle = "a riposo"))
     }
 
     @Test fun conUnoStrumentoInCorsoSottoVaLUltimoEsito() {

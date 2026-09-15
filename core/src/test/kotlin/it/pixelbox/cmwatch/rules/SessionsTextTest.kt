@@ -132,4 +132,7 @@ class SessionsTitleTest {
         assertEquals("Passkey Google", cell("* Passkey Google").title)
         assertEquals("Passkey Google", cell("1. Passkey Google").title)
     }
+
+    @Test fun unLinkMarkdownDiventaIlSuoTesto() =
+        assertEquals("Android Central – Googlebook event in New York", cell("- [Android Central – Googlebook event in New York](https://www.androidcentral.com/x)").title)
 }
