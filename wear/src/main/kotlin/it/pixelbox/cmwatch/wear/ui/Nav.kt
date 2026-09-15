@@ -10,7 +10,6 @@ object Routes {
     const val QUESTION = "question/{name}"
     const val SETTINGS = "settings"
     const val PAIRING = "pairing"
-    const val OUTCOME = "outcome/{name}"
     const val TERMINAL = "terminal/{name}"
     const val TIMELINE = "timeline"
     const val LAUNCH = "launch"
@@ -25,7 +24,6 @@ object Routes {
         is Screen.Question -> "question/${Uri.encode(screen.name)}"
         Screen.Settings -> SETTINGS
         Screen.Pairing -> PAIRING
-        is Screen.Outcome -> "outcome/${Uri.encode(screen.name)}"
         is Screen.Terminal -> "terminal/${Uri.encode(screen.name)}"
         Screen.Timeline -> TIMELINE
         Screen.Launch -> LAUNCH
@@ -41,7 +39,6 @@ object Routes {
         QUESTION -> Screen.Question(name.orEmpty())
         SETTINGS -> Screen.Settings
         PAIRING -> Screen.Pairing
-        OUTCOME -> Screen.Outcome(name.orEmpty())
         TERMINAL -> Screen.Terminal(name.orEmpty())
         TIMELINE -> Screen.Timeline
         LAUNCH -> Screen.Launch
@@ -62,7 +59,8 @@ object Routes {
             "question" -> name?.let { Screen.Question(it) }
             "quota" -> Screen.Quota
             "settings" -> Screen.Settings
-            "outcome" -> name?.let { Screen.Outcome(it) }
+            // L'Esito è dentro la Scheda (15/09 17:02): le notifiche di esito e i link vecchi aprono lei.
+            "outcome" -> name?.let { Screen.Session(it) }
             "terminal" -> name?.let { Screen.Terminal(it) }
             "timeline" -> Screen.Timeline
             "launch" -> Screen.Launch

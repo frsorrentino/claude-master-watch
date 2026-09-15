@@ -181,3 +181,33 @@ class SessionsRepeatTest {
     @Test fun unaParolaCheNeIniziaUnAltraNonERipetizione() =
         assertFalse(SessionsText.repeats("legge", "leggere la tile"))
 }
+
+// Franz, 15/09 17:02: Scheda ed Esito fusi. Chi è fermo mostra l'esito intero nella card, senza un tap in più.
+class SessionsSheetTest {
+    private val st = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val zone = ZoneId.of("Europe/Rome")
+    private val mezzanotteOggi = Instant.ofEpochSecond(st.ts).atZone(zone).toLocalDate().atStartOfDay(zone).toEpochSecond()
+    private val o = it.pixelbox.cmwatch.contract.Outcome("relay aggiornato", "Ho cambiato fit_state e i test sono verdi.\nEsito: relay aggiornato", st.ts)
+    private val idle = st.sessions.first { it.state == SessionState.IDLE }.copy(outcome = o, next = null, nextAt = null)
+    private fun sheet(s: it.pixelbox.cmwatch.contract.Session) = SessionsText.sheet(s, st.ts, "turno in corso", "a riposo", null, zone)
+
+    @Test fun chiEFermaMostraLEsitoIntero() {
+        val c = sheet(idle)
+        assertEquals(OutcomeText.headline(o), c.title); assertEquals(OutcomeText.body(o), c.body); assertNull(c.detail)
+    }
+
+    @Test fun ilProssimoDiversoStaSotto() =
+        assertEquals("rifinire la tile", sheet(idle.copy(next = "rifinire la tile", nextAt = mezzanotteOggi)).detail)
+
+    @Test fun ilProssimoCheRipeteLEsitoTace() =
+        assertNull(sheet(idle.copy(next = "i test sono verdi", nextAt = mezzanotteOggi)).detail)
+
+    @Test fun chiLavoraRestaComeLaCella() {
+        val b = st.sessions.first { it.state == SessionState.BUSY }
+        val c = sheet(b)
+        assertEquals(SessionsText.cell(b, st.ts, "turno in corso", "a riposo", null, zone).title, c.title); assertNull(c.body)
+    }
+
+    @Test fun chiEFermaSenzaEsitoRestaComeLaCella() =
+        assertEquals("a riposo", sheet(idle.copy(outcome = null)).title)
+}

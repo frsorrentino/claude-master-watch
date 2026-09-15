@@ -20,6 +20,8 @@ import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.CardText
+import it.pixelbox.cmwatch.rules.OutcomeText
+import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
@@ -43,7 +45,7 @@ import it.pixelbox.cmwatch.wear.ui.components.IconAction
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
-/** Scheda: riga nome · account · stato · durata; → prossimo; esito; Rispondi / Scrivi / Terminale / Segui. */
+/** Scheda: testata con ▶; card con quello che fa o l'esito intero, che apre il Terminale; Segui; Rispondi / Scrivi / Riavvia. */
 @Composable
 fun SessionScreen(
     snapshot: Snapshot,
@@ -53,7 +55,6 @@ fun SessionScreen(
     onWrite: () -> Unit,
     onTerminal: () -> Unit,
     onFollow: (Boolean) -> Unit,
-    onOutcome: () -> Unit,
     onBackToSessions: () -> Unit,
     onRelaunch: (() -> Unit)? = null,
     speaking: Boolean = false,
@@ -95,14 +96,18 @@ fun SessionScreen(
             // Scheda rifatta (review UX, scelta da Franz il 13/09): intestazione, UNA card con quello che sta
             // facendo, «Segui» come interruttore, poi le azioni con la loro icona. Prima erano quattro bottoni
             // larghi identici che davano lo stesso peso a tutto, con l'informazione in due righe minuscole.
-            val cell = SessionsText.cell(s, now, running, idleLabel, tools)
+            // La card contiene anche l'Esito: chi è fermo lo mostra intero, senza un tap in più (Franz, 15/09 17:02).
+            val cell = SessionsText.sheet(s, now, running, idleLabel, tools)
             // La riga dello strumento in testata tace se la card sotto la dice già intera (Franz, 15/09 16:00).
             val toolRepeated = cell.says(ToolText.describe(s.toolNote, s.tool, tools))
-            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated) }
+            // Il ▶ in testata, accanto al nome, come nella Domanda: legge la risposta intera chiesta al PC.
+            val listen: (@Composable () -> Unit)? = onListen?.let { l -> { SpeakButton(speaking, onToggle = l) } }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated, trailing = listen) }
             if (cell.title != null || cell.detail != null) {
                 item {
                     Card(
-                        onClick = if (s.outcome != null) onOutcome else ({}),
+                        // Toccare la card apre il Terminale: il livello «tutto», dopo il riassunto (15/09 17:02).
+                        onClick = onTerminal,
                         modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                         shape = RoundedCornerShape(21.dp),
                         colors = CardDefaults.cardColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.text),
@@ -112,9 +117,13 @@ fun SessionScreen(
                         // Il testo intero: la card cresce e la lista scorre, mai «…» (Franz, 15/09 10:56).
                         cell.title?.let {
                             Text(
-                                TileTexts.breakable(it), style = MaterialTheme.typography.titleMedium, color = CmColors.text,
-                                modifier = Modifier.fillMaxWidth(),
+                                TileTexts.breakable(it), color = CmColors.text, modifier = Modifier.fillMaxWidth(),
+                                // Grande se è breve, più piccolo se è una frase lunga (contratto 1.6, fino a 200 caratteri).
+                                style = if (OutcomeText.bigTitle(it)) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
                             )
+                        }
+                        cell.body?.let {
+                            Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth())
                         }
                         cell.detail?.let {
                             Text(
@@ -139,25 +148,7 @@ fun SessionScreen(
                         transformation = SurfaceTransformation(spec),
                     )
                 }
-                item {
-                    IconAction(
-                        label = stringResource(R.string.card_terminal), icon = Icons.Rounded.Terminal,
-                        onClick = onTerminal, enabled = enabled,
-                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
-                    )
-                }
-                if (onListen != null) {
-                    item {
-                        // ▶ sulla scheda: la risposta intera chiesta al PC, letta a voce (Franz, 14/09 12:17).
-                        IconAction(
-                            label = stringResource(if (speaking) R.string.tts_stop else R.string.card_listen),
-                            icon = if (speaking) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                            onClick = onListen, enabled = true,
-                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
-                        )
-                    }
-                }
-                // Niente bottone «Esito»: toccare la card in alto apre già l'Esito (Franz, 15/09 13:21, «ridondante»).
+                // Niente bottoni «Terminale» e «Ascolta»: la card apre il Terminale, il ▶ sta in testata (Franz, 15/09 17:02).
             }
         }
     }

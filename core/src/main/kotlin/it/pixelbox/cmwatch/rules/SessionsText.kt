@@ -63,6 +63,33 @@ object SessionsText {
 
     private fun norm(t: String) = TileTexts.plain(t).lowercase().replace(Regex("\\s+"), " ").trim().trimEnd('.', '…', ':', ';', ',', ' ')
 
+    /**
+     * La card della Scheda, che ora contiene anche l'Esito (Franz, 15/09 17:02: tre schermate fuse in due). Chi è fermo
+     * mostra l'esito intero, titolo e resto sotto; chi lavora, domanda o è senza esito resta come la cella della lista.
+     * Il prossimo passo sotto solo se non ripete l'esito.
+     */
+    data class Sheet(val title: String?, val body: String?, val detail: String?) {
+        fun says(text: String?): Boolean = repeats(text, title) || repeats(text, body) || repeats(text, detail)
+    }
+
+    fun sheet(
+        s: Session,
+        now: Long,
+        running: String,
+        idle: String,
+        tools: ToolText.Labels? = null,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): Sheet {
+        val c = cell(s, now, running, idle, tools, zone)
+        val o = s.outcome
+        val ferma = s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING
+        if (!ferma || o == null) return Sheet(c.title, null, c.detail)
+        val title = OutcomeText.headline(o)
+        val body = OutcomeText.body(o)
+        val detail = c.detail?.takeUnless { d -> repeats(d, title) || repeats(d, body) || body?.contains(d.trim()) == true }
+        return Sheet(title, body, detail)
+    }
+
     /** Titolo e dettaglio che ripetono la stessa cosa: resta il più lungo, da solo, con tutte le righe per sé. */
     private fun pair(title: String?, detail: String?): Cell =
         if (repeats(title, detail)) Cell(title = listOfNotNull(title, detail).maxBy { it.length }, detail = null) else Cell(title, detail)

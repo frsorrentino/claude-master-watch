@@ -45,7 +45,6 @@ import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SettingsScreen
-import it.pixelbox.cmwatch.wear.ui.screens.OutcomeScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.LaunchScreen
@@ -188,7 +187,6 @@ class MainActivity : ComponentActivity() {
                     onWrite = { write(name) },
                     onTerminal = { nav.go(Screen.Terminal(name)) },
                     onFollow = { follow -> scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
-                    onOutcome = { nav.go(Screen.Outcome(name)) },
                     onBackToSessions = { nav.go(Screen.Sessions) },
                     speaking = speaking || preparing,
                     onListen = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.let { o -> { SpeakService.last(this@MainActivity, name, o.full) } },
@@ -244,17 +242,6 @@ class MainActivity : ComponentActivity() {
                     onRetry = { pairing = PairingStatus.Idle },
                 )
             }
-            composable(Routes.OUTCOME) { back ->
-                val name = back.arguments?.getString("name").orEmpty()
-                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
-                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
-                OutcomeScreen(
-                    snapshot, name, now, settings?.ttsMinChars ?: 120, speaking || preparing,
-                    // Il ▶ legge quello che si vede accanto, non la risposta intera: quella è della Scheda (Franz, 14/09 15:01).
-                    onSpeak = { text -> SpeakService.text(this@MainActivity, text) },
-                    onReadAll = { nav.go(Screen.Terminal(name)) }, onBack = { nav.go(Screen.Sessions) },
-                )
-            }
             composable(Routes.TERMINAL) { back ->
                 val name = back.arguments?.getString("name").orEmpty()
                 var text by remember { mutableStateOf<String?>(null) }
@@ -274,7 +261,6 @@ class MainActivity : ComponentActivity() {
                     name, text, loading = text == null && error == null && !failed,
                     error = error ?: if (failed) getString(R.string.question_not_delivered) else null,
                     onRefresh = { ask() },
-                    answer = snapshot.state?.sessions?.firstOrNull { it.name == name }?.outcome?.full,
                     speaking = speaking || preparing,
                     onSpeak = { t -> SpeakService.text(this@MainActivity, t) },
                 )

@@ -39,7 +39,6 @@ fun TerminalScreen(
     loading: Boolean,
     error: String?,
     onRefresh: () -> Unit,
-    answer: String? = null,
     speaking: Boolean = false,
     onSpeak: (String) -> Unit = {},
 ) {
@@ -59,18 +58,7 @@ fun TerminalScreen(
                     if (parlato != null) { Spacer(Modifier.width(8.dp)); SpeakButton(speaking, onToggle = { onSpeak(parlato) }) }
                 }
             }
-            // La risposta finale della sessione, che nella cattura del terminale spesso non c'è più: sta in cima, in
-            // carattere proporzionale e più grande, così si riconosce dalla lavorazione (Franz, 13/09 18:11).
-            answer?.takeIf { it.isNotBlank() }?.let { risposta ->
-                item {
-                    Text(
-                        stringResource(R.string.terminal_answer), style = MaterialTheme.typography.labelMedium,
-                        color = CmColors.briefLabel, modifier = Modifier.fillMaxWidth().morph(this, spec),
-                    )
-                }
-                item { Text(risposta, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
-                item { Spacer(Modifier.height(10.dp)) }
-            }
+            // Niente più «Risposta» in cima: era `outcome.full`, che la Scheda ora mostra intero (Franz, 15/09 17:02).
             when {
                 loading -> item { Text(stringResource(R.string.terminal_loading), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
                 error != null -> item { Text(error, color = CmColors.gone, modifier = Modifier.morph(this, spec)) }

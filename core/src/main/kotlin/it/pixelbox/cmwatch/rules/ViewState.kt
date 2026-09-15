@@ -9,7 +9,6 @@ sealed class Screen {
     data class Question(val name: String) : Screen()
     data object Settings : Screen()
     data object Pairing : Screen()
-    data class Outcome(val name: String) : Screen()
     data class Terminal(val name: String) : Screen()
     data object Timeline : Screen()
     data object Launch : Screen()
