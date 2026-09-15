@@ -64,7 +64,7 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
                 }
                 val app = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
                 RangedValueComplicationData.Builder(r.value, 0f, r.max, text(desc))
-                    .setText(text(r.text)).setMonochromaticImage(app).setTapAction(open("cmwatch://quota", 3)).build()
+                    .setText(text(r.text)).setTitle(r.title?.let { text(it) }).setMonochromaticImage(app).setTapAction(open("cmwatch://quota", 3)).build()
             }
             else -> null
         }

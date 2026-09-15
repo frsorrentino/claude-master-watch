@@ -33,12 +33,15 @@ class ComplicationTextsTest {
 
     @Test fun ranged() {
         val r = ComplicationTexts.ranged(q, "personal")
-        assertEquals(11f, r.value); assertEquals(100f, r.max); assertEquals("5h 11%", r.text); assertEquals(false, r.week)
+        assertEquals(11f, r.value); assertEquals(100f, r.max); assertEquals("11%", r.text); assertEquals("5h", r.title); assertEquals(false, r.week)
         // `work` nella fixture ha solo la settimana: l'anello la mostra con la sua sigla.
-        assertEquals("7d 75%", ComplicationTexts.ranged(q, "work").text)
+        val w = ComplicationTexts.ranged(q, "work")
+        assertEquals("75%", w.text); assertEquals("7d", w.title)
         val none = ComplicationTexts.ranged(q, "nessuno")
-        assertEquals(0f, none.value); assertEquals("—", none.text); assertEquals(null, none.week)
+        assertEquals(0f, none.value); assertEquals("—", none.text); assertEquals(null, none.week); assertEquals(null, none.title)
     }
+
+    private fun twoLines(r: ComplicationTexts.Ranged) = "${r.text}/${r.title}"
 
     // Franz, 15/09 16:44: di notte e nel weekend le 5 ore stanno a zero, l'anello passa alla settimana con la sua sigla.
     private fun withQuota(h5: Int?, w7: Int?) =
@@ -46,14 +49,14 @@ class ComplicationTextsTest {
 
     @Test fun rangedAZeroPassaAllaSettimana() {
         val r = ComplicationTexts.ranged(withQuota(0, 34), "personal")
-        assertEquals(34f, r.value); assertEquals("7d 34%", r.text); assertEquals(true, r.week)
+        assertEquals(34f, r.value); assertEquals("34%/7d", twoLines(r)); assertEquals(true, r.week)
     }
 
     @Test fun rangedSenzaCinqueOrePassaAllaSettimana() =
-        assertEquals("7d 34%", ComplicationTexts.ranged(withQuota(null, 34), "personal").text)
+        assertEquals("34%/7d", twoLines(ComplicationTexts.ranged(withQuota(null, 34), "personal")))
 
     @Test fun rangedAZeroSenzaSettimanaRestaSulleCinqueOre() =
-        assertEquals("5h 0%", ComplicationTexts.ranged(withQuota(0, null), "personal").text)
+        assertEquals("0%/5h", twoLines(ComplicationTexts.ranged(withQuota(0, null), "personal")))
 
     @Test fun rangedSenzaLettureMostraIlTrattino() =
         assertEquals("—", ComplicationTexts.ranged(withQuota(null, null), "personal").text)

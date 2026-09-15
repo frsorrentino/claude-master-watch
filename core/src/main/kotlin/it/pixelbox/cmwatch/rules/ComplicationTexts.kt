@@ -5,7 +5,7 @@ import it.pixelbox.cmwatch.contract.State
 
 /** Testi della complication (tre tipi, stessa sorgente; design, sezione 2). */
 object ComplicationTexts {
-    data class Ranged(val value: Float, val max: Float, val text: String, val week: Boolean? = null)
+    data class Ranged(val value: Float, val max: Float, val text: String, val week: Boolean? = null, val title: String? = null)
 
     /** «1?» / «▶3» / «✓»; «PC» con il PC fermo; «—» senza stato. */
     fun short(state: State?, fresh: Boolean, seen: Set<String> = emptySet()): String {
@@ -40,15 +40,16 @@ object ComplicationTexts {
     }
 
     /**
-     * Anello della quota dell'account scelto, con la sigla della finestra davanti al numero: «5h 12%», «7d 34%». Con le
+     * Anello della quota dell'account scelto: il numero come testo, la sigla della finestra («5h», «7d») come titolo,
+     * che il quadrante disegna sotto e più piccolo (Franz, 15/09 17:00: «su 2 righe con gerarchia diversa»). Con le
      * 5 ore a zero o senza lettura (di notte, nel weekend) l'anello passa alla settimana, l'unica cosa che conta allora
-     * (Franz, 15/09 16:44). `week` è null senza nessuna lettura.
+     * (Franz, 15/09 16:44). `week` e `title` sono null senza nessuna lettura.
      */
     fun ranged(state: State?, account: String, h5Tag: String = "5h", weekTag: String = "7d"): Ranged {
         val q = state?.quota?.get(account) ?: return Ranged(0f, 100f, "—")
         val week = (q.h5 == null || q.h5 == 0) && q.w7 != null
         val v = (if (week) q.w7 else q.h5) ?: return Ranged(0f, 100f, "—")
-        return Ranged(v.toFloat(), 100f, "${if (week) weekTag else h5Tag} $v%", week)
+        return Ranged(v.toFloat(), 100f, "$v%", week, if (week) weekTag else h5Tag)
     }
 
     fun tapTarget(state: State?): String =
