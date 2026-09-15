@@ -33,6 +33,8 @@ fun WideButton(
     transformation: SurfaceTransformation? = null,
     /** Bordo rosso sulle opzioni delle domande a rischio alto, ora che i tasti sono tutti blu (Franz, 15/09 18:14). */
     border: BorderStroke? = null,
+    /** Icona accanto alla parola, come nelle liste di Messages e nei moduli di Maps (proposta 39, fase 1). */
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) {
     val m = modifier.fillMaxWidth().heightIn(min = 56.dp)
     // Sul primario il suo blu notte; sugli altri pieni chiari (ambra) nero, sui pieni scuri (rosso) bianco.
@@ -45,11 +47,29 @@ fun WideButton(
         Button(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
             colors = ButtonDefaults.buttonColors(containerColor = fill, contentColor = onFill), border = border,
-        ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+        ) {
+            if (icon == null) Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            else androidx.compose.foundation.layout.Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                androidx.wear.compose.material3.Icon(icon, contentDescription = null)
+                Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
     } else {
         FilledTonalButton(
             onClick = onClick, onLongClick = onLongClick, enabled = enabled, modifier = m, transformation = transformation,
             colors = ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text), border = border,
-        ) { Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+        ) {
+            if (icon == null) Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            else androidx.compose.foundation.layout.Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                androidx.wear.compose.material3.Icon(icon, contentDescription = null)
+                Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
     }
 }

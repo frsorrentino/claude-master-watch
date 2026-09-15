@@ -389,6 +389,10 @@ class MainActivity : ComponentActivity() {
                     name, text, loading = text == null && error == null && !failed,
                     error = if (text != null) null else error ?: if (failed) getString(R.string.question_not_delivered) else null,
                     capturedAt = capturedAt,
+                    // Il filo delle tue righe nel colore del badge della sessione (proposta 38, fase 1).
+                    railColor = session?.let { ses ->
+                        androidx.compose.ui.graphics.Color(it.pixelbox.cmwatch.rules.Badge.of(ses.account, ses.color, ses.state, ses.icon, ses.accountKind).fill)
+                    } ?: it.pixelbox.cmwatch.wear.ui.theme.CmColors.accent,
                     answer = blocks,
                     current = if (speaking) block else null,
                     speaking = speaking || preparing,

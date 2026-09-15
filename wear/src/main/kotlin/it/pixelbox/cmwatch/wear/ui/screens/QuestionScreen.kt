@@ -67,6 +67,18 @@ fun QuestionScreen(
     val enabled = snapshot.freshness is Freshness.Fresh
     val pending = snapshot.pending.firstOrNull { it.cmd.id == sentId }
     var holdHint by rememberSaveable { mutableStateOf(false) }
+    // Il bordo rosso del rischio alto fa un respiro solo all'arrivo della domanda, poi resta fermo (proposta 20, fase 1):
+    // si nota senza restare ad animare addosso alla batteria. Con «riduci animazioni» il bordo è subito quello fermo.
+    val respiro = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+    val fermeAnimazioni = it.pixelbox.cmwatch.wear.ui.ambient.animationsOff()
+    LaunchedEffect(q, fermeAnimazioni) {
+        if (q?.tier == Tier.HIGH && !fermeAnimazioni) {
+            respiro.snapTo(1f)
+            respiro.animateTo(0f, androidx.compose.animation.core.tween(durationMillis = 900))
+        } else {
+            respiro.snapTo(0f)
+        }
+    }
 
     // Domanda sparita: se l'abbiamo mandata noi si chiude al risultato; altrimenti «già risposta» e si chiude.
     if (q == null) {
@@ -114,7 +126,8 @@ fun QuestionScreen(
                         primary = primary, enabled = enabled && pending == null,
                         transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
                         // Il rischio alto si vede anche col colore, non solo con la pressione lunga (Franz, 15/09 18:14).
-                        border = if (q.tier == Tier.HIGH) androidx.compose.foundation.BorderStroke(2.dp, CmColors.gone) else null,
+                        // A riposo resta il bordo di prima (2 dp pieno); il respiro lo ingrossa una volta sola all'arrivo.
+                        border = if (q.tier == Tier.HIGH) androidx.compose.foundation.BorderStroke((2 + 2 * respiro.value).dp, CmColors.gone) else null,
                     )
                 }
             }

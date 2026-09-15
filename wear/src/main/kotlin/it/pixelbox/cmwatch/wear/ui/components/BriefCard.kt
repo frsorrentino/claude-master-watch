@@ -40,6 +40,8 @@ fun BriefCard(
     transformation: SurfaceTransformation?,
     modifier: Modifier = Modifier,
     animate: Boolean = true,
+    /** Vero quando la card è nell'inquadratura: da lì parte il riempimento dell'arco (Franz, 16/09 01:45). */
+    visible: Boolean = true,
     onClick: () -> Unit = {},
 ) {
     val ink = if (card.tone == BriefCards.Tone.STALE) CmColors.stale else CmColors.briefBig
@@ -59,7 +61,8 @@ fun BriefCard(
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(card.value, style = BriefNumber, color = ink, maxLines = 1)
+                    // Il numero grande rotola quando cambia (proposta 19, fase 1): 7 % → 8 % si nota anche di sfuggita.
+                    RollingText(card.value, style = BriefNumber, color = ink, animate = animate)
                     card.unit?.let {
                         Spacer(Modifier.width(4.dp))
                         Text(
@@ -81,7 +84,7 @@ fun BriefCard(
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
-                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate)
+                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate, visible = visible)
             }
         }
         // La ripartenza settimanale centrata sotto tutta la card (S07): a sinistra, in fondo a una card alta, il bordo

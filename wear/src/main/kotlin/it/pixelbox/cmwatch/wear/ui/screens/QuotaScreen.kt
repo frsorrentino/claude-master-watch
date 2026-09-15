@@ -54,6 +54,9 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
     // Giorni della settimana nella lingua delle risorse: con l'inglese «reset Thu 02:00», non «gio» (14/09 23:43).
     val quota = BriefCards.quota(state, labels, locale = LocalConfiguration.current.locales[0])
     val work = BriefCards.work(state, freshness, now, labels)
+    // Quali elementi sono nell'inquadratura: l'arco di una card si riempie quando la sua entra (Franz, 16/09 01:45).
+    // L'indice 0 è l'intestazione, poi le card della quota, poi l'intestazione del lavoro e le sue card.
+    val visibili = listState.layoutInfo.visibleItems.map { it.index }.toSet()
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -62,7 +65,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                 }
             }
             items(quota.size) { i ->
-                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
+                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = (1 + i) in visibili)
             }
             if (work.isNotEmpty()) {
                 item {
@@ -71,7 +74,8 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                     }
                 }
                 items(work.size) { i ->
-                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
+                    // Dopo l'intestazione della quota, le sue card e l'intestazione del lavoro: 2 + quante sono le card sopra.
+                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = (2 + quota.size + i) in visibili)
                 }
             }
             if (quota.isEmpty() && work.isEmpty()) {

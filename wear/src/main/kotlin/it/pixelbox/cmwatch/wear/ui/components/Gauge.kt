@@ -46,16 +46,21 @@ fun Gauge(
     modifier: Modifier = Modifier,
     size: Dp = 52.dp,
     animate: Boolean = true,
+    /** L'arco si riempie quando la card entra nell'inquadratura, non quando viene composta (Franz, 16/09 01:45). */
+    visible: Boolean = true,
 ) {
     val target = progress.coerceIn(0f, 1f)
     val shown = remember { Animatable(if (animate) 0f else target) }
     // L'arco si riempie con la molla lenta del motion scheme di M3 Expressive, non con una curva fissa (B9, 15/09 23:40).
     val fill = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
-    LaunchedEffect(target, animate) {
-        // G9 (16/09 01:04, registrazione dal polso): il riempimento finiva mentre la schermata stava ancora entrando e al
-        // polso non si vedeva. Parte dopo lo scorrimento d'ingresso (~400 ms), solo la prima volta; i cambi dopo, subito.
-        if (animate) { if (shown.value == 0f) kotlinx.coroutines.delay(400); shown.animateTo(target, fill) }
-        else shown.snapTo(target)
+    LaunchedEffect(target, animate, visible) {
+        // G9: il riempimento parte quando la card entra nell'inquadratura (Franz, 16/09 01:45), non quando viene
+        // composta. Prima finiva mentre la schermata stava ancora entrando e al polso non si vedeva.
+        when {
+            !animate -> shown.snapTo(target)
+            visible -> shown.animateTo(target, fill)
+            else -> shown.snapTo(0f)
+        }
     }
     // Il dato vecchio si spegne piano: l'arco e l'icona scendono a metà luce invece di cambiare colore di colpo.
     val light by animateFloatAsState(if (tone == BriefCards.Tone.STALE) 0.5f else 1f, MaterialTheme.motionScheme.slowEffectsSpec(), label = "luce")

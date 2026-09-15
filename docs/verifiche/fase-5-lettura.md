@@ -53,3 +53,16 @@ Build `7898035`, installata il 16/09 alle 00:07:35. Da provare con «riduci anim
 | G9 | Gli archi della Quota si riempiono con una molla; con il dato vecchio si spengono piano | Quota | ✗ 16/09 01:00: il riempimento finiva mentre la schermata entrava (registrazione dal polso, 7 %). Corretto in `9b806ad` (parte dopo ~400 ms), da riprovare |
 | G10 | Accanto all'ora «❓ n» in ambra quando qualcuno aspetta | qualsiasi schermata dell'app con una domanda aperta | ✅ 16/09 01:00, build `7898035`, confermato da Franz |
 | G11 | Nella tile la barra della quota cresce da sinistra quando la tile si carica | scorrere fino alla tile | ✗ 16/09 01:00: `animate(0,1)` partiva alla preparazione della tile, prima dello swipe. Corretto in `9b806ad` (cresce a tile visibile, `isLayoutVisible`), da riprovare |
+
+## Fase 1, primo blocco (proposte 19, 20, 33-35, 38, 39, 44)
+
+Build del 16/09 01:51. Da provare con «riduci animazioni» spento e poi acceso.
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| F1 | Il numero grande della Quota rotola quando cambia (7 % → 8 %) | Quota, con il PC che lavora | |
+| F2 | Gli archi si riempiono quando la loro card entra nell'inquadratura, non prima | Quota, scorrendo dall'alto | |
+| F3 | Il bordo rosso di una domanda a rischio alto fa un respiro solo all'arrivo | una domanda HIGH | |
+| F4 | Nella Scheda di una sessione che lavora c'è un bagliore in fondo, che respira piano e sparisce quando si ferma | Scheda di una sessione attiva | |
+| F5 | Nel Terminale il filo delle tue righe ha il colore della sessione, lo stesso del badge | Terminale di due sessioni diverse | |
+| F6 | Il tasto «Riavvia» e gli altri tasti con icona si leggono bene, icona e parola allineate | Scheda di una sessione chiusa | |

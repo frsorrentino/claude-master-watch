@@ -11,6 +11,7 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
+import it.pixelbox.cmwatch.wear.ui.theme.bottomGlow
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
@@ -95,7 +96,12 @@ fun SessionScreen(
             }
         },
     ) { padding ->
-        TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        // Bagliore in fondo mentre la sessione lavora (proposta 44, fase 1): respira piano e si spegne da solo quando
+        // la sessione si ferma. In ambient e con «riduci animazioni» resta una luce ferma e fioca.
+        TransformingLazyColumn(
+            state = listState, contentPadding = padding,
+            modifier = Modifier.fillMaxSize().bottomGlow(CmColors.busy, visible = s?.state == SessionState.BUSY),
+        ) {
             if (s == null) {
                 item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
                 item { WideButton(stringResource(R.string.sessions_title), onClick = onBackToSessions, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }

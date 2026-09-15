@@ -84,6 +84,8 @@ fun TerminalScreen(
     onBlock: (Int) -> Unit = {},
     onWrite: () -> Unit = {},
     capturedAt: Long? = null,
+    /** Il filo accanto alle tue righe prende il colore della sessione (proposta 38, fase 1): si riconosce di chi è. */
+    railColor: androidx.compose.ui.graphics.Color = CmColors.accent,
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -141,7 +143,7 @@ fun TerminalScreen(
                         val top = if (i > 0 && (b.kind == TerminalText.Kind.USER || b.kind == TerminalText.Kind.CLAUDE)) 8.dp else 0.dp
                         val base = "${b.kind}:${b.text.hashCode()}"
                         val n = volte.merge(base, 1, Int::plus) ?: 1
-                        item(key = "$base#$n") { TerminalBlock(b, Modifier.fillMaxWidth().padding(top = top).morph(this, spec).animateItem()) }
+                        item(key = "$base#$n") { TerminalBlock(b, railColor, Modifier.fillMaxWidth().padding(top = top).morph(this, spec).animateItem()) }
                     }
                 }
             }
@@ -186,12 +188,13 @@ private val VoiceSize = 15.sp
 private val VoiceLine = 21.sp
 
 @Composable
-private fun TerminalBlock(b: TerminalText.Block, modifier: Modifier = Modifier) {
+private fun TerminalBlock(b: TerminalText.Block, railColor: Color, modifier: Modifier = Modifier) {
     val voice = MaterialTheme.typography.bodyMedium.copy(fontSize = VoiceSize, lineHeight = VoiceLine)
     when (b.kind) {
-        // Il filo è dentro l'item e alto quanto il blocco: resta continuo anche mentre la lista si deforma.
+        // Il filo è dentro l'item e alto quanto il blocco: resta continuo anche mentre la lista si deforma. Il colore è
+        // quello della sessione (proposta 38, fase 1), lo stesso del suo badge nella lista.
         TerminalText.Kind.USER -> Row(modifier.height(IntrinsicSize.Min)) {
-            Box(Modifier.width(3.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(CmColors.accent))
+            Box(Modifier.width(3.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(railColor))
             Spacer(Modifier.width(8.dp))
             Text(b.text, style = voice, color = CmColors.actionIcon)
         }
