@@ -64,9 +64,10 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
                 }
                 val app = MonochromaticImage.Builder(Icon.createWithResource(this, R.drawable.ic_app_mono)).build()
                 RangedValueComplicationData.Builder(r.value, 0f, r.max, text(desc))
-                    // La sigla anche come icona sotto il numero: il quadrante di Franz disegna testo e icona, non il titolo
-                    // (15/09 17:28). Senza lettura resta il simbolo dell'app.
-                    .setText(text(r.text)).setTitle(r.title?.let { text(it) }).setMonochromaticImage(r.title?.let { tag(it) } ?: app).setTapAction(open("cmwatch://quota", 3)).build()
+                    // La sigla come icona sotto il numero, senza titolo: con il titolo il quadrante di Franz rimpiccioliva e
+                    // ingrigiva il numero, la batteria senza titolo lo mostra grande e bianco (15/09 17:54). Senza lettura
+                    // resta il simbolo dell'app.
+                    .setText(text(r.text)).setMonochromaticImage(r.title?.let { tag(it) } ?: app).setTapAction(open("cmwatch://quota", 3)).build()
             }
             else -> null
         }
@@ -82,8 +83,10 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
             color = android.graphics.Color.WHITE
             textAlign = android.graphics.Paint.Align.CENTER
             typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-            textSize = px * 0.62f
+            textSize = px * 0.8f
         }
+        // La sigla riempie il quadrato in larghezza: a 0,62 il quadrante la disegnava minuscola (15/09 17:54).
+        p.textSize *= (px * 0.96f) / p.measureText(s)
         android.graphics.Canvas(bmp).drawText(s, px / 2f, px / 2f - (p.descent() + p.ascent()) / 2f, p)
         return MonochromaticImage.Builder(Icon.createWithBitmap(bmp)).build()
     }
