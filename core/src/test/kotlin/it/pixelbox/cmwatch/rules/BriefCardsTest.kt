@@ -41,6 +41,23 @@ class BriefCardsTest {
         assertEquals(BriefCards.Tone.NEUTRAL, c.tone)
     }
 
+    // Anello concentrico (proposta 46, fase 1): fuori le 5 ore, dentro la settimana, così le due misure si raccontano
+    // uguali invece di essere una un numero grande e l'altra una pillolina.
+    @Test fun laCardDellaQuotaPortaAncheLaFrazioneDellaSettimana() {
+        val c = BriefCards.quota(state, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first()
+        val q = state.quota.getValue("personal")
+        assertEquals(q.h5!! / 100f, c.progress!!, 0.001f)
+        assertEquals(q.w7!! / 100f, c.progress2!!, 0.001f)
+    }
+
+    @Test fun senzaCinqueOreLAnelloEsternoELaSettimanaEDentroNonCEniente() {
+        val q = state.quota.getValue("personal")
+        val s = state.copy(quota = mapOf("personal" to q.copy(h5 = null, resetH5 = null)))
+        val c = BriefCards.quota(s, labels.copy(weekOnly = "settimana"), ZoneId.of("Europe/Rome"), Locale.ITALIAN).first()
+        assertEquals(q.w7!! / 100f, c.progress!!, 0.001f)
+        assertNull(c.progress2)
+    }
+
     @Test fun senzaRipartenzaDelleCinqueOreLaRigaDelResetNonSiDisegna() {
         val s = state.copy(quota = mapOf("personal" to state.quota.getValue("personal").copy(resetH5 = null)))
         assertNull(BriefCards.quota(s, labels, ZoneId.of("Europe/Rome"), Locale.ITALIAN).first().secondary)

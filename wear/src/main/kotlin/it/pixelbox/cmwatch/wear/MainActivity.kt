@@ -62,6 +62,16 @@ import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
 import it.pixelbox.cmwatch.rules.TerminalLive
 import it.pixelbox.cmwatch.wear.ui.components.CmTimeText
+import it.pixelbox.cmwatch.wear.ui.components.CmConfirm
+import it.pixelbox.cmwatch.wear.ui.components.CmConfirmState
+import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsOff
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.wear.compose.material3.confirmationDialogCurvedText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -198,40 +208,21 @@ class MainActivity : ComponentActivity() {
         // croce, insieme alla vibrazione. Solo le azioni dell'utente: le catture del Terminale dal vivo vibravano a ogni giro.
         // La conferma porta con sé la sua frase (Franz, 16/09 01:58): dopo una pressione lunga «Ti avviso quando finisce»,
         // non «Fatto». Le azioni che non hanno una frase propria mostrano «Fatto» quando il PC risponde.
-        var conferma by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+        var conferma by remember { mutableStateOf<CmConfirmState?>(null) }
+        fun conferma(icon: ImageVector, tint: Color, text: String) { conferma = CmConfirmState(icon, tint, text) }
         LaunchedEffect(Unit) {
             app.repo.userResults.collect { r ->
                 Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR)
-                conferma = when {
-                    !r.ok -> false to getString(R.string.confirm_failed)
-                    conferma == null -> true to getString(R.string.confirm_done)
-                    else -> conferma!!   // la frase l'ha già messa l'azione: non la sovrascrivo
+                when {
+                    !r.ok -> conferma(Icons.Rounded.Close, CmColors.gone, getString(R.string.confirm_failed))
+                    // La frase e il segno li ha già messi l'azione: non li sovrascrivo.
+                    conferma == null -> conferma(Icons.Rounded.Check, CmColors.idle, getString(R.string.confirm_done))
                 }
             }
         }
-        // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
-        val curvo = androidx.wear.compose.material3.ConfirmationDialogDefaults.curvedTextStyle
-        val frase = conferma?.second ?: getString(R.string.confirm_done)
-        // Il segno domina, il contenitore no (Franz, 16/09 02:44): spunta verde e croce rossa su fondo scuro, al posto
-        // della macchia pastello che si prendeva mezzo schermo. Frasi brevi e simmetriche: «Ti avviso» / «Non ti avviso».
-        androidx.wear.compose.material3.SuccessConfirmationDialog(
-            visible = conferma?.first == true, onDismissRequest = { conferma = null },
-            curvedText = { confirmationDialogCurvedText(frase, curvo) },
-            colors = androidx.wear.compose.material3.ConfirmationDialogDefaults.successColors(
-                iconColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.idle,
-                iconContainerColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.surfaceHigh,
-                textColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.text,
-            ),
-        )
-        androidx.wear.compose.material3.FailureConfirmationDialog(
-            visible = conferma?.first == false, onDismissRequest = { conferma = null },
-            curvedText = { confirmationDialogCurvedText(frase, curvo) },
-            colors = androidx.wear.compose.material3.ConfirmationDialogDefaults.failureColors(
-                iconColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.gone,
-                iconContainerColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.surfaceHigh,
-                textColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.text,
-            ),
-        )
+        // La nostra conferma al posto di quella di sistema (Franz, 16/09 03:08): cerchio, segno, frase sotto, niente
+        // testo curvo né forma ruotata. Si chiude da sola dopo poco più di un secondo, o al tocco.
+        CmConfirm(conferma) { conferma = null }
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 
@@ -252,9 +243,14 @@ class MainActivity : ComponentActivity() {
                     reopenStatus = { n -> reopenStatus(n) },
                     // Pressione lunga sulla riga: segui / smetti, con la vibrazione come conferma (Franz, 15/09 19:04).
                     onFollow = { n, follow ->
-                        Haptics.play(this@MainActivity, Haptics.Kind.SENT)
-                        // La frase la mette la pressione lunga, subito: «Ti avviso quando finisce» / «Non ti avviso più».
-                        conferma = true to getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow)
+                        // Gli interruttori hanno un segno proprio: acceso sale, spento scende (16/09 03:00).
+                        Haptics.play(this@MainActivity, if (follow) Haptics.Kind.TOGGLE_ON else Haptics.Kind.TOGGLE_OFF)
+                        // Il segno e la frase li mette la pressione lunga, subito: campanella accesa o barrata.
+                        conferma(
+                            if (follow) Icons.Rounded.Notifications else Icons.Rounded.NotificationsOff,
+                            if (follow) CmColors.followed else CmColors.text2,
+                            getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow),
+                        )
                         scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, n, null) }
                     },
                 )
@@ -282,8 +278,12 @@ class MainActivity : ComponentActivity() {
                     onWrite = { write(name) },
                     onTerminal = { nav.go(Screen.Terminal(name)) },
                     onFollow = { follow ->
-                        Haptics.play(this@MainActivity, Haptics.Kind.SENT)
-                        conferma = true to getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow)
+                        Haptics.play(this@MainActivity, if (follow) Haptics.Kind.TOGGLE_ON else Haptics.Kind.TOGGLE_OFF)
+                        conferma(
+                            if (follow) Icons.Rounded.Notifications else Icons.Rounded.NotificationsOff,
+                            if (follow) CmColors.followed else CmColors.text2,
+                            getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow),
+                        )
                         scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) }
                     },
                     live = live,

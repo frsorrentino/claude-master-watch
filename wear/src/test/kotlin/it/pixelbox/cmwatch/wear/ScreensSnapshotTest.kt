@@ -10,6 +10,12 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsOff
+import it.pixelbox.cmwatch.wear.ui.components.CmConfirm
+import it.pixelbox.cmwatch.wear.ui.components.CmConfirmState
+import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import androidx.wear.compose.material3.ConfirmationDialogDefaults
 import androidx.wear.compose.material3.FailureConfirmationDialogContent
 import androidx.wear.compose.material3.SuccessConfirmationDialogContent
@@ -51,19 +57,13 @@ class ScreensSnapshotTest {
         CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }
     }
     // Le due conferme del «segui», una accanto all'altra: coppia simmetrica e segno dominante (Franz, 16/09 02:44).
+    // Le nostre due conferme (Franz, 16/09 03:08: quelle di sistema non gli piacciono): cerchio, segno, frase sotto.
     @Test fun confirmFollow() = paparazzi.snapshot {
-        CmTheme {
-            // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
-            val curvo = ConfirmationDialogDefaults.curvedTextStyle
-            SuccessConfirmationDialogContent(curvedText = { confirmationDialogCurvedText("Alerts on", curvo) })
-        }
+        CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.Notifications, CmColors.followed, "Alerts on")) {} }
     }
 
     @Test fun confirmUnfollow() = paparazzi.snapshot {
-        CmTheme {
-            val curvo = ConfirmationDialogDefaults.curvedTextStyle
-            FailureConfirmationDialogContent(curvedText = { confirmationDialogCurvedText("Alerts off", curvo) })
-        }
+        CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.NotificationsOff, CmColors.text2, "Alerts off")) {} }
     }
 
     private val terminalSample = listOf(

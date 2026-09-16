@@ -84,7 +84,7 @@ fun BriefCard(
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
-                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate, visible = visible)
+                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate, visible = visible, second = card.progress2)
             }
         }
         // La ripartenza settimanale centrata sotto tutta la card (S07): a sinistra, in fondo a una card alta, il bordo

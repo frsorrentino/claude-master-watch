@@ -32,6 +32,12 @@ object BriefCards {
         val note: String? = null,
         val tone: Tone = Tone.NEUTRAL,
         val progress: Float? = null,
+        /**
+         * Secondo valore per l'anello concentrico (proposta 46, 16/09): nella quota, fuori le 5 ore e dentro la
+         * settimana. Assente quando il numero grande è già la settimana: un anello dentro l'altro con lo stesso dato
+         * non direbbe niente.
+         */
+        val progress2: Float? = null,
         val glyph: Glyph = Glyph.TIME,
     )
 
@@ -88,6 +94,8 @@ object BriefCards {
                     else -> Tone.NEUTRAL
                 },
                 progress = QuotaText.fraction(big),
+                // Anello concentrico (proposta 46): dentro la settimana, ma solo quando fuori ci sono le 5 ore.
+                progress2 = if (soloSettimana) null else q.w7?.let { QuotaText.fraction(it) },
                 glyph = Glyph.TIME,
             )
         }

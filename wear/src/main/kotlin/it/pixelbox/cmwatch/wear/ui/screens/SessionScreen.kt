@@ -161,6 +161,14 @@ fun SessionScreen(
                     }
                 }
             }
+            // Il riquadro di contesto (Franz, 16/09 00:14): per ora la quota dell'account di questa sessione, con
+            // l'anello concentrico di 5 ore e settimana. Modello, effort e contesto entrano qui con il contratto 1.11.
+            item {
+                it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
+                    snapshot.state, s.account, SurfaceTransformation(spec),
+                    Modifier.transformedHeight(this, spec),
+                )
+            }
             if (s.state != SessionState.GONE) {
                 // Niente interruttore «Segui»: occupava mezzo schermo (Franz, 15/09 19:04). Si segue con la pressione
                 // lunga sulla card o sulla riga della lista; lo stato lo dice la campanella in testata.
