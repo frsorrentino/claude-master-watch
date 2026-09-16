@@ -125,9 +125,12 @@ class MainActivity : ComponentActivity() {
             val px = intent.getIntExtra(EXTRA_SCROLL_PX, 0); val ms = intent.getIntExtra(EXTRA_SCROLL_MS, 2000)
             app.scope.launch { if (app.prefs.current().demoMode) it.pixelbox.cmwatch.wear.ui.components.DemoScrollBus.requests.emit(px to ms) }
         }
+        // Storia dei video (piano 16/09): la scena `--es demo_step question` e la dettatura simulata `--es demo_dictation "…"`.
+        intent?.getStringExtra(EXTRA_DEMO_STEP)?.let { app.setDemoStep(it, intent.getIntExtra(EXTRA_DEMO_DELAY_MS, 0).toLong()) }
+        intent?.getStringExtra(EXTRA_DEMO_DICTATION)?.let { app.demoDictation = it }
     }
 
-    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code"; const val EXTRA_DEMO = "demo"; const val EXTRA_SCROLL_PX = "scroll_px"; const val EXTRA_SCROLL_MS = "scroll_ms" }
+    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code"; const val EXTRA_DEMO = "demo"; const val EXTRA_SCROLL_PX = "scroll_px"; const val EXTRA_SCROLL_MS = "scroll_ms"; const val EXTRA_DEMO_STEP = "demo_step"; const val EXTRA_DEMO_DICTATION = "demo_dictation"; const val EXTRA_DEMO_DELAY_MS = "demo_delay_ms" }
 
     @Composable
     private fun App(app: CmApp) {
@@ -189,6 +192,18 @@ class MainActivity : ComponentActivity() {
             launchPath = null
         }
         fun write(name: String) {
+            // Demo per i video: la «dettatura» preparata via adb va come se l'avesse restituita la tastiera.
+            val dettato = app.demoDictation
+            if (settings?.demoMode == true && dettato != null) {
+                app.demoDictation = null
+                val aperta = !forcePrompt && snapshot.state?.sessions?.firstOrNull { it.name == name }?.question != null
+                forcePrompt = false
+                scope.launch {
+                    sentId = if (aperta) app.repo.answerText(name, dettato) else app.repo.prompt(name, dettato)
+                    Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+                }
+                return
+            }
             writeTarget = name
             runCatching { keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
                 .onFailure { Haptics.play(this@MainActivity, Haptics.Kind.ERROR) }   // nessuna tastiera Wear (es. ARC)
@@ -475,6 +490,12 @@ class MainActivity : ComponentActivity() {
                     snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh,
                     onLaunch = { path -> launch(path, null); nav.go(Screen.Sessions) },
                     onWrite = { p ->
+                        val dettato = app.demoDictation
+                        if (settings?.demoMode == true && dettato != null) {
+                            app.demoDictation = null
+                            launch(p.path, dettato)
+                            return@LaunchScreen
+                        }
                         launchPath = p.path
                         runCatching { launchKeyboard.launch(Keyboard.intent(getString(R.string.launch_hint, p.name))) }
                             .onFailure { Haptics.play(this@MainActivity, Haptics.Kind.ERROR) }
@@ -483,7 +504,10 @@ class MainActivity : ComponentActivity() {
             }
             composable(Routes.QUOTA) {
                 // Eventi per «Oggi» e campioni della quota per il ritmo della finestra (Franz, 16/09 13:00).
-                val events by app.repo.events.collectAsStateWithLifecycle()
+                val eventiVeri by app.repo.events.collectAsStateWithLifecycle()
+                val eventiDemo by app.fake.events.collectAsStateWithLifecycle(emptyList())
+                // In demo «Oggi» conta solo gli eventi della demo: con quelli veri salvati su Room diceva 336 (16/09).
+                val events = if (settings?.demoMode == true) eventiDemo else eventiVeri
                 val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
                 QuotaScreen(
                     snapshot.state, snapshot.freshness, events = events, samples = samples,

@@ -37,7 +37,8 @@ class FakeTransport(
         fun at(id: String, f: (Session) -> Session) = s.copy(ts = t, sessions = Order.sessions(s.sessions.map { if (it.id == id) f(it) else it }))
         current.value = when (step) {
             DemoStep.CALM -> at(deployId) { it.copy(state = SessionState.IDLE, question = null, since = t - 900) }
-            DemoStep.QUESTION -> at(deployId) { it.copy(state = SessionState.WAITING, since = t, question = originalQuestion?.copy(askedAt = t)) }
+            // Id nuovo a ogni scena: con quello della fixture, già tra le domande viste, la notifica non partiva.
+            DemoStep.QUESTION -> at(deployId) { it.copy(state = SessionState.WAITING, since = t, question = originalQuestion?.copy(id = "${originalQuestion.id}-$t", askedAt = t)) }
             DemoStep.DEPLOYED -> at(deployId) {
                 it.copy(
                     state = SessionState.IDLE, question = null, since = t, followed = true,

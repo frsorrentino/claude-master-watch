@@ -131,6 +131,25 @@ class CmApp : Application() {
         }
     }
 
+    /**
+     * Porta la demo a una scena della storia dei video (`--es demo_step question`). La rilettura passa dal diff degli stati,
+     * lo stesso delle notifiche vere: la domanda arriva con la sua notifica anche ad app chiusa.
+     */
+    fun setDemoStep(name: String, delayMs: Long = 0) {
+        val step = runCatching { it.pixelbox.cmwatch.transport.DemoStep.valueOf(name.uppercase()) }.getOrNull() ?: return
+        scope.launch {
+            if (!prefs.current().demoMode) return@launch
+            // Il ritardo lascia il tempo di tornare al quadrante: con l'app in primo piano le notifiche non partono.
+            kotlinx.coroutines.delay(delayMs)
+            fake.demoStep(step)
+            repo.refresh()
+            runCatching { CmTileService.requestUpdate(this@CmApp) }; runCatching { CmComplicationService.requestUpdate(this@CmApp) }
+        }
+    }
+
+    /** Il testo che la prossima «dettatura» della demo restituisce al posto della tastiera (`--es demo_dictation "…"`). */
+    @Volatile var demoDictation: String? = null
+
     @Volatile private var lastState: State? = null
 
     private fun foreground(): Boolean =

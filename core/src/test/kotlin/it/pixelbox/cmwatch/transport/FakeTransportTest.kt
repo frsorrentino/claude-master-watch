@@ -122,6 +122,7 @@ class FakeTransportTest {
         val q = tr.state.first().sessions.first { it.question != null }
         assertEquals(SessionState.WAITING, q.state)
         assertEquals(clock, q.question!!.askedAt)
+        assertNotEquals(t().state.first().sessions.first { it.question != null }.question!!.id, q.question!!.id)
     }
 
     @Test fun iRuoliRestanoDopoUnaRispostaCheRiordina() = runTest {
