@@ -70,17 +70,20 @@ fun SessionMetersCard(
         contentPadding = PaddingValues(start = 15.dp, top = 13.dp, end = 15.dp, bottom = 13.dp),
         transformation = transformation,
     ) {
+        // Il titolo è il tema della card, «Sessione»: dentro ci sono contesto, modello ed effort, e «Contesto» ne diceva
+        // uno solo (Franz, 16/09 14:37). Il contesto si legge accanto al numero, «44 % contesto». Fuori dal blocco del
+        // contesto: subito dopo una compattazione il contesto manca per qualche secondo e la card resterebbe senza titolo.
+        Text(
+            stringResource(R.string.card_meters), style = MaterialTheme.typography.labelMedium,
+            color = CmColors.briefLabel, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
         frazione?.let { f ->
-            Text(
-                stringResource(R.string.card_context), style = MaterialTheme.typography.labelMedium,
-                color = CmColors.briefLabel, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
             Row(verticalAlignment = Alignment.Bottom) {
                 // Il numero rotola come quelli del brief: 43 % → 44 % si nota anche di sfuggita.
                 RollingText("${session.context}", style = BriefNumber, color = inchiostro(tono), animate = animate)
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    stringResource(R.string.card_context_unit), style = MaterialTheme.typography.bodyMedium,
+                    stringResource(R.string.card_context_unit_long), style = MaterialTheme.typography.bodyMedium,
                     color = CmColors.briefSecondary, maxLines = 1, modifier = Modifier.padding(bottom = 3.dp),
                 )
             }
@@ -88,7 +91,7 @@ fun SessionMetersCard(
             ContextBar(f, tono, animate = animate, visible = visible)
         }
         if (nome != null || passo != null) {
-            Spacer(Modifier.height(if (frazione == null) 0.dp else 12.dp))
+            Spacer(Modifier.height(if (frazione == null) 6.dp else 12.dp))
             Row(
                 Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,

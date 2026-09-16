@@ -139,8 +139,9 @@ class Repo(
     suspend fun chat(session: String) = command(CmdOp.ANSWER, session, it.pixelbox.cmwatch.rules.QuestionRules.CHAT_ARG)
 
     /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
-    suspend fun command(op: CmdOp, session: String?, arg: String?): String {
-        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by)
+    /** `text`: il primo messaggio di un `launch` (contratto 1.13); per gli altri comandi resta null. */
+    suspend fun command(op: CmdOp, session: String?, arg: String?, text: String? = null): String {
+        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by, text = text)
         if (!online()) { enqueue(cmd); return cmd.id }
         dispatch(cmd)
         return cmd.id

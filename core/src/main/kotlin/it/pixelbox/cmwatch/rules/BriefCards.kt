@@ -21,6 +21,9 @@ object BriefCards {
     /** Simbolo dentro il gauge, come le icone del brief. Il disegno lo scegli in `BriefCard`, qui sta il significato. */
     enum class Glyph { TIME, SESSIONS, QUESTION, NIGHT, SYNC }
 
+    /** Il segno dell'account davanti al titolo, come nella tile: cerchio personale, quadrato lavoro (Franz, 16/09 14:41). */
+    enum class Shape { CIRCLE, SQUARE }
+
     data class Card(
         val key: String,
         val label: String,
@@ -41,6 +44,8 @@ object BriefCards {
         val glyph: Glyph = Glyph.TIME,
         /** Tono dell'anello interno e della sua pillola: la settimana ha soglie sue (Franz, 16/09 11:52). */
         val tone2: Tone = Tone.NEUTRAL,
+        /** Solo nelle card della quota: di quale account è, detto con la forma invece che con il nome. */
+        val shape: Shape? = null,
     )
 
     data class Labels(
@@ -51,6 +56,8 @@ object BriefCards {
         val update: String, val minutes: String, val now: String, val stopped: String,
         /** «settimana»: la pillolina quando il numero grande è già la settimana, senza lettura delle 5 ore. */
         val weekOnly: String = "",
+        /** Il titolo della card della quota, uguale in Panoramica e nella Scheda (Franz, 16/09 14:41). */
+        val quotaTitle: String = "Quota",
     )
 
     private val RESET = DateTimeFormatter.ofPattern("EEE HH:mm")
@@ -71,17 +78,20 @@ object BriefCards {
             val weekReset = weekDay?.let { l.resetAt.format(it) }
             Card(
                 key = "quota-$account",
-                // L'etichetta è il solo nome dell'account: «Quota» lo dice già l'intestazione della sezione, e con
-                // l'anello a destra la colonna è larga una quindicina di caratteri (misurato al polso, 13/09 16:41).
-                label = account,
+                // Il titolo è il tema, «Quota», uguale in Panoramica e nella Scheda; l'account lo dice la forma (Franz, 16/09
+                // 14:41). Prima era il nome dell'account qui e «Quota» nella Scheda: la stessa card con due titoli.
+                label = l.quotaTitle,
+                shape = if (Accounts.isPersonalQuota(account, q)) Shape.CIRCLE else Shape.SQUARE,
                 value = big?.toString() ?: l.none,
                 unit = if (big != null) "%" else null,
                 // Sotto la percentuale delle 5 ore la sua ripartenza (contratto 1.3); la settimanale sta con la settimana,
                 // altrimenti «gio 04:00» sotto il 7 % sembrava il reset delle 5 ore (Franz, 14/09 10:38).
-                secondary = if (soloSettimana) weekReset else q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
+                // Con la sola settimana il reset va nella pillola come negli altri casi: accanto all'anello «reset gio 04:00»
+                // veniva tagliato (Franz, 16/09 14:37).
+                secondary = if (soloSettimana) null else q.resetH5?.let { l.resetAt.format(HHMM.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) },
                 pill = when {
                     q.stale -> l.stale
-                    soloSettimana -> l.weekOnly
+                    soloSettimana -> l.weekOnly + (weekDay?.let { " · $it" } ?: "")
                     // La ripartenza settimanale dentro la pillola: ora la pillola sta a tutta larghezza sotto l'anello
                     // e non va più a capo, e la riga sua in fondo rendeva questa card diversa da quella della Scheda
                     // (Franz, 16/09 13:09). Se il numero grande è la settimana, il reset sta già sotto di lui.
@@ -97,9 +107,9 @@ object BriefCards {
                     (q.h5 ?: 0) >= 90 -> Tone.WARN
                     else -> Tone.NEUTRAL
                 },
-                progress = QuotaText.fraction(big),
-                // Anello concentrico (proposta 46): dentro la settimana, ma solo quando fuori ci sono le 5 ore.
-                progress2 = if (soloSettimana) null else q.w7?.let { QuotaText.fraction(it) },
+                // Sempre due anelli (Franz, 16/09 14:41): fuori le 5 ore, vuoto quando non c'è la lettura; dentro la settimana.
+                progress = if (soloSettimana) 0f else QuotaText.fraction(big),
+                progress2 = q.w7?.let { QuotaText.fraction(it) },
                 glyph = Glyph.TIME,
                 // La settimana col suo tono: ambra dall'80 %, la soglia di stop; rosso esaurita. Con la settimana all'82 %
                 // l'anello interno restava azzurro come le 5 ore e non avvisava (Franz, 16/09 11:52).

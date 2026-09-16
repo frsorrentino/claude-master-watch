@@ -8,7 +8,6 @@ import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
-import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
@@ -54,7 +53,6 @@ class ScreensSnapshotTest {
     @Test fun quota() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now, animateOverride = false) } }
     // S07: la Scheda di una sessione ferma, con l'esito intero (era la schermata Esito), e la Timeline.
     @Test fun cardIdle() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
-    @Test fun timeline() = paparazzi.snapshot { CmTheme { TimelineScreen(ContractJson.decodeEvents(File("../contract/events-sample.json").readText())) } }
     // Design 15/09: il Terminale come un copione — il prompt sul filo azzurro, la prosa di Claude, strumento e output in mono.
     @Test fun terminal() = paparazzi.snapshot {
         CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }

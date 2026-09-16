@@ -47,12 +47,8 @@ import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SettingsScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
-import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.LaunchScreen
 import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
-import it.pixelbox.cmwatch.wear.ui.screens.RecapScreen
-import it.pixelbox.cmwatch.wear.ui.screens.NightScreen
-import it.pixelbox.cmwatch.wear.ui.screens.MenuScreen
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.contract.Night
@@ -164,6 +160,22 @@ class MainActivity : ComponentActivity() {
                 Haptics.play(this@MainActivity, Haptics.Kind.SENT)
             }
         }
+        // «Nuova sessione» (contratto 1.13): il primo messaggio dalla tastiera, poi il launch; il `/result` dice come si
+        // chiama la sessione nata, e appena compare nello stato si apre la sua Scheda.
+        var launchPath by rememberSaveable { mutableStateOf<String?>(null) }
+        var launchId by rememberSaveable { mutableStateOf<String?>(null) }
+        fun launch(path: String, text: String?) {
+            scope.launch {
+                launchId = app.repo.command(CmdOp.LAUNCH, null, path, text?.takeIf { it.isNotBlank() })
+                Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+            }
+        }
+        val launchKeyboard = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            val text = Keyboard.result(res.data); val path = launchPath
+            // Tastiera chiusa senza testo: non si lancia niente, si resta sulla scelta del progetto.
+            if (text != null && path != null) launch(path, text)
+            launchPath = null
+        }
         fun write(name: String) {
             writeTarget = name
             runCatching { keyboard.launch(Keyboard.intent(getString(R.string.write_hint, name))) }
@@ -210,6 +222,18 @@ class MainActivity : ComponentActivity() {
         // non «Fatto». Le azioni che non hanno una frase propria mostrano «Fatto» quando il PC risponde.
         var conferma by remember { mutableStateOf<CmConfirmState?>(null) }
         fun conferma(icon: ImageVector, tint: Color, text: String) { conferma = CmConfirmState(icon, tint, text) }
+        // Dopo «Nuova sessione»: appena il PC dice il nome della sessione nata e quella compare nello stato, si apre la
+        // sua Scheda. Rifiutato senza sessione: il motivo del PC nella conferma. Nata ma messaggio non consegnato: si apre
+        // lo stesso, così le si può riscrivere (contratto 1.13).
+        LaunchedEffect(launchId, allResults[launchId], snapshot.state) {
+            val r = launchId?.let { allResults[it] } ?: return@LaunchedEffect
+            val nata = r.session
+            when {
+                nata != null && snapshot.state?.sessions?.any { it.name == nata } == true -> { launchId = null; nav.go(Screen.Session(nata)) }
+                nata == null && !r.ok -> { launchId = null; conferma(Icons.Rounded.Close, CmColors.gone, r.text) }
+                nata == null -> launchId = null
+            }
+        }
         LaunchedEffect(Unit) {
             app.repo.userResults.collect { r ->
                 Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR)
@@ -416,7 +440,7 @@ class MainActivity : ComponentActivity() {
                 TerminalScreen(
                     name, text, loading = text == null && error == null && !failed,
                     error = if (text != null) null else error ?: if (failed) getString(R.string.question_not_delivered) else null,
-                    capturedAt = capturedAt,
+                    capturedAt = capturedAt, session = session,
                     // Il filo delle tue righe nel colore del badge della sessione (proposta 38, fase 1).
                     railColor = session?.let { ses ->
                         androidx.compose.ui.graphics.Color(it.pixelbox.cmwatch.rules.Badge.of(ses.account, ses.color, ses.state, ses.icon, ses.accountKind).fill)
@@ -434,9 +458,16 @@ class MainActivity : ComponentActivity() {
                     onWrite = { write(name) },
                 )
             }
-            composable(Routes.TIMELINE) { val events by app.repo.events.collectAsStateWithLifecycle(); TimelineScreen(events) }
             composable(Routes.LAUNCH) {
-                LaunchScreen(snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh) { path -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; nav.go(Screen.Sessions) }
+                LaunchScreen(
+                    snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh,
+                    onLaunch = { path -> launch(path, null); nav.go(Screen.Sessions) },
+                    onWrite = { p ->
+                        launchPath = p.path
+                        runCatching { launchKeyboard.launch(Keyboard.intent(getString(R.string.launch_hint, p.name))) }
+                            .onFailure { Haptics.play(this@MainActivity, Haptics.Kind.ERROR) }
+                    },
+                )
             }
             composable(Routes.QUOTA) {
                 // Eventi per «Oggi» e campioni della quota per il ritmo della finestra (Franz, 16/09 13:00).
@@ -447,14 +478,6 @@ class MainActivity : ComponentActivity() {
                     onOpenQuestion = { nav.go(Screen.Question(it)) }, onOpenSessions = { nav.go(Screen.Sessions) },
                 )
             }
-            composable(Routes.RECAP) {
-                val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
-                val preparing by app.reader.preparing.collectAsStateWithLifecycle()
-                val recap = snapshot.state?.recap ?: Recap()
-                RecapScreen(recap, speaking || preparing, onSpeak = { SpeakService.text(this@MainActivity, SpeechText.recap(recap, getString(R.string.tts_recap_next))) })
-            }
-            composable(Routes.NIGHT) { NightScreen(snapshot.state?.night ?: Night()) }
-            composable(Routes.MENU) { MenuScreen(onOpen = { nav.go(it) }) }
         }
     }
 }

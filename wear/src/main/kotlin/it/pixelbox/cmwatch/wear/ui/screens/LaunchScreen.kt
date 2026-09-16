@@ -1,6 +1,10 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,24 +27,44 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
-/** Lancia: solo i progetti pubblicati dal PC; tap → il bottone pieno «Lancia nome» conferma. */
+/**
+ * «Nuova sessione» (Franz, 16/09 14:33, contratto 1.13): i progetti pubblicati dal PC, dal più usato di recente. Il tocco
+ * su un progetto apre sotto di lui le due strade: scrivere il primo messaggio (tastiera o dettatura) o avviare senza.
+ */
 @Composable
-fun LaunchScreen(projects: List<Project>, enabled: Boolean, onLaunch: (String) -> Unit) {
+fun LaunchScreen(projects: List<Project>, enabled: Boolean, onLaunch: (String) -> Unit, onWrite: (Project) -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     var chosen by rememberSaveable { mutableStateOf<String?>(null) }
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.launch_title)) } }
+            item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.launch_new)) } }
             if (projects.isEmpty()) item { Text(stringResource(R.string.launch_empty), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
-            for (p in projects) item {
+            for (p in LaunchRules.ordered(projects)) {
                 val selected = chosen == p.path
-                WideButton(
-                    if (selected) stringResource(R.string.launch_confirm, p.name) else "${p.name} · ${p.account}",
-                    onClick = { if (selected && LaunchRules.allowed(p.path, projects)) { onLaunch(p.path); chosen = null } else chosen = p.path },
-                    primary = selected, enabled = enabled,
-                    transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
-                )
+                item {
+                    WideButton(
+                        "${p.name} · ${p.account}", onClick = { chosen = if (selected) null else p.path }, enabled = enabled,
+                        icon = Icons.Rounded.Folder,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
+                if (selected && LaunchRules.allowed(p.path, projects)) {
+                    item {
+                        WideButton(
+                            stringResource(R.string.launch_with_message), onClick = { onWrite(p); chosen = null },
+                            primary = true, enabled = enabled, icon = Icons.Rounded.Edit,
+                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                        )
+                    }
+                    item {
+                        WideButton(
+                            stringResource(R.string.launch_without_message), onClick = { onLaunch(p.path); chosen = null },
+                            enabled = enabled, icon = Icons.Rounded.PlayArrow,
+                            transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                        )
+                    }
+                }
             }
         }
     }

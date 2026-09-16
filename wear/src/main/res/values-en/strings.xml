@@ -186,4 +186,31 @@
     <string name="work_pace_now" formatted="false">% now</string>
     <string name="work_pace_unknown">estimate in a few minutes</string>
     <string name="work_pace_projection">at this pace</string>
+    <!-- Settings in Google's style (16/09) -->
+    <string name="settings_section_voice">Read aloud</string>
+    <string name="settings_threshold_label">Threshold</string>
+    <string name="settings_threshold_value">%1$d characters</string>
+    <string name="settings_voice_label">Voice</string>
+    <string name="settings_voice_default_value">default</string>
+    <string name="settings_voice_value">%1$d of %2$d</string>
+    <string name="settings_section_haptics">Vibration</string>
+    <string name="settings_haptic_question_short">Questions</string>
+    <string name="settings_haptic_outcome_short">Outcomes</string>
+    <string name="settings_haptic_gone_short">Sessions gone</string>
+    <string name="settings_section_pc">PC</string>
+    <string name="settings_repair_hint">pair the PC again</string>
+    <string name="card_context_unit_long" formatted="false">% context</string>
+    <string name="card_meters">Session</string>
+    <!-- Sessions list without the Menu (16/09) -->
+    <string name="sessions_gone_show">Recently closed · %1$d</string>
+    <string name="sessions_gone_hide">Hide closed</string>
+    <string name="sessions_none_open">No open sessions</string>
+    <string name="launch_new">New session</string>
+    <string name="overview_title">Overview</string>
+    <!-- Pillola della settimana con la sigla della tile: «settimana 83 % · gio 04:00» veniva tagliata (16/09 14:41) -->
+    <string name="quota_week_pill">7d %1$s</string>
+    <!-- New session with the first message (contract 1.13) -->
+    <string name="launch_with_message">Write the first message</string>
+    <string name="launch_without_message">Start without a message</string>
+    <string name="launch_hint">First message for %1$s</string>
 </resources>

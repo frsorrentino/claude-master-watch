@@ -189,4 +189,30 @@
     <string name="work_pace_now" formatted="false">% adesso</string>
     <string name="work_pace_unknown">stima tra qualche minuto</string>
     <string name="work_pace_projection">a questo ritmo</string>
+    <!-- Impostazioni nello stile di Google (Franz, 16/09 14:27) -->
+    <string name="settings_section_voice">Lettura vocale</string>
+    <string name="settings_threshold_label">Soglia</string>
+    <string name="settings_threshold_value">%1$d caratteri</string>
+    <string name="settings_voice_label">Voce</string>
+    <string name="settings_voice_default_value">predefinita</string>
+    <string name="settings_voice_value">%1$d di %2$d</string>
+    <string name="settings_section_haptics">Vibrazioni</string>
+    <string name="settings_haptic_question_short">Domande</string>
+    <string name="settings_haptic_outcome_short">Esiti</string>
+    <string name="settings_haptic_gone_short">Sessioni sparite</string>
+    <string name="settings_section_pc">PC</string>
+    <string name="settings_repair_hint">associa di nuovo il PC</string>
+    <string name="card_context_unit_long" formatted="false">% contesto</string>
+    <!-- Lista sessioni senza Menu (Franz, 16/09 14:33) -->
+    <string name="sessions_gone_show">Chiuse di recente · %1$d</string>
+    <string name="sessions_gone_hide">Nascondi chiuse</string>
+    <string name="sessions_none_open">Nessuna sessione aperta</string>
+    <string name="launch_new">Nuova sessione</string>
+    <string name="overview_title">Panoramica</string>
+    <!-- Pillola della settimana con la sigla della tile: «settimana 83 % · gio 04:00» veniva tagliata (16/09 14:41) -->
+    <string name="quota_week_pill">7d %1$s</string>
+    <!-- Nuova sessione con il primo messaggio (contratto 1.13) -->
+    <string name="launch_with_message">Scrivi il primo messaggio</string>
+    <string name="launch_without_message">Avvia senza messaggio</string>
+    <string name="launch_hint">Primo messaggio per %1$s</string>
 </resources>

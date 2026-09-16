@@ -27,15 +27,15 @@ fun SessionQuotaCard(
 ) {
     val card = BriefCards.quota(state, labels(), locale = LocalConfiguration.current.locales[0])
         .firstOrNull { it.key == "quota-${session.account}" } ?: return
-    // La ripartenza settimanale resta nella pagina Quota: nella Scheda era la riga che rendeva la card più alta di tutte.
-    BriefCard(card.copy(note = null), transformation, modifier, animate = animate, visible = visible)
+    // La stessa card della Panoramica, identica: titolo «Quota», forma dell'account, due anelli (Franz, 16/09 14:41).
+    BriefCard(card, transformation, modifier, animate = animate, visible = visible)
 }
 
 @Composable
 private fun labels() = BriefCards.Labels(
     quota = stringResource(R.string.quota_title),
     // Con il segnaposto: «settimana 36 %». Con il testo senza numero la pillola diceva solo «settimana» (foto 10:44).
-    week = stringResource(R.string.quota_week_chip),
+    week = stringResource(R.string.quota_week_pill),
     resetAt = stringResource(R.string.quota_reset_at), stale = stringResource(R.string.quota_stale),
     none = stringResource(R.string.quota_none), active = stringResource(R.string.brief_active),
     waitingPill = stringResource(R.string.brief_waiting), noQuestions = stringResource(R.string.brief_no_questions),
@@ -43,5 +43,6 @@ private fun labels() = BriefCards.Labels(
     night = stringResource(R.string.brief_night), running = stringResource(R.string.brief_running),
     nothingRunning = stringResource(R.string.brief_nothing_running), update = stringResource(R.string.brief_update),
     minutes = stringResource(R.string.brief_minutes), now = stringResource(R.string.brief_now),
-    stopped = stringResource(R.string.brief_stopped), weekOnly = stringResource(R.string.quota_week),
+    stopped = stringResource(R.string.brief_stopped), weekOnly = stringResource(R.string.tile_quota_tag_week),
+    quotaTitle = stringResource(R.string.quota_title),
 )

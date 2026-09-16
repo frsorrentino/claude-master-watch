@@ -114,3 +114,5 @@ busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento p
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna
 null; il movimento di una sessione ferma lo dà `outcome.at`, che il relay aggiorna a ogni fine turno. Quindi
 «ultimo movimento» = max(since, turn_started, outcome.at).
+
+Contratto 1.13 (16/09/2026, solo aggiunte, richiesta dell'utente): il comando `launch` accetta un campo opzionale `text`, il primo messaggio della sessione; il relay lancia, trova la sessione nata e le consegna il testo come primo prompt con il prefisso del polso. Il `/result` di un launch porta `session`, il nome della sessione nata come in `sessions[].name` (può differire dal progetto: `field-notes-2`), anche quando il messaggio non è stato consegnato (ok=false). Ogni progetto porta `last_used`, epoch s della trascrizione più recente della cartella nel suo account, o null; l'ordine di `projects` resta per nome. `v` resta 1.

@@ -46,6 +46,10 @@ object TimelineText {
 object LaunchRules {
     fun allowed(path: String, projects: List<Project>): Boolean = path.isNotBlank() && projects.any { it.path == path }
 
+    /** «Nuova sessione» (contratto 1.13): dal progetto usato più di recente; chi non ha mai avuto sessioni in fondo, per nome. */
+    fun ordered(projects: List<Project>): List<Project> =
+        projects.sortedWith(compareBy<Project> { it.lastUsed == null }.thenByDescending { it.lastUsed ?: 0L }.thenBy { it.name.lowercase() })
+
     /**
      * Percorso da lanciare per far ripartire una sessione chiusa: `resume` non vale per una sessione che non esiste
      * più, il comando giusto è `launch` sul suo progetto (Franz, 13/09 18:11). Si accoppia per coda del percorso,

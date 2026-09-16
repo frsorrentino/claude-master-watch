@@ -10,12 +10,8 @@ sealed class Screen {
     data object Settings : Screen()
     data object Pairing : Screen()
     data class Terminal(val name: String) : Screen()
-    data object Timeline : Screen()
     data object Launch : Screen()
     data object Quota : Screen()
-    data object Recap : Screen()
-    data object Night : Screen()
-    data object Menu : Screen()
 }
 
 /** Un solo ViewState con priorità: non accoppiato > domanda aperta non ancora vista > schermata scelta (design, sezione 2). */

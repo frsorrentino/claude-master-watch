@@ -68,7 +68,7 @@ fun QuotaScreen(
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val labels = BriefCards.Labels(
-        quota = stringResource(R.string.quota_label), week = stringResource(R.string.quota_week_chip),
+        quota = stringResource(R.string.quota_label), week = stringResource(R.string.quota_week_pill),
         resetAt = stringResource(R.string.quota_reset_at), stale = stringResource(R.string.quota_stale),
         none = stringResource(R.string.quota_none),
         active = stringResource(R.string.brief_active), waitingPill = stringResource(R.string.brief_waiting),
@@ -77,7 +77,7 @@ fun QuotaScreen(
         running = stringResource(R.string.brief_running), nothingRunning = stringResource(R.string.brief_nothing_running),
         update = stringResource(R.string.brief_update), minutes = stringResource(R.string.brief_minutes),
         now = stringResource(R.string.brief_now), stopped = stringResource(R.string.brief_stopped),
-        weekOnly = stringResource(R.string.quota_week),
+        weekOnly = stringResource(R.string.tile_quota_tag_week), quotaTitle = stringResource(R.string.quota_title),
     )
     val animate = animateOverride ?: (!rememberAmbient() && !animationsOff())
     val locale = LocalConfiguration.current.locales[0]
@@ -90,9 +90,10 @@ fun QuotaScreen(
     val oraReset = DateTimeFormatter.ofPattern("HH:mm", locale)
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+            // «Panoramica» (Franz, 16/09 14:33): la pagina è quota, ritmo e lavoro insieme; «Quota» diventa la sua prima sezione.
             item {
                 ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
-                    Text(stringResource(R.string.quota_title))
+                    Text(stringResource(R.string.overview_title))
                 }
             }
             items(quota.size) { i ->

@@ -2,6 +2,18 @@ package it.pixelbox.cmwatch.wear.ui.screens
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
+import it.pixelbox.cmwatch.contract.Session
+import it.pixelbox.cmwatch.contract.SessionState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
@@ -27,7 +39,7 @@ import it.pixelbox.cmwatch.wear.ui.theme.rememberCenterIndex
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
-/** Lista Sessioni: ordine ❓ ▶ ✓ ✗ (già nel Repo), chip «PC fermo» solo se serve, Impostazioni in fondo. */
+/** Lista Sessioni: le aperte in ordine ❓ ▶ ✓ (già nel Repo), le chiuse dietro un tasto; in fondo Panoramica, Impostazioni e Nuova sessione. */
 @Composable
 fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}, ambient: Boolean = false, onReopen: (String) -> Unit = {}, onFollow: (String, Boolean) -> Unit = { _, _ -> }, reopenStatus: (String) -> it.pixelbox.cmwatch.rules.ReopenText.Status? = { null }) {
     val listState = rememberTransformingLazyColumnState()
@@ -46,6 +58,18 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
         message = stringResource(R.string.tool_message), delegate = stringResource(R.string.tool_delegate),
         plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
     )
+    var mostraChiuse by rememberSaveable { mutableStateOf(false) }
+    val riga: @Composable TransformingLazyColumnItemScope.(Session, Int, List<String>) -> Unit = { s, i, names ->
+        SessionRow(
+            s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec),
+            // Quando una sessione sale per una domanda o scende a fine lavoro, la card scivola al suo posto (A5, 15/09).
+            modifier = Modifier.transformedHeight(this, spec).animateItem(), siblings = names, ambient = ambient,
+            marquee = canScroll && center == firstRow + i, tools = tools,
+            onReopen = if (s.state == SessionState.GONE) ({ onReopen(s.name) }) else null,
+            reopen = reopenStatus(s.name),
+            onLongClick = if (s.state != SessionState.GONE) ({ onFollow(s.name, !s.followed) }) else null,
+        )
+    }
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -56,26 +80,47 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
                 item { StaleChip(st.minutes, Modifier.morph(this, spec)) }
             }
+            // Solo le sessioni aperte (che lavorano, aspettano o sono ferme al prompt); le chiuse dietro un tasto, con il loro
+            // numero (Franz, 16/09 14:33). Una ferma resta: è viva e le si può scrivere.
+            val aperte = sessions.filter { it.state != SessionState.GONE }
+            val chiuse = sessions.filter { it.state == SessionState.GONE }.sortedByDescending { it.since }
             if (sessions.isEmpty()) {
                 item { Text(stringResource(R.string.sessions_empty), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
+            } else if (aperte.isEmpty()) {
+                item { Text(stringResource(R.string.sessions_none_open), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
             }
             val names = sessions.map { it.name }
-            items(count = sessions.size, key = { sessions[it].id }) { i ->
-                val s = sessions[i]
-                SessionRow(
-                    s, now, fresh, onClick = { onOpen(s.name) }, transformation = SurfaceTransformation(spec),
-                    // Quando una sessione sale per una domanda o scende a fine lavoro, la card scivola al suo posto (A5, 15/09).
-                    modifier = Modifier.transformedHeight(this, spec).animateItem(), siblings = names, ambient = ambient,
-                    marquee = canScroll && center == firstRow + i, tools = tools,
-                    onReopen = if (s.state == it.pixelbox.cmwatch.contract.SessionState.GONE) ({ onReopen(s.name) }) else null,
-                    reopen = reopenStatus(s.name),
-                    onLongClick = if (s.state != it.pixelbox.cmwatch.contract.SessionState.GONE) ({ onFollow(s.name, !s.followed) }) else null,
-                )
+            items(count = aperte.size, key = { aperte[it].id }) { i -> riga(aperte[i], i, names) }
+            if (chiuse.isNotEmpty() && !ambient) {
+                item {
+                    WideButton(
+                        if (mostraChiuse) stringResource(R.string.sessions_gone_hide) else stringResource(R.string.sessions_gone_show, chiuse.size),
+                        onClick = { mostraChiuse = !mostraChiuse }, icon = if (mostraChiuse) Icons.Rounded.ExpandLess else Icons.Rounded.History,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
             }
-            // Un solo tasto, diverso dalle righe delle sessioni: apre il Menu (Franz, 12/09 15:35). In ambient sparisce.
-            // Curvo come ultimo elemento della lista: lo slot `edgeButton` dello scaffold, in questa versione della
-            // libreria, non disegnava niente (provato al polso, 14/09 07:49).
-            if (!ambient) item { CmEdgeButton(stringResource(R.string.menu_title), onClick = { onMenu(Screen.Menu) }) }
+            if (mostraChiuse || ambient) {
+                items(count = chiuse.size, key = { chiuse[it].id }) { i -> riga(chiuse[i], aperte.size + i, names) }
+            }
+            if (!ambient) {
+                // Al posto della pagina Menu (Franz, 16/09 14:33): le due voci rimaste stanno qui, e «Nuova sessione» è il
+                // solo tasto pieno, curvo sul bordo come ultimo elemento. Lo slot `edgeButton` dello scaffold, in questa
+                // versione della libreria, non disegnava niente (provato al polso, 14/09 07:49).
+                item {
+                    WideButton(
+                        stringResource(R.string.overview_title), onClick = { onMenu(Screen.Quota) }, icon = Icons.Rounded.Insights,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
+                item {
+                    WideButton(
+                        stringResource(R.string.settings_title), onClick = onSettings, icon = Icons.Rounded.Settings,
+                        transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec),
+                    )
+                }
+                item { CmEdgeButton(stringResource(R.string.launch_new), onClick = { onMenu(Screen.Launch) }) }
+            }
         }
     }
 }

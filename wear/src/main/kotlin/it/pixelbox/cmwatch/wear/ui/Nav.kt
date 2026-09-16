@@ -11,12 +11,8 @@ object Routes {
     const val SETTINGS = "settings"
     const val PAIRING = "pairing"
     const val TERMINAL = "terminal/{name}"
-    const val TIMELINE = "timeline"
     const val LAUNCH = "launch"
     const val QUOTA = "quota"
-    const val RECAP = "recap"
-    const val NIGHT = "night"
-    const val MENU = "menu"
 
     fun of(screen: Screen): String = when (screen) {
         Screen.Sessions -> SESSIONS
@@ -25,12 +21,8 @@ object Routes {
         Screen.Settings -> SETTINGS
         Screen.Pairing -> PAIRING
         is Screen.Terminal -> "terminal/${Uri.encode(screen.name)}"
-        Screen.Timeline -> TIMELINE
         Screen.Launch -> LAUNCH
         Screen.Quota -> QUOTA
-        Screen.Recap -> RECAP
-        Screen.Night -> NIGHT
-        Screen.Menu -> MENU
     }
 
     /** Dalla rotta corrente (con argomenti risolti) alla Screen. */
@@ -40,12 +32,8 @@ object Routes {
         SETTINGS -> Screen.Settings
         PAIRING -> Screen.Pairing
         TERMINAL -> Screen.Terminal(name.orEmpty())
-        TIMELINE -> Screen.Timeline
         LAUNCH -> Screen.Launch
         QUOTA -> Screen.Quota
-        RECAP -> Screen.Recap
-        NIGHT -> Screen.Night
-        MENU -> Screen.Menu
         else -> Screen.Sessions
     }
 
@@ -62,11 +50,9 @@ object Routes {
             // L'Esito è dentro la Scheda (15/09 17:02): le notifiche di esito e i link vecchi aprono lei.
             "outcome" -> name?.let { Screen.Session(it) }
             "terminal" -> name?.let { Screen.Terminal(it) }
-            "timeline" -> Screen.Timeline
             "launch" -> Screen.Launch
-            "recap" -> Screen.Recap
-            "night" -> Screen.Night
-            "menu" -> Screen.Menu
+            // Timeline, Recap, Notte e Menu tolti (Franz, 16/09 14:26): un link vecchio apre la lista delle sessioni.
+            "timeline", "recap", "night", "menu" -> Screen.Sessions
             else -> null
         }
     }

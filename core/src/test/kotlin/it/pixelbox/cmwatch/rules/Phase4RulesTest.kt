@@ -50,6 +50,13 @@ class LaunchRulesTest {
         assertFalse(LaunchRules.allowed("/tmp/evil", s.projects))
         assertFalse(LaunchRules.allowed("", s.projects))
     }
+
+    /** «Nuova sessione» (contratto 1.13): i progetti dal più usato di recente; chi non ha mai avuto sessioni va in fondo, per nome. */
+    @Test fun progettiDalPiuRecente() {
+        val mai = s.projects.first().copy(path = "/p/zeta", name = "zeta", lastUsed = null)
+        val nomi = LaunchRules.ordered(s.projects + mai).map { it.name }
+        assertEquals(listOf("atlas-shop", "ledger-api", "orbit-docs", "zeta"), nomi)
+    }
 }
 
 class FollowRulesTest {

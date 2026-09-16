@@ -55,11 +55,24 @@ fun BriefCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    card.label, style = MaterialTheme.typography.labelMedium,
-                    color = if (card.tone == BriefCards.Tone.STALE) CmColors.stale else CmColors.briefLabel,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Cerchio per l'account personale, quadrato per quello di lavoro, come nella tile: il titolo resta «Quota»
+                    // uguale in Panoramica e nella Scheda (Franz, 16/09 14:41).
+                    card.shape?.let { forma ->
+                        Box(
+                            Modifier.size(8.dp).background(
+                                if (card.tone == BriefCards.Tone.STALE) CmColors.stale else CmColors.briefLabel,
+                                if (forma == BriefCards.Shape.CIRCLE) RoundedCornerShape(percent = 50) else RoundedCornerShape(1.5.dp),
+                            )
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        card.label, style = MaterialTheme.typography.labelMedium,
+                        color = if (card.tone == BriefCards.Tone.STALE) CmColors.stale else CmColors.briefLabel,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Row(verticalAlignment = Alignment.Bottom) {
                     // Il numero grande rotola quando cambia (proposta 19, fase 1): 7 % → 8 % si nota anche di sfuggita.
                     RollingText(card.value, style = BriefNumber, color = ink, animate = animate)

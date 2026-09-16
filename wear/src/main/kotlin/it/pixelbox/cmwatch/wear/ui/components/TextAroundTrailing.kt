@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -60,9 +61,14 @@ fun TextAroundTrailing(
             while (n < r.lineCount && (n == 0 || r.getLineBottom(n - 1) < alto)) n++
             if (n >= r.lineCount) text.length else r.getLineEnd(n - 1)
         }
+        // I due pezzi devono sembrare un paragrafo solo: di norma Compose toglie lo spazio sopra la prima riga e sotto
+        // l'ultima di ogni testo, e al taglio le due righe restavano più vicine delle altre (foto 14:39). Si toglie solo
+        // sopra il primo pezzo e sotto il secondo.
+        val sopra = style.copy(lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.FirstLineTop))
+        val sotto = style.copy(lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.LastLineBottom))
         Column {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Text(text.subSequence(0, taglio), style = style, color = color, modifier = Modifier.weight(1f))
+                Text(text.subSequence(0, taglio), style = sopra, color = color, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(gap))
                 trailing()
             }
@@ -70,7 +76,7 @@ fun TextAroundTrailing(
             var inizio = taglio
             while (inizio < text.length && text[inizio].isWhitespace()) inizio++
             if (inizio < text.length) {
-                Text(text.subSequence(inizio, text.length), style = style, color = color, modifier = Modifier.fillMaxWidth())
+                Text(text.subSequence(inizio, text.length), style = sotto, color = color, modifier = Modifier.fillMaxWidth())
             }
         }
     }

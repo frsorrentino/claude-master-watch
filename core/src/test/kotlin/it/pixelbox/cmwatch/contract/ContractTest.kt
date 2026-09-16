@@ -76,11 +76,30 @@ class ContractTest {
         val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
         // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
-        assertEquals(11, results.size); assertEquals(3, results.count { !it.ok })
+        // Contratto 1.13: uno in più, il launch con il primo messaggio.
+        assertEquals(12, results.size); assertEquals(3, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
         assertEquals(results[3], ContractJson.decodeResult(ContractJson.json.encodeToString(CmdResult.serializer(), results[3])))
+    }
+
+    /**
+     * Contratto 1.13 (Franz, 16/09 14:33, «Nuova sessione» dal polso): `launch` porta il primo messaggio in `text`, il
+     * `/result` dice il nome della sessione nata in `session`, e ogni progetto ha `last_used` per ordinarli dal più recente.
+     */
+    @Test fun launchWithFirstMessageNamesTheNewSession() {
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+        val launch = cmds.single { it.op == CmdOp.LAUNCH && it.text != null }
+        assertEquals("check the draft for typos", launch.text)
+        val r = results.single { it.id == launch.id }
+        assertTrue(r.ok); assertEquals("field-notes-2", r.session)
+        // Senza `text` il cmd si scrive come prima: un relay vecchio non vede campi nuovi.
+        assertFalse(ContractJson.encode(cmds[0]).contains("\"text\""))
+        val state = ContractJson.decodeState(Fixtures.stateQuestion)
+        assertEquals(1789210700L, state.projects.single { it.name == "atlas-shop" }.lastUsed)
     }
 
     @Test fun lastAsksForTheWholeReply() {

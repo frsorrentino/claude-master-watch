@@ -85,7 +85,11 @@ enum class CmdOp {
     val kind: String? = null,
 )
 
-@Serializable data class Project(val path: String, val name: String, val account: String)
+@Serializable data class Project(
+    val path: String, val name: String, val account: String,
+    /** Contratto 1.13: epoch s della trascrizione più recente della cartella nel suo account, null se non ce n'è. */
+    @SerialName("last_used") val lastUsed: Long? = null,
+)
 @Serializable data class Night(val queued: Int = 0, val running: String? = null)
 @Serializable data class RecapItem(val project: String, val done: String, val next: String? = null)
 @Serializable data class Recap(val date: String = "", val items: List<RecapItem> = emptyList())
@@ -106,6 +110,17 @@ enum class CmdOp {
 @Serializable data class Cmd(
     val id: String, val op: CmdOp, val session: String? = null, val arg: String? = null,
     val issued: Long, val by: String,
+    /**
+     * Contratto 1.13: il primo messaggio di un `launch`. Assente, non scritto: un comando senza messaggio resta identico
+     * a prima, e un relay vecchio lancia senza messaggio invece di uno a metà.
+     */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val text: String? = null,
 )
 
-@Serializable data class CmdResult(val id: String, val ok: Boolean, val text: String, val at: Long)
+@Serializable data class CmdResult(
+    val id: String, val ok: Boolean, val text: String, val at: Long,
+    /** Contratto 1.13: la sessione nata da un `launch`, come in `sessions[].name`; c'è anche se il messaggio non è arrivato. */
+    val session: String? = null,
+)

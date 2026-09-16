@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.semantics.contentDescription
@@ -89,6 +90,8 @@ fun TerminalScreen(
     capturedAt: Long? = null,
     /** Il filo accanto alle tue righe prende il colore della sessione (proposta 38, fase 1): si riconosce di chi è. */
     railColor: androidx.compose.ui.graphics.Color = CmColors.accent,
+    /** Per il badge accanto al nome in testata, come nella Scheda. */
+    session: it.pixelbox.cmwatch.contract.Session? = null,
 ) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
@@ -121,7 +124,16 @@ fun TerminalScreen(
                 // Niente più Aggiorna (Franz, 15/09 22:54): il Terminale si aggiorna da solo. Il ▶ sta nel primo paragrafo
                 // della risposta, in alto a destra, con il testo che gli scorre attorno (Franz, 16/09 14:13, come nella
                 // Scheda). Resta accanto al nome solo quando la risposta non c'è ancora ma il terminale sì.
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
+                // Badge accanto al nome e un'altezza minima: tolto il ▶, la riga era alta quanto il testo e il nome saliva fin
+                // sotto l'ora, senza icona (Franz, 16/09 14:39).
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().morph(this, spec).padding(top = 6.dp).heightIn(min = 32.dp),
+                ) {
+                    session?.let { ses ->
+                        it.pixelbox.cmwatch.wear.ui.components.SessionBadge(ses, size = 16.dp)
+                        Spacer(Modifier.width(6.dp))
+                    }
                     FitName(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
                     if (answer.isNullOrEmpty() && text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
                 }
