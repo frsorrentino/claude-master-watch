@@ -56,7 +56,11 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
     val work = BriefCards.work(state, freshness, now, labels)
     // Quali elementi sono nell'inquadratura: l'arco di una card si riempie quando la sua entra (Franz, 16/09 01:45).
     // L'indice 0 è l'intestazione, poi le card della quota, poi l'intestazione del lavoro e le sue card.
+    // Finché la lista non ha misurato niente (primo disegno, e in Paparazzi sempre) si considerano tutte visibili:
+    // altrimenti l'arco resterebbe a zero e le immagini del README mostrerebbero anelli vuoti (16/09 03:31).
+    val misurata = listState.layoutInfo.visibleItems.isNotEmpty()
     val visibili = listState.layoutInfo.visibleItems.map { it.index }.toSet()
+    fun visibile(i: Int) = !misurata || i in visibili
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -65,7 +69,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                 }
             }
             items(quota.size) { i ->
-                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = (1 + i) in visibili)
+                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = visibile(1 + i))
             }
             if (work.isNotEmpty()) {
                 item {
@@ -75,7 +79,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
                 }
                 items(work.size) { i ->
                     // Dopo l'intestazione della quota, le sue card e l'intestazione del lavoro: 2 + quante sono le card sopra.
-                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = (2 + quota.size + i) in visibili)
+                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = visibile(2 + quota.size + i))
                 }
             }
             if (quota.isEmpty() && work.isEmpty()) {
