@@ -79,3 +79,15 @@ Build `44381b5`, installata il 16/09 alle 03:27:00.
 | H4 | Nella Scheda c'è il riquadro con la quota dell'account di quella sessione | Scheda di una sessione qualsiasi | |
 | H5 | L'anello del riquadro ha due cerchi: fuori le 5 ore, dentro la settimana; niente icona dell'orologio | come H4 e nella pagina Quota | |
 | H6 | Gli anelli si riempiono quando la card entra nell'inquadratura, quello interno un attimo dopo l'esterno | Quota, scorrendo dall'alto | |
+
+## Riquadro di contesto nella Scheda (contratto 1.11)
+
+Build `596db7a`, da installare quando l'orologio torna raggiungibile (alle 04:13 non rispondeva).
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| K1 | Sotto la card c'è la quota dell'account della sessione, con i due anelli | Scheda di una sessione viva | |
+| K2 | Sotto la quota: «Contesto» con la percentuale, «Modello» con il nome breve, «Effort» con il livello | come K1 | |
+| K3 | Il contesto è ambra oltre il 75 % e rosso oltre il 90 %, altrimenti chiaro | una sessione con contesto alto | |
+| K4 | Su una sessione chiusa, o senza turni, le tre righe non si disegnano: nessun numero inventato | Scheda di una sessione sparita | |
+| K5 | Con il modello cambiato a metà sessione il contesto non compare, mentre modello ed effort sì | sessione dove hai cambiato modello | |
