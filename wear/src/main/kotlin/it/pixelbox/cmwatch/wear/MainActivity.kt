@@ -196,22 +196,29 @@ class MainActivity : ComponentActivity() {
         }
         // Conferma animata delle azioni dell'utente (A6, 15/09 23:40): quando il PC risponde, la spunta che si disegna o la
         // croce, insieme alla vibrazione. Solo le azioni dell'utente: le catture del Terminale dal vivo vibravano a ogni giro.
-        var conferma by remember { mutableStateOf<Boolean?>(null) }
+        // La conferma porta con sé la sua frase (Franz, 16/09 01:58): dopo una pressione lunga «Ti avviso quando finisce»,
+        // non «Fatto». Le azioni che non hanno una frase propria mostrano «Fatto» quando il PC risponde.
+        var conferma by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
         LaunchedEffect(Unit) {
             app.repo.userResults.collect { r ->
                 Haptics.play(this@MainActivity, if (r.ok) Haptics.Kind.CONFIRMED else Haptics.Kind.ERROR)
-                conferma = r.ok
+                conferma = when {
+                    !r.ok -> false to getString(R.string.confirm_failed)
+                    conferma == null -> true to getString(R.string.confirm_done)
+                    else -> conferma!!   // la frase l'ha già messa l'azione: non la sovrascrivo
+                }
             }
         }
         // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
         val curvo = androidx.wear.compose.material3.ConfirmationDialogDefaults.curvedTextStyle
+        val frase = conferma?.second ?: getString(R.string.confirm_done)
         androidx.wear.compose.material3.SuccessConfirmationDialog(
-            visible = conferma == true, onDismissRequest = { conferma = null },
-            curvedText = { confirmationDialogCurvedText(getString(R.string.confirm_done), curvo) },
+            visible = conferma?.first == true, onDismissRequest = { conferma = null },
+            curvedText = { confirmationDialogCurvedText(frase, curvo) },
         )
         androidx.wear.compose.material3.FailureConfirmationDialog(
-            visible = conferma == false, onDismissRequest = { conferma = null },
-            curvedText = { confirmationDialogCurvedText(getString(R.string.confirm_failed), curvo) },
+            visible = conferma?.first == false, onDismissRequest = { conferma = null },
+            curvedText = { confirmationDialogCurvedText(frase, curvo) },
         )
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
@@ -232,7 +239,12 @@ class MainActivity : ComponentActivity() {
                     onReopen = { n -> reopen(n) },
                     reopenStatus = { n -> reopenStatus(n) },
                     // Pressione lunga sulla riga: segui / smetti, con la vibrazione come conferma (Franz, 15/09 19:04).
-                    onFollow = { n, follow -> Haptics.play(this@MainActivity, Haptics.Kind.SENT); scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, n, null) } },
+                    onFollow = { n, follow ->
+                        Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+                        // La frase la mette la pressione lunga, subito: «Ti avviso quando finisce» / «Non ti avviso più».
+                        conferma = true to getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow)
+                        scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, n, null) }
+                    },
                 )
             }
             composable(Routes.SESSION) { back ->
@@ -257,7 +269,11 @@ class MainActivity : ComponentActivity() {
                     onReply = { nav.go(Screen.Question(name)) },
                     onWrite = { write(name) },
                     onTerminal = { nav.go(Screen.Terminal(name)) },
-                    onFollow = { follow -> Haptics.play(this@MainActivity, Haptics.Kind.SENT); scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) } },
+                    onFollow = { follow ->
+                        Haptics.play(this@MainActivity, Haptics.Kind.SENT)
+                        conferma = true to getString(if (follow) R.string.confirm_follow else R.string.confirm_unfollow)
+                        scope.launch { app.repo.command(if (follow) CmdOp.FOLLOW else CmdOp.UNFOLLOW, name, null) }
+                    },
                     live = live,
                     onBackToSessions = { nav.go(Screen.Sessions) },
                     speaking = speaking || preparing,

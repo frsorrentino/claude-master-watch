@@ -93,7 +93,12 @@ fun QuestionScreen(
         // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi».
         edgeButton = { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) },
     ) { padding ->
-        TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        // La corona muove la Domanda un'opzione per volta, con lo scatto aptico del sistema (proposta 17, fase 1):
+        // si sceglie senza coprire il testo con il dito.
+        TransformingLazyColumn(
+            state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize(),
+            rotaryScrollableBehavior = androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.snapBehavior(listState),
+        ) {
             if (s == null || q == null) {
                 item {
                     val text = when {

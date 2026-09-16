@@ -135,6 +135,9 @@ fun SessionScreen(
                         modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                         shape = RoundedCornerShape(21.dp),
                         colors = CardDefaults.cardColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.text),
+                        // Seguita = «accesa», come la riga della lista (Franz, 16/09 01:58): bordo giallino qui e
+                        // campanella in testata, così la pressione lunga si vede anche nella Scheda.
+                        border = if (s.followed) androidx.compose.foundation.BorderStroke(1.5.dp, CmColors.followed) else null,
                         contentPadding = PaddingValues(14.dp),
                         transformation = SurfaceTransformation(spec),
                     ) {

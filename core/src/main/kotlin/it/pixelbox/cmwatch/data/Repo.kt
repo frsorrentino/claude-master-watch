@@ -134,7 +134,7 @@ class Repo(
 
     private fun dispatch(cmd: Cmd) {
         _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id } + Pending(cmd, PendingStatus.SENDING)) }
-        if (cmd.op == CmdOp.ANSWER || cmd.op == CmdOp.PROMPT) optimistic(cmd)
+        if (cmd.op in OPTIMISTIC) optimistic(cmd)
         jobs[cmd.id]?.cancel()
         jobs[cmd.id] = scope.launch {
             val r = try {
@@ -156,7 +156,14 @@ class Repo(
         _snapshot.update { snap ->
             val s = snap.state ?: return@update snap
             snap.copy(state = s.copy(sessions = s.sessions.map {
-                if (it.name == cmd.session) it.copy(question = null, state = SessionState.BUSY) else it
+                if (it.name != cmd.session) it
+                else when (cmd.op) {
+                    // Segui e non seguire si vedono subito (Franz, 16/09 01:58): campanella e bordo non aspettano il PC,
+                    // altrimenti dopo la pressione lunga non cambia niente sullo schermo. Il prossimo stato dal PC comanda.
+                    CmdOp.FOLLOW -> it.copy(followed = true)
+                    CmdOp.UNFOLLOW -> it.copy(followed = false)
+                    else -> it.copy(question = null, state = SessionState.BUSY)
+                }
             }))
         }
     }
@@ -194,5 +201,11 @@ class Repo(
         const val EVENTS_KEEP_S = 30L * 86400
         const val FRESHNESS_TICK_MS = 30_000L
         const val MAX_RESULTS = 32
+
+        /**
+         * Le azioni che si vedono prima della risposta del PC: risposta e prompt (la sessione riparte), segui e non
+         * seguire (campanella e bordo). Il prossimo stato che arriva dal PC comanda comunque.
+         */
+        private val OPTIMISTIC = setOf(CmdOp.ANSWER, CmdOp.PROMPT, CmdOp.FOLLOW, CmdOp.UNFOLLOW)
     }
 }

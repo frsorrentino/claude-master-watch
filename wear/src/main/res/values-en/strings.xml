@@ -159,5 +159,7 @@
     <string name="tile_edge_active">%1$d active</string>
     <!-- Animated confirmation after an action (A6, 15/09) -->
     <string name="confirm_done">Done</string>
+    <string name="confirm_follow">I will tell you when it ends</string>
+    <string name="confirm_unfollow">I will not tell you any more</string>
     <string name="confirm_failed">Failed</string>
 </resources>

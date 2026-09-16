@@ -104,6 +104,17 @@ class RepoTest {
         assertTrue(repo.resultsById.value.containsKey(last))
     }
 
+    // Segui e non seguire si vedono subito (Franz, 16/09 01:58): la campanella e il bordo non aspettano il PC, altrimenti
+    // dopo la pressione lunga non cambia niente sullo schermo. Se il comando fallisce, il prossimo stato rimette a posto.
+    @Test fun seguireSiVedeSubito() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
+        val nome = repo.snapshot.value.state!!.sessions.first { !it.followed }.name
+        repo.command(CmdOp.FOLLOW, nome, null)
+        assertTrue(repo.snapshot.value.state!!.sessions.first { it.name == nome }.followed)
+        repo.command(CmdOp.UNFOLLOW, nome, null)
+        assertFalse(repo.snapshot.value.state!!.sessions.first { it.name == nome }.followed)
+    }
+
     @Test fun noResultWithin20sBecomesFailedAndRetryIsSafe() = runTest {
         val slow = Slow(25_000, fake())
         val repo = Repo(MemoryStore(), slow, bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()

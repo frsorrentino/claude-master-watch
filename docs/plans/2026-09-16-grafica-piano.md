@@ -83,3 +83,9 @@ reset), barre per ora dagli eventi, banda di stato di una sessione, regole di `R
 - 00:39, Franz: op con ripristino (b) se affidabile, altrimenti (c) con l'effetto sul default detto nel `/result`. Chiesta
   come 1.12 dopo la 1.11. Condizioni per la (b): riscrittura solo delle chiavi toccate, lock sul file per tutta la
   sequenza, rilettura di verifica, ripristino anche senza conferma dal pane. Scelta finale e motivo li dà claude-master.
+
+## Da sistemare negli snapshot (16/09 02:05)
+
+Con l'arco della Quota che si riempie solo quando la card entra nell'inquadratura, in Paparazzi resta sempre vuoto: la
+schermata non scorre mai. Nello snapshot va passato `visible = true` (o una `QuotaScreen` con la lista già posizionata),
+altrimenti l'immagine della Quota nel README mostra un anello vuoto. Sul polso il comportamento è quello giusto.
