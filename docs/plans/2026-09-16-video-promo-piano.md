@@ -152,3 +152,11 @@ Ogni flusso è una storia con un inizio reale e un esito visibile. Durate indica
 3. Audio della lettura: solo il tasto acceso, o voce aggiunta in montaggio.
 4. Conferma delle due fasi di montaggio: revisione nella pagina HTML, poi Remotion per i file finali dei flussi approvati.
 5. Quando fare i passi sull'orologio (quadrante neutro, tile al primo posto).
+
+### Decise da Franz (16/09 19:14)
+- Dettatura: **simulata** dalla demo (prerequisito 2, Task 3 passo 3).
+- Audio della lettura: **nessuna voce**, si vede solo il tasto ▶ acceso e il paragrafo evidenziato.
+- Montaggio: **confermate le due fasi**, revisione nella pagina HTML poi Remotion.
+- Preparazione dell'orologio (quadrante neutro, tile al primo posto, debug wireless chiuso): **da fare stasera** con Franz,
+  prima di qualsiasi registrazione.
+
