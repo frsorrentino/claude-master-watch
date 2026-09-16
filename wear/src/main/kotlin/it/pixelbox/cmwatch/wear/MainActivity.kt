@@ -120,9 +120,14 @@ class MainActivity : ComponentActivity() {
     /** L'extra `demo` (solo via adb): accende o spegne la demo per i video. Senza extra non cambia niente. */
     private fun demoExtra(intent: Intent?, app: CmApp) {
         if (intent?.hasExtra(EXTRA_DEMO) == true) app.setDemo(intent.getBooleanExtra(EXTRA_DEMO, false))
+        // Scorrimento guidato per i video: `--ei scroll_px 520 --ei scroll_ms 2200`, eseguito solo con la demo accesa.
+        if (intent?.hasExtra(EXTRA_SCROLL_PX) == true) {
+            val px = intent.getIntExtra(EXTRA_SCROLL_PX, 0); val ms = intent.getIntExtra(EXTRA_SCROLL_MS, 2000)
+            app.scope.launch { if (app.prefs.current().demoMode) it.pixelbox.cmwatch.wear.ui.components.DemoScrollBus.requests.emit(px to ms) }
+        }
     }
 
-    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code"; const val EXTRA_DEMO = "demo" }
+    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code"; const val EXTRA_DEMO = "demo"; const val EXTRA_SCROLL_PX = "scroll_px"; const val EXTRA_SCROLL_MS = "scroll_ms" }
 
     @Composable
     private fun App(app: CmApp) {

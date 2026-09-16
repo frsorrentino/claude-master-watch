@@ -94,6 +94,7 @@ fun TerminalScreen(
     session: it.pixelbox.cmwatch.contract.Session? = null,
 ) {
     val listState = rememberTransformingLazyColumnState()
+    it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val blocks = remember(text) { text?.let { TerminalText.blocks(it) }.orEmpty() }
     // La lista segue la voce: il paragrafo letto sale in vista (l'elemento 0 è la testata).

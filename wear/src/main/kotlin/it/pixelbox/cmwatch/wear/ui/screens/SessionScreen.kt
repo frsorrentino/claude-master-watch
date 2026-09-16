@@ -82,6 +82,7 @@ fun SessionScreen(
         plan = stringResource(R.string.tool_plan), other = stringResource(R.string.tool_other),
     )
     val listState = rememberTransformingLazyColumnState()
+    it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val enabled = snapshot.freshness is Freshness.Fresh

@@ -43,6 +43,7 @@ import it.pixelbox.cmwatch.wear.ui.theme.morph
 @Composable
 fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSettings: () -> Unit, onMenu: (Screen) -> Unit = {}, ambient: Boolean = false, onReopen: (String) -> Unit = {}, onFollow: (String, Boolean) -> Unit = { _, _ -> }, reopenStatus: (String) -> it.pixelbox.cmwatch.rules.ReopenText.Status? = { null }) {
     val listState = rememberTransformingLazyColumnState()
+    it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val sessions = snapshot.state?.sessions.orEmpty()
     val fresh = snapshot.freshness is Freshness.Fresh

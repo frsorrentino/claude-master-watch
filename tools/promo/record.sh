@@ -26,33 +26,63 @@ open_list() {   # app a freddo: in demo c'è una domanda aperta e l'app si apre 
 # posto giusto. Con i tocchi a coordinate la lista non si fermava due volte uguale e si finiva sulla sessione sbagliata.
 go() { sh am start -n $ACT --es cmwatch_uri "cmwatch://$1" >/dev/null 2>&1; }
 hold() { sh input swipe "$1" "$2" "$1" "$2" "${3:-1100}"; }   # pressione lunga, per confermare una risposta
+# Scorrimento guidato: la lista dell'app scorre di PX pixel in MS millisecondi, in un solo movimento con partenza e arrivo
+# morbidi (solo con la demo accesa). È il modo per avere un movimento continuo fino all'elemento da mostrare (18:08).
+scroll() { sh am start -n $ACT --ei scroll_px "$1" --ei scroll_ms "${2:-2400}" >/dev/null 2>&1; pause "$(python3 -c "print(${2:-2400}/1000 + ${3:-1.8})")"; }
+# Scorrimento con il dito, lento: il contenuto segue in modo continuo. La corona simulata manda scatti singoli e l'app
+# aggancia lo scorrimento a ogni scatto: in video diventava una sequenza di salti (Franz, 16/09 18:07).
+drag() { sh input swipe 240 "${2:-360}" 240 "${3:-160}" "${4:-950}"; pause "${1:-1.2}"; }
+drags() { local n=$1 p=${2:-1.2}; for _ in $(seq "$n"); do drag "$p"; done; }
+# Quanti trascinamenti servono per arrivare in fondo: si trascina finché lo schermo non cambia più. Si registra poi con quel
+# numero esatto, così la clip non arriva mai in fondo a vuoto a «provare» a scorrere.
+measure() {
+  local label=$1 prev="" cur n=0
+  prev=$(timeout 20 "$A" -s "$D" exec-out screencap -p | md5sum)
+  while [ $n -lt 30 ]; do
+    drag 1.4
+    cur=$(timeout 20 "$A" -s "$D" exec-out screencap -p | md5sum)
+    [ "$cur" = "$prev" ] && break
+    prev=$cur; n=$((n + 1))
+  done
+  echo "$label: $n trascinamenti"
+}
 
-clip_question() {   # una domanda arriva: si legge, si scorre alle opzioni, si conferma «yes» tenendo premuto
+clip_question() {   # una domanda arriva: si legge e si conferma «yes» tenendo premuto
   sh am force-stop $PKG; sh input keyevent KEYCODE_WAKEUP
-  go question/ledger-api; pause 3.2; snap domanda
-  hold 240 "${Y_YES:-300}"; pause 3.2; snap risposta
+  go question/payments-api; pause 3.2; snap domanda
+  # Con la domanda lunga «yes» sta in fondo, visibile per metà: la pressione lunga va lì.
+  hold 240 "${Y_YES:-440}"; pause 3.2; snap risposta
 }
 
-clip_session() {   # dalla lista alla Scheda di una sessione al lavoro: testo, quota, sessione, poi il terminale
-  open_list; snap lista; pause 1.5
-  go session/atlas-shop; pause 2.4; snap scheda
-  crown 4 -1 0.22; pause 1.8; snap scheda_quota
-  crown 5 -1 0.22; pause 2.0; snap scheda_sessione
-  go terminal/atlas-shop; pause 2.6; snap terminale
-  crown 7 -1 0.25; pause 2.2; snap terminale_giu
+clip_session() {   # dalla lista alla Scheda: testo, quota, sessione; poi il terminale
+  open_list; snap lista; pause 1.6
+  go session/storefront; pause 2.4; snap scheda
+  scroll "${S1:-300}" 2400; snap scheda_quota
+  scroll "${S2:-300}" 2200; snap scheda_sessione
+  go terminal/storefront; pause 2.6; snap terminale
+  scroll "${S3:-420}" 2800; snap terminale_giu
 }
 
-clip_overview() {   # la Panoramica scorsa con calma: quota, ritmo, lavoro, contesto, oggi
+clip_overview() {   # la Panoramica: un movimento per gruppo, con una pausa per leggerlo
   open_list; pause 1.0
   go quota; pause 2.6; snap panoramica
-  for tappa in ritmo adesso domande contesto oggi; do crown 4 -1 0.22; pause 1.7; snap "pan_$tappa"; done
+  scroll "${O1:-380}" 2600; snap pan_ritmo
+  scroll "${O2:-420}" 2600; snap pan_lavoro
+  scroll "${O3:-420}" 2600; snap pan_contesto_oggi
+  scroll "${O4:-400}" 2400; snap pan_fondo
 }
 
 clip_new() {   # una nuova sessione su un progetto
   open_list; pause 1.0
   go launch; pause 2.4; snap progetti
   tap 240 "${Y_PROJECT:-190}"; pause 1.6; snap progetto_scelto
-  tap 240 "${Y_START:-350}"; pause 3.0; snap lanciata
+  tap 240 "${Y_START:-410}"; pause 3.0; snap lanciata
+}
+
+clip_measure() {   # non è una clip: misura i trascinamenti di ogni schermata che scorre
+  open_list; go session/storefront; pause 2.4; measure N_SESSION
+  go terminal/storefront; pause 2.6; measure N_TERMINAL
+  go quota; pause 2.6; measure N_OVERVIEW
 }
 
 setup() {
@@ -86,7 +116,7 @@ run() {
     timeout 120 "$A" -s "$D" pull /sdcard/promo_$CLIP.mp4 "$OUT/$CLIP.mp4" >/dev/null && sh rm -f /sdcard/promo_$CLIP.mp4
     echo "registrata: $OUT/$CLIP.mp4"
   else
-    "clip_$CLIP"; echo "prova $CLIP: $N screenshot"
+    "clip_$CLIP"; [ "$CLIP" = measure ] || echo "prova $CLIP: $N screenshot"
   fi
 }
 

@@ -49,7 +49,7 @@ class CmApp : Application() {
     lateinit var follow: FollowOngoing
     val speaker: Speaker by lazy { Speaker(this) }
     val reader: Reader by lazy { Reader(this) }
-    val fake: FakeTransport by lazy { FakeTransport(load = { assets.open("contract/$it.json").bufferedReader().readText() }) }
+    val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
     override fun onCreate() {
         super.onCreate()

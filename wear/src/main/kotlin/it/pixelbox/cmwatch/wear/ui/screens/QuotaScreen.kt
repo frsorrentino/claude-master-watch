@@ -66,6 +66,7 @@ fun QuotaScreen(
     animateOverride: Boolean? = null,
 ) {
     val listState = rememberTransformingLazyColumnState()
+    it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val labels = BriefCards.Labels(
         quota = stringResource(R.string.quota_label), week = stringResource(R.string.quota_week_pill),
