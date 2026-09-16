@@ -64,3 +64,54 @@ me the icon rendered at 48 px and 24 px on both a black and a white circle so I 
 - Dice «sessioni parallele» senza spiegare? L'icona di oggi dice «Claude» più «codice», non dice il parallelismo.
 - Resta diversa dal quadrante e dalle icone di sistema quando è nell'elenco app, dove sta accanto a tondi bianchi e blu.
 - Il corallo resta il colore dell'identità: se una proposta funziona solo in blu, non è la nostra.
+
+---
+
+# Prompt per Gemini (generazione dell'immagine)
+
+Gemini lavora meglio con una descrizione dell'immagine che con un capitolato. Sotto: prima le regole del logo, poi
+quattro descrizioni pronte, una per idea. Si incolla una descrizione per volta e si chiede una variante alla volta.
+
+## Regole da mettere in testa alla richiesta
+
+Design a simple, modern app logo. What "simple and modern" means here, concretely:
+- **One idea only.** The logo says a single thing. If it needs a caption to be understood, it is too complicated.
+- **Three to five shapes, no more.** Big, geometric, confident forms: circles, arcs, rounded bars, triangles. No
+  scenes, no perspective, no mascots, no faces.
+- **Flat 2D vector look.** Solid fills only: no gradients, no shadows, no bevels, no glow, no texture, no 3D, no
+  reflections, no outlines around everything.
+- **Generous empty space.** The artwork fills about two thirds of the frame, centred, with clear breathing room.
+- **Thick strokes.** Nothing thinner than a tenth of the icon's width, so it survives when shrunk.
+- **High contrast, few colours.** Two or three at most, from this palette: coral `#CC785C`, pastel blue `#D3E3FD`,
+  navy `#0A2050`, black, off-white `#F2F4F7`.
+- **No text, no letters, no numbers.**
+- **Symmetric or deliberately off-centre by one element**, never accidentally lopsided.
+- **It must still read as a shape at thumbnail size**, and still work filled in a single colour.
+- Square image, 1:1, the logo centred inside a circle, because the watch crops icons to a circle.
+
+## Descrizioni, una per idea
+
+**1. Molti in uno.** «A minimalist flat vector app logo, centred on a solid coral background circle: seven short,
+thick navy bars arranged like rays around a single small filled circle at the centre, the rays of slightly different
+lengths, one of them pastel blue and longer than the rest. Clean geometric shapes, solid colours, no gradients, no
+shadows, no text, generous negative space, crisp edges, symmetric composition, square 1:1 image, thumbnail-legible.»
+
+**2. L'anello che chiama.** «A minimalist flat vector app logo: a thick coral ring on a black background, the ring
+broken at the top right by a gap, and one small pastel blue dot sitting in that gap. Bold geometric forms, solid
+fills, no gradients, no shadows, no text, wide empty space inside the ring, perfectly centred, square 1:1 image,
+readable at very small sizes.»
+
+**3. La scheda sul quadrante.** «A minimalist flat vector app logo: a solid coral circle with one rounded navy
+rectangle laid across its lower half, cropped by the circle's edge, and a small pastel blue dot above it on the left.
+Flat 2D, solid colours only, no gradients, no shadows, no text, calm and balanced, generous margins, square 1:1
+image, designed to stay legible when scaled down to a thumbnail.»
+
+**4. Le sessioni in fila.** «A minimalist flat vector app logo: three thick vertical rounded bars of different
+heights, navy, standing side by side inside a solid coral circle, with the tallest bar tipped by a pastel blue dot.
+Flat geometric design, solid fills, no gradients, no shadows, no text, lots of negative space, centred composition,
+square 1:1 image, clear at small sizes.»
+
+## Cosa chiedere dopo
+
+«Now show the same logo at 48 px and at 24 px, on a black circle and on a white circle, side by side» e, per la
+versione scelta, «Give me the same logo as a clean SVG with flat solid shapes, and a single-colour version».
