@@ -10,6 +10,8 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
@@ -65,8 +67,11 @@ class ScreensSnapshotTest {
         CmTheme {
             // `atlas-shop` è dell'account personale, quello con la quota viva: con `ledger-api`, che è del lavoro, la
             // card mostrava il dato vecchio («stale data», reset di martedì) e non si capiva niente (16/09 04:26).
+            // Fuori dalla lista non c'è `morph`, che nella Scheda porta i margini laterali: qui si passano a mano,
+            // gli stessi di `CardDefaults.ContentPadding`, altrimenti lo snapshot mostra un taglio che al polso non c'è.
             it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
-                state, state.sessions.single { s -> s.name == "atlas-shop" }, null, animate = false,
+                state, state.sessions.single { s -> s.name == "atlas-shop" }, null,
+                androidx.compose.ui.Modifier.padding(horizontal = 14.dp), animate = false,
             )
         }
     }

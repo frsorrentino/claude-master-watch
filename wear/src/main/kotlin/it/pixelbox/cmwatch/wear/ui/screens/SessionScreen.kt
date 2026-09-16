@@ -166,7 +166,9 @@ fun SessionScreen(
             item {
                 it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
                     snapshot.state, s, SurfaceTransformation(spec),
-                    Modifier.transformedHeight(this, spec),
+                    // `morph` e non solo `transformedHeight`: porta i margini laterali che hanno tutte le voci della
+                    // lista. Senza, il bordo tondo mangiava etichette e valori (snapshot 16/09 04:26 e 04:39).
+                    Modifier.morph(this, spec),
                     // Con le animazioni spente l'arco si disegna subito al suo valore: è il caso di Paparazzi, dove il
                     // primo fotogramma lo coglierebbe ancora a zero (16/09 03:44), e dell'ambient.
                     animate = !it.pixelbox.cmwatch.wear.ui.ambient.animationsOff(),

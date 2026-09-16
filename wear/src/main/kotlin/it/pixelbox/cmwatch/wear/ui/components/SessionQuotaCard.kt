@@ -51,7 +51,8 @@ fun SessionQuotaCard(
         )
         righe.forEach { (etichetta, valore) ->
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically,
+                // Nessun margine inventato qui: i margini laterali li porta la lista con `morph`, come per ogni voce.
+                Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(etichetta, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
