@@ -49,7 +49,8 @@ object ComplicationTexts {
         val q = state?.quota?.get(account) ?: return Ranged(0f, 100f, "—")
         val week = (q.h5 == null || q.h5 == 0) && q.w7 != null
         val v = (if (week) q.w7 else q.h5) ?: return Ranged(0f, 100f, "—")
-        return Ranged(v.toFloat(), 100f, "$v%", week, if (week) weekTag else h5Tag)
+        // Senza «%» (Franz, 16/09 13:44): la batteria accanto mostra «51», e l'arco dice già che è una parte di 100.
+        return Ranged(v.toFloat(), 100f, "$v", week, if (week) weekTag else h5Tag)
     }
 
     fun tapTarget(state: State?): String =

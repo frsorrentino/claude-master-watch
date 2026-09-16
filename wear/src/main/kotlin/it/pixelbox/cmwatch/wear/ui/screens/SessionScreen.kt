@@ -2,7 +2,13 @@ package it.pixelbox.cmwatch.wear.ui.screens
 
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +29,7 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.rules.CardText
 import it.pixelbox.cmwatch.rules.OutcomeText
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
+import it.pixelbox.cmwatch.wear.ui.components.TextAroundTrailing
 import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
@@ -115,9 +122,10 @@ fun SessionScreen(
             val cell = SessionsText.sheet(s, now, running, idleLabel, tools, live = live)
             // La riga dello strumento in testata tace se la card sotto la dice già intera (Franz, 15/09 16:00).
             val toolRepeated = cell.says(ToolText.describe(s.toolNote, s.tool, tools))
-            // Il ▶ in testata, accanto al nome, come nella Domanda: legge la risposta intera chiesta al PC.
-            val listen: (@Composable () -> Unit)? = onListen?.let { l -> { SpeakButton(speaking, onToggle = l) } }
-            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated, trailing = listen) }
+            // Il ▶ dentro la card del testo, in alto a destra (Franz, 16/09 13:18, soluzione A): in testata stringeva il nome
+            // su tre righe («claude- / master- / watch»). Nella card sta accanto a quello che legge.
+            val listen: (@Composable () -> Unit)? = onListen?.let { l -> { SpeakButton(speaking, onToggle = l, modifier = Modifier.size(38.dp)) } }
+            item { SessionHeader(s, now, enabled, modifier = Modifier.morph(this, spec), showTool = !toolRepeated) }
             (reopen as? it.pixelbox.cmwatch.rules.ReopenText.Status.Failed)?.let { f ->
                 item {
                     Text(
@@ -141,15 +149,23 @@ fun SessionScreen(
                         contentPadding = PaddingValues(14.dp),
                         transformation = SurfaceTransformation(spec),
                     ) {
-                        // Il testo intero: la card cresce e la lista scorre, mai «…» (Franz, 15/09 10:56).
-                        cell.title?.let {
-                            Text(
-                                TileTexts.breakable(it), color = CmColors.text, modifier = Modifier.fillMaxWidth(),
-                                // Grande se è breve, più piccolo se è una frase lunga (contratto 1.6, fino a 200 caratteri).
-                                style = if (OutcomeText.bigTitle(it)) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-                            )
+                        // Il testo intero: la card cresce e la lista scorre, mai «…» (Franz, 15/09 10:56). Il ▶ sta accanto
+                        // alla prima riga di testo; quello che segue torna a tutta larghezza.
+                        // Il primo testo scorre attorno al ▶: accanto al tasto solo le righe che ne coprono l'altezza, poi
+                        // di nuovo a tutta larghezza (Franz, 16/09 13:39).
+                        val primo = cell.title?.let { TileTexts.breakable(it) } ?: cell.body
+                        val stile = when {
+                            // Grande se è breve, più piccolo se è una frase lunga (contratto 1.6, fino a 200 caratteri).
+                            cell.title != null -> if (OutcomeText.bigTitle(cell.title!!)) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
+                            else -> MaterialTheme.typography.bodyMedium
                         }
-                        cell.body?.let {
+                        when {
+                            primo != null && listen != null ->
+                                TextAroundTrailing(primo, stile, CmColors.text, trailingSize = 38.dp, trailing = listen)
+                            primo != null -> Text(primo, style = stile, color = CmColors.text, modifier = Modifier.fillMaxWidth())
+                            listen != null -> Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) { listen() }
+                        }
+                        if (cell.title != null) cell.body?.let {
                             Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.fillMaxWidth())
                         }
                         cell.detail?.let {

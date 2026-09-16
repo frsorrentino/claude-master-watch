@@ -438,7 +438,15 @@ class MainActivity : ComponentActivity() {
             composable(Routes.LAUNCH) {
                 LaunchScreen(snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh) { path -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, path); Haptics.play(this@MainActivity, Haptics.Kind.SENT) }; nav.go(Screen.Sessions) }
             }
-            composable(Routes.QUOTA) { QuotaScreen(snapshot.state, snapshot.freshness) }
+            composable(Routes.QUOTA) {
+                // Eventi per «Oggi» e campioni della quota per il ritmo della finestra (Franz, 16/09 13:00).
+                val events by app.repo.events.collectAsStateWithLifecycle()
+                val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
+                QuotaScreen(
+                    snapshot.state, snapshot.freshness, events = events, samples = samples,
+                    onOpenQuestion = { nav.go(Screen.Question(it)) }, onOpenSessions = { nav.go(Screen.Sessions) },
+                )
+            }
             composable(Routes.RECAP) {
                 val speaking by app.speaker.speaking.collectAsStateWithLifecycle()
                 val preparing by app.reader.preparing.collectAsStateWithLifecycle()

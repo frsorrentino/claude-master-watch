@@ -47,6 +47,43 @@ class RepoTest {
         assertEquals(6, repo.events.value.size)
     }
 
+    /** Un transport il cui stato si cambia a mano, per mandare al Repo una sequenza di stati. */
+    private class Pushing(base: FakeTransport, first: State) : Transport by base {
+        val flow = MutableStateFlow(first)
+        override val state: Flow<State> = flow
+    }
+
+    private fun conH5(ts: Long, h5: Int): State {
+        val base = ContractJson.decodeState(Fixtures.stateQuestion)
+        return base.copy(ts = ts, quota = base.quota.mapValues { (k, q) -> if (k == "personal") q.copy(h5 = h5) else q })
+    }
+
+    // «Ritmo 5 ore» (Franz, 16/09 13:00): l'orologio registra da sé un campione della quota a ogni stato che riceve.
+    @Test fun ogniStatoRegistraUnCampioneDellaQuotaPerIlRitmo() = runTest {
+        val tr = Pushing(fake(), conH5(clock, 10))
+        val store = MemoryStore()
+        val repo = Repo(store, tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        clock += 600; tr.flow.value = conH5(clock, 14); idle()
+        // Stesso valore un minuto dopo: nessun campione nuovo, la linea non si riempie di punti uguali.
+        clock += 60; tr.flow.value = conH5(clock, 14); idle()
+        assertEquals(listOf(10, 14), repo.quotaSamples.value.getValue("personal").map { it.pct })
+        // L'account di lavoro non ha la lettura delle 5 ore (`h5` null): niente campioni inventati.
+        assertNull(repo.quotaSamples.value["work"])
+        // Riaprendo l'app i campioni tornano da Room, prima che arrivi uno stato nuovo.
+        val riaperto = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        riaperto.loadFromStore()
+        assertEquals(2, riaperto.quotaSamples.value.getValue("personal").size)
+    }
+
+    @Test fun iCampioniPiuVecchiDellaFinestraSiButtano() = runTest {
+        val tr = Pushing(fake(), conH5(clock, 10))
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        clock += 7 * 3600; tr.flow.value = conH5(clock, 3); idle()
+        assertEquals(listOf(3), repo.quotaSamples.value.getValue("personal").map { it.pct })
+    }
+
     /** Conta chi sta ascoltando gli stream del transport: con l'app chiusa devono essere zero. */
     private class Counting(base: FakeTransport) : Transport by base {
         val listening = MutableStateFlow(0)
@@ -163,4 +200,9 @@ class MemoryStore : Store {
     override suspend fun pruneEvents(olderThan: Long) { events = events.filter { it.ts >= olderThan } }
     override suspend fun loadPending() = pending
     override suspend fun savePending(c: List<Cmd>) { pending = c }
+    private val samples = ArrayList<Pair<String, it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>()
+    override suspend fun saveQuotaSample(account: String, sample: it.pixelbox.cmwatch.rules.QuotaHistory.Sample) { samples += account to sample }
+    override suspend fun loadQuotaSamples(since: Long) =
+        samples.filter { it.second.ts >= since }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.sortedBy { it.ts } }
+    override suspend fun pruneQuotaSamples(olderThan: Long) { samples.removeAll { it.second.ts < olderThan } }
 }

@@ -1,14 +1,14 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ListHeader
@@ -19,30 +19,49 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.BriefCards
+import it.pixelbox.cmwatch.rules.DayBars
+import it.pixelbox.cmwatch.rules.QuotaHistory
+import it.pixelbox.cmwatch.rules.WorkPanel
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
 import it.pixelbox.cmwatch.wear.ui.ambient.rememberAmbient
 import it.pixelbox.cmwatch.wear.ui.components.BriefCard
+import it.pixelbox.cmwatch.wear.ui.components.ContextListCard
+import it.pixelbox.cmwatch.wear.ui.components.NightWorkCard
+import it.pixelbox.cmwatch.wear.ui.components.NowCard
+import it.pixelbox.cmwatch.wear.ui.components.PaceCard
+import it.pixelbox.cmwatch.wear.ui.components.QuestionsWorkCard
+import it.pixelbox.cmwatch.wear.ui.components.TodayCard
+import it.pixelbox.cmwatch.wear.ui.components.UpdatedFooter
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
- * Quota e stato del lavoro nello stile del «brief mattutino» di Wear OS, che Franz vuole identico (13/09 16:16):
- * una card per dato, con etichetta verde, numero grande, pillolina e anello. Due sezioni: la quota di ogni account,
- * poi il lavoro (attive, domande, coda della notte, freschezza del PC). Cosa si vede lo decide `BriefCards`.
+ * Quota e lavoro nello stile del «brief mattutino» di Wear OS (Franz, 13/09 16:16). Sezione Quota: una card per account
+ * con il doppio anello, e sotto il ritmo della finestra di 5 ore. Sezione Lavoro rifatta (16/09 13:00, «ok tutte»):
+ * una grafica per dato — «Adesso» a segmenti, le domande quando ci sono, il contesto per sessione, «Oggi» a colonne, la
+ * notte quando c'è — e in fondo la riga dell'aggiornamento al posto della card «Aggiornato».
  */
 @Composable
 fun QuotaScreen(
     state: State?,
     freshness: Freshness,
     now: Long = System.currentTimeMillis() / 1000,
+    /** Gli eventi salvati sull'orologio (7 giorni): le colonne di «Oggi». */
+    events: List<Event> = emptyList(),
+    /** I campioni della quota registrati dall'orologio, per account: il ritmo della finestra. */
+    samples: Map<String, List<QuotaHistory.Sample>> = emptyMap(),
+    onOpenQuestion: (String) -> Unit = {},
+    onOpenSessions: () -> Unit = {},
     /**
-     * Negli snapshot si passa `false`: Paparazzi fotografa il primo fotogramma, e con l'animazione attiva l'arco è
-     * ancora a zero (visto il 16/09 03:44). Senza animazione il gauge si disegna subito al suo valore, come il polso
-     * lo mostra un istante dopo. In app resta `null`, cioè decide la schermata: niente in ambient, niente se il
-     * sistema ha spento le animazioni.
+     * Negli snapshot si passa `false`: Paparazzi fotografa il primo fotogramma, e con l'animazione attiva archi e barre
+     * sono ancora a zero (visto il 16/09 03:44). In app resta `null`: niente in ambient, niente con le animazioni spente.
      */
     animateOverride: Boolean? = null,
 ) {
@@ -60,17 +79,15 @@ fun QuotaScreen(
         now = stringResource(R.string.brief_now), stopped = stringResource(R.string.brief_stopped),
         weekOnly = stringResource(R.string.quota_week),
     )
-    // Niente animazioni in ambient né con le animazioni di sistema spente (design, sezione 3).
     val animate = animateOverride ?: (!rememberAmbient() && !animationsOff())
-    // Giorni della settimana nella lingua delle risorse: con l'inglese «reset Thu 02:00», non «gio» (14/09 23:43).
-    val quota = BriefCards.quota(state, labels, locale = LocalConfiguration.current.locales[0])
-    val work = BriefCards.work(state, freshness, now, labels)
-    // Quali elementi sono nell'inquadratura: l'arco di una card si riempie quando la sua entra (Franz, 16/09 01:45).
-    // L'indice 0 è l'intestazione, poi le card della quota, poi l'intestazione del lavoro e le sue card.
-    // Niente lettura della posizione della lista qui: leggere `layoutInfo` durante il disegno faceva ridisegnare tutta
-    // la schermata a ogni scatto della corona, e lo scorrimento diventava lentissimo (Franz, 16/09 08:09). In una lista
-    // pigra la card viene composta quando sta per entrare nell'inquadratura: è già il momento giusto per riempire l'arco.
-    fun visibile(i: Int) = true
+    val locale = LocalConfiguration.current.locales[0]
+    val zone = ZoneId.systemDefault()
+    val quota = BriefCards.quota(state, labels, locale = locale)
+    // Il ritmo per gli account che hanno la lettura delle 5 ore e la sua ripartenza: senza, non c'è una finestra da seguire.
+    val ritmi = state?.quota.orEmpty().filter { (_, q) -> q.h5 != null && q.resetH5 != null }.map { (account, q) ->
+        Triple(q, QuotaHistory.pace(samples[account].orEmpty(), q.resetH5!!, now), account)
+    }
+    val oraReset = DateTimeFormatter.ofPattern("HH:mm", locale)
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -79,20 +96,46 @@ fun QuotaScreen(
                 }
             }
             items(quota.size) { i ->
-                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = visibile(1 + i))
+                BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
             }
-            if (work.isNotEmpty()) {
+            items(ritmi.size) { i ->
+                val (q, pace, _) = ritmi[i]
+                PaceCard(
+                    pace = pace, current = q.h5!!, resetAt = q.resetH5!!, now = now,
+                    startLabel = oraReset.format(Instant.ofEpochSecond(q.resetH5!! - QuotaHistory.WINDOW_S).atZone(zone)),
+                    resetLabel = oraReset.format(Instant.ofEpochSecond(q.resetH5!!).atZone(zone)),
+                    transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec), animate = animate,
+                )
+            }
+            if (state != null) {
                 item {
                     ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) {
                         Text(stringResource(R.string.brief_section_work))
                     }
                 }
-                items(work.size) { i ->
-                    // Dopo l'intestazione della quota, le sue card e l'intestazione del lavoro: 2 + quante sono le card sopra.
-                    BriefCard(work[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, visible = visibile(2 + quota.size + i))
+                item {
+                    NowCard(WorkPanel.now(state), SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, onClick = onOpenSessions)
+                }
+                WorkPanel.questions(state, now)?.let { q ->
+                    item {
+                        QuestionsWorkCard(q, SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate, onClick = { onOpenQuestion(q.oldest) })
+                    }
+                }
+                val contesti = WorkPanel.contexts(state)
+                if (contesti.isNotEmpty()) item {
+                    ContextListCard(contesti, SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
+                }
+                item {
+                    TodayCard(DayBars.today(events, now, zone), SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
+                }
+                WorkPanel.night(state)?.let { n ->
+                    item { NightWorkCard(n, SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate) }
+                }
+                item {
+                    UpdatedFooter(WorkPanel.updated(state, freshness, now), Modifier.morph(this, spec).padding(top = 4.dp))
                 }
             }
-            if (quota.isEmpty() && work.isEmpty()) {
+            if (quota.isEmpty() && state == null) {
                 item {
                     Text(
                         stringResource(R.string.quota_none), style = MaterialTheme.typography.bodyMedium,

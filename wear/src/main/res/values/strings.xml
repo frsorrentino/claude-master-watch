@@ -170,4 +170,23 @@
     <string name="confirm_follow">Ti avviso</string>
     <string name="confirm_unfollow">Non ti avviso</string>
     <string name="confirm_failed">Non riuscito</string>
+    <!-- Sezione Lavoro rifatta (Franz, 16/09 13:00) -->
+    <string name="work_now">Adesso</string>
+    <plurals name="work_now_working"><item quantity="one">lavora</item><item quantity="other">lavorano</item></plurals>
+    <plurals name="work_legend_waiting"><item quantity="one">%1$d aspetta te</item><item quantity="other">%1$d aspettano te</item></plurals>
+    <plurals name="work_legend_working"><item quantity="one">%1$d lavora</item><item quantity="other">%1$d lavorano</item></plurals>
+    <plurals name="work_legend_idle"><item quantity="one">%1$d ferma</item><item quantity="other">%1$d ferme</item></plurals>
+    <string name="work_none_live">nessuna sessione aperta</string>
+    <string name="work_context">Contesto</string>
+    <string name="work_today">Oggi</string>
+    <plurals name="work_today_events"><item quantity="one">evento</item><item quantity="other">eventi</item></plurals>
+    <string name="work_question_oldest">%1$s · da %2$s</string>
+    <string name="work_updated_now">aggiornato ora · %1$s</string>
+    <string name="work_updated_ago">aggiornato %1$d min fa · %2$s</string>
+    <string name="work_stale">PC fermo da %1$d min · %2$s</string>
+    <string name="work_pace">Ritmo 5 ore</string>
+    <string name="work_pace_at">%% alle %1$s</string>
+    <string name="work_pace_now" formatted="false">% adesso</string>
+    <string name="work_pace_unknown">stima tra qualche minuto</string>
+    <string name="work_pace_projection">a questo ritmo</string>
 </resources>

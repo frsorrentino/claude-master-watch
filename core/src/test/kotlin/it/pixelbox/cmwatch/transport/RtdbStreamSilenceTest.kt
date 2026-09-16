@@ -37,3 +37,31 @@ class RtdbStreamSilenceTest {
         assertTrue("atteso errore di rete, arrivato: $errore", errore is TransportException.Network)
     }
 }
+
+/**
+ * Crash del 16/09 13:57 al polso, durante un cambio di rete: `Rtdb.put` lasciava uscire `SocketTimeoutException` così
+ * com'era, il `Repo` raccoglie solo `TransportException` e l'app si chiudeva. Ogni errore di rete delle chiamate REST
+ * deve arrivare come `TransportException.Network`, come già fa lo stream.
+ */
+class RtdbNetworkErrorTest {
+    private val server = MockWebServer()
+
+    @After fun down() = server.shutdown()
+
+    private fun rtdbCheNonRisponde(): Rtdb {
+        server.enqueue(MockResponse().setSocketPolicy(okhttp3.mockwebserver.SocketPolicy.NO_RESPONSE))
+        server.start()
+        val lento = okhttp3.OkHttpClient.Builder().readTimeout(300, TimeUnit.MILLISECONDS).build()
+        return Rtdb(server.url("/").toString().removeSuffix("/"), token = { "t" }, client = lento)
+    }
+
+    @Test fun putSenzaRispostaEUnErroreDiRete() = runBlocking {
+        val e = runCatching { rtdbCheNonRisponde().put("cmd/x", "{}") }.exceptionOrNull()
+        assertTrue("atteso errore di rete, arrivato: $e", e is TransportException.Network)
+    }
+
+    @Test fun getSenzaRispostaEUnErroreDiRete() = runBlocking {
+        val e = runCatching { rtdbCheNonRisponde().get("state") }.exceptionOrNull()
+        assertTrue("atteso errore di rete, arrivato: $e", e is TransportException.Network)
+    }
+}

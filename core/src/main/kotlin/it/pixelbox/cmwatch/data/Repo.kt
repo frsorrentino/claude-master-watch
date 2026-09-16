@@ -37,6 +37,9 @@ class Repo(
 ) {
     private val _snapshot = MutableStateFlow(Snapshot(null, Freshness.Stale(0)))
     val snapshot: StateFlow<Snapshot> = _snapshot
+    private val _quotaSamples = MutableStateFlow<Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>>(emptyMap())
+    /** I campioni della quota delle 5 ore per account, per il ritmo della finestra nella pagina Quota. */
+    val quotaSamples: StateFlow<Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>> = _quotaSamples
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events
     private val _results = MutableSharedFlow<CmdResult>(extraBufferCapacity = 16)
@@ -59,6 +62,7 @@ class Repo(
     suspend fun loadFromStore() {
         store.loadState()?.let { (s, _) -> _snapshot.update { it.copy(state = s, freshness = Freshness.of(s.ts, now())) } }
         _events.value = store.loadEvents()
+        _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
         _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
     }
 
@@ -105,6 +109,23 @@ class Repo(
         val ordered = s.copy(sessions = Order.sessions(s.sessions))
         store.saveState(ordered, now())
         _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered.ts, now())) }
+        recordQuota(ordered)
+    }
+
+    /**
+     * Un campione per account a ogni stato con la lettura delle 5 ore, con l'ora del PC. Uno uguale al precedente entro
+     * cinque minuti non si salva: la linea non si riempie di punti fermi. Il dato vecchio (`stale`) non è una lettura.
+     */
+    private suspend fun recordQuota(s: State) {
+        for ((account, q) in s.quota) {
+            val pct = q.h5 ?: continue
+            if (q.stale) continue
+            val ultimo = _quotaSamples.value[account]?.lastOrNull()
+            if (ultimo != null && (ultimo.ts >= s.ts || (ultimo.pct == pct && s.ts - ultimo.ts < SAMPLE_MIN_GAP_S))) continue
+            store.saveQuotaSample(account, it.pixelbox.cmwatch.rules.QuotaHistory.Sample(s.ts, pct))
+        }
+        store.pruneQuotaSamples(now() - SAMPLES_KEEP_S)
+        _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
     }
 
     /** Un GET (sveglia FCM). Vero se lo stato è arrivato. */
@@ -200,6 +221,10 @@ class Repo(
         const val MAX_QUEUE_AGE_S = 600L
         const val EVENTS_KEEP_S = 30L * 86400
         const val FRESHNESS_TICK_MS = 30_000L
+        /** Un campione uguale al precedente entro questo tempo non si salva. */
+        const val SAMPLE_MIN_GAP_S = 300L
+        /** La finestra di 5 ore e un'ora in più: basta per disegnarla anche appena ripartita. */
+        const val SAMPLES_KEEP_S = it.pixelbox.cmwatch.rules.QuotaHistory.WINDOW_S + 3600
         const val MAX_RESULTS = 32
 
         /**

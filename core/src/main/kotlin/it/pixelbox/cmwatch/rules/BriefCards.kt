@@ -67,7 +67,8 @@ object BriefCards {
             // card mostrava solo «—» (Franz, 15/09 15:34).
             val soloSettimana = q.h5 == null && q.w7 != null
             val big = if (soloSettimana) q.w7 else q.h5
-            val weekReset = q.resetW7?.let { l.resetAt.format(RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone))) }
+            val weekDay = q.resetW7?.let { RESET.withLocale(locale).format(Instant.ofEpochSecond(it).atZone(zone)) }
+            val weekReset = weekDay?.let { l.resetAt.format(it) }
             Card(
                 key = "quota-$account",
                 // L'etichetta è il solo nome dell'account: «Quota» lo dice già l'intestazione della sezione, e con
@@ -81,11 +82,12 @@ object BriefCards {
                 pill = when {
                     q.stale -> l.stale
                     soloSettimana -> l.weekOnly
-                    else -> l.week.format(q.w7?.let { "$it %" } ?: l.none)
+                    // La ripartenza settimanale dentro la pillola: ora la pillola sta a tutta larghezza sotto l'anello
+                    // e non va più a capo, e la riga sua in fondo rendeva questa card diversa da quella della Scheda
+                    // (Franz, 16/09 13:09). Se il numero grande è la settimana, il reset sta già sotto di lui.
+                    else -> l.week.format(q.w7?.let { "$it %" } ?: l.none) + (weekDay?.let { " · $it" } ?: "")
                 },
-                // La ripartenza settimanale su una riga sua sotto la pillolina: dentro andava a capo e il bordo tondo
-                // la tagliava (visto al polso, 14/09 11:33). Se il numero grande è la settimana, sta già sotto di lui.
-                note = if (soloSettimana) null else weekReset,
+                note = null,
                 // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,
                 // perché da lì non si lavora più (review UX, 13/09). Per la settimana, l'ambra dall'80 %, la soglia di stop.
                 tone = when {

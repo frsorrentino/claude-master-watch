@@ -41,25 +41,39 @@ class Rtdb(
 
     /** Corpo della risposta, o null se il nodo non esiste (RTDB risponde `null`). */
     suspend fun get(path: String, query: Map<String, String> = emptyMap()): String? = withContext(Dispatchers.IO) {
-        http.newCall(Request.Builder().url(url(path, query)).get().build()).execute().use { r ->
-            val body = r.body.string()
-            if (!r.isSuccessful) { android.util.Log.w("cmwatch", "GET $path: HTTP ${r.code} $body"); throw TransportException.Network("GET $path: HTTP ${r.code}") }
-            body.takeIf { it != "null" && it.isNotBlank() }
+        net("GET $path") {
+            http.newCall(Request.Builder().url(url(path, query)).get().build()).execute().use { r ->
+                val body = r.body.string()
+                if (!r.isSuccessful) { android.util.Log.w("cmwatch", "GET $path: HTTP ${r.code} $body"); throw TransportException.Network("GET $path: HTTP ${r.code}") }
+                body.takeIf { it != "null" && it.isNotBlank() }
+            }
         }
     }
 
     suspend fun put(path: String, body: String): String = withContext(Dispatchers.IO) {
-        http.newCall(Request.Builder().url(url(path)).put(body.toRequestBody(json)).build()).execute().use { r ->
-            if (!r.isSuccessful) { android.util.Log.w("cmwatch", "PUT $path: HTTP ${r.code}"); throw TransportException.Network("PUT $path: HTTP ${r.code}") }
-            r.body.string()
+        net("PUT $path") {
+            http.newCall(Request.Builder().url(url(path)).put(body.toRequestBody(json)).build()).execute().use { r ->
+                if (!r.isSuccessful) { android.util.Log.w("cmwatch", "PUT $path: HTTP ${r.code}"); throw TransportException.Network("PUT $path: HTTP ${r.code}") }
+                r.body.string()
+            }
         }
     }
 
     suspend fun delete(path: String) = withContext(Dispatchers.IO) {
-        http.newCall(Request.Builder().url(url(path)).delete().build()).execute().use { r ->
-            if (!r.isSuccessful) throw TransportException.Network("DELETE $path: HTTP ${r.code}")
+        net("DELETE $path") {
+            http.newCall(Request.Builder().url(url(path)).delete().build()).execute().use { r ->
+                if (!r.isSuccessful) throw TransportException.Network("DELETE $path: HTTP ${r.code}")
+            }
         }
     }
+
+    /**
+     * Gli errori di rete di Java (timeout, connessione caduta) diventano `TransportException.Network`, l'unico errore che
+     * il resto dell'app raccoglie. Prima uscivano così com'erano e chiudevano l'app: crash del 16/09 13:57 al polso,
+     * un `SocketTimeoutException` su `put` durante un cambio di rete.
+     */
+    private inline fun <T> net(what: String, block: () -> T): T =
+        try { block() } catch (e: IOException) { throw TransportException.Network("$what: ${e.message}") }
 
     /** Eventi SSE di RTDB (`put`, `patch`, `keep-alive`, `cancel`, `auth_revoked`). Si chiude con errore alla caduta della connessione. */
     fun stream(path: String): Flow<SseEvent> = callbackFlow {

@@ -167,4 +167,23 @@
     <string name="confirm_follow">Alerts on</string>
     <string name="confirm_unfollow">Alerts off</string>
     <string name="confirm_failed">Failed</string>
+    <!-- Work section redone (16/09) -->
+    <string name="work_now">Now</string>
+    <plurals name="work_now_working"><item quantity="one">working</item><item quantity="other">working</item></plurals>
+    <plurals name="work_legend_waiting"><item quantity="one">%1$d waits for you</item><item quantity="other">%1$d wait for you</item></plurals>
+    <plurals name="work_legend_working"><item quantity="one">%1$d working</item><item quantity="other">%1$d working</item></plurals>
+    <plurals name="work_legend_idle"><item quantity="one">%1$d idle</item><item quantity="other">%1$d idle</item></plurals>
+    <string name="work_none_live">no open sessions</string>
+    <string name="work_context">Context</string>
+    <string name="work_today">Today</string>
+    <plurals name="work_today_events"><item quantity="one">event</item><item quantity="other">events</item></plurals>
+    <string name="work_question_oldest">%1$s · for %2$s</string>
+    <string name="work_updated_now">updated now · %1$s</string>
+    <string name="work_updated_ago">updated %1$d min ago · %2$s</string>
+    <string name="work_stale">PC stopped for %1$d min · %2$s</string>
+    <string name="work_pace">5-hour pace</string>
+    <string name="work_pace_at">%% at %1$s</string>
+    <string name="work_pace_now" formatted="false">% now</string>
+    <string name="work_pace_unknown">estimate in a few minutes</string>
+    <string name="work_pace_projection">at this pace</string>
 </resources>

@@ -8,7 +8,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -55,6 +57,7 @@ import it.pixelbox.cmwatch.rules.AnswerText
 import it.pixelbox.cmwatch.rules.TerminalText
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
+import it.pixelbox.cmwatch.wear.ui.components.TextAroundTrailing
 import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.Mono
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
@@ -115,10 +118,12 @@ fun TerminalScreen(
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
-                // Niente più Aggiorna (Franz, 15/09 22:54): il Terminale si aggiorna da solo. Resta ▶ accanto al nome.
+                // Niente più Aggiorna (Franz, 15/09 22:54): il Terminale si aggiorna da solo. Il ▶ sta nel primo paragrafo
+                // della risposta, in alto a destra, con il testo che gli scorre attorno (Franz, 16/09 14:13, come nella
+                // Scheda). Resta accanto al nome solo quando la risposta non c'è ancora ma il terminale sì.
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().morph(this, spec)) {
                     FitName(name, style = MonoStyle, color = CmColors.text2, modifier = Modifier.weight(1f))
-                    if (!answer.isNullOrEmpty() || text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
+                    if (answer.isNullOrEmpty() && text != null) { Spacer(Modifier.width(4.dp)); SpeakButton(speaking, onToggle = onSpeakAll) }
                 }
             }
             if (answer == null) {
@@ -127,7 +132,8 @@ fun TerminalScreen(
             }
             // Toccare un paragrafo lo legge da lì in avanti; quello letto ha il fondo acceso.
             answer.forEachIndexed { i, b ->
-                item { AnswerBlock(b, active = current == i, onClick = { onBlock(i) }, modifier = Modifier.morph(this, spec)) }
+                val play: (@Composable () -> Unit)? = if (i == 0) ({ SpeakButton(speaking, onToggle = onSpeakAll, modifier = Modifier.size(38.dp)) }) else null
+                item { AnswerBlock(b, active = current == i, onClick = { onBlock(i) }, modifier = Modifier.morph(this, spec), trailing = play) }
             }
             when {
                 loading -> item { LoadingLines(stringResource(R.string.terminal_loading), Modifier.morph(this, spec)) }
@@ -211,7 +217,11 @@ private val AnswerSize = 16.sp
 private val AnswerLine = 23.sp
 
 @Composable
-private fun AnswerBlock(b: AnswerText.Block, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun AnswerBlock(
+    b: AnswerText.Block, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier,
+    /** Il ▶ del primo paragrafo: il testo gli scorre attorno invece di stringersi in una colonna. */
+    trailing: (@Composable () -> Unit)? = null,
+) {
     val style = MaterialTheme.typography.bodyLarge.copy(fontSize = AnswerSize, lineHeight = AnswerLine)
     // Il paragrafo letto si accende piano invece di scattare (proposta A4, 15/09 23:40), con il tempo del motion scheme.
     val fondo by animateColorAsState(if (active) CmColors.surfaceHigh else Color.Transparent, MaterialTheme.motionScheme.defaultEffectsSpec(), label = "paragrafo")
@@ -220,6 +230,26 @@ private fun AnswerBlock(b: AnswerText.Block, active: Boolean, onClick: () -> Uni
             .background(fondo)
             .clickable(onClick = onClick).padding(horizontal = 6.dp, vertical = 4.dp),
     ) {
+        when {
+            trailing != null && b.kind == AnswerText.Kind.PARA ->
+                TextAroundTrailing(inline(b.text), style, CmColors.text, trailingSize = 38.dp, trailing = trailing)
+            trailing != null && b.kind == AnswerText.Kind.HEADING -> TextAroundTrailing(
+                b.text, MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), CmColors.actionIcon,
+                trailingSize = 38.dp, trailing = trailing,
+            )
+            // Codice ed elenco: il ▶ in una riga sua in alto a destra, senza toccare il blocco.
+            trailing != null -> Column {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { trailing() }
+                AnswerBlockBody(b, style)
+            }
+            else -> AnswerBlockBody(b, style)
+        }
+    }
+}
+
+@Composable
+private fun AnswerBlockBody(b: AnswerText.Block, style: androidx.compose.ui.text.TextStyle) {
+    run {
         when (b.kind) {
             AnswerText.Kind.HEADING -> Text(
                 b.text, color = CmColors.actionIcon,
