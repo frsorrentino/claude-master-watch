@@ -285,6 +285,9 @@ Nessun codice. Da chiedere a Franz e verificare con uno screenshot prima di regi
 
 - [ ] **Passo 1:** quadrante neutro (senza complication personali), con la complication della quota di Claude Master.
 - [ ] **Passo 2:** tile di Claude Master al primo posto del carosello (a destra del quadrante).
+- [ ] **Passo 2b:** lingua di sistema in inglese per le registrazioni (Franz, 16/09 22:23): la lingua per app non basta,
+  i testi del sistema restano italiani («Ora» nella notifica, data del quadrante, conferme). Dopo le registrazioni si
+  torna all'italiano.
 - [ ] **Passo 3:** debug wireless chiuso sullo schermo dell'orologio, batteria sopra il 50 %, fuori dal caricatore.
 - [ ] **Passo 4: verifica.** `record.sh setup`, poi `input keyevent KEYCODE_HOME`, screenshot; `input swipe 420 240 60 240 180`,
   screenshot. Atteso: quadrante neutro con la nostra complication; subito la nostra tile.
