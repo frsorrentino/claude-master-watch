@@ -85,6 +85,61 @@ clip_measure() {   # non è una clip: misura i trascinamenti di ogni schermata c
   go quota; pause 2.6; measure N_OVERVIEW
 }
 
+# ---- Storia «Il rilascio 2.8.0, dal polso» (piano 16/09): nove scene, una per registrazione. ----
+# Scena della storia sull'app aperta, senza cambiare schermata.
+step() { sh am start -n $ACT --es demo_step "$1" >/dev/null 2>&1; pause "${2:-1.5}"; }
+# Scena che deve arrivare come notifica: si torna al quadrante e la scena scatta dopo, ad app in secondo piano (con l'app
+# in primo piano le notifiche non partono, prova del 16/09 21:58).
+alert() { sh am start -n $ACT --es demo_step "$1" --ei demo_delay_ms 2500 >/dev/null 2>&1; pause 0.4; home 0.1; pause "${2:-4.0}"; }
+dictate() { sh am start -n $ACT --es demo_dictation "$1" >/dev/null 2>&1; pause 0.3; }
+home() { sh input keyevent KEYCODE_HOME; pause "${1:-1.5}"; }
+
+scene_0() { step calm; home 3.0; snap quadrante; }
+scene_1() {   # un'occhiata: tile, poi lista
+  sh input swipe 420 240 60 240 380; pause 2.5; snap tile
+  tap 240 "${Y_TILE_SESSIONS:-420}"; pause 2.4; snap lista
+  scroll 260 2400; snap lista_giu
+}
+# Inizio pulito della storia: l'app chiusa toglie le notifiche rimaste. Le nostre avvisano una volta sola, e una notifica
+# vecchia della stessa sessione trasformava quella nuova in un aggiornamento muto (prova del 16/09 22:43).
+fresh() { sh am force-stop $PKG; sh input keyevent KEYCODE_WAKEUP; sh am start -n $ACT >/dev/null 2>&1; pause 2.5; step calm 1.0; home 1.0; }
+scene_2() {   # arriva la domanda: notifica, ascolto, risposta
+  fresh; alert question; snap notifica
+  # Toccare il testo della notifica non apre l'app: si scorre fino alle azioni e si tocca «Open».
+  drag 1.0 400 160 600; drag 1.2 400 160 600; snap azioni
+  tap 240 "${Y_OPEN:-334}"; pause 2.8; snap domanda
+  tap "${X_PLAY:-350}" "${Y_PLAY:-124}"; pause 3.0; snap ascolto
+  hold 240 "${Y_YES:-440}"; pause 3.0; snap risposta
+}
+scene_3() {   # la seguo
+  # Sulla card della Scheda e non sulla riga della lista: la lista scorre e la riga sotto il dito cambia (prova 17/09 01:45).
+  go session/payments-api; pause 2.4; snap scheda
+  hold 240 "${Y_CARD:-260}" 900; pause 2.5; snap seguita
+}
+scene_4() {   # il deploy è fatto
+  home 1.0; alert deployed; snap esito_notifica
+  drag 1.0 400 160 600; drag 1.2 400 160 600; snap esito_azioni
+  tap 240 "${Y_OPEN_OUTCOME:-334}"; pause 2.8; snap scheda
+  tap "${X_PLAY:-400}" "${Y_PLAY_CARD:-150}"; pause 1.5; snap ascolto
+  scroll 300 2600; scroll 300 2400; snap scheda_giu
+}
+scene_5() {   # il passo dopo, a voce; poi il terminale dal vivo
+  dictate "Great. Now update the changelog and tag the release"
+  scroll "${S5:-1200}" 2000 1.0; snap fondo
+  tap 240 "${Y_WRITE:-350}"; pause 2.5; snap inviato
+  step followup 1.0; go terminal/payments-api; pause 9.0; snap terminale
+}
+scene_6() {   # quanta quota resta
+  go quota; pause 2.4; snap panoramica; scroll 300 2600; snap ritmo; scroll 360 2400; snap lavoro
+}
+scene_7() {   # il post sul blog
+  dictate "Draft a post about the 2.8.0 release"
+  go launch; pause 2.2; snap progetti
+  tap 240 "${Y_PROJECT_BLOG:-290}"; pause 1.5; snap progetto
+  tap 240 "${Y_WRITE_FIRST:-300}"; pause 3.5; snap sessione_nata
+}
+scene_8() { home 3.0; snap chiusura; }
+
 setup() {
   # Il valore originale si salva una volta sola: rilanciando setup si salverebbe quello lungo messo qui.
   [ -s "$OUT/.timeout_prima" ] || sh settings get system screen_off_timeout > "$OUT/.timeout_prima"
@@ -110,13 +165,13 @@ run() {
     # screenrecord in background sull'orologio; il copione recita mentre registra, poi si ferma con SIGINT.
     timeout 200 "$A" -s "$D" shell screenrecord --bit-rate 8000000 /sdcard/promo_$CLIP.mp4 & rec=$!
     pause 1.5
-    "clip_$CLIP"
+    if declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi
     pause 1.0
     sh pkill -INT screenrecord; wait $rec 2>/dev/null; pause 1.5
     timeout 120 "$A" -s "$D" pull /sdcard/promo_$CLIP.mp4 "$OUT/$CLIP.mp4" >/dev/null && sh rm -f /sdcard/promo_$CLIP.mp4
     echo "registrata: $OUT/$CLIP.mp4"
   else
-    "clip_$CLIP"; [ "$CLIP" = measure ] || echo "prova $CLIP: $N screenshot"
+    if declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi; [ "$CLIP" = measure ] || echo "prova $CLIP: $N screenshot"
   fi
 }
 
