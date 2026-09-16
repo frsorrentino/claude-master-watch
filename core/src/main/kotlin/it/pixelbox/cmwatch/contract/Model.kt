@@ -30,6 +30,8 @@ enum class CmdOp {
     @SerialName("last") LAST,
     /** Contratto 1.9: una sessione gone rilanciata nella sua cartella, stessa conversazione se il PC la conosce. */
     @SerialName("reopen") REOPEN,
+    /** Contratto 1.12 (in preparazione da claude-master): modello ed effort della sessione, validi solo per lei. */
+    @SerialName("model") MODEL, @SerialName("effort") EFFORT,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -68,8 +70,11 @@ enum class CmdOp {
     val context: Int? = null,
 )
 
-/** Il modello come lo scrive Claude Code: `id` completo (il suffisso `[1m]` dice la finestra da 1M) e nome breve. */
-@Serializable data class Model(val id: String, val label: String)
+/**
+ * Il modello come lo scrive Claude Code: `id` completo (il suffisso `[1m]` dice la finestra da 1M) e nome breve.
+ * Dal vivo `label` arriva null (visto il 16/09 08:09 su tutte le sessioni): il nome si ricava dall'id con `ModelText`.
+ */
+@Serializable data class Model(val id: String, val label: String? = null)
 
 @Serializable data class QuotaAccount(
     val h5: Int? = null, val w7: Int? = null,

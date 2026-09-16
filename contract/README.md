@@ -89,6 +89,26 @@ quello della voce di sistema — un cambio di modello a metà sessione: lì la f
 stima. Le op `model` ed `effort` dal polso non fanno parte di questa versione: arrivano con la 1.12, insieme a
 `choices`. `v` resta 1.
 
+Contratto 1.11.1 (16/09/2026, correzione, segnalata dall'app alle 08:13): `model.label` e `context` arrivavano null su
+ogni sessione viva. La voce di sistema che porta l'id completo e il nome del modello la scrive Claude Code all'AVVIO
+della conversazione, quindi in una sessione lunga sta fuori dalla coda che il relay leggeva (misurato: una sola voce, a
+221 KB su 4,5 MB). Ora il relay la cerca prima nella coda — un cambio di modello a metà sessione ne riscrive una lì, e
+deve vincere — e poi nella testa. `context` resta null solo quando una voce c'è e non coincide con il modello
+dell'ultimo turno, oppure quando non c'è nessuna voce: l'id dell'ultimo turno da solo non porta la finestra. Forma
+invariata, `v` resta 1.
+
+Contratto 1.12 (16/09/2026, solo aggiunte, richiesta dell'app approvata da Franz): comandi `model` (arg = un id di
+`choices.models`) ed `effort` (arg = uno di `choices.efforts`), applicati SOLO a quella sessione dal suo selettore
+(«s to use this session only»): il default delle sessioni nuove non si tocca mai. In radice di `/state`, `choices` =
+`{"models": [{"id", "label"}], "efforts": ["low", "medium", "high", "xhigh", "max"]}`; l'id del modello è quello
+completo che la sessione riporta in `model.id` (col suffisso `[1m]` dove c'è). Risultato: `ok` con una riga del tipo
+«field-notes: model Sonnet 5, this session only», oppure `ok=false` con un motivo breve da mostrare così com'è
+(sessione al lavoro, domanda aperta, testo scritto nel prompt, valore non disponibile, selettore o conferma non
+arrivati). Dopo un ok lo `/state` successivo riporta già il valore nuovo in `model`/`effort` (il relay spinge subito);
+con un modello cambiato `context` resta null fino al turno successivo della sessione, perché la finestra del turno
+vecchio non è quella del modello nuovo. La scelta vale finché la sessione vive: un riavvio o una ripresa tornano al
+default. `v` resta 1.
+
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna

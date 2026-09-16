@@ -77,15 +77,24 @@ fun BriefCard(
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
-                card.pill?.let {
+                if (card.progress2 == null) card.pill?.let {
                     Spacer(Modifier.height(8.dp))
                     Pill(it, card.tone)
                 }
             }
             card.progress?.let { p ->
                 Spacer(Modifier.width(8.dp))
-                Gauge(progress = p, tone = card.tone, glyph = card.glyph, animate = animate, visible = visible, second = card.progress2)
+                Gauge(
+                    progress = p, tone = card.tone, glyph = card.glyph, animate = animate, visible = visible,
+                    second = card.progress2, secondTone = card.tone2,
+                )
             }
+        }
+        // Con il doppio anello la pillola è la legenda dell'anello interno: stesso colore, e sotto la riga dell'anello
+        // a tutta larghezza, su una riga sola. Nella colonna accanto all'anello «settimana 82 %» andava a capo (11:52).
+        if (card.progress2 != null) card.pill?.let {
+            Spacer(Modifier.height(8.dp))
+            WeekPill(it, card.tone2)
         }
         // La ripartenza settimanale centrata sotto tutta la card (S07): a sinistra, in fondo a una card alta, il bordo
         // tondo la tagliava («reset Thu 02:00» nello snapshot della Quota); al centro resta dentro la corda del cerchio.
@@ -96,6 +105,20 @@ fun BriefCard(
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/** La pillola della settimana, del colore dell'anello interno: lavanda, oppure ambra e rosso sopra le soglie. */
+@Composable
+private fun WeekPill(text: String, tone: BriefCards.Tone) {
+    val (bg, ink) = when (tone) {
+        BriefCards.Tone.WARN -> CmColors.briefWarn to CmColors.briefWarnInk
+        BriefCards.Tone.ALERT -> CmColors.briefAlert to CmColors.briefAlertInk
+        BriefCards.Tone.STALE -> CmColors.line to CmColors.text2
+        else -> CmColors.briefWeek to CmColors.briefWeekInk
+    }
+    Box(Modifier.background(bg, RoundedCornerShape(percent = 50)).padding(horizontal = 12.dp, vertical = 3.dp)) {
+        Text(text, style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

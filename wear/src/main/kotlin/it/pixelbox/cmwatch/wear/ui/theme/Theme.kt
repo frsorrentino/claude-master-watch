@@ -61,6 +61,18 @@ object CmColors {
     val briefAlert = Color(0xFFF2B8B5)
     val briefAlertInk = Color(0xFF5F1412)
     val briefAlertRing = Color(0xFFE5736B)
+
+    // L'anello interno della quota, la settimana (Franz, 16/09 11:52): lavanda, vicino all'azzurro delle 5 ore ma
+    // distinguibile a colpo d'occhio. Stesso colore sulla pillola «settimana», che così fa da legenda senza scritte.
+    val briefWeek = Color(0xFFB9A6F5)
+    val briefWeekInk = Color(0xFF1F1147)
+
+    // Il pallino della pillola del modello (Franz, 16/09 08:29): la famiglia si riconosce dal colore prima del nome.
+    // Opus prende il corallo di Claude, che è il colore del marchio; le altre due restano dentro la tavolozza del brief.
+    val modelOpus = Color(0xFFD97757)
+    val modelSonnet = Color(0xFF8BB4F7)
+    val modelHaiku = Color(0xFF65C581)
+    val modelOther = Color(0xFFB0B8C4)
 }
 
 /**

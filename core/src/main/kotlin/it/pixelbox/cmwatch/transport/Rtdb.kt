@@ -23,9 +23,15 @@ class Rtdb(
     private val baseUrl: String,
     private val token: suspend () -> String?,
     client: OkHttpClient = OkHttpClient(),
+    /**
+     * Quanto silenzio dello stream vuol dire connessione morta. RTDB manda un keep-alive ogni 30 s circa: con l'attesa
+     * infinita di prima, dopo un cambio di rete la connessione restava mezza aperta senza errori e l'orologio diceva
+     * «PC fermo da 17 min» mentre il relay pubblicava ogni minuto (N1, Franz 16/09 08:13).
+     */
+    streamSilenceMs: Long = 90_000,
 ) {
     private val http = client.newBuilder().callTimeout(30, TimeUnit.SECONDS).build()
-    private val streaming = client.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build()
+    private val streaming = client.newBuilder().readTimeout(streamSilenceMs, TimeUnit.MILLISECONDS).build()
     private val json = "application/json; charset=utf-8".toMediaType()
 
     private suspend fun url(path: String, query: Map<String, String> = emptyMap()): String {

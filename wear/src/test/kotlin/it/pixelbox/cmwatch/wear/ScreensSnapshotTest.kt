@@ -69,10 +69,16 @@ class ScreensSnapshotTest {
             // card mostrava il dato vecchio («stale data», reset di martedì) e non si capiva niente (16/09 04:26).
             // Fuori dalla lista non c'è `morph`, che nella Scheda porta i margini laterali: qui si passano a mano,
             // gli stessi di `CardDefaults.ContentPadding`, altrimenti lo snapshot mostra un taglio che al polso non c'è.
-            it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
-                state, state.sessions.single { s -> s.name == "atlas-shop" }, null,
-                androidx.compose.ui.Modifier.padding(horizontal = 14.dp), animate = false,
-            )
+            // Nella Scheda sono due voci della lista (Franz, 16/09 10:44); qui una sotto l'altra, come si leggono scorrendo.
+            val ses = state.sessions.single { s -> s.name == "atlas-shop" }
+            androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+                it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
+                    state, ses, null, androidx.compose.ui.Modifier.padding(horizontal = 14.dp), animate = false,
+                )
+                it.pixelbox.cmwatch.wear.ui.components.SessionMetersCard(
+                    ses, null, androidx.compose.ui.Modifier.padding(horizontal = 14.dp), animate = false,
+                )
+            }
         }
     }
 

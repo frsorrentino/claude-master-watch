@@ -75,7 +75,8 @@ class ContractTest {
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
-        assertEquals(9, results.size); assertEquals(2, results.count { !it.ok })
+        // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
+        assertEquals(11, results.size); assertEquals(3, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))

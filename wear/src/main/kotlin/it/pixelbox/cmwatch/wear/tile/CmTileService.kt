@@ -89,7 +89,7 @@ open class CmTileService : TileService() {
                 TileBuilders.Tile.Builder()
                     .setResourcesVersion(resourcesVersion(state))
                     .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(root))
-                    .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it) } ?: 15 * 60_000L)
+                    .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it, snap.freshness) } ?: 15 * 60_000L)
                     .build()
             )
             "tile"

@@ -86,6 +86,8 @@ class FakeTransport(
                 ses.state != SessionState.GONE -> ko("${ses.name} is already running")
                 else -> ok("reopened ${ses.name} (${ses.account}): last conversation in the folder")
             }
+            // Contratto 1.12: la demo non cambia modello né effort, lo dice come farebbe il relay con una sessione occupata.
+            CmdOp.MODEL, CmdOp.EFFORT -> ko("${cmd.session}: not available in demo")
         }
         results[cmd.id] = r
         return r

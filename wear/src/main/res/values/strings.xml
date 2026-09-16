@@ -162,6 +162,10 @@
     <string name="card_model">Modello</string>
     <string name="card_effort">Effort</string>
     <string name="card_context_pct">%1$d %%</string>
+    <string name="card_context_unit" formatted="false">%</string>
+    <!-- Targhetta della finestra grande: l'id del modello finisce con [1m] (contratto 1.11) -->
+    <string name="card_window_1m">1M</string>
+    <string name="card_meters">Sessione</string>
     <string name="confirm_done">Fatto</string>
     <string name="confirm_follow">Ti avviso</string>
     <string name="confirm_unfollow">Non ti avviso</string>

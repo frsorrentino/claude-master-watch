@@ -39,6 +39,8 @@ object BriefCards {
          */
         val progress2: Float? = null,
         val glyph: Glyph = Glyph.TIME,
+        /** Tono dell'anello interno e della sua pillola: la settimana ha soglie sue (Franz, 16/09 11:52). */
+        val tone2: Tone = Tone.NEUTRAL,
     )
 
     data class Labels(
@@ -97,6 +99,14 @@ object BriefCards {
                 // Anello concentrico (proposta 46): dentro la settimana, ma solo quando fuori ci sono le 5 ore.
                 progress2 = if (soloSettimana) null else q.w7?.let { QuotaText.fraction(it) },
                 glyph = Glyph.TIME,
+                // La settimana col suo tono: ambra dall'80 %, la soglia di stop; rosso esaurita. Con la settimana all'82 %
+                // l'anello interno restava azzurro come le 5 ore e non avvisava (Franz, 16/09 11:52).
+                tone2 = when {
+                    q.stale -> Tone.STALE
+                    (q.w7 ?: 0) >= 100 -> Tone.ALERT
+                    (q.w7 ?: 0) >= 80 -> Tone.WARN
+                    else -> Tone.NEUTRAL
+                },
             )
         }
     }

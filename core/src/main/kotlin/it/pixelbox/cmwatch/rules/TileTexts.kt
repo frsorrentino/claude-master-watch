@@ -371,8 +371,15 @@ object TileTexts {
     fun buttons(state: State): List<Button> =
         if (state.sessions.any { it.question != null }) listOf(Button.OPEN, Button.SESSIONS) else listOf(Button.SESSIONS, Button.QUOTA)
 
-    /** 30 s con domande aperte, 15 min altrimenti. */
-    fun freshnessMs(state: State): Long = if (state.sessions.any { it.question != null }) 30_000L else 15 * 60_000L
+    /**
+     * 30 s con domande aperte, 15 min altrimenti. Con il PC fermo ogni minuto: la tile scrive «fermo da N min» come
+     * testo, e ridisegnata ogni 15 minuti restava indietro rispetto alla lista (N2, Franz 16/09 08:13: 9 min contro 17).
+     */
+    fun freshnessMs(state: State, freshness: Freshness = Freshness.Fresh): Long = when {
+        freshness is Freshness.Stale -> 60_000L
+        state.sessions.any { it.question != null } -> 30_000L
+        else -> 15 * 60_000L
+    }
 
     fun staleLine(f: Freshness.Stale, pattern: String): String = pattern.format(f.minutes)
 }

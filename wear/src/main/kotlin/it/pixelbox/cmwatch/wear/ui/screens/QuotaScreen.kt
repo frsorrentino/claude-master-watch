@@ -67,11 +67,10 @@ fun QuotaScreen(
     val work = BriefCards.work(state, freshness, now, labels)
     // Quali elementi sono nell'inquadratura: l'arco di una card si riempie quando la sua entra (Franz, 16/09 01:45).
     // L'indice 0 è l'intestazione, poi le card della quota, poi l'intestazione del lavoro e le sue card.
-    // Finché la lista non ha misurato niente (primo disegno, e in Paparazzi sempre) si considerano tutte visibili:
-    // altrimenti l'arco resterebbe a zero e le immagini del README mostrerebbero anelli vuoti (16/09 03:31).
-    val misurata = listState.layoutInfo.visibleItems.isNotEmpty()
-    val visibili = listState.layoutInfo.visibleItems.map { it.index }.toSet()
-    fun visibile(i: Int) = !misurata || i in visibili
+    // Niente lettura della posizione della lista qui: leggere `layoutInfo` durante il disegno faceva ridisegnare tutta
+    // la schermata a ogni scatto della corona, e lo scorrimento diventava lentissimo (Franz, 16/09 08:09). In una lista
+    // pigra la card viene composta quando sta per entrare nell'inquadratura: è già il momento giusto per riempire l'arco.
+    fun visibile(i: Int) = true
     ScreenScaffold(scrollState = listState) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {

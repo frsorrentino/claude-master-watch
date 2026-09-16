@@ -53,6 +53,8 @@ fun Gauge(
      * 5 ore e dentro la settimana. Quando c'è, prende il posto del simbolo al centro.
      */
     second: Float? = null,
+    /** Tono dell'anello interno: la settimana ha le sue soglie, indipendenti da quelle delle 5 ore. */
+    secondTone: BriefCards.Tone = BriefCards.Tone.NEUTRAL,
 ) {
     val target = progress.coerceIn(0f, 1f)
     val shown = remember { Animatable(if (animate) 0f else target) }
@@ -94,28 +96,33 @@ fun Gauge(
             else -> innerShown.snapTo(0f)
         }
     }
+    // Doppio anello come gli anelli attività (Franz, 16/09 11:52): stesso spessore, 2 dp di stacco, e ogni binario
+    // tinto del suo colore, così i due si distinguono anche quasi vuoti. Da solo resta l'anello pieno da 8 dp del brief.
+    val doppio = second != null
+    val tratto = if (doppio) 6.dp else 8.dp
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
             progress = { shown.value },
             modifier = Modifier.fillMaxSize(),
             startAngle = START,
             endAngle = END,
-            strokeWidth = 8.dp,
+            strokeWidth = tratto,
             colors = ProgressIndicatorDefaults.colors(
                 indicatorColor = ink.copy(alpha = pulse.value * light),
-                trackColor = CmColors.briefTrack,
+                trackColor = if (doppio) ink.copy(alpha = 0.22f * light) else CmColors.briefTrack,
             ),
         )
         if (second != null) {
+            val inner = colourSecond(secondTone)
             CircularProgressIndicator(
                 progress = { innerShown.value },
-                modifier = Modifier.size(size - 14.dp),
+                modifier = Modifier.size(size - (tratto + 2.dp) * 2),
                 startAngle = START,
                 endAngle = END,
-                strokeWidth = 5.dp,
+                strokeWidth = tratto,
                 colors = ProgressIndicatorDefaults.colors(
-                    indicatorColor = CmColors.briefRing.copy(alpha = light),
-                    trackColor = CmColors.briefTrack.copy(alpha = 0.6f * light),
+                    indicatorColor = inner.copy(alpha = light),
+                    trackColor = inner.copy(alpha = 0.22f * light),
                 ),
             )
         } else {
@@ -143,6 +150,12 @@ private fun colour(tone: BriefCards.Tone): Color = when (tone) {
     BriefCards.Tone.ALERT -> CmColors.briefAlertRing
     BriefCards.Tone.STALE -> CmColors.stale
     BriefCards.Tone.NEUTRAL -> CmColors.briefRing
+}
+
+/** La settimana è lavanda finché è tranquilla; le soglie usano gli stessi ambra e rosso delle 5 ore. */
+internal fun colourSecond(tone: BriefCards.Tone): Color = when (tone) {
+    BriefCards.Tone.NEUTRAL, BriefCards.Tone.GOOD -> CmColors.briefWeek
+    else -> colour(tone)
 }
 
 private fun vector(glyph: BriefCards.Glyph): ImageVector = when (glyph) {

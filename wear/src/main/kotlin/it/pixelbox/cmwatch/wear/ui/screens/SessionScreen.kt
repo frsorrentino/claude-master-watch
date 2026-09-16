@@ -174,6 +174,14 @@ fun SessionScreen(
                     animate = !it.pixelbox.cmwatch.wear.ui.ambient.animationsOff(),
                 )
             }
+            // Le misure della sessione in una voce propria: una voce per card, così ognuna si deforma scorrendo come
+            // tutte le altre (Franz, 16/09 10:44). Senza dati la card non si disegna e la voce resta vuota.
+            item {
+                it.pixelbox.cmwatch.wear.ui.components.SessionMetersCard(
+                    s, SurfaceTransformation(spec), Modifier.morph(this, spec),
+                    animate = !it.pixelbox.cmwatch.wear.ui.ambient.animationsOff(),
+                )
+            }
             if (s.state != SessionState.GONE) {
                 // Niente interruttore «Segui»: occupava mezzo schermo (Franz, 15/09 19:04). Si segue con la pressione
                 // lunga sulla card o sulla riga della lista; lo stato lo dice la campanella in testata.

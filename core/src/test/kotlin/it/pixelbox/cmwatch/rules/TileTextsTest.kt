@@ -36,5 +36,15 @@ class TileTextsTest {
         assertEquals(15 * 60_000L, TileTexts.freshnessMs(idle))
     }
 
+    /**
+     * N2 (Franz, 16/09 08:13): la tile diceva «fermo da 9 min» e la lista «da 17». La tile scrive l'età come testo e si
+     * ridisegnava ogni 15 minuti; con il PC fermo si ridisegna ogni minuto, così l'età scritta non resta indietro.
+     */
+    @Test fun conIlPcFermoLaTileSiRidisegnaOgniMinuto() {
+        assertEquals(60_000L, TileTexts.freshnessMs(idle, Freshness.Stale(9)))
+        assertEquals(60_000L, TileTexts.freshnessMs(q, Freshness.Stale(9)))
+        assertEquals(15 * 60_000L, TileTexts.freshnessMs(idle, Freshness.Fresh))
+    }
+
     @Test fun staleLine() = assertEquals("PC fermo da 12 min", TileTexts.staleLine(Freshness.Stale(12), "PC fermo da %d min"))
 }

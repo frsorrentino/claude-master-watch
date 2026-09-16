@@ -150,3 +150,34 @@ class BriefQuotaAlertTest {
         assertEquals(BriefCards.Tone.ALERT, tono(100))
     }
 }
+
+/**
+ * Il tono dell'anello interno, la settimana (Franz, 16/09 11:52: settimana all'82 % e l'anello interno dello stesso
+ * azzurro delle 5 ore, senza avviso). Ambra dall'80 %, la soglia di stop; rosso esaurita; spento col dato vecchio.
+ */
+class BriefQuotaWeekToneTest {
+    private val state = ContractJson.decodeState(Fixtures.stateQuestion)
+    private val labels = BriefCards.Labels(
+        quota = "Quota %s", week = "settimana %s", resetAt = "reset %s", stale = "dato vecchio", none = "—",
+        active = "Sessioni attive", waitingPill = "%d in attesa", noQuestions = "nessuna domanda",
+        questions = "Domande aperte", oldest = "più vecchia %s",
+        night = "Coda notte", running = "in corso %s", nothingRunning = "nessuna in corso",
+        update = "Aggiornato", minutes = "min", now = "ora", stopped = "PC fermo",
+    )
+
+    private fun card(w7: Int, stale: Boolean = false) = BriefCards.quota(
+        state.copy(quota = mapOf("personal" to state.quota.getValue("personal").copy(h5 = 9, w7 = w7, stale = stale))), labels,
+    ).first()
+
+    @Test fun laSettimanaHaIlSuoTono() {
+        assertEquals(BriefCards.Tone.NEUTRAL, card(79).tone2)
+        assertEquals(BriefCards.Tone.WARN, card(82).tone2)
+        assertEquals(BriefCards.Tone.ALERT, card(100).tone2)
+        assertEquals(BriefCards.Tone.STALE, card(82, stale = true).tone2)
+    }
+
+    /** Le 5 ore al 9 % restano tranquille anche con la settimana all'82 %: i due anelli non si copiano il tono. */
+    @Test fun iDueToniSonoIndipendenti() {
+        assertEquals(BriefCards.Tone.NEUTRAL, card(82).tone)
+    }
+}

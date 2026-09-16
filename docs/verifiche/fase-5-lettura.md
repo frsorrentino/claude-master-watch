@@ -98,3 +98,24 @@ Build `596db7a`, da installare quando l'orologio torna raggiungibile (alle 04:13
 |---|------|-------|-------|
 | M1 | La Quota scorre lentissima con la corona | Mia regressione della notte: `QuotaScreen` leggeva `listState.layoutInfo` durante il disegno per sapere quali card fossero nell'inquadratura, e così ridisegnava tutta la schermata a ogni scatto | Corretto: la lettura è tolta, in una lista pigra la card si compone quando sta per entrare |
 | M2 | Il riquadro di contesto mostra solo la quota | Il relay manda `model.label` null e `context` null su tutte le sessioni (stato delle 08:09:04); l'app mostrava il modello solo con l'etichetta | In corso: l'app ricava il nome breve dall'id (`ModelText`); `label` e `context` vuoti segnalati a claude-master |
+
+## Riscontri del 16/09, ore 08:24-08:33
+
+| # | Cosa | Causa | Stato |
+|---|------|-------|-------|
+| N1 | «PC fermo da N min» mentre le sessioni lavorano | NON è il PC: il relay ha pubblicato ogni minuto senza errori (relay.log 08:14→08:29, stato con 2 s di vita alla lettura delle 08:29). È l'orologio che non riceveva per 17 minuti | Da indagare. claude-master ha contato 161 push fra 07:45 e 08:15, nessun minuto vuoto, e alle 08:05-08:06 ha eseguito comandi arrivati dall'orologio: il canale dei comandi funzionava. Quindi non è ricezione morta ma uno stato che l'app non rilegge (stream di `/state` fermo o cache non ricaricata) |
+| N2 | Tile e lista dicono due tempi diversi per lo stesso fatto (9 min contro 17) | La tile scrive l'età come testo fisso al momento del disegno e si ridisegna ogni 15 min (`TileTexts.freshnessMs`); la lista ricalcola ogni 30 s (`FRESHNESS_TICK_MS`) | Da correggere: far contare alla tile l'ora di piattaforma invece di un numero scritto |
+| M2 | Riquadro con solo la quota | Risolto dal relay con il contratto 1.11.1 (la voce di sistema col modello sta in testa alla trascrizione, non in coda): `label`, `context` ed `effort` arrivano pieni | Chiuso; nell'app resta il ripiego `ModelText` per i relay vecchi e per i secondi dopo una compattazione |
+
+## Card delle misure della sessione (Franz, 16/09 08:29)
+
+Due card al posto delle tre righe etichetta-valore: la Quota com'era, e sotto le misure con una grafica per misura.
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| P1 | Sotto la quota c'è una seconda card con il contesto in grande e la sua barra | Scheda di una sessione viva | |
+| P2 | La barra si riempie da sinistra quando la card entra nell'inquadratura, e ha due tacche scure al 75 % e al 90 % | scorrendo la Scheda dall'alto | |
+| P3 | Numero e barra passano ad ambra oltre il 75 % e a rosso oltre il 90 % | una sessione con contesto alto | |
+| P4 | Il modello è una pillola con il pallino di famiglia (corallo Opus, azzurro Sonnet, verde Haiku) e la targhetta «1M» se la finestra è grande | come P1 | |
+| P5 | L'effort sono tre tacche crescenti che si accendono una dopo l'altra fino al livello, con la parola accanto | una sessione con effort diverso da high | |
+| P6 | Su una sessione senza dati (sparita) la card delle misure non compare del tutto | Scheda di una sessione sparita | |
