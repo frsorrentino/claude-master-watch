@@ -90,3 +90,12 @@ L'arco si riempiva solo all'ingresso nell'inquadratura e in Paparazzi, dove la l
 le immagini del README mostravano anelli spenti. Ora, finché la lista non ha misurato nulla (primo disegno, e sempre
 sotto Paparazzi), le card contano come visibili. Sul polso non cambia niente: lì la lista misura e l'arco aspetta
 ancora che la sua card entri.
+
+## Lo snapshot isolato del riquadro non è una verifica (16/09 04:53)
+
+`sessionContextBox` disegna `SessionQuotaCard` fuori dalla lista, in un quadrato di 456 px: il cerchio taglia gli
+angoli e le righe sembrano tagliate anche quando nella Scheda non lo sono, perché lì `morph` riduce la larghezza utile.
+Tre giri di «correzione» sono nati da questa immagine: il primo (margine di 18 dp dentro il componente) era un cerotto,
+poi tolto; il secondo (account sbagliato nella fixture) era vero; il terzo — il riquadro che ora prende i margini della
+lista con `morph` (`03d6369`) — è la correzione giusta. Da qui in avanti: o lo snapshot disegna il componente dentro
+una `TransformingLazyColumn` come la Scheda, oppure la verifica dei margini è K1-K5 al polso, non un'immagine.
