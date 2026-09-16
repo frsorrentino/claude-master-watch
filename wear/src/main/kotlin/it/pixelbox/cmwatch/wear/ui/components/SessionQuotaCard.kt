@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +37,12 @@ fun SessionQuotaCard(
 ) {
     val card = BriefCards.quota(state, labels(), locale = LocalConfiguration.current.locales[0])
         .firstOrNull { it.key == "quota-${session.account}" }
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // Le tre righe stanno DENTRO il riquadro, con i margini della card: a piena larghezza il bordo tondo mangiava le
+    // etichette a sinistra e i valori a destra («Model» → «odel», «high» → «h»), visto nello snapshot delle 04:26.
+    Column(
+        modifier.fillMaxWidth().padding(bottom = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         card?.let { BriefCard(it, transformation, animate = animate, visible = visible) }
         val righe = listOfNotNull(
             session.context?.let { stringResource(R.string.card_context) to stringResource(R.string.card_context_pct, it) },
@@ -45,7 +51,7 @@ fun SessionQuotaCard(
         )
         righe.forEach { (etichetta, valore) ->
             Row(
-                Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(etichetta, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)

@@ -63,8 +63,10 @@ class ScreensSnapshotTest {
     // perché lo snapshot non scorre (16/09 04:18). Qui si vedono le tre righe come le legge chi scorre al polso.
     @Test fun sessionContextBox() = paparazzi.snapshot {
         CmTheme {
+            // `atlas-shop` è dell'account personale, quello con la quota viva: con `ledger-api`, che è del lavoro, la
+            // card mostrava il dato vecchio («stale data», reset di martedì) e non si capiva niente (16/09 04:26).
             it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
-                state, state.sessions.single { s -> s.name == "ledger-api" }, null, animate = false,
+                state, state.sessions.single { s -> s.name == "atlas-shop" }, null, animate = false,
             )
         }
     }
