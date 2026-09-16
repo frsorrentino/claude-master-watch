@@ -90,8 +90,6 @@ fun QuestionScreen(
 
     ScreenScaffold(
         scrollState = listState,
-        // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi».
-        edgeButton = { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) },
     ) { padding ->
         // La corona muove la Domanda un'opzione per volta, con lo scatto aptico del sistema (proposta 17, fase 1):
         // si sceglie senza coprire il testo con il dito.
@@ -146,6 +144,9 @@ fun QuestionScreen(
             if (QuestionRules.allowAllVisible(q)) {
                 item { WideButton(stringResource(R.string.question_allow_all), onClick = onAllowAll, enabled = enabled && pending == null, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
             }
+            // Le opzioni restano bottoni in lista, perché sono contenuto; l'azione della schermata è «Scrivi», ultima voce e
+            // curva sul bordo: nello slot fisso copriva le opzioni mentre si scorreva (video 16/09 18:48).
+            item { CmEdgeButton(stringResource(R.string.question_write), onClick = onFreeText, enabled = enabled && pending == null) }
         }
     }
 }

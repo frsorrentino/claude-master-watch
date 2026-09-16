@@ -117,8 +117,6 @@ fun TerminalScreen(
     }
     ScreenScaffold(
         scrollState = listState,
-        // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15).
-        edgeButton = { CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite) },
     ) { padding ->
         TransformingLazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
@@ -141,6 +139,7 @@ fun TerminalScreen(
             }
             if (answer == null) {
                 item { LoadingLines(stringResource(R.string.terminal_loading), Modifier.morph(this, spec)) }
+                item { CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite) }
                 return@TransformingLazyColumn
             }
             // Toccare un paragrafo lo legge da lì in avanti; quello letto ha il fondo acceso.
@@ -166,6 +165,9 @@ fun TerminalScreen(
                     }
                 }
             }
+            // «Scrivi» è l'azione della schermata, dopo aver letto (Franz, 15/09 18:15). In fondo alla lista, curvo sul bordo
+            // come in Sessioni: nello slot fisso dello scaffold restava pieno sopra il testo mentre si scorreva (video 16/09 18:48).
+            item { CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite) }
         }
     }
 }

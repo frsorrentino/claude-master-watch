@@ -90,23 +90,25 @@ fun SessionScreen(
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val enabled = snapshot.freshness is Freshness.Fresh
+    // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi». È l'ultima
+    // voce della lista, curva sul bordo come in Sessioni: nello slot fisso restava piena sopra la card mentre si scorreva
+    // (video 16/09 18:48).
+    val edgeAction: @Composable () -> Unit = {
+        when {
+            s?.question != null -> CmEdgeButton(stringResource(R.string.card_reply), onClick = onReply, enabled = enabled)
+            // Una chiusa si riprende nella sua conversazione (contratto 1.9); «Riavvia» da capo resta sotto.
+            s?.state == SessionState.GONE && onReopen != null ->
+                // «Avvio in corso» spento finché il PC rilancia (30-60 s) e la sessione torna (Franz, 15/09 19:14).
+                if (reopen is it.pixelbox.cmwatch.rules.ReopenText.Status.Starting) CmEdgeButton(stringResource(R.string.reopen_starting), onClick = {}, enabled = false)
+                else CmEdgeButton(stringResource(R.string.notif_resume), onClick = onReopen, enabled = enabled)
+            s?.state == SessionState.GONE && onRelaunch != null ->
+                CmEdgeButton(stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled)
+            s != null -> CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled)
+            else -> CmEdgeButton(stringResource(R.string.sessions_title), onClick = onBackToSessions)
+        }
+    }
     ScreenScaffold(
         scrollState = listState,
-        // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi».
-        edgeButton = {
-            when {
-                s?.question != null -> CmEdgeButton(stringResource(R.string.card_reply), onClick = onReply, enabled = enabled)
-                // Una chiusa si riprende nella sua conversazione (contratto 1.9); «Riavvia» da capo resta sotto.
-                s?.state == SessionState.GONE && onReopen != null ->
-                    // «Avvio in corso» spento finché il PC rilancia (30-60 s) e la sessione torna (Franz, 15/09 19:14).
-                    if (reopen is it.pixelbox.cmwatch.rules.ReopenText.Status.Starting) CmEdgeButton(stringResource(R.string.reopen_starting), onClick = {}, enabled = false)
-                    else CmEdgeButton(stringResource(R.string.notif_resume), onClick = onReopen, enabled = enabled)
-                s?.state == SessionState.GONE && onRelaunch != null ->
-                    CmEdgeButton(stringResource(R.string.card_relaunch), onClick = onRelaunch, enabled = enabled)
-                s != null -> CmEdgeButton(stringResource(R.string.card_write), onClick = onWrite, enabled = enabled)
-                else -> CmEdgeButton(stringResource(R.string.sessions_title), onClick = onBackToSessions)
-            }
-        },
     ) { padding ->
         // Bagliore in fondo mentre la sessione lavora (proposta 44, fase 1): respira piano e si spegne da solo quando
         // la sessione si ferma. In ambient e con «riduci animazioni» resta una luce ferma e fioca.
@@ -138,6 +140,7 @@ fun SessionScreen(
                         )
                     }
                 }
+                item { edgeAction() }
                 return@TransformingLazyColumn
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.morph(this, spec)) } }
@@ -237,6 +240,7 @@ fun SessionScreen(
                     )
                 }
             }
+            item { edgeAction() }
         }
     }
 }
