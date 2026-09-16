@@ -17,7 +17,38 @@ video di prodotto degli smartwatch. Dopo due giri di prova il metodo è chiaro; 
 | «Today» conta eventi veri (336) | Gli eventi salvati su Room restano anche in demo | **Da correggere**: in demo solo eventi demo |
 | «New session» non mostra la sessione che nasce | La demo non crea sessioni | **Da correggere**: in demo il launch aggiunge la sessione |
 
-## I flussi
+## La sequenza principale: «Il rilascio 2.8.0, dal polso» (~75 s)
+
+Franz, 18:56: serve una sequenza concatenata e plausibile, non un flusso isolato. Una storia sola, legata a un filo
+conduttore: il rilascio 2.8.0 di payments-api. Ogni scena parte dallo stato in cui finisce la precedente; tra le scene
+tagli o didascalie di tempo («A few minutes later»), non salti di stato inspiegati.
+
+| # | Scena | Cosa si vede | Stato alla fine | ~s |
+|---|---|---|---|---|
+| 0 | Tutto tranquillo | Quadrante con la complication della quota (11 %) | — | 3 |
+| 1 | Un'occhiata | Dal quadrante alla tile: storefront al lavoro, quota con i due anelli. Tocco → lista, scorrimento: storefront lavora, blog ferma | nessuna domanda | 9 |
+| 2 | Arriva una domanda | Vibrazione, notifica di payments-api: «Refund endpoint is ready… Deploy version 2.8.0 to production now?». Tocco → la domanda. ▶ Ascolta, il testo scorre. Pressione lunga su «yes» → «Sent» | payments-api al lavoro | 14 |
+| 3 | La seguo | Lista: pressione lunga su payments-api → «Alerts on», campanella | seguita | 5 |
+| 4 | Il deploy è fatto | «A few minutes later». Notifica di esito: «Deployed 2.8.0, smoke tests green». Tocco → Scheda: esito lungo, ▶ Ascolta mentre scorre fino a Quota e Sessione (contesto 62 %) | payments-api ferma | 12 |
+| 5 | Il passo dopo, a voce | «Write» compare in fondo → dettatura «Great. Now update the changelog and tag the release» → «Sent». Tocco sulla card → Terminale: le righe nuove arrivano dal vivo | payments-api al lavoro | 12 |
+| 6 | Quanta quota resta? | Indietro alla lista → Panoramica: Ritmo 5 ore «at this pace 64 % at 13:10», Now, Contesto | — | 10 |
+| 7 | Ne parliamo sul blog | Lista in fondo → «New session» → blog → dettatura «Draft a post about the 2.8.0 release» → la sessione nasce, la sua Scheda «turn in progress» | blog al lavoro | 10 |
+| 8 | Chiusura | Ritorno al quadrante (complication), didascalia di chiusura in montaggio | — | 3 |
+
+Perché regge: ogni azione ha un motivo nella scena prima (la domanda porta al deploy, il deploy all'esito, l'esito al passo
+successivo, il consumo di quota alla verifica, il rilascio al post). Mostra tutte le funzioni principali senza un elenco:
+complication, tile, lista, notifica, ascolto, risposta, seguire, esito, risposta a voce, terminale dal vivo, Panoramica,
+nuova sessione.
+
+**Come si registra**: una scena per registrazione, con lo stato della demo preparato a mano tra una e l'altra (vedi
+prerequisiti), poi montaggio in sequenza. Una sola ripresa lunga sarebbe fragile: un tocco sbagliato a 60 secondi la butta.
+
+**Ritagli dalla stessa sequenza**, non registrazioni separate:
+- **README** (~20 s): scene 2 + 4 + 6, cioè domanda, esito, quota.
+- **Pagina del plugin** (~12 s): scena 2 da sola.
+- **Clip per funzione**: le singole scene.
+
+## I flussi singoli (materiale per i ritagli)
 
 Ogni flusso è una storia con un inizio reale e un esito visibile. Durate indicative.
 
@@ -65,6 +96,11 @@ Ogni flusso è una storia con un inizio reale e un esito visibile. Durate indica
 3. **Launch che crea la sessione**: nella demo `launch` aggiunge la sessione allo stato, così F5 finisce sulla Scheda.
 4. **Terminale che cresce**: nella demo, dopo una risposta, `screen` restituisce righe nuove a ogni aggiornamento.
 5. **Eventi solo demo**: con la demo accesa «Today» legge solo gli eventi demo.
+5b. **Passi della storia**: extra `demo_step` che porta la demo allo stato di ogni scena della sequenza principale, in
+   modo riproducibile: `calm` (nessuna domanda), `question` (arriva la domanda del deploy, con notifica), `deployed`
+   (payments-api ferma con l'esito «Deployed 2.8.0, smoke tests green», notifica di esito se seguita), `followup` (al
+   lavoro sul changelog, terminale che cresce), `blog` (la sessione blog nata dal launch). Così ogni scena si registra da
+   uno stato noto e si può rifare da sola.
 
 ### Nell'app, per tutti
 6. **«Write» che si riduce scorrendo**: l'`EdgeButton` deve collegarsi allo scorrimento della lista (comportamento
@@ -111,7 +147,7 @@ Ogni flusso è una storia con un inizio reale e un esito visibile. Durate indica
 
 ## Decisioni per Franz
 
-1. Quali flussi e in che ordine (proposta: F1, F2, F3, poi F4 e F5).
+1. La sequenza principale «Il rilascio 2.8.0, dal polso»: scene, ordine, frasi dettate e durata (~75 s).
 2. Dettatura simulata (prerequisito 2) o dettata dal vivo da te.
 3. Audio della lettura: solo il tasto acceso, o voce aggiunta in montaggio.
 4. Conferma delle due fasi di montaggio: revisione nella pagina HTML, poi Remotion per i file finali dei flussi approvati.
