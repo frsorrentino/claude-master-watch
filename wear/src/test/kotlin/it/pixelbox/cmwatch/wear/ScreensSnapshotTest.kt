@@ -59,6 +59,16 @@ class ScreensSnapshotTest {
     }
     // Le due conferme del «segui», una accanto all'altra: coppia simmetrica e segno dominante (Franz, 16/09 02:44).
     // Le nostre due conferme (Franz, 16/09 03:08: quelle di sistema non gli piacciono): cerchio, segno, frase sotto.
+    // Il riquadro della Scheda da solo: nella Scheda intera contesto, modello ed effort finiscono sotto il bordo tondo,
+    // perché lo snapshot non scorre (16/09 04:18). Qui si vedono le tre righe come le legge chi scorre al polso.
+    @Test fun sessionContextBox() = paparazzi.snapshot {
+        CmTheme {
+            it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
+                state, state.sessions.single { s -> s.name == "ledger-api" }, null, animate = false,
+            )
+        }
+    }
+
     @Test fun confirmFollow() = paparazzi.snapshot {
         CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.Notifications, CmColors.followed, "Alerts on")) {} }
     }
