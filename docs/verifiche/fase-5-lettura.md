@@ -66,3 +66,16 @@ Build del 16/09 01:51. Da provare con «riduci animazioni» spento e poi acceso.
 | F4 | Nella Scheda di una sessione che lavora c'è un bagliore in fondo, che respira piano e sparisce quando si ferma | Scheda di una sessione attiva | |
 | F5 | Nel Terminale il filo delle tue righe ha il colore della sessione, lo stesso del badge | Terminale di due sessioni diverse | |
 | F6 | Il tasto «Riavvia» e gli altri tasti con icona si leggono bene, icona e parola allineate | Scheda di una sessione chiusa | |
+
+## Fase 1, secondo blocco (conferma nostra, box quota, anello concentrico, aptica)
+
+Build `44381b5`, installata il 16/09 alle 03:27:00.
+
+| # | Cosa | Come | Esito |
+|---|------|------|-------|
+| H1 | La conferma è nostra: velo scuro, cerchio con campanella accesa in ambra o barrata in grigio, frase su una riga sotto; si chiude da sola dopo poco più di un secondo o al tocco | pressione lunga su una riga della lista | |
+| H2 | «Ti avviso» e «Non ti avviso» si leggono intere, senza testo curvo e senza forma ruotata | come H1, nei due versi | |
+| H3 | La vibrazione di «segui» sale e quella di «non seguire» scende, e si distinguono dall'invio | come H1, a occhi chiusi | |
+| H4 | Nella Scheda c'è il riquadro con la quota dell'account di quella sessione | Scheda di una sessione qualsiasi | |
+| H5 | L'anello del riquadro ha due cerchi: fuori le 5 ore, dentro la settimana; niente icona dell'orologio | come H4 e nella pagina Quota | |
+| H6 | Gli anelli si riempiono quando la card entra nell'inquadratura, quello interno un attimo dopo l'esterno | Quota, scorrendo dall'alto | |
