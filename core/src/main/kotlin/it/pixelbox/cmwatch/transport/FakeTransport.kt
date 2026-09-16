@@ -4,6 +4,9 @@ import it.pixelbox.cmwatch.contract.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
+/** Gli stati della storia dei video promozionali (piano 16/09): uno per scena, raggiungibili via adb. */
+enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, BLOG }
+
 /**
  * Legge le fixture del contratto e simula il PC. Gli scarti temporali delle fixture 1 e 2 vengono riportati
  * a «adesso»; la fixture 3 (stale) tiene il suo ts vecchio perché deve mostrare «PC fermo».
@@ -18,6 +21,39 @@ class FakeTransport(
 
     override val state: Flow<State> get() = current
     override val events: Flow<List<Event>> = MutableStateFlow(eventList)
+
+    // Ruoli della storia, per id della fixture `state-1-question`: la sessione della domanda è quella del deploy, la ferma
+    // scrive il post. Per id e non per posizione: ogni risposta riordina la lista.
+    private val base = ContractJson.decodeState(load("state-1-question"))
+    private val deployId = base.sessions[0].id
+    private val blogId = base.sessions[2].id
+    private val originalQuestion = base.sessions[0].question
+    private var screenGrowth = 0
+
+    /** Porta la demo allo stato di una scena. I testi sono in inglese come la demo. */
+    fun demoStep(step: DemoStep) {
+        val s = current.value
+        val t = now()
+        fun at(id: String, f: (Session) -> Session) = s.copy(ts = t, sessions = Order.sessions(s.sessions.map { if (it.id == id) f(it) else it }))
+        current.value = when (step) {
+            DemoStep.CALM -> at(deployId) { it.copy(state = SessionState.IDLE, question = null, since = t - 900) }
+            DemoStep.QUESTION -> at(deployId) { it.copy(state = SessionState.WAITING, since = t, question = originalQuestion?.copy(askedAt = t)) }
+            DemoStep.DEPLOYED -> at(deployId) {
+                it.copy(
+                    state = SessionState.IDLE, question = null, since = t, followed = true,
+                    outcome = Outcome(
+                        "Deployed 2.8.0, smoke tests green",
+                        "Deployed 2.8.0 to production. Smoke tests are green on checkout, refunds and webhooks; error rate unchanged after ten minutes.", t,
+                    ),
+                )
+            }
+            DemoStep.FOLLOWUP -> {
+                screenGrowth = 0
+                at(deployId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, tool = "Bash", toolNote = "Update the changelog and tag the release") }
+            }
+            DemoStep.BLOG -> at(blogId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, toolNote = "Draft a post about the 2.8.0 release") }
+        }
+    }
 
     fun useFixture(name: String) {
         val s = ContractJson.decodeState(load(name))
@@ -111,13 +147,24 @@ class FakeTransport(
             CmdOp.PROMPT -> if (ses == null) ko("no session ${cmd.session}") else {
                 replace(ses.copy(state = SessionState.BUSY, question = null, turnStarted = now())); ok("delivered")
             }
-            CmdOp.LAUNCH -> s.projects.firstOrNull { it.path == cmd.arg }?.let { ok("launched ${it.name} (${it.account})") } ?: ko("unknown project")
+            CmdOp.LAUNCH -> s.projects.firstOrNull { it.path == cmd.arg }?.let { p ->
+                // Demo (piano 16/09): la sessione del progetto si mette al lavoro, così la storia arriva sulla sua Scheda.
+                current.value = s.copy(ts = now(), sessions = Order.sessions(s.sessions.map {
+                    if (it.name == p.name) it.copy(state = SessionState.BUSY, question = null, turnStarted = now(), since = now(), toolNote = cmd.text ?: it.toolNote) else it
+                }))
+                CmdResult(cmd.id, true, "launched ${p.name} (${p.account})", now(), session = p.name)
+            } ?: ko("unknown project")
             CmdOp.FOLLOW -> if (ses == null) ko("no session ${cmd.session}") else {
                 current.value = s.copy(sessions = s.sessions.map { it.copy(followed = it.name == ses.name) }); ok("following ${ses.name}")
             }
             CmdOp.UNFOLLOW -> { current.value = s.copy(sessions = s.sessions.map { it.copy(followed = false) }); ok("unfollowed") }
             CmdOp.RESUME -> if (ses?.state == SessionState.GONE) ko("${ses.name} is gone: use launch") else ok("resumed")
-            CmdOp.SCREEN -> if (ses == null) ko("no session ${cmd.session}") else ok("$ pytest -q tests\n42 passed in 3.1s\nEdit app/admin.py\nRead app/seed.py")
+            CmdOp.SCREEN -> if (ses == null) ko("no session ${cmd.session}") else {
+                // Dopo il passo FOLLOWUP il terminale cresce a ogni cattura: nel video le righe arrivano dal vivo.
+                val extra = listOf("Edit CHANGELOG.md", "+ ## 2.8.0 — refund endpoint, webhook retries", "$ git tag v2.8.0", "$ git push --tags", "Tag v2.8.0 pushed")
+                val righe = if (ses.id == deployId && ses.toolNote == "Update the changelog and tag the release") extra.take(screenGrowth++.coerceAtMost(extra.size)) else listOf("Edit app/admin.py", "Read app/seed.py")
+                ok((listOf("$ pytest -q tests", "42 passed in 3.1s") + righe).joinToString("\n"))
+            }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")
             // Contratto 1.9: i testi del relay, di successo e di rifiuto.

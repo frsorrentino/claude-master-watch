@@ -107,4 +107,58 @@ class FakeTransportTest {
         assertTrue(c.all { it.ts >= q.resetH5!! - 5 * 3600 && it.ts <= clock })
         assertNull("senza lettura delle 5 ore niente campioni", tr.demoQuotaSamples()["work"])
     }
+
+    // ---- Storia dei video (piano 16/09): ogni scena parte da uno stato noto, costruito per ruolo e non per nome. ----
+
+    @Test fun calmaNessunaDomanda() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.CALM)
+        val s = tr.state.first()
+        assertTrue(s.sessions.none { it.question != null })
+        assertEquals(SessionState.IDLE, s.sessions.first { it.name == "ledger-api" }.state)
+    }
+
+    @Test fun laDomandaDelDeployArrivaAdesso() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.CALM); tr.demoStep(DemoStep.QUESTION)
+        val q = tr.state.first().sessions.first { it.question != null }
+        assertEquals(SessionState.WAITING, q.state)
+        assertEquals(clock, q.question!!.askedAt)
+    }
+
+    @Test fun iRuoliRestanoDopoUnaRispostaCheRiordina() = runTest {
+        val tr = t()
+        tr.send(Cmd("r1", CmdOp.ANSWER, "ledger-api", "1", clock, "test"))   // ledger-api scende al secondo posto
+        tr.demoStep(DemoStep.DEPLOYED)
+        assertNotNull(tr.state.first().sessions.first { it.name == "ledger-api" }.outcome?.short?.takeIf { it.startsWith("Deployed") })
+    }
+
+    @Test fun deployFattoConEsitoESeguita() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.DEPLOYED)
+        val s = tr.state.first().sessions.first { it.outcome?.short == "Deployed 2.8.0, smoke tests green" }
+        assertEquals(SessionState.IDLE, s.state); assertNull(s.question); assertTrue(s.followed)
+        assertEquals(clock, s.outcome!!.at)
+    }
+
+    @Test fun ilPassoDopoLavoraEIlTerminaleCresce() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.FOLLOWUP)
+        val s = tr.state.first().sessions.first { it.toolNote == "Update the changelog and tag the release" }
+        assertEquals(SessionState.BUSY, s.state)
+        val uno = tr.send(Cmd("s1", CmdOp.SCREEN, s.name, null, clock, "test")).text.lines().size
+        val due = tr.send(Cmd("s2", CmdOp.SCREEN, s.name, null, clock, "test")).text.lines().size
+        assertTrue("il terminale deve crescere: $uno → $due", due > uno)
+    }
+
+    @Test fun ilBlogSiMetteALavorare() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.BLOG)
+        val s = tr.state.first().sessions.first { it.name == "field-notes" }
+        assertEquals(SessionState.BUSY, s.state); assertEquals("Draft a post about the 2.8.0 release", s.toolNote)
+    }
+
+    @Test fun ilLaunchDellaDemoCreaLaSessione() = runTest {
+        val tr = t()
+        val p = tr.state.first().projects.first()
+        val r = tr.send(Cmd("l1", CmdOp.LAUNCH, null, p.path, clock, "test", text = "Draft a post about the 2.8.0 release"))
+        assertTrue(r.ok); assertEquals(p.name, r.session)
+        val s = tr.state.first().sessions.first { it.name == p.name }
+        assertEquals(SessionState.BUSY, s.state); assertEquals("Draft a post about the 2.8.0 release", s.toolNote)
+    }
 }
