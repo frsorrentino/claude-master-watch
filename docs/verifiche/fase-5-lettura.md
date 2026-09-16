@@ -91,3 +91,10 @@ Build `596db7a`, da installare quando l'orologio torna raggiungibile (alle 04:13
 | K3 | Il contesto è ambra oltre il 75 % e rosso oltre il 90 %, altrimenti chiaro | una sessione con contesto alto | |
 | K4 | Su una sessione chiusa, o senza turni, le tre righe non si disegnano: nessun numero inventato | Scheda di una sessione sparita | |
 | K5 | Con il modello cambiato a metà sessione il contesto non compare, mentre modello ed effort sì | sessione dove hai cambiato modello | |
+
+## Riscontri dal polso del 16/09, mattina (build `03d6369`, installata 08:03)
+
+| # | Cosa | Causa | Stato |
+|---|------|-------|-------|
+| M1 | La Quota scorre lentissima con la corona | Mia regressione della notte: `QuotaScreen` leggeva `listState.layoutInfo` durante il disegno per sapere quali card fossero nell'inquadratura, e così ridisegnava tutta la schermata a ogni scatto | Corretto: la lettura è tolta, in una lista pigra la card si compone quando sta per entrare |
+| M2 | Il riquadro di contesto mostra solo la quota | Il relay manda `model.label` null e `context` null su tutte le sessioni (stato delle 08:09:04); l'app mostrava il modello solo con l'etichetta | In corso: l'app ricava il nome breve dall'id (`ModelText`); `label` e `context` vuoti segnalati a claude-master |
