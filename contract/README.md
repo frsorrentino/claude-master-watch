@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.7)
+# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.11)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -75,6 +75,19 @@ Contratto 1.10 (15/09/2026, solo aggiunte): `answer` accetta come arg anche `tex
 testo, a capo → spazi) e `chat` («Chat about this»); risultato `answered {n}. {testo}` o `answered {n}. Chat about this`;
 `text:` vuoto → «empty text», altri arg non numerici → «answer <arg>: expected a number, text:<text> or chat». Dopo
 `chat` la sessione rifiuta la domanda e aspetta un messaggio. `v` resta 1.
+
+Contratto 1.11 (16/09/2026, solo aggiunte, richiesta dell'app approvata da Franz alle 00:26): ogni sessione porta
+`model`, `effort` e `context`, letti dalla sua trascrizione. `model` è `{"id": "claude-opus-5[1m]", "label": "Opus 5"}`:
+l'id completo come lo scrive Claude Code (il suffisso `[1m]` dice la finestra da 1M) e il nome breve, senza la
+parentesi. `effort` è il livello dell'ultimo turno ("low", "medium", "high", "xhigh", "max"). `context` è la
+percentuale intera 0-100 di finestra consumata: i token dell'ultimo turno (input + cache letta + cache scritta)
+sulla finestra del modello (1M col suffisso `[1m]`, altrimenti 200k).
+
+I tre campi ci sono sempre; valgono null quando non si leggono: nessuna trascrizione (per esempio una sessione
+`gone`), o nessun turno dell'assistente. In più `context` è null quando il modello dell'ultimo turno non coincide con
+quello della voce di sistema — un cambio di modello a metà sessione: lì la finestra non è certa e il numero NON si
+stima. Le op `model` ed `effort` dal polso non fanno parte di questa versione: arrivano con la 1.12, insieme a
+`choices`. `v` resta 1.
 
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di

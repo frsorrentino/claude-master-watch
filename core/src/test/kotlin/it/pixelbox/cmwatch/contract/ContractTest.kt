@@ -105,6 +105,22 @@ class ContractTest {
         assertTrue(ContractJson.encode(reopen).contains("\"op\":\"reopen\""))
     }
 
+    // Contratto 1.11 (16/09): ogni sessione porta modello, effort e contesto, letti dalla sua trascrizione. I campi ci
+    // sono sempre e valgono null quando non si leggono: una sessione sparita non ha trascrizione, quindi niente numeri.
+    @Test fun sessionsCarryModelEffortAndContext() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val ledger = s.sessions.single { it.name == "ledger-api" }
+        assertEquals("claude-opus-5[1m]", ledger.model!!.id)
+        assertEquals("Opus 5", ledger.model!!.label)
+        assertEquals("high", ledger.effort)
+        assertEquals(62, ledger.context)
+        val atlas = s.sessions.single { it.name == "atlas-shop" }
+        assertEquals("Sonnet 5", atlas.model!!.label)
+        assertEquals(18, atlas.context)
+        val gone = s.sessions.single { it.state == SessionState.GONE }
+        assertNull(gone.model); assertNull(gone.effort); assertNull(gone.context)
+    }
+
     @Test fun unknownKeysAreIgnored() {
         val s = ContractJson.decodeState(Fixtures.stateIdle.replaceFirst("\"host\"", "\"extra\": 1, \"host\""))
         assertEquals("crostini-demo", s.host)

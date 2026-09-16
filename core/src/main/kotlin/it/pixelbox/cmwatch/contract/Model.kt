@@ -58,7 +58,18 @@ enum class CmdOp {
     val icon: String? = null,
     /** Contratto 1.8: «personal» o «work»; assente con un relay precedente (si ripiega sul nome «personale»). */
     @SerialName("account_kind") val accountKind: String? = null,
+    /**
+     * Contratto 1.11: modello, effort e contesto della sessione, letti dalla sua trascrizione. Valgono null quando non
+     * si leggono: nessuna trascrizione (una sessione sparita), nessun turno dell'assistente, e per `context` anche un
+     * cambio di modello a metà sessione, dove la finestra non è certa e il PC non stima.
+     */
+    val model: Model? = null,
+    val effort: String? = null,
+    val context: Int? = null,
 )
+
+/** Il modello come lo scrive Claude Code: `id` completo (il suffisso `[1m]` dice la finestra da 1M) e nome breve. */
+@Serializable data class Model(val id: String, val label: String)
 
 @Serializable data class QuotaAccount(
     val h5: Int? = null, val w7: Int? = null,
