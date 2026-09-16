@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -111,8 +115,29 @@ fun SessionScreen(
             modifier = Modifier.fillMaxSize().bottomGlow(CmColors.busy, visible = s?.state == SessionState.BUSY),
         ) {
             if (s == null) {
-                item { Text(stringResource(R.string.card_missing), color = CmColors.text2, modifier = Modifier.morph(this, spec)) }
-                item { WideButton(stringResource(R.string.sessions_title), onClick = onBackToSessions, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) }
+                // Stato vuoto centrato, con il solo tasto di bordo «Sessioni»: prima c'erano due bottoni pieni uguali e
+                // il testo schiacciato contro il bordo in alto a sinistra (Franz, 16/09 20:01).
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().morph(this, spec).padding(top = 16.dp),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_state_gone), contentDescription = null,
+                            tint = CmColors.goneDim, modifier = Modifier.size(32.dp),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.card_missing), style = MaterialTheme.typography.titleMedium,
+                            color = CmColors.text, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            stringResource(R.string.card_missing_detail, name), style = MaterialTheme.typography.bodySmall,
+                            color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
                 return@TransformingLazyColumn
             }
             (snapshot.freshness as? Freshness.Stale)?.let { st -> item { StaleChip(st.minutes, Modifier.morph(this, spec)) } }

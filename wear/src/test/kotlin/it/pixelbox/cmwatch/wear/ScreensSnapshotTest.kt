@@ -45,6 +45,8 @@ class ScreensSnapshotTest {
 
     @Test fun sessions() = paparazzi.snapshot { CmTheme { SessionsScreen(snap, now, onOpen = {}, onSettings = {}) } }
     @Test fun card() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "atlas-shop", now, {}, {}, {}, {}, {}) } }
+    // Scheda di una sessione sparita dallo stato del PC: stato vuoto centrato, un solo tasto (16/09 20:01).
+    @Test fun cardMissing() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "old-session", now, {}, {}, {}, {}, {}) } }
     @Test fun question() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun stale() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
     @Test fun pairing() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, {}, {}) } }

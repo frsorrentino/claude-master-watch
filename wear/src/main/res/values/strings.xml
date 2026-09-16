@@ -15,6 +15,7 @@
     <string name="card_follow">Segui</string>
     <string name="card_unfollow">Smetti di seguire</string>
     <string name="card_missing">Sessione non più presente</string>
+    <string name="card_missing_detail">%1$s non è più tra le sessioni del PC.</string>
     <string name="write_hint">Messaggio per %1$s</string>
     <string name="question_hold">Tieni premuto per confermare</string>
     <string name="question_write">Scrivi</string>
