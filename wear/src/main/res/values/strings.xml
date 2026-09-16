@@ -157,6 +157,11 @@
     <string name="tile_edge_questions">%1$d domande</string>
     <string name="tile_edge_active">%1$d attive</string>
     <!-- Conferma animata dopo un'azione (A6, 15/09) -->
+    <!-- Riquadro di contesto nella Scheda (contratto 1.11) -->
+    <string name="card_context">Contesto</string>
+    <string name="card_model">Modello</string>
+    <string name="card_effort">Effort</string>
+    <string name="card_context_pct">%1$d %%</string>
     <string name="confirm_done">Fatto</string>
     <string name="confirm_follow">Ti avviso</string>
     <string name="confirm_unfollow">Non ti avviso</string>

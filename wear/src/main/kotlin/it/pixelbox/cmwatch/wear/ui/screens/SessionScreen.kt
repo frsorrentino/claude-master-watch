@@ -165,7 +165,7 @@ fun SessionScreen(
             // l'anello concentrico di 5 ore e settimana. Modello, effort e contesto entrano qui con il contratto 1.11.
             item {
                 it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
-                    snapshot.state, s.account, SurfaceTransformation(spec),
+                    snapshot.state, s, SurfaceTransformation(spec),
                     Modifier.transformedHeight(this, spec),
                     // Con le animazioni spente l'arco si disegna subito al suo valore: è il caso di Paparazzi, dove il
                     // primo fotogramma lo coglierebbe ancora a zero (16/09 03:44), e dell'ambient.

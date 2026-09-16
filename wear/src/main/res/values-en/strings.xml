@@ -158,6 +158,11 @@
     <string name="tile_edge_questions">%1$d questions</string>
     <string name="tile_edge_active">%1$d active</string>
     <!-- Animated confirmation after an action (A6, 15/09) -->
+    <!-- Context box on the session card (contract 1.11) -->
+    <string name="card_context">Context</string>
+    <string name="card_model">Model</string>
+    <string name="card_effort">Effort</string>
+    <string name="card_context_pct">%1$d %%</string>
     <string name="confirm_done">Done</string>
     <string name="confirm_follow">Alerts on</string>
     <string name="confirm_unfollow">Alerts off</string>

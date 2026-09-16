@@ -1,32 +1,68 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.BriefCards
+import it.pixelbox.cmwatch.wear.ui.theme.CmColors
 
 /**
- * Il riquadro di contesto nella Scheda (Franz, 16/09 00:14 e 03:06): la quota dell'account di quella sessione, con
- * l'anello concentrico delle 5 ore e della settimana, così mentre leggi cosa sta facendo vedi anche quanto margine hai.
- * Modello, effort e contesto della sessione entrano qui appena arriva il contratto 1.11: finché il PC non li manda non
- * si disegnano, perché un dato inventato su questa schermata varrebbe meno di niente.
+ * Il riquadro di contesto nella Scheda (Franz, 16/09 00:14): la quota dell'account di questa sessione, con l'anello
+ * concentrico delle 5 ore e della settimana, e sotto quanto contesto ha consumato, con quale modello e con quale
+ * effort (contratto 1.11). Quello che il PC non manda non si disegna: niente numeri inventati su questa schermata.
  */
 @Composable
 fun SessionQuotaCard(
     state: State?,
-    account: String,
+    session: Session,
     transformation: SurfaceTransformation?,
     modifier: Modifier = Modifier,
     animate: Boolean = true,
     visible: Boolean = true,
 ) {
     val card = BriefCards.quota(state, labels(), locale = LocalConfiguration.current.locales[0])
-        .firstOrNull { it.key == "quota-$account" } ?: return
-    BriefCard(card, transformation, modifier, animate = animate, visible = visible)
+        .firstOrNull { it.key == "quota-${session.account}" }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        card?.let { BriefCard(it, transformation, animate = animate, visible = visible) }
+        val righe = listOfNotNull(
+            session.context?.let { stringResource(R.string.card_context) to stringResource(R.string.card_context_pct, it) },
+            session.model?.let { stringResource(R.string.card_model) to it.label },
+            session.effort?.let { stringResource(R.string.card_effort) to it },
+        )
+        righe.forEach { (etichetta, valore) ->
+            Row(
+                Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(etichetta, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
+                Text(
+                    valore, style = MaterialTheme.typography.bodySmall,
+                    // Il contesto oltre tre quarti è da guardare, oltre il 90 % è il momento di chiudere il turno.
+                    color = when {
+                        etichetta != stringResource(R.string.card_context) -> CmColors.text
+                        (session.context ?: 0) >= 90 -> CmColors.gone
+                        (session.context ?: 0) >= 75 -> CmColors.waiting
+                        else -> CmColors.text
+                    },
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
 }
 
 @Composable
