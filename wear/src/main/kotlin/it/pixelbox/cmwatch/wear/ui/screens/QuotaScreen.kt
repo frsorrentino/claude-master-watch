@@ -100,11 +100,12 @@ fun QuotaScreen(
                 BriefCard(quota[i], SurfaceTransformation(spec), Modifier.transformedHeight(this, spec), animate = animate)
             }
             items(ritmi.size) { i ->
-                val (q, pace, _) = ritmi[i]
+                val (q, pace, account) = ritmi[i]
                 PaceCard(
                     pace = pace, current = q.h5!!, resetAt = q.resetH5!!, now = now,
                     startLabel = oraReset.format(Instant.ofEpochSecond(q.resetH5!! - QuotaHistory.WINDOW_S).atZone(zone)),
                     resetLabel = oraReset.format(Instant.ofEpochSecond(q.resetH5!!).atZone(zone)),
+                    shape = if (it.pixelbox.cmwatch.rules.Accounts.isPersonalQuota(account, q)) BriefCards.Shape.CIRCLE else BriefCards.Shape.SQUARE,
                     transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec), animate = animate,
                 )
             }

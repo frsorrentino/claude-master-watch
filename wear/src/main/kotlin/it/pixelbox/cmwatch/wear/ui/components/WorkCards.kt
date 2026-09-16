@@ -62,6 +62,8 @@ private fun WorkShell(
     modifier: Modifier,
     labelColor: Color = CmColors.briefLabel,
     onClick: () -> Unit = {},
+    /** Il segno dell'account dopo il titolo, come nella card della quota. */
+    shape: BriefCards.Shape? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
@@ -72,7 +74,10 @@ private fun WorkShell(
         contentPadding = PaddingValues(start = 15.dp, top = 13.dp, end = 15.dp, bottom = 13.dp),
         transformation = transformation,
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = labelColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = labelColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            shape?.let { Spacer(Modifier.width(6.dp)); AccountMark(it, labelColor) }
+        }
         content()
     }
 }
@@ -298,6 +303,8 @@ fun PaceCard(
     now: Long,
     startLabel: String,
     resetLabel: String,
+    /** Di quale account è il ritmo: con due account le due card «Ritmo 5 ore» si distinguono dal segno (16/09 15:26). */
+    shape: BriefCards.Shape?,
     transformation: SurfaceTransformation?,
     modifier: Modifier = Modifier,
     animate: Boolean = true,
@@ -312,7 +319,7 @@ fun PaceCard(
     val punti = pace.points
     // Almeno due campioni a dieci minuti l'uno dall'altro: sotto, la linea è un puntino e la proiezione un'invenzione.
     val grafico = punti.size >= 2 && punti.last().ts - punti.first().ts >= 600
-    WorkShell(stringResource(R.string.work_pace), transformation, modifier) {
+    WorkShell(stringResource(R.string.work_pace), transformation, modifier, shape = shape) {
         if (proiettato != null && grafico) {
             BigNumber(proiettato.toString(), stringResource(R.string.work_pace_at, resetLabel), animate, color = ink)
             Text(stringResource(R.string.work_pace_projection), style = MaterialTheme.typography.bodySmall, color = CmColors.briefSecondary, maxLines = 1)
