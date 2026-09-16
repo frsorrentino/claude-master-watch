@@ -3,27 +3,33 @@ package it.pixelbox.cmwatch.wear.push
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
+import androidx.core.content.ContextCompat
+import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.SessionState
 
-/** Glifo di stato colorato (❓ ambra, ▶ blu, ✓ verde, ✗ rosso) come bitmap: icona grande e Person della conversazione. */
+/**
+ * L'icona grande delle notifiche: cerchio scuro con l'icona dello stato nel suo colore. Prima era un carattere («?», «✗»)
+ * nero su cerchio pieno, che sul polso usciva grossolano (Franz, 16/09 16:30). I significati restano quelli di Telegram:
+ * fumetto ambra = aspetta una risposta, triangolo azzurro = lavora, spunta verde = esito, stop rosso spento = chiusa.
+ */
 object Glyphs {
     fun state(ctx: Context, state: SessionState?, sizePx: Int = 96): Bitmap {
-        val (color, text) = when (state) {
-            SessionState.WAITING -> 0xFFFFB020.toInt() to "?"
-            SessionState.BUSY, SessionState.AWAITING -> 0xFF7FA1FF.toInt() to "▶"
-            SessionState.IDLE -> 0xFF34C759.toInt() to "✓"
-            SessionState.GONE -> 0xFFFF453A.toInt() to "✗"
-            null -> 0xFF4C7DFF.toInt() to "◔"
+        val (res, color) = when (state) {
+            SessionState.WAITING -> R.drawable.ic_state_question to 0xFFFFB020.toInt()
+            SessionState.BUSY, SessionState.AWAITING -> R.drawable.ic_state_busy to 0xFF8BB4F7.toInt()
+            SessionState.IDLE -> R.drawable.ic_state_done to 0xFF65C581.toInt()
+            SessionState.GONE -> R.drawable.ic_state_gone to 0xFFC2554D.toInt()
+            null -> R.drawable.ic_app_mono to 0xFF8BB4F7.toInt()
         }
         val bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
-        c.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, p)
-        p.color = Color.BLACK; p.textSize = sizePx * 0.58f; p.textAlign = Paint.Align.CENTER; p.isFakeBoldText = true
-        val y = sizePx / 2f - (p.descent() + p.ascent()) / 2f
-        c.drawText(text, sizePx / 2f, y, p)
+        c.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = 0xFF262A32.toInt() })
+        val icon = ContextCompat.getDrawable(ctx, res)?.mutate() ?: return bmp
+        icon.setTint(color)
+        val pad = (sizePx * 0.22f).toInt()
+        icon.setBounds(pad, pad, sizePx - pad, sizePx - pad)
+        icon.draw(c)
         return bmp
     }
 }

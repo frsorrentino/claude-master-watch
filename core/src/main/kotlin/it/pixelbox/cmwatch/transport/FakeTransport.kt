@@ -13,7 +13,7 @@ class FakeTransport(
     private val now: () -> Long = { System.currentTimeMillis() / 1000 },
 ) : Transport {
     private val current = MutableStateFlow(rebase(ContractJson.decodeState(load("state-1-question"))))
-    private val eventList = ContractJson.decodeEvents(load("events-sample")).sortedByDescending { it.ts }
+    private val eventList = demoEvents(ContractJson.decodeEvents(load("events-sample")), ContractJson.decodeState(load("state-1-question")))
     private val results = HashMap<String, CmdResult>()
 
     override val state: Flow<State> get() = current
@@ -31,7 +31,47 @@ class FakeTransport(
             ses.copy(since = ses.since + d, turnStarted = sh(ses.turnStarted),
                 question = ses.question?.let { it.copy(askedAt = it.askedAt + d) },
                 outcome = ses.outcome?.let { it.copy(at = it.at + d) })
-        })
+        },
+            // Demo per i video (16/09 16:05): la finestra delle 5 ore è in corso da tre ore, così il ritmo ha una linea e una
+            // proiezione; la settimana e l'ultimo uso dei progetti seguono lo stesso spostamento delle sessioni.
+            quota = s.quota.mapValues { (_, q) ->
+                q.copy(
+                    resetH5 = if (q.h5 != null && q.resetH5 != null) now() + DEMO_WINDOW_LEFT_S else sh(q.resetH5),
+                    resetW7 = sh(q.resetW7),
+                )
+            },
+            projects = s.projects.map { it.copy(lastUsed = sh(it.lastUsed)) },
+        )
+    }
+
+    /**
+     * I campioni della quota delle 5 ore che l'orologio avrebbe registrato nelle ultime tre ore: salgono fino alla quota di
+     * adesso. Servono solo alla demo, dove lo stato non cambia mai e il ritmo resterebbe senza linea.
+     */
+    fun demoQuotaSamples(): Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>> {
+        val s = current.value
+        return s.quota.filter { (_, q) -> q.h5 != null && q.resetH5 != null }.mapValues { (_, q) ->
+            val fine = now()
+            val inizio = maxOf(q.resetH5!! - it.pixelbox.cmwatch.rules.QuotaHistory.WINDOW_S, fine - 3 * 3600) + 600
+            val passi = 9
+            (0..passi).map { i ->
+                val ts = inizio + (fine - inizio) * i / passi
+                it.pixelbox.cmwatch.rules.QuotaHistory.Sample(ts, (q.h5!! * (i + 1) / (passi + 1)))
+            }
+        }
+    }
+
+    /** Gli eventi della fixture portati ad adesso, più un giro di eventi sparsi lungo la giornata per le colonne di «Oggi». */
+    private fun demoEvents(fixture: List<Event>, base: State): List<Event> {
+        // Il più recente della fixture cade adesso: gli eventi restano tutti, con le stesse distanze, e nessuno nel futuro.
+        val d = now() - (fixture.maxOfOrNull { it.ts } ?: base.ts)
+        val nomi = base.sessions.map { it.name }
+        val tipi = listOf(EventKind.OUTCOME, EventKind.LAUNCHED, EventKind.ANSWERED, EventKind.QUESTION)
+        val sparsi = (1..14).map { k ->
+            val nome = nomi[k % nomi.size]
+            Event(key = "demo-$k", kind = tipi[k % tipi.size], session = nome, ts = now() - k * 47L * 60, title = nome)
+        }
+        return (fixture.map { it.copy(ts = it.ts + d) } + sparsi).sortedByDescending { it.ts }
     }
 
     override suspend fun fetchState(): State = current.value
@@ -103,3 +143,5 @@ class FakeTransport(
         return PairingInfo(uid = "fake-$deviceName", host = current.value.host)
     }
 }
+
+private const val DEMO_WINDOW_LEFT_S = 2L * 3600

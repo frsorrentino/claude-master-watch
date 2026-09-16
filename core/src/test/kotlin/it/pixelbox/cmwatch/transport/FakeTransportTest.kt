@@ -65,11 +65,46 @@ class FakeTransportTest {
 
     @Test fun eventsComeFromFixtureNewestFirst() = runTest {
         val ev = t().events.first()
-        assertEquals(6, ev.size); assertTrue(ev[0].ts >= ev[1].ts)
+        // I 6 della fixture ci sono tutti, più i 14 sparsi della demo (16/09 16:05).
+        assertEquals(6 + 14, ev.size); assertTrue(ev.zipWithNext().all { (a, b) -> a.ts >= b.ts })
+        assertEquals(6, ev.count { !it.key.startsWith("demo-") })
     }
 
     @Test fun pairAcceptsAnySixDigits() = runTest {
         assertEquals("crostini-demo", t().pair("123456", "watch").host)
         assertThrows(TransportException.Network::class.java) { runBlocking { t().pair("12", "watch") } }
+    }
+
+    // ---- Demo per i video promozionali (Franz, 16/09 16:05): i dati finti devono sembrare di adesso. ----
+
+    /** La finestra delle 5 ore è in corso, a due ore dalla fine: così il ritmo ha una linea e una proiezione da mostrare. */
+    @Test fun laFinestraDelleCinqueOreEInCorso() = runTest {
+        val q = t().state.first().quota.getValue("personal")
+        assertEquals(clock + 2 * 3600, q.resetH5)
+        assertTrue("la settimana riparte nel futuro", q.resetW7!! > clock)
+    }
+
+    @Test fun iProgettiSonoStatiUsatiDiRecente() = runTest {
+        val p = t().state.first().projects.single { it.name == "atlas-shop" }
+        assertEquals(1789210700L + 30, p.lastUsed)
+    }
+
+    /** «Oggi» ha colonne in più ore della giornata, mai nel futuro. */
+    @Test fun gliEventiRiempionoLaGiornata() = runTest {
+        val ev = t().events.first()
+        assertTrue(ev.all { it.ts <= clock })
+        assertTrue("almeno cinque ore diverse", ev.map { (clock - it.ts) / 3600 }.toSet().size >= 5)
+    }
+
+    /** I campioni del ritmo: dentro la finestra, crescenti, e l'ultimo è la quota di adesso. */
+    @Test fun iCampioniDelRitmoSalgonoFinoAllaQuotaDiAdesso() = runTest {
+        val tr = t()
+        val q = tr.state.first().quota.getValue("personal")
+        val c = tr.demoQuotaSamples().getValue("personal")
+        assertTrue(c.size >= 4)
+        assertEquals(q.h5, c.last().pct)
+        assertTrue(c.zipWithNext().all { (a, b) -> a.ts < b.ts && a.pct <= b.pct })
+        assertTrue(c.all { it.ts >= q.resetH5!! - 5 * 3600 && it.ts <= clock })
+        assertNull("senza lettura delle 5 ore niente campioni", tr.demoQuotaSamples()["work"])
     }
 }

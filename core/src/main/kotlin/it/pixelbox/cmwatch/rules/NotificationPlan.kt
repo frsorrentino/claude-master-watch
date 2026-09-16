@@ -22,6 +22,8 @@ object NotificationPlan {
         val sent: String, val confirmed: String, val notDelivered: String, val sessions: String,
         /** «Sessione chiusa. Per riaprirla tocca Riprendi.»: la notifica di chiusura lo dice a parole (Franz, 15/09 17:27). */
         val goneText: String = "",
+        /** Lo stato a parole nel riepilogo, al posto degli emoji (Franz, 16/09 16:30): «in attesa», «al lavoro», «ferma», «chiusa». */
+        val waiting: String = "", val busy: String = "", val idle: String = "", val gone: String = "",
     )
 
     sealed class Act {
@@ -58,8 +60,10 @@ object NotificationPlan {
             add(Act.Open)
         }
         return Plan(
-            session = s.name, title = "❓ ${s.name}", person = "${dot(s)} ${s.name}",
-            messages = history.map { "❓ ${it.question} → ${it.answer}" } + q.text, bigText = null,
+            // Niente emoji nel titolo né nelle righe (Franz, 16/09 16:30: «? e x un po' grossolani»): lo stato lo dice
+            // l'icona grande, il fumetto ambra.
+            session = s.name, title = s.name, person = "${dot(s)} ${s.name}",
+            messages = history.map { "${it.question} → ${it.answer}" } + q.text, bigText = null,
             actions = actions, choices = if (high) emptyList() else q.options.map { optionLabel(it.n, it.label) },
             freeForm = !high, channel = CH_QUESTIONS, whenS = q.askedAt, chronometer = true, subText = s.account,
             autoCancel = false, timeoutMs = null, progress = null, accent = SessionState.WAITING,
@@ -72,14 +76,14 @@ object NotificationPlan {
      */
     fun readLabel(reading: Boolean, l: Labels) = if (reading) l.stop else l.read
 
-    fun sentLine(n: Int, label: String, l: Labels) = "✓ $n · $label ${l.sent}"
-    fun confirmedLine(l: Labels) = "✓ ${l.confirmed}"
-    fun failedLine(l: Labels) = "✗ ${l.notDelivered} · ${l.retry}"
+    fun sentLine(n: Int, label: String, l: Labels) = "$n · $label ${l.sent}"
+    fun confirmedLine(l: Labels) = l.confirmed
+    fun failedLine(l: Labels) = "${l.notDelivered} · ${l.retry}"
 
     fun outcome(s: Session, l: Labels): Plan {
         val o = s.outcome ?: error("no outcome")
         return Plan(
-            session = s.name, title = "✓ ${s.name}", person = null, messages = listOf(o.short), bigText = o.full,
+            session = s.name, title = s.name, person = null, messages = listOf(o.short), bigText = o.full,
             actions = listOf(Act.Read, Act.Write, Act.Open), choices = emptyList(), freeForm = true, channel = CH_OUTCOMES,
             whenS = o.at, chronometer = false, subText = s.account, autoCancel = true, timeoutMs = 12 * 3600_000L,
             progress = null, accent = SessionState.IDLE,
@@ -87,7 +91,7 @@ object NotificationPlan {
     }
 
     fun gone(name: String, account: String?, l: Labels): Plan = Plan(
-        session = name, title = "✗ $name", person = null,
+        session = name, title = name, person = null,
         messages = listOfNotNull(l.goneText.ifEmpty { null }), bigText = l.goneText.ifEmpty { null },
         actions = listOf(Act.Resume), choices = emptyList(), freeForm = false, channel = CH_GONE,
         whenS = null, chronometer = false, subText = account, autoCancel = true, timeoutMs = null, progress = null, accent = SessionState.GONE,
@@ -107,10 +111,10 @@ object NotificationPlan {
         val q = state.sessions.count { it.question != null }
         val title = "${state.sessions.size} ${l.sessions}" + if (q > 0) " · $q?" else ""
         val rows = state.sessions.map { s ->
-            val icon = if (s.question != null) "❓" else when (s.state) {
-                SessionState.WAITING -> "❓"; SessionState.BUSY, SessionState.AWAITING -> "▶"; SessionState.IDLE -> "✓"; SessionState.GONE -> "✗"
+            val stato = if (s.question != null) l.waiting else when (s.state) {
+                SessionState.WAITING -> l.waiting; SessionState.BUSY, SessionState.AWAITING -> l.busy; SessionState.IDLE -> l.idle; SessionState.GONE -> l.gone
             }
-            "$icon ${s.name}"
+            if (stato.isEmpty()) s.name else "${s.name} · $stato"
         }
         return Summary(title, rows)
     }

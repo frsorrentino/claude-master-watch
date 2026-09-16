@@ -69,6 +69,8 @@ class Notifier(private val ctx: Context) {
         read = ctx.getString(R.string.notif_read), stop = ctx.getString(R.string.notif_stop), write = ctx.getString(R.string.card_write), resume = ctx.getString(R.string.notif_resume),
         sent = ctx.getString(R.string.notif_sent), confirmed = ctx.getString(R.string.notif_confirmed), notDelivered = ctx.getString(R.string.question_not_delivered),
         sessions = ctx.getString(R.string.sessions_label), goneText = ctx.getString(R.string.notif_gone_text),
+        waiting = ctx.getString(R.string.notif_state_waiting), busy = ctx.getString(R.string.notif_state_busy),
+        idle = ctx.getString(R.string.notif_state_idle), gone = ctx.getString(R.string.notif_state_gone),
     )
 
     fun ensureChannels() {
@@ -150,7 +152,7 @@ class Notifier(private val ctx: Context) {
         val them = person(plan.person ?: s.name, s, SessionState.WAITING)
         val style = NotificationCompat.MessagingStyle(me).setConversationTitle(plan.title)
         val hist = history[s.name].orEmpty()
-        hist.forEach { style.addMessage("❓ ${it.question}", it.at * 1000, them).addMessage(it.answer, it.at * 1000 + 1, me) }
+        hist.forEach { style.addMessage(it.question, it.at * 1000, them).addMessage(it.answer, it.at * 1000 + 1, me) }
         style.addMessage(q.text, q.askedAt * 1000, them)
         val b = base(plan).setLargeIcon(badge(s)).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentText(q.text)
@@ -218,7 +220,7 @@ class Notifier(private val ctx: Context) {
 
     fun gone(name: String, account: String?) {
         val plan = NotificationPlan.gone(name, account, labels)
-        // Oltre al titolo «✗ nome», la chiusura detta a parole con l'azione per riaprirla (Franz, 15/09 17:27).
+        // Oltre al titolo con il nome e l'icona di chiusura, la chiusura detta a parole con l'azione per riaprirla (Franz, 15/09 17:27).
         post(id(name), base(plan).setContentText(plan.bigText).setStyle(NotificationCompat.BigTextStyle().bigText(plan.bigText))
             .setContentIntent(open("cmwatch://sessions", id(name)))
             .addAction(R.drawable.ic_play, labels.resume, broadcast(ReplyReceiver.ACTION_RESUME, name, id(name) * 10 + 5)))

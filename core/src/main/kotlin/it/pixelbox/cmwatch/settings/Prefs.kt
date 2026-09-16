@@ -27,6 +27,8 @@ data class Settings(
     val hapticGone: Boolean = true,
     val complicationAccount: String = "personale",
     val demoFixture: String = "state-1-question",
+    /** Demo per i video (16/09 16:05): dati finti anche da accoppiati. Si accende e spegne solo via adb, extra `demo`. */
+    val demoMode: Boolean = false,
     val seenQuestions: Set<String> = emptySet(),
 )
 
@@ -41,6 +43,7 @@ class Prefs(private val ctx: Context) {
         val hapticQuestion = booleanPreferencesKey("hapticQuestion"); val hapticOutcome = booleanPreferencesKey("hapticOutcome")
         val hapticGone = booleanPreferencesKey("hapticGone"); val complicationAccount = stringPreferencesKey("complicationAccount")
         val demoFixture = stringPreferencesKey("demoFixture")
+        val demoMode = booleanPreferencesKey("demoMode")
         val seenQuestions = stringSetPreferencesKey("seenQuestions")
     }
 
@@ -55,6 +58,7 @@ class Prefs(private val ctx: Context) {
             hapticGone = p[K.hapticGone] ?: d.hapticGone,
             complicationAccount = p[K.complicationAccount] ?: d.complicationAccount,
             demoFixture = p[K.demoFixture] ?: d.demoFixture,
+            demoMode = p[K.demoMode] ?: d.demoMode,
             seenQuestions = p[K.seenQuestions] ?: d.seenQuestions,
         )
     }
@@ -74,6 +78,7 @@ class Prefs(private val ctx: Context) {
             p[K.hapticQuestion] = s.hapticQuestion; p[K.hapticOutcome] = s.hapticOutcome; p[K.hapticGone] = s.hapticGone
             p[K.complicationAccount] = s.complicationAccount
             p[K.demoFixture] = s.demoFixture
+            p[K.demoMode] = s.demoMode
             p[K.seenQuestions] = s.seenQuestions.toList().takeLast(50).toSet()
         }
     }

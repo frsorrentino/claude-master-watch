@@ -44,7 +44,7 @@ class RepoTest {
         assertEquals(4, repo.snapshot.value.state!!.sessions.size)     // poi dal transport
         assertEquals(Freshness.Fresh, repo.snapshot.value.freshness)
         assertEquals(4, store.loadState()!!.first.sessions.size)
-        assertEquals(6, repo.events.value.size)
+        assertEquals(6 + 14, repo.events.value.size)                  // i 6 della fixture e i 14 sparsi della demo (16/09)
     }
 
     /** Un transport il cui stato si cambia a mano, per mandare al Repo una sequenza di stati. */

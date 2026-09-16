@@ -213,4 +213,9 @@
     <string name="launch_with_message">Write the first message</string>
     <string name="launch_without_message">Start without a message</string>
     <string name="launch_hint">First message for %1$s</string>
+    <!-- Stato a parole nel riepilogo delle notifiche, al posto degli emoji (16/09 16:32) -->
+    <string name="notif_state_waiting">waiting</string>
+    <string name="notif_state_busy">working</string>
+    <string name="notif_state_idle">idle</string>
+    <string name="notif_state_gone">closed</string>
 </resources>

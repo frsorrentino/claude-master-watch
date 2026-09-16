@@ -10,12 +10,14 @@ import org.junit.Test
 
 class NotificationPlanTest {
     private val s = ContractJson.decodeState(Fixtures.stateQuestion)
-    private val l = NotificationPlan.Labels(open = "Apri", reply = "Rispondi", retry = "Riprova", read = "Leggi", stop = "Ferma", write = "Scrivi", resume = "Riprendi", sent = "inviato", confirmed = "confermato", notDelivered = "non consegnato", sessions = "sessioni")
+    private val l = NotificationPlan.Labels(open = "Apri", reply = "Rispondi", retry = "Riprova", read = "Leggi", stop = "Ferma", write = "Scrivi", resume = "Riprendi", sent = "inviato", confirmed = "confermato", notDelivered = "non consegnato", sessions = "sessioni",
+        waiting = "in attesa", busy = "al lavoro", idle = "ferma", gone = "chiusa")
     private val ledger = s.sessions[0]
 
     @Test fun questionMediumHasTwoDirectActionsReplyWithChoicesAndOpen() {
         val p = NotificationPlan.question(ledger, l, history = emptyList())
-        assertEquals("❓ ledger-api", p.title)
+        // Niente emoji nel titolo (Franz, 16/09 16:30: «? e x un po' grossolani»): lo stato lo dice l'icona grande.
+        assertEquals("ledger-api", p.title)
         assertEquals("🔴 ledger-api", p.person)
         assertEquals("Deploy ready, waiting for the client's ok. Deploy now?", p.messages.last())
         assertEquals(listOf(Act.Option(1, "1 yes"), Act.Option(2, "2 no"), Act.Reply, Act.Open), p.actions)
@@ -34,13 +36,13 @@ class NotificationPlanTest {
     @Test fun historyStaysInTheThread() {
         val p = NotificationPlan.question(ledger, l, history = listOf(NotificationPlan.Qa("Run tests?", "1 yes", 1789200000L)))
         assertEquals(2, p.messages.size)
-        assertEquals("❓ Run tests? → 1 yes", p.messages[0])
+        assertEquals("Run tests? → 1 yes", p.messages[0])
     }
 
     @Test fun afterTapTheSameNotificationSaysSentThenConfirmed() {
-        assertEquals("✓ 1 · yes inviato", NotificationPlan.sentLine(1, "yes", l))
-        assertEquals("✓ confermato", NotificationPlan.confirmedLine(l))
-        assertEquals("✗ non consegnato · Riprova", NotificationPlan.failedLine(l))
+        assertEquals("1 · yes inviato", NotificationPlan.sentLine(1, "yes", l))
+        assertEquals("confermato", NotificationPlan.confirmedLine(l))
+        assertEquals("non consegnato · Riprova", NotificationPlan.failedLine(l))
     }
 
     // Mentre legge, il «Leggi» della notifica che ha fatto partire la voce dice «Ferma» (Franz, 14/09 16:08).
@@ -51,11 +53,11 @@ class NotificationPlanTest {
 
     @Test fun outcomeGoneQuota() {
         val o = NotificationPlan.outcome(s.sessions[1], l)
-        assertEquals("✓ atlas-shop", o.title); assertEquals("Migrations 008-011 applied, tests green", o.messages.first())
+        assertEquals("atlas-shop", o.title); assertEquals("Migrations 008-011 applied, tests green", o.messages.first())
         assertEquals("Esito: migrations 008-011 applied, tests green.\nThe test seeds and the admin page are still to review.", o.bigText)
         assertEquals(listOf(Act.Read, Act.Write, Act.Open), o.actions); assertTrue(o.autoCancel); assertEquals(12 * 3600_000L, o.timeoutMs)
         val g = NotificationPlan.gone("orbit-docs", "agenzia", l)
-        assertEquals("✗ orbit-docs", g.title); assertEquals(listOf(Act.Resume), g.actions)
+        assertEquals("orbit-docs", g.title); assertEquals(listOf(Act.Resume), g.actions)
         // Franz, 15/09 17:27: la chiusura detta a parole, con l'azione per riaprirla.
         val detta = NotificationPlan.gone("orbit-docs", "agenzia", l.copy(goneText = "Sessione chiusa. Per riaprirla tocca Riprendi."))
         assertEquals(listOf("Sessione chiusa. Per riaprirla tocca Riprendi."), detta.messages)
@@ -67,6 +69,6 @@ class NotificationPlanTest {
     @Test fun groupSummaryOneLinePerSession() {
         val lines = NotificationPlan.summary(s, l)
         assertEquals("4 sessioni · 1?", lines.title)
-        assertEquals(listOf("❓ ledger-api", "▶ atlas-shop", "✓ field-notes", "✗ orbit-docs"), lines.rows)
+        assertEquals(listOf("ledger-api · in attesa", "atlas-shop · al lavoro", "field-notes · ferma", "orbit-docs · chiusa"), lines.rows)
     }
 }

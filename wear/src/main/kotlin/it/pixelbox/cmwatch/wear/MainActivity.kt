@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
         deepLink.value = link(intent)
         pairCodeFromIntent.value = intent?.getStringExtra(EXTRA_PAIR_CODE)?.takeIf { it.matches(Regex("\\d{6}")) }
         val app = application as CmApp
+        demoExtra(intent, app)
         askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         // Solo debug: `adb shell am start … --ez demo_paired true` salta il pairing dove non c'è la tastiera Wear (ARC).
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo_paired", false) == true) {
@@ -113,9 +114,15 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         deepLink.value = link(intent)
         pairCodeFromIntent.value = intent.getStringExtra(EXTRA_PAIR_CODE)?.takeIf { it.matches(Regex("\\d{6}")) }
+        demoExtra(intent, application as CmApp)
     }
 
-    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code" }
+    /** L'extra `demo` (solo via adb): accende o spegne la demo per i video. Senza extra non cambia niente. */
+    private fun demoExtra(intent: Intent?, app: CmApp) {
+        if (intent?.hasExtra(EXTRA_DEMO) == true) app.setDemo(intent.getBooleanExtra(EXTRA_DEMO, false))
+    }
+
+    companion object { const val EXTRA_URI = "cmwatch_uri"; const val EXTRA_PAIR_CODE = "pair_code"; const val EXTRA_DEMO = "demo" }
 
     @Composable
     private fun App(app: CmApp) {

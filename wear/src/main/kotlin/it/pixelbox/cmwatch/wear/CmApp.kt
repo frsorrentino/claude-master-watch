@@ -92,7 +92,7 @@ class CmApp : Application() {
     /** Firebase solo se accoppiato, con la chiave nel vault e google-services.json presente; altrimenti il finto sulle fixture. */
     fun choose(settings: Settings): Transport {
         val key = settings.wrappedKey?.let { runCatching { KeyVault.unwrap(it, KeyVault.keystoreKek()) }.getOrNull() }
-        val kind = TransportChoice.pick(settings.paired, key != null, BuildConfig.FIREBASE && FirebaseAuthToken.databaseUrl() != null)
+        val kind = TransportChoice.pick(settings.paired, key != null, BuildConfig.FIREBASE && FirebaseAuthToken.databaseUrl() != null, demo = settings.demoMode)
         return when (kind) {
             TransportChoice.Kind.FAKE -> fake
             TransportChoice.Kind.FIREBASE -> FirebaseTransport(
@@ -115,6 +115,21 @@ class CmApp : Application() {
 
     /** Dopo il pairing o un nuovo pairing: il Transport cambia a caldo. */
     fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())) } }
+
+    /**
+     * Demo per i video promozionali (Franz, 16/09 16:05): `adb shell am start -n it.pixelbox.cmwatch/.wear.MainActivity
+     * --ez demo true|false`. Accesa, l'app mostra le fixture inglesi con le date di adesso e i campioni del ritmo;
+     * spenta, torna al PC vero. L'accoppiamento non si tocca.
+     */
+    fun setDemo(on: Boolean) {
+        scope.launch {
+            prefs.update { it.copy(demoMode = on) }
+            transport.switchTo(choose(prefs.current()))
+            if (on) repo.seedQuotaSamples(fake.demoQuotaSamples())
+            else repo.refresh()
+            runCatching { CmTileService.requestUpdate(this@CmApp) }; runCatching { CmComplicationService.requestUpdate(this@CmApp) }
+        }
+    }
 
     @Volatile private var lastState: State? = null
 

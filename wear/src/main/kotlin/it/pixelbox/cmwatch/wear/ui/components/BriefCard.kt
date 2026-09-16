@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.wear.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -109,12 +110,15 @@ fun BriefCard(
     }
 }
 
-/** Cerchio per l'account personale, quadrato per quello di lavoro, come nella tile (Franz, 16/09 14:41). */
+/**
+ * Cerchio per l'account personale, quadrato per quello di lavoro, come nella tile (Franz, 16/09 14:41). Vuoti, 10 dp e
+ * quadrato ad angoli vivi (16/09 15:47): pieni da 8 dp, con gli angoli smussati, il quadrato si leggeva quasi come un cerchio.
+ */
 @Composable
 fun AccountMark(shape: BriefCards.Shape, color: androidx.compose.ui.graphics.Color) {
     Box(
-        Modifier.size(8.dp).background(
-            color, if (shape == BriefCards.Shape.CIRCLE) RoundedCornerShape(percent = 50) else RoundedCornerShape(1.5.dp),
+        Modifier.size(10.dp).border(
+            1.5.dp, color, if (shape == BriefCards.Shape.CIRCLE) RoundedCornerShape(percent = 50) else androidx.compose.ui.graphics.RectangleShape,
         )
     )
 }

@@ -112,6 +112,12 @@ class Repo(
         recordQuota(ordered)
     }
 
+    /** Demo per i video: i campioni che l'orologio avrebbe registrato, perché nella demo lo stato non cambia mai. */
+    suspend fun seedQuotaSamples(samples: Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>) {
+        for ((account, list) in samples) for (s in list) store.saveQuotaSample(account, s)
+        _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
+    }
+
     /**
      * Un campione per account a ogni stato con la lettura delle 5 ore, con l'ora del PC. Uno uguale al precedente entro
      * cinque minuti non si salva: la linea non si riempie di punti fermi. Il dato vecchio (`stale`) non è una lettura.

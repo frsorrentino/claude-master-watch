@@ -215,4 +215,9 @@
     <string name="launch_with_message">Scrivi il primo messaggio</string>
     <string name="launch_without_message">Avvia senza messaggio</string>
     <string name="launch_hint">Primo messaggio per %1$s</string>
+    <!-- Stato a parole nel riepilogo delle notifiche, al posto degli emoji (16/09 16:32) -->
+    <string name="notif_state_waiting">in attesa</string>
+    <string name="notif_state_busy">al lavoro</string>
+    <string name="notif_state_idle">ferma</string>
+    <string name="notif_state_gone">chiusa</string>
 </resources>
