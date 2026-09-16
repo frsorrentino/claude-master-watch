@@ -167,6 +167,9 @@ fun SessionScreen(
                 it.pixelbox.cmwatch.wear.ui.components.SessionQuotaCard(
                     snapshot.state, s.account, SurfaceTransformation(spec),
                     Modifier.transformedHeight(this, spec),
+                    // Con le animazioni spente l'arco si disegna subito al suo valore: è il caso di Paparazzi, dove il
+                    // primo fotogramma lo coglierebbe ancora a zero (16/09 03:44), e dell'ambient.
+                    animate = !it.pixelbox.cmwatch.wear.ui.ambient.animationsOff(),
                 )
             }
             if (s.state != SessionState.GONE) {

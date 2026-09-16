@@ -48,7 +48,8 @@ class ScreensSnapshotTest {
     @Test fun stale() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
     @Test fun pairing() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, {}, {}) } }
     // Per le card del README (Franz, 14/09 22:47): i due account della fixture, uno fresco e uno con il dato vecchio.
-    @Test fun quota() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now) } }
+    // Senza animazione: Paparazzi fotografa il primo fotogramma e l'arco sarebbe ancora a zero (16/09 03:44).
+    @Test fun quota() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now, animateOverride = false) } }
     // S07: la Scheda di una sessione ferma, con l'esito intero (era la schermata Esito), e la Timeline.
     @Test fun cardIdle() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
     @Test fun timeline() = paparazzi.snapshot { CmTheme { TimelineScreen(ContractJson.decodeEvents(File("../contract/events-sample.json").readText())) } }

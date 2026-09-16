@@ -34,7 +34,18 @@ import it.pixelbox.cmwatch.wear.ui.theme.morph
  * poi il lavoro (attive, domande, coda della notte, freschezza del PC). Cosa si vede lo decide `BriefCards`.
  */
 @Composable
-fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentTimeMillis() / 1000) {
+fun QuotaScreen(
+    state: State?,
+    freshness: Freshness,
+    now: Long = System.currentTimeMillis() / 1000,
+    /**
+     * Negli snapshot si passa `false`: Paparazzi fotografa il primo fotogramma, e con l'animazione attiva l'arco è
+     * ancora a zero (visto il 16/09 03:44). Senza animazione il gauge si disegna subito al suo valore, come il polso
+     * lo mostra un istante dopo. In app resta `null`, cioè decide la schermata: niente in ambient, niente se il
+     * sistema ha spento le animazioni.
+     */
+    animateOverride: Boolean? = null,
+) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     val labels = BriefCards.Labels(
@@ -50,7 +61,7 @@ fun QuotaScreen(state: State?, freshness: Freshness, now: Long = System.currentT
         weekOnly = stringResource(R.string.quota_week),
     )
     // Niente animazioni in ambient né con le animazioni di sistema spente (design, sezione 3).
-    val animate = !rememberAmbient() && !animationsOff()
+    val animate = animateOverride ?: (!rememberAmbient() && !animationsOff())
     // Giorni della settimana nella lingua delle risorse: con l'inglese «reset Thu 02:00», non «gio» (14/09 23:43).
     val quota = BriefCards.quota(state, labels, locale = LocalConfiguration.current.locales[0])
     val work = BriefCards.work(state, freshness, now, labels)
