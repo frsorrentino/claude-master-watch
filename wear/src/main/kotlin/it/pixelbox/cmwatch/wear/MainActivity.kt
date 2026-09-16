@@ -212,13 +212,25 @@ class MainActivity : ComponentActivity() {
         // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
         val curvo = androidx.wear.compose.material3.ConfirmationDialogDefaults.curvedTextStyle
         val frase = conferma?.second ?: getString(R.string.confirm_done)
+        // Il segno domina, il contenitore no (Franz, 16/09 02:44): spunta verde e croce rossa su fondo scuro, al posto
+        // della macchia pastello che si prendeva mezzo schermo. Frasi brevi e simmetriche: «Ti avviso» / «Non ti avviso».
         androidx.wear.compose.material3.SuccessConfirmationDialog(
             visible = conferma?.first == true, onDismissRequest = { conferma = null },
             curvedText = { confirmationDialogCurvedText(frase, curvo) },
+            colors = androidx.wear.compose.material3.ConfirmationDialogDefaults.successColors(
+                iconColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.idle,
+                iconContainerColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.surfaceHigh,
+                textColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.text,
+            ),
         )
         androidx.wear.compose.material3.FailureConfirmationDialog(
             visible = conferma?.first == false, onDismissRequest = { conferma = null },
             curvedText = { confirmationDialogCurvedText(frase, curvo) },
+            colors = androidx.wear.compose.material3.ConfirmationDialogDefaults.failureColors(
+                iconColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.gone,
+                iconContainerColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.surfaceHigh,
+                textColor = it.pixelbox.cmwatch.wear.ui.theme.CmColors.text,
+            ),
         )
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))

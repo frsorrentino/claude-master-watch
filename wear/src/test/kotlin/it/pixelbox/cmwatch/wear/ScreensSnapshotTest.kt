@@ -10,6 +10,10 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.wear.ui.screens.PairingScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TimelineScreen
 import it.pixelbox.cmwatch.wear.ui.screens.TerminalScreen
+import androidx.wear.compose.material3.ConfirmationDialogDefaults
+import androidx.wear.compose.material3.FailureConfirmationDialogContent
+import androidx.wear.compose.material3.SuccessConfirmationDialogContent
+import androidx.wear.compose.material3.confirmationDialogCurvedText
 import it.pixelbox.cmwatch.wear.ui.screens.PairingStatus
 import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
@@ -46,6 +50,22 @@ class ScreensSnapshotTest {
     @Test fun terminal() = paparazzi.snapshot {
         CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }
     }
+    // Le due conferme del «segui», una accanto all'altra: coppia simmetrica e segno dominante (Franz, 16/09 02:44).
+    @Test fun confirmFollow() = paparazzi.snapshot {
+        CmTheme {
+            // Lo stile curvo si legge qui: il getter è @Composable, la lambda del testo curvo no.
+            val curvo = ConfirmationDialogDefaults.curvedTextStyle
+            SuccessConfirmationDialogContent(curvedText = { confirmationDialogCurvedText("Alerts on", curvo) })
+        }
+    }
+
+    @Test fun confirmUnfollow() = paparazzi.snapshot {
+        CmTheme {
+            val curvo = ConfirmationDialogDefaults.curvedTextStyle
+            FailureConfirmationDialogContent(curvedText = { confirmationDialogCurvedText("Alerts off", curvo) })
+        }
+    }
+
     private val terminalSample = listOf(
         "❯ Run the tests, then update", "the changelog", "⏺ Running the suite.",
         "⏺ Bash(pytest -q)", "⎿ 42 passed in 3.1s", "⏺ All green, moving to the", "changelog.",
