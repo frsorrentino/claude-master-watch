@@ -84,8 +84,9 @@ reset), barre per ora dagli eventi, banda di stato di una sessione, regole di `R
   come 1.12 dopo la 1.11. Condizioni per la (b): riscrittura solo delle chiavi toccate, lock sul file per tutta la
   sequenza, rilettura di verifica, ripristino anche senza conferma dal pane. Scelta finale e motivo li dà claude-master.
 
-## Da sistemare negli snapshot (16/09 02:05)
+## Anelli negli snapshot: sistemato (16/09 03:39, `cc708f1`)
 
-Con l'arco della Quota che si riempie solo quando la card entra nell'inquadratura, in Paparazzi resta sempre vuoto: la
-schermata non scorre mai. Nello snapshot va passato `visible = true` (o una `QuotaScreen` con la lista già posizionata),
-altrimenti l'immagine della Quota nel README mostra un anello vuoto. Sul polso il comportamento è quello giusto.
+L'arco si riempiva solo all'ingresso nell'inquadratura e in Paparazzi, dove la lista non scorre mai, restava vuoto:
+le immagini del README mostravano anelli spenti. Ora, finché la lista non ha misurato nulla (primo disegno, e sempre
+sotto Paparazzi), le card contano come visibili. Sul polso non cambia niente: lì la lista misura e l'arco aspetta
+ancora che la sua card entri.
