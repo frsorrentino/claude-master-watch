@@ -25,6 +25,18 @@ Secondo giro, elettronica moderna e ritmata con taglio hip hop o funky: scaricat
 | Static Rhythm (The Tech House) | 9JackJack8 | https://pixabay.com/music/house-static-rhythm-the-tech-house-526056/ |
 | Futuristic Beat | NverAvetyanMusic | https://pixabay.com/music/future-bass-futuristic-beat-146661/ |
 
+Terzo giro (17/09/2026 20:40), su richiesta di Franz dopo il secondo («la più adeguata è la due», cioè Brick By Brick, che
+resta traccia di lavoro; per le altre «ritmo meno lineare e suoni più innovativi»): scelte per quota di attacchi in levare.
+
+| Traccia | Autore su Pixabay | Pagina |
+|---|---|---|
+| Glitch Experimental Tech | Trending_Music | https://pixabay.com/music/beats-glitch-experimental-tech-340319/ |
+| IDM Electronic Science Technology | Musinova | https://pixabay.com/music/electronic-idm-electronic-science-technology-483366/ |
+| Tech Force | Bransboynd | https://pixabay.com/music/electro-tech-force-506468/ |
+| Abstract Electronic (Everything Feels New) | Evgeny_Bardyuzha | https://pixabay.com/music/beats-abstract-electronic-everything-feels-new-15241/ |
+| Broken Clockwork Dreams II | lazarosv | https://pixabay.com/music/electronic-broken-clockwork-dreams-ii-379971/ |
+| Dynamic Glitch | The_Mountain | https://pixabay.com/music/beats-dynamic-glitch-179500/ |
+
 Riepilogo della licenza come appariva il 17/09/2026 alle 19:45 su `https://pixabay.com/service/license-summary/` (copiato
 dalla pagina; la pagina stessa avverte che fa fede solo la Content License completa):
 
