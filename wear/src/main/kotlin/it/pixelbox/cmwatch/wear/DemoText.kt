@@ -28,6 +28,9 @@ object DemoText {
         "field-notes" to "blog",
         "orbit-docs" to "ios-app",
         "crostini-demo" to "dev-laptop",
+        // La quota di lavoro della fixture è «stale» e senza finestra di 5 ore: nel video sembrava un errore (17/09 02:30).
+        "\"h5\": null,\n      \"w7\": 75," to "\"h5\": 38,\n      \"w7\": 75,",
+        "\"stale\": true,\n      \"kind\": \"work\"" to "\"stale\": false,\n      \"kind\": \"work\"",
     )
 
     fun dress(json: String): String = sostituzioni.fold(json) { testo, (da, a) -> testo.replace(da, a) }

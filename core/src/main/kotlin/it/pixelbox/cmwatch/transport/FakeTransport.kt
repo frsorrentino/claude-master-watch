@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Gli stati della storia dei video promozionali (piano 16/09): uno per scena, raggiungibili via adb. */
-enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, BLOG }
+enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, TICK, BLOG }
 
 /**
  * Legge le fixture del contratto e simula il PC. Gli scarti temporali delle fixture 1 e 2 vengono riportati
@@ -29,14 +29,22 @@ class FakeTransport(
     private val blogId = base.sessions[2].id
     private val originalQuestion = base.sessions[0].question
     private var screenGrowth = 0
+    /** Acceso da FOLLOWUP: il terminale della sessione del deploy cresce a ogni cattura e TICK fa avanzare il lavoro. */
+    private var growing = false
+    private val ticks = listOf("Edit CHANGELOG.md" to "Edit", "Tag v2.8.0" to "Bash", "Push the tag" to "Bash")
+    private var tick = 0
 
     /** Porta la demo allo stato di una scena. I testi sono in inglese come la demo. */
     fun demoStep(step: DemoStep) {
         val s = current.value
         val t = now()
         fun at(id: String, f: (Session) -> Session) = s.copy(ts = t, sessions = Order.sessions(s.sessions.map { if (it.id == id) f(it) else it }))
+        if (step != DemoStep.FOLLOWUP && step != DemoStep.TICK) growing = false
         current.value = when (step) {
-            DemoStep.CALM -> at(deployId) { it.copy(state = SessionState.IDLE, question = null, since = t - 900) }
+            // Nessuna sessione seguita all'inizio: la pressione lunga della scena 3 deve accendere la campanella, non trovarla accesa.
+            DemoStep.CALM -> s.copy(ts = t, sessions = Order.sessions(s.sessions.map {
+                if (it.id == deployId) it.copy(state = SessionState.IDLE, question = null, since = t - 900, followed = false) else it.copy(followed = false)
+            }))
             // Id nuovo a ogni scena: con quello della fixture, già tra le domande viste, la notifica non partiva.
             DemoStep.QUESTION -> at(deployId) { it.copy(state = SessionState.WAITING, since = t, question = originalQuestion?.copy(id = "${originalQuestion.id}-$t", askedAt = t)) }
             DemoStep.DEPLOYED -> at(deployId) {
@@ -49,8 +57,13 @@ class FakeTransport(
                 )
             }
             DemoStep.FOLLOWUP -> {
-                screenGrowth = 0
+                screenGrowth = 0; growing = true; tick = 0
                 at(deployId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, tool = "Bash", toolNote = "Update the changelog and tag the release") }
+            }
+            // Il Terminale chiede una cattura nuova solo quando la sessione cambia: ogni tick le dà il passo successivo.
+            DemoStep.TICK -> if (!growing) s else {
+                val (note, tool) = ticks[tick % ticks.size]; tick++
+                at(deployId) { it.copy(since = t, tool = tool, toolNote = note) }
             }
             DemoStep.BLOG -> at(blogId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, toolNote = "Draft a post about the 2.8.0 release") }
         }
@@ -163,7 +176,7 @@ class FakeTransport(
             CmdOp.SCREEN -> if (ses == null) ko("no session ${cmd.session}") else {
                 // Dopo il passo FOLLOWUP il terminale cresce a ogni cattura: nel video le righe arrivano dal vivo.
                 val extra = listOf("Edit CHANGELOG.md", "+ ## 2.8.0 — refund endpoint, webhook retries", "$ git tag v2.8.0", "$ git push --tags", "Tag v2.8.0 pushed")
-                val righe = if (ses.id == deployId && ses.toolNote == "Update the changelog and tag the release") extra.take(screenGrowth++.coerceAtMost(extra.size)) else listOf("Edit app/admin.py", "Read app/seed.py")
+                val righe = if (ses.id == deployId && growing) extra.take(screenGrowth++.coerceAtMost(extra.size)) else listOf("Edit app/admin.py", "Read app/seed.py")
                 ok((listOf("$ pytest -q tests", "42 passed in 3.1s") + righe).joinToString("\n"))
             }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")

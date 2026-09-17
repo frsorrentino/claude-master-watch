@@ -115,6 +115,7 @@ class FakeTransportTest {
         val s = tr.state.first()
         assertTrue(s.sessions.none { it.question != null })
         assertEquals(SessionState.IDLE, s.sessions.first { it.name == "ledger-api" }.state)
+        assertTrue(s.sessions.none { it.followed })
     }
 
     @Test fun laDomandaDelDeployArrivaAdesso() = runTest {
@@ -146,6 +147,26 @@ class FakeTransportTest {
         val uno = tr.send(Cmd("s1", CmdOp.SCREEN, s.name, null, clock, "test")).text.lines().size
         val due = tr.send(Cmd("s2", CmdOp.SCREEN, s.name, null, clock, "test")).text.lines().size
         assertTrue("il terminale deve crescere: $uno → $due", due > uno)
+    }
+
+    @Test fun ogniTickFaAvanzareIlLavoroEIlTerminale() = runTest {
+        val tr = t(); tr.demoStep(DemoStep.FOLLOWUP)
+        val nome = tr.state.first().sessions.first { it.toolNote == "Update the changelog and tag the release" }.name
+        val prima = tr.state.first().sessions.first { it.name == nome }
+        val righe0 = tr.send(Cmd("k0", CmdOp.SCREEN, nome, null, clock, "test")).text.lines().size
+        tr.demoStep(DemoStep.TICK)
+        val dopo = tr.state.first().sessions.first { it.name == nome }
+        // Il Terminale chiede una cattura nuova solo se la sessione cambia: il tick deve cambiarla.
+        assertNotEquals(prima.toolNote, dopo.toolNote)
+        assertEquals(SessionState.BUSY, dopo.state)
+        val righe1 = tr.send(Cmd("k1", CmdOp.SCREEN, nome, null, clock, "test")).text.lines().size
+        assertTrue("$righe0 → $righe1", righe1 > righe0)
+    }
+
+    @Test fun ilTickSenzaPassoDopoNonCambiaNiente() = runTest {
+        val tr = t(); val prima = tr.state.first()
+        tr.demoStep(DemoStep.TICK)
+        assertEquals(prima.sessions, tr.state.first().sessions)
     }
 
     @Test fun ilBlogSiMetteALavorare() = runTest {
