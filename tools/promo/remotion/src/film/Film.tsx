@@ -12,6 +12,7 @@ import { WordMask } from "./WordMask.tsx";
 import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
+import { LogoMark } from "./LogoMark.tsx";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
@@ -41,10 +42,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={overlay} around={around}
+          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
+      {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">

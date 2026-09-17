@@ -26,7 +26,7 @@ export class TimelineError extends Error {
 
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn"];
-const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft"];
+const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
 const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 

@@ -1,5 +1,5 @@
 /** L'orologio è un'immagine piatta nello spazio: entra, deriva lentamente, esce. Oltre i 10 gradi sembra finto. */
-export type Move = "riseIn" | "slideIn" | "slideOut" | "pushIn" | "pullOut" | "settleSmall" | "zoomLeft";
+export type Move = "riseIn" | "slideIn" | "slideOut" | "pushIn" | "pullOut" | "settleSmall" | "zoomLeft" | "diveIn";
 export type Pose = { x: number; y: number; scale: number; tilt: number };
 export const MAX_TILT = 9;
 export const MOVE_BEATS = 2;
@@ -22,6 +22,8 @@ const moveAt = (m: Move, t: number): Pose => {
     // uscita dell'apertura: dentro il quadrante della complication di sinistra, centro (85, 240,5) e raggio 63 su 480 (misurati sul
     // fotogramma). Inquadratura finale simmetrica: il quadrante al centro del quadro a 3,4×, deriva di fine scena compensata.
     case "zoomLeft": return { x: 0.1739 * inOut(t), y: 0.0078 * inOut(t), scale: 1 + 2.301 * inOut(t), tilt: 0 };
+    // uscita della penultima scena: dentro lo schermo fino a riempire il quadro (il display al centro), verso il nero da cui nasce il logo
+    case "diveIn": return { x: -0.19 * in3(t), y: 0.01 * in3(t), scale: 1 + 6.3 * in3(t), tilt: 0 };
     case "pullOut": return { x: 0, y: 0, scale: 1 - 0.45 * inOut(t), tilt: 4 * inOut(t) };
   }
 };
@@ -37,15 +39,17 @@ export const poseAt = (frame: number, total: number, moveFrames: number, enter?:
 
 /** La chiusura (Franz, 17/09 23:52): solo il logo grande in dissolvenza, poi si inclina e sotto compare l'orologio, poi ci si
  *  allontana fino all'inquadratura finale con l'orologio piccolo in alto. `beats` = battiti dall'inizio della scena. */
-export type Closing = { pose: Pose; logo: number; tilt: number; body: number; focus: number };
+export type Closing = { pose: Pose; logo: number; draw: number; tilt: number; body: number; focus: number };
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 export const closingAt = (beats: number): Closing => {
   const out = inOut(ramp(beats, 5, 8));
+  const near = 1 - out3(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
   return {
     logo: ramp(beats, 0, 2),
+    draw: inOut(ramp(beats, 0.5, 3)),              // l'arco del logo si disegna da zero al suo 70 %, come un gauge che si riempie
     tilt: inOut(ramp(beats, 3, 5)),
     body: ramp(beats, 3.5, 5) >= 1 ? 1 : inOut(ramp(beats, 3.5, 5)) * (beats <= 3 ? 0 : 1),
     focus: 1 - out,
-    pose: { x: 0, y: -0.2 * out, scale: 1.7 + (0.5 - 1.7) * out, tilt: 0 },
+    pose: { x: 0, y: -0.2 * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
   };
 };

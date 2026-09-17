@@ -296,7 +296,7 @@
     "view": "front",
     "clip": "scenes/s1_list.mp4",
     "clipStart": 1.5,
-    "exit": "pushIn",
+    "exit": "diveIn",
     "rate": 0.7
    },
    "text": {
@@ -318,7 +318,7 @@
     "view": "threeQuarter",
     "clip": "scenes/s1_list.mp4",
     "clipStart": 0.2,
-    "still": "icon/close.png"
+    "still": "icon/black.png"
    },
    "endCard": true
   }

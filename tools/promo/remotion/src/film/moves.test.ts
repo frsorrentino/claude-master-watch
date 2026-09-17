@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MAX_TILT, closingAt, poseAt } from "./moves.ts";
 import type { Move } from "./moves.ts";
 
-const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft"];
+const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
 
 test("l'inclinazione resta entro i 10 gradi in ogni momento di ogni movimento", () => {
   for (const enter of MOVES) for (const exit of MOVES) for (let f = 0; f <= 120; f++) {
@@ -45,4 +45,15 @@ test("chiusura: prima solo il logo grande, poi si inclina e compare l'orologio, 
   const a = closingAt(1), z = closingAt(9);
   assert.ok(a.focus === 1 && a.pose.scale > 1.5 && a.pose.y === 0);
   assert.ok(z.focus === 0 && Math.abs(z.pose.scale - 0.5) < 1e-9 && Math.abs(z.pose.y + 0.2) < 1e-9);
+});
+
+test("diveIn entra nello schermo fino a riempire il quadro, con il display al centro", () => {
+  const p = poseAt(120, 120, 36, undefined, "diveIn");
+  assert.ok(p.scale > 6 && Math.abs(0.69 * 1920 + p.x * 1920 - 960) < 2 && Math.abs(p.y) < 0.02);
+});
+
+test("chiusura speculare: il logo compare mentre ci si allontana da vicino, e il suo arco si disegna da zero", () => {
+  assert.ok(closingAt(0).pose.scale > closingAt(2.5).pose.scale + 0.5);
+  assert.ok(Math.abs(closingAt(2.5).pose.scale - 1.7) < 1e-9);
+  assert.equal(closingAt(0.5).draw, 0); assert.equal(closingAt(3).draw, 1);
 });
