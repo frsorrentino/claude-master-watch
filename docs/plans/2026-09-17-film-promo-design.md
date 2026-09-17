@@ -166,3 +166,12 @@ ospitare il file per il sito non è deciso. La sessione `francescosorrentino-com
 
 Narratore, versione italiana, formati verticali e quadrati, pubblicazione su YouTube, render 3D vero, 60 fps e sfocatura
 di movimento, suoni accordati alla tonalità della traccia. Si riaprono solo su richiesta di Franz.
+
+## 10. Decisioni dopo i punti di controllo
+
+- **17/09/2026 20:12, punto 1 (aspetto): approvato da Franz.** Mockup fotografico (non la cassa disegnata), bianco caldo
+  `#F4F2EC`, i tre colori d'atto.
+- **17/09/2026 20:12, punto 2 (musica): le quattro candidate bocciate, «troppo calme e basilari».** La direzione della
+  sezione 4 cambia: non «elettronica calda e minimale» ma **elettronica moderna e ritmata, con taglio hip hop o funky**,
+  come nei film dei grandi marchi. Il tempo non è più vincolato a 95-110: la scaletta è in battiti e segue la traccia; resta
+  l'esigenza di un'apertura più rada e di un finale vero (o di un punto dove chiudere sul battito).
