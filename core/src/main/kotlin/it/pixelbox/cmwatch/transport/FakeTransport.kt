@@ -61,7 +61,9 @@ class FakeTransport(
                 at(deployId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, tool = "Bash", toolNote = "Update the changelog and tag the release") }
             }
             // Il Terminale chiede una cattura nuova solo quando la sessione cambia: ogni tick le dà il passo successivo.
-            DemoStep.TICK -> if (!growing) s else {
+            // Senza lavoro in corso il tick rinfresca solo l'ora dello stato: dopo tre minuti fermi la demo risultava
+            // vecchia e l'app spegneva i tasti (prova 17/09 07:41).
+            DemoStep.TICK -> if (!growing) s.copy(ts = t) else {
                 val (note, tool) = ticks[tick % ticks.size]; tick++
                 at(deployId) { it.copy(since = t, tool = tool, toolNote = note) }
             }

@@ -1,0 +1,107 @@
+[
+  {
+    "file": "scenes/s0_face.mp4",
+    "seconds": 3,
+    "caption": "Claude Master for Wear OS"
+  },
+  {
+    "file": "scenes/s1_list.mp4",
+    "seconds": 7,
+    "caption": "Every session at a glance"
+  },
+  {
+    "file": "scenes/s2_question.mp4",
+    "seconds": 9,
+    "caption": "Claude asks, your wrist hears it",
+    "masks": [
+      {
+        "from": 0.85,
+        "to": 1.05,
+        "x": 206,
+        "y": 100,
+        "w": 68,
+        "h": 40
+      },
+      {
+        "from": 1.05,
+        "to": 1.15,
+        "x": 206,
+        "y": 94,
+        "w": 68,
+        "h": 40
+      },
+      {
+        "from": 1.15,
+        "to": 1.25,
+        "x": 206,
+        "y": 88,
+        "w": 68,
+        "h": 40
+      },
+      {
+        "from": 1.25,
+        "to": 2.34,
+        "x": 206,
+        "y": 82,
+        "w": 68,
+        "h": 40
+      },
+      {
+        "from": 2.34,
+        "to": 2.4,
+        "x": 206,
+        "y": 68,
+        "w": 68,
+        "h": 38
+      },
+      {
+        "from": 2.4,
+        "to": 2.45,
+        "x": 206,
+        "y": 40,
+        "w": 68,
+        "h": 42
+      },
+      {
+        "from": 2.45,
+        "to": 2.52,
+        "x": 206,
+        "y": 0,
+        "w": 68,
+        "h": 48
+      },
+      {
+        "from": 2.52,
+        "to": 2.57,
+        "x": 206,
+        "y": 0,
+        "w": 68,
+        "h": 30
+      }
+    ]
+  },
+  {
+    "file": "scenes/s3_done.mp4",
+    "seconds": 3,
+    "caption": "Know when it's done"
+  },
+  {
+    "file": "scenes/s4_write.mp4",
+    "seconds": 3.5,
+    "caption": "Reply without your laptop"
+  },
+  {
+    "file": "scenes/s5_terminal.mp4",
+    "seconds": 12,
+    "caption": "Watch it work, live"
+  },
+  {
+    "file": "scenes/s6_quota.mp4",
+    "seconds": 12,
+    "caption": "Know your quota and your pace"
+  },
+  {
+    "file": "scenes/s0_face.mp4",
+    "seconds": 3
+  }
+]

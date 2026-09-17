@@ -164,9 +164,13 @@ class FakeTransportTest {
     }
 
     @Test fun ilTickSenzaPassoDopoNonCambiaNiente() = runTest {
-        val tr = t(); val prima = tr.state.first()
+        var ora = clock
+        val tr = FakeTransport(load = { Fixtures.read("$it.json") }, now = { ora })
+        val prima = tr.state.first()
+        ora += 600
         tr.demoStep(DemoStep.TICK)
         assertEquals(prima.sessions, tr.state.first().sessions)
+        assertEquals(ora, tr.state.first().ts)   // rinfrescato: la demo non diventa «vecchia»
     }
 
     @Test fun ilBlogSiMetteALavorare() = runTest {

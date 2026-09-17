@@ -26,7 +26,8 @@ open_list() {   # app a freddo: in demo c'è una domanda aperta e l'app si apre 
 # Verso una schermata con il collegamento interno dell'app: parte con la stessa animazione di un tocco e arriva sempre nel
 # posto giusto. Con i tocchi a coordinate la lista non si fermava due volte uguale e si finiva sulla sessione sbagliata.
 go() { sh am start -n $ACT --es cmwatch_uri "cmwatch://$1" >/dev/null 2>&1; }
-hold() { sh input swipe "$1" "$2" "$1" "$2" "${3:-1100}"; }   # pressione lunga, per confermare una risposta
+# Pressione lunga con eventi espliciti: uno swipe fermo non arrivava come pressione lunga alla card (prova 17/09 07:43).
+hold() { sh "input motionevent DOWN $1 $2; sleep $(python3 -c "print(${3:-1100}/1000)"); input motionevent UP $1 $2"; }
 # Scorrimento guidato: la lista dell'app scorre di PX pixel in MS millisecondi, in un solo movimento con partenza e arrivo
 # morbidi (solo con la demo accesa). È il modo per avere un movimento continuo fino all'elemento da mostrare (18:08).
 scroll() { sh am start -n $ACT --ei scroll_px "$1" --ei scroll_ms "${2:-2400}" >/dev/null 2>&1; pause "$(python3 -c "print(${2:-2400}/1000 + ${3:-1.8})")"; }
@@ -96,10 +97,10 @@ dictate() { sh am start -n $ACT --es demo_dictation "$1" >/dev/null 2>&1; pause 
 home() { sh input keyevent KEYCODE_HOME; pause "${1:-1.5}"; }
 
 scene_0() { step calm; home 3.0; snap quadrante; }
-scene_1() {   # un'occhiata: la complication della quota sul quadrante apre la lista
+scene_1() {   # un'occhiata: la lista delle sessioni
   # Non la tile: tra quadrante e tile ci sono quelle di salute, che nel video non devono passare (17/09 02:00).
-  home 1.5; tap "${X_COMPLICATION:-75}" "${Y_COMPLICATION:-240}"; pause 2.6; snap panoramica
-  back; pause 2.2; snap lista
+  # Collegamento diretto: il tocco sulla complication di mattina riapriva il popup di un'altra app (17/09 07:39).
+  home 1.5; go sessions; pause 2.6; snap lista
   scroll 260 2400; snap lista_giu
 }
 # Inizio pulito della storia: l'app chiusa toglie le notifiche rimaste. Le nostre avvisano una volta sola, e una notifica
@@ -140,9 +141,10 @@ scene_6() {   # quanta quota resta
 scene_7() {   # una sessione nuova per usare il rimborso nel negozio
   # Nella demo non c'è un progetto «blog»: il seguito naturale del rilascio è il negozio che usa l'endpoint dei rimborsi.
   dictate "Add the refund button to the storefront orders page"
-  go launch; pause 2.2; snap progetti
+  # Il tick rinfresca l'ora dello stato: dopo tre minuti senza passi la demo risulta vecchia e i tasti si spengono.
+  step tick 0.5; go launch; pause 2.2; snap progetti
   tap 240 "${Y_PROJECT:-200}"; pause 1.5; snap progetto
-  tap 240 "${Y_WRITE_FIRST:-320}"; pause 3.5; snap sessione_nata
+  tap 240 "${Y_WRITE_FIRST:-320}"; pause 4.0; snap sessione_nata
 }
 scene_8() { home 3.0; snap chiusura; }
 
