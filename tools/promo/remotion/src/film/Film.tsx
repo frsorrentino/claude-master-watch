@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import raw from "./timeline.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
@@ -32,6 +32,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const pose = w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit) : null;
   const cx = (scene.text ? THEME.watchX : 0.5) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
+  // se l'orologio esce di lato attraversa la colonna del testo: il testo se ne va prima della scivolata
+  const leave = (w?.exit === "slideOut" ? total - beat * MOVE_BEATS : total) - 8;
+  const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
@@ -46,8 +49,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <Sequence from={textAt} layout="none">
           <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.size} sub={scene.text.sub}
-              perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={total - textAt - 8} align={w ? "left" : "center"} />
-            <div style={{ marginTop: 40 }}>{watchTextFor(scene, GRID, textAt)}</div>
+              perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={leave - textAt} align={w ? "left" : "center"} />
+            <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
         </Sequence>
       ) : null}
