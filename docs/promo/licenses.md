@@ -37,6 +37,20 @@ resta traccia di lavoro; per le altre «ritmo meno lineare e suoni più innovati
 | Broken Clockwork Dreams II | lazarosv | https://pixabay.com/music/electronic-broken-clockwork-dreams-ii-379971/ |
 | Dynamic Glitch | The_Mountain | https://pixabay.com/music/beats-dynamic-glitch-179500/ |
 
+Quarto giro (17/09/2026 21:00), dopo «troppo calme, melodie semplici, servivano più animate»: scelte per attacchi al secondo
+nel corpo della traccia, tutte sopra Brick By Brick (4,5), che resta la traccia scelta finché una di queste non la batte.
+
+| Traccia | Autore su Pixabay | Pagina |
+|---|---|---|
+| Dynamic - Dynamic Music | (vedi pagina) | https://pixabay.com/music/percussion-dynamic-dynamic-music-590415/ |
+| Dance | (vedi pagina) | https://pixabay.com/music/electro-dance-518070/ |
+| Hip-Hop - Hip Hop Beat | (vedi pagina) | https://pixabay.com/music/alternative-hip-hop-hip-hop-hip-hop-beat-595812/ |
+| Sport - Sport Music | (vedi pagina) | https://pixabay.com/music/beats-sport-sport-music-577815/ |
+| Electro Funk 03 | (vedi pagina) | https://pixabay.com/music/upbeat-electro-funk-03-257144/ |
+| G-House Beat (Stylish Background Music) | (vedi pagina) | https://pixabay.com/music/upbeat-g-house-beat-stylish-background-music-268654/ |
+
+Titoli e autori di questo giro non sono stati letti dalla pagina (solo l'indirizzo): si completano per la traccia scelta.
+
 Riepilogo della licenza come appariva il 17/09/2026 alle 19:45 su `https://pixabay.com/service/license-summary/` (copiato
 dalla pagina; la pagina stessa avverte che fa fede solo la Content License completa):
 

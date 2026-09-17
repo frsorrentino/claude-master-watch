@@ -18,7 +18,9 @@ card = {"file": src.name, "seconds": round(len(x) / sr, 1), "bpm": bpm, "bpm_can
         "film_bars": round(66 / (240 / bpm), 1),
         # quanto è ritmata: attacchi raccolti sul battito in deviazioni standard dell'inviluppo, e quota di energia della cassa (40-120 Hz)
         "beat_salience": round(top[0][1] / float(env.std()), 2), "kick_band_db": round(M.band_db(x, sr, 40, 120), 1), "crest_db": round(M.crest_db(x), 1),
-        "offbeat_ratio": round(M.offbeat_ratio(env, times, bpm, first), 2)}
+        "offbeat_ratio": round(M.offbeat_ratio(env, times, bpm, first), 2),
+        # quanto è animata: attacchi distinti al secondo nel corpo della traccia (dal 25 % al 75 % della durata)
+        "onsets_per_s": round(len([o for o in M.onsets(env, times, gap_s=0.06) if 0.25 * len(x) / sr < o < 0.75 * len(x) / sr]) / (0.5 * len(x) / sr), 2)}
 Path(str(src) + ".card.json").write_text(json.dumps(card, indent=1))
 print(f"{src.name}: {bpm} bpm (alternative {top[1:]}), primo battito a {first:.3f} s, {len(bars)} battute, salita alla battuta {rise}, introduzione rada per {card['intro_bars_below_body']} battute")
 print(" ".join(f"{v:.0f}" for v in bars))

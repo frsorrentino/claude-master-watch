@@ -55,5 +55,14 @@ class Livelli(unittest.TestCase):
         e = M.bar_energy_db(x, SR, 100, 0.30)
         self.assertEqual(len(e), 9); self.assertAlmostEqual(e[7] - e[1], 12.0, delta=1.0)
 
+class Taglio(unittest.TestCase):
+    def test_la_giunta_resta_sulla_griglia(self):
+        import cut_track
+        x = click_track(100, 60); y = cut_track.cut(x, SR, 100, 0.30, [(0, 4), (10, 16), (20, 24)])
+        self.assertAlmostEqual(len(y) / SR, 14 * 2.4 + 0.30, delta=0.05)
+        env, times = M.onset_env(y, SR); on = M.onsets(env, times)
+        self.assertEqual(len(on), 56)                                                        # 14 battute da 4: nessun colpo perso o doppio alle giunte
+        self.assertLess(max(abs(o - (0.30 + 0.6 * i)) for i, o in enumerate(on)), 0.010)      # giunte comprese
+
 if __name__ == "__main__":
     unittest.main()
