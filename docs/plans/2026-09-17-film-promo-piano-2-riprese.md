@@ -16,16 +16,24 @@ Il motore, la musica e la scaletta (piano 1) restano: qui cambiano le clip.
 - Una clip per scena, registrata da sola: la connessione cade (tre volte in una notte) e ogni clip si rifà senza le altre.
 - Dopo ogni gesto il copione legge l'albero dell'interfaccia e verifica il testo atteso (modalità prova prima della ripresa).
 - Lingua di sistema in inglese, demo pilotata, nessun dato personale a schermo; alla fine sempre `teardown`.
+- **Ogni scena è precisa, chiara e di senso compiuto** (Franz, 18/09 00:29): chi guarda capisce cosa è successo anche senza
+  la scritta. Una sola azione per clip, portata fino al suo esito visibile; niente gesti a metà, niente schermate di passaggio.
+- **Quando si inquadra il quadrante non ci sono notifiche di sessione attive**: altrimenti il sistema mette il testo in
+  sovraimpressione sul quadrante. Prima di ogni ripresa del quadrante: passo demo CALM, notifiche dell'app chiuse
+  (`cmd notification` / scorrimento), verifica sull'albero dell'interfaccia che non ci sia nessun riquadro sopra il quadrante.
+- **Le risposte si riprendono nella schermata della domanda dell'app, non nella notifica**: nella notifica di sistema i tasti sono
+  tutti celesti; nell'app la prima opzione è piena (primaria) e le altre scure, con «Chat about this» e «Write», e il bordo
+  rosso quando il rischio è alto (`QuestionScreen`, `QuestionRules.isPrimary`). È la schermata che Franz ricordava.
 
 ## 2. Elenco delle riprese (110 battiti al minuto: 1 battito = 0,545 s)
 
 | Scena · scritta | Battiti | Da | Gesto | A |
 |---|---|---|---|---|
-| open-3 · «That's fine.» | 6 | quadrante in ambiente (scuro) | `WAKEUP` | quadrante acceso, complication «payments-api ▶»; il film entra nella complication di sinistra |
+| open-3 · «That's fine.» | 6 | quadrante in ambiente (scuro), nessuna notifica attiva | `WAKEUP` | quadrante acceso e pulito, con le nostre complication; il film entra nel quadrante della complication di sinistra |
 | list · «Every session. One glance.» | 8 | quadrante | tocco sulla complication | lista delle sessioni che scorre lenta dalla prima alla terza card |
 | asks · «It asks.» | 8 | lista ferma | passo demo QUESTION | la notifica con la domanda entra e si apre (anelli di vibrazione sull'arrivo) |
-| speaks · «It speaks.» | 18 | schermata della domanda con ▶ | tocco su ▶ | ▶ diventa ■, l'orologio legge (audio vero), a fine lettura ■ torna ▶ |
-| answer · «You answer.» | 6 | opzioni «1 yes / 2 no» in vista | pressione lunga su «yes» | conferma dell'invio, poi la sessione torna ▶ in lista |
+| speaks · «It speaks.» | 18 | schermata della domanda dell'app, in cima, con ▶ | tocco su ▶, poi scorrimento lento a tempo con la voce | ▶ diventa ■; mentre legge il testo scorre fino ai tasti «1 yes» (pieno) e «2 no» (scuro); a fine lettura ■ torna ▶. L'app non scorre da sola: lo scorrimento lo dà il copione (`input swipe` da 2-3 s, due volte), senza modifiche all'app |
+| answer · «You answer.» | 6 | i tasti dell'app in vista: «1 yes» pieno, «2 no» scuro | pressione lunga su «yes» | conferma dell'invio, poi la sessione torna ▶ in lista |
 | follow · «Follow what matters.» | 6 | card payments-api senza campanella | pressione lunga sulla card | campanella accesa sulla card |
 | done · «Know when it's done.» | 6 | lista | passo demo DEPLOYED | notifica dell'esito che entra, tocco, schermata «Deployed 2.8.0…» |
 | say · «Say what's next.» | 8 | fondo dell'esito, tasto «Write» | tocco, dettatura demo | il testo dettato nel campo, poi «Sent» |
