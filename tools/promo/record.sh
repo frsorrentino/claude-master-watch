@@ -8,7 +8,8 @@ MODE=${1:?probe|record|setup|teardown}; shift || true
 A=${ADB:-/usr/bin/adb}; D=${WATCH:?serve WATCH=IP:PORTA}
 OUT=${OUT:-$(cd "$(dirname "$0")" && pwd)/out/clips}; mkdir -p "$OUT"
 PKG=it.pixelbox.cmwatch; ACT=$PKG/.wear.MainActivity
-sh() { timeout 30 "$A" -s "$D" shell "$@"; }
+# adb senza fili cade senza avviso (17/09 02:23, a metà della scena 4): se il comando fallisce si ricollega e si riprova una volta.
+sh() { timeout 30 "$A" -s "$D" shell "$@" || { timeout 20 "$A" connect "$D" >/dev/null 2>&1; timeout 30 "$A" -s "$D" shell "$@"; }; }
 pause() { sleep "$1"; }
 # La corona: uno scatto alla volta con un ritmo da dito vero, non uno scatto secco.
 crown() { local n=$1 dir=$2 gap=${3:-0.16}; for _ in $(seq "$n"); do sh input rotaryencoder scroll --axis "SCROLL,$dir"; sleep "$gap"; done; }
@@ -95,9 +96,10 @@ dictate() { sh am start -n $ACT --es demo_dictation "$1" >/dev/null 2>&1; pause 
 home() { sh input keyevent KEYCODE_HOME; pause "${1:-1.5}"; }
 
 scene_0() { step calm; home 3.0; snap quadrante; }
-scene_1() {   # un'occhiata: tile, poi lista
-  sh input swipe 420 240 60 240 380; pause 2.5; snap tile
-  tap 240 "${Y_TILE_SESSIONS:-420}"; pause 2.4; snap lista
+scene_1() {   # un'occhiata: la complication della quota sul quadrante apre la lista
+  # Non la tile: tra quadrante e tile ci sono quelle di salute, che nel video non devono passare (17/09 02:00).
+  home 1.5; tap "${X_COMPLICATION:-75}" "${Y_COMPLICATION:-240}"; pause 2.6; snap panoramica
+  back; pause 2.2; snap lista
   scroll 260 2400; snap lista_giu
 }
 # Inizio pulito della storia: l'app chiusa toglie le notifiche rimaste. Le nostre avvisano una volta sola, e una notifica
@@ -127,16 +129,20 @@ scene_5() {   # il passo dopo, a voce; poi il terminale dal vivo
   dictate "Great. Now update the changelog and tag the release"
   scroll "${S5:-1200}" 2000 1.0; snap fondo
   tap 240 "${Y_WRITE:-350}"; pause 2.5; snap inviato
-  step followup 1.0; go terminal/payments-api; pause 9.0; snap terminale
+  # In fondo al Terminale: solo da lì le righe nuove lo fanno scorrere da sole.
+  # I tick fanno avanzare il lavoro: a ogni passo il Terminale cattura di nuovo e le righe nuove scorrono dentro.
+  step followup 1.0; go terminal/payments-api; pause 2.4; scroll 3000 2600 0.5; snap terminale
+  step tick 3.2; step tick 3.2; step tick 3.5; snap terminale_cresce
 }
 scene_6() {   # quanta quota resta
   go quota; pause 2.4; snap panoramica; scroll 300 2600; snap ritmo; scroll 360 2400; snap lavoro
 }
-scene_7() {   # il post sul blog
-  dictate "Draft a post about the 2.8.0 release"
+scene_7() {   # una sessione nuova per usare il rimborso nel negozio
+  # Nella demo non c'è un progetto «blog»: il seguito naturale del rilascio è il negozio che usa l'endpoint dei rimborsi.
+  dictate "Add the refund button to the storefront orders page"
   go launch; pause 2.2; snap progetti
-  tap 240 "${Y_PROJECT_BLOG:-290}"; pause 1.5; snap progetto
-  tap 240 "${Y_WRITE_FIRST:-300}"; pause 3.5; snap sessione_nata
+  tap 240 "${Y_PROJECT:-200}"; pause 1.5; snap progetto
+  tap 240 "${Y_WRITE_FIRST:-320}"; pause 3.5; snap sessione_nata
 }
 scene_8() { home 3.0; snap chiusura; }
 
@@ -144,6 +150,9 @@ setup() {
   # Il valore originale si salva una volta sola: rilanciando setup si salverebbe quello lungo messo qui.
   [ -s "$OUT/.timeout_prima" ] || sh settings get system screen_off_timeout > "$OUT/.timeout_prima"
   sh settings put system screen_off_timeout 1800000
+  # Volume multimediale a zero: il ▶ delle scene legge ad alta voce, e il video non ha audio (17/09 01:47).
+  [ -s "$OUT/.volume_prima" ] || sh cmd media_session volume --stream 3 --get 2>/dev/null | sed -n 's/.*volume is \([0-9]*\).*/\1/p' > "$OUT/.volume_prima"
+  sh cmd media_session volume --stream 3 --set 0 >/dev/null 2>&1
   sh svc power stayon true
   sh cmd locale set-app-locales $PKG --locales en-US
   sh am start -n $ACT --ez demo true >/dev/null; pause 3
@@ -154,6 +163,7 @@ teardown() {
   sh am start -n $ACT --ez demo false >/dev/null; pause 2
   sh cmd locale set-app-locales $PKG --locales ""
   sh svc power stayon false
+  sh cmd media_session volume --stream 3 --set "$(cat "$OUT/.volume_prima" 2>/dev/null || echo 5)" >/dev/null 2>&1
   sh settings put system screen_off_timeout "$(cat "$OUT/.timeout_prima" 2>/dev/null || echo 15000)"
   echo "dati veri, lingua di sistema, schermo normale"
 }

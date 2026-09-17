@@ -21,3 +21,9 @@ captures/
 # Catture dal polso con sessioni vere e riferimenti con dati personali: restano sul disco, mai nel repo pubblico
 docs/screenshots/
 docs/brief/*.png
+
+# Montaggio Remotion dei video promozionali: dipendenze collegate, render e clip restano fuori dal repo
+tools/promo/remotion/node_modules
+tools/promo/remotion/out/
+tools/promo/remotion/public/scenes/
+tools/promo/out/
