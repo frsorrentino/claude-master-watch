@@ -1,7 +1,7 @@
 {
- "bpm": 100,
+ "bpm": 110,
  "fps": 30,
- "offsetSeconds": 0,
+ "offsetSeconds": 0.0075,
  "scenes": [
   {
    "id": "open-1",
@@ -68,7 +68,7 @@
   {
    "id": "asks",
    "at": 20,
-   "len": 6,
+   "len": 8,
    "act": "know",
    "watch": {
     "view": "front",
@@ -85,14 +85,14 @@
    "fx": [
     {
      "kind": "haptic",
-     "at": 1
+     "at": 4
     }
    ]
   },
   {
    "id": "speaks",
-   "at": 26,
-   "len": 14,
+   "at": 28,
+   "len": 18,
    "act": "know",
    "watch": {
     "view": "front",
@@ -119,7 +119,7 @@
   },
   {
    "id": "answer",
-   "at": 40,
+   "at": 46,
    "len": 6,
    "act": "act",
    "watch": {
@@ -139,14 +139,14 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 2,
-     "len": 2
+     "at": 3,
+     "len": 3
     }
    ]
   },
   {
    "id": "follow",
-   "at": 46,
+   "at": 52,
    "len": 6,
    "act": "act",
    "watch": {
@@ -173,7 +173,7 @@
   },
   {
    "id": "done",
-   "at": 52,
+   "at": 58,
    "len": 6,
    "act": "act",
    "watch": {
@@ -191,8 +191,8 @@
   },
   {
    "id": "say",
-   "at": 58,
-   "len": 6,
+   "at": 64,
+   "len": 8,
    "act": "act",
    "watch": {
     "view": "front",
@@ -219,7 +219,7 @@
   },
   {
    "id": "watch",
-   "at": 64,
+   "at": 72,
    "len": 8,
    "act": "act",
    "watch": {
@@ -250,7 +250,7 @@
   },
   {
    "id": "limits",
-   "at": 72,
+   "at": 80,
    "len": 10,
    "act": "control",
    "watch": {
@@ -278,7 +278,7 @@
   },
   {
    "id": "new",
-   "at": 82,
+   "at": 90,
    "len": 14,
    "act": "control",
    "watch": {
@@ -300,8 +300,8 @@
   },
   {
    "id": "close",
-   "at": 96,
-   "len": 14,
+   "at": 104,
+   "len": 16,
    "act": "close",
    "watch": {
     "view": "threeQuarter",
@@ -312,5 +312,6 @@
    },
    "endCard": true
   }
- ]
+ ],
+ "music": "audio/music.wav"
 }

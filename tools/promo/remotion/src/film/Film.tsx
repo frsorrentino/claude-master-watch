@@ -14,11 +14,14 @@ import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
+import { Soundtrack } from "./Soundtrack.tsx";
+import type { Stems } from "./Soundtrack.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
 export const TIMELINE = validateTimeline(raw);
 export const GRID: Grid = { bpm: TIMELINE.bpm, fps: TIMELINE.fps, offsetSeconds: TIMELINE.offsetSeconds };
-export const filmFrames = (): number => beatToFrame(GRID, totalBeats(TIMELINE)) - beatToFrame(GRID, 0);
+/** I fotogrammi sono assoluti: la musica parte dal fotogramma 0 e il battito 0 cade a offsetSeconds. */
+export const filmFrames = (): number => beatToFrame(GRID, totalBeats(TIMELINE));
 
 export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; around?: React.ReactNode }> = ({ scene, overlay, around }) => {
   const frame = useCurrentFrame();
@@ -52,13 +55,13 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   );
 };
 
-export const Film: React.FC = () => {
+export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   useFilmFonts();
-  const zero = beatToFrame(GRID, 0);
   return (
     <AbsoluteFill style={{ background: "#000" }}>
+      <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "music"} />
       {TIMELINE.scenes.map((s) => (
-        <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at) - zero} durationInFrames={spanFrames(GRID, s.at, s.len)}>
+        <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
           <SceneView scene={s} {...fxLayers(s, GRID)} />
         </Sequence>
       ))}

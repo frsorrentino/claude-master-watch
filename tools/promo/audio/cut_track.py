@@ -21,4 +21,5 @@ if __name__ == "__main__":
     y = cut(x, sr, card["bpm"], card["first_beat_s"], segs)
     dst = Path(__file__).resolve().parent.parent / "remotion/public/audio/music.wav"; dst.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(dst), "wb") as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())
-    print(f"{dst}: {len(y) / sr:.2f} s · bpm {card['bpm']} · offsetSeconds {card['first_beat_s']}")
+    offset = card['first_beat_s'] if segs[0][0] == 0 else 0.015 / 2          # se si parte da una battuta interna, il primo battito cade dopo mezza dissolvenza
+    print(f"{dst}: {len(y) / sr:.2f} s · bpm {card['bpm']} · offsetSeconds {offset:.4f}")
