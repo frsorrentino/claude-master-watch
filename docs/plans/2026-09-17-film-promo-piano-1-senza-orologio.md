@@ -1425,7 +1425,7 @@ La chiave sta in `~/.claude/fable-director/cross-family.json` → `providers.gem
 
 **Interfaces:**
 - Produces: `read_wav(path) -> (sr, x)`, `to_wav(src, dst, sr=44100)`, `rms_db(x)`, `crest_db(x)`, `band_db(x, sr, lo, hi)`,
-  `onset_env(x, sr) -> (env, times)`, `tempo(env) -> (bpm, first_beat_s, [(bpm, punteggio) × 3])`,
+  `onset_env(x, sr) -> (env, times)`, `tempo(env, times) -> (bpm, first_beat_s, [(bpm, punteggio) × 3])`,
   `onsets(env, times) -> [s]`, `bar_energy_db(x, sr, bpm, first_beat_s) -> [dB]`, `loudness(path) -> (lufs, peak_dbfs)`.
 
 - [ ] **Step 1: test che falliscono** — `test_measure.py`
@@ -1438,10 +1438,12 @@ import numpy as np
 import measure as M
 
 SR = 44100
+def click_times(bpm, seconds, first=0.30):
+    return [first + i * 60 / bpm for i in range(int((seconds - 0.2 - first) * bpm / 60) + 1)]      # per indice: sommando 0,6 sedici volte si resta sotto 9,9 e nasce un clic in più
 def click_track(bpm, seconds, first=0.30):
-    x = np.zeros(int(SR * seconds), np.float32); t = first
-    while t < seconds - 0.1:
-        i = int(t * SR); x[i:i + 220] += np.hanning(220) * np.sin(2 * np.pi * 1800 * np.arange(220) / SR) * 0.8; t += 60 / bpm
+    x = np.zeros(int(SR * seconds), np.float32)
+    for t in click_times(bpm, seconds, first):
+        i = int(t * SR); x[i:i + 220] += np.hanning(220) * np.sin(2 * np.pi * 1800 * np.arange(220) / SR) * 0.8
     return x + np.random.default_rng(1).normal(0, 0.002, len(x)).astype(np.float32)
 def write(x, path):
     with wave.open(str(path), "wb") as w:
@@ -1449,14 +1451,14 @@ def write(x, path):
 
 class Tempo(unittest.TestCase):
     def test_cento_battiti(self):
-        env, times = M.onset_env(click_track(100, 40), SR); bpm, first, _ = M.tempo(env)
+        env, times = M.onset_env(click_track(100, 40), SR); bpm, first, _ = M.tempo(env, times)
         self.assertAlmostEqual(bpm, 100, delta=0.1)
         self.assertAlmostEqual(first % 0.6, 0.30, delta=0.005, msg=f"scarto {first % 0.6 - 0.30:+.4f} s: correggere ENV_BIAS_S di questo valore")
     def test_novantasette(self):
-        self.assertAlmostEqual(M.tempo(M.onset_env(click_track(97, 40), SR)[0])[0], 97, delta=0.1)
+        self.assertAlmostEqual(M.tempo(*M.onset_env(click_track(97, 40), SR))[0], 97, delta=0.1)
     def test_attacchi(self):
         env, times = M.onset_env(click_track(100, 10), SR); on = M.onsets(env, times)
-        self.assertEqual(len(on), 16); self.assertLess(max(abs(o - (0.30 + 0.6 * i)) for i, o in enumerate(on)), 0.010)
+        want = click_times(100, 10); self.assertEqual(len(on), len(want)); self.assertLess(max(abs(o - w) for o, w in zip(on, want)), 0.010)
 
 class Livelli(unittest.TestCase):
     def test_cresta(self):
@@ -1489,8 +1491,8 @@ Run: `cd tools/promo/audio && python3 -m unittest test_measure -v` → FAIL (`No
 import re, subprocess, wave
 import numpy as np
 
-HOP_S = 0.005          # passo dell'inviluppo degli attacchi
-ENV_BIAS_S = 0.0       # ritardo sistematico dell'inviluppo rispetto all'attacco vero: lo fissa test_cento_battiti
+HOP_S = 0.005          # passo NOMINALE dell'inviluppo: quello vero è un numero intero di campioni, e lo dicono i tempi restituiti
+ENV_BIAS_S = -0.0057   # l'inviluppo anticipa l'attacco vero di 5,7 ms (misurato su clic a 97, 100 e 108 battiti: −5,6/−5,8/−5,7): costante dello strumento, non della traccia
 
 def read_wav(path):
     with wave.open(str(path), "rb") as w:
@@ -1520,15 +1522,15 @@ def onset_env(x, sr, n=1024, block=2000):
     env = np.r_[0.0, np.concatenate(flux)]
     return env, (np.arange(len(env)) * hop + n / 2) / sr - ENV_BIAS_S
 
-def tempo(env, lo=80.0, hi=130.0, step=0.05):
+def tempo(env, times, lo=80.0, hi=130.0, step=0.05):
     """Per ogni tempo candidato, la fase che raccoglie più attacchi. Restituisce bpm, primo battito (s), i tre migliori."""
-    e = env - env.mean(); t = np.arange(len(e)); res = []
+    e = env - env.mean(); t = np.arange(len(e)); hop_s = float(times[1] - times[0]); res = []      # 220 campioni a 44,1 kHz sono 4,989 ms, non 5: con 5 tondi il tempo esce sbagliato dello 0,23 %
     for bpm in np.arange(lo, hi, step):
-        period = 60 / bpm / HOP_S; ph = np.arange(0, period, 0.5)
+        period = 60 / bpm / hop_s; ph = np.arange(0, period, 0.5)
         beats = ph[:, None] + period * np.arange(int(len(e) / period) - 1)[None, :]
         sc = np.interp(beats, t, e).mean(axis=1); i = int(sc.argmax()); res.append((float(sc[i]), float(bpm), float(ph[i])))
     res.sort(reverse=True); _, bpm, ph = res[0]
-    first = (ph * HOP_S * 1.0) + (1024 / 2) / 44100 - ENV_BIAS_S
+    first = float(np.interp(ph, t, times))
     top = []
     for s, b, _ in res:
         if all(abs(b - q) > 1 for q, _ in top): top.append((round(b, 2), round(s, 3)))
@@ -1551,11 +1553,11 @@ def loudness(path):
     return float(re.search(r"I:\s+(-?[\d.]+) LUFS", tail).group(1)), float(re.search(r"Peak:\s+(-?[\d.]+) dBFS", tail).group(1))
 ```
 
-`tempo()` assume la finestra di 1024 campioni a 44,1 kHz di `onset_env`: le tracce passano sempre da `to_wav()`.
+`tempo()` lavora sui tempi veri restituiti da `onset_env` (il passo è un numero intero di campioni: 4,989 ms, non 5).
 
-- [ ] **Step 3: tarare il ritardo.** Run dei test: se `test_cento_battiti` fallisce solo sul primo battito, il messaggio dice lo
-  scarto (`scarto +0.0xxx s`): mettere quel valore in `ENV_BIAS_S` e rilanciare. È una costante dello strumento (finestra e
-  compressione), non della traccia: `test_novantasette` e `test_attacchi` la confermano su un altro segnale.
+- [ ] **Step 3: tarare il ritardo.** Fatto il 17/09: su clic a 97, 100 e 108 battiti l'inviluppo anticipava di 5,6-5,8 ms; con
+  `ENV_BIAS_S = -0.0057` gli attacchi cadono entro 2,7 ms e il primo battito entro 1,7 ms. È una costante dello strumento
+  (finestra e compressione), non della traccia: se si cambia finestra o passo va rimisurata con lo stesso script.
 - [ ] **Step 4:** `python3 -m unittest test_measure -v` → 7 test OK.
 - [ ] **Step 5: commit** `feat(promo): audio measures with numpy only — tempo and first beat, onsets, crest factor, band energy, bar energy, LUFS via ffmpeg`.
 
@@ -1577,7 +1579,7 @@ import measure as M
 src = Path(sys.argv[1])
 with tempfile.TemporaryDirectory() as d:
     sr, x = M.read_wav(M.to_wav(src, Path(d) / "t.wav"))
-env, times = M.onset_env(x, sr); bpm, first, top = M.tempo(env); bars = M.bar_energy_db(x, sr, bpm, first)
+env, times = M.onset_env(x, sr); bpm, first, top = M.tempo(env, times); bars = M.bar_energy_db(x, sr, bpm, first)
 e = np.array(bars); rise = int(np.argmax(np.convolve(np.diff(e), np.ones(2), "valid"))) + 1      # la battuta dove l'energia sale di più
 lufs, peak = M.loudness(src)
 card = {"file": src.name, "seconds": round(len(x) / sr, 1), "bpm": bpm, "bpm_candidates": top, "first_beat_s": round(first, 3),
