@@ -109,6 +109,12 @@ con un modello cambiato `context` resta null fino al turno successivo della sess
 vecchio non è quella del modello nuovo. La scelta vale finché la sessione vive: un riavvio o una ripresa tornano al
 default. `v` resta 1.
 
+Contratto 1.13.1 (17/09/2026, solo semantica di `context`, segnalata dall'app alle 14:31: master al 100 % sul polso e al
+59 % nel terminale): la finestra non si deduce più dalla sola assenza di `[1m]`. Fonti, in ordine: il suffisso `[1m]`; la
+finestra dichiarata da Claude Code alla statusline, se salvata per sessione; più di 200k token → 1M. Per un modello il
+cui id non dice la finestra (Fable 5.1) e senza nessuna di queste fonti, `context` è null. Un turno `<synthetic>` non
+conta come ultimo turno. `v` resta 1.
+
 Semantica dei tempi, dal relay (per non reinterpretarla ogni volta): `since` è la nascita della sessione per
 busy/idle/awaiting, l'istante della domanda per waiting, l'ultimo avvistamento per gone, e non cambia a ogni cambio di
 stato; `turn_started` è l'ultimo prompt o ripresa ed è valorizzato solo mentre lo stato è busy o awaiting, poi torna
