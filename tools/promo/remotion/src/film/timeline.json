@@ -318,7 +318,6 @@
     "view": "threeQuarter",
     "clip": "scenes/s1_list.mp4",
     "clipStart": 0.2,
-    "enter": "settleSmall",
     "still": "icon/close.png"
    },
    "endCard": true

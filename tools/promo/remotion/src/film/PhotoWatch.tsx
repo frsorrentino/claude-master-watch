@@ -1,12 +1,12 @@
 import React from "react";
 import { Freeze, Img, OffthreadVideo, staticFile } from "remotion";
 import geo from "./mockup.geometry.json";
-import { homography, toMatrix3d } from "./homography.ts";
+import { applyH, homography, toMatrix3d } from "./homography.ts";
 import type { Quad } from "./homography.ts";
 import { MAX_TILT } from "./moves.ts";
 import { Watch } from "../Watch";
 
-type Props = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
+type Props = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
 
 const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, still, overlay }) => {
   const video = <OffthreadVideo src={staticFile(clip)} muted trimBefore={Math.round(clipStart * 30)} playbackRate={rate} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
@@ -50,20 +50,29 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx,
   );
 };
 
-const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, overlay }) => {
+const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, overlay, reveal = 1, bodyOpacity = 1, contentOpacity = 1, focus = 0 }) => {
   const Q = geo.q34;
   const k = glassPx / (2 * Q.b);
+  const H = homography(480, Q.quad as Quad);
+  // il logo piatto: un quadrato dritto, centrato dove cade il centro del display e grande come il display visto di tre quarti;
+  // inclinarsi = passare da questa matrice a quella della prospettiva vera, così alla fine combacia col vetro senza scatti
+  const [qx, qy] = applyH(H, [240, 240]);
+  const q = Q.quad as Quad;
+  const side = (Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) + Math.hypot(q[2][0] - q[3][0], q[2][1] - q[3][1]) + Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]) + Math.hypot(q[2][0] - q[1][0], q[2][1] - q[1][1])) / 4;
+  const flat = [side / 480, 0, qx - side / 2, 0, side / 480, qy - side / 2, 0, 0, 1];
+  const M = flat.map((f, i) => f + (H[i] - f) * reveal);
+  const ox = Q.cx + (qx - Q.cx) * focus, oy = Q.cy + (qy - Q.cy) * focus;      // focus 1: al centro c'è il display, non il vetro
   return (
-    <div style={{ width: Q.size * k, height: Q.size * k, translate: `${-Q.cx * k}px ${-Q.cy * k}px`,
+    <div style={{ width: Q.size * k, height: Q.size * k, translate: `${-ox * k}px ${-oy * k}px`,
       /* il cinturino finisce con la foto: sfuma nel buio prima che il bordo entri in quadro */
       maskImage: "linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 11%, #000 89%, rgba(0,0,0,0) 100%)" }}>
       <div style={{ width: Q.size, height: Q.size, position: "relative", transformOrigin: "0 0", scale: String(k) }}>
-        <Img src={staticFile("mockup/q34_body.png")} style={{ position: "absolute", inset: 0, filter: "drop-shadow(30px 36px 36px rgba(4,5,12,.62))" }} />
-        <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", transform: toMatrix3d(homography(480, Q.quad as Quad)), filter: "blur(0.4px) brightness(.95)", ["--k" as string]: "1" }}>
+        <Img src={staticFile("mockup/q34_body.png")} style={{ position: "absolute", inset: 0, opacity: bodyOpacity, filter: "drop-shadow(30px 36px 36px rgba(4,5,12,.62))" }} />
+        <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", transform: toMatrix3d(M), opacity: contentOpacity, filter: "blur(0.4px) brightness(.95)", ["--k" as string]: "1" }}>
           <Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} still={still} overlay={overlay} />
         </div>
         {/* qui il telefono non c'è: i riflessi VERI della foto sopra l'interfaccia */}
-        <Img src={staticFile("mockup/q34_reflections.png")} style={{ position: "absolute", inset: 0, mixBlendMode: "screen" }} />
+        <Img src={staticFile("mockup/q34_reflections.png")} style={{ position: "absolute", inset: 0, mixBlendMode: "screen", opacity: bodyOpacity }} />
       </div>
     </div>
   );

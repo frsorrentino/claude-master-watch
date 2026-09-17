@@ -3,7 +3,7 @@ import { AbsoluteFill, Sequence, interpolate, useCurrentFrame, useVideoConfig } 
 import raw from "./timeline.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { MOVE_BEATS, poseAt } from "./moves.ts";
+import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
 import { totalBeats, validateTimeline } from "./timeline.ts";
 import type { Scene } from "./timeline.ts";
 import { Backdrop } from "./Backdrop.tsx";
@@ -29,7 +29,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const total = spanFrames(GRID, scene.at, scene.len);
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
-  const pose = w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit) : null;
+  const closing = scene.endCard ? closingAt(frame / beat) : null;
+  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit) : null;
   const cx = (scene.text ? THEME.watchX : 0.5) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima
@@ -40,11 +41,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} tilt={pose.tilt} overlay={overlay} around={around}
+          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
-      {scene.endCard ? <Sequence from={beat * MOVE_BEATS} layout="none"><EndCard beat={beat} /></Sequence> : null}
+      {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">
           <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: "center" }}>

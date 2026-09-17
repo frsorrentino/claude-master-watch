@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MAX_TILT, poseAt } from "./moves.ts";
+import { MAX_TILT, closingAt, poseAt } from "./moves.ts";
 import type { Move } from "./moves.ts";
 
 const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft"];
@@ -29,4 +29,20 @@ test("settleSmall lascia l'orologio piccolo e in alto per tutto il resto della s
 test("zoomLeft ingrandisce verso la complication di sinistra e parte da fermo", () => {
   const a = poseAt(84, 120, 36, undefined, "zoomLeft"), b = poseAt(120, 120, 36, undefined, "zoomLeft");
   assert.ok(Math.abs(a.scale - 1) < 0.05 && b.scale > 2);
+});
+
+test("zoomLeft finisce centrato sul quadrante della complication: simmetrico, deriva compresa", () => {
+  const p = poseAt(120, 120, 36, undefined, "zoomLeft");
+  const cx = 0.69 * 1920, dx = (85 - 240) * 1.326, dy = (240.5 - 240) * 1.326;      // centro del quadrante misurato sul quadrante: (85, 240,5) su 480
+  assert.ok(Math.abs(cx + p.x * 1920 + dx * p.scale - 960) < 2, "orizzontale");
+  assert.ok(Math.abs(540 + p.y * 1080 + dy * p.scale - 540) < 2, "verticale");
+  assert.ok(p.scale > 3.2);
+});
+
+test("chiusura: prima solo il logo grande, poi si inclina e compare l'orologio, poi si allontana fino all'inquadratura finale", () => {
+  assert.equal(closingAt(0).logo, 0); assert.equal(closingAt(2).logo, 1);
+  assert.equal(closingAt(3).tilt, 0); assert.equal(closingAt(3).body, 0); assert.equal(closingAt(5).tilt, 1); assert.equal(closingAt(5).body, 1);
+  const a = closingAt(1), z = closingAt(9);
+  assert.ok(a.focus === 1 && a.pose.scale > 1.5 && a.pose.y === 0);
+  assert.ok(z.focus === 0 && Math.abs(z.pose.scale - 0.5) < 1e-9 && Math.abs(z.pose.y + 0.2) < 1e-9);
 });
