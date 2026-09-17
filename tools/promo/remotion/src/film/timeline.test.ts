@@ -41,3 +41,9 @@ test("tre righe al massimo, mai i puntini di sospensione", () => {
   const t = base(); t.scenes[0].text.lines = ["a", "b", "c", "d…"];
   assert.equal(problems(t).length, 3);      // quattro righe, i puntini, e «working.» che non c'è più
 });
+test("con l'orologio in scena una riga di titolo non supera i 14 caratteri: oltre, finisce sopra la cassa", () => {
+  const t = base(); t.scenes[1].text.lines = ["Know your limits."]; t.scenes[1].text.accent = "limits.";
+  assert.match(problems(t).join("\n"), /list: la riga «Know your limits\.» ha 17 caratteri, al massimo 14 accanto all'orologio/);
+  const solo = base(); solo.scenes[0].text.lines = ["Claude is working hard."]; solo.scenes[0].text.accent = "working";
+  assert.deepEqual(problems(solo), []);
+});

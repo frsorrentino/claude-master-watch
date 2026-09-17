@@ -14,6 +14,6 @@
       "text": { "lines": ["It asks."], "accent": "asks.", "at": 1 }, "fx": [{ "kind": "haptic", "at": 1 }] },
     { "id": "limits", "at": 26, "len": 6, "act": "control",
       "watch": { "view": "front", "clip": "scenes/s6_quota.mp4", "enter": "slideIn" },
-      "text": { "lines": ["Know your limits."], "accent": "limits.", "at": 1 } }
+      "text": { "lines": ["Know your", "limits."], "accent": "limits.", "at": 1 } }
   ]
 }

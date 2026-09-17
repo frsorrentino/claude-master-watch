@@ -616,6 +616,12 @@ test("tre righe al massimo, mai i puntini di sospensione", () => {
   const t = base(); t.scenes[0].text.lines = ["a", "b", "c", "d…"];
   assert.equal(problems(t).length, 3);      // quattro righe, i puntini, e «working.» che non c'è più
 });
+test("con l'orologio in scena una riga di titolo non supera i 14 caratteri: oltre, finisce sopra la cassa", () => {
+  const t = base(); t.scenes[1].text.lines = ["Know your limits."]; t.scenes[1].text.accent = "limits.";
+  assert.match(problems(t).join("\n"), /list: la riga «Know your limits\.» ha 17 caratteri, al massimo 14 accanto all'orologio/);
+  const solo = base(); solo.scenes[0].text.lines = ["Claude is working hard."]; solo.scenes[0].text.accent = "working";
+  assert.deepEqual(problems(solo), []);
+});
 ```
 
 Run: `npm test` → FAIL (moduli mancanti).
@@ -717,6 +723,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);
       if (s.text.lines.some((l) => l.includes("…") || l.includes("..."))) say("puntini di sospensione nel testo");
+      // accanto all'orologio restano ~735 px: a 110 px sono 14 caratteri (misurato: «Every session.» entra, «Know your limits.» no)
+      if (s.watch && (s.text.size ?? "title") === "title") for (const l of s.text.lines) if (l.length > 14) say(`la riga «${l}» ha ${l.length} caratteri, al massimo 14 accanto all'orologio`);
       const words = s.text.lines.flatMap((l) => l.split(" "));
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
       if (s.text.at !== undefined && (!half(s.text.at) || s.text.at >= s.len)) say(`il testo al battito ${s.text.at} esce dalla scena`);
@@ -767,7 +775,7 @@ console.log(`scaletta valida: ${t.scenes.length} scene, ${totalBeats(t)} battiti
       "text": { "lines": ["It asks."], "accent": "asks.", "at": 1 }, "fx": [{ "kind": "haptic", "at": 1 }] },
     { "id": "limits", "at": 26, "len": 6, "act": "control",
       "watch": { "view": "front", "clip": "scenes/s6_quota.mp4", "enter": "slideIn" },
-      "text": { "lines": ["Know your limits."], "accent": "limits.", "at": 1 } }
+      "text": { "lines": ["Know your", "limits."], "accent": "limits.", "at": 1 } }
   ]
 }
 ```
