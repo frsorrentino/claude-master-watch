@@ -7,7 +7,7 @@ import { Film, filmFrames } from "./film/Film.tsx";
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition id="Release" component={Release} fps={FPS} width={1920} height={1080} durationInFrames={durationInFrames()} />
-    <Composition id="Film" component={Film} defaultProps={{ stems: "music" as const }} fps={30} width={1920} height={1080} durationInFrames={filmFrames()} />
+    <Composition id="Film" component={Film} defaultProps={{ stems: "nosfx" as const }} fps={30} width={1920} height={1080} durationInFrames={filmFrames()} />
     <Composition id="Compare" component={Compare} fps={30} width={1920} height={1080} durationInFrames={90} />
   </>
 );

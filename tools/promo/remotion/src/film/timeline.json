@@ -37,7 +37,8 @@
     "view": "threeQuarter",
     "clip": "scenes/s0_face.mp4",
     "enter": "riseIn",
-    "exit": "zoomLeft"
+    "exit": "zoomLeft",
+    "rate": 0.85
    },
    "text": {
     "lines": [
@@ -74,7 +75,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s2_question.mp4",
-    "clipStart": 5
+    "clipStart": 4.5
    },
    "text": {
     "lines": [
@@ -107,14 +108,21 @@
      "It speaks."
     ],
     "accent": "speaks.",
-    "at": 1
+    "at": 0.5
    },
    "fx": [
     {
      "kind": "tap",
-     "at": 2,
+     "at": 1,
      "x": 344,
      "y": 86
+    },
+    {
+     "kind": "spoken",
+     "at": 1,
+     "len": 17,
+     "voice": "question.wav",
+     "words": "question.words.json"
     }
    ]
   },
@@ -179,7 +187,8 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s3_done.mp4",
-    "clipStart": 0.3
+    "clipStart": 0,
+    "rate": 0.9
    },
    "text": {
     "lines": [

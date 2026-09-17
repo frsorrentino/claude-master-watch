@@ -62,7 +62,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   useFilmFonts();
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "music"} />
+      <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
       {TIMELINE.scenes.map((s) => (
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
           <SceneView scene={s} {...fxLayers(s, GRID)} />
