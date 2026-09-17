@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Livello monocromatico dell'icona adattiva (icone a tema): senza traccia, perché la tinta unica chiuderebbe il quadrante.
+     Generato da docs/icona/gen_icona.py: non modificare a mano. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.907" android:strokeLineCap="round" android:pathData="M35.972,75.485 A28.047,28.047 0 1 1 77.252,38.317" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.617" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M42.949,44.065 L52.493,52.605 L42.949,61.144" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.617" android:strokeLineCap="round" android:pathData="M56.813,61.144 L63.745,61.144" />
+</vector>

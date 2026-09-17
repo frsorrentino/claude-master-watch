@@ -1,21 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Glifo monocromo dell'app (raggiera Claude): icona della tile, della complication e delle notifiche.
-     Prima c'era ic_notification, che è un punto interrogativo: Wear OS lo mostrava sopra la tile e sembrava un segnaposto. -->
+<!-- Glifo monocromo dell'app: notifiche, complication, badge senza icona propria. La traccia è al 35 % di opacità.
+     Generato da docs/icona/gen_icona.py: non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp" android:viewportWidth="48" android:viewportHeight="48">
-    <group android:translateX="24" android:translateY="24">
-        <path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" />
-        <group android:rotation="30"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="60"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="90"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="120"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="150"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="180"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="210"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="240"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="270"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="300"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <group android:rotation="330"><path android:fillColor="#FFFFFFFF" android:pathData="M-1.7,-4 L-2.5,-19 A2.5,2.5 0 0 1 2.5,-19 L1.7,-4 Z" /></group>
-        <path android:fillColor="#FFFFFFFF" android:pathData="M-5,0 A5,5 0 1 1 5,0 A5,5 0 1 1 -5,0 Z" />
-    </group>
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:strokeColor="#59FFFFFF" android:strokeWidth="2.735" android:strokeLineCap="round" android:pathData="M11.380,39.039 A19.633,19.633 0 1 1 36.620,39.039" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.735" android:strokeLineCap="round" android:pathData="M11.380,39.039 A19.633,19.633 0 1 1 40.276,13.022" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.532" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M16.264,17.046 L22.945,23.023 L16.264,29.001" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.532" android:strokeLineCap="round" android:pathData="M25.969,29.001 L30.822,29.001" />
 </vector>
