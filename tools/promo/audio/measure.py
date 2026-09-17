@@ -62,3 +62,10 @@ def loudness(path):
     err = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True).stderr
     tail = err[err.rfind("Summary:"):]
     return float(re.search(r"I:\s+(-?[\d.]+) LUFS", tail).group(1)), float(re.search(r"Peak:\s+(-?[\d.]+) dBFS", tail).group(1))
+
+def offbeat_ratio(env, times, bpm, first_beat_s):
+    """Quanto il ritmo è spezzato: forza media degli attacchi sui sedicesimi in levare (¼ e ¾ di battito) divisa per quella
+    sui battiti. Cassa dritta: vicino a 0; ritmo sincopato o spezzato: sale."""
+    e = np.maximum(env - np.median(env), 0); beat = 60 / bpm; n = int((times[-1] - first_beat_s) / beat) - 1
+    at = lambda frac: float(np.interp(first_beat_s + (np.arange(n) + frac) * beat, times, e).mean())
+    return (at(0.25) + at(0.75)) / 2 / max(at(0.0), 1e-9)

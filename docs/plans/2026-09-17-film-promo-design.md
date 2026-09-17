@@ -175,3 +175,10 @@ di movimento, suoni accordati alla tonalità della traccia. Si riaprono solo su 
   sezione 4 cambia: non «elettronica calda e minimale» ma **elettronica moderna e ritmata, con taglio hip hop o funky**,
   come nei film dei grandi marchi. Il tempo non è più vincolato a 95-110: la scaletta è in battiti e segue la traccia; resta
   l'esigenza di un'apertura più rada e di un finale vero (o di un punto dove chiudere sul battito).
+- **17/09/2026 20:50, allineamento del tre quarti verificato su una foto reale a schermo acceso** (Franz, al polso, 20:38;
+  inclinazione ~39°; copia in `tools/promo/materiali/foto/`). Misure: contenuto acceso ed ellisse del vetro adattati ai minimi
+  quadrati; margine nero sul lato lontano 0,073 del semiasse maggiore, verso la corona circa il doppio (il bordo vicino, in
+  penombra, è incerto di ±20 px). Il raggio 0,86 regge. Era sbagliata la **profondità**: avevo messo il pannello 0,03 raggi
+  SOTTO il piano del bordo del vetro (margini uguali, anzi display spinto verso la corona); sul Pixel Watch 4 il display è
+  vicino al vetro e la cupola scende sui fianchi, quindi la giunzione vetro/cassa sta più in basso del pannello: profondità
+  apparente **−0,05 raggi**. Corretto in `export.py` (`DEPTH`), con test sul verso dello spostamento.

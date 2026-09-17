@@ -9,7 +9,7 @@ HERE = Path(__file__).resolve().parent
 MAT = HERE.parent / "materiali/foto"
 PUB = HERE.parent / "remotion/public/mockup"
 GEO = HERE.parent / "remotion/src/film/mockup.geometry.json"
-CH, K = 7.8, 0.86                                  # smusso lucido (come matte_front.py) e raggio del display sul vetro
+CH, K, DEPTH = 7.8, 0.86, -0.05                    # smusso lucido (come matte_front.py), raggio del display sul vetro, profondità apparente del pannello
 
 def grade(im, contrast, red):                      # la stessa correzione dei fotogrammi di prova: contrasto e dominante fredda
     r, g, b = ImageEnhance.Contrast(im).enhance(contrast).split()
@@ -26,7 +26,11 @@ def q34():
     photo = Image.open(MAT / "q10_clean.png").convert("RGB"); n = photo.width
     body = grade(photo, 1.10, 0.95); pts = json.loads((HERE / "q34_outline.json").read_text())["points"]
     rgba = body.copy(); rgba.putalpha(outline.mask(pts, n)); rgba.save(PUB / "q34_body.png")
-    quad = pose.display_quad(pose.fit()[0], k=K, depth=0.03); m = 960
+    # Profondità NEGATIVA: dal Pixel Watch 4 il display è vicino al vetro della cupola, e la cupola scende lungo i fianchi: la
+    # giunzione vetro/cassa (l'ellisse misurata) sta più in basso del pannello. Misurato sulla foto reale a schermo acceso del
+    # 17/09 (inclinazione 39°): margine lontano 0,073 del semiasse maggiore, margine verso la corona circa doppio; con +0,03 i
+    # due margini uscivano uguali.
+    quad = pose.display_quad(pose.fit()[0], k=K, depth=DEPTH); m = 960
     disc = Image.new("L", (m, m), 0); ImageDraw.Draw(disc).ellipse([2, 2, m - 3, m - 3], fill=255)
     M, rhs = [], []
     for (x, y), (X, Y) in zip(quad, [(0, 0), (m, 0), (m, m), (0, m)]):      # coefficienti uscita -> ingresso, come vuole PIL

@@ -43,6 +43,12 @@ class Esportazione(unittest.TestCase):
         self.assertEqual(len(g["q34"]["quad"]), 4)
         for name in ("front_body.png", "q34_body.png"):
             self.assertEqual(Image.open(pub / name).mode, "RGBA")
+        # foto reale a schermo acceso (17/09, 20:38): margine nero stretto sul lato lontano, circa doppio verso la corona,
+        # perché la cupola scende sui fianchi e il pannello sta SOPRA il piano della giunzione vetro/cassa
+        import pose
+        q = np.array(g["q34"]["quad"]); base = np.array(pose.display_quad(pose.fit()[0], k=0.86, depth=0.0))
+        self.assertLess(q[:, 0].mean(), base[:, 0].mean() - 10)          # spostato verso il lato lontano (sinistra), non verso la corona
+        self.assertGreater(q[:, 0].mean(), base[:, 0].mean() - 40)
         r = np.asarray(Image.open(pub / "q34_reflections.png").convert("L"))
         self.assertEqual(int(r[5, 5]), 0)                         # fuori dal display: nero, neutro nella fusione «schermo»
         self.assertGreater(int(r.max()), 60)                      # dentro: i riflessi veri ci sono

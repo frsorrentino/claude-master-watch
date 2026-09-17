@@ -27,6 +27,16 @@ class Tempo(unittest.TestCase):
         env, times = M.onset_env(click_track(100, 10), SR); on = M.onsets(env, times)
         want = click_times(100, 10); self.assertEqual(len(on), len(want)); self.assertLess(max(abs(o - w) for o, w in zip(on, want)), 0.010)
 
+class Ritmo(unittest.TestCase):
+    def test_il_ritmo_spezzato_si_distingue_dalla_cassa_dritta(self):
+        dritto = click_track(100, 30); env, times = M.onset_env(dritto, SR)
+        spezzato = dritto.copy()
+        for t in click_times(100, 30)[::2]:                                  # un colpo in levare, a tre quarti di battito, un battito sì e uno no
+            i = int((t + 0.45) * SR); spezzato[i:i + 220] += np.hanning(220) * np.sin(2 * np.pi * 900 * np.arange(220) / SR) * 0.8
+        env2, times2 = M.onset_env(spezzato, SR)
+        a, b = M.offbeat_ratio(env, times, 100, 0.30), M.offbeat_ratio(env2, times2, 100, 0.30)
+        self.assertLess(a, 0.05); self.assertGreater(b, 0.15)
+
 class Livelli(unittest.TestCase):
     def test_cresta(self):
         s = np.sin(2 * np.pi * 440 * np.arange(SR) / SR).astype(np.float32)
