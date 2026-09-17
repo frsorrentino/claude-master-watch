@@ -40,7 +40,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} tilt={pose.tilt} overlay={overlay} around={around}
+          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} tilt={pose.tilt} overlay={overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

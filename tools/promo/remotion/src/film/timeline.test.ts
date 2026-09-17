@@ -53,3 +53,9 @@ test("le parole devono entrare nella scena: una per battito senza orologio, una 
   const ok = base(); ok.scenes[0].len = 6; ok.scenes[0].text.lines = ["You’re not", "at your desk."]; ok.scenes[0].text.accent = "desk."; ok.scenes[1].at = 6;
   assert.deepEqual(problems(ok), []);
 });
+test("al posto della clip una scena può mostrare un'immagine ferma, ma deve essere un PNG del progetto", () => {
+  const t = base(); t.scenes[1].watch.still = "icon/close.png";
+  assert.deepEqual(problems(t), []);
+  t.scenes[1].watch.still = "https://example.com/x.jpg";
+  assert.match(problems(t).join("\n"), /list: immagine «https:\/\/example.com\/x.jpg»: attesa un PNG dentro public/);
+});

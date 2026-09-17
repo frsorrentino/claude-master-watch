@@ -9,7 +9,7 @@ const missing = t.scenes.filter((s) => s.watch && !existsSync(`${here}../../publ
 if (missing.length) { console.error(missing.join("\n")); process.exit(1); }
 // La clip deve bastare per la scena: chiedere fotogrammi oltre la fine fa scadere il render (17/09: apertura 3,27 s su una clip da 3 s).
 const short = t.scenes.flatMap((s) => {
-  if (!s.watch || s.watch.freeze) return [];
+  if (!s.watch || s.watch.freeze || s.watch.still) return [];
   const file = `${here}../../public/${s.watch.clip}`;
   const dur = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file], { encoding: "utf8" }));
   const need = (s.watch.clipStart ?? 0) + ((s.len * 60) / t.bpm) * (s.watch.rate ?? 1);

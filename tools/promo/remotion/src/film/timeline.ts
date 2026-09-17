@@ -11,7 +11,7 @@ export type Fx =
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
 export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
@@ -52,6 +52,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (!VIEWS.includes(s.watch.view)) say(`vista «${s.watch.view}» sconosciuta`);
       for (const m of [s.watch.enter, s.watch.exit]) if (m !== undefined && !MOVES.includes(m)) say(`movimento «${m}» sconosciuto`);
       if (!/^scenes\/[\w.-]+\.mp4$/.test(s.watch.clip)) say(`clip «${s.watch.clip}»: attesa scenes/<nome>.mp4`);
+      if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
     }
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);

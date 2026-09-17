@@ -34,7 +34,7 @@
    "len": 6,
    "act": "open",
    "watch": {
-    "view": "threeQuarter",
+    "view": "front",
     "clip": "scenes/s0_face.mp4",
     "enter": "riseIn",
     "exit": "zoomLeft",
@@ -75,7 +75,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s2_question.mp4",
-    "clipStart": 4.5
+    "clipStart": 3.0
    },
    "text": {
     "lines": [
@@ -134,8 +134,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s2_question.mp4",
-    "clipStart": 8,
-    "freeze": true,
+    "clipStart": 5.6,
     "enter": "slideIn"
    },
    "text": {
@@ -161,7 +160,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s1_list.mp4",
-    "clipStart": 3.5
+    "clipStart": 2.0
    },
    "text": {
     "lines": [
@@ -207,8 +206,8 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s4_write.mp4",
-    "clipStart": 3,
-    "freeze": true
+    "clipStart": 0.6,
+    "rate": 0.65
    },
    "text": {
     "lines": [
@@ -320,7 +319,7 @@
     "clip": "scenes/s1_list.mp4",
     "clipStart": 0.2,
     "enter": "settleSmall",
-    "rate": 0.75
+    "still": "icon/close.png"
    },
    "endCard": true
   }
