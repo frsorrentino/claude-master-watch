@@ -1,19 +1,316 @@
 {
-  "bpm": 100, "fps": 30, "offsetSeconds": 0,
-  "scenes": [
-    { "id": "open-1", "at": 0, "len": 4, "act": "open", "text": { "lines": ["Claude is working."], "accent": "working." } },
-    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You’re not", "at your desk."], "accent": "desk." } },
-    { "id": "open-3", "at": 8, "len": 5, "act": "open",
-      "watch": { "view": "threeQuarter", "clip": "scenes/s0_face.mp4", "enter": "riseIn", "exit": "pushIn" },
-      "text": { "lines": ["That’s fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
-    { "id": "list", "at": 13, "len": 7, "act": "know",
-      "watch": { "view": "front", "clip": "scenes/s1_list.mp4", "exit": "slideOut" },
-      "text": { "lines": ["Every session.", "One glance."], "accent": "glance.", "at": 1 } },
-    { "id": "asks", "at": 20, "len": 6, "act": "know",
-      "watch": { "view": "front", "clip": "scenes/s2_question.mp4", "clipStart": 5, "enter": "slideIn" },
-      "text": { "lines": ["It asks."], "accent": "asks.", "at": 1 }, "fx": [{ "kind": "haptic", "at": 1 }, { "kind": "tap", "at": 2.5, "x": 240, "y": 330 }, { "kind": "longPress", "at": 3, "len": 2 }] },
-    { "id": "limits", "at": 26, "len": 6, "act": "control",
-      "watch": { "view": "front", "clip": "scenes/s6_quota.mp4", "enter": "slideIn" },
-      "text": { "lines": ["Know your", "limits."], "accent": "limits.", "at": 1 } }
-  ]
+ "bpm": 100,
+ "fps": 30,
+ "offsetSeconds": 0,
+ "scenes": [
+  {
+   "id": "open-1",
+   "at": 0,
+   "len": 4,
+   "act": "open",
+   "text": {
+    "lines": [
+     "Claude is working."
+    ],
+    "accent": "working."
+   }
+  },
+  {
+   "id": "open-2",
+   "at": 4,
+   "len": 4,
+   "act": "open",
+   "text": {
+    "lines": [
+     "You’re not",
+     "at your desk."
+    ],
+    "accent": "desk."
+   }
+  },
+  {
+   "id": "open-3",
+   "at": 8,
+   "len": 4,
+   "act": "open",
+   "watch": {
+    "view": "threeQuarter",
+    "clip": "scenes/s0_face.mp4",
+    "enter": "riseIn",
+    "exit": "pushIn"
+   },
+   "text": {
+    "lines": [
+     "That’s fine."
+    ],
+    "accent": "fine.",
+    "sub": "Claude Master · for Wear OS"
+   }
+  },
+  {
+   "id": "list",
+   "at": 12,
+   "len": 8,
+   "act": "know",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s1_list.mp4"
+   },
+   "text": {
+    "lines": [
+     "Every session.",
+     "One glance."
+    ],
+    "accent": "glance.",
+    "at": 1
+   }
+  },
+  {
+   "id": "asks",
+   "at": 20,
+   "len": 6,
+   "act": "know",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s2_question.mp4",
+    "clipStart": 5
+   },
+   "text": {
+    "lines": [
+     "It asks."
+    ],
+    "accent": "asks.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "haptic",
+     "at": 1
+    }
+   ]
+  },
+  {
+   "id": "speaks",
+   "at": 26,
+   "len": 14,
+   "act": "know",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s2_question.mp4",
+    "clipStart": 8,
+    "freeze": true,
+    "exit": "slideOut"
+   },
+   "text": {
+    "lines": [
+     "It speaks."
+    ],
+    "accent": "speaks.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "tap",
+     "at": 2,
+     "x": 344,
+     "y": 86
+    }
+   ]
+  },
+  {
+   "id": "answer",
+   "at": 40,
+   "len": 6,
+   "act": "act",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s2_question.mp4",
+    "clipStart": 8,
+    "freeze": true,
+    "enter": "slideIn"
+   },
+   "text": {
+    "lines": [
+     "You answer."
+    ],
+    "accent": "answer.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "longPress",
+     "at": 2,
+     "len": 2
+    }
+   ]
+  },
+  {
+   "id": "follow",
+   "at": 46,
+   "len": 6,
+   "act": "act",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s1_list.mp4",
+    "clipStart": 2,
+    "freeze": true
+   },
+   "text": {
+    "lines": [
+     "Follow what",
+     "matters."
+    ],
+    "accent": "matters.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "longPress",
+     "at": 2,
+     "len": 1.5
+    }
+   ]
+  },
+  {
+   "id": "done",
+   "at": 52,
+   "len": 6,
+   "act": "act",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s3_done.mp4"
+   },
+   "text": {
+    "lines": [
+     "Know when",
+     "it’s done."
+    ],
+    "accent": "done.",
+    "at": 1
+   }
+  },
+  {
+   "id": "say",
+   "at": 58,
+   "len": 6,
+   "act": "act",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s4_write.mp4",
+    "clipStart": 3,
+    "freeze": true
+   },
+   "text": {
+    "lines": [
+     "Say what’s",
+     "next."
+    ],
+    "accent": "next.",
+    "at": 0.5
+   },
+   "fx": [
+    {
+     "kind": "typed",
+     "at": 1.5,
+     "len": 3.5,
+     "text": "Great. Now update the changelog and tag the release"
+    }
+   ]
+  },
+  {
+   "id": "watch",
+   "at": 64,
+   "len": 8,
+   "act": "act",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s5_terminal.mp4",
+    "exit": "slideOut"
+   },
+   "text": {
+    "lines": [
+     "Watch it work."
+    ],
+    "accent": "work.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "terminal",
+     "at": 2,
+     "every": 1,
+     "lines": [
+      "$ pytest -q tests",
+      "42 passed in 3.1s",
+      "Edit CHANGELOG.md",
+      "+ ## 2.8.0 — refund endpoint"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "limits",
+   "at": 72,
+   "len": 10,
+   "act": "control",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s6_quota.mp4",
+    "enter": "slideIn"
+   },
+   "text": {
+    "lines": [
+     "Know your",
+     "limits."
+    ],
+    "accent": "limits.",
+    "at": 1
+   },
+   "fx": [
+    {
+     "kind": "counter",
+     "at": 2.5,
+     "len": 3,
+     "to": 11,
+     "suffix": " %"
+    }
+   ]
+  },
+  {
+   "id": "new",
+   "at": 82,
+   "len": 14,
+   "act": "control",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/s1_list.mp4",
+    "clipStart": 2,
+    "freeze": true,
+    "exit": "pushIn"
+   },
+   "text": {
+    "lines": [
+     "Start",
+     "something",
+     "new."
+    ],
+    "accent": "new.",
+    "at": 1
+   }
+  },
+  {
+   "id": "close",
+   "at": 96,
+   "len": 14,
+   "act": "close",
+   "watch": {
+    "view": "threeQuarter",
+    "clip": "scenes/s0_face.mp4",
+    "clipStart": 2,
+    "freeze": true,
+    "enter": "settleSmall"
+   },
+   "endCard": true
+  }
+ ]
 }

@@ -1913,6 +1913,20 @@ for s in all music voice sfx; do npx remotion render Film out/stem-$s.wav --prop
 
 ---
 
+## Scostamenti in esecuzione (17/09, sera)
+
+- Task 12-14 eseguiti insieme: la prova dei testi che escono dall'orologio è la scaletta completa, non tre scene provvisorie.
+- `watchTextFor(scene, grid, offsetFrames)`: terzo argomento, perché la colonna del testo parte a `text.at` e i tempi degli
+  effetti sono dall'inizio della scena.
+- Chiusura: non `pullOut` ritoccato ma un movimento d'entrata nuovo, `settleSmall`, che lascia l'orologio piccolo e in alto
+  per tutta la scena (con test). `WatchCue.freeze`: la clip resta ferma su `clipStart` (le clip segnaposto sono più corte
+  delle scene, e durante la lettura lo schermo è fermo per progetto).
+- Lo `spoken` della scena `speaks` entra con il Task 19: senza il file delle parole il render resterebbe in attesa.
+- Righe del terminale a 46 px; `EndCard` con `paddingTop: 330` per stare sotto l'orologio rimpicciolito.
+- Musica: primo giro bocciato, secondo giro: traccia di lavoro «Brick By Brick» (110 battiti); terzo giro in corso su richiesta
+  di Franz (ritmo meno lineare, suoni più innovativi). `track_card.py` ha in più forza del battito, quota della cassa e un
+  intervallo di tempo facoltativo.
+
 ## Fine del piano 1
 
 Esito atteso: `Film` di 66-67 s con mockup fotografico approvato al punto 1, traccia scelta al punto 2 e tagliata sulle

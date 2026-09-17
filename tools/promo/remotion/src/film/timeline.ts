@@ -11,7 +11,7 @@ export type Fx =
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; enter?: Move; exit?: Move };
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; freeze?: boolean; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
 export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
@@ -26,7 +26,7 @@ export class TimelineError extends Error {
 
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn"];
-const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut"];
+const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall"];
 const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 

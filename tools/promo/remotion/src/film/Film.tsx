@@ -11,7 +11,9 @@ import { PhotoWatch } from "./PhotoWatch.tsx";
 import { WordMask } from "./WordMask.tsx";
 import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
+import { EndCard } from "./EndCard.tsx";
 import { fxLayers } from "./Fx.tsx";
+import { watchTextFor } from "./WatchText.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
 export const TIMELINE = validateTimeline(raw);
@@ -32,15 +34,17 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} tilt={pose.tilt} overlay={overlay} around={around}
+          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} freeze={w.freeze} tilt={pose.tilt} overlay={overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
+      {scene.endCard ? <Sequence from={beat * MOVE_BEATS} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: w ? "flex-start" : "center" }}>
+          <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.size} sub={scene.text.sub}
               perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={total - textAt - 8} align={w ? "left" : "center"} />
+            <div style={{ marginTop: 40 }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
         </Sequence>
       ) : null}
