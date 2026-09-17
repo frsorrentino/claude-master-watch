@@ -57,3 +57,24 @@ del taglio.
 - A vista: tavola di fotogrammi per scena; confronto affiancato componente ricostruito / fotogramma vero dell'app (stessi
   colori, stessi raggi, stesso carattere): se non è fedele non entra.
 - Limite dichiarato: niente 3D vero né sfocatura di movimento reale; profondità simulata con `filter: blur` per piano.
+
+## 6. Primo abbozzo e critica (18/09, 01:15)
+
+Costruiti `UiTokens`, `UiCard`, `Plane3D`, `heroes.ts` (`cardOutAt`, con test) e l'effetto `cardOut` nella scena `list`
+(`out/puntoA/`). Franz, 01:12: «dobbiamo evitare di apparire posticci, serve cura per i dettagli e rivederlo più volte per
+perfezionarlo, modificandolo con idee creative». L'abbozzo È posticcio, per quattro motivi precisi:
+
+1. **Non è lo stesso oggetto.** Sul display ci sono blog e payments-api, fuori esce «storefront». Nei riferimenti il
+   componente che esce è quello che stava nell'interfaccia. Regola nuova: il momento forte prende **rettangolo di partenza e
+   contenuto** dalla card che in quell'istante è ferma sul display (coordinate 480 nella scaletta), parte esattamente da lì
+   alla stessa grandezza, e sul display al suo posto resta il vuoto (una toppa del colore della superficie che si dissolve al
+   rientro). Serve la ripresa vera del piano 2, dove lo scorrimento guidato ferma la lista in un punto noto.
+2. **Si posa sotto il titolo come un adesivo.** Deve avere una sua inquadratura: il titolo esce, la card prende il centro
+   sinistro a grandezza da protagonista, poi il titolo della scena dopo entra. Un solo protagonista per volta.
+3. **L'inclinazione sembra una stortura.** Serve uno spazio credibile: ombra a terra coerente con l'orologio, luce dallo stesso
+   lato del vetro (alto a sinistra), rotazione attorno a un asse solo durante il volo e piano quasi frontale all'arrivo.
+4. **Il bordo luminoso verde è un effetto facile.** Via: la profondità la danno ombra e sfocatura, il colore resta quello
+   dell'app (badge di stato), come nei riferimenti.
+
+Metodo per tutti i momenti forti: abbozzo → tavola di fotogrammi → critica scritta contro i riferimenti → rifacimento,
+almeno tre giri prima di mostrarlo; confronto affiancato con il fotogramma vero dell'app a ogni giro.

@@ -19,7 +19,7 @@ const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number): 
   return f(y1, y2, (lo + hi) / 2);
 };
 /** Atterraggio morbido (Franz, 18/09): parte deciso e frena a lungo, come le entrate del testo. */
-const soft = bezier(0.2, 0, 0, 1);
+export const soft = bezier(0.2, 0, 0, 1);
 
 const REST: Pose = { x: 0, y: 0, scale: 1, tilt: 0 };
 

@@ -65,7 +65,18 @@
     ],
     "accent": "glance.",
     "at": 1
-   }
+   },
+   "fx": [
+    {
+     "kind": "cardOut",
+     "at": 2.5,
+     "len": 4.5,
+     "name": "storefront",
+     "age": "2 m",
+     "busyText": "Running the checkout test suite",
+     "doneText": "Checkout tests green, 214 passed"
+    }
+   ]
   },
   {
    "id": "asks",
