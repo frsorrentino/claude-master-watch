@@ -11,6 +11,7 @@ import { PhotoWatch } from "./PhotoWatch.tsx";
 import { WordMask } from "./WordMask.tsx";
 import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
+import { fxLayers } from "./Fx.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
 export const TIMELINE = validateTimeline(raw);
@@ -54,7 +55,7 @@ export const Film: React.FC = () => {
     <AbsoluteFill style={{ background: "#000" }}>
       {TIMELINE.scenes.map((s) => (
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at) - zero} durationInFrames={spanFrames(GRID, s.at, s.len)}>
-          <SceneView scene={s} />
+          <SceneView scene={s} {...fxLayers(s, GRID)} />
         </Sequence>
       ))}
     </AbsoluteFill>
