@@ -12,15 +12,18 @@ Pixabay vieta di ridistribuire il contenuto da solo): restano in `tools/promo/ma
 
 ## Musica: candidate da Pixabay
 
-Scaricate il 17/09/2026 alle 19:41 da `cdn.pixabay.com`, dalla pagina di ciascuna traccia. Quella scelta da Franz resta;
-le altre righe si tolgono a scelta fatta.
+Primo giro (17/09/2026 19:41, quattro tracce «calde e minimali»): bocciato da Franz alle 20:12, «troppo calme e basilari».
+Secondo giro, elettronica moderna e ritmata con taglio hip hop o funky: scaricate il 17/09/2026 alle 20:16 da
+`cdn.pixabay.com`, dalla pagina di ciascuna traccia. Quella scelta da Franz resta; le altre righe si tolgono a scelta fatta.
 
 | Traccia | Autore su Pixabay | Pagina |
 |---|---|---|
-| Minimal Inspiration | PaulYudin | https://pixabay.com/music/corporate-minimal-inspiration-164832/ |
-| Atmospheric Advertising Minimal | penguinmusic | https://pixabay.com/music/corporate-atmospheric-advertising-minimal-445459/ |
-| Technology | NastelBom | https://pixabay.com/music/beats-technology-422298/ |
-| Coffee Lover Girl | Evgeny_Bardyuzha | https://pixabay.com/music/future-bass-coffee-lover-girl-15242/ |
+| Hip-Hop Background | SoundSurfer | https://pixabay.com/music/old-school-hip-hop-hip-hop-background-590806/ |
+| Brick By Brick ( Trending Advertising ) | SigmaMusicArt | https://pixabay.com/music/beats-brick-by-brick-trending-advertising-279931/ |
+| Stylish | SoundSurfer | https://pixabay.com/music/beats-stylish-582113/ |
+| Funky | NastelBom | https://pixabay.com/music/upbeat-funky-410678/ |
+| Static Rhythm (The Tech House) | 9JackJack8 | https://pixabay.com/music/house-static-rhythm-the-tech-house-526056/ |
+| Futuristic Beat | NverAvetyanMusic | https://pixabay.com/music/future-bass-futuristic-beat-146661/ |
 
 Riepilogo della licenza come appariva il 17/09/2026 alle 19:45 su `https://pixabay.com/service/license-summary/` (copiato
 dalla pagina; la pagina stessa avverte che fa fede solo la Content License completa):
