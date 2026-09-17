@@ -10,6 +10,10 @@ name="$1"; shift || true
 mkdir -p out/consegna
 npx remotion render Film "out/consegna/$name.video.mp4" --muted "$@"
 npx remotion render Film "out/consegna/$name.wav"
-ffmpeg -v error -y -i "out/consegna/$name.video.mp4" -i "out/consegna/$name.wav" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -movflags +faststart "out/consegna/$name.mp4"
+# Loudness finale a due passate: prima si misura, poi si applica in modo lineare (niente compressione): -14 LUFS, picco -1 dB.
+m=$(ffmpeg -hide_banner -nostats -i "out/consegna/$name.wav" -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')
+g() { echo "$m" | python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])"; }
+ffmpeg -v error -y -i "out/consegna/$name.wav" -af "loudnorm=I=-14:TP=-1:LRA=11:measured_I=$(g input_i):measured_TP=$(g input_tp):measured_LRA=$(g input_lra):measured_thresh=$(g input_thresh):offset=$(g target_offset):linear=true" -ar 48000 "out/consegna/$name.norm.wav"
+ffmpeg -v error -y -i "out/consegna/$name.video.mp4" -i "out/consegna/$name.norm.wav" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -movflags +faststart "out/consegna/$name.mp4"
 ffmpeg -v error -y -i "out/consegna/$name.mp4" -an -c:v copy "out/consegna/$name.muto.mp4"
 ffprobe -v error -show_entries format=duration,size -of csv=p=0 "out/consegna/$name.mp4"
