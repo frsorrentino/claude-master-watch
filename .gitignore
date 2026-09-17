@@ -27,3 +27,8 @@ tools/promo/remotion/node_modules
 tools/promo/remotion/out/
 tools/promo/remotion/public/scenes/
 tools/promo/out/
+
+# Film promozionale: materiali (foto, musica, voce) e prodotti del mockup e dell'audio restano fuori dal repo
+tools/promo/materiali/
+tools/promo/remotion/public/mockup/
+tools/promo/remotion/public/audio/
