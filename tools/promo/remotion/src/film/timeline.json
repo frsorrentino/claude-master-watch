@@ -1,0 +1,19 @@
+{
+  "bpm": 100, "fps": 30, "offsetSeconds": 0,
+  "scenes": [
+    { "id": "open-1", "at": 0, "len": 4, "act": "open", "text": { "lines": ["Claude is working."], "accent": "working." } },
+    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You're not", "at your desk."], "accent": "desk." } },
+    { "id": "open-3", "at": 8, "len": 5, "act": "open",
+      "watch": { "view": "threeQuarter", "clip": "scenes/s0_face.mp4", "enter": "riseIn", "exit": "pushIn" },
+      "text": { "lines": ["That's fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
+    { "id": "list", "at": 13, "len": 7, "act": "know",
+      "watch": { "view": "front", "clip": "scenes/s1_list.mp4", "exit": "slideOut" },
+      "text": { "lines": ["Every session.", "One glance."], "accent": "glance.", "at": 1 } },
+    { "id": "asks", "at": 20, "len": 6, "act": "know",
+      "watch": { "view": "front", "clip": "scenes/s2_question.mp4", "clipStart": 5, "enter": "slideIn" },
+      "text": { "lines": ["It asks."], "accent": "asks.", "at": 1 }, "fx": [{ "kind": "haptic", "at": 1 }] },
+    { "id": "limits", "at": 26, "len": 6, "act": "control",
+      "watch": { "view": "front", "clip": "scenes/s6_quota.mp4", "enter": "slideIn" },
+      "text": { "lines": ["Know your limits."], "accent": "limits.", "at": 1 } }
+  ]
+}

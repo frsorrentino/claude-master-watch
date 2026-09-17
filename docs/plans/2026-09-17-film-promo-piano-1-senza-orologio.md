@@ -662,7 +662,20 @@ export const poseAt = (frame: number, total: number, moveFrames: number, enter?:
 import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
 
-// … tipi Act, Fx, WatchCue, TextCue, Scene, Timeline come in «Produces» …
+/** La scaletta: scene in fila, in battiti. Dentro una scena i tempi (text.at, fx[].at) partono dall'inizio della scena; mezzi battiti ammessi. */
+export type Act = "open" | "know" | "act" | "control" | "close";
+export type Fx =
+  | { kind: "tap"; at: number; x: number; y: number }               // x, y nello schermo dell'orologio, 0-480
+  | { kind: "longPress"; at: number; len: number }
+  | { kind: "haptic"; at: number }
+  | { kind: "counter"; at: number; len: number; to: number; suffix: string }
+  | { kind: "typed"; at: number; len: number; text: string }
+  | { kind: "terminal"; at: number; every: number; lines: string[] }
+  | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; enter?: Move; exit?: Move };
+export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean };
+export type Timeline = Grid & { music?: string; scenes: Scene[] };
 
 export class TimelineError extends Error {
   problems: string[];
@@ -750,7 +763,7 @@ console.log(`scaletta valida: ${t.scenes.length} scene, ${totalBeats(t)} battiti
       "watch": { "view": "front", "clip": "scenes/s1_list.mp4", "exit": "slideOut" },
       "text": { "lines": ["Every session.", "One glance."], "accent": "glance.", "at": 1 } },
     { "id": "asks", "at": 20, "len": 6, "act": "know",
-      "watch": { "view": "front", "clip": "scenes/s2_question.mp4", "clipStart": 4, "enter": "slideIn" },
+      "watch": { "view": "front", "clip": "scenes/s2_question.mp4", "clipStart": 5, "enter": "slideIn" },
       "text": { "lines": ["It asks."], "accent": "asks.", "at": 1 }, "fx": [{ "kind": "haptic", "at": 1 }] },
     { "id": "limits", "at": 26, "len": 6, "act": "control",
       "watch": { "view": "front", "clip": "scenes/s6_quota.mp4", "enter": "slideIn" },
