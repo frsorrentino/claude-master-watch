@@ -2,7 +2,8 @@
 
 Nasce dall'anteprima del 17/09 sera. Giudizio di Franz: «si vedono perlopiù immagini dell'orologio statiche», «più video e
 meno screenshot», «ogni scena parta da un punto per arrivare a un altro ben definito, pertinente a quello che scriviamo»;
-▶ deve diventare ■ e si deve sentire la voce vera dell'app; in chiusura l'app, possibilmente la tile, non il quadrante.
+▶ deve diventare ■ e si deve sentire la voce vera dell'app; in chiusura l'icona dell'app, non il quadrante. L'orologio di
+tre quarti compare solo in chiusura: tutte le riprese vanno sul frontale.
 Il motore, la musica e la scaletta (piano 1) restano: qui cambiano le clip.
 
 ## 1. Regole di ripresa
@@ -31,7 +32,7 @@ Il motore, la musica e la scaletta (piano 1) restano: qui cambiano le clip.
 | watch · «Watch it work.» | 8 | card al lavoro | tocco sulla card | terminale con le righe che arrivano (TICK ogni 0,5 s) e lo scorrimento che le segue |
 | limits · «Know your limits.» | 10 | panoramica, card «Quota 11 %» | scorrimento lento | grafico del ritmo a cinque ore |
 | new · «Start something new.» | 14 | fondo della lista, «New session» | tocco, scelta di storefront, dettatura | la lista con storefront ▶ al lavoro |
-| close · cartello finale | 16 | quadrante | uno scorrimento laterale | la tile di Claude Master |
+| close · cartello finale | 16 | — | nessuna ripresa | sullo schermo del tre quarti l'icona dell'app, immagine ferma (Franz, 17/09 23:18: l'icona, non la tile) |
 
 Tre di queste dipendono dai difetti aperti del blocco A (piano 1, progetto §5): scelta del progetto in «New session»,
 pressione lunga su «yes» con l'opzione mezza fuori dal bordo, conferma dopo il messaggio dettato. Si indagano con
@@ -55,9 +56,9 @@ orologio per il film. La voce Gemini di stasera resta solo come segnaposto per g
 
 ## 4. Serve Franz (giorno di ripresa, ~40 minuti, orologio fuori dal caricatore)
 
-Lingua di sistema in inglese · debug wireless acceso · quadrante con la nostra complication · **la tile di Claude Master
-spostata al primo posto** dopo il quadrante (tra le due oggi ci sono le tile di salute, che nel film non devono passare) ·
-volume della voce a metà e stanza silenziosa per la presa audio.
+Lingua di sistema in inglese · debug wireless acceso · quadrante con la nostra complication · nelle impostazioni dell'app
+**la voce maschile che Franz usa davvero** (gli pare la numero 3 dell'elenco) · volume della voce a metà e stanza silenziosa
+per la presa audio. La tile non serve più: in chiusura va l'icona.
 
 ## 5. Ordine di lavoro
 

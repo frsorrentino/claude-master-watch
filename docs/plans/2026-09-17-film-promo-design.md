@@ -182,3 +182,13 @@ di movimento, suoni accordati alla tonalità della traccia. Si riaprono solo su 
   SOTTO il piano del bordo del vetro (margini uguali, anzi display spinto verso la corona); sul Pixel Watch 4 il display è
   vicino al vetro e la cupola scende sui fianchi, quindi la giunzione vetro/cassa sta più in basso del pannello: profondità
   apparente **−0,05 raggi**. Corretto in `export.py` (`DEPTH`), con test sul verso dello spostamento.
+- **17/09/2026 21:47-23:25, giudizio sulle anteprime 1 e 2.** Traccia: «Brick By Brick» (110 battiti), confermata tre volte.
+  L'orologio di tre quarti **solo in chiusura**, con l'**icona dell'app** sullo schermo (non la tile, non il quadrante);
+  l'apertura va sul frontale, con ingrandimento sulla complication di sinistra. Voce: quella **maschile che Franz usa
+  sull'orologio** (gli pare la numero 3), catturata senza modificare app né orologio; fino ad allora segnaposto Gemini
+  maschile (Charon). Più riprese in movimento e meno fermi: elenco «da → a» nel piano 2.
+- **Icona dell'app, in discussione (17/09 23:12-23:25).** Proposta di Franz: «>_» al posto della raggiera di Claude su disco
+  corallo (segno di Anthropic: il punto più delicato per un progetto pubblico non affiliato). Ridisegnata piatta e
+  vettoriale; colore corallo `#D97757` su `#1B1F26` per richiamare Claude senza usarne il segno. A Franz piace la variante A
+  (corallo su scuro con anello); da decidere anello aperto o chiuso. Prove in `tools/promo/out/icona/`. Nel film, in
+  chiusura, per ora A2 (anello chiuso). Se l'icona cambia, cambia anche il segno viola nella complication.
