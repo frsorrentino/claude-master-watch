@@ -205,6 +205,7 @@ MAT = HERE.parent / "materiali/foto"
 OUT = HERE.parent / "out/contorno"
 JSON = HERE / "q34_outline.json"
 CX, CY, A, B, ROT = 872., 880., 525., 640., 7.
+SHADOW = (7.5, 47.5)                                         # gradi dal centro, in senso orario dalle ore 3: tra la corona e l'ansa in basso
 
 def mask(points, n, ss=4):
     m = Image.new("L", (n * ss, n * ss), 0)
@@ -219,12 +220,16 @@ def seed():
         return (u / a) ** 2 + (v / b) ** 2
     dark = np.asarray(Image.fromarray(((L < 78) * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9))) > 0
     m = dark | (ell(CX + 17, CY + 12, A + 17, B + 12, ROT) <= 1) | (ell(1495, 830, 64, 104, 4) <= 1)
-    s = Image.fromarray((m * 255).astype(np.uint8)); ImageDraw.floodfill(s, (int(CX), int(CY)), 77); body = np.asarray(s) == 77
+    s = Image.fromarray((m * 255).astype(np.uint8)).copy(); ImageDraw.floodfill(s, (int(CX), int(CY)), 77); body = np.asarray(s) == 77
+    wall = ell(CX + 30, CY + 14, A + 34, B + 16, ROT) <= 1       # bordo esterno della parete della cassa sul lato della corona (misurato sugli ingrandimenti)
     pts = []
-    for deg in np.arange(0, 360, 2.5):                       # il raggio esce dal centro: tengo l'ultimo pixel del corpo
+    for deg in np.arange(0, 360, 1.0):                       # il raggio esce dal centro: tengo l'ultimo pixel del corpo
         r = np.arange(0, n * 0.75, 0.5); x = CX + r * np.cos(np.deg2rad(deg)); y = CY + r * np.sin(np.deg2rad(deg))
         ok = (x >= 0) & (x < n - 1) & (y >= 0) & (y < n - 1); hit = np.where(body[y[ok].astype(int), x[ok].astype(int)])[0]
-        pts.append([round(float(x[ok][hit.max()]), 1), round(float(y[ok][hit.max()]), 1)])
+        j = hit.max()
+        if SHADOW[0] <= deg <= SHADOW[1]:                     # sotto la corona l'ombra ha la luminosità del metallo: lì vale la parete della cassa, costruita
+            j = np.where(wall[y[ok].astype(int), x[ok].astype(int)])[0].max()
+        pts.append([round(float(x[ok][j]), 1), round(float(y[ok][j]), 1)])
     JSON.write_text(json.dumps({"size": n, "points": pts}, indent=0)); print(len(pts), "punti in", JSON)
 
 def check():
@@ -247,7 +252,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: seminare e guardare**
 
 Run: `cd tools/promo/mockup && python3 outline.py seed && python3 outline.py check`
-Expected: `144 punti`, otto `contorno_N.jpg` e `ritaglio_su_viola.jpg` in `tools/promo/out/contorno/`.
+Expected: `360 punti`, otto `contorno_N.jpg` e `ritaglio_su_viola.jpg` in `tools/promo/out/contorno/`.
 
 - [ ] **Step 3: correggere a mano**
 
