@@ -32,15 +32,15 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const pose = w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit) : null;
   const cx = (scene.text ? THEME.watchX : 0.5) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
-  // se l'orologio esce di lato attraversa la colonna del testo: il testo se ne va prima della scivolata
-  const leave = (w?.exit === "slideOut" ? total - beat * MOVE_BEATS : total) - 8;
+  // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima
+  const leave = (w?.exit ? total - beat * MOVE_BEATS : total) - 8;
   const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} freeze={w.freeze} tilt={pose.tilt} overlay={overlay} around={around}
+          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} tilt={pose.tilt} overlay={overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

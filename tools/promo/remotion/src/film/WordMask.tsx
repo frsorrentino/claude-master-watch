@@ -20,11 +20,12 @@ export const WordMask: React.FC<{
       </span>
     );
   };
+  const subOut = exitAt === undefined ? 1 : interpolate(frame, [exitAt, exitAt + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const subIn = interpolate(frame, [total * perWordFrames + 6, total * perWordFrames + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <div style={{ fontFamily: "Inter", fontWeight: 600, fontSize: px, lineHeight: 1.04, letterSpacing: "-0.02em", textAlign: align, whiteSpace: "nowrap" }}>
       {lines.map((l, li) => <div key={li}>{l.split(" ").map((w) => word(w, k++))}</div>)}
-      {sub ? <div style={{ marginTop: 26, fontWeight: 500, fontSize: THEME.service, letterSpacing: 0, color: THEME.dim, opacity: subIn }}>{sub}</div> : null}
+      {sub ? <div style={{ marginTop: 26, fontWeight: 500, fontSize: THEME.service, letterSpacing: 0, color: THEME.dim, opacity: subIn * subOut }}>{sub}</div> : null}
     </div>
   );
 };

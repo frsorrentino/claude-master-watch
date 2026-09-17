@@ -1,7 +1,7 @@
 {
  "bpm": 110,
  "fps": 30,
- "offsetSeconds": 0.0075,
+ "offsetSeconds": 0.025,
  "scenes": [
   {
    "id": "open-1",
@@ -18,7 +18,7 @@
   {
    "id": "open-2",
    "at": 4,
-   "len": 4,
+   "len": 6,
    "act": "open",
    "text": {
     "lines": [
@@ -30,14 +30,14 @@
   },
   {
    "id": "open-3",
-   "at": 8,
-   "len": 4,
+   "at": 10,
+   "len": 6,
    "act": "open",
    "watch": {
     "view": "threeQuarter",
     "clip": "scenes/s0_face.mp4",
     "enter": "riseIn",
-    "exit": "pushIn"
+    "exit": "zoomLeft"
    },
    "text": {
     "lines": [
@@ -49,12 +49,13 @@
   },
   {
    "id": "list",
-   "at": 12,
+   "at": 16,
    "len": 8,
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/s1_list.mp4"
+    "clip": "scenes/s1_list.mp4",
+    "clipStart": 1.5
    },
    "text": {
     "lines": [
@@ -67,7 +68,7 @@
   },
   {
    "id": "asks",
-   "at": 20,
+   "at": 24,
    "len": 8,
    "act": "know",
    "watch": {
@@ -91,7 +92,7 @@
   },
   {
    "id": "speaks",
-   "at": 28,
+   "at": 32,
    "len": 18,
    "act": "know",
    "watch": {
@@ -119,7 +120,7 @@
   },
   {
    "id": "answer",
-   "at": 46,
+   "at": 50,
    "len": 6,
    "act": "act",
    "watch": {
@@ -146,14 +147,13 @@
   },
   {
    "id": "follow",
-   "at": 52,
+   "at": 56,
    "len": 6,
    "act": "act",
    "watch": {
     "view": "front",
     "clip": "scenes/s1_list.mp4",
-    "clipStart": 2,
-    "freeze": true
+    "clipStart": 3.5
    },
    "text": {
     "lines": [
@@ -173,12 +173,13 @@
   },
   {
    "id": "done",
-   "at": 58,
+   "at": 62,
    "len": 6,
    "act": "act",
    "watch": {
     "view": "front",
-    "clip": "scenes/s3_done.mp4"
+    "clip": "scenes/s3_done.mp4",
+    "clipStart": 0.3
    },
    "text": {
     "lines": [
@@ -191,7 +192,7 @@
   },
   {
    "id": "say",
-   "at": 64,
+   "at": 68,
    "len": 8,
    "act": "act",
    "watch": {
@@ -219,13 +220,14 @@
   },
   {
    "id": "watch",
-   "at": 72,
+   "at": 76,
    "len": 8,
    "act": "act",
    "watch": {
     "view": "front",
     "clip": "scenes/s5_terminal.mp4",
-    "exit": "slideOut"
+    "exit": "slideOut",
+    "clipStart": 7.5
    },
    "text": {
     "lines": [
@@ -250,13 +252,14 @@
   },
   {
    "id": "limits",
-   "at": 80,
+   "at": 84,
    "len": 10,
    "act": "control",
    "watch": {
     "view": "front",
     "clip": "scenes/s6_quota.mp4",
-    "enter": "slideIn"
+    "enter": "slideIn",
+    "clipStart": 0
    },
    "text": {
     "lines": [
@@ -278,15 +281,15 @@
   },
   {
    "id": "new",
-   "at": 90,
+   "at": 94,
    "len": 14,
    "act": "control",
    "watch": {
     "view": "front",
     "clip": "scenes/s1_list.mp4",
-    "clipStart": 2,
-    "freeze": true,
-    "exit": "pushIn"
+    "clipStart": 1.5,
+    "exit": "pushIn",
+    "rate": 0.7
    },
    "text": {
     "lines": [
@@ -300,15 +303,15 @@
   },
   {
    "id": "close",
-   "at": 104,
+   "at": 108,
    "len": 16,
    "act": "close",
    "watch": {
     "view": "threeQuarter",
-    "clip": "scenes/s0_face.mp4",
-    "clipStart": 2,
-    "freeze": true,
-    "enter": "settleSmall"
+    "clip": "scenes/s1_list.mp4",
+    "clipStart": 0.2,
+    "enter": "settleSmall",
+    "rate": 0.75
    },
    "endCard": true
   }

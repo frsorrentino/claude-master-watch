@@ -47,3 +47,9 @@ test("con l'orologio in scena una riga di titolo non supera i 14 caratteri: oltr
   const solo = base(); solo.scenes[0].text.lines = ["Claude is working hard."]; solo.scenes[0].text.accent = "working";
   assert.deepEqual(problems(solo), []);
 });
+test("le parole devono entrare nella scena: una per battito senza orologio, una ogni mezzo battito con, più un battito per leggerle", () => {
+  const t = base(); t.scenes[0].len = 4; t.scenes[0].text.lines = ["You’re not", "at your desk."]; t.scenes[0].text.accent = "desk."; t.scenes[1].at = 4;
+  assert.match(problems(t).join("\n"), /open: 5 parole a una per battito più uno per leggerle fanno 6 battiti, la scena ne ha 4/);
+  const ok = base(); ok.scenes[0].len = 6; ok.scenes[0].text.lines = ["You’re not", "at your desk."]; ok.scenes[0].text.accent = "desk."; ok.scenes[1].at = 6;
+  assert.deepEqual(problems(ok), []);
+});

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MAX_TILT, poseAt } from "./moves.ts";
 import type { Move } from "./moves.ts";
 
-const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall"];
+const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft"];
 
 test("l'inclinazione resta entro i 10 gradi in ogni momento di ogni movimento", () => {
   for (const enter of MOVES) for (const exit of MOVES) for (let f = 0; f <= 120; f++) {
@@ -24,4 +24,9 @@ test("riseIn parte da sotto il quadro", () => {
 test("settleSmall lascia l'orologio piccolo e in alto per tutto il resto della scena", () => {
   const p = poseAt(200, 252, 36, "settleSmall");
   assert.ok(p.scale < 0.6 && p.y < -0.15 && Math.abs(p.x) < 0.02);
+});
+
+test("zoomLeft ingrandisce verso la complication di sinistra e parte da fermo", () => {
+  const a = poseAt(84, 120, 36, undefined, "zoomLeft"), b = poseAt(120, 120, 36, undefined, "zoomLeft");
+  assert.ok(Math.abs(a.scale - 1) < 0.05 && b.scale > 2);
 });

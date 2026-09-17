@@ -11,7 +11,7 @@ export type Fx =
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; freeze?: boolean; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
 export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
@@ -26,7 +26,7 @@ export class TimelineError extends Error {
 
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn"];
-const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall"];
+const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft"];
 const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
@@ -59,6 +59,10 @@ export const validateTimeline = (raw: unknown): Timeline => {
       // accanto all'orologio restano ~735 px: a 110 px sono 14 caratteri (misurato: «Every session.» entra, «Know your limits.» no)
       if (s.watch && (s.text.size ?? "title") === "title") for (const l of s.text.lines) if (l.length > 14) say(`la riga «${l}» ha ${l.length} caratteri, al massimo 14 accanto all'orologio`);
       const words = s.text.lines.flatMap((l) => l.split(" "));
+      // «desk.» tagliata nell'anteprima del 17/09: cinque parole a una per battito in una scena di quattro battiti
+      const perWord = s.watch ? 0.5 : 1;
+      const room = s.len - (s.text.at ?? 0) - (s.watch?.exit ? 2 : 0);
+      if (words.length * perWord + 1 > room) say(`${words.length} parole a ${s.watch ? "mezzo battito l'una" : "una per battito"} più uno per leggerle fanno ${words.length * perWord + 1} battiti, la scena ne ha ${room}`);
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
       if (s.text.at !== undefined && (!half(s.text.at) || s.text.at >= s.len)) say(`il testo al battito ${s.text.at} esce dalla scena`);
     }

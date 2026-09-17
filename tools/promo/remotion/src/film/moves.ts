@@ -1,5 +1,5 @@
 /** L'orologio è un'immagine piatta nello spazio: entra, deriva lentamente, esce. Oltre i 10 gradi sembra finto. */
-export type Move = "riseIn" | "slideIn" | "slideOut" | "pushIn" | "pullOut" | "settleSmall";
+export type Move = "riseIn" | "slideIn" | "slideOut" | "pushIn" | "pullOut" | "settleSmall" | "zoomLeft";
 export type Pose = { x: number; y: number; scale: number; tilt: number };
 export const MAX_TILT = 9;
 export const MOVE_BEATS = 2;
@@ -19,6 +19,8 @@ const moveAt = (m: Move, t: number): Pose => {
     case "pushIn": return { x: 0, y: 0, scale: 1 + 0.35 * inOut(t), tilt: 0 };
     // entrata della chiusura: l'orologio rimpicciolisce e sale, e lì RESTA (a fine entrata non torna a riposo) per lasciare il posto al cartello
     case "settleSmall": return { x: 0, y: -0.2 * inOut(t), scale: 1 - 0.5 * inOut(t), tilt: 0 };
+    // uscita dell'apertura: dentro la complication di sinistra del quadrante (nel tre quarti sta 183 px a sinistra e 18 sotto il centro del vetro)
+    case "zoomLeft": return { x: 0.039 * inOut(t), y: -0.04 * inOut(t), scale: 1 + 1.4 * inOut(t), tilt: 0 };
     case "pullOut": return { x: 0, y: 0, scale: 1 - 0.45 * inOut(t), tilt: 4 * inOut(t) };
   }
 };
