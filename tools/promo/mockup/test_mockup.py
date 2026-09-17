@@ -34,5 +34,18 @@ class Frontale(unittest.TestCase):
         self.assertGreaterEqual(m[int(cy), int(cx - rc + 3)], 250)      # lo smusso lucido resta dentro, anche ai lati
         self.assertLess(m[int(cy), int(cx - rc - 4)], 10)
 
+class Esportazione(unittest.TestCase):
+    def test_immagini_e_misure(self):
+        import json
+        subprocess.run([sys.executable, str(HERE / "export.py")], check=True)
+        pub = HERE.parent / "remotion/public/mockup"; g = json.loads((HERE.parent / "remotion/src/film/mockup.geometry.json").read_text())
+        self.assertAlmostEqual(g["front"]["displayR"] / g["front"]["glassR"], 0.86, places=3)
+        self.assertEqual(len(g["q34"]["quad"]), 4)
+        for name in ("front_body.png", "q34_body.png"):
+            self.assertEqual(Image.open(pub / name).mode, "RGBA")
+        r = np.asarray(Image.open(pub / "q34_reflections.png").convert("L"))
+        self.assertEqual(int(r[5, 5]), 0)                         # fuori dal display: nero, neutro nella fusione «schermo»
+        self.assertGreater(int(r.max()), 60)                      # dentro: i riflessi veri ci sono
+
 if __name__ == "__main__":
     unittest.main()
