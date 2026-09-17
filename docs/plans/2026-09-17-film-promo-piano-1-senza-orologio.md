@@ -376,8 +376,8 @@ git commit -m "feat(promo): export the photo mockup to Remotion — alpha cut-ou
   `"allowImportingTsExtensions": true` e portare `"lib"` a `["es2020", "dom"]`. In `package.json`, negli `scripts`:
 
 ```json
-"test": "node --test src/film/",
-"check": "tsc --noEmit && node --test src/film/ && node src/film/check.ts"
+"test": "node --test \"src/film/*.test.ts\"",
+"check": "tsc --noEmit && node --test \"src/film/*.test.ts\" && node src/film/check.ts"
 ```
 
 Gli import tra file del film usano l'estensione esplicita (`./beats.ts`) e `import type` per i soli tipi: Node esegue
