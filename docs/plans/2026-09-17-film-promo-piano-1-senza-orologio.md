@@ -1580,7 +1580,7 @@ src = Path(sys.argv[1])
 with tempfile.TemporaryDirectory() as d:
     sr, x = M.read_wav(M.to_wav(src, Path(d) / "t.wav"))
 env, times = M.onset_env(x, sr); bpm, first, top = M.tempo(env, times); bars = M.bar_energy_db(x, sr, bpm, first)
-e = np.array(bars); rise = int(np.argmax(np.convolve(np.diff(e), np.ones(2), "valid"))) + 1      # la battuta dove l'energia sale di più
+e = np.array(bars); rise = int(np.argmax(np.diff(e))) + 1                                        # la prima battuta al livello nuovo, dopo il salto di energia più grande
 lufs, peak = M.loudness(src)
 card = {"file": src.name, "seconds": round(len(x) / sr, 1), "bpm": bpm, "bpm_candidates": top, "first_beat_s": round(first, 3),
         "bars": len(bars), "bar_seconds": round(240 / bpm, 3), "bar_energy_db": bars, "biggest_rise_at_bar": rise,
