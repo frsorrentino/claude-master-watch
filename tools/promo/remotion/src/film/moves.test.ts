@@ -57,3 +57,11 @@ test("chiusura speculare: il logo compare mentre ci si allontana da vicino, e il
   assert.ok(Math.abs(closingAt(2.5).pose.scale - 1.7) < 1e-9);
   assert.equal(closingAt(0.5).draw, 0); assert.equal(closingAt(3).draw, 1);
 });
+
+test("i movimenti finali atterrano morbidi: nell'ultimo quinto del tempo resta meno del 3 % della strada", () => {
+  const scaleAt = (b: number) => closingAt(b).pose.scale;
+  const left = (scaleAt(7.4) - scaleAt(8)) / (scaleAt(5) - scaleAt(8));          // allontanamento: battiti 5-8
+  assert.ok(left > 0 && left < 0.03, `allontanamento: resta ${left}`);
+  const tiltLeft = 1 - closingAt(4.6).tilt;                                        // inclinazione: battiti 3-5
+  assert.ok(tiltLeft > 0 && tiltLeft < 0.03, `inclinazione: resta ${tiltLeft}`);
+});

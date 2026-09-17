@@ -9,6 +9,16 @@ const out3 = (t: number) => 1 - Math.pow(1 - t, 3);
 const in3 = (t: number) => t * t * t;
 const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/** Curva di Bézier cubica come in CSS: dato il tempo 0-1 restituisce l'avanzamento. */
+const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number): number => {
+  const f = (a: number, b: number, s: number) => 3 * a * s * (1 - s) * (1 - s) + 3 * b * s * s * (1 - s) + s * s * s;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (f(x1, x2, mid) < t) lo = mid; else hi = mid; }
+  return f(y1, y2, (lo + hi) / 2);
+};
+/** Atterraggio morbido (Franz, 18/09): parte deciso e frena a lungo, come le entrate del testo. */
+const soft = bezier(0.2, 0, 0, 1);
+
 const REST: Pose = { x: 0, y: 0, scale: 1, tilt: 0 };
 
 const moveAt = (m: Move, t: number): Pose => {
@@ -42,12 +52,12 @@ export const poseAt = (frame: number, total: number, moveFrames: number, enter?:
 export type Closing = { pose: Pose; logo: number; draw: number; tilt: number; body: number; focus: number };
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 export const closingAt = (beats: number): Closing => {
-  const out = inOut(ramp(beats, 5, 8));
+  const out = soft(ramp(beats, 5, 8));
   const near = 1 - out3(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
   return {
     logo: ramp(beats, 0, 2),
     draw: inOut(ramp(beats, 0.5, 3)),              // l'arco del logo si disegna da zero al suo 70 %, come un gauge che si riempie
-    tilt: inOut(ramp(beats, 3, 5)),
+    tilt: soft(ramp(beats, 3, 5)),
     body: ramp(beats, 3.5, 5) >= 1 ? 1 : inOut(ramp(beats, 3.5, 5)) * (beats <= 3 ? 0 : 1),
     focus: 1 - out,
     pose: { x: 0, y: -0.2 * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
