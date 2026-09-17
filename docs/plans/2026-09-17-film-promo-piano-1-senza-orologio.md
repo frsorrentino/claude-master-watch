@@ -755,10 +755,10 @@ console.log(`scaletta valida: ${t.scenes.length} scene, ${totalBeats(t)} battiti
   "bpm": 100, "fps": 30, "offsetSeconds": 0,
   "scenes": [
     { "id": "open-1", "at": 0, "len": 4, "act": "open", "text": { "lines": ["Claude is working."], "accent": "working." } },
-    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You're not", "at your desk."], "accent": "desk." } },
+    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You’re not", "at your desk."], "accent": "desk." } },
     { "id": "open-3", "at": 8, "len": 5, "act": "open",
       "watch": { "view": "threeQuarter", "clip": "scenes/s0_face.mp4", "enter": "riseIn", "exit": "pushIn" },
-      "text": { "lines": ["That's fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
+      "text": { "lines": ["That’s fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
     { "id": "list", "at": 13, "len": 7, "act": "know",
       "watch": { "view": "front", "clip": "scenes/s1_list.mp4", "exit": "slideOut" },
       "text": { "lines": ["Every session.", "One glance."], "accent": "glance.", "at": 1 } },
@@ -821,13 +821,13 @@ export const THEME = {
   q34GlassPx: 760,
 };
 
-/** Un colore per atto: centro, mezzo, bordo del gradiente, e l'alone dietro l'orologio. */
+/** Un colore per atto: centro, mezzo, bordo del gradiente, e l'alone dietro l'orologio (luce che si SOMMA al fondo: fusione «schermo»). */
 export const ACT_BG: Record<Act, [string, string, string, string]> = {
-  open: ["#000000", "#000000", "#000000", "rgba(0,0,0,0)"],
-  know: ["#3A4468", "#242A42", "#14172A", "rgba(26,30,52,.55)"],
-  act: ["#4A3670", "#2C2148", "#17122A", "rgba(40,26,60,.55)"],
-  control: ["#1F5A5E", "#15393F", "#0C1F26", "rgba(16,48,50,.55)"],
-  close: ["#000000", "#000000", "#000000", "rgba(0,0,0,0)"],
+  open: ["#000000", "#000000", "#000000", "rgb(0,0,0)"],
+  know: ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"],
+  act: ["#4A3670", "#2C2148", "#17122A", "rgb(44,30,66)"],
+  control: ["#1F5A5E", "#15393F", "#0C1F26", "rgb(18,52,54)"],
+  close: ["#000000", "#000000", "#000000", "rgb(0,0,0)"],
 };
 ```
 
@@ -900,7 +900,7 @@ export const Backdrop: React.FC<{ act: Act; glowX?: number }> = ({ act, glowX = 
   const [c0, c1, c2, glow] = ACT_BG[act];
   return (
     <AbsoluteFill style={{ background: `radial-gradient(120% 120% at 70% 30%, ${c0} 0%, ${c1} 45%, ${c2} 100%)` }}>
-      <AbsoluteFill style={{ background: `radial-gradient(23% 42% at ${glowX * 100}% 50%, ${glow} 0%, rgba(0,0,0,0) 100%)` }} />
+      <AbsoluteFill style={{ mixBlendMode: "screen", background: `radial-gradient(38% 70% at ${glowX * 100}% 50%, ${glow} 0%, rgba(0,0,0,.0) 100%), #000`, opacity: 1 }} />
     </AbsoluteFill>
   );
 };
@@ -950,7 +950,8 @@ const Front: React.FC<Props> = ({ clip, clipStart, glassPx, tilt, overlay, aroun
   const G = geo.front;
   const k = glassPx / (2 * G.glassR);
   const disc = (r: number): React.CSSProperties => ({ position: "absolute", left: G.cx - r, top: G.cy - r, width: 2 * r, height: 2 * r, borderRadius: "50%" });
-  const blade = (tilt / MAX_TILT) * 60;          // la lama di luce scorre con l'inclinazione
+  const blade = (tilt / MAX_TILT) * 60;          // la lama di luce scorre con l'inclinazione e da fermo non c'è
+  const bladeOn = Math.min(1, Math.abs(tilt) / 3);
   const A = G.caseR * 1.5;
   return (
     <div style={{ width: G.size * k, height: G.size * k, translate: `${-G.cx * k}px ${-G.cy * k}px` }}>
@@ -961,12 +962,12 @@ const Front: React.FC<Props> = ({ clip, clipStart, glassPx, tilt, overlay, aroun
         <div style={{ ...disc(G.displayR), ["--k" as string]: String((2 * G.displayR) / 480) }}><Ui clip={clip} clipStart={clipStart} overlay={overlay} /></div>
         <div style={{ ...disc(G.coverR), overflow: "hidden", mixBlendMode: "screen" }}>
           {/* alone in alto a sinistra, finestra sfocata, lama di luce, filo sul bordo */}
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(95% 62% at 31% 24%, rgba(220,235,255,.18) 0%, rgba(0,0,0,0) 70%)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(47.5% 31% at 31% 24%, rgba(235,245,255,.18) 0%, rgba(235,245,255,.113) 50%, rgba(235,245,255,.048) 75%, rgba(235,245,255,.013) 90%, rgba(235,245,255,0) 100%)" }} />
           <svg viewBox="0 0 100 100" style={{ position: "absolute", inset: 0, filter: "blur(18px)", opacity: 0.12 }}>
             <polygon points="25,25 40,20 43,35 27.5,41" fill="#fff" />
             <line x1="33.5" y1="22.5" x2="35.5" y2="38" stroke="#000" strokeWidth="1" /><line x1="26" y1="32.5" x2="41.5" y2="27.5" stroke="#000" strokeWidth="1" />
           </svg>
-          <div style={{ position: "absolute", inset: "-20%", rotate: "24deg", translate: `${blade}% 0`, background: "linear-gradient(90deg, rgba(0,0,0,0) 40%, rgba(255,255,255,.07) 48%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.07) 52%, rgba(0,0,0,0) 60%)" }} />
+          <div style={{ position: "absolute", inset: "-20%", rotate: "24deg", translate: `${blade}% 0`, opacity: bladeOn, background: "linear-gradient(90deg, rgba(0,0,0,0) 40%, rgba(255,255,255,.07) 48%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.07) 52%, rgba(0,0,0,0) 60%)" }} />
           <div style={{ position: "absolute", inset: 0, borderRadius: "50%", boxShadow: "inset 5px 5px 7px -3px rgba(235,244,255,.3)" }} />
         </div>
         {around ? <div style={{ position: "absolute", left: G.cx - A, top: G.cy - A, width: 2 * A, height: 2 * A }}>{around}</div> : null}
@@ -1108,7 +1109,7 @@ export const Compare: React.FC = () => (
     <Backdrop act="know" glowX={0.5} />
     {(["drawn", "front"] as const).map((view, i) => (
       <div key={view} style={{ position: "absolute", left: 1920 * (0.27 + 0.46 * i), top: 540 }}>
-        <PhotoWatch view={view} clip="scenes/s1_list.mp4" clipStart={2} glassPx={700} tilt={0} />
+        <PhotoWatch view={view} clip="scenes/s1_list.mp4" glassPx={700} tilt={0} />
       </div>
     ))}
   </AbsoluteFill>

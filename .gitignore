@@ -32,3 +32,6 @@ tools/promo/out/
 tools/promo/materiali/
 tools/promo/remotion/public/mockup/
 tools/promo/remotion/public/audio/
+
+# Python
+__pycache__/

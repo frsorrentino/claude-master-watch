@@ -2,10 +2,10 @@
   "bpm": 100, "fps": 30, "offsetSeconds": 0,
   "scenes": [
     { "id": "open-1", "at": 0, "len": 4, "act": "open", "text": { "lines": ["Claude is working."], "accent": "working." } },
-    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You're not", "at your desk."], "accent": "desk." } },
+    { "id": "open-2", "at": 4, "len": 4, "act": "open", "text": { "lines": ["You’re not", "at your desk."], "accent": "desk." } },
     { "id": "open-3", "at": 8, "len": 5, "act": "open",
       "watch": { "view": "threeQuarter", "clip": "scenes/s0_face.mp4", "enter": "riseIn", "exit": "pushIn" },
-      "text": { "lines": ["That's fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
+      "text": { "lines": ["That’s fine."], "accent": "fine.", "sub": "Claude Master · for Wear OS" } },
     { "id": "list", "at": 13, "len": 7, "act": "know",
       "watch": { "view": "front", "clip": "scenes/s1_list.mp4", "exit": "slideOut" },
       "text": { "lines": ["Every session.", "One glance."], "accent": "glance.", "at": 1 } },

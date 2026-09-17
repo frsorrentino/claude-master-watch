@@ -10,11 +10,11 @@ export const THEME = {
   q34GlassPx: 760,
 };
 
-/** Un colore per atto: centro, mezzo, bordo del gradiente, e l'alone dietro l'orologio. */
+/** Un colore per atto: centro, mezzo, bordo del gradiente, e l'alone dietro l'orologio (luce che si SOMMA al fondo: fusione «schermo»). */
 export const ACT_BG: Record<Act, [string, string, string, string]> = {
-  open: ["#000000", "#000000", "#000000", "rgba(0,0,0,0)"],
-  know: ["#3A4468", "#242A42", "#14172A", "rgba(26,30,52,.55)"],
-  act: ["#4A3670", "#2C2148", "#17122A", "rgba(40,26,60,.55)"],
-  control: ["#1F5A5E", "#15393F", "#0C1F26", "rgba(16,48,50,.55)"],
-  close: ["#000000", "#000000", "#000000", "rgba(0,0,0,0)"],
+  open: ["#000000", "#000000", "#000000", "rgb(0,0,0)"],
+  know: ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"],
+  act: ["#4A3670", "#2C2148", "#17122A", "rgb(44,30,66)"],
+  control: ["#1F5A5E", "#15393F", "#0C1F26", "rgb(18,52,54)"],
+  close: ["#000000", "#000000", "#000000", "rgb(0,0,0)"],
 };

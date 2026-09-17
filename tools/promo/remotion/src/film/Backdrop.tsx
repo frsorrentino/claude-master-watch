@@ -7,7 +7,7 @@ export const Backdrop: React.FC<{ act: Act; glowX?: number }> = ({ act, glowX = 
   const [c0, c1, c2, glow] = ACT_BG[act];
   return (
     <AbsoluteFill style={{ background: `radial-gradient(120% 120% at 70% 30%, ${c0} 0%, ${c1} 45%, ${c2} 100%)` }}>
-      <AbsoluteFill style={{ background: `radial-gradient(23% 42% at ${glowX * 100}% 50%, ${glow} 0%, rgba(0,0,0,0) 100%)` }} />
+      <AbsoluteFill style={{ mixBlendMode: "screen", background: `radial-gradient(38% 70% at ${glowX * 100}% 50%, ${glow} 0%, rgba(0,0,0,.0) 100%), #000`, opacity: 1 }} />
     </AbsoluteFill>
   );
 };
