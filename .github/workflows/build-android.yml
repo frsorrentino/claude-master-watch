@@ -69,4 +69,5 @@ jobs:
             wear/build/outputs/apk/debug/*.apk
             wear/build/outputs/apk/release/*.apk
             mobile/build/outputs/apk/debug/*.apk
-          retention-days: 30
+          # 47 MB a build: con 30 giorni la quota Actions (0,5 GB-mese) finiva in pochi giorni di push. L'APK si scarica subito.
+          retention-days: 1
