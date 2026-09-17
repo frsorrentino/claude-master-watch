@@ -13,6 +13,12 @@ on:
         type: boolean
         default: false
 
+# Un solo run per ramo: un push e un avvio a mano a pochi secondi di distanza caricavano due APK da 47 MB (17/09: quota
+# storage di Actions al 100 %). L'ultimo arrivato cancella il precedente; i run con record=true hanno un gruppo loro.
+concurrency:
+  group: build-${{ github.ref }}-${{ github.event.inputs.record == 'true' && 'record' || 'apk' }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
