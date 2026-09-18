@@ -21,7 +21,7 @@ import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { Blinds } from "./ui/Blinds.tsx";
-import { BLIND_CUT } from "./ui/blinds.ts";
+import { BLIND_CUT, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
 import type { Key } from "./ui/carry.ts";
 import { fxLayers } from "./Fx.tsx";
@@ -61,6 +61,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // mentre il takeover cresce, il componente sotto sparisce: il takeover È quel componente, non una copia sopra
   const takeStart = scene.takeover ? total - Math.round(spanFrames(GRID, scene.at, scene.takeover.len) * TAKEOVER_CUT) : Infinity;
   const underTakeover = frame >= takeStart ? Math.min(1, (frame - takeStart) / 4) : 0;
+  // quando parte la tapparella il quadro si svuota e restano sole le due barre, che diventano i primi listelli:
+  // è così che si vede il collegamento fra il grafico e la transizione (Franz, 18/09 22:28)
+  const blindStart = scene.blinds ? total - Math.round(spanFrames(GRID, scene.at, scene.blinds.len) * BLIND_CUT) : Infinity;
+  const blindFrames = scene.blinds ? spanFrames(GRID, scene.at, scene.blinds.len) : 1;
+  const solo = frame >= blindStart ? blindSoloAt((frame - blindStart) / blindFrames) : 0;
   // vibrazione: la notifica arriva e l'orologio trema per 10 fotogrammi (Franz, 13:13)
   const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
   const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
@@ -79,7 +84,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
@@ -91,7 +96,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", opacity: 1 - Math.min(1, over * 2.5), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
+          <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub}
               fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
               perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />

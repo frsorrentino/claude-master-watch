@@ -28,13 +28,20 @@ oggetto che si piega, si spezza, si allontana). Il CSS deforma un rettangolo; no
 
 ## I tre momenti da costruire
 
-### 1. La tapparella (fine Panoramica → «Start the next one») — prima cosa da fare
+### 1. La tapparella (fine Panoramica → «Start the next one») — fatta, primo giro il 18/09 22:25
 Le due barre del Context non si dissolvono: **diventano i primi due listelli di una tapparella**. Tutto il quadro —
 l'orologio con la registrazione vera sopra, presa come texture — si divide in dodici strisce orizzontali che ruotano
 sul loro asse, sfalsate, con la luce che corre sullo spigolo mentre girano; dietro, già in posa, c'è la scena dopo.
 Perché è calzante: la Panoramica È una pila di schede; la pila si volta e scopre quello che viene dopo.
 Perché serve il 3D: le strisce devono avere spessore e prendere luce, e la camera deve restare ferma mentre girano —
 in CSS diventano rettangoli che si schiacciano, senza spigolo.
+
+**Secondo giro (Franz, 22:27-22:28): il collegamento fra il grafico e la transizione non si vedeva.** Rifatto l'inizio con
+la sua proposta — il quadro si svuota in dissolvenza (orologio, titolo, numeri) e restano **sole le due barre**, che si
+allungano dal loro bordo sinistro e si ingrossano da 16 a 90 px fino a essere listelli; poi fanno un accenno di voltata
+(`wink`) e solo dopo nascono gli altri. Tempi: barre sole fino al 34 % dell'arco (1,6 s), accenno 34-44 %, nascita degli
+altri 40-66 %, voltata dal 68 %. Il taglio con la scena dopo cade al 66 %, a tapparella chiusa. La Panoramica passa da 32
+a 35 battiti (film 84,5 s) perché il pannello Context deve restare in scena prima che la tapparella lo prenda.
 
 ### 2. Il muro degli account («Watch it work» → «Every account. One view.»)
 Il pannello del terminale, che a quel punto riempie il quadro, resta una lastra sospesa; **la camera arretra** e la
@@ -43,7 +50,7 @@ le più lontane sfocate. Le parole «Every account. One view.» si compongono da
 una sola lastra per entrare nella Panoramica.
 Perché serve il 3D: è tutto parallasse e profondità di campo. In CSS le lastre lontane sono solo più piccole, e si vede.
 
-### 3. La chiusura
+### 3. La chiusura — costruita in prova, non ancora nel film
 Il segno dell'app **estruso**: nasce di taglio (si vede solo lo spessore, una linea), ruota fino a mostrarsi di faccia
 e nel farlo prende la luce corallo; il nome compare sotto. Sostituisce la comparsa piatta di oggi, che Franz ha già
 segnalato come slegata.

@@ -7,6 +7,7 @@ import { THEME } from "../theme.ts";
 import { UI } from "./UiTokens.ts";
 import { UiGauge } from "./UiGauge.tsx";
 import { soft } from "../moves.ts";
+import { BLIND_CUT } from "./blinds.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -20,6 +21,10 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
   const { height } = useVideoConfig();
   const list = (scene.fx ?? []).filter((f): f is Extract<Fx, { kind: "aside" }> => f.kind === "aside");
   if (!list.length) return null;
+  // quando parte la tapparella le barre HTML lasciano il posto ai listelli in Three, che nascono identici: prima si riempiono
+  // fino in fondo e il resto del pannello se ne va, poi al fotogramma esatto dell'innesco spariscono
+  const sceneTotal = spanFrames(g, scene.at, scene.len);
+  const blindStart = scene.blinds ? sceneTotal - Math.round(spanFrames(g, scene.at, scene.blinds.len) * BLIND_CUT) : Infinity;
   return (
     <>
       {list.map((e, i) => {
@@ -31,7 +36,7 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
         const next = list[i + 1];
         const gone = next ? spanFrames(g, scene.at, next.at) - 2 : from + len;
         const fade = e.out === "bars" ? 1 : 1 - soft(clamp((frame - (gone - 8)) / 8));
-        const a = Math.min(soft(clamp(t / 0.12)), fade);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
+        const a = Math.min(soft(clamp(t / 0.12)), fade) * (e.out === "bars" && frame >= blindStart ? 0 : 1);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
         const d = soft(clamp((t - 0.12) / 0.45));                                        // il dato si disegna sul posto
         return (
           <div key={i} style={{ position: "absolute", left: THEME.leftMargin, top: height / 2, width: 760, translate: "0 -50%", opacity: a, fontFamily: "Inter", color: THEME.white }}>
@@ -100,12 +105,13 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Context</div>
                 {(e.rows ?? []).map((r, k) => {
-                  const p = clamp(d * 1.6 - k * 0.35);
+                  // mentre le barre si riempiono per la tapparella, anche i numeri finiscono di salire: nessun dato resta a metà
+                  const p = Math.max(clamp(d * 1.6 - k * 0.35), e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0);
                   // l'ultima scheda non svanisce: le due barre si riempiono fino in fondo e da lì nasce la tapparella (Blinds)
-                  const g2 = e.out === "bars" ? soft(clamp((t - 0.42) / 0.14)) : 0;
+                  const g2 = e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0;
                   return (
                     <div key={k} style={{ marginTop: k ? 34 : 18 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: 1 - (e.out === "bars" ? clamp((t - 0.44) / 0.14) : 0) }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: 1 - (e.out === "bars" ? clamp((frame - (blindStart - 14)) / 12) : 0) }}>
                         <span>{r.name}</span>
                         <span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * p)} %</span>
                       </div>

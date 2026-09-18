@@ -380,13 +380,13 @@
   {
    "id": "limits",
    "at": 96,
-   "len": 32,
+   "len": 35,
    "act": "control",
    "watch": {
     "view": "front",
     "clip": "scenes/n_overview_cut.mp4",
     "clipStart": 0,
-    "rate": 1.25,
+    "rate": 1.15,
     "enter": "slideIn"
    },
    "text": {
@@ -444,7 +444,7 @@
     {
      "kind": "aside",
      "at": 26,
-     "len": 6,
+     "len": 9,
      "panel": "context",
      "rows": [
       {
@@ -460,12 +460,12 @@
     }
    ],
    "blinds": {
-    "len": 7
+    "len": 8.5
    }
   },
   {
    "id": "new",
-   "at": 128,
+   "at": 131,
    "len": 10,
    "act": "control",
    "watch": {
@@ -485,7 +485,7 @@
   },
   {
    "id": "close",
-   "at": 138,
+   "at": 141,
    "len": 14,
    "act": "close",
    "watch": {
