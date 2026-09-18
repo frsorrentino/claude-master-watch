@@ -42,7 +42,7 @@ export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; 
     // dopo il battito di ciglia: card già al centro, l'orologio compare attorno e la camera torna indietro piano
     const t = Math.min(1, Math.max(0, frame / 40));
     const ease = t * t * (3 - 2 * t);
-    return { zoom: 1.35 - 0.35 * ease, focus: 0, watch: Math.min(1, frame / 24) };
+    return { zoom: 1.35 - 0.35 * ease, focus: 0.35 * (1 - exit), watch: Math.min(1, frame / 24) };
   }
   if (p < 0 || p >= 1) return { zoom: 1, focus: 0, watch: 1 };
   const near = travel * (1 - exit);
@@ -64,8 +64,8 @@ const Flying: React.FC<{ c: Flight; from: [number, number, number, number]; u: n
   const yaw = 3 * c.travel + 16 * c.swing + 1.2 * c.drift * c.travel;
   return (
     <>
-      {/* il campo si pulisce: una vignetta scurisce i bordi finché il componente è protagonista */}
-      <div style={{ position: "absolute", inset: 0, opacity: 0.55 * c.travel * (1 - c.exit), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
+      {/* il campo si pulisce: una vignetta leggera sui bordi finché il componente è protagonista */}
+      <div style={{ position: "absolute", inset: 0, opacity: 0.3 * c.travel * (1 - c.exit), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
       <div style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity: c.alpha }}>
         {/* impaginato alla grandezza da protagonista (`zoom`) e poi solo rimpicciolito: ingrandire con `scale` un elemento da
             104 px lo sgrana; il contenitore ha la misura del rettangolo di partenza, così il centro è quello del rettangolo */}

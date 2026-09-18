@@ -42,7 +42,7 @@ export const flightAt = (p: number, outEnd: number, exitFrom: number): Flight =>
  *  battiti (57 fotogrammi) uscita e rientro durano 800 e 630 ms. */
 export type CardOut = Flight;
 /** `fromOut`: la card è già fuori (dopo il battito di ciglia) e l'orologio si materializza attorno. */
-export const cardOutAt = (p: number, fromOut = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, 0.8);
+export const cardOutAt = (p: number, fromOut = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, 0.86);
 
 /**
  * Il gauge della quota lascia la card (0-0,3) svuotandosi mentre vola, fuori si disegna da zero al suo valore (0,34-0,62,
