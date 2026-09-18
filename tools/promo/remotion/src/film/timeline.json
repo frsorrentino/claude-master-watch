@@ -365,9 +365,22 @@
    ]
   },
   {
-   "id": "limits",
+   "id": "accounts",
    "at": 90,
-   "len": 33,
+   "len": 6,
+   "act": "control",
+   "text": {
+    "lines": [
+     "Every account.",
+     "One view."
+    ],
+    "accent": "view."
+   }
+  },
+  {
+   "id": "limits",
+   "at": 96,
+   "len": 38,
    "act": "control",
    "watch": {
     "view": "front",
@@ -399,8 +412,16 @@
     },
     {
      "kind": "aside",
-     "at": 19,
+     "at": 17.5,
      "len": 5,
+     "panel": "pace",
+     "n": 59,
+     "note": "at 09:36, at this pace"
+    },
+    {
+     "kind": "aside",
+     "at": 23,
+     "len": 4.5,
      "panel": "work",
      "n": 1,
      "note": "1 waits for you · 1 working",
@@ -412,15 +433,16 @@
     },
     {
      "kind": "aside",
-     "at": 24,
-     "len": 4,
+     "at": 27.5,
+     "len": 5,
      "panel": "questions",
      "n": 1,
-     "note": "payments-api · for 5 m"
+     "note": "payments-api · for 5 m",
+     "quote": "Deploy version 2.8.0 to production now?"
     },
     {
      "kind": "aside",
-     "at": 27.5,
+     "at": 32.5,
      "len": 5.5,
      "panel": "context",
      "rows": [
@@ -439,7 +461,7 @@
   },
   {
    "id": "new",
-   "at": 123,
+   "at": 134,
    "len": 10,
    "act": "control",
    "watch": {
@@ -459,7 +481,7 @@
   },
   {
    "id": "close",
-   "at": 133,
+   "at": 144,
    "len": 14,
    "act": "close",
    "watch": {

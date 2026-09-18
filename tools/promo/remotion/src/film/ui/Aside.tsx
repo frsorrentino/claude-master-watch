@@ -30,7 +30,26 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
         const d = soft(clamp((t - 0.12) / 0.45));                                        // il dato si disegna sul posto
         return (
           <div key={i} style={{ position: "absolute", left: THEME.leftMargin, top: height / 2, width: 760, translate: "0 -50%", opacity: a, fontFamily: "Inter", color: THEME.white }}>
-            {e.panel === "work" ? (
+            {e.panel === "note" ? (
+              <div style={{ fontSize: 76, fontWeight: 600, lineHeight: 1.12, letterSpacing: "-0.02em" }}>
+                {(e.lines ?? []).map((l, k) => <div key={k} style={{ opacity: clamp(d * 2 - k * 0.5), translate: `0 ${(1 - clamp(d * 2 - k * 0.5)) * 18}px` }}>{k === (e.lines ?? []).length - 1 ? <span style={{ color: THEME.accent }}>{l}</span> : l}</div>)}
+              </div>
+            ) : e.panel === "pace" ? (
+              <>
+                <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefRing }}>5-hour pace</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 6 }}>
+                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 0) * d)}</span>
+                  <span style={{ fontSize: 52, color: THEME.dim }}>% {e.note}</span>
+                </div>
+                {/* la linea del ritmo si disegna da sinistra: tratto pieno fino ad adesso, tratteggio sulla proiezione */}
+                <svg width={700} height={190} style={{ marginTop: 22, overflow: "visible" }}>
+                  <line x1={0} y1={188} x2={700} y2={188} stroke="rgba(235,244,255,.18)" strokeWidth={2} />
+                  <path d="M 0 176 L 250 128 L 430 96" fill="none" stroke={UI.briefRing} strokeWidth={6} strokeLinecap="round" strokeDasharray={520} strokeDashoffset={520 * (1 - clamp(d * 1.5))} />
+                  <path d="M 430 96 L 700 8" fill="none" stroke={UI.briefRing} strokeWidth={6} strokeLinecap="round" strokeDasharray="14 16" opacity={clamp(d * 1.5 - 0.7) * 0.8} />
+                  <circle cx={430} cy={96} r={12} fill={UI.briefRing} opacity={clamp(d * 1.5 - 0.6)} />
+                </svg>
+              </>
+            ) : e.panel === "work" ? (
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Now</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 6 }}>
@@ -47,8 +66,16 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
             ) : e.panel === "questions" ? (
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.waiting }}>Open questions</div>
-                <div style={{ fontSize: 190, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.04em", color: UI.waiting, marginTop: 4 }}>{e.n ?? 1}</div>
-                <div style={{ marginTop: 14, fontSize: 40, color: THEME.dim }}>{e.note}</div>
+                {/* il numero non sta fermo: attorno gli corre l'anello dell'attesa, e sotto appare la domanda che aspetta */}
+                <div style={{ position: "relative", width: 260, height: 260, marginTop: 10 }}>
+                  <svg width={260} height={260} style={{ position: "absolute", inset: 0, rotate: "-90deg" }}>
+                    <circle cx={130} cy={130} r={112} fill="none" stroke="rgba(255,176,32,.18)" strokeWidth={10} />
+                    <circle cx={130} cy={130} r={112} fill="none" stroke={UI.waiting} strokeWidth={10} strokeLinecap="round" strokeDasharray={2 * Math.PI * 112} strokeDashoffset={2 * Math.PI * 112 * (1 - clamp(d * 1.3))} />
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 150, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.04em", color: UI.waiting, scale: String(0.86 + 0.14 * clamp(d * 3)) }}>{e.n ?? 1}</div>
+                </div>
+                <div style={{ marginTop: 18, fontSize: 40, color: THEME.dim }}>{e.note}</div>
+                <div style={{ marginTop: 10, fontSize: 44, color: THEME.white, opacity: clamp(d * 1.6 - 0.5), maxWidth: 700 }}>{e.quote}</div>
               </>
             ) : (
               <>
