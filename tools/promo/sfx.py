@@ -60,6 +60,19 @@ def write(name: str, x: np.ndarray, out: pathlib.Path) -> None:
         w.writeframes(data.tobytes())
 
 
+def reson(x: np.ndarray, hz: float, q: float) -> np.ndarray:
+    """Risonatore a due poli: fa cantare il rumore attorno a `hz`. È così che suona un motore, non con un seno puro."""
+    r = np.exp(-np.pi * hz / (q * SR))
+    a1, a2 = 2 * r * np.cos(2 * np.pi * hz / SR), -r * r
+    y = np.zeros_like(x)
+    y1 = y2 = 0.0
+    for i, v in enumerate(x):
+        acc = (1 - r) * v + a1 * y1 + a2 * y2
+        y[i] = acc
+        y2, y1 = y1, acc
+    return y
+
+
 def tick() -> np.ndarray:
     """Il tocco sul vetro: un click corto e opaco, niente scintillio."""
     n = int(0.05 * SR)
@@ -94,22 +107,20 @@ def bell() -> np.ndarray:
 
 
 def thump() -> np.ndarray:
-    """La vibrazione al polso (Franz, 23:26: «non somiglia a una vibrazione»). Non è un tonfo grave: è un motore lineare,
-    che gira attorno ai 180 Hz con l'ampiezza modulata a ~55 Hz — il ronzio ruvido che si sente sulla cassa — in due
-    impulsi come la notifica di Wear OS, ciascuno con attacco e stacco netti."""
-    n = int(0.52 * SR)
+    """La vibrazione al polso, terza versione (Franz, 23:45: «meglio altro suono»). Non più seni: è **rumore fatto
+    risuonare** attorno a 165 Hz, con un secondo risuonatore basso per il corpo della cassa — il modo in cui suona
+    davvero un motore lineare contro il polso. Due impulsi, il secondo più corto, con bordi morbidi e una coda breve."""
+    n = int(0.56 * SR)
     t = np.arange(n) / SR
-    carrier = np.sin(2 * np.pi * 168 * t) + 0.35 * np.sin(2 * np.pi * 360 * t)
-    rough = 0.80 + 0.20 * np.sin(2 * np.pi * 42 * t)          # il motore non è liscio: batte
+    src = noise(n, 5)
+    motor = reson(src, 165, 14) * 4.2 + reson(src, 330, 9) * 1.1      # il motore e la sua seconda
+    body = reson(src, 78, 5) * 2.4                                    # la cassa, sorda
     gate = np.zeros(n)
-    # impulsi più lunghi e con i bordi smussati: Franz (23:43) la sentiva troppo secca
-    for off, dur in ((0.0, 0.165), (0.225, 0.135)):           # bzz-bzz
+    for off, dur in ((0.0, 0.19), (0.255, 0.15)):
         i, j = int(off * SR), int((off + dur) * SR)
         m = j - i
-        gate[i:j] = np.clip(np.arange(m) / (0.022 * SR), 0, 1) ** 0.7 * np.clip((m - np.arange(m)) / (0.05 * SR), 0, 1) ** 0.8
-    body = 0.22 * lowpass(noise(n, 3), 400)                   # il corpo dell'orologio che risuona
-    tail = 0.18 * np.sin(2 * np.pi * 168 * t) * env(n, 0.22, 0.12, 3.0)   # la cassa continua un attimo dopo il motore
-    return (carrier * rough + body) * gate + tail
+        gate[i:j] = np.clip(np.arange(m) / (0.03 * SR), 0, 1) ** 0.6 * np.clip((m - np.arange(m)) / (0.07 * SR), 0, 1) ** 0.9
+    return (motor + body) * gate * (0.85 + 0.15 * np.sin(2 * np.pi * 31 * t))
 
 
 def press_rise() -> np.ndarray:
