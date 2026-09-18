@@ -8,6 +8,7 @@ export const THEME = {
   watchX: 0.69,                // centro dell'orologio quando c'è testo a sinistra
   frontGlassPx: 740,           // diametro del vetro nelle scene di lettura: display = 0,86 × 740 = 636 px = 59 % di 1080
   q34GlassPx: 760,
+  sideCasePx: 1000,            // larghezza della cassa nella vista laterale: l'orologio riempie il quadro in basso
 };
 
 /** Un colore per atto: centro, mezzo, bordo del gradiente, e l'alone dietro l'orologio (luce che si SOMMA al fondo: fusione «schermo»). */

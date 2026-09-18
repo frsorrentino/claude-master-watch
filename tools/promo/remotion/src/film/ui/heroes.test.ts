@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt, gaugeHeroAt, optionsBuildAt, terminalPlaneAt } from "./heroes.ts";
+import { cardOutAt, floatAt, gaugeHeroAt, optionsBuildAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -38,4 +38,12 @@ test("il terminale del PC compare dietro e si ritira alla fine", () => {
   assert.equal(terminalPlaneAt(-0.1).show, 0);
   assert.equal(terminalPlaneAt(0.3).show, 1);
   assert.ok(terminalPlaneAt(0.5).exit === 0 && terminalPlaneAt(0.99).exit > 0.9);
+});
+
+test("le card galleggianti salgono una dopo l'altra e le precedenti arretrano", () => {
+  assert.equal(floatAt(0, 0, 3).rise, 0);
+  assert.equal(floatAt(0.2, 0, 3).rise, 1);
+  assert.equal(floatAt(0.2, 1, 3).rise, 0);
+  assert.equal(floatAt(0.5, 1, 3).rise, 1);
+  assert.ok(floatAt(0.5, 0, 3).depth >= 1 && floatAt(0.5, 2, 3).depth === 0);
 });

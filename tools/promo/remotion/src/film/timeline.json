@@ -103,16 +103,6 @@
     ],
     "accent": "glance.",
     "place": "top"
-   },
-   "carryOut": {
-    "shape": "circle",
-    "x": 66,
-    "y": 107,
-    "w": 30,
-    "h": 30,
-    "color": "#2ECC71",
-    "glyph": "play",
-    "glyphColor": "#000"
    }
   },
   {
@@ -137,27 +127,7 @@
      "kind": "shake",
      "at": 2.5
     }
-   ],
-   "carryIn": {
-    "shape": "square",
-    "x": 105,
-    "y": 89.5,
-    "w": 27,
-    "h": 27,
-    "color": "#3C81F2",
-    "glyph": "question",
-    "glyphColor": "#fff"
-   },
-   "carryOut": {
-    "shape": "square",
-    "x": 105,
-    "y": 89.5,
-    "w": 27,
-    "h": 27,
-    "color": "#3C81F2",
-    "glyph": "question",
-    "glyphColor": "#fff"
-   }
+   ]
   },
   {
    "id": "speaks",
@@ -195,27 +165,7 @@
      "at": 0.5,
      "len": 4
     }
-   ],
-   "carryIn": {
-    "shape": "circle",
-    "x": 346.5,
-    "y": 89.5,
-    "w": 83,
-    "h": 83,
-    "color": "#23272E",
-    "glyph": "play",
-    "glyphColor": "#D3E3FD"
-   },
-   "carryOut": {
-    "shape": "line",
-    "space": "frame",
-    "x": 550,
-    "y": 840,
-    "w": 800,
-    "h": 0,
-    "color": "#D97757",
-    "stroke": 3.5
-   }
+   ]
   },
   {
    "id": "answer",
@@ -259,156 +209,61 @@
      "yesLabel": "1 · yes",
      "noLabel": "2 · no"
     }
-   ],
-   "carryIn": {
-    "shape": "pill",
-    "space": "frame",
-    "x": 530,
-    "y": 444,
-    "w": 760,
-    "h": 196,
-    "color": "#D3E3FD",
-    "glyph": "none"
-   },
-   "carryOut": {
-    "shape": "pill",
-    "space": "frame",
-    "x": 960,
-    "y": 540,
-    "w": 2600,
-    "h": 1400,
-    "color": "#D3E3FD",
-    "glyph": "none"
-   }
+   ]
   },
   {
-   "id": "follow",
+   "id": "loop",
    "at": 68,
-   "len": 6,
-   "act": "act",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_follow.mp4",
-    "clipStart": 10.0
-   },
-   "text": {
-    "lines": [
-     "Follow what",
-     "matters."
-    ],
-    "accent": "matters.",
-    "at": 0.5
-   },
-   "carryIn": {
-    "shape": "circle",
-    "x": 216.5,
-    "y": 96,
-    "w": 34,
-    "h": 34,
-    "color": "#FFE08A",
-    "glyph": "bell",
-    "glyphColor": "#1F1147"
-   },
-   "carryOut": {
-    "shape": "circle",
-    "x": 216.5,
-    "y": 96,
-    "w": 34,
-    "h": 34,
-    "color": "#FFE08A",
-    "glyph": "bell",
-    "glyphColor": "#1F1147"
-   }
-  },
-  {
-   "id": "done",
-   "at": 74,
-   "len": 6,
-   "act": "act",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_done.mp4",
-    "clipStart": 22.9
-   },
-   "text": {
-    "lines": [
-     "Know when",
-     "it’s done."
-    ],
-    "accent": "done.",
-    "at": 0.5
-   },
-   "carryIn": {
-    "shape": "square",
-    "x": 66,
-    "y": 107,
-    "w": 30,
-    "h": 30,
-    "color": "#3C81F2",
-    "glyph": "check",
-    "glyphColor": "#fff"
-   },
-   "carryOut": {
-    "shape": "square",
-    "x": 66,
-    "y": 107,
-    "w": 30,
-    "h": 30,
-    "color": "#3C81F2",
-    "glyph": "check",
-    "glyphColor": "#fff"
-   }
-  },
-  {
-   "id": "say",
-   "at": 80,
    "len": 14,
    "act": "act",
    "watch": {
-    "view": "front",
-    "clip": "scenes/n_say.mp4",
-    "clipStart": 22.5
+    "view": "side",
+    "clip": "scenes/n_follow.mp4",
+    "clipStart": 8.0,
+    "freeze": true
    },
    "text": {
     "lines": [
-     "Say what’s",
-     "next."
+     "It keeps you",
+     "in the loop."
     ],
-    "accent": "next.",
+    "accent": "loop.",
     "at": 0.5
    },
    "fx": [
     {
-     "kind": "typed",
+     "kind": "float",
      "at": 2,
-     "len": 8,
-     "text": "Great now update the change log and tag the release"
+     "len": 11,
+     "cards": [
+      {
+       "name": "payments-api",
+       "age": "14 m",
+       "text": "Running the staging checks for 2.8.0",
+       "badge": "#3C81F2",
+       "icon": "bell"
+      },
+      {
+       "name": "payments-api",
+       "age": "0 m",
+       "text": "Deployed 2.8.0, smoke tests green",
+       "badge": "#3C81F2",
+       "icon": "check"
+      },
+      {
+       "name": "payments-api",
+       "age": "0 m",
+       "text": "Great. Now update the changelog and tag the release",
+       "badge": "#3C81F2",
+       "icon": "play"
+      }
+     ]
     }
-   ],
-   "carryIn": {
-    "shape": "circle",
-    "x": 239,
-    "y": 395.5,
-    "w": 100,
-    "h": 100,
-    "color": "#23272E",
-    "glyph": "mic",
-    "glyphColor": "#F2F4F7"
-   },
-   "carryOut": {
-    "shape": "circle",
-    "x": 239,
-    "y": 395.5,
-    "w": 100,
-    "h": 100,
-    "color": "#23272E",
-    "glyph": "mic",
-    "glyphColor": "#F2F4F7"
-   }
+   ]
   },
   {
    "id": "watch",
-   "at": 94,
+   "at": 82,
    "len": 8,
    "act": "control",
    "watch": {
@@ -446,31 +301,11 @@
      ],
      "every": 0.75
     }
-   ],
-   "carryIn": {
-    "shape": "circle",
-    "space": "frame",
-    "x": 240,
-    "y": 420,
-    "w": 40,
-    "h": 40,
-    "color": "#D97757",
-    "glyph": "none"
-   },
-   "carryOut": {
-    "shape": "line",
-    "space": "frame",
-    "x": 960,
-    "y": 700,
-    "w": 1200,
-    "h": 0,
-    "color": "#B0B8C4",
-    "stroke": 3
-   }
+   ]
   },
   {
    "id": "limits",
-   "at": 102,
+   "at": 90,
    "len": 10,
    "act": "control",
    "watch": {
@@ -499,29 +334,11 @@
      "suffix": "%",
      "phrase": "of your 5 hours"
     }
-   ],
-   "carryIn": {
-    "shape": "arc",
-    "x": 385.6,
-    "y": 240.2,
-    "w": 92,
-    "h": 92,
-    "color": "#8BB4F7",
-    "stroke": 6
-   },
-   "carryOut": {
-    "shape": "arc",
-    "x": 385.6,
-    "y": 240.2,
-    "w": 92,
-    "h": 92,
-    "color": "#8BB4F7",
-    "stroke": 6
-   }
+   ]
   },
   {
    "id": "new",
-   "at": 112,
+   "at": 100,
    "len": 10,
    "act": "control",
    "watch": {
@@ -537,20 +354,11 @@
     ],
     "accent": "next",
     "at": 0.5
-   },
-   "carryIn": {
-    "shape": "pill",
-    "x": 240,
-    "y": 200.5,
-    "w": 300,
-    "h": 56,
-    "color": "#D3E3FD",
-    "glyph": "none"
    }
   },
   {
    "id": "close",
-   "at": 122,
+   "at": 110,
    "len": 14,
    "act": "close",
    "watch": {

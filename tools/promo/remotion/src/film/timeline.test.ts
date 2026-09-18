@@ -30,7 +30,7 @@ test("un effetto fuori dalla sua scena è un errore", () => {
   assert.match(problems(t).join("\n"), /list: l'effetto tap al battito 8 esce dalla scena/);
 });
 test("tipo di effetto, vista, movimento e atto sconosciuti sono errori, tutti insieme", () => {
-  const t = base(); t.scenes[1].fx[0].kind = "swipe"; t.scenes[1].watch.view = "side"; t.scenes[1].watch.enter = "spin"; t.scenes[0].act = "intro";
+  const t = base(); t.scenes[1].fx[0].kind = "swipe"; t.scenes[1].watch.view = "top"; t.scenes[1].watch.enter = "spin"; t.scenes[0].act = "intro";
   assert.equal(problems(t).length, 4);
 });
 test("id doppi, battiti che non sono mezzi, tocchi fuori dallo schermo", () => {

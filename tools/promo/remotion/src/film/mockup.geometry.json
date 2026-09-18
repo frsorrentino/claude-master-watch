@@ -31,5 +31,16 @@
         1404.4
       ]
     ]
+  },
+  "side": {
+    "width": 1280,
+    "height": 720,
+    "caseX0": 266,
+    "caseX1": 1011,
+    "apexX": 600,
+    "apexY": 157,
+    "bottom": 442,
+    "displayCx": 638,
+    "displayCy": 169
   }
 }

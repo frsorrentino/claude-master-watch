@@ -8,6 +8,8 @@ import { totalBeats, validateTimeline } from "./timeline.ts";
 import type { Scene } from "./timeline.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
+import { SideWatch } from "./SideWatch.tsx";
+import { Floating } from "./ui/Floating.tsx";
 import { WordMask } from "./WordMask.tsx";
 import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
@@ -59,7 +61,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       <TerminalBackdrop scene={scene} g={GRID} />
-      {w && pose ? (
+      {w && pose && w.view === "side" ? (
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.62 + pose.y * height}px, 0) scale(${pose.scale})` }}>
+          <SideWatch widthPx={THEME.sideCasePx} above={<Floating scene={scene} g={GRID} k={THEME.sideCasePx / 745} />} />
+        </div>
+      ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
