@@ -83,6 +83,17 @@ export type TerminalPlane = { show: number; exit: number };
 export const terminalPlaneAt = (p: number): TerminalPlane => ({ show: p < 0 ? 0 : soft(ramp(p, 0, 0.2)), exit: soft(ramp(p, 0.85, 1)) });
 
 /**
+ * Un pannello della Panoramica che esce e si anima (Franz, 18/09 20:06: «animazioni dei suoi elementi come hai fatto col
+ * gauge»): esce dal display (0-0,3), fuori il suo contenuto si disegna da zero — barre che si riempiono, percentuali che
+ * contano (0,34-0,66) — resta, e si consegna alla scena dopo (0,84-1).
+ */
+export type PanelHero = Flight & { draw: number };
+export const panelHeroAt = (p: number): PanelHero => {
+  const f = flightAt(p, 0.3, 0.84);
+  return { ...f, draw: p < 0.32 ? 0 : soft(ramp(p, 0.34, 0.66)) };
+};
+
+/**
  * Lo scorrimento della corsia (vista laterale): una LISTA vera, non elementi indipendenti (Franz, 18/09 19:03). Le schede
  * stanno a passo costante e la lista scorre di un passo alla volta, **soffermandosi su ogni scheda**: dentro ogni passo il
  * primo tratto è movimento (curva morbida), il resto è sosta. `steps` = tempo in passi; il risultato è l'offset della lista.

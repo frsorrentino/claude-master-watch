@@ -13,14 +13,14 @@ const Card: React.FC<{ w: number; label: string; labelColor: string; children: R
   </div>
 );
 
-export const UiBriefWork: React.FC<{ w: number; n: number; note: string; bars: number[] }> = ({ w, n, note, bars }) => (
+export const UiBriefWork: React.FC<{ w: number; n: number; note: string; bars: number[]; draw?: number }> = ({ w, n, note, bars, draw = 1 }) => (
   <Card w={w} label="Now" labelColor={UI.briefGood}>
     <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
       <span style={{ fontSize: 58, fontWeight: 500, lineHeight: 1 }}>{n}</span>
       <span style={{ fontSize: 34, color: UI.text2 }}>working</span>
     </div>
     <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-      {bars.map((f, i) => <span key={i} style={{ flex: f, height: 14, borderRadius: 7, background: [UI.waiting, UI.busy, UI.idle][i % 3] }} />)}
+      {bars.map((f, i) => <span key={i} style={{ flex: f, height: 14, borderRadius: 7, background: [UI.waiting, UI.busy, UI.idle][i % 3], transform: `scaleX(${Math.min(1, Math.max(0, draw * 1.6 - i * 0.3))})`, transformOrigin: "0 50%" }} />)}
     </div>
     <div style={{ marginTop: 14, fontSize: 30, color: UI.text2, whiteSpace: "nowrap", overflow: "hidden" }}>{note}</div>
   </Card>
@@ -33,15 +33,15 @@ export const UiBriefQuestions: React.FC<{ w: number; n: number; note: string }> 
   </Card>
 );
 
-export const UiBriefContext: React.FC<{ w: number; rows: { name: string; pct: number }[] }> = ({ w, rows }) => (
+export const UiBriefContext: React.FC<{ w: number; rows: { name: string; pct: number }[]; draw?: number }> = ({ w, rows, draw = 1 }) => (
   <Card w={w} label="Context" labelColor={UI.briefGood}>
     {rows.map((r, i) => (
       <div key={i} style={{ marginTop: i ? 18 : 8 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 34 }}>
-          <span>{r.name}</span><span style={{ color: UI.briefRing }}>{r.pct} %</span>
+          <span>{r.name}</span><span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * Math.min(1, Math.max(0, draw * 1.5 - i * 0.35)))} %</span>
         </div>
         <div style={{ marginTop: 8, height: 10, borderRadius: 5, background: "rgba(139,180,247,.18)" }}>
-          <div style={{ width: `${r.pct}%`, height: "100%", borderRadius: 5, background: UI.briefRing }} />
+          <div style={{ width: `${r.pct * Math.min(1, Math.max(0, draw * 1.5 - i * 0.35))}%`, height: "100%", borderRadius: 5, background: UI.briefRing }} />
         </div>
       </div>
     ))}

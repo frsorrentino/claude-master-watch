@@ -6,18 +6,19 @@ import type { Grid } from "../beats.ts";
 import type { Pose } from "../moves.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
-import { cardOutAt, gaugeHeroAt, optionsBuildAt, terminalPlaneAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, optionsBuildAt, panelHeroAt, terminalPlaneAt } from "./heroes.ts";
 import type { Flight } from "./heroes.ts";
 import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
 import { UiOption } from "./UiOption.tsx";
 import { UiTerminalPanel } from "./UiTerminalPanel.tsx";
+import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760, HERO_TERMINAL_PX = 1700;
-type Hero = Extract<Fx, { kind: "cardOut" | "gaugeHero" | "optionsBuild" }>;
-const isHero = (e: Fx): e is Hero => e.kind === "cardOut" || e.kind === "gaugeHero" || e.kind === "optionsBuild";
+type Hero = Extract<Fx, { kind: "cardOut" | "gaugeHero" | "optionsBuild" | "panelHero" }>;
+const isHero = (e: Fx): e is Hero => e.kind === "cardOut" || e.kind === "gaugeHero" || e.kind === "optionsBuild" || e.kind === "panelHero";
 
 /** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito), quanto è
  *  «fuori» (`travel`) e quanto si sta consegnando alla scena dopo (`exit`). Senza momento forte: p = −1. */
@@ -30,6 +31,7 @@ export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; tr
     if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut, e.toCenter); return { p, travel: c.travel, exit: c.exit }; }
     if (e.kind === "gaugeHero") { const c = gaugeHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
     if (e.kind === "optionsBuild") { const c = optionsBuildAt(p); return { p, travel: c.travel, exit: c.fill }; }
+    if (e.kind === "panelHero") { const c = panelHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
   }
   return { p: -1, travel: 0, exit: 0 };
 };
@@ -177,6 +179,18 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           return (
             <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={to} toScale={HERO_CARD_PX / e.rect[2]} exitTo={exitTo}>
               <UiCard w={e.rect[2]} name={e.name} age={e.age} text={e.text} badge={e.badge} icon={e.icon} light={c.travel} />
+            </Flying>
+          );
+        }
+        if (e.kind === "panelHero") {
+          const c = panelHeroAt(p);
+          if (c.alpha <= 0) return null;
+          const K = 980 / e.rect[2];
+          return (
+            <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={[THEME.leftMargin + 980 / 2, height / 2]} toScale={K} exitTo={exitTo}>
+              {e.panel === "work"
+                ? <UiBriefWork w={e.rect[2]} n={e.n ?? 1} note={e.note ?? ""} bars={e.bars ?? [1, 1, 1]} draw={c.draw} />
+                : <UiBriefContext w={e.rect[2]} rows={e.rows ?? []} draw={c.draw} />}
             </Flying>
           );
         }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RAIL_MOVE, cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, railStackPx, terminalPlaneAt } from "./heroes.ts";
+import { RAIL_MOVE, cardOutAt, panelHeroAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, railStackPx, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -72,4 +72,12 @@ test("le schede si impilano a stacco costante: fra due consecutive restano sempr
     const hA = H * railAt(v / span).scale, hB = H * railAt((v + 1) / span).scale;
     assert.ok(Math.abs((yB - yA) - (hA + hB) / 2 - gap) < 22, `a ${v} lo stacco è ${((yB - yA) - (hA + hB) / 2).toFixed(1)} invece di ${gap}`);
   }
+});
+
+test("il pannello della Panoramica esce vuoto, si disegna fuori e si consegna", () => {
+  assert.equal(panelHeroAt(0).draw, 0);
+  assert.equal(panelHeroAt(0.31).draw, 0);
+  assert.ok(panelHeroAt(0.5).draw > 0.3 && panelHeroAt(0.5).draw < 1 && panelHeroAt(0.5).travel === 1);
+  assert.equal(panelHeroAt(0.7).draw, 1);
+  assert.ok(panelHeroAt(0.95).exit > 0.5);
 });
