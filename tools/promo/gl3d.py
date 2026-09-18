@@ -11,12 +11,22 @@ Stampa una riga per tratto: `primo ultimo` (compresi). Senza argomenti usa la sc
 """
 import json
 import pathlib
+import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 TIMELINE = HERE / "remotion/src/film/timeline.json"
-BLIND_CUT = 0.42          # deve restare uguale a src/film/ui/blinds.ts
+BLINDS_TS = HERE / "remotion/src/film/ui/blinds.ts"
 MARGIN = 2                # un paio di fotogrammi di margine: il taglio non cade sul primo listello
+
+
+def blind_cut() -> float:
+    """Il taglio della tapparella si legge dal sorgente, non si ricopia qui: una copia disallineata (0,42 contro 0,66)
+    il 18/09 ha fatto finire la tapparella dentro il segmento reso in egl, e il render è morto sul contesto WebGL."""
+    m = re.search(r"BLIND_CUT\s*=\s*([0-9.]+)", BLINDS_TS.read_text())
+    if not m:
+        raise SystemExit(f"BLIND_CUT non trovato in {BLINDS_TS}")
+    return float(m.group(1))
 
 
 def beat_to_frame(g: dict, beat: float) -> int:
@@ -30,7 +40,7 @@ def ranges(t: dict) -> list[tuple[int, int]]:
         nxt = scenes[i + 1] if i + 1 < len(scenes) else None
         if "blinds" in s and nxt:
             frames = beat_to_frame(t, s["at"] + s["blinds"]["len"]) - beat_to_frame(t, s["at"])
-            start = beat_to_frame(t, nxt["at"]) - round(frames * BLIND_CUT)
+            start = beat_to_frame(t, nxt["at"]) - round(frames * blind_cut())
             out.append((max(0, start - MARGIN), start + frames + MARGIN))
     return sorted(out)
 
