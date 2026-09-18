@@ -17,6 +17,7 @@ import { Heroes, heroTravel } from "./ui/Heroes.tsx";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
+import { Whip } from "./ui/Whip.tsx";
 import type { Stems } from "./Soundtrack.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
@@ -68,6 +69,10 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   );
 };
 
+/** I battiti in cui cambia l'atto (senza apertura e chiusura, che hanno la loro cornice): lì passa la frustata. */
+export const actChanges = (scenes: Scene[]): number[] =>
+  scenes.filter((s, i) => i > 0 && s.act !== scenes[i - 1].act && s.act !== "close" && scenes[i - 1].act !== "open").map((s) => s.at);
+
 export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   useFilmFonts();
   return (
@@ -77,6 +82,9 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
           <SceneView scene={s} {...fxLayers(s, GRID)} />
         </Sequence>
+      ))}
+      {actChanges(TIMELINE.scenes).map((b) => (
+        <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
       ))}
     </AbsoluteFill>
   );
