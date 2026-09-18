@@ -22,7 +22,7 @@ export const WordMask: React.FC<{
     return (
       <span key={i} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom", padding: "0.08em 0 0.16em", marginRight: "0.26em" }}>
         <span style={{ display: "inline-block", translate: `0 ${up + away}%`, color: w === accent ? THEME.accent : THEME.white }}>
-          {text}{last ? <Sign size={px * 0.34} style={{ marginLeft: "0.12em", verticalAlign: "0.02em" }} /> : null}
+          {text}{last ? <Sign size={px * 0.5} style={{ marginLeft: "0.1em", verticalAlign: "-0.04em" }} /> : null}
         </span>
       </span>
     );

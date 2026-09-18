@@ -29,14 +29,19 @@ export const wavePath = (width: number, mid: number, amp: number, phase: number,
  * per tutta la larghezza della colonna (`x0`..`x1`, a quota `y`). `reach` 0-1: quanto è arrivata (da ▶ alla colonna).
  * Tracciato in coordinate del quadro: un ramo dal ▶ alla fine destra della colonna, poi l'onda verso sinistra.
  */
-export const wavePathFrom = (from: [number, number], x0: number, x1: number, y: number, amp: number, phase: number, reach: number, waves = 3.4): string => {
+export const wavePathFrom = (from: [number, number], x0: number, x1: number, y: number, amp: number, phase: number, reach: number, waves = 3.4, top?: number): string => {
   const n = 64;
   const pts: [number, number][] = [];
-  // ramo: dal ▶ alla colonna con una curva morbida (cubica campionata)
-  const [fx, fy] = from; const m = 12;
+  // ramo: dal ▶ esce dal vetro verso l'alto e gira attorno all'orologio fino alla colonna (Bézier cubica campionata): non
+  // attraversa mai il testo sul display
+  const [fx, fy] = from; const m = 24;
+  const ty = top ?? fy - 260;
+  const P = [[fx, fy], [fx - 160, ty], [x1 - 140, ty + 60], [x1, y]];   // scende a sinistra del vetro, mai sopra il testo del display
   for (let k = 0; k <= m; k++) {
-    const t = k / m; const s = t * t * (3 - 2 * t);
-    pts.push([fx + (x1 - fx) * s, fy + (y - fy) * s]);
+    const t = k / m, a = 1 - t;
+    const x = a * a * a * P[0][0] + 3 * a * a * t * P[1][0] + 3 * a * t * t * P[2][0] + t * t * t * P[3][0];
+    const yy = a * a * a * P[0][1] + 3 * a * a * t * P[1][1] + 3 * a * t * t * P[2][1] + t * t * t * P[3][1];
+    pts.push([x, yy]);
   }
   for (let k = 1; k <= n; k++) {
     const x = x1 - ((x1 - x0) * k) / n;

@@ -1,7 +1,7 @@
 {
  "bpm": 110,
  "fps": 30,
- "offsetSeconds": 0.025,
+ "offsetSeconds": 0.0075,
  "scenes": [
   {
    "id": "open-1",
@@ -281,8 +281,8 @@
    "fx": [
     {
      "kind": "terminalPlane",
-     "at": 1,
-     "len": 6.5,
+     "at": 2.5,
+     "len": 5.5,
      "rect": [
       26,
       128,

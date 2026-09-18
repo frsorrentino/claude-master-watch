@@ -31,15 +31,15 @@ export const UiWave: React.FC<{ file: string; width?: number; height?: number }>
  * L'onda giro 2: dal ▶ del display (punto nel quadro) alla colonna delle parole, ampiezza piena sui picchi veri della voce
  * (fino a 150 px), tutta la larghezza della colonna. `f` parte con la voce; nei primi 14 fotogrammi il filo «arriva» dal ▶.
  */
-export const UiWaveFrom: React.FC<{ file: string; from: [number, number]; x0: number; x1: number; y: number }> = ({ file, from, x0, x1, y }) => {
+export const UiWaveFrom: React.FC<{ file: string; from: [number, number]; x0: number; x1: number; y: number; top: number }> = ({ file, from, x0, x1, y, top }) => {
   const f = useCurrentFrame();
   const [env, setEnv] = useState<number[]>([]);
   const [handle] = useState(() => delayRender(`onda ${file}`));
   useEffect(() => { fetch(staticFile(`audio/${file}`)).then((r) => r.json()).then((e: Envelope) => { setEnv(e.env); continueRender(handle); }); }, [file, handle]);
   const a = waveAmplitudeAt(env, f);
-  const reach = soft(Math.min(1, f / 14));
-  const amp = (6 + 150 * a) * Math.min(1, Math.max(0, (f - 10) / 10));
-  const d = wavePathFrom(from, x0, x1, y, amp, f * 0.3, reach);
+  const reach = soft(Math.min(1, f / 18));
+  const amp = (6 + 150 * a) * Math.min(1, Math.max(0, (f - 14) / 10));
+  const d = wavePathFrom(from, x0, x1, y, amp, f * 0.3, reach, 3.4, top);
   return (
     <svg style={{ position: "absolute", inset: 0, overflow: "visible", pointerEvents: "none" }} width="100%" height="100%">
       <path d={d} fill="none" stroke={UI.coral} strokeWidth={18} strokeLinecap="round" strokeLinejoin="round" opacity={0.3 + 0.4 * a} style={{ filter: "blur(9px)" }} />
