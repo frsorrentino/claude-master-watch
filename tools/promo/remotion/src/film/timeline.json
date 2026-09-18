@@ -302,17 +302,24 @@
    "takeover": {
     "len": 4,
     "x": 960,
-    "y": 560,
-    "w": 760,
-    "h": 300,
-    "r": 60,
+    "y": 271,
+    "w": 644,
+    "h": 330,
+    "r": 63,
     "color": "#23272E",
     "toColor": "#15393F",
     "body": "words",
     "words": [
      "Great. Now update the",
      "changelog and tag the release"
-    ]
+    ],
+    "card": {
+     "name": "payments-api",
+     "age": "0 m",
+     "text": "Great. Now update the changelog and tag the release",
+     "badge": "#3C81F2",
+     "icon": "play"
+    }
    }
   },
   {

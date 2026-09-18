@@ -4,9 +4,10 @@ import { TAKEOVER_CUT, takeoverAt } from "./takeover.ts";
 import { mixColor } from "./carry.ts";
 import { THEME } from "../theme.ts";
 import { UI } from "./UiTokens.ts";
+import { UiCard } from "./UiCard.tsx";
 
 /** Cosa c'è dentro il componente che prende il quadro: la card protagonista, le parole dette, il tasto. */
-export type TakeoverBody = { kind: "card"; text: string } | { kind: "words"; words: string[] } | { kind: "plain" };
+export type TakeoverBody = { kind: "card"; text: string } | { kind: "words"; words: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } } | { kind: "plain" };
 
 /**
  * Un takeover (piano 5): il componente parte dal suo posto (`x`, `y`, `w`, `h`, raggio `r`, colore `color`), **cresce fino a
@@ -42,9 +43,17 @@ export const Takeover: React.FC<{
           {body.text}
         </div>
       ) : null}
+      {body.kind === "words" && body.card ? (
+        // parte ESATTAMENTE come una scheda della corsia (Franz, 18/09 19:13) e sfuma mentre il rettangolo cresce
+        <div style={{ position: "absolute", left: cx, top: cy, width: 0, height: 0, opacity: Math.max(0, 1 - t.grow * 2.6) }}>
+          <div style={{ translate: "-50% -50%", width: w }}>
+            <div style={{ zoom: w / 427 }}><UiCard w={427} name={body.card.name} age={body.card.age} text={body.card.text} badge={body.card.badge} icon={body.card.icon} light={1} /></div>
+          </div>
+        </div>
+      ) : null}
       {body.kind === "words" ? (
         // le parole dette si dispongono come righe monospazio: nel become sono già le righe del terminale
-        <div style={{ position: "absolute", left: width * 0.16, top: height * 0.34, width: width * 0.68, textAlign: "center", opacity: Math.min(1, t.grow * 1.4) * (1 - t.settle), fontFamily: t.become > 0.5 ? "Cousine" : "Inter", fontWeight: t.become > 0.5 ? 400 : 600, fontSize: 70 - 26 * t.become, lineHeight: t.become > 0.5 ? "62px" : 1.25, color: t.become > 0.5 ? UI.text2 : THEME.white, whiteSpace: "pre-wrap", letterSpacing: t.become > 0.5 ? 0 : "-0.02em" }}>
+        <div style={{ position: "absolute", left: width * 0.16, top: height * 0.34, width: width * 0.68, textAlign: "center", opacity: Math.min(1, Math.max(0, (t.grow - 0.35) / 0.4)) * (1 - t.settle), fontFamily: t.become > 0.5 ? "Cousine" : "Inter", fontWeight: t.become > 0.5 ? 400 : 600, fontSize: 70 - 26 * t.become, lineHeight: t.become > 0.5 ? "62px" : 1.25, color: t.become > 0.5 ? UI.text2 : THEME.white, whiteSpace: "pre-wrap", letterSpacing: t.become > 0.5 ? 0 : "-0.02em" }}>
           {body.words.map((l, i) => <div key={i} style={{ opacity: 1 - 0.14 * i * t.become }}>{l}</div>)}
         </div>
       ) : null}

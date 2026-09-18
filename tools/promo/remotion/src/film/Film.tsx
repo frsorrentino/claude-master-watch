@@ -68,10 +68,10 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.78 + pose.y * height}px, 0) scale(${pose.scale})` }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>
           <SideWatch widthPx={THEME.sideCasePx} />
         </div>
-        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.78} /></div>
+        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
@@ -124,7 +124,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         const next = TIMELINE.scenes[i + 1];
         if (!s.takeover || !next) return null;
         const k = s.takeover, frames = spanFrames(GRID, s.at, k.len);
-        const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [] } : { kind: "plain" as const };
+        const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : { kind: "plain" as const };
         return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} color={k.color} toColor={k.toColor} frames={frames} body={body} /></Sequence>;
       })}
       {TIMELINE.scenes.map((s, i) => {
