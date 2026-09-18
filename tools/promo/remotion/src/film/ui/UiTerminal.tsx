@@ -17,7 +17,7 @@ export const UiTerminal: React.FC<{ lines: string[]; everyFrames: number; startF
   const f = useCurrentFrame() - startFrame;
   const newest = lines.reduce((n, _, i) => (f >= i * everyFrames ? i : n), -1);
   return (
-    <div style={{ transform: "skewY(-7deg)", transformOrigin: "100% 50%", fontFamily: "Noto Sans Mono", fontSize: 48, lineHeight: 1.45, whiteSpace: "pre" }}>
+    <div style={{ transform: "skewY(-7deg)", transformOrigin: "100% 50%", fontFamily: "Noto Sans Mono", fontSize: 56, lineHeight: 1.4, whiteSpace: "pre", marginTop: 50 }}>
       {lines.map((l, i) => {
         const e = soft(clamp((f - i * everyFrames) / 12));
         const age = Math.max(0, newest - i);

@@ -5,6 +5,7 @@ import type { Grid } from "./beats.ts";
 import type { Scene } from "./timeline.ts";
 import { THEME } from "./theme.ts";
 import { UiTerminal } from "./ui/UiTerminal.tsx";
+import { UiWave } from "./ui/UiWave.tsx";
 
 const clampBoth = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const big: React.CSSProperties = { fontFamily: "Inter", fontWeight: 600, color: THEME.white, letterSpacing: "-0.02em" };
@@ -59,7 +60,7 @@ export const watchTextFor = (scene: Scene, g: Grid, offsetFrames = 0): React.Rea
     const node = e.kind === "counter" ? <Counter to={e.to} suffix={e.suffix} frames={at(e.at + e.len) - at(e.at)} />
       : e.kind === "typed" ? <TypedLine text={e.text} frames={at(e.at + e.len) - at(e.at)} />
       : e.kind === "terminal" ? <UiTerminal lines={e.lines} everyFrames={at(e.every)} startFrame={at(e.at) - offsetFrames} />
-      : e.kind === "spoken" ? <SpokenWords file={e.words} fps={g.fps} /> : null;
+      : e.kind === "spoken" ? <><SpokenWords file={e.words} fps={g.fps} /><div style={{ marginTop: 28 }}><UiWave file={e.voice.replace(/\.wav$/, ".env.json")} /></div></> : null;
     return node ? <Sequence key={i} from={e.kind === "terminal" ? 0 : at(e.at) - offsetFrames} layout="none">{node}</Sequence> : null;
   });
 };
