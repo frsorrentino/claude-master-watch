@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { spanFrames } from "../beats.ts";
 import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
-import { railAt, railScrollVar } from "./heroes.ts";
+import { railAt, railScrollVar, railStackPx } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
 import { UI } from "./UiTokens.ts";
 import { THEME } from "../theme.ts";
@@ -23,10 +23,11 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
   const p = (frame - from) / len;
   if (p < 0) return null;
   const W = 560, cx = width / 2;                // colonna centrale: le schede e le scritte si alternano sopra l'orologio
-  const TOP = 70;                               // la corsia finisce qui: sopra, le schede sono uscite
-  const GAP = 150;                              // la corsia comincia sopra l'orologio, senza toccarlo
-  const SPAN = 1.84;                             // quante schede si vedono insieme: passo 291 px contro 279 di altezza: 12 px di stacco, la stessa proporzione della lista vera (212 px di card, 9 di stacco)
-  const yBottom = glassY - GAP;
+  const CLEAR = 150;                            // la corsia comincia sopra l'orologio, senza toccarlo
+  const SPAN = 2.2;                             // quante schede si vedono insieme
+  const CARD_H = W * 0.503;                     // altezza della scheda alla scala piena (427×215 nel display)
+  const GAP = CARD_H * 0.043;                   // stacco come sul display (card 209 px, stacco 9): impilamento a stacco costante
+  const yBottom = glassY - CLEAR;
   // la sosta la decide la scaletta, scheda per scheda: le card lunghe si leggono, le scritte passano più svelte
   // l'ultima scheda si ferma al centro e resta lì: da quella posizione parte l'ingrandimento della transizione
   const holds = e.cards.map((c, i) => c.hold ?? (i === e.cards.length - 1 ? 1.6 : c.kind === "text" ? 0.2 : 0.5));
@@ -36,7 +37,7 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
       {e.cards.map((c, i) => {
         const d = offset - i;                    // 0 = appena entrata in fondo alla corsia, SPAN = in cima
         const u = d / SPAN;
-        const y = yBottom - (yBottom - TOP) * u;
+        const y = yBottom - railStackPx(d, CARD_H, GAP, SPAN);
         // la scheda non sparisce ai capi: resta piccola e appena trasparente finché non esce davvero dal quadro
         if (d <= -0.06 || y < -240) return null;
         const rail = railAt(u);

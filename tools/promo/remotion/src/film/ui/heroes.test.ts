@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RAIL_MOVE, cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, terminalPlaneAt } from "./heroes.ts";
+import { RAIL_MOVE, cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, railStackPx, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -63,4 +63,13 @@ test("la sosta è diversa per scheda, e cade quando la scheda è al centro della
   assert.ok(Math.abs(railScrollVar((RAIL_MOVE + 0.2) / total, holds) - 0.8) < 1e-9, "resta ferma per tutta la sosta");
   assert.ok(Math.abs(railScrollVar(1, holds) - 1.8) < 1e-9);
   assert.ok(railScrollVar(0.95, holds) === railScrollVar(0.85, holds), "sosta lunga sulla seconda: non si muove");
+});
+
+test("le schede si impilano a stacco costante: fra due consecutive restano sempre i pixel dello stacco vero", () => {
+  const H = 279, gap = 12, span = 2.2;
+  for (const v of [0.2, 0.8, 1.4]) {
+    const yA = railStackPx(v, H, gap, span), yB = railStackPx(v + 1, H, gap, span);
+    const hA = H * railAt(v / span).scale, hB = H * railAt((v + 1) / span).scale;
+    assert.ok(Math.abs((yB - yA) - (hA + hB) / 2 - gap) < 22, `a ${v} lo stacco è ${((yB - yA) - (hA + hB) / 2).toFixed(1)} invece di ${gap}`);
+  }
 });

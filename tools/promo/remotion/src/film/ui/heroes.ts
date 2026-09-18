@@ -121,3 +121,17 @@ export const railAt = (t: number): { scale: number; alpha: number } => {
   const bell = Math.sin(Math.PI * clamp(t));
   return { scale: 0.62 + 0.38 * bell, alpha: 0.45 + 0.55 * Math.min(1, 1.5 * bell) };
 };
+
+/**
+ * Quanto è salita dal fondo della corsia, in pixel, una scheda che sta a `v` passi dalla più bassa (Franz, 18/09 19:47: «le
+ * schede nella realtà sono molto più vicine»). Non basta un passo fisso: con la deformazione le schede fuori centro sono più
+ * piccole e lo stacco apparente cresce. Qui la quota si ottiene **impilando le altezze vere**: fra due schede a un passo di
+ * distanza restano sempre `gap` pixel, come sul display (card 209 px, stacco 9).
+ */
+export const railStackPx = (v: number, cardH: number, gap: number, span: number, steps = 96): number => {
+  if (v <= 0) return v * (cardH + gap);
+  const h = v / steps;
+  let acc = 0;
+  for (let k = 0; k < steps; k++) acc += (cardH * railAt(((k + 0.5) * h) / span).scale + gap) * h;
+  return acc;
+};
