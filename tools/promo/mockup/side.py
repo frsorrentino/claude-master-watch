@@ -47,12 +47,13 @@ def main():
     xs = np.arange(cx0, cx1 + 1)
     good = np.abs(top[xs] - np.poly1d(np.polyfit(xs, top[xs], 6))(xs)) < 6        # via i pelucchi, poi si riadatta
     fit = np.poly1d(np.polyfit(xs[good], top[xs][good], 6))
-    top[xs] = fit(xs)
-    band = np.r_[np.arange(0, cx0), np.arange(cx1 + 1, W)]
-    for arr in (top, bot):
-        sm = arr.copy()
-        for i in band: sm[i] = arr[max(0, i - 18):i + 19].mean()
-        arr[band] = sm[band]
+    # profilo lisciato ovunque (serve al cinturino e al raccordo con la cupola)
+    smooth = np.array([top[max(0, i - 18):i + 19].mean() for i in range(W)])
+    # peso della cupola: 1 al centro della cassa, 0 sul cinturino, transizione dolce in 90 px attorno alle anse: niente scalini
+    d = np.minimum(np.arange(W) - cx0, cx1 - np.arange(W)).astype(float)
+    t = np.clip(d / 90.0, 0, 1); wgt = t * t * (3 - 2 * t)
+    top = wgt * fit(np.arange(W)) + (1 - wgt) * smooth
+    bot = np.array([bot[max(0, i - 18):i + 19].mean() for i in range(W)])
     lo = np.poly1d(np.polyfit(np.arange(W), bot, 3))(np.arange(W))               # il cinturino appoggia su una curva dolce
     bot = np.minimum(bot, lo + 6)
     top = np.round(top).astype(int) + 3; bot = np.round(bot).astype(int) - 1
