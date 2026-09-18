@@ -12,6 +12,19 @@ ripulendo la precedente per far spazio alla nuova»). Regole nuove, che sostitui
 3. **Un ingrandimento «sul posto» è sul posto**: il tasto premuto cresce del 6 % dentro il display e torna, senza uscire.
 4. **Si tagliano le scene deboli** per dare tempo ai passaggi: l'estetica prima della completezza.
 
+## Stato al 18/09, 23:45 (quanto di questo piano è nel film)
+
+La scaletta ha preso una strada in parte diversa, decisa con Franz mentre si costruiva: va letta lì, non qui.
+- **Fatti**: il takeover della card (lista → It asks) e quello delle parole dette (corsia laterale → Watch it work);
+  il battito di ciglia con la parola che cresce; la vibrazione; la tile in «One glance»; il terminale del PC come
+  sfondo dietro l'orologio; la tapparella in 3D che chiude la Panoramica (revisione 3D, momento 1).
+- **Sostituiti**: le scene 9, 10 e 11 («Follow what matters», «Know when it's done», «Say what's next») sono state
+  tolte e al loro posto c'è la **scena laterale** con l'orologio a terra e le card che scorrono sopra — Franz,
+  18/09 pomeriggio: erano tre scene deboli e ripetitive.
+- **Non fatti**: i passaggi 6, 10, 12 e 13 della tabella (badge ❓, ✓ che diventa microfono, cursore che diventa gauge,
+  gauge che si apre in due campi). Il 13 è superato dalla tapparella.
+- **Aperti con Franz**: domanda corta per «It speaks», voce AI per la dettatura, chiusura (c'è una prova in 3D).
+
 ## 1. Scaletta (110 bpm; battiti; clip del 18/09 a 1×)
 
 | # | Scena · titolo | Battiti | Sul display | Il passaggio alla scena dopo (≥ 3 battiti, dentro i battiti della scena) |
