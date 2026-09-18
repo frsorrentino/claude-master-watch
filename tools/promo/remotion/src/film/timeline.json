@@ -150,12 +150,12 @@
   {
    "id": "answer",
    "at": 58,
-   "len": 8,
+   "len": 10,
    "act": "act",
    "watch": {
     "view": "front",
     "clip": "scenes/n_answer.mp4",
-    "clipStart": 8.5
+    "clipStart": 12.0
    },
    "text": {
     "lines": [
@@ -167,14 +167,14 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 3.5,
+     "at": 4.5,
      "len": 2
     }
    ]
   },
   {
    "id": "follow",
-   "at": 66,
+   "at": 68,
    "len": 6,
    "act": "act",
    "watch": {
@@ -193,7 +193,7 @@
   },
   {
    "id": "done",
-   "at": 72,
+   "at": 74,
    "len": 6,
    "act": "act",
    "watch": {
@@ -212,7 +212,7 @@
   },
   {
    "id": "say",
-   "at": 78,
+   "at": 80,
    "len": 14,
    "act": "act",
    "watch": {
@@ -239,7 +239,7 @@
   },
   {
    "id": "watch",
-   "at": 92,
+   "at": 94,
    "len": 8,
    "act": "control",
    "watch": {
@@ -270,8 +270,8 @@
   },
   {
    "id": "limits",
-   "at": 100,
-   "len": 12,
+   "at": 102,
+   "len": 10,
    "act": "control",
    "watch": {
     "view": "front",
