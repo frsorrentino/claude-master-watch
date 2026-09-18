@@ -11,7 +11,7 @@ import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 
 /** Larghezza della card da protagonista, nel quadro: riempie lo spazio a sinistra dell'orologio tenendo il margine del testo. */
-export const HERO_CARD_PX = 800;
+export const HERO_CARD_PX = 900;
 
 /**
  * I momenti forti di una scena, disegnati sopra l'orologio. Il display frontale sta a `watchCx + pose.x·width`,
@@ -40,13 +40,17 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
         // un asse solo: attorno alla verticale, il lato destro (quello che si stacca per ultimo) più vicino; fuori resta appena girata
         const yaw = 3 * c.travel + 16 * c.swing + 1.2 * c.drift * c.travel;
         return (
-          <div key={i} style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity: c.alpha }}>
+          <React.Fragment key={i}>
+          {/* il campo si pulisce: una vignetta scurisce i bordi finché la card è fuori */}
+          <div style={{ position: "absolute", inset: 0, opacity: 0.55 * c.travel, background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
+          <div style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity: c.alpha }}>
             <div style={{ translate: "-50% -50%", width: "max-content", scale: String(scale) }}>
               <Plane3D ry={yaw} perspective={2600 / scale}>
                 <UiCard w={rw} name={e.name} age={e.age} text={e.text} light={c.travel} />
               </Plane3D>
             </div>
           </div>
+          </React.Fragment>
         );
       })}
     </>

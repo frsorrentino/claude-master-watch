@@ -14,6 +14,7 @@ import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
 import { Heroes } from "./ui/Heroes.tsx";
+import { cardOutAt } from "./ui/heroes.ts";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
@@ -38,18 +39,22 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
   const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut");
-  const leave = Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : Infinity);
+  const heroFrom = hero ? spanFrames(GRID, scene.at, hero.at) : 0;
+  const leave = Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? heroFrom - 6 : Infinity);
+  // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
+  // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
+  const back = hero ? cardOutAt((frame - heroFrom) / spanFrames(GRID, scene.at + hero.at, hero.len)).travel : 0;
   const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale) }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale * (1 + 0.55 * back)), filter: back > 0 ? `blur(${5 * back}px) brightness(${1 - 0.45 * back})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
-      <Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" ? pose : null} glassPx={THEME.frontGlassPx} />
+      <Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * (1 + 0.55 * back) } : null} glassPx={THEME.frontGlassPx} />
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (

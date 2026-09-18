@@ -44,11 +44,18 @@ export const HapticRings: React.FC = () => {
   );
 };
 
-/** Il vuoto lasciato dalla card che esce (piano 3): una toppa del colore del fondo sul suo rettangolo, finché non rientra. */
+/** Il posto lasciato dalla card che esce (piano 3): un fantasma del colore della superficie, senza testo, finché non rientra
+ *  (una toppa nera si leggeva come un buco nel render: master, 18/09 02:22). */
 export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number }> = ({ rect, frames }) => {
   const f = useCurrentFrame();
   const [x, y, w, h] = rect;
-  return <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.bg, opacity: cardOutAt(f / frames).patch }} />;
+  const patch = cardOutAt(f / frames).patch;
+  return (
+    <>
+      <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.bg, opacity: patch }} />
+      <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.surface, opacity: 0.38 * patch }} />
+    </>
+  );
 };
 
 export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; around: React.ReactNode } => {
