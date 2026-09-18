@@ -36,7 +36,8 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_tile.mp4",
-    "clipStart": 6.0
+    "clipStart": 6.0,
+    "exit": "zoomLeft"
    },
    "text": {
     "lines": [

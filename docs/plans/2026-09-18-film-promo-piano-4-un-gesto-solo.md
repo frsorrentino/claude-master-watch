@@ -28,7 +28,7 @@ restano. Qui cambiano scaletta, transizioni e i tre fili trasversali.
 |---|---|---|---|---|---|
 | 1 | Claude is working. | 4 (2,2) | — | titolo | dissolvenza |
 | 2 | You're not at your desk. | 6 (3,3) | — | titolo | dissolvenza |
-| 3 | That's fine. | 6 (3,3) | `tile` 0,0-3,3: quadrante acceso, a 2,0 parte lo swipe verso la tile | orologio già in quadro, dal nero | la tile entra scorrendo: è la scena dopo |
+| 3 | That's fine. | 6 (3,3) | quadrante acceso (`list` 6,0-9,3) | orologio già in quadro, dal nero | **zoom dentro la complication** (Franz, 11:21: il passaggio dalla quotidianità alla novità dell'app), come nella v5; la tile resta per la scena 4 quando sarà rigirata |
 | 4 | Every session. One glance. | 8 (4,4) | `tile` 3,3-7,7: la tile ferma (card di storefront, barra delle 5 ore) | «glance.» cresce fino a riempire il quadro e il suo nero diventa il battito di ciglia (un gesto solo) | riapertura sulla lista, orologio a tutto schermo |
 | 5 | (lista) | 10 (5,45) | `list` 10,5-15,95: la lista scorre (11,5-14,0) e si ferma su storefront + blog | la card di storefront esce mentre la lista scorre e **rientra sulla lista ferma con la camera già tornata indietro** (inquadratura cambiata) | dissolvenza (stesso atto) |
 | 6 | It asks. | 6 (3,3) | `asks` 9,2-12,5: lista, la domanda si apre da sola a 11,0 | il segno corallo pulsa una volta (nessun anello) | stacco |
