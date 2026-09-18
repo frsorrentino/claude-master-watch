@@ -386,7 +386,7 @@
     "view": "front",
     "clip": "scenes/n_overview_cut.mp4",
     "clipStart": 0,
-    "rate": 1.15,
+    "rate": 1.14,
     "enter": "slideIn"
    },
    "text": {

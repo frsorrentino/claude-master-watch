@@ -26,8 +26,9 @@ export const blindSoloAt = (p: number): number => ease(clamp(p / 0.16));
 export const blindAt = (p: number, i: number, n: number, bars: readonly [number, number] = [6, 7]): Blind => {
   const isBar = i === bars[0] || i === bars[1];
   const del = blindDelay(i, n, bars);
-  // le due barre restano sole in scena e diventano listelli: si allungano e si ingrossano mentre il resto sfuma
-  const spread = isBar ? ease(clamp((p - 0.1) / 0.24)) : 1;
+  // le due barre cominciano a crescere NEL MOMENTO in cui il resto sfuma, senza pausa in mezzo (Franz, 22:41):
+  // `solo` e `spread` corrono insieme, il secondo un po' più lungo del primo
+  const spread = isBar ? ease(clamp(p / 0.3)) : 1;
   // l'accenno di voltata delle sole barre, a tapparella ancora vuota: un quarto di secondo, avanti e indietro
   const wink = isBar ? Math.sin(Math.PI * clamp((p - 0.34) / 0.1)) : 0;
   // gli altri listelli nascono dopo l'accenno, a ventaglio dalle barre verso i capi

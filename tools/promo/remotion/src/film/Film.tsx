@@ -65,7 +65,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // è così che si vede il collegamento fra il grafico e la transizione (Franz, 18/09 22:28)
   const blindStart = scene.blinds ? total - Math.round(spanFrames(GRID, scene.at, scene.blinds.len) * BLIND_CUT) : Infinity;
   const blindFrames = scene.blinds ? spanFrames(GRID, scene.at, scene.blinds.len) : 1;
-  const solo = frame >= blindStart ? blindSoloAt((frame - blindStart) / blindFrames) : 0;
+  // il fade parte insieme al riempimento delle barre, 16 fotogrammi prima dell'innesco: così la crescita non si ferma
+  // ad aspettare che il quadro si svuoti, le due cose corrono insieme (Franz, 22:41)
+  const solo = frame >= blindStart - 16 ? blindSoloAt((frame - (blindStart - 16)) / blindFrames) : 0;
   // vibrazione: la notifica arriva e l'orologio trema per 10 fotogrammi (Franz, 13:13)
   const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
   const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
