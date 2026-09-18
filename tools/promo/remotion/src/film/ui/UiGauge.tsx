@@ -21,6 +21,9 @@ const onCard = (hex: string, alpha = 0.22): string => {
  *  fisso in pixel (18,4 px del display, cioè un angolo che cresce sull'anello interno). Misurato sui due anelli del fotogramma
  *  della quota (18/09): esterno 11 % visibile 110-136°, interno 36 % visibile 112-211°; i due punti fissano costante e stacco. */
 export const GAUGE_START = 105.5, GAUGE_SWEEP = 329, GAUGE_INSET = 5, GAUGE_DEG_PER_PCT = 3.09, GAUGE_GAP_PX = 18.4;
+/** Misure del gauge sul display, in pixel (1 dp = 2 px), da `Gauge.kt`: cassa 52 dp, tratto 6 dp, stacco fra i due anelli 2 dp.
+ *  Sono la BASE delle proporzioni: a qualunque `size` il tratto resta 11,54 % del diametro e lo stacco 3,85 %. */
+export const GAUGE_SIZE_PX = 104, GAUGE_STROKE_PX = 12, GAUGE_GAP2_PX = 4;
 
 /**
  * Il gauge doppio della quota (`Gauge.kt` con `second`), ricostruito nello spazio del display (1 dp = 2 px): 52 dp, tratti da
@@ -28,11 +31,12 @@ export const GAUGE_START = 105.5, GAUGE_SWEEP = 329, GAUGE_INSET = 5, GAUGE_DEG_
  * `outer` e `inner` 0-1; `ghost` disegna solo i binari (il posto lasciato sul display).
  */
 export const UiGauge: React.FC<{ size?: number; outer: number; inner: number; ghost?: boolean }> = ({ size = 104, outer, inner, ghost = false }) => {
-  const stroke = 12, gap = 4, c = size / 2;
+  // tutto in proporzione al diametro, come sul display (52 dp: tratto 6 dp, stacco 2 dp): ingrandendolo i tratti crescono con lui
+  const k = size / GAUGE_SIZE_PX, stroke = GAUGE_STROKE_PX * k, gap = GAUGE_GAP2_PX * k, c = size / 2;
   const rOut = c - stroke / 2, rIn = c - stroke - gap - stroke / 2;
   const ring = (r: number, v: number, ink: string) => {
     const deg = 180 / Math.PI, cap = ((stroke / 2) / r) * deg;             // l'estremità tonda sporge di mezzo tratto: l'arco disegnato la tiene dentro
-    const a = GAUGE_START + GAUGE_INSET + cap, b = a + Math.min(1, v) * 100 * GAUGE_DEG_PER_PCT - (GAUGE_GAP_PX / r) * deg;
+    const a = GAUGE_START + GAUGE_INSET + cap, b = a + Math.min(1, v) * 100 * GAUGE_DEG_PER_PCT - ((GAUGE_GAP_PX * k) / r) * deg;
     return (
       <>
         <path d={arc(c, c, r, GAUGE_START + cap, GAUGE_START + GAUGE_SWEEP - cap)} fill="none" stroke={onCard(ink)} strokeWidth={stroke} strokeLinecap="round" />

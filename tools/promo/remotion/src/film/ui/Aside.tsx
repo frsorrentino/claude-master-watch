@@ -26,7 +26,11 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const t = (frame - from) / len;
         if (t < 0 || t >= 1) return null;
-        const fade = e.out === "bars" ? 1 : 1 - soft(clamp((t - 0.88) / 0.12));
+        // il pannello resta fermo fino a POCO PRIMA che entri il successivo e se ne va in 8 fotogrammi: mai due insieme
+        // (Franz, 18/09 21:54: la quota sbordava di un battito e mezzo sopra il ritmo)
+        const next = list[i + 1];
+        const gone = next ? spanFrames(g, scene.at, next.at) - 2 : from + len;
+        const fade = e.out === "bars" ? 1 : 1 - soft(clamp((frame - (gone - 8)) / 8));
         const a = Math.min(soft(clamp(t / 0.12)), fade);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
         const d = soft(clamp((t - 0.12) / 0.45));                                        // il dato si disegna sul posto
         return (
