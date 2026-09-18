@@ -10,18 +10,18 @@ export type Fx =
   | { kind: "counter"; at: number; len: number; to: number; suffix: string }
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
-  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; fromOut?: boolean }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
+  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; fromOut?: boolean; toCenter?: boolean }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
   | { kind: "optionsBuild"; at: number; len: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
   | { kind: "shake"; at: number }
-  | { kind: "float"; at: number; len: number; cards: { name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; every?: number }[] }   // card che salgono dal vetro e galleggiano (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
+  | { kind: "float"; at: number; len: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell" } | { kind: "text"; lines: string[]; accent?: string })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number };   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
-export type Camera = "close" | "release";
+export type Camera = "close" | "release" | "around";   // around: l'orologio compare attorno alla card già ferma al centro, grande
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top" };   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
 /** Passaggio alla scena dopo (piano 4 §2 bis): `blink` = la parola in colore cresce fino a riempire il quadro e il suo nero è un battito di ciglia. */
 /** Una chiave del passaggio (piano 4 §2 bis): dove sta e che forma ha l'oggetto che attraversa il taglio, nel display (0-480)
@@ -73,8 +73,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
       // Un'interfaccia da polso accelerata si vede (piano 4): le clip vanno a tempo reale, al massimo 1,25×.
       if (s.watch.rate !== undefined && !(s.watch.rate > 0 && s.watch.rate <= 1.25)) say(`velocità della clip ${s.watch.rate}: al massimo 1,25×`);
       if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
-      if (s.watch.camera !== undefined && !["close", "release"].includes(s.watch.camera)) say(`camera «${s.watch.camera}» sconosciuta`);
-      if (s.watch.camera === "release" && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero")) say("la camera «release» vuole un momento forte nella scena");
+      if (s.watch.camera !== undefined && !["close", "release", "around"].includes(s.watch.camera)) say(`camera «${s.watch.camera}» sconosciuta`);
+      if ((s.watch.camera === "release" || s.watch.camera === "around") && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero")) say(`la camera «${s.watch.camera}» vuole un momento forte nella scena`);
     }
     if (s.out !== undefined && s.out !== "blink") say(`passaggio «${s.out}» sconosciuto`);
     for (const k of [s.carryOut, s.carryIn]) if (k && (k.space ?? "display") === "display" && !(k.x >= 0 && k.x <= 480 && k.y >= 0 && k.y <= 480)) say(`chiave del passaggio (${k.x}, ${k.y}) fuori dal display`);

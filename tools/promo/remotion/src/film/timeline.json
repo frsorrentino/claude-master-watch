@@ -65,7 +65,26 @@
     "accent": "glance.",
     "at": 1
    },
-   "out": "blink"
+   "out": "blink",
+   "fx": [
+    {
+     "kind": "cardOut",
+     "at": 3,
+     "len": 5,
+     "rect": [
+      26,
+      63,
+      427,
+      213
+     ],
+     "name": "storefront",
+     "age": "1 m",
+     "text": "Run the checkout test suite after the Stripe webhook refactor",
+     "badge": "#2ECC71",
+     "icon": "play",
+     "toCenter": true
+    }
+   ]
   },
   {
    "id": "list",
@@ -76,7 +95,7 @@
     "view": "front",
     "clip": "scenes/n_list.mp4",
     "clipStart": 13.0,
-    "camera": "release"
+    "camera": "around"
    },
    "fx": [
     {
@@ -94,7 +113,8 @@
      "text": "Run the checkout test suite after the Stripe webhook refactor",
      "badge": "#2ECC71",
      "icon": "play",
-     "fromOut": true
+     "fromOut": true,
+     "toCenter": true
     }
    ],
    "text": {
@@ -234,20 +254,20 @@
     "clipStart": 8.0,
     "freeze": true
    },
-   "text": {
-    "lines": [
-     "It keeps you",
-     "in the loop."
-    ],
-    "accent": "loop.",
-    "at": 0.5
-   },
    "fx": [
     {
      "kind": "float",
-     "at": 2,
-     "len": 11,
+     "at": 1,
+     "len": 12.5,
      "cards": [
+      {
+       "kind": "text",
+       "lines": [
+        "It keeps you",
+        "in the loop."
+       ],
+       "accent": "loop."
+      },
       {
        "name": "payments-api",
        "age": "14 m",
@@ -263,6 +283,13 @@
        "icon": "check"
       },
       {
+       "kind": "text",
+       "lines": [
+        "Say what's next."
+       ],
+       "accent": "next."
+      },
+      {
        "name": "payments-api",
        "age": "0 m",
        "text": "Great. Now update the changelog and tag the release",
@@ -274,11 +301,11 @@
    ],
    "takeover": {
     "len": 4,
-    "x": 1161,
-    "y": 430,
-    "w": 540,
+    "x": 960,
+    "y": 560,
+    "w": 760,
     "h": 300,
-    "r": 56,
+    "r": 60,
     "color": "#23272E",
     "toColor": "#15393F",
     "body": "words",

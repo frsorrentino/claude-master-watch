@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt, floatAt, gaugeHeroAt, optionsBuildAt, terminalPlaneAt } from "./heroes.ts";
+import { cardOutAt, floatAt, gaugeHeroAt, optionsBuildAt, railAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -46,4 +46,11 @@ test("le card galleggianti salgono una dopo l'altra e le precedenti arretrano", 
   assert.equal(floatAt(0.2, 1, 3).rise, 0);
   assert.equal(floatAt(0.5, 1, 3).rise, 1);
   assert.ok(floatAt(0.5, 0, 3).depth >= 1 && floatAt(0.5, 2, 3).depth === 0);
+});
+
+test("la corsia deforma come le liste di Wear OS: piccola sotto, larga al centro, piccola in cima", () => {
+  assert.ok(Math.abs(railAt(0).scale - 0.68) < 1e-9 && railAt(0).alpha === 0);
+  assert.ok(Math.abs(railAt(0.5).scale - 1) < 1e-9 && railAt(0.5).alpha === 1);
+  assert.ok(Math.abs(railAt(1).scale - 0.68) < 1e-9 && railAt(1).alpha < 1e-9);
+  assert.ok(railAt(0.25).scale > 0.85 && railAt(0.25).scale < 1);
 });

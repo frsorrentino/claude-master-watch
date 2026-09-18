@@ -50,7 +50,7 @@ export const HapticRings: React.FC = () => {
 export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number; fromOut?: boolean }> = ({ rect, frames, fromOut }) => {
   const f = useCurrentFrame();
   const [x, y, w, h] = rect;
-  const patch = cardOutAt(f / frames, fromOut).patch;
+  const patch = cardOutAt(f / frames, fromOut, true).patch;
   return (
     <>
       <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.bg, opacity: patch }} />

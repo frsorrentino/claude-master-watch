@@ -42,7 +42,7 @@ export const flightAt = (p: number, outEnd: number, exitFrom: number): Flight =>
  *  battiti (57 fotogrammi) uscita e rientro durano 800 e 630 ms. */
 export type CardOut = Flight;
 /** `fromOut`: la card è già fuori (dopo il battito di ciglia) e l'orologio si materializza attorno. */
-export const cardOutAt = (p: number, fromOut = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, 0.86);
+export const cardOutAt = (p: number, fromOut = false, stay = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, stay ? 2 : 0.86);
 
 /**
  * Il gauge della quota lascia la card (0-0,3) svuotandosi mentre vola, fuori si disegna da zero al suo valore (0,34-0,62,
@@ -91,4 +91,15 @@ export const floatAt = (p: number, i: number, n: number, gap = 0.22): FloatCard 
   const newest = Math.min(n - 1, Math.floor(Math.max(0, p) / gap));
   const depth = Math.max(0, newest - i) + soft(ramp(p, (i + 1) * gap, (i + 1) * gap + 0.16)) * (i < n - 1 ? 0 : 0);
   return { rise, bob: Math.sin(2 * Math.PI * (p - start) * 1.3) * rise, depth: Math.min(depth, 2) };
+};
+
+/**
+ * La deformazione delle liste di Wear OS (`SurfaceTransformation`, Franz 18/09 18:40): una scheda entra piccola in basso, è
+ * più larga al centro e torna piccola salendo; la scala dipende dalla QUOTA, non dal tempo. `t` 0-1 dal bordo basso della
+ * corsia (0, dove la scheda nasce) alla cima (1, dove esce). Il testo non si deforma: sale liscio.
+ */
+export const railAt = (t: number): { scale: number; alpha: number } => {
+  const u = clamp(t);
+  const bell = Math.sin(Math.PI * u);
+  return { scale: 0.68 + 0.32 * bell, alpha: Math.min(1, 1.6 * bell) };
 };

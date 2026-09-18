@@ -1,46 +1,58 @@
 import React from "react";
-import { useCurrentFrame } from "remotion";
+import { useCurrentFrame, useVideoConfig } from "remotion";
 import { spanFrames } from "../beats.ts";
 import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
-import { floatAt } from "./heroes.ts";
+import { floatAt, railAt } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
 import { UI } from "./UiTokens.ts";
+import { THEME } from "../theme.ts";
 
 /**
- * Le card che galleggiano sopra il display visto di taglio (piano 5, Franz 16:44): ognuna sale dal vetro, si ferma a mezz'aria
- * appena inclinata verso chi guarda, respira; quando arriva la successiva arretra di un passo (più piccola, più su, più tenue).
- * Coordinate: l'origine è il centro del display nel mockup laterale; `k` = pixel del quadro per pixel del mockup (per la scala del
- * testo si impagina a grandezza piena e si rimpicciolisce, come gli altri componenti). Le card sono componenti veri (`UiCard`).
+ * Le card che **scorrono sopra** l'orologio appoggiato a terra (Franz, 18/09 18:24). Coordinate di schermo, non del mockup:
+ * ogni card nasce dal vetro (`glassY`), sale e continua a salire mentre arriva la successiva; chi arriva in cima esce dal quadro.
+ * Un flusso, non un mucchio: a regime se ne vedono due o tre, la più bassa è la più nuova e la più nitida. Nel flusso le card
+ * si alternano alle scritte (Franz, 18/09 18:30): il titolo della scena non sta più a lato, scorre anche lui.
  */
-export const Floating: React.FC<{ scene: Scene; g: Grid; k: number }> = ({ scene, g, k }) => {
+export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ scene, g, glassY }) => {
   const frame = useCurrentFrame();
+  const { width } = useVideoConfig();
   const e = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "float" }> => f.kind === "float");
   if (!e) return null;
   const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
   const p = (frame - from) / len;
   if (p < 0) return null;
-  const W = 400;                                   // larghezza della card a mezz'aria, in pixel del mockup (poi ×k)
+  const W = 760, cx = width / 2;                // colonna centrale: le card e le scritte si alternano sopra l'orologio
+  const STEP = 330;                             // quanto sale una scheda quando arriva la successiva
+  const TOP = 60;                               // la corsia finisce qui: sopra, le schede sono uscite
   return (
     <>
       {e.cards.map((c, i) => {
         const f = floatAt(p, i, e.cards.length);
         if (f.rise <= 0) return null;
-        // sale dal vetro a destra del centro (il titolo sta a sinistra); le precedenti salgono e arretrano nel mucchio, più su e più tenui
-        const y = -30 - 150 * f.rise - 70 * f.depth + 5 * f.bob;
-        const x = 150 + 16 * f.depth;
-        const s = (0.6 + 0.4 * f.rise) * Math.pow(0.9, f.depth);
-        const a = f.rise * (1 - 0.35 * f.depth);
+        // la quota è lineare nel tempo; scala e opacità vengono dalla quota, come nella lista dell'orologio
+        const y = glassY - 120 * f.rise - STEP * f.depth + 8 * f.bob;
+        const rail = railAt((glassY - y) / (glassY - TOP));
+        const isText = c.kind === "text";
+        const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio
+        const a = isText ? Math.min(1, f.rise * 1.2) * Math.max(0, 1 - 0.5 * f.depth) : rail.alpha;
+        if (c.kind === "text") return (
+          <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
+            <div style={{ translate: "-50% -50%", width: W + 220, textAlign: "center", scale: String(s), fontFamily: "Inter", fontWeight: 600, fontSize: 82, lineHeight: 1.08, letterSpacing: "-0.02em", color: THEME.white }}>
+              {c.lines.map((l, j) => <div key={j}>{l.split(" ").map((wd, n) => <span key={n} style={{ color: wd === c.accent ? THEME.accent : undefined }}>{wd}{n < l.split(" ").length - 1 ? " " : ""}</span>)}</div>)}
+            </div>
+          </div>
+        );
         return (
-          <div key={i} style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
-            {/* ombra sul vetro: la card sta sopra il display, la luce dall'alto la proietta sotto */}
-            <div style={{ position: "absolute", left: -W / 2, top: -y - 8, width: W, height: 22, borderRadius: "50%", background: "rgba(0,0,0,.5)", filter: "blur(9px)", opacity: f.rise * (1 - 0.6 * f.depth), scale: String(s) }} />
-            <div style={{ translate: "-50% -50%", width: W, scale: String(s / k), perspective: 1400 }}>
-              <div style={{ transform: "rotateX(14deg)", transformOrigin: "50% 100%" }}>
-                <div style={{ zoom: k }}>
+          <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
+            {/* ombra sul vetro solo per la card più bassa: è quella appoggiata alla luce del display */}
+            {f.depth < 0.5 ? <div style={{ position: "absolute", left: -W / 2, top: glassY - y - 10, width: W, height: 26, borderRadius: "50%", background: "rgba(0,0,0,.5)", filter: "blur(12px)", opacity: f.rise }} /> : null}
+            <div style={{ translate: "-50% -50%", width: W, scale: String(s), perspective: 1600 }}>
+              <div style={{ transform: "rotateX(10deg)", transformOrigin: "50% 100%", position: "relative" }}>
+                <div style={{ zoom: W / 427 }}>
                   <UiCard w={427} name={c.name} age={c.age} text={c.text} badge={c.badge} icon={c.icon === "bell" ? "check" : c.icon} light={1} />
-                  {c.icon === "bell" ? <div style={{ position: "absolute", right: 24, top: 22, width: 30, height: 30, borderRadius: "50%", background: UI.followed }} /> : null}
                 </div>
+                {c.icon === "bell" ? <div style={{ position: "absolute", right: 42, top: 34, width: 34, height: 34, borderRadius: "50%", background: UI.followed }} /> : null}
               </div>
             </div>
           </div>

@@ -18,6 +18,11 @@ def grade(im, contrast, red):
     r, g, b = ImageEnhance.Contrast(im).enhance(contrast).split()
     return Image.merge("RGB", (r.point(lambda v: int(v * red)), g, b.point(lambda v: min(255, int(v * 1.05)))))
 
+def flatten(im, sat=0.5, contrast=0.8, light=0.78):
+    """Meno realismo (Franz, 18/09 18:22): colori opachi e contrasto basso, così la foto sta con i componenti disegnati."""
+    out = ImageEnhance.Contrast(ImageEnhance.Color(im).enhance(sat)).enhance(contrast)
+    return ImageEnhance.Brightness(out).enhance(light)   # più scuro: il chiaro faceva sembrare la foto scontornata male
+
 def main():
     im = Image.open(SRC).convert("RGB"); a = np.asarray(im).astype(float); L = a.mean(axis=2); H, W = L.shape
     top = np.full(W, H); bot = np.full(W, -1)
@@ -36,14 +41,26 @@ def main():
     m = np.zeros((H, W), bool)
     for x in range(W): m[top[x]:bot[x] + 1, x] = True
     mask = Image.fromarray((m * 255).astype("uint8")).filter(ImageFilter.GaussianBlur(1.0))
-    body = grade(im, 1.12, 0.96); body.putalpha(mask)
-    PUB.mkdir(parents=True, exist_ok=True); body.save(PUB / "side_body.png")
+    body = flatten(grade(im, 1.06, 0.97)); body.putalpha(mask)
+    # in piano: il cinturino scende da sinistra a destra di qualche pixel, si raddrizza sulla sua retta dei minimi quadrati
+    xs = np.arange(W)[(bot > 0) & ((np.arange(W) < 200) | (np.arange(W) > W - 200))]
+    slope = np.polyfit(xs, bot[xs], 1)[0]
+    ang = np.degrees(np.arctan(slope))
+    body = body.rotate(ang, resample=Image.BICUBIC, center=(W / 2, float(np.median(bot))), expand=False)
+    # il cinturino arriva ai bordi del quadro: la tela si allarga e le colonne di bordo si stirano (niente sfumature di taglio)
+    EXT = 760
+    wide = Image.new("RGBA", (W + 2 * EXT, H), (0, 0, 0, 0))
+    wide.paste(body, (EXT, 0))
+    left = body.crop((6, 0, 26, H)).resize((EXT + 6, H), Image.BICUBIC)
+    right = body.crop((W - 26, 0, W - 6, H)).resize((EXT + 6, H), Image.BICUBIC)
+    wide.paste(left, (0, 0)); wide.paste(right, (W + EXT - 6, 0))
+    PUB.mkdir(parents=True, exist_ok=True); wide.save(PUB / "side_body.png")
     # geometria: la cupola del vetro è la parte sopra la fascia di alluminio; misure sul bordo superiore
     case = np.where(top < 200)[0]; x0, x1 = int(case.min()), int(case.max())
     apex_x = int(x0 + np.argmin(top[x0:x1 + 1])); apex_y = int(top[apex_x])
     geo = json.loads(GEO.read_text()) if GEO.exists() else {}
     # origine per la grafica sospesa: il centro della cupola, appena sotto la cima
-    geo["side"] = {"width": W, "height": H, "caseX0": x0, "caseX1": x1, "apexX": apex_x, "apexY": apex_y, "bottom": int(np.median(bot[x0:x1])), "displayCx": (x0 + x1) // 2, "displayCy": apex_y + 12}
+    geo["side"] = {"width": W + 2 * EXT, "height": H, "ext": EXT, "photoW": W, "tilt": round(float(ang), 3), "caseX0": x0 + EXT, "caseX1": x1 + EXT, "apexX": apex_x + EXT, "apexY": apex_y, "bottom": int(np.median(bot[x0:x1])), "displayCx": (x0 + x1) // 2 + EXT, "displayCy": apex_y + 12}
     GEO.write_text(json.dumps(geo, indent=2) + "\n")
     print(geo["side"])
 

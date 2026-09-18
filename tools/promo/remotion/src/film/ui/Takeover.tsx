@@ -44,7 +44,7 @@ export const Takeover: React.FC<{
       ) : null}
       {body.kind === "words" ? (
         // le parole dette si dispongono come righe monospazio: nel become sono già le righe del terminale
-        <div style={{ position: "absolute", left: width * 0.16, top: height * 0.32, width: width * 0.68, opacity: Math.min(1, t.grow * 1.4) * (1 - t.settle), fontFamily: t.become > 0.5 ? "Cousine" : "Inter", fontWeight: t.become > 0.5 ? 400 : 600, fontSize: 70 - 26 * t.become, lineHeight: t.become > 0.5 ? "62px" : 1.25, color: t.become > 0.5 ? UI.text2 : THEME.white, whiteSpace: "pre-wrap", letterSpacing: t.become > 0.5 ? 0 : "-0.02em" }}>
+        <div style={{ position: "absolute", left: width * 0.16, top: height * 0.34, width: width * 0.68, textAlign: "center", opacity: Math.min(1, t.grow * 1.4) * (1 - t.settle), fontFamily: t.become > 0.5 ? "Cousine" : "Inter", fontWeight: t.become > 0.5 ? 400 : 600, fontSize: 70 - 26 * t.become, lineHeight: t.become > 0.5 ? "62px" : 1.25, color: t.become > 0.5 ? UI.text2 : THEME.white, whiteSpace: "pre-wrap", letterSpacing: t.become > 0.5 ? 0 : "-0.02em" }}>
           {body.words.map((l, i) => <div key={i} style={{ opacity: 1 - 0.14 * i * t.become }}>{l}</div>)}
         </div>
       ) : null}

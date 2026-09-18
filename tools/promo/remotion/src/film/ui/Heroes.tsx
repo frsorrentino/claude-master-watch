@@ -27,7 +27,7 @@ export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; tr
     const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
     const p = (frame - from) / len;
     if (p < 0 || p >= 1) return { p, travel: 0, exit: p >= 1 ? 1 : 0 };
-    if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut); return { p, travel: c.travel, exit: c.exit }; }
+    if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut, e.toCenter); return { p, travel: c.travel, exit: c.exit }; }
     if (e.kind === "gaugeHero") { const c = gaugeHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
     if (e.kind === "optionsBuild") { const c = optionsBuildAt(p); return { p, travel: c.travel, exit: c.fill }; }
   }
@@ -38,6 +38,11 @@ export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; tr
  *  `watch` (opacità dell'orologio: con la camera `release` si materializza attorno alla card già fuori). */
 export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; focus: number; watch: number } => {
   const { p, travel, exit } = heroState(scene, g, frame);
+  if (scene.watch?.camera === "around") {
+    // la card è ferma al centro dal battito di ciglia: l'orologio compare attorno, grande e centrato, e resta
+    const t = Math.min(1, Math.max(0, frame / 30));
+    return { zoom: 1.5, focus: 0, watch: t * t * (3 - 2 * t) };
+  }
   if (scene.watch?.camera === "release") {
     // dopo il battito di ciglia: card già al centro, l'orologio compare attorno e la camera torna indietro piano
     const t = Math.min(1, Math.max(0, frame / 40));
@@ -144,19 +149,20 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           if (o.alpha <= 0) return null;
           const k = HERO_OPTION_PX / e.yes[2], gap = (e.no[1] - (e.yes[1] + e.yes[3])) * k;
           const top = height / 2 - (e.yes[3] * k + gap + e.no[3] * k) / 2;
+          const left = width / 2 - (e.yes[2] * k) / 2;                 // tasti al centro del quadro (Franz, 18/09 18:22)
           // dopo la pressione il tasto «yes» si gonfia e poi cresce fino a coprire il quadro: è lui lo sfondo della scena dopo
           const grow = 1 + 0.06 * o.pop + 12 * o.fill;
           return (
             <React.Fragment key={i}>
               <div style={{ position: "absolute", inset: 0, opacity: 0.55 * o.travel * (1 - o.fill), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
-              <div style={{ position: "absolute", left: THEME.leftMargin, top, opacity: 1 - o.fill }}>
+              <div style={{ position: "absolute", left, top, opacity: 1 - o.fill }}>
                 <div style={{ zoom: k }}>
                   <div style={{ height: e.yes[3] }} />
                   <div style={{ height: gap / k }} />
                   <UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.06)} />
                 </div>
               </div>
-              <div style={{ position: "absolute", left: THEME.leftMargin + (e.yes[2] * k) / 2, top: top + (e.yes[3] * k) / 2, width: 0, height: 0 }}>
+              <div style={{ position: "absolute", left: left + (e.yes[2] * k) / 2, top: top + (e.yes[3] * k) / 2, width: 0, height: 0 }}>
                 <div style={{ translate: "-50% -50%", width: e.yes[2] * k, height: e.yes[3] * k, scale: String(grow) }}>
                   <div style={{ zoom: k }}><UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} /></div>
                 </div>
@@ -165,9 +171,9 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           );
         }
         if (e.kind === "cardOut") {
-          const c = cardOutAt(p, e.fromOut);
+          const c = cardOutAt(p, e.fromOut, e.toCenter);
           if (c.alpha <= 0) return null;
-          const to: [number, number] = e.fromOut ? [width * 0.42, height / 2] : [THEME.leftMargin + HERO_CARD_PX / 2, height / 2];
+          const to: [number, number] = e.toCenter ? [width / 2, height / 2 + 60] : e.fromOut ? [width * 0.42, height / 2] : [THEME.leftMargin + HERO_CARD_PX / 2, height / 2];
           return (
             <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={to} toScale={HERO_CARD_PX / e.rect[2]} exitTo={exitTo}>
               <UiCard w={e.rect[2]} name={e.name} age={e.age} text={e.text} badge={e.badge} icon={e.icon} light={c.travel} />

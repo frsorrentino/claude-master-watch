@@ -13,11 +13,10 @@ export const SideWatch: React.FC<{ widthPx: number; above?: React.ReactNode }> =
   const k = widthPx / (G.caseX1 - G.caseX0);
   return (
     <div style={{ width: G.width * k, height: G.height * k, translate: `${-G.displayCx * k}px ${-G.displayCy * k}px`, position: "relative",
-      /* la foto finisce prima del quadro: il cinturino sfuma nel buio ai due lati, come il tre quarti */
-      maskImage: "linear-gradient(90deg, rgba(0,0,0,0) 0%, #000 9%, #000 91%, rgba(0,0,0,0) 100%)" }}>
+      /* il cinturino arriva ai bordi del quadro (la tela del mockup è già estesa): nessuna sfumatura di taglio */ }}>
       <div style={{ width: G.width, height: G.height, position: "relative", transformOrigin: "0 0", scale: String(k) }}>
         {/* ombra a terra: la cassa poggia sul cinturino, la luce viene dall'alto */}
-        <div style={{ position: "absolute", left: G.caseX0 - 60, top: G.bottom - 30, width: G.caseX1 - G.caseX0 + 120, height: 70, borderRadius: "50%", background: "rgba(0,0,0,.75)", filter: "blur(28px)" }} />
+        <div style={{ position: "absolute", left: G.caseX0 - 60, top: G.bottom - 26, width: G.caseX1 - G.caseX0 + 120, height: 58, borderRadius: "50%", background: "rgba(0,0,0,.6)", filter: "blur(26px)" }} />
         <Img src={staticFile("mockup/side_body.png")} style={{ position: "absolute", inset: 0 }} />
         {above ? <div style={{ position: "absolute", left: G.displayCx, top: G.displayCy, width: 0, height: 0 }}>{above}</div> : null}
       </div>

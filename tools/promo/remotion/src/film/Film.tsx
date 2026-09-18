@@ -67,10 +67,12 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       <TerminalBackdrop scene={scene} g={GRID} />
-      {w && pose && w.view === "side" ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.62 + pose.y * height}px, 0) scale(${pose.scale})` }}>
-          <SideWatch widthPx={THEME.sideCasePx} above={<div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} k={THEME.sideCasePx / 745} /></div>} />
+      {w && pose && w.view === "side" ? (<>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.66 + pose.y * height}px, 0) scale(${pose.scale})` }}>
+          <SideWatch widthPx={THEME.sideCasePx} />
         </div>
+        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.66} /></div>
+        </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
@@ -84,7 +86,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <Sequence from={textAt} layout="none">
           <div style={{ position: "absolute", opacity: 1 - Math.min(1, over * 2.5), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub}
-              fadeFrom={scene.out === "blink" ? total - 16 - textAt : undefined}
+              fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
               perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
@@ -132,7 +134,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
       })}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
-        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 16} durationInFrames={26} layout="none"><Blink word={s.text!.accent!} cut={16} from={[387, 555]} /></Sequence>
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 30} durationInFrames={40} layout="none"><Blink word={s.text!.accent!} cut={30} from={[387, 555]} to={[860, 130]} /></Sequence>
       ))}
       {actChanges(TIMELINE.scenes).map((b) => (
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
