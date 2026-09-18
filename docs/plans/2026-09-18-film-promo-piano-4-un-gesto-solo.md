@@ -83,3 +83,13 @@ Regole di macchina: `remotion render` con `nice -n 15 --concurrency 1`, uno per 
   piace a Franz (sostituire con il badge della sessione o togliere).
 - All'apertura a freddo compare per un attimo la scritta «Already answered elsewhere» (stato vecchio).
 - Franz, 18/09 07:35: le sigle degli account al posto di quadrato/cerchio: **USR** e **PRO**.
+
+## 6. Stato (18/09, 10:40)
+
+Fatto, verificato sui fotogrammi, committato (ultimo `8468fb1`): scaletta v6a a 1× (136 battiti) · battito di ciglia (4→5) ·
+camera `release` sulla lista · tasti da contorno con l'anello (8) · stop-and-go della musica sul ▶ (7) · segno come punto dei
+titoli · onda giro 2 dal ▶ (7) · terminale → finestra del PC (12) con fedeltà del blocco (Cousine = gemello del Droid Sans
+Mono dell'orologio). Consegnate: `anteprima-v6a.mp4` (grezzo), `anteprima-v6b.mp4` (in render alle 10:40).
+Da fare, in ordine: catena dei passaggi 5→6, 8→9, 9→10, 10→11, 11→12, 12→13 (§2 bis) · linea → ritmo a 5 ore (13) · barra
+della tile da una linea (4) · card della sessione nuova (14: è la scheda del messaggio con ▶, componente a parte) · tile da
+rigirare (lo swipe ha aperto il cassetto delle app) · domanda più corta · ✓ dentro il segno (10).
