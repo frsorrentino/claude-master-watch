@@ -15,31 +15,39 @@ restano. Qui cambiano scaletta, transizioni e i tre fili trasversali.
 2. **La camera** non entra e non esce a ogni scena: dentro un atto è un movimento solo (avvicinamento lento, laterale lento);
    le scene si passano il posto con un gesto (battito di ciglia, frustata, dissolvenza), mai con l'orologio che scivola dentro.
 3. **L'interfaccia ricostruita recita**: ogni momento forte parte da un componente vero sul display, lo ingrandisce a
-   protagonista e lo riporta a posto **in un'inquadratura diversa** (mai lo stesso quadro di partenza).
+   protagonista e lo riporta a posto **in un'inquadratura diversa** (mai lo stesso quadro di partenza). Franz, 08:29: i
+   componenti si **decostruiscono e ricostruiscono** con movimenti di prospettiva, e le primitive grafiche diventano
+   interfaccia: una linea che attraversa il quadro e diventa la linea del ritmo a 5 ore, un anello che diventa il gauge, una
+   barra che diventa la barra della tile. Il testo ha effetti spaziali come nei riferimenti (parola che cresce, sillabe,
+   numero dentro la frase) ma con lo **stesso carattere (Inter) e la stessa famiglia** delle entrate di oggi: niente che
+   se ne allontani.
 
 ## 2. Scaletta (battiti a 110 bpm; le clip sono quelle del 18/09)
 
-| # | Scena · titolo | Battiti | Sul display (clip, da → a) | Fuori dal display | Passaggio alla scena dopo |
+| # | Scena · titolo | Battiti (s) | Sul display: clip, tratto esatto a 1× | Fuori dal display | Passaggio |
 |---|---|---|---|---|---|
-| 1 | Claude is working. | 4 | — | titolo | dissolvenza |
-| 2 | You're not at your desk. | 6 | — | titolo | dissolvenza |
-| 3 | That's fine. | 6 | `tile` 0-4 s: quadrante acceso, poi lo swipe verso la tile | orologio già in quadro, dal nero, senza scivolate | la tile entra scorrendo: è la scena dopo |
-| 4 | Every session. One glance. | 8 | `tile` 4-10 s: la tile con la card e la barra delle 5 ore | **la parola «glance.» cresce fino a riempire il quadro** (riferimento LangEase «Audio»), poi **battito di ciglia** (nero da sopra e sotto) | alla riapertura l'orologio è a tutto schermo sulla lista |
-| 5 | (lista, senza titolo) | 6 | `list` 5-11 s: la lista scorre lenta | la card di payments-api **esce** a protagonista mentre la lista scorre sotto, e **rientra sulla lista ferma** (inquadratura cambiata: orologio grande) | frustata |
-| 6 | It asks. | 6 | `asks` 9-13 s: la domanda si apre da sola | anelli di vibrazione dalla cassa (unica volta) | stacco sul battito |
-| 7 | It speaks. | 16 | `speaks` 13-22 s: ▶ diventa ■, il testo scorre fino ai tasti, ■ torna ▶ | **musica: stop sul tocco di ▶** (una battuta di vuoto), la voce sul breakdown; **onda giro 2** che nasce dal ▶ e corre sotto le parole dette | la band rientra sulla frustata |
-| 8 | You answer. | 8 | `answer` 8-16 s: pressione lunga su «1 · yes», «Sent», lista con «Deploying 2.8.0 to production» | **tasti che nascono da contorno** fuori dal display, «1 · yes» si riempie, l'anello corallo corre attorno al tasto (metro Ask 13,5 s) | dissolvenza |
-| 9 | Follow what matters. | 6 | `follow` 9-16 s: pressione lunga sulla card, campanella accesa | la campanella esce dalla card e si accende grande (componente ricostruito, stesso oggetto) | dissolvenza |
-| 10 | Know when it's done. | 6 | `done` 10-17 s: la card diventa ✓ «Deployed 2.8.0, smoke tests green», poi la schermata dell'esito | il badge ✓ della card esce e diventa il punto del titolo (il segno) | stacco |
-| 11 | Say what's next. | 10 | `say_franz2` 19-31 s a 1,3×: Write, microfono, le parole compaiono, invio | le parole dettate si compongono grandi accanto (dalla clip, stesso testo) | frustata |
-| 12 | Watch it work. | 8 | `watch` 7-15 s: il terminale cresce sul TICK | **terminale giro 5**: il pannello intero esce come un oggetto, in fuga, le righe arrivano dentro (metro Canvas 36,0 s) | dissolvenza |
-| 13 | Know your limits. | 14 | `overview` 2-30 s a 1,4×: Quota → ritmo a 5 ore → Work → domande aperte | gauge protagonista (piano 3) all'inizio, poi la Panoramica scorre continua come un piano unico | frustata |
-| 14 | Start something new. | 10 | `new` 7-17 s: progetto, «Write the first message», la sessione nasce | la card nuova di storefront esce a protagonista con il testo dettato | tuffo nello schermo (diveIn) |
-| 15 | chiusura | 16 | tre quarti con l'icona | logo dal segno, cartello | — |
+| 1 | Claude is working. | 4 (2,2) | — | titolo | dissolvenza |
+| 2 | You're not at your desk. | 6 (3,3) | — | titolo | dissolvenza |
+| 3 | That's fine. | 6 (3,3) | `tile` 0,0-3,3: quadrante acceso, a 2,0 parte lo swipe verso la tile | orologio già in quadro, dal nero | la tile entra scorrendo: è la scena dopo |
+| 4 | Every session. One glance. | 8 (4,4) | `tile` 3,3-7,7: la tile ferma (card di storefront, barra delle 5 ore) | «glance.» cresce fino a riempire il quadro e il suo nero diventa il battito di ciglia (un gesto solo) | riapertura sulla lista, orologio a tutto schermo |
+| 5 | (lista) | 10 (5,45) | `list` 10,5-15,95: la lista scorre (11,5-14,0) e si ferma su storefront + blog | la card di storefront esce mentre la lista scorre e **rientra sulla lista ferma con la camera già tornata indietro** (inquadratura cambiata) | dissolvenza (stesso atto) |
+| 6 | It asks. | 6 (3,3) | `asks` 9,2-12,5: lista, la domanda si apre da sola a 11,0 | il segno corallo pulsa una volta (nessun anello) | stacco |
+| 7 | It speaks. | 18 (9,8) | `speaks` 13,0-22,8: ▶ a 13,2 diventa ■, il testo scorre fino ai tasti, ■ torna ▶ | musica: stop sul tocco di ▶; onda giro 2 dal ▶; parole dette | frustata: la band rientra (know → act) |
+| 8 | You answer. | 8 (4,4) | `answer` 8,5-12,9: tasti in vista, pressione lunga (10,5-11,6), «Sent», lista «Deploying 2.8.0 to production» | tasti da contorno, «1 · yes» si riempie, l'anello corallo attorno al tasto (**l'unico cerchio del film**) | dissolvenza |
+| 9 | Follow what matters. | 6 (3,3) | `follow` 10,0-13,3: pressione lunga sulla card, campanella accesa | la campanella esce dalla card e si accende grande | dissolvenza |
+| 10 | Know when it's done. | 6 (3,3) | `done` 22,9-26,2: lista → la schermata dell'esito «Deployed 2.8.0, smoke tests green» | il ✓ della card atterra **dentro il segno corallo**, che si riempie; il segno resta il punto del titolo | stacco |
+| 11 | Say what's next. | 14 (7,6) | `say` 22,5-30,1: microfono, le parole compaiono, invio (dettatura vera) | le parole dettate si compongono grandi accanto, stesso testo | frustata (act → control) |
+| 12 | Watch it work. | 8 (4,4) | `watch` 7,5-11,9: il terminale cresce sul TICK | terminale giro 5: il pannello esce come un oggetto, in fuga | dissolvenza |
+| 13 | Know your limits. | 12 (6,5) | `overview` 8,5-15,0 (con 2,5 s di fermo inserito sulla Quota): gauge fermo, poi lo scorrimento al ritmo a 5 ore | gauge protagonista, poi **una linea attraversa il quadro e diventa la linea del ritmo**; Work e domande aperte via | frustata |
+| 14 | Start something new. | 10 (5,45) | `new` 13,0-18,45: progetto, «Write the first message», la sessione nasce | la card nuova di storefront esce con il testo dettato | tuffo nello schermo |
+| 15 | chiusura | 14 (7,6) | tre quarti con l'icona | logo dal segno, cartello | — |
 
-Totale 130 battiti ≈ 71 s (la traccia originale ne ha 180: il taglio si rifà su questa griglia). Il cerchio compare **una** volta
-(scena 8). Nessuna scena entra con `slideIn`/`riseIn`: l'orologio si muove solo per avvicinarsi (momenti forti) o per tuffarsi
-(finale).
+Totale **136 battiti = 74,2 s**, clip sempre a 1×, tratto = battiti × 0,545 s (regola da mettere in `check.ts`: velocità ≤ 1,25×,
+tratto entro un battito dai battiti della scena). Atti e movimento di camera: **open** 1-3 (fermo, dal nero) · **know** 4-7
+(avvicinamento lento e continuo: tile → lista grande → domanda) · **act** 8-11 (deriva laterale lenta da sinistra a destra) ·
+**control** 12-14 (arretramento lento) · **close** 15 (tuffo e logo). Frustate ai tre cambi (7→8, 11→12, 14→15); dentro un
+atto solo dissolvenze e stacchi sul battito. Musica: `cut_track.py 1-7 16-27 28-45` = 34 battute = 136 battiti, con lo stop
+costruito alla scena 7.
 
 ## 3. Musica: stop and go costruito
 
