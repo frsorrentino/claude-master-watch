@@ -49,6 +49,10 @@ lastra si scopre una di molte, disposte su una griglia leggermente curva, ognuna
 le più lontane sfocate. Le parole «Every account. One view.» si compongono davanti al muro, e la camera torna dentro
 una sola lastra per entrare nella Panoramica.
 Perché serve il 3D: è tutto parallasse e profondità di campo. In CSS le lastre lontane sono solo più piccole, e si vede.
+Nota tecnica (da decidere prima di costruirlo): le lastre hanno bisogno di una superficie che si legga come schermo. Tre
+strade, in ordine di costo: (a) `useOffthreadVideoTexture` con la registrazione vera su una lastra sola, colore piatto
+sulle altre; (b) una `CanvasTexture` disegnata una volta (righe monospazio, nomi di account diversi) e riusata su tutte;
+(c) mesh di barre sottili che da lontano leggono come righe. La (b) è la più convincente a parità di lavoro.
 
 ### 3. La chiusura — costruita in prova, non ancora nel film
 Il segno dell'app **estruso**: nasce di taglio (si vede solo lo spessore, una linea), ruota fino a mostrarsi di faccia
