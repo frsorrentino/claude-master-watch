@@ -283,7 +283,8 @@
     "view": "front",
     "clip": "scenes/s6_quota.mp4",
     "enter": "slideIn",
-    "clipStart": 0
+    "clipStart": 0,
+    "freeze": true
    },
    "text": {
     "lines": [
@@ -295,11 +296,16 @@
    },
    "fx": [
     {
-     "kind": "counter",
-     "at": 2.5,
-     "len": 3,
-     "to": 11,
-     "suffix": " %"
+     "kind": "gaugeHero",
+     "at": 4,
+     "len": 5,
+     "cx": 385,
+     "cy": 238,
+     "size": 104,
+     "value": 11,
+     "week": 36,
+     "suffix": "%",
+     "phrase": "of your 5 hours"
     }
    ]
   },

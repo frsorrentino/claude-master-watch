@@ -4,7 +4,8 @@ import { spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
 import type { Scene } from "./timeline.ts";
 import { THEME } from "./theme.ts";
-import { cardOutAt } from "./ui/heroes.ts";
+import { cardOutAt, gaugeHeroAt } from "./ui/heroes.ts";
+import { UiGauge } from "./ui/UiGauge.tsx";
 import { UI } from "./ui/UiTokens.ts";
 
 const clampBoth = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
@@ -58,13 +59,25 @@ export const CardHole: React.FC<{ rect: [number, number, number, number]; frames
   );
 };
 
+/** Il posto lasciato dal gauge che esce: la superficie della card sopra gli anelli, con i soli binari in trasparenza. */
+export const GaugeHole: React.FC<{ cx: number; cy: number; size: number; frames: number }> = ({ cx, cy, size, frames }) => {
+  const f = useCurrentFrame();
+  const patch = gaugeHeroAt(f / frames).patch;
+  return (
+    <div style={{ position: "absolute", left: cx - size / 2 - 2, top: cy - size / 2 - 2, width: size + 4, height: size + 4, borderRadius: "50%", background: UI.surfaceHigh, opacity: patch, display: "grid", placeItems: "center" }}>
+      <div style={{ opacity: 0.38 }}><UiGauge size={size} outer={0} inner={0} ghost /></div>
+    </div>
+  );
+};
+
 export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; around: React.ReactNode } => {
   const at = (b: number) => spanFrames(g, scene.at, b);
   const fx = scene.fx ?? [];
   return {
     overlay: fx.map((e, i) =>
       e.kind === "tap" ? <Sequence key={i} from={at(e.at)} durationInFrames={14} layout="none"><TapDot x={e.x} y={e.y} /></Sequence>
-      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} /></Sequence> : null),
+      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
+      : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence> : null),
     around: fx.map((e, i) =>
       e.kind === "longPress" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at) + 8} layout="none"><LongPressArc frames={at(e.at + e.len) - at(e.at)} /></Sequence>
       : e.kind === "haptic" ? <Sequence key={i} from={at(e.at)} durationInFrames={26} layout="none"><HapticRings /></Sequence> : null),

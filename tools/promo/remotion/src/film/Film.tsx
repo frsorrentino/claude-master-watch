@@ -13,8 +13,7 @@ import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
-import { Heroes } from "./ui/Heroes.tsx";
-import { cardOutAt } from "./ui/heroes.ts";
+import { Heroes, heroTravel } from "./ui/Heroes.tsx";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
@@ -38,12 +37,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
-  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut");
-  const heroFrom = hero ? spanFrames(GRID, scene.at, hero.at) : 0;
-  const leave = Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? heroFrom - 6 : Infinity);
+  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero");
+  const leave = Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : Infinity);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
-  const back = hero ? cardOutAt((frame - heroFrom) / spanFrames(GRID, scene.at + hero.at, hero.len)).travel : 0;
+  const back = heroTravel(scene, GRID, frame);
   const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>

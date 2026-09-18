@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt } from "./heroes.ts";
 
 test("la card parte dal display e ci torna: agli estremi combacia con la card vera", () => {
   assert.deepEqual(cardOutAt(0), { travel: 0, swing: 0, drift: 0, patch: 0, alpha: 1 });
@@ -30,4 +30,13 @@ test("la toppa copre la card vera appena la card si stacca e se ne va con lei", 
   assert.ok(cardOutAt(0.01).patch > 0 && cardOutAt(0.01).travel < 0.02);
   assert.equal(cardOutAt(0.5).patch, 1);
   assert.equal(cardOutAt(0.975).patch, 0, "il fantasma se n'è già andato a metà dissolvenza");
+});
+
+test("il gauge parte pieno, si svuota in volo, si disegna fuori col numero, rientra pieno", () => {
+  assert.equal(gaugeHeroAt(0).value, 1);
+  assert.ok(gaugeHeroAt(0.31).value === 0 && gaugeHeroAt(0.31).label === 0, "arrivato vuoto, senza numero");
+  const mid = gaugeHeroAt(0.5);
+  assert.ok(mid.value > 0.5 && mid.value < 1 && mid.label === 1 && mid.travel === 1);
+  assert.ok(gaugeHeroAt(0.65).value === 1 && gaugeHeroAt(0.75).label === 0, "pieno prima del rientro, numero già andato");
+  assert.ok(gaugeHeroAt(0.96).value === 1 && gaugeHeroAt(0.96).travel === 0, "atterra pieno com'era sul display");
 });

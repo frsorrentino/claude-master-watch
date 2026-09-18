@@ -9,25 +9,45 @@ const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 
 /**
- * La card lascia il display (0-0,42, strappo e atterraggio morbido nel posto da protagonista), resta fuori con una deriva
- * lenta, rientra (0,62-0,95, atterraggio morbido sul suo rettangolo) e si dissolve sulla card vera (0,95-1). Su 3,5 battiti
- * (57 fotogrammi) uscita e rientro durano 800 e 630 ms.
- * - `travel` 0-1: dov'è tra il display (0) e il posto da protagonista (1); a 0 combacia con la card vera.
- * - `swing` 0-1: quanto è girata attorno all'asse verticale: solo in volo, all'arrivo è quasi frontale.
+ * Il volo comune ai componenti che lasciano il display e ci tornano: strappo e atterraggio morbido nel posto da protagonista
+ * (0-`outEnd`), sosta con deriva lenta, rientro morbido sul proprio rettangolo (`backFrom`-`backTo`), dissolvenza sull'originale.
+ * - `travel` 0-1: dov'è tra il display (0) e il posto da protagonista (1); a 0 combacia con l'originale sul fotogramma.
+ * - `swing` 0-1: quanto è girato attorno all'asse verticale: solo in volo, all'arrivo è quasi frontale.
  * - `drift` −1…1: respiro lento mentre è fuori (posizione e inclinazione di pochi pixel e gradi).
- * - `patch` 0-1: quanto è coperta la card vera sul display (un fantasma della superficie che resta al suo posto).
- * - `alpha` 0-1: visibilità della card ricostruita (si dissolve solo alla fine, dopo essere atterrata sul display).
+ * - `patch` 0-1: quanto è coperto l'originale sul display (un fantasma della superficie che resta al suo posto); il fantasma
+ *   sparisce prima del componente (0,95-0,97), così sotto la dissolvenza c'è già l'originale.
+ * - `alpha` 0-1: visibilità del componente ricostruito: a 0 è già disegnato, combaciante (il confronto di fedeltà si fa lì);
+ *   si dissolve solo dopo essere atterrato.
  */
-export type CardOut = { travel: number; swing: number; drift: number; patch: number; alpha: number };
-export const cardOutAt = (p: number): CardOut => {
-  const out = pull(ramp(p, 0, 0.42)), back = soft(ramp(p, 0.62, 0.95));
+export type Flight = { travel: number; swing: number; drift: number; patch: number; alpha: number };
+export const flightAt = (p: number, outEnd: number, backFrom: number, backTo = 0.95): Flight => {
+  const out = pull(ramp(p, 0, outEnd)), back = soft(ramp(p, backFrom, backTo));
   const travel = out * (1 - back);
-  const fade = ramp(p, 0.95, 1);
+  const fade = ramp(p, backTo, 1);
   return {
     travel,
     swing: Math.sin(Math.PI * travel),
-    drift: Math.sin(2 * Math.PI * ramp(p, 0.3, 0.8)),
-    patch: ramp(p, 0, 0.03) * (1 - ramp(p, 0.95, 0.97)),   // il fantasma sparisce prima della card: sotto la dissolvenza c'è già la card vera
-    alpha: p < 0 || p >= 1 ? 0 : 1 - fade,          // a 0 è già disegnata, combaciante con la card vera: il confronto si fa lì
+    drift: Math.sin(2 * Math.PI * ramp(p, outEnd * 0.7, backFrom + 0.1)),
+    patch: ramp(p, 0, 0.03) * (1 - ramp(p, backTo, backTo + 0.02)),
+    alpha: p < 0 || p >= 1 ? 0 : 1 - fade,
   };
+};
+
+/** La card lascia il display (0-0,42), resta fuori, rientra (0,62-0,95) e si dissolve sulla card vera (0,95-1). Su 3,5
+ *  battiti (57 fotogrammi) uscita e rientro durano 800 e 630 ms. */
+export type CardOut = Flight;
+export const cardOutAt = (p: number): CardOut => flightAt(p, 0.42, 0.62);
+
+/**
+ * Il gauge della quota lascia la card (0-0,3) svuotandosi mentre vola, fuori si disegna da zero al suo valore (0,34-0,62,
+ * molla lenta come nell'app) con il numero che conta, resta, e rientra pieno (0,72-0,95) com'era sul display.
+ * `value` 0-1: frazione del valore vero mostrata dagli archi e dal contatore; agli estremi è 1, cioè il display.
+ * `label` 0-1: numero e frase accanto al gauge, solo mentre è fermo fuori (compaiono con il disegno, se ne vanno prima del rientro).
+ */
+export type GaugeHero = Flight & { value: number; label: number };
+export const gaugeHeroAt = (p: number): GaugeHero => {
+  const f = flightAt(p, 0.3, 0.72);
+  const value = p < 0.32 ? 1 - pull(ramp(p, 0, 0.3)) : soft(ramp(p, 0.34, 0.62));
+  const label = ramp(p, 0.33, 0.38) * (1 - ramp(p, 0.7, 0.74));
+  return { ...f, value, label };
 };
