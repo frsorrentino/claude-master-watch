@@ -144,6 +144,11 @@
      "len": 17,
      "voice": "question.wav",
      "words": "question.words.json"
+    },
+    {
+     "kind": "musicStop",
+     "at": 0.5,
+     "len": 4
     }
    ]
   },

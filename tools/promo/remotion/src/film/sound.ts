@@ -39,3 +39,15 @@ export const duckGain = (frame: number, windows: [number, number][], depthDb: nu
   const smooth = down * down * (3 - 2 * down);
   return dbToGain(depthDb * smooth);
 };
+
+/** Stop and go (piano 4 §3): la musica tace di colpo (2 fotogrammi) nelle finestre date e rientra in 3. Non è un abbassamento: è
+ *  un vuoto costruito sul battito del gesto (il tocco di ▶), poi la band riparte da dove sarebbe arrivata. */
+export const stopGain = (frame: number, windows: [number, number][]): number => {
+  for (const [a, b] of windows) {
+    if (frame < a || frame >= b + 3) continue;
+    if (frame < a + 2) return 1 - (frame - a + 1) / 2;
+    if (frame >= b) return (frame - b + 1) / 3;
+    return 0;
+  }
+  return 1;
+};

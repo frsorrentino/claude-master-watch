@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dbToGain, duckGain, sfxCues } from "./sound.ts";
+import { stopGain, dbToGain, duckGain, sfxCues } from "./sound.ts";
 import { validateTimeline } from "./timeline.ts";
 
 const t = validateTimeline({
@@ -27,4 +27,13 @@ test("la musica scende di 12 dB sotto la voce con rampe morbide e torna su", () 
   const mid = duckGain(100 - 4, w, -12, 9);
   assert.ok(mid < 1 && mid > dbToGain(-12));
   assert.equal(duckGain(260, w, -12, 9), 1);
+});
+
+test("stop and go: la musica tace di colpo sul battito e rientra in tre fotogrammi", () => {
+  const w: [number, number][] = [[100, 160]];
+  assert.equal(stopGain(99, w), 1);
+  assert.equal(stopGain(100, w), 0.5);
+  assert.equal(stopGain(101, w), 0);
+  assert.equal(stopGain(130, w), 0);
+  assert.ok(stopGain(160, w) > 0 && stopGain(161, w) < 1 && stopGain(163, w) === 1);
 });

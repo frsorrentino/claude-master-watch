@@ -23,3 +23,26 @@ export const wavePath = (width: number, mid: number, amp: number, phase: number,
   return pts.join(" ");
 };
 
+
+/**
+ * L'onda giro 2 (piano 4): nasce dal tasto ▶ sul display (`from`), attraversa il vetro e corre verso le parole, poi ondeggia
+ * per tutta la larghezza della colonna (`x0`..`x1`, a quota `y`). `reach` 0-1: quanto è arrivata (da ▶ alla colonna).
+ * Tracciato in coordinate del quadro: un ramo dal ▶ alla fine destra della colonna, poi l'onda verso sinistra.
+ */
+export const wavePathFrom = (from: [number, number], x0: number, x1: number, y: number, amp: number, phase: number, reach: number, waves = 3.4): string => {
+  const n = 64;
+  const pts: [number, number][] = [];
+  // ramo: dal ▶ alla colonna con una curva morbida (cubica campionata)
+  const [fx, fy] = from; const m = 12;
+  for (let k = 0; k <= m; k++) {
+    const t = k / m; const s = t * t * (3 - 2 * t);
+    pts.push([fx + (x1 - fx) * s, fy + (y - fy) * s]);
+  }
+  for (let k = 1; k <= n; k++) {
+    const x = x1 - ((x1 - x0) * k) / n;
+    const bell = Math.sin((Math.PI * k) / n);
+    pts.push([x, y + amp * bell * Math.sin((2 * Math.PI * waves * k) / n + phase)]);
+  }
+  const keep = Math.max(2, Math.round(pts.length * Math.min(1, Math.max(0, reach))));
+  return pts.slice(0, keep).map(([x, yy], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${yy.toFixed(1)}`).join(" ");
+};

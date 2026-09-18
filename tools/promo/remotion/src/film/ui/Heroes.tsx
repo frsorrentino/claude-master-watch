@@ -12,6 +12,8 @@ import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
 import { UiOption } from "./UiOption.tsx";
+import { UiWaveFrom } from "./UiWave.tsx";
+import { Sequence } from "remotion";
 
 /** Larghezza della card da protagonista e diametro del gauge da protagonista, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760;
@@ -97,6 +99,17 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
   return (
     <>
       {(scene.fx ?? []).map((e, i) => {
+        if (e.kind === "spoken") {
+          // l'onda della voce nasce dal ▶ sul display: il punto lo dà il tocco della stessa scena (coordinate del display)
+          const tap = (scene.fx ?? []).find((x) => x.kind === "tap");
+          const from: [number, number] = tap && tap.kind === "tap" ? [dx + (tap.x - 240) * u, dy + (tap.y - 240) * u] : [dx, dy];
+          const start = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
+          return (
+            <Sequence key={i} from={start} durationInFrames={len} layout="none">
+              <UiWaveFrom file={e.voice.replace(/\.wav$/, ".env.json")} from={from} x0={THEME.leftMargin} x1={THEME.leftMargin + 780} y={height / 2 + 300} />
+            </Sequence>
+          );
+        }
         if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild") return null;
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;
