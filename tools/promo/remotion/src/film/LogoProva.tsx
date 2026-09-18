@@ -3,9 +3,11 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { LogoThree } from "./ui/LogoThree.tsx";
 import { logoSpinAt } from "./ui/logo3d.ts";
 import { THEME } from "./theme.ts";
+import { useFilmFonts } from "./fonts.ts";
 
 /** Prova isolata della chiusura in 3D (revisione, momento 3): il segno si presenta e il nome entra sotto. Non è nel film. */
 export const LogoProva: React.FC<{ frames?: number }> = ({ frames = 90 }) => {
+  useFilmFonts();
   const f = useCurrentFrame();
   const s = logoSpinAt(Math.min(1, f / frames));
   return (

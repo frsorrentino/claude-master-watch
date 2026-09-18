@@ -6,7 +6,10 @@ import { logoSpinAt } from "./logo3d.ts";
 /** Il segno dell'app in tre dimensioni: stesse proporzioni di `LogoMark` (spazio 480 del display), portate a `R` pixel di raggio. */
 const CORAL = "#D97757", TRACK = "#3A404C";
 const U = 300 / 92, G = U * 0.72, STROKE = 7.2 * G;         // le stesse unità del segno piatto
-const R480 = 40.2 * U, ARC = (280 * Math.PI) / 180, START = (130 * Math.PI) / 180;
+const R480 = 40.2 * U, ARC = (280 * Math.PI) / 180;
+/** Il vuoto del quadrante va in basso come nel segno piatto: un torus parte dall'asse x e cresce in senso antiorario,
+ *  quindi il suo vuoto è centrato a -40°; lo si porta sotto (-90°) con mezzo giro di 50°. */
+const START = ((90 - (360 - 280) / 2) * Math.PI) / 180;
 
 /** Un tratto tondo da `a` a `b` (coordinate dello spazio 480, y in giù), come lo `strokeLinecap="round"` del segno piatto. */
 const Bar: React.FC<{ a: [number, number]; b: [number, number]; k: number; r: number; glow: number }> = ({ a, b, k, r, glow }) => {
@@ -38,14 +41,16 @@ export const LogoThree: React.FC<{ frames: number; size?: number }> = ({ frames,
       <directionalLight position={[-600, 800, 900]} intensity={1.6} />
       <directionalLight position={[700, -400, 500]} intensity={0.5} />
       <group rotation={[0, s.yaw, 0]}>
-        {/* il quadrante: binario intero e arco corallo che si disegna fino al 70 % */}
+        {/* il quadrante: binario intero e arco corallo che si disegna fino al 70 %, dal capo in basso a sinistra
+            e in senso orario come nel segno piatto (in Three gli angoli crescono in senso antiorario: l'arco si allunga
+            all'indietro tenendo fermo quel capo) */}
         <mesh rotation={[0, 0, -START]}>
-          <torusGeometry args={[size, tube, 18, 120, ARC]} />
+          <torusGeometry args={[size, tube, 18, 160, ARC]} />
           <meshStandardMaterial color={TRACK} roughness={0.6} metalness={0.1} />
         </mesh>
         {s.draw > 0.005 ? (
-          <mesh rotation={[0, 0, -START]}>
-            <torusGeometry args={[size, tube * 1.02, 18, 120, ARC * 0.7 * s.draw]} />
+          <mesh position={[0, 0, 1.5]} rotation={[0, 0, -START + ARC - ARC * 0.7 * s.draw]}>
+            <torusGeometry args={[size, tube, 18, 160, ARC * 0.7 * s.draw]} />
             <meshStandardMaterial color={CORAL} emissive={CORAL} emissiveIntensity={0.18 + 0.6 * s.glow} roughness={0.36} metalness={0.25} />
           </mesh>
         ) : null}
