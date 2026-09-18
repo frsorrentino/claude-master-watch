@@ -15,9 +15,10 @@ import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
-import { Heroes, TerminalBackdrop, cameraAt } from "./ui/Heroes.tsx";
+import { Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
+import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import geo from "./mockup.geometry.json";
 import type { Key } from "./ui/carry.ts";
 import { fxLayers } from "./Fx.tsx";
@@ -50,6 +51,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
+  // quando un momento forte prende il quadro (il tasto che diventa sfondo) il titolo se ne va: sul chiaro non si leggerebbe
+  const over = heroState(scene, GRID, frame).exit;
+  // mentre il takeover cresce, il componente sotto sparisce: il takeover È quel componente, non una copia sopra
+  const takeStart = scene.takeover ? total - Math.round(spanFrames(GRID, scene.at, scene.takeover.len) * TAKEOVER_CUT) : Infinity;
+  const underTakeover = frame >= takeStart ? Math.min(1, (frame - takeStart) / 4) : 0;
   // vibrazione: la notifica arriva e l'orologio trema per 10 fotogrammi (Franz, 13:13)
   const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
   const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
@@ -63,7 +69,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.62 + pose.y * height}px, 0) scale(${pose.scale})` }}>
-          <SideWatch widthPx={THEME.sideCasePx} above={<Floating scene={scene} g={GRID} k={THEME.sideCasePx / 745} />} />
+          <SideWatch widthPx={THEME.sideCasePx} above={<div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} k={THEME.sideCasePx / 745} /></div>} />
         </div>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
@@ -71,13 +77,14 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
-      <Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} />
+      <div style={{ position: "absolute", inset: 0, opacity: 1 - underTakeover }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
+          <div style={{ position: "absolute", opacity: 1 - Math.min(1, over * 2.5), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub}
+              fadeFrom={scene.out === "blink" ? total - 16 - textAt : undefined}
               perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
@@ -113,12 +120,19 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
       ))}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];
+        if (!s.takeover || !next) return null;
+        const k = s.takeover, frames = spanFrames(GRID, s.at, k.len);
+        const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [] } : { kind: "plain" as const };
+        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} color={k.color} toColor={k.toColor} frames={frames} body={body} /></Sequence>;
+      })}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
         if (!s.carryOut || !next?.carryIn) return null;
         // centrato sul taglio: l'oggetto lascia la scena negli ultimi 7 fotogrammi e arriva nei primi 7 della dopo
         return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
       })}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
-        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 16} durationInFrames={26} layout="none"><Blink word={s.text!.accent!} cut={16} /></Sequence>
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 16} durationInFrames={26} layout="none"><Blink word={s.text!.accent!} cut={16} from={[387, 555]} /></Sequence>
       ))}
       {actChanges(TIMELINE.scenes).map((b) => (
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>

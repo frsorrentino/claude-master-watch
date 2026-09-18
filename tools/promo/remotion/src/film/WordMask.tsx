@@ -5,8 +5,8 @@ import { Sign } from "./ui/Sign.tsx";
 
 /** Ogni parola sale da una fessura con frenata morbida ed esce verso l'alto. Una sola parola in colore per frase. */
 export const WordMask: React.FC<{
-  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center";
-}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left" }) => {
+  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center"; fadeFrom?: number;
+}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left", fadeFrom }) => {
   const frame = useCurrentFrame();
   const px = size === "title" ? THEME.title : THEME.service;
   const total = lines.reduce((n, l) => n + l.split(" ").length, 0);
@@ -30,8 +30,9 @@ export const WordMask: React.FC<{
   };
   const subOut = exitAt === undefined ? 1 : interpolate(frame, [exitAt, exitAt + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const subIn = interpolate(frame, [total * perWordFrames + 6, total * perWordFrames + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // `fadeFrom`: da quel fotogramma il titolo se ne va perché la sua parola in colore sta crescendo a tutto quadro (battito di ciglia)
   return (
-    <div style={{ fontFamily: "Inter", fontWeight: 600, fontSize: px, lineHeight: 1.04, letterSpacing: "-0.02em", textAlign: align, whiteSpace: "nowrap" }}>
+    <div style={{ fontFamily: "Inter", fontWeight: 600, fontSize: px, lineHeight: 1.04, letterSpacing: "-0.02em", textAlign: align, whiteSpace: "nowrap", opacity: fadeFrom === undefined ? 1 : interpolate(frame, [fadeFrom, fadeFrom + 4], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
       {lines.map((l, li) => <div key={li}>{l.split(" ").map((w) => word(w, k++))}</div>)}
       {sub ? <div style={{ marginTop: 26, fontWeight: 500, fontSize: THEME.service, letterSpacing: 0, color: THEME.dim, opacity: subIn * subOut }}>{sub}</div> : null}
     </div>

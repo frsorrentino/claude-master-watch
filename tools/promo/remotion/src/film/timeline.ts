@@ -27,7 +27,11 @@ export type TextCue = { lines: string[]; accent?: string; size?: "title" | "serv
 /** Una chiave del passaggio (piano 4 §2 bis): dove sta e che forma ha l'oggetto che attraversa il taglio, nel display (0-480)
  *  o nel quadro (`space: "frame"`). Il taglio interpola da `carryOut` della scena a `carryIn` della scena dopo. */
 export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x: number; y: number; w: number; h: number; color: string; glyph?: "play" | "question" | "check" | "bell" | "mic" | "none"; glyphColor?: string; stroke?: number; space?: "display" | "frame" };
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey };
+/** Il takeover che chiude la scena (piano 5 §2): il componente, già protagonista nel quadro (`x`, `y`, `w`, `h`, raggio `r`,
+ *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
+ *  del taglio. `body`: cosa si vede dentro mentre cresce. */
+export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[] };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
 
 export class TimelineError extends Error {
@@ -74,6 +78,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
     }
     if (s.out !== undefined && s.out !== "blink") say(`passaggio «${s.out}» sconosciuto`);
     for (const k of [s.carryOut, s.carryIn]) if (k && (k.space ?? "display") === "display" && !(k.x >= 0 && k.x <= 480 && k.y >= 0 && k.y <= 480)) say(`chiave del passaggio (${k.x}, ${k.y}) fuori dal display`);
+    // un takeover deve durare: sotto i 3 battiti non si legge come trasformazione (Franz, 18/09: «servono animazioni che prendano più tempo»)
+    if (s.takeover && !(s.takeover.len >= 3)) say(`il takeover dura ${s.takeover.len} battiti: il minimo è 3`);
     if (s.out === "blink" && !s.text?.accent) say("il battito di ciglia vuole una parola in colore da far crescere");
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);

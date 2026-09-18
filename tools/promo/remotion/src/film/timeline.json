@@ -103,6 +103,18 @@
     ],
     "accent": "glance.",
     "place": "top"
+   },
+   "takeover": {
+    "len": 4,
+    "x": 600,
+    "y": 540,
+    "w": 900,
+    "h": 449,
+    "r": 88,
+    "color": "#23272E",
+    "toColor": "#242A42",
+    "body": "card",
+    "text": "Run the checkout test suite after the Stripe webhook refactor"
    }
   },
   {
@@ -259,7 +271,22 @@
       }
      ]
     }
-   ]
+   ],
+   "takeover": {
+    "len": 4,
+    "x": 1161,
+    "y": 430,
+    "w": 540,
+    "h": 300,
+    "r": 56,
+    "color": "#23272E",
+    "toColor": "#15393F",
+    "body": "words",
+    "words": [
+     "Great. Now update the",
+     "changelog and tag the release"
+    ]
+   }
   },
   {
    "id": "watch",
