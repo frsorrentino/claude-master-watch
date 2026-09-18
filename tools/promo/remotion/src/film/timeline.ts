@@ -15,7 +15,7 @@ export type Fx =
   | { kind: "optionsBuild"; at: number; len: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
   | { kind: "shake"; at: number }
-  | { kind: "float"; at: number; len: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number } | { kind: "text"; lines: string[]; accent?: string; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
+  | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "work" | "questions" | "context"; n?: number; note?: string; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number };   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
@@ -112,7 +112,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
         if (s.watch?.view !== "front") say("la card esce solo dal display frontale");
       }
       if (f.kind === "optionsBuild") for (const r of [f.yes, f.no]) if (!(r[0] >= 0 && r[1] >= 0 && r[2] > 0 && r[3] > 0 && r[0] + r[2] <= 480 && r[1] + r[3] <= 480)) say(`il tasto (${String(r)}) esce dallo schermo 480×480`);
-      const HERO = ["cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float"];
+      const HERO = ["cardOut", "gaugeHero", "optionsBuild", "terminalPlane"];
       if (HERO.includes(f.kind) && (s.fx ?? []).filter((x) => HERO.includes(x.kind)).length > 1) say("un solo momento forte per scena");
     }
   }

@@ -367,7 +367,7 @@
   {
    "id": "limits",
    "at": 90,
-   "len": 10,
+   "len": 16,
    "act": "control",
    "watch": {
     "view": "front",
@@ -385,8 +385,8 @@
    "fx": [
     {
      "kind": "gaugeHero",
-     "at": 3,
-     "len": 6.5,
+     "at": 1.5,
+     "len": 5.5,
      "cx": 385.6,
      "cy": 240.2,
      "size": 104,
@@ -394,12 +394,56 @@
      "week": 36,
      "suffix": "%",
      "phrase": "of your 5 hours"
+    },
+    {
+     "kind": "float",
+     "at": 7,
+     "len": 8.5,
+     "cx": 0.29,
+     "bottom": 1.04,
+     "width": 700,
+     "cards": [
+      {
+       "kind": "brief",
+       "panel": "work",
+       "n": 1,
+       "note": "1 waits for you · 1 working",
+       "bars": [
+        1,
+        1,
+        1
+       ],
+       "hold": 0.5
+      },
+      {
+       "kind": "brief",
+       "panel": "questions",
+       "n": 1,
+       "note": "payments-api · for 5 m",
+       "hold": 0.5
+      },
+      {
+       "kind": "brief",
+       "panel": "context",
+       "rows": [
+        {
+         "name": "payments-api",
+         "pct": 62
+        },
+        {
+         "name": "storefront",
+         "pct": 18
+        }
+       ],
+       "hold": 1.2
+      }
+     ]
     }
    ]
   },
   {
    "id": "new",
-   "at": 100,
+   "at": 106,
    "len": 10,
    "act": "control",
    "watch": {
@@ -419,7 +463,7 @@
   },
   {
    "id": "close",
-   "at": 110,
+   "at": 116,
    "len": 14,
    "act": "close",
    "watch": {
