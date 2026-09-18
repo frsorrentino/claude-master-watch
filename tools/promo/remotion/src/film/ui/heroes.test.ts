@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt, gaugeHeroAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display e ci torna: agli estremi combacia con la card vera", () => {
   assert.deepEqual(cardOutAt(0), { travel: 0, swing: 0, drift: 0, patch: 0, alpha: 1 });
@@ -39,4 +39,10 @@ test("il gauge parte pieno, si svuota in volo, si disegna fuori col numero, rien
   assert.ok(mid.value > 0.5 && mid.value < 1 && mid.label === 1 && mid.travel === 1);
   assert.ok(gaugeHeroAt(0.65).value === 1 && gaugeHeroAt(0.75).label === 0, "pieno prima del rientro, numero già andato");
   assert.ok(gaugeHeroAt(0.96).value === 1 && gaugeHeroAt(0.96).travel === 0, "atterra pieno com'era sul display");
+});
+
+test("il terminale è com'è sul display a casa e finestra del PC quando è fuori", () => {
+  assert.equal(terminalPlaneAt(0).morph, 0);
+  assert.equal(terminalPlaneAt(0.5).morph, 1);
+  assert.equal(terminalPlaneAt(0.96).morph, 0);
 });

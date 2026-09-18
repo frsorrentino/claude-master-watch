@@ -64,3 +64,8 @@ export const optionsBuildAt = (p: number): OptionsBuild => ({
   alpha: p < 0 || p >= 1 ? 0 : 1 - ramp(p, 0.86, 1),
   travel: p < 0 || p >= 1 ? 0 : Math.min(soft(ramp(p, 0, 0.2)), 1 - ramp(p, 0.86, 1)),
 });
+
+/** Il terminale lascia il display (0-0,25), resta fuori come finestra del PC mentre le righe arrivano, rientra (0,78-0,95).
+ *  `morph` segue il volo: com'è sul display quando è a casa, finestra del PC quando è fuori. */
+export type TerminalPlane = Flight & { morph: number };
+export const terminalPlaneAt = (p: number): TerminalPlane => { const f = flightAt(p, 0.25, 0.78); return { ...f, morph: f.travel }; };

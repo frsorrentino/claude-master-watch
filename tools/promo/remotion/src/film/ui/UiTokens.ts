@@ -5,5 +5,6 @@ export const UI = {
   waiting: "#FFB020", followed: "#FFE08A", busy: "#7FA1FF", idle: "#34C759", coral: "#D97757",
   badge: "#3C81F2",
   briefRing: "#8BB4F7", briefWeek: "#B9A6F5", briefTrack: "#455165",   // anelli della quota: 5 ore, settimana, binario
-  track: "#3A404C",                                                       // il binario del segno (LogoMark)            // il blu dell'account nel badge della card (misurato sul fotogramma della lista)
+  track: "#3A404C",                                                       // il binario del segno (LogoMark)
+  briefGood: "#65C581", briefLabel: "#BCE4C7",                             // verde del brief (intestazione del terminale)            // il blu dell'account nel badge della card (misurato sul fotogramma della lista)
 };

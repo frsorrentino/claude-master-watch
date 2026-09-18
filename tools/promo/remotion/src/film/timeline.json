@@ -280,15 +280,26 @@
    },
    "fx": [
     {
-     "kind": "terminal",
+     "kind": "terminalPlane",
      "at": 1,
-     "every": 1,
+     "len": 6.5,
+     "rect": [
+      26,
+      128,
+      427,
+      130
+     ],
+     "header": "Terminal · 07:36",
+     "title": "payments-api — claude",
      "lines": [
+      "$ pytest -q tests",
+      "42 passed in 3.1s",
       "Edit CHANGELOG.md",
       "+ ## 2.8.0 — refund endpoint, webhook retries",
       "$ git tag v2.8.0",
       "$ git push --tags"
-     ]
+     ],
+     "every": 0.75
     }
    ]
   },

@@ -6,26 +6,27 @@ import type { Grid } from "../beats.ts";
 import type { Pose } from "../moves.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
-import { cardOutAt, gaugeHeroAt, optionsBuildAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, optionsBuildAt, terminalPlaneAt } from "./heroes.ts";
 import type { Flight } from "./heroes.ts";
 import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
 import { UiOption } from "./UiOption.tsx";
 import { UiWaveFrom } from "./UiWave.tsx";
+import { UiTerminalPanel } from "./UiTerminalPanel.tsx";
 import { Sequence } from "remotion";
 
 /** Larghezza della card da protagonista e diametro del gauge da protagonista, nel quadro. */
-export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760;
+export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760, HERO_TERMINAL_PX = 1040;
 
 /** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito) e quanto è
  *  «fuori» (`travel`). Senza momento forte: p = −1, travel = 0. */
 export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; travel: number } => {
   for (const e of scene.fx ?? []) {
-    if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild") continue;
+    if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild" && e.kind !== "terminalPlane") continue;
     const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
     const p = (frame - from) / len;
-    const travel = p >= 0 && p < 1 ? (e.kind === "cardOut" ? cardOutAt(p) : e.kind === "gaugeHero" ? gaugeHeroAt(p) : optionsBuildAt(p)).travel : 0;
+    const travel = p >= 0 && p < 1 ? (e.kind === "cardOut" ? cardOutAt(p) : e.kind === "gaugeHero" ? gaugeHeroAt(p) : e.kind === "optionsBuild" ? optionsBuildAt(p) : terminalPlaneAt(p)).travel : 0;
     return { p, travel };
   }
   return { p: -1, travel: 0 };
@@ -110,9 +111,21 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
             </Sequence>
           );
         }
-        if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild") return null;
+        if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild" && e.kind !== "terminalPlane") return null;
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;
+        if (e.kind === "terminalPlane") {
+          const c = terminalPlaneAt(p);
+          if (c.alpha <= 0) return null;
+          const every = spanFrames(g, scene.at, e.every);
+          // le righe arrivano una per volta dal momento in cui il pannello è fuori; le prime due ci sono già (come sul display)
+          const shown = 2 + Math.max(0, (frame - from - len * 0.25) / every);
+          return (
+            <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={[THEME.leftMargin + HERO_TERMINAL_PX / 2, height / 2]} toScale={HERO_TERMINAL_PX / e.rect[2]}>
+              <UiTerminalPanel w={e.rect[2]} header={e.header} title={e.title} lines={e.lines} shown={shown} morph={c.morph} />
+            </Flying>
+          );
+        }
         if (e.kind === "optionsBuild") {
           const o = optionsBuildAt(p);
           if (o.alpha <= 0) return null;
