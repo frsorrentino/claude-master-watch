@@ -32,18 +32,19 @@ export const wavePath = (width: number, mid: number, amp: number, phase: number,
 export const wavePathFrom = (from: [number, number], x0: number, x1: number, y: number, amp: number, phase: number, reach: number, waves = 3.4, top?: number): string => {
   const n = 64;
   const pts: [number, number][] = [];
-  // ramo: dal ▶ esce dal vetro verso l'alto e gira attorno all'orologio fino alla colonna (Bézier cubica campionata): non
-  // attraversa mai il testo sul display
+  // dal ■ un gancio corto verso l'alto a destra (70 px), poi dritto in orizzontale sopra il quadro fino alla colonna e giù in
+  // verticale: il filo non segue la ghiera (a 1 fps sembrava un anello attorno all'orologio, un secondo cerchio: master, 12:05).
+  // Meno filo, più onda: i lobi stanno solo sotto le parole.
   const [fx, fy] = from; const m = 24;
   const ty = top ?? fy - 260;
-  // dal ■ (in alto a destra) esce dal vetro verso l'alto a destra, il punto di ghiera più vicino; gira sopra la cassa e scende a
-  // sinistra, fino alla colonna: mai sopra l'ora o il testo del display (master, 18/09 10:25)
-  const P = [[fx, fy], [fx + 150, ty - 20], [x1 - 160, ty - 30], [x1, y]];
+  const K: [number, number][] = [[fx, fy], [fx + 50, fy - 70], [fx + 50, ty], [x1, ty], [x1, y]];
+  const segs = K.slice(1).map((q, i) => Math.hypot(q[0] - K[i][0], q[1] - K[i][1]));
+  const total = segs.reduce((a, b) => a + b, 0);
   for (let k = 0; k <= m; k++) {
-    const t = k / m, a = 1 - t;
-    const x = a * a * a * P[0][0] + 3 * a * a * t * P[1][0] + 3 * a * t * t * P[2][0] + t * t * t * P[3][0];
-    const yy = a * a * a * P[0][1] + 3 * a * a * t * P[1][1] + 3 * a * t * t * P[2][1] + t * t * t * P[3][1];
-    pts.push([x, yy]);
+    let d = (total * k) / m, j = 0;
+    while (j < segs.length - 1 && d > segs[j]) { d -= segs[j]; j++; }
+    const t = segs[j] ? d / segs[j] : 0;
+    pts.push([K[j][0] + (K[j + 1][0] - K[j][0]) * t, K[j][1] + (K[j + 1][1] - K[j][1]) * t]);
   }
   for (let k = 1; k <= n; k++) {
     const x = x1 - ((x1 - x0) * k) / n;
