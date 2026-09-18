@@ -114,7 +114,9 @@ class FakeTransportTest {
         val tr = t(); tr.demoStep(DemoStep.CALM)
         val s = tr.state.first()
         assertTrue(s.sessions.none { it.question != null })
-        assertEquals(SessionState.IDLE, s.sessions.first { it.name == "ledger-api" }.state)
+        // Al lavoro con un testo, non «Idle»: una card vuota al polso è un buco nei video (Franz, 18/09 07:39).
+        val deploy = s.sessions.first { it.name == "ledger-api" }
+        assertEquals(SessionState.BUSY, deploy.state); assertEquals("Running the staging checks for 2.8.0", deploy.toolNote)
         assertTrue(s.sessions.none { it.followed })
     }
 

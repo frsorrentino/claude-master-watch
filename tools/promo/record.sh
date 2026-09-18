@@ -93,7 +93,8 @@ step() { sh am start -n $ACT --es demo_step "$1" >/dev/null 2>&1; pause "${2:-1.
 # Scena che deve arrivare come notifica: si torna al quadrante e la scena scatta dopo, ad app in secondo piano (con l'app
 # in primo piano le notifiche non partono, prova del 16/09 21:58).
 alert() { sh am start -n $ACT --es demo_step "$1" --ei demo_delay_ms 2500 >/dev/null 2>&1; pause 0.4; home 0.1; pause "${2:-4.0}"; }
-dictate() { sh am start -n $ACT --es demo_dictation "$1" >/dev/null 2>&1; pause 0.3; }
+# Le virgolette interne: `adb shell` rispezza gli argomenti sugli spazi e all'app arrivava solo «Add» (18/09 08:14).
+dictate() { sh am start -n $ACT --es demo_dictation "'$1'" >/dev/null 2>&1; pause 0.3; }
 home() { sh input keyevent KEYCODE_HOME; pause "${1:-1.5}"; }
 
 scene_0() { step calm; home 3.0; snap quadrante; }
@@ -148,6 +149,61 @@ scene_7() {   # una sessione nuova per usare il rimborso nel negozio
 }
 scene_8() { home 3.0; snap chiusura; }
 
+# ---- Piano 2 (17/09): una clip per riga della tabella «da → a», riprese del 18/09 mattina con la lingua in inglese. ----
+# Coordinate misurate sugli screenshot di prova (spazio 480): ▶ della domanda a (347, 90); dopo un trascinamento di 250 px
+# «1 · yes» pieno sta a y 205 e «2 · no» a 325 (prova 07:15: la pressione lunga lì manda la risposta e torna in lista).
+p2_list() {   # quadrante → lista che scorre lenta fino alla terza card
+  fresh; home 1.5; go sessions; pause 2.4; snap lista
+  scroll 260 2400; snap lista_giu
+}
+p2_asks() {   # lista ferma → arriva la domanda: l'app apre da sola la schermata della domanda (il popup di sistema oggi non compare)
+  fresh; go sessions; pause 2.6; snap lista
+  step question 3.2; snap domanda
+}
+p2_speaks() {   # domanda in cima con ▶ → tocco ▶, il testo scorre lento fino ai tasti mentre legge, ■ torna ▶
+  fresh; go sessions; pause 2.0; step question 3.0; snap domanda
+  tap 347 90; pause 1.2; snap legge
+  sh input swipe 240 420 240 200 2600; pause 2.6; snap scorre_1
+  sh input swipe 240 400 240 320 2200; pause 4.0; snap scorre_2
+}
+p2_answer() {   # tasti in vista («1 · yes» pieno, «2 · no» scuro) → pressione lunga su yes → conferma, lista con ▶
+  fresh; go sessions; pause 2.0; step question 3.0
+  sh input swipe 240 400 240 150 900; pause 2.0; snap tasti
+  hold 240 205 1100; pause 0.6; snap inviato; pause 3.0; snap lista
+}
+p2_follow() {   # scheda di payments-api senza campanella → pressione lunga → campanella accesa (stato pulito: `fresh`)
+  fresh; go session/payments-api; pause 2.6; snap scheda
+  hold 240 170 900; pause 2.6; snap seguita       # la card «Idle» in cima alla scheda (misurata 07:30)
+}
+p2_done() {   # lista → arriva l'esito: la card diventa ✓ «Deployed 2.8.0» → tocco → schermata dell'esito
+  fresh; go sessions; pause 2.4; scroll 260 2400; snap lista
+  step deployed 2.8; snap card_esito
+  go session/payments-api; pause 3.0; snap esito      # la card è sotto il bordo: il collegamento parte con la stessa animazione
+}
+p2_say() {   # fondo dell'esito, «Write» → dettatura (demo, o Franz con la tastiera vocale) → «Sent»
+  [ -n "${DICT:-}" ] && dictate "$DICT"
+  go session/payments-api; pause 2.6; scroll 1200 2000 1.0; snap fondo
+  tap 240 315; pause "${SAY_WAIT:-3.0}"; snap inviato
+}
+p2_watch() {   # card al lavoro → terminale con le righe che arrivano sul TICK
+  step followup 1.0; go terminal/payments-api; pause 2.4; scroll 3000 2600 0.5; snap terminale
+  for _ in 1 2 3 4 5; do step tick 0.7; done; pause 1.5; snap terminale_cresce
+}
+p2_limits() {   # panoramica, card «Quota» → scorrimento lento → grafico del ritmo a cinque ore
+  go quota; pause 2.6; snap panoramica; scroll 380 2600; pause 1.0; snap ritmo
+}
+p2_overview() { clip_overview; }
+p2_tile() {   # quadrante → scorrimento dal bordo destro → la tile (prima accanto al quadrante, Franz 07:30) → si resta
+  fresh; home 2.0; snap quadrante
+  sh input swipe 440 240 40 240 450; pause 4.0; snap tile
+}   # la Panoramica intera, un gruppo per movimento (Franz, 18/09 07:28: al posto della sequenza piatta)
+p2_new() {   # fondo della lista, «New session» → scelta di storefront → dettatura → lista con storefront ▶
+  fresh; dictate "Add the refund button to the storefront orders page"
+  step tick 0.5; go launch; pause 2.2; snap progetti
+  tap 240 "${Y_PROJECT:-200}"; pause 1.5; snap progetto
+  tap 240 "${Y_WRITE_FIRST:-320}"; pause 4.0; snap sessione_nata
+}
+
 setup() {
   # Il valore originale si salva una volta sola: rilanciando setup si salverebbe quello lungo messo qui.
   [ -s "$OUT/.timeout_prima" ] || sh settings get system screen_off_timeout > "$OUT/.timeout_prima"
@@ -177,13 +233,13 @@ run() {
     # screenrecord in background sull'orologio; il copione recita mentre registra, poi si ferma con SIGINT.
     timeout 200 "$A" -s "$D" shell screenrecord --bit-rate 8000000 /sdcard/promo_$CLIP.mp4 & rec=$!
     pause 1.5
-    if declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi
+    if declare -F "p2_$CLIP" >/dev/null; then "p2_$CLIP"; elif declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi
     pause 1.0
     sh pkill -INT screenrecord; wait $rec 2>/dev/null; pause 1.5
     timeout 120 "$A" -s "$D" pull /sdcard/promo_$CLIP.mp4 "$OUT/$CLIP.mp4" >/dev/null && sh rm -f /sdcard/promo_$CLIP.mp4
     echo "registrata: $OUT/$CLIP.mp4"
   else
-    if declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi; [ "$CLIP" = measure ] || echo "prova $CLIP: $N screenshot"
+    if declare -F "p2_$CLIP" >/dev/null; then "p2_$CLIP"; elif declare -F "scene_$CLIP" >/dev/null; then "scene_$CLIP"; else "clip_$CLIP"; fi; [ "$CLIP" = measure ] || echo "prova $CLIP: $N screenshot"
   fi
 }
 

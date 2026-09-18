@@ -42,8 +42,9 @@ class FakeTransport(
         if (step != DemoStep.FOLLOWUP && step != DemoStep.TICK) growing = false
         current.value = when (step) {
             // Nessuna sessione seguita all'inizio: la pressione lunga della scena 3 deve accendere la campanella, non trovarla accesa.
+            // La sessione del rilascio non è mai vuota: al polso una card «Idle» senza testo è un buco (Franz, 18/09 07:39).
             DemoStep.CALM -> s.copy(ts = t, sessions = Order.sessions(s.sessions.map {
-                if (it.id == deployId) it.copy(state = SessionState.IDLE, question = null, since = t - 900, followed = false) else it.copy(followed = false)
+                if (it.id == deployId) it.copy(state = SessionState.BUSY, question = null, since = t - 900, turnStarted = t - 900, followed = false, tool = "Bash", toolNote = "Running the staging checks for 2.8.0") else it.copy(followed = false)
             }))
             // Id nuovo a ogni scena: con quello della fixture, già tra le domande viste, la notifica non partiva.
             DemoStep.QUESTION -> at(deployId) { it.copy(state = SessionState.WAITING, since = t, question = originalQuestion?.copy(id = "${originalQuestion.id}-$t", askedAt = t)) }
@@ -145,7 +146,7 @@ class FakeTransport(
                     cmd.arg?.startsWith("text:") == true -> {
                         val t = cmd.arg.removePrefix("text:")
                         if (t.isBlank()) ko("empty text") else {
-                            replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now()))
+                            replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now(), tool = "Bash", toolNote = t))
                             ok("answered ${q.options.size + 1}. $t")
                         }
                     }
@@ -155,18 +156,19 @@ class FakeTransport(
                     }
                     cmd.arg?.toIntOrNull() == null -> ko("answer ${cmd.arg}: expected a number, text:<text> or chat")
                     else -> {
-                        replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now()))
+                        // Dopo la risposta la sessione dice cosa sta facendo, non «turno in corso» (Franz, 18/09 07:39).
+                        replace(ses.copy(question = null, state = SessionState.BUSY, since = now(), turnStarted = now(), tool = "Bash", toolNote = "Deploying 2.8.0 to production"))
                         ok("answered ${cmd.arg}. ${opt?.label ?: cmd.arg}")
                     }
                 }
             }
             CmdOp.PROMPT -> if (ses == null) ko("no session ${cmd.session}") else {
-                replace(ses.copy(state = SessionState.BUSY, question = null, turnStarted = now())); ok("delivered")
+                replace(ses.copy(state = SessionState.BUSY, question = null, turnStarted = now(), tool = "Bash", toolNote = cmd.text ?: ses.toolNote)); ok("delivered")
             }
             CmdOp.LAUNCH -> s.projects.firstOrNull { it.path == cmd.arg }?.let { p ->
                 // Demo (piano 16/09): la sessione del progetto si mette al lavoro, così la storia arriva sulla sua Scheda.
                 current.value = s.copy(ts = now(), sessions = Order.sessions(s.sessions.map {
-                    if (it.name == p.name) it.copy(state = SessionState.BUSY, question = null, turnStarted = now(), since = now(), toolNote = cmd.text ?: it.toolNote) else it
+                    if (it.name == p.name) it.copy(state = SessionState.BUSY, question = null, turnStarted = now(), since = now(), tool = "Bash", toolNote = cmd.text ?: it.toolNote) else it
                 }))
                 CmdResult(cmd.id, true, "launched ${p.name} (${p.account})", now(), session = p.name)
             } ?: ko("unknown project")
