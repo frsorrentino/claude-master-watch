@@ -84,6 +84,9 @@ export const validateTimeline = (raw: unknown): Timeline => {
     for (const k of [s.carryOut, s.carryIn]) if (k && (k.space ?? "display") === "display" && !(k.x >= 0 && k.x <= 480 && k.y >= 0 && k.y <= 480)) say(`chiave del passaggio (${k.x}, ${k.y}) fuori dal display`);
     // un takeover deve durare: sotto i 3 battiti non si legge come trasformazione (Franz, 18/09: «servono animazioni che prendano più tempo»)
     if (s.takeover && !(s.takeover.len >= 3)) say(`il takeover dura ${s.takeover.len} battiti: il minimo è 3`);
+    // la tapparella deve stare davanti e dietro al taglio: sotto i 6 battiti le barre non fanno in tempo a diventare listelli
+    if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
+    if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
     if (s.out === "blink" && !s.text?.accent) say("il battito di ciglia vuole una parola in colore da far crescere");
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);
