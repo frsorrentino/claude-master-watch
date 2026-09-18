@@ -36,7 +36,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_tile.mp4",
-    "clipStart": 0.0
+    "clipStart": 6.0
    },
    "text": {
     "lines": [
@@ -53,8 +53,8 @@
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_tile.mp4",
-    "clipStart": 3.3
+    "clip": "scenes/n_list.mp4",
+    "clipStart": 8.5
    },
    "text": {
     "lines": [
@@ -74,7 +74,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_list.mp4",
-    "clipStart": 10.5,
+    "clipStart": 12.9,
     "camera": "release"
    },
    "fx": [
@@ -169,6 +169,25 @@
      "kind": "longPress",
      "at": 4.5,
      "len": 2
+    },
+    {
+     "kind": "optionsBuild",
+     "at": 3,
+     "len": 5,
+     "yes": [
+      26,
+      150,
+      427,
+      110
+     ],
+     "no": [
+      26,
+      270,
+      427,
+      110
+     ],
+     "yesLabel": "1 · yes",
+     "noLabel": "2 · no"
     }
    ]
   },

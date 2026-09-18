@@ -6,23 +6,25 @@ import type { Grid } from "../beats.ts";
 import type { Pose } from "../moves.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
-import { cardOutAt, gaugeHeroAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, optionsBuildAt } from "./heroes.ts";
 import type { Flight } from "./heroes.ts";
 import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
+import { UiOption } from "./UiOption.tsx";
 
 /** Larghezza della card da protagonista e diametro del gauge da protagonista, nel quadro. */
-export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640;
+export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760;
 
 /** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito) e quanto è
  *  «fuori» (`travel`). Senza momento forte: p = −1, travel = 0. */
 export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; travel: number } => {
   for (const e of scene.fx ?? []) {
-    if (e.kind !== "cardOut" && e.kind !== "gaugeHero") continue;
+    if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild") continue;
     const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
     const p = (frame - from) / len;
-    return { p, travel: p >= 0 && p < 1 ? (e.kind === "cardOut" ? cardOutAt(p) : gaugeHeroAt(p)).travel : 0 };
+    const travel = p >= 0 && p < 1 ? (e.kind === "cardOut" ? cardOutAt(p) : e.kind === "gaugeHero" ? gaugeHeroAt(p) : optionsBuildAt(p)).travel : 0;
+    return { p, travel };
   }
   return { p: -1, travel: 0 };
 };
@@ -95,9 +97,27 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
   return (
     <>
       {(scene.fx ?? []).map((e, i) => {
-        if (e.kind !== "cardOut" && e.kind !== "gaugeHero") return null;
+        if (e.kind !== "cardOut" && e.kind !== "gaugeHero" && e.kind !== "optionsBuild") return null;
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;
+        if (e.kind === "optionsBuild") {
+          const o = optionsBuildAt(p);
+          if (o.alpha <= 0) return null;
+          const k = HERO_OPTION_PX / e.yes[2], gap = (e.no[1] - (e.yes[1] + e.yes[3])) * k;
+          // i tasti non lasciano il display: nascono fuori, al centro sinistro, alla grandezza da protagonista (impaginati con zoom)
+          return (
+            <React.Fragment key={i}>
+              <div style={{ position: "absolute", inset: 0, opacity: 0.55 * o.travel, background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
+              <div style={{ position: "absolute", left: THEME.leftMargin, top: height / 2 - (e.yes[3] * k + gap + e.no[3] * k) / 2, opacity: o.alpha }}>
+                <div style={{ zoom: k }}>
+                  <UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} />
+                  <div style={{ height: gap / k }} />
+                  <UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.08)} />
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        }
         if (e.kind === "cardOut") {
           const c = cardOutAt(p);
           if (c.alpha <= 0) return null;

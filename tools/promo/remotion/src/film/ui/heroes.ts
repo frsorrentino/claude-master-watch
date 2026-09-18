@@ -51,3 +51,16 @@ export const gaugeHeroAt = (p: number): GaugeHero => {
   const label = ramp(p, 0.33, 0.38) * (1 - ramp(p, 0.7, 0.74));
   return { ...f, value, label };
 };
+
+/**
+ * I tasti della domanda nascono come contorno fuori dal display (0-0,2), si riempiono (0,2-0,3: «1 · yes» pieno, «2 · no»
+ * scuro), l'anello corallo della pressione lunga corre attorno a «1 · yes» in tempo con la pressione vera (0,3-0,68), poi
+ * i tasti restano un attimo e si dissolvono (0,86-1) mentre sul display arriva «Sent». Non lasciano il display: sono l'eco.
+ */
+export type OptionsBuild = { build: number; ring: number; alpha: number; travel: number };
+export const optionsBuildAt = (p: number): OptionsBuild => ({
+  build: soft(ramp(p, 0, 0.3)),
+  ring: ramp(p, 0.3, 0.68),
+  alpha: p < 0 || p >= 1 ? 0 : 1 - ramp(p, 0.86, 1),
+  travel: p < 0 || p >= 1 ? 0 : Math.min(soft(ramp(p, 0, 0.2)), 1 - ramp(p, 0.86, 1)),
+});

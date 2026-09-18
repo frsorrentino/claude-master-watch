@@ -12,6 +12,7 @@ export type Fx =
   | { kind: "terminal"; at: number; every: number; lines: string[] }
   | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play" }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
+  | { kind: "optionsBuild"; at: number; len: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
@@ -33,7 +34,7 @@ export class TimelineError extends Error {
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn"];
 const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
-const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero"];
+const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
 export const totalBeats = (t: Timeline): number => (t.scenes.length ? t.scenes[t.scenes.length - 1].at + t.scenes[t.scenes.length - 1].len : 0);
@@ -96,7 +97,9 @@ export const validateTimeline = (raw: unknown): Timeline => {
         if (!(Array.isArray(r) && r.length === 4 && r.every((v) => typeof v === "number") && r[0] >= 0 && r[1] >= 0 && r[2] > 0 && r[3] > 0 && r[0] + r[2] <= 480 && r[1] + r[3] <= 480)) say(`la card (${String(r)}) esce dallo schermo 480×480`);
         if (s.watch?.view !== "front") say("la card esce solo dal display frontale");
       }
-      if ((f.kind === "cardOut" || f.kind === "gaugeHero") && (s.fx ?? []).filter((x) => x.kind === "cardOut" || x.kind === "gaugeHero").length > 1) say("un solo momento forte per scena");
+      if (f.kind === "optionsBuild") for (const r of [f.yes, f.no]) if (!(r[0] >= 0 && r[1] >= 0 && r[2] > 0 && r[3] > 0 && r[0] + r[2] <= 480 && r[1] + r[3] <= 480)) say(`il tasto (${String(r)}) esce dallo schermo 480×480`);
+      const HERO = ["cardOut", "gaugeHero", "optionsBuild"];
+      if (HERO.includes(f.kind) && (s.fx ?? []).filter((x) => HERO.includes(x.kind)).length > 1) say("un solo momento forte per scena");
     }
   }
   if (bad.length) throw new TimelineError(bad);
