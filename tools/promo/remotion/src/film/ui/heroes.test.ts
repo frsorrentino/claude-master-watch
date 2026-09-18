@@ -29,5 +29,5 @@ test("gira solo in volo, con un picco a metà, e si dissolve solo dopo essere at
 test("la toppa copre la card vera appena la card si stacca e se ne va con lei", () => {
   assert.ok(cardOutAt(0.01).patch > 0 && cardOutAt(0.01).travel < 0.02);
   assert.equal(cardOutAt(0.5).patch, 1);
-  assert.equal(cardOutAt(0.975).patch, cardOutAt(0.975).alpha);
+  assert.equal(cardOutAt(0.975).patch, 0, "il fantasma se n'è già andato a metà dissolvenza");
 });

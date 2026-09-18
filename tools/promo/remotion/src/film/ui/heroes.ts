@@ -15,7 +15,7 @@ const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
  * - `travel` 0-1: dov'è tra il display (0) e il posto da protagonista (1); a 0 combacia con la card vera.
  * - `swing` 0-1: quanto è girata attorno all'asse verticale: solo in volo, all'arrivo è quasi frontale.
  * - `drift` −1…1: respiro lento mentre è fuori (posizione e inclinazione di pochi pixel e gradi).
- * - `patch` 0-1: quanto è coperta la card vera sul display (una toppa del colore del fondo che resta al suo posto).
+ * - `patch` 0-1: quanto è coperta la card vera sul display (un fantasma della superficie che resta al suo posto).
  * - `alpha` 0-1: visibilità della card ricostruita (si dissolve solo alla fine, dopo essere atterrata sul display).
  */
 export type CardOut = { travel: number; swing: number; drift: number; patch: number; alpha: number };
@@ -27,7 +27,7 @@ export const cardOutAt = (p: number): CardOut => {
     travel,
     swing: Math.sin(Math.PI * travel),
     drift: Math.sin(2 * Math.PI * ramp(p, 0.3, 0.8)),
-    patch: ramp(p, 0, 0.03) * (1 - fade),
+    patch: ramp(p, 0, 0.03) * (1 - ramp(p, 0.95, 0.97)),   // il fantasma sparisce prima della card: sotto la dissolvenza c'è già la card vera
     alpha: p < 0 || p >= 1 ? 0 : 1 - fade,          // a 0 è già disegnata, combaciante con la card vera: il confronto si fa lì
   };
 };

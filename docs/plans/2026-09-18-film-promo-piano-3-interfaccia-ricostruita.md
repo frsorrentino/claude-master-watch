@@ -78,3 +78,29 @@ perfezionarlo, modificandolo con idee creative». L'abbozzo È posticcio, per qu
 
 Metodo per tutti i momenti forti: abbozzo → tavola di fotogrammi → critica scritta contro i riferimenti → rifacimento,
 almeno tre giri prima di mostrarlo; confronto affiancato con il fotogramma vero dell'app a ogni giro.
+
+## 7. I fotogrammi metro (18/09, 02:45)
+
+`tools/promo/riferimenti.sh` scarica i tre film a 720p in `tools/promo/materiali/riferimenti/` (ignorata dal repo), fa le tavole a
+2 fotogrammi al secondo e ritaglia i fotogrammi metro in `metro/`. Ogni giro di critica affianca il nostro fotogramma a questi,
+alla stessa scala (`out/cardOut/metro-giro4.png` è il primo esempio):
+
+| Momento | Film | Tempo | Cosa si vede |
+|---|---|---|---|
+| 1 card che esce | Canvas | 31,5 s | il campo della domanda davanti, l'interfaccia enorme, scura e sfocata dietro, inclinata |
+| 1 bis componente isolato | Canvas | 15,0 s | il pulsante «Canvas» solo, il resto dell'interfaccia appena accennato |
+| 2 tasto che nasce da contorno | Ask | 13,5 s | il cerchio di «AI Mode» nasce come contorno nella barra, poi il pillolo si riempie |
+| 2 bis riquadro da contorno | Ask | 78,0 s | «Snap»: il quadrato nasce come contorno colorato |
+| 3 forma d'onda della voce | Ask | 77,5 s | «Say it»: un arco di luce colorata che ondeggia sotto la parola |
+| 4 piano inclinato | Canvas | 36,0 s | righe di codice in prospettiva, fuoco sulle righe vicine |
+| 5 gauge con contatore | LangEase | 11,5 s | barra a tutto quadro con «82/100» che conta |
+| 6 frustata | Ask | 4,5 s | il nastro di colore che attraversa il quadro tra due frasi |
+
+### Giri della card che esce (chiusi 02:45, in attesa del punto di controllo A di Franz)
+1. Abbozzo (§6). 2. Stessa card del display (rettangolo misurato, Roboto al 110 %, `fedelta.py`), titolo che lascia il posto.
+3. Strappo morbido (Bézier 0,35·0·0,15·1, 800 ms), retta, ombra e luce dal vetro. 4. Card 900 px, orologio che arretra:
+scartato al metro (Canvas 31,5 s: il componente sta davanti a un'interfaccia enorme). 5. **Ci si avvicina** all'orologio
+(×1,55, sfocatura, −55 % di luce), vignetta, fantasma della superficie al posto del buco. 6. Sfocatura 8 px (nessun altro testo
+leggibile nella sosta), fantasma che sparisce prima della card (nessuno scatto: differenze 8→7→0 sugli ultimi fotogrammi).
+Aperto per Franz: durante la sosta le altre card della lista escono a ventaglio dietro la prima (proposta di master) o una sola.
+Limite noto: la deriva lenta dell'orologio avanza a scatti di un pixel (Chrome arrotonda la posizione): c'era già, si vede poco.

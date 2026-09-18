@@ -49,7 +49,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale * (1 + 0.55 * back)), filter: back > 0 ? `blur(${5 * back}px) brightness(${1 - 0.45 * back})` : undefined }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: cx + pose.x * width, top: height / 2 + pose.y * height, transformOrigin: "0 0", scale: String(pose.scale * (1 + 0.55 * back)), filter: back > 0 ? `blur(${8 * back}px) brightness(${1 - 0.55 * back})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
