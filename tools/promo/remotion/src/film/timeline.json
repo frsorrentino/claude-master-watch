@@ -54,8 +54,9 @@
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_list.mp4",
-    "clipStart": 8.5
+    "clip": "scenes/n_tile.mp4",
+    "clipStart": 3.05,
+    "freeze": true
    },
    "text": {
     "lines": [
@@ -73,8 +74,8 @@
      "len": 5,
      "rect": [
       26,
-      63,
-      427,
+      145,
+      428,
       213
      ],
      "name": "storefront",
