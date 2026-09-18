@@ -36,10 +36,11 @@ else
   done
   [ "$cur" -le "$ultimo" ] && seg "$cur" "$ultimo" "$GL"
   ffmpeg -v error -y -f concat -safe 0 -i out/segmenti/lista.txt -c copy "out/consegna/$name.video.mp4"
-  atteso=$total; reso=$(ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 "out/consegna/$name.video.mp4")
+  atteso=$total; reso=$(ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nw=1:nk=1 "out/consegna/$name.video.mp4")   # csv=p=0 lascia una virgola in coda e il confronto fallisce sempre
   [ "$reso" = "$atteso" ] || { echo "montaggio sbagliato: $reso fotogrammi invece di $atteso"; exit 1; }
 fi
-npx remotion render Film "out/consegna/$name.wav" --gl="$GL" "$@"
+# anche il render dell'"'"'audio monta i componenti, quindi inciampa sul ThreeCanvas: se c'"'"'è 3D in scaletta va in swangle
+npx remotion render Film "out/consegna/$name.wav" --gl="$([ "${#tratti[@]}" -gt 0 ] && echo "$GL3D" || echo "$GL")" "$@"
 # Loudness finale a due passate: prima si misura, poi si applica in modo lineare (niente compressione): -14 LUFS, picco -1 dB.
 m=$(ffmpeg -hide_banner -nostats -i "out/consegna/$name.wav" -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')
 g() { echo "$m" | python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])"; }
