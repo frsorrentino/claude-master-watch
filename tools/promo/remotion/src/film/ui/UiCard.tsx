@@ -1,23 +1,23 @@
 import React from "react";
 import { UI } from "./UiTokens.ts";
 
-/** La card di sessione dell'app, ricostruita (spazio 400×… px, poi scalata da chi la usa). `flip` 0-1: l'icona di stato gira
- *  da «lavora» (▶ su blu) a «fatto» (✓ su verde) attorno all'asse verticale, e il testo cambia a metà giro. */
-export const UiCard: React.FC<{ name: string; age: string; busyText: string; doneText: string; flip: number }> = ({ name, age, busyText, doneText, flip }) => {
-  const done = flip >= 0.5;
-  const turn = flip < 0.5 ? flip * 180 : (flip - 1) * 180;                 // 0→90°, poi −90°→0: a metà l'icona è di taglio e cambia faccia
-  return (
-    <div style={{ width: 400, padding: "20px 24px 24px", borderRadius: 30, background: UI.surfaceHigh, boxShadow: `0 40px 80px -30px rgba(0,0,0,.7), 0 0 0 1.5px ${done ? "rgba(52,199,89,.55)" : "rgba(76,125,255,.55)"}, 0 0 46px -8px ${done ? "rgba(52,199,89,.45)" : "rgba(76,125,255,.45)"}`, fontFamily: "Inter", color: UI.text }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: done ? UI.idle : UI.accent, display: "grid", placeItems: "center", transform: `rotateY(${turn}deg)` }}>
-          <svg viewBox="0 0 24 24" width="22" height="22">
-            {done ? <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /> : <path d="M8 5.5v13l11-6.5z" fill="#fff" />}
-          </svg>
-        </div>
-        <div style={{ fontFamily: "Noto Sans Mono", fontSize: 24, color: UI.text2, flex: 1 }}>{name}</div>
-        <div style={{ fontSize: 24, color: UI.text2 }}>{age}</div>
+/**
+ * La card di sessione dell'app (`SessionRow.kt`), ricostruita nello spazio del display 480×480 (1 dp = 2 px): raggio 21 dp,
+ * riempimento 12 dp, badge quadrato 16 dp con angoli al 23 %, nome mono 13 sp, età 15 sp, testo 16 sp; sull'orologio di Franz i
+ * caratteri sono al 110 % (misurato sul fotogramma: testo 36 px, interlinea 46), e le misure qui sono quelle. Stesse misure e stessi
+ * colori della card vera, così a grandezza 1 combacia col fotogramma. `light` 0-1: quanto è fuori dallo schermo (ombra a terra
+ * e luce dall'alto a sinistra, come sul vetro dell'orologio; sul display non ce n'è).
+ */
+export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; light?: number }> = ({ w, name, age, text, badge = UI.badge, light = 0 }) => (
+  <div style={{ width: w, boxSizing: "border-box", padding: "24px 24px 19px", borderRadius: 42, background: UI.surface, color: UI.text, fontFamily: "Roboto",
+    boxShadow: `inset 1px 1px 0 rgba(235,244,255,${0.16 * light}), ${16 * light}px ${24 * light}px ${44 * light}px ${-6 * light}px rgba(4,5,12,${0.62 * light})` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 16, height: 36 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 7.4, background: badge, display: "grid", placeItems: "center", flex: "none" }}>
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5.5 12.5l4 4L18.5 7.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
-      <div style={{ marginTop: 12, fontSize: 29, lineHeight: 1.22, fontWeight: 500 }}>{done ? doneText : busyText}</div>
+      <div style={{ fontFamily: "Noto Sans Mono", fontSize: 28, color: UI.text2, flex: 1, whiteSpace: "nowrap" }}>{name}</div>
+      <div style={{ fontSize: 33, color: UI.text2, whiteSpace: "nowrap" }}>{age}</div>
     </div>
-  );
-};
+    <div style={{ marginTop: 0, fontSize: 36, lineHeight: "46px", letterSpacing: -0.6 }}>{text}</div>
+  </div>
+);

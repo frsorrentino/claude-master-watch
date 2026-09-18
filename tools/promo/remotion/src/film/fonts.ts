@@ -5,6 +5,8 @@ const FACES: [string, string, string][] = [
   ["Inter", "fonts/Inter-SemiBold.ttf", "600"],
   ["Inter", "fonts/Inter-Medium.ttf", "500"],
   ["Noto Sans Mono", "fonts/NotoSansMono-Regular.ttf", "400"],
+  ["Roboto", "fonts/Roboto-Regular.ttf", "400"],           // il carattere dell'interfaccia dell'orologio, per i componenti ricostruiti
+  ["Roboto", "fonts/Roboto-Medium.ttf", "500"],
 ];
 
 /** Il render aspetta i caratteri: senza, i primi fotogrammi escono con il carattere di ripiego. */

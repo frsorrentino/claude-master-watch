@@ -1,0 +1,3 @@
+Roboto (Regular, Medium) - Copyright 2011 Google Inc.
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+Copiato da /usr/share/fonts/chromeos/roboto/ il 18/09/2026 per ricostruire i componenti dell'interfaccia nel film.

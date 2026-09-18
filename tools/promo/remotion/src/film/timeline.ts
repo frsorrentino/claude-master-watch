@@ -10,7 +10,7 @@ export type Fx =
   | { kind: "counter"; at: number; len: number; to: number; suffix: string }
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
-  | { kind: "cardOut"; at: number; len: number; name: string; age: string; busyText: string; doneText: string }   // la card esce dal display (piano 3)
+  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3)
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
@@ -74,7 +74,12 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (!half(f.at) || !half(len)) say(`l'effetto ${f.kind} ha tempi che non sono mezzi battiti (at ${f.at})`);
       else if (f.at + len > s.len || f.at >= s.len) say(`l'effetto ${f.kind} al battito ${f.at} esce dalla scena`);
       if (f.kind === "tap" && !(f.x >= 0 && f.x <= 480 && f.y >= 0 && f.y <= 480)) say(`tocco (${f.x}, ${f.y}) fuori dallo schermo 480×480`);
-      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
+      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "cardOut") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
+      if (f.kind === "cardOut") {
+        const r = f.rect;
+        if (!(Array.isArray(r) && r.length === 4 && r.every((v) => typeof v === "number") && r[0] >= 0 && r[1] >= 0 && r[2] > 0 && r[3] > 0 && r[0] + r[2] <= 480 && r[1] + r[3] <= 480)) say(`la card (${String(r)}) esce dallo schermo 480×480`);
+        if (s.watch?.view !== "front") say("la card esce solo dal display frontale");
+      }
     }
   }
   if (bad.length) throw new TimelineError(bad);

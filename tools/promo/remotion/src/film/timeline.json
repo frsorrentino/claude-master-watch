@@ -56,7 +56,7 @@
    "watch": {
     "view": "front",
     "clip": "scenes/s1_list.mp4",
-    "clipStart": 1.5
+    "clipStart": 2.6
    },
    "text": {
     "lines": [
@@ -69,12 +69,17 @@
    "fx": [
     {
      "kind": "cardOut",
-     "at": 2.5,
-     "len": 4.5,
-     "name": "storefront",
-     "age": "2 m",
-     "busyText": "Running the checkout test suite",
-     "doneText": "Checkout tests green, 214 passed"
+     "at": 4,
+     "len": 3.5,
+     "rect": [
+      26,
+      123,
+      427,
+      170
+     ],
+     "name": "payments-api",
+     "age": "15 m",
+     "text": "Deployed 2.8.0, smoke tests green"
     }
    ]
   },

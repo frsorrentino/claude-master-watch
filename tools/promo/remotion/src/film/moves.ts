@@ -10,7 +10,7 @@ const in3 = (t: number) => t * t * t;
 const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** Curva di Bézier cubica come in CSS: dato il tempo 0-1 restituisce l'avanzamento. */
-const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number): number => {
+export const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number): number => {
   const f = (a: number, b: number, s: number) => 3 * a * s * (1 - s) * (1 - s) + 3 * b * s * s * (1 - s) + s * s * s;
   if (t <= 0) return 0;
   if (t >= 1) return 1;          // agli estremi esatto: la bisezione si fermerebbe a 0,9999999
