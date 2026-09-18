@@ -60,7 +60,7 @@ const GaugeHeroView: React.FC<{ e: Extract<Fx, { kind: "gaugeHero" }>; value: nu
       {/* a destra del gauge, come «82/100» accanto alla barra nel riferimento: il numero grande e la frase sotto */}
       <div style={{ position: "absolute", left: "100%", top: "50%", translate: `${e.size * 0.12}px -50%`, opacity: show, whiteSpace: "nowrap", fontFamily: "Inter", color: THEME.white }}>
         <div style={{ fontWeight: 600, fontSize: e.size * 0.42, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
-          {n}<span style={{ color: THEME.accent, fontSize: "0.55em", marginLeft: "0.06em" }}>{e.suffix}</span>
+          {n}<span style={{ color: THEME.dim, fontSize: "0.5em", marginLeft: "0.08em", fontWeight: 500 }}>{e.suffix}</span>{/* come l'app: grigio chiaro a corpo minore, l'unico accento del film resta il corallo */}
         </div>
         <div style={{ marginTop: e.size * 0.05, fontWeight: 500, color: THEME.dim, fontSize: e.size * 0.1 }}>{e.phrase}</div>
       </div>
