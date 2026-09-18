@@ -403,17 +403,11 @@
      "at": 3.5,
      "len": 8,
      "panel": "quota",
-     "note": "of your 5 hours · 7d 36 % and 75 %",
      "rows": [
       {
        "name": "personal",
        "pct": 11,
        "week": 36
-      },
-      {
-       "name": "work",
-       "pct": 38,
-       "week": 75
       }
      ]
     },

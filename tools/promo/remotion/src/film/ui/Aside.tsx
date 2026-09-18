@@ -34,23 +34,21 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
             {e.panel === "quota" ? (
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Quota</div>
-                <div style={{ display: "flex", gap: 90, marginTop: 18 }}>
-                  {(e.rows ?? []).map((r, k) => {
-                    const p = clamp(d * 1.5 - k * 0.3);
-                    return (
-                      <div key={k} style={{ display: "flex", alignItems: "center", gap: 26 }}>
-                        <UiGauge size={150} outer={(r.pct / 100) * p} inner={((r.week ?? 0) / 100) * p} />
-                        <div>
-                          <div style={{ fontSize: 96, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
-                            {Math.round(r.pct * p)}<span style={{ fontSize: "0.45em", color: THEME.dim, marginLeft: 8 }}>%</span>
-                          </div>
-                          <div style={{ marginTop: 8, fontSize: 34, color: THEME.dim }}>{r.name}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {/* un gauge solo: i due anelli SONO i due valori (fuori le 5 ore, dentro la settimana) — Franz, 18/09 21:47 */}
+                <div style={{ display: "flex", alignItems: "center", gap: 46, marginTop: 20 }}>
+                  <UiGauge size={210} outer={((e.rows?.[0]?.pct ?? 0) / 100) * clamp(d * 1.4)} inner={((e.rows?.[0]?.week ?? 0) / 100) * clamp(d * 1.4 - 0.15)} />
+                  <div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+                      <span style={{ fontSize: 104, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: UI.briefRing }}>{Math.round((e.rows?.[0]?.pct ?? 0) * clamp(d * 1.4))}<span style={{ fontSize: "0.42em", color: THEME.dim, marginLeft: 8 }}>%</span></span>
+                      <span style={{ fontSize: 36, color: THEME.dim }}>of your 5 hours</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 18 }}>
+                      <span style={{ fontSize: 76, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: UI.briefWeek }}>{Math.round((e.rows?.[0]?.week ?? 0) * clamp(d * 1.4 - 0.15))}<span style={{ fontSize: "0.42em", color: THEME.dim, marginLeft: 8 }}>%</span></span>
+                      <span style={{ fontSize: 36, color: THEME.dim }}>this week</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ marginTop: 26, fontSize: 38, color: THEME.dim }}>{e.note}</div>
+                {e.note ? <div style={{ marginTop: 24, fontSize: 36, color: THEME.dim }}>{e.note}</div> : null}
               </>
             ) : e.panel === "note" ? (
               <div style={{ fontSize: 76, fontWeight: 600, lineHeight: 1.12, letterSpacing: "-0.02em" }}>
