@@ -23,19 +23,18 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
   const p = (frame - from) / len;
   if (p < 0) return null;
   const W = 760, cx = width / 2;                // colonna centrale: le card e le scritte si alternano sopra l'orologio
-  const STEP = 330;                             // quanto sale una scheda quando arriva la successiva
   const TOP = 60;                               // la corsia finisce qui: sopra, le schede sono uscite
   return (
     <>
       {e.cards.map((c, i) => {
         const f = floatAt(p, i, e.cards.length);
-        if (f.rise <= 0) return null;
-        // la quota è lineare nel tempo; scala e opacità vengono dalla quota, come nella lista dell'orologio
-        const y = glassY - 120 * f.rise - STEP * f.depth + 8 * f.bob;
-        const rail = railAt((glassY - y) / (glassY - TOP));
+        if (f.u <= 0 || f.u >= 1) return null;
+        // quota lineare nel tempo (scorrimento continuo); scala e opacità vengono dalla quota, come nella lista dell'orologio
+        const y = glassY - (glassY - TOP) * f.u + 6 * f.bob;
+        const rail = railAt(f.u);
         const isText = c.kind === "text";
         const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio
-        const a = isText ? Math.min(1, f.rise * 1.2) * Math.max(0, 1 - 0.5 * f.depth) : rail.alpha;
+        const a = isText ? Math.min(1, Math.sin(Math.PI * f.u) * 2) : rail.alpha;
         if (c.kind === "text") return (
           <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
             <div style={{ translate: "-50% -50%", width: W + 220, textAlign: "center", scale: String(s), fontFamily: "Inter", fontWeight: 600, fontSize: 82, lineHeight: 1.08, letterSpacing: "-0.02em", color: THEME.white }}>
@@ -46,7 +45,7 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
         return (
           <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
             {/* ombra sul vetro solo per la card più bassa: è quella appoggiata alla luce del display */}
-            {f.depth < 0.5 ? <div style={{ position: "absolute", left: -W / 2, top: glassY - y - 10, width: W, height: 26, borderRadius: "50%", background: "rgba(0,0,0,.5)", filter: "blur(12px)", opacity: f.rise }} /> : null}
+            {f.u < 0.22 && !isText ? <div style={{ position: "absolute", left: -W / 2, top: glassY - y - 10, width: W, height: 26, borderRadius: "50%", background: "rgba(0,0,0,.5)", filter: "blur(12px)", opacity: 1 - f.u / 0.22 }} /> : null}
             <div style={{ translate: "-50% -50%", width: W, scale: String(s), perspective: 1600 }}>
               <div style={{ transform: "rotateX(10deg)", transformOrigin: "50% 100%", position: "relative" }}>
                 <div style={{ zoom: W / 427 }}>

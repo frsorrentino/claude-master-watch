@@ -40,12 +40,11 @@ test("il terminale del PC compare dietro e si ritira alla fine", () => {
   assert.ok(terminalPlaneAt(0.5).exit === 0 && terminalPlaneAt(0.99).exit > 0.9);
 });
 
-test("le card galleggianti salgono una dopo l'altra e le precedenti arretrano", () => {
-  assert.equal(floatAt(0, 0, 3).rise, 0);
-  assert.equal(floatAt(0.2, 0, 3).rise, 1);
-  assert.equal(floatAt(0.2, 1, 3).rise, 0);
-  assert.equal(floatAt(0.5, 1, 3).rise, 1);
-  assert.ok(floatAt(0.5, 0, 3).depth >= 1 && floatAt(0.5, 2, 3).depth === 0);
+test("il flusso della corsia è continuo: ogni elemento entra dopo il precedente e sale a velocità costante", () => {
+  assert.ok(floatAt(0, 0, 3).u === 0 && floatAt(0, 1, 3).u < 0, "il secondo non è ancora nato");
+  assert.ok(Math.abs(floatAt(0.31, 0, 3).u - 0.5) < 1e-9, "a metà corsia");
+  assert.ok(floatAt(0.2, 1, 3).u === 0 && floatAt(0.51, 1, 3).u > 0.49, "il secondo segue di un passo");
+  assert.ok(floatAt(0.62, 0, 3).u >= 1, "il primo è uscito quando il terzo entra");
 });
 
 test("la corsia deforma come le liste di Wear OS: piccola sotto, larga al centro, piccola in cima", () => {

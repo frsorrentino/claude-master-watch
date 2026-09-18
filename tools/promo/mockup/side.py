@@ -18,10 +18,13 @@ def grade(im, contrast, red):
     r, g, b = ImageEnhance.Contrast(im).enhance(contrast).split()
     return Image.merge("RGB", (r.point(lambda v: int(v * red)), g, b.point(lambda v: min(255, int(v * 1.05)))))
 
-def flatten(im, sat=0.5, contrast=0.8, light=0.78):
-    """Meno realismo (Franz, 18/09 18:22): colori opachi e contrasto basso, così la foto sta con i componenti disegnati."""
-    out = ImageEnhance.Contrast(ImageEnhance.Color(im).enhance(sat)).enhance(contrast)
-    return ImageEnhance.Brightness(out).enhance(light)   # più scuro: il chiaro faceva sembrare la foto scontornata male
+def satin(im, sat=0.72, contrast=1.16, black=0.45, high=0.5):
+    """Meno fotografico, più oggetto (Franz, 18/09 18:49): si scuriscono SOLO i neri (curva sulle ombre, le alte luci restano),
+    si alza un po' il contrasto e si comprimono i riflessi speculari: il vetro diventa satinato invece che specchiante."""
+    curve = [int(v * (1 - black * max(0.0, 1 - v / 110) ** 1.5)) for v in range(256)]          # ombre giù, mezzitoni quasi fermi
+    curve = [min(255, int(c if c < 190 else 190 + (c - 190) * high)) for c in curve]           # alte luci compresse: satinato
+    out = ImageEnhance.Color(im).enhance(sat).point(curve * 3)
+    return ImageEnhance.Contrast(out).enhance(contrast)
 
 def main():
     im = Image.open(SRC).convert("RGB"); a = np.asarray(im).astype(float); L = a.mean(axis=2); H, W = L.shape
@@ -35,13 +38,28 @@ def main():
         # dal nero al foglio: si taglia dove supera 60
         ys2 = np.where(col < 45)[0]
         if len(ys2): bot[x] = ys2.max()
+    # il bordo non è la fila di pixel: è una CURVA (Franz, 18/09 18:54). Sulla cassa si adatta un polinomio al profilo
+    # misurato (la cupola è un arco liscio), sul cinturino basta una lisciatura lunga; così il ritaglio non è mai frastagliato.
     k = 4
-    top = np.array([np.median(top[max(0, i - k):i + k + 1]) for i in range(W)]).astype(int) + 3
-    bot = np.array([np.median(bot[max(0, i - k):i + k + 1]) for i in range(W)]).astype(int) - 1
+    top = np.array([np.median(top[max(0, i - k):i + k + 1]) for i in range(W)], dtype=float)
+    bot = np.array([np.median(bot[max(0, i - k):i + k + 1]) for i in range(W)], dtype=float)
+    case = np.where(top < 200)[0]; cx0, cx1 = int(case.min()), int(case.max())
+    xs = np.arange(cx0, cx1 + 1)
+    good = np.abs(top[xs] - np.poly1d(np.polyfit(xs, top[xs], 6))(xs)) < 6        # via i pelucchi, poi si riadatta
+    fit = np.poly1d(np.polyfit(xs[good], top[xs][good], 6))
+    top[xs] = fit(xs)
+    band = np.r_[np.arange(0, cx0), np.arange(cx1 + 1, W)]
+    for arr in (top, bot):
+        sm = arr.copy()
+        for i in band: sm[i] = arr[max(0, i - 18):i + 19].mean()
+        arr[band] = sm[band]
+    lo = np.poly1d(np.polyfit(np.arange(W), bot, 3))(np.arange(W))               # il cinturino appoggia su una curva dolce
+    bot = np.minimum(bot, lo + 6)
+    top = np.round(top).astype(int) + 3; bot = np.round(bot).astype(int) - 1
     m = np.zeros((H, W), bool)
     for x in range(W): m[top[x]:bot[x] + 1, x] = True
     mask = Image.fromarray((m * 255).astype("uint8")).filter(ImageFilter.GaussianBlur(1.0))
-    body = flatten(grade(im, 1.06, 0.97)); body.putalpha(mask)
+    body = satin(grade(im, 1.0, 0.98)); body.putalpha(mask)
     # in piano: il cinturino scende da sinistra a destra di qualche pixel, si raddrizza sulla sua retta dei minimi quadrati
     xs = np.arange(W)[(bot > 0) & ((np.arange(W) < 200) | (np.arange(W) > W - 200))]
     slope = np.polyfit(xs, bot[xs], 1)[0]

@@ -82,15 +82,14 @@ export const optionsBuildAt = (p: number): OptionsBuild => ({
 export type TerminalPlane = { show: number; exit: number };
 export const terminalPlaneAt = (p: number): TerminalPlane => ({ show: p < 0 ? 0 : soft(ramp(p, 0, 0.2)), exit: soft(ramp(p, 0.85, 1)) });
 
-/** Le card che galleggiano sopra il vetro (vista laterale): la i-esima sale dal display (`rise` 0-1, atterraggio morbido) `every`
- *  battiti dopo la precedente, resta a mezz'aria con un respiro (`bob`), e le precedenti arretrano di un passo (`depth`). */
-export type FloatCard = { rise: number; bob: number; depth: number };
-export const floatAt = (p: number, i: number, n: number, gap = 0.22): FloatCard => {
-  const start = i * gap;
-  const rise = soft(ramp(p, start, start + 0.16));
-  const newest = Math.min(n - 1, Math.floor(Math.max(0, p) / gap));
-  const depth = Math.max(0, newest - i) + soft(ramp(p, (i + 1) * gap, (i + 1) * gap + 0.16)) * (i < n - 1 ? 0 : 0);
-  return { rise, bob: Math.sin(2 * Math.PI * (p - start) * 1.3) * rise, depth: Math.min(depth, 2) };
+/**
+ * Il flusso della corsia (vista laterale): l'elemento `i` entra dal vetro quando `p` supera `i·gap` e sale a velocità costante,
+ * percorrendo la corsia in `span`. Movimento continuo, senza gradini: `u` 0 è appena nato sul vetro, 1 è uscito in cima.
+ */
+export type FloatCard = { u: number; bob: number };
+export const floatAt = (p: number, i: number, _n: number, gap = 0.2, span = 0.62): FloatCard => {
+  const u = (p - i * gap) / span;
+  return { u, bob: Math.sin(2 * Math.PI * (p - i * gap) * 0.9) };
 };
 
 /**
