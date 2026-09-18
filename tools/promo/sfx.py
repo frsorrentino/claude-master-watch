@@ -94,20 +94,61 @@ def bell() -> np.ndarray:
 
 
 def thump() -> np.ndarray:
-    """La vibrazione sotto la campanella: un tonfo grave che si sente più che sentirsi."""
-    n = int(0.3 * SR)
+    """La vibrazione al polso (Franz, 23:26: «non somiglia a una vibrazione»). Non è un tonfo grave: è un motore lineare,
+    che gira attorno ai 180 Hz con l'ampiezza modulata a ~55 Hz — il ronzio ruvido che si sente sulla cassa — in due
+    impulsi come la notifica di Wear OS, ciascuno con attacco e stacco netti."""
+    n = int(0.42 * SR)
     t = np.arange(n) / SR
-    f = 74 * np.exp(-6 * t)                                   # scende da 74 a ~40 Hz
-    return np.sin(2 * np.pi * np.cumsum(f) / SR) * env(n, 0.002, 0.09, 3.0)
+    carrier = np.sin(2 * np.pi * 180 * t) + 0.35 * np.sin(2 * np.pi * 360 * t)
+    rough = 0.72 + 0.28 * np.sin(2 * np.pi * 55 * t)          # il motore non è liscio: batte
+    gate = np.zeros(n)
+    for off, dur in ((0.0, 0.115), (0.185, 0.095)):           # bzz-bzz
+        i, j = int(off * SR), int((off + dur) * SR)
+        m = j - i
+        gate[i:j] = np.clip(np.arange(m) / (0.008 * SR), 0, 1) * np.clip((m - np.arange(m)) / (0.02 * SR), 0, 1)
+    body = 0.22 * lowpass(noise(n, 3), 400)                   # il corpo dell'orologio che risuona
+    return (carrier * rough + body) * gate
 
 
 def press_rise() -> np.ndarray:
-    """La pressione lunga: un tono che sale mentre l'anello corre attorno al tasto."""
-    n = int(0.62 * SR)
+    """La pressione lunga, variante A: micro-tocchi che accelerano mentre l'anello corre attorno al tasto, e un click
+    secco quando si chiude. È un feedback aptico ripetuto, non una nota che sale."""
+    n = int(0.66 * SR)
+    x = np.zeros(n)
+    # numero fisso di tocchi, non un `while` sulla somma: i ritardi si stringono in progressione geometrica e la loro
+    # somma converge (0,105·0,82/(1−0,82) ≈ 0,48 s), quindi una condizione sul tempo non finirebbe mai
+    offs, gap, tpos = [], 0.105, 0.0
+    for _ in range(9):
+        offs.append(tpos)
+        tpos += gap
+        gap *= 0.82
+    for k, off in enumerate(offs):
+        i = int(off * SR)
+        m = min(int(0.05 * SR), n - i)
+        g = 0.45 + 0.55 * (k / max(1, len(offs) - 1))
+        x[i:i + m] += g * lowpass(noise(m, 20 + k), 2000) * env(m, 0.0006, 0.012, 5.0)
+    i = int(0.585 * SR)
+    m = n - i
+    x[i:] += 1.0 * lowpass(noise(m, 99), 3000) * env(m, 0.0006, 0.03, 3.0)   # il click di conferma
+    return x
+
+
+def press_hum() -> np.ndarray:
+    """La pressione lunga, variante B: un ronzio sordo che si apre (il filtro sale con l'anello) e si chiude in un click.
+    Meno «interfaccia», più fisico."""
+    n = int(0.66 * SR)
     t = np.arange(n) / SR
-    f = G5 * (1 + 0.5 * (t / t[-1]) ** 1.6)
-    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.7 + np.sin(4 * np.pi * np.cumsum(f) / SR) * 0.12
-    return body * env(n, 0.05, 0.5, 1.2) * np.clip(t / 0.12, 0, 1)
+    raw = noise(n, 31)
+    slow = lowpass(raw, 300)
+    open_ = lowpass(raw, 1500)
+    k = np.clip(t / 0.5, 0, 1) ** 1.4
+    x = (slow * (1 - k) + open_ * k) * (0.25 + 0.75 * k)
+    hum = 0.3 * np.sin(2 * np.pi * 110 * t) * k
+    i = int(0.585 * SR)
+    m = n - i
+    click = np.zeros(n)
+    click[i:] = lowpass(noise(m, 32), 3000) * env(m, 0.0006, 0.03, 3.0)
+    return (x + hum) * np.clip((0.62 - t) / 0.06, 0, 1) + click
 
 
 def whoosh() -> np.ndarray:
@@ -118,14 +159,15 @@ def whoosh() -> np.ndarray:
     return x * np.exp(-((t - 0.16) ** 2) / 0.006)
 
 
-SOUNDS = {"tick": tick, "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "whoosh": whoosh}
+SOUNDS = {"tick": tick, "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "pressHum": press_hum, "whoosh": whoosh}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=str(OUT))
+    ap.add_argument("--only", nargs="*", help="rigenera solo questi suoni (la macchina ha 4 GB: con un render in corso conviene)")
     a = ap.parse_args()
     out = pathlib.Path(a.dir)
-    for name, fn in SOUNDS.items():
+    for name, fn in ({k: v for k, v in SOUNDS.items() if k in a.only} if a.only else SOUNDS).items():
         x = fn()
         write(name, x, out)
         print(f"{name}.wav · {len(x) / SR:.2f} s")
