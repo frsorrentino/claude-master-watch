@@ -25,10 +25,12 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
   const W = 560, cx = width / 2;                // colonna centrale: le schede e le scritte si alternano sopra l'orologio
   const TOP = 70;                               // la corsia finisce qui: sopra, le schede sono uscite
   const GAP = 150;                              // la corsia comincia sopra l'orologio, senza toccarlo
-  const SPAN = 1.75;                             // quante schede si vedono insieme: il passo (306 px) resta maggiore dell'altezza di una scheda (279 px): mai a contatto, ma vicine
+  const SPAN = 1.84;                             // quante schede si vedono insieme: passo 291 px contro 279 di altezza: 12 px di stacco, la stessa proporzione della lista vera (212 px di card, 9 di stacco)
   const yBottom = glassY - GAP;
   // la sosta la decide la scaletta, scheda per scheda: le card lunghe si leggono, le scritte passano più svelte
-  const offset = railScrollVar(p, [...e.cards.map((c) => c.hold ?? (c.kind === "text" ? 0.2 : 0.5)), 0.8, 0.4]);
+  // l'ultima scheda si ferma al centro e resta lì: da quella posizione parte l'ingrandimento della transizione
+  const holds = e.cards.map((c, i) => c.hold ?? (i === e.cards.length - 1 ? 1.6 : c.kind === "text" ? 0.2 : 0.5));
+  const offset = railScrollVar(p, holds);
   return (
     <>
       {e.cards.map((c, i) => {
