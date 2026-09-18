@@ -90,7 +90,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           if (c.alpha <= 0) return null;
           return (
             <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={[THEME.leftMargin + HERO_CARD_PX / 2, height / 2]} toScale={HERO_CARD_PX / e.rect[2]}>
-              <UiCard w={e.rect[2]} name={e.name} age={e.age} text={e.text} light={c.travel} />
+              <UiCard w={e.rect[2]} name={e.name} age={e.age} text={e.text} badge={e.badge} icon={e.icon} light={c.travel} />
             </Flying>
           );
         }

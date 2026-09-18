@@ -35,28 +35,26 @@
    "act": "open",
    "watch": {
     "view": "front",
-    "clip": "scenes/s0_face.mp4",
-    "enter": "riseIn",
-    "exit": "zoomLeft",
-    "rate": 0.85
+    "clip": "scenes/n_tile.mp4",
+    "clipStart": 0.0
    },
    "text": {
     "lines": [
      "That’s fine."
     ],
     "accent": "fine.",
-    "sub": "Claude Master · for Wear OS"
+    "at": 1
    }
   },
   {
-   "id": "list",
+   "id": "glance",
    "at": 16,
    "len": 8,
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/s1_list.mp4",
-    "clipStart": 2.6
+    "clip": "scenes/n_tile.mp4",
+    "clipStart": 3.3
    },
    "text": {
     "lines": [
@@ -65,59 +63,64 @@
     ],
     "accent": "glance.",
     "at": 1
+   }
+  },
+  {
+   "id": "list",
+   "at": 24,
+   "len": 10,
+   "act": "know",
+   "watch": {
+    "view": "front",
+    "clip": "scenes/n_list.mp4",
+    "clipStart": 10.5
    },
    "fx": [
     {
      "kind": "cardOut",
-     "at": 4,
+     "at": 6.5,
      "len": 3.5,
      "rect": [
       26,
-      123,
+      63,
       427,
-      170
+      213
      ],
-     "name": "payments-api",
-     "age": "15 m",
-     "text": "Deployed 2.8.0, smoke tests green"
+     "name": "storefront",
+     "age": "1 m",
+     "text": "Run the checkout test suite after the Stripe webhook refactor",
+     "badge": "#2ECC71",
+     "icon": "play"
     }
    ]
   },
   {
    "id": "asks",
-   "at": 24,
-   "len": 8,
+   "at": 34,
+   "len": 6,
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/s2_question.mp4",
-    "clipStart": 3.0
+    "clip": "scenes/n_asks.mp4",
+    "clipStart": 9.2
    },
    "text": {
     "lines": [
      "It asks."
     ],
     "accent": "asks.",
-    "at": 1
-   },
-   "fx": [
-    {
-     "kind": "haptic",
-     "at": 4
-    }
-   ]
+    "at": 0.5
+   }
   },
   {
    "id": "speaks",
-   "at": 32,
+   "at": 40,
    "len": 18,
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/s2_question.mp4",
-    "clipStart": 8,
-    "freeze": true,
-    "exit": "slideOut"
+    "clip": "scenes/n_speaks.mp4",
+    "clipStart": 13.0
    },
    "text": {
     "lines": [
@@ -129,9 +132,9 @@
    "fx": [
     {
      "kind": "tap",
-     "at": 1,
-     "x": 344,
-     "y": 86
+     "at": 0.5,
+     "x": 347,
+     "y": 90
     },
     {
      "kind": "spoken",
@@ -144,39 +147,38 @@
   },
   {
    "id": "answer",
-   "at": 50,
-   "len": 6,
+   "at": 58,
+   "len": 8,
    "act": "act",
    "watch": {
     "view": "front",
-    "clip": "scenes/s2_question.mp4",
-    "clipStart": 5.6,
-    "enter": "slideIn"
+    "clip": "scenes/n_answer.mp4",
+    "clipStart": 8.5
    },
    "text": {
     "lines": [
      "You answer."
     ],
     "accent": "answer.",
-    "at": 1
+    "at": 0.5
    },
    "fx": [
     {
      "kind": "longPress",
-     "at": 3,
-     "len": 3
+     "at": 3.5,
+     "len": 2
     }
    ]
   },
   {
    "id": "follow",
-   "at": 56,
+   "at": 66,
    "len": 6,
    "act": "act",
    "watch": {
     "view": "front",
-    "clip": "scenes/s1_list.mp4",
-    "clipStart": 2.0
+    "clip": "scenes/n_follow.mp4",
+    "clipStart": 10.0
    },
    "text": {
     "lines": [
@@ -184,26 +186,18 @@
      "matters."
     ],
     "accent": "matters.",
-    "at": 1
-   },
-   "fx": [
-    {
-     "kind": "longPress",
-     "at": 2,
-     "len": 1.5
-    }
-   ]
+    "at": 0.5
+   }
   },
   {
    "id": "done",
-   "at": 62,
+   "at": 72,
    "len": 6,
    "act": "act",
    "watch": {
     "view": "front",
-    "clip": "scenes/s3_done.mp4",
-    "clipStart": 0,
-    "rate": 0.9
+    "clip": "scenes/n_done.mp4",
+    "clipStart": 22.9
    },
    "text": {
     "lines": [
@@ -211,19 +205,18 @@
      "it’s done."
     ],
     "accent": "done.",
-    "at": 1
+    "at": 0.5
    }
   },
   {
    "id": "say",
-   "at": 68,
-   "len": 8,
+   "at": 78,
+   "len": 14,
    "act": "act",
    "watch": {
     "view": "front",
-    "clip": "scenes/s4_write.mp4",
-    "clipStart": 0.6,
-    "rate": 0.65
+    "clip": "scenes/n_say.mp4",
+    "clipStart": 22.5
    },
    "text": {
     "lines": [
@@ -236,21 +229,20 @@
    "fx": [
     {
      "kind": "typed",
-     "at": 1.5,
-     "len": 3.5,
-     "text": "Great. Now update the changelog and tag the release"
+     "at": 2,
+     "len": 8,
+     "text": "Great now update the change log and tag the release"
     }
    ]
   },
   {
    "id": "watch",
-   "at": 76,
+   "at": 92,
    "len": 8,
-   "act": "act",
+   "act": "control",
    "watch": {
     "view": "front",
-    "clip": "scenes/s5_terminal.mp4",
-    "exit": "slideOut",
+    "clip": "scenes/n_watch.mp4",
     "clipStart": 7.5
    },
    "text": {
@@ -258,33 +250,31 @@
      "Watch it work."
     ],
     "accent": "work.",
-    "at": 1
+    "at": 0.5
    },
    "fx": [
     {
      "kind": "terminal",
-     "at": 2,
+     "at": 1,
      "every": 1,
      "lines": [
-      "$ pytest -q tests",
-      "42 passed in 3.1s",
       "Edit CHANGELOG.md",
-      "+ ## 2.8.0 — refund endpoint"
+      "+ ## 2.8.0 — refund endpoint, webhook retries",
+      "$ git tag v2.8.0",
+      "$ git push --tags"
      ]
     }
    ]
   },
   {
    "id": "limits",
-   "at": 84,
-   "len": 10,
+   "at": 100,
+   "len": 12,
    "act": "control",
    "watch": {
     "view": "front",
-    "clip": "scenes/s6_quota.mp4",
-    "enter": "slideIn",
-    "clipStart": 0,
-    "freeze": true
+    "clip": "scenes/n_overview_hold.mp4",
+    "clipStart": 8.5
    },
    "text": {
     "lines": [
@@ -292,12 +282,12 @@
      "limits."
     ],
     "accent": "limits.",
-    "at": 1
+    "at": 0.5
    },
    "fx": [
     {
      "kind": "gaugeHero",
-     "at": 4,
+     "at": 2,
      "len": 5,
      "cx": 385.6,
      "cy": 240.2,
@@ -311,15 +301,14 @@
   },
   {
    "id": "new",
-   "at": 94,
-   "len": 14,
+   "at": 112,
+   "len": 10,
    "act": "control",
    "watch": {
     "view": "front",
-    "clip": "scenes/s1_list.mp4",
-    "clipStart": 1.5,
-    "exit": "diveIn",
-    "rate": 0.7
+    "clip": "scenes/n_new.mp4",
+    "clipStart": 13.0,
+    "exit": "diveIn"
    },
    "text": {
     "lines": [
@@ -328,13 +317,13 @@
      "new."
     ],
     "accent": "new.",
-    "at": 1
+    "at": 0.5
    }
   },
   {
    "id": "close",
-   "at": 108,
-   "len": 16,
+   "at": 122,
+   "len": 14,
    "act": "close",
    "watch": {
     "view": "threeQuarter",

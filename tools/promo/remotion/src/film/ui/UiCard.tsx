@@ -8,12 +8,15 @@ import { UI } from "./UiTokens.ts";
  * colori della card vera, così a grandezza 1 combacia col fotogramma. `light` 0-1: quanto è fuori dallo schermo (ombra a terra
  * e luce dall'alto a sinistra, come sul vetro dell'orologio; sul display non ce n'è).
  */
-export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; light?: number }> = ({ w, name, age, text, badge = UI.badge, light = 0 }) => (
+export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; light?: number }> = ({ w, name, age, text, badge = UI.badge, icon = "check", light = 0 }) => (
   <div style={{ width: w, boxSizing: "border-box", padding: "24px 24px 19px", borderRadius: 42, background: UI.surface, color: UI.text, fontFamily: "Roboto",
     boxShadow: `inset 1px 1px 0 rgba(235,244,255,${0.16 * light}), ${16 * light}px ${24 * light}px ${44 * light}px ${-6 * light}px rgba(4,5,12,${0.62 * light})` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 16, height: 36 }}>
-      <div style={{ width: 32, height: 32, borderRadius: 7.4, background: badge, display: "grid", placeItems: "center", flex: "none" }}>
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5.5 12.5l4 4L18.5 7.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      {/* badge come `SessionBadge`: quadrato con angoli al 23 % per il lavoro, tondo per il personale; ✓ = finita, ▶ = al lavoro */}
+      <div style={{ width: 32, height: 32, borderRadius: icon === "play" ? "50%" : 7.4, background: badge, display: "grid", placeItems: "center", flex: "none" }}>
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          {icon === "play" ? <path d="M8.5 6v12l10-6z" fill="#000" /> : <path d="M5.5 12.5l4 4L18.5 7.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />}
+        </svg>
       </div>
       <div style={{ fontFamily: "Noto Sans Mono", fontSize: 28, color: UI.text2, flex: 1, whiteSpace: "nowrap" }}>{name}</div>
       <div style={{ fontSize: 33, color: UI.text2, whiteSpace: "nowrap" }}>{age}</div>

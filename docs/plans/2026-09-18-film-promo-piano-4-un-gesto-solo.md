@@ -38,16 +38,16 @@ restano. Qui cambiano scaletta, transizioni e i tre fili trasversali.
 | 10 | Know when it's done. | 6 (3,3) | `done` 22,9-26,2: lista → la schermata dell'esito «Deployed 2.8.0, smoke tests green» | il ✓ della card atterra **dentro il segno corallo**, che si riempie; il segno resta il punto del titolo | stacco |
 | 11 | Say what's next. | 14 (7,6) | `say` 22,5-30,1: microfono, le parole compaiono, invio (dettatura vera) | le parole dettate si compongono grandi accanto, stesso testo | frustata (act → control) |
 | 12 | Watch it work. | 8 (4,4) | `watch` 7,5-11,9: il terminale cresce sul TICK | terminale giro 5: il pannello esce come un oggetto, in fuga | dissolvenza |
-| 13 | Know your limits. | 12 (6,5) | `overview` 8,5-15,0 (con 2,5 s di fermo inserito sulla Quota): gauge fermo, poi lo scorrimento al ritmo a 5 ore | gauge protagonista, poi **una linea attraversa il quadro e diventa la linea del ritmo**; Work e domande aperte via | frustata |
-| 14 | Start something new. | 10 (5,45) | `new` 13,0-18,45: progetto, «Write the first message», la sessione nasce | la card nuova di storefront esce con il testo dettato | tuffo nello schermo |
+| 13 | Know your limits. | 12 (6,5) | `overview` 8,5-15,0 (con 2,5 s di fermo inserito sulla Quota): gauge fermo, poi lo scorrimento al ritmo a 5 ore | gauge protagonista, poi **una linea attraversa il quadro e diventa la linea del ritmo**; Work e domande aperte via | dissolvenza |
+| 14 | Start something new. | 10 (5,45) | `new` 13,0-18,45: progetto, «Write the first message», la sessione nasce | una **seconda sessione sul progetto storefront** (la card a 0 m con il testo dettato) esce a protagonista: storefront esiste dalla scena 4, qui nasce una sessione nuova sullo stesso progetto, come fa la clip | tuffo nello schermo (è il passaggio al nero del logo) |
 | 15 | chiusura | 14 (7,6) | tre quarti con l'icona | logo dal segno, cartello | — |
 
 Totale **136 battiti = 74,2 s**, clip sempre a 1×, tratto = battiti × 0,545 s (regola da mettere in `check.ts`: velocità ≤ 1,25×,
 tratto entro un battito dai battiti della scena). Atti e movimento di camera: **open** 1-3 (fermo, dal nero) · **know** 4-7
 (avvicinamento lento e continuo: tile → lista grande → domanda) · **act** 8-11 (deriva laterale lenta da sinistra a destra) ·
-**control** 12-14 (arretramento lento) · **close** 15 (tuffo e logo). Frustate ai tre cambi (7→8, 11→12, 14→15); dentro un
-atto solo dissolvenze e stacchi sul battito. Musica: `cut_track.py 1-7 16-27 28-45` = 34 battute = 136 battiti, con lo stop
-costruito alla scena 7.
+**control** 12-14 (arretramento lento) · **close** 15 (tuffo e logo). Frustate ai due cambi 7→8 e 11→12 (14→15 è il tuffo); dentro un
+atto solo dissolvenze e stacchi sul battito. Musica: `cut_track.py 1-7 16-27 28-45` (estremi esclusivi, come il taglio del piano 1) = 6 + 11 + 17 = 34 battute = 136
+battiti; lo stop costruito alla scena 7 prende il posto di una battuta della musica, non si aggiunge.
 
 ## 3. Musica: stop and go costruito
 

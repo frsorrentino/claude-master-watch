@@ -10,7 +10,7 @@ export type Fx =
   | { kind: "counter"; at: number; len: number; to: number; suffix: string }
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
-  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3)
+  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play" }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
