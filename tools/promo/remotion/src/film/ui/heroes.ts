@@ -99,8 +99,8 @@ export const railScroll = (steps: number, dwell = 0.58): number => {
  * `p` 0-1 è il tempo della scena; il risultato è l'offset della lista.
  */
 /** Il passo della lista: parte piano, accelera e frena a lungo (più «easing» di uno smoothstep, Franz 18/09 19:25). */
-const railEase = bezier(0.62, 0, 0.18, 1);
-export const RAIL_MOVE = 0.45;
+const railEase = bezier(0.45, 0, 0.22, 1);
+export const RAIL_MOVE = 0.66;          // il movimento occupa più tempo della sosta: scorre, non scatta
 export const railScrollVar = (p: number, holds: number[], center = 0.8): number => {
   const dur = holds.map((h) => RAIL_MOVE + Math.max(0, h));
   const total = dur.reduce((a, b) => a + b, 0);
