@@ -62,7 +62,7 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefRing }}>5-hour pace</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 6 }}>
-                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 0) * d)}</span>
+                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 0) * clamp(d * 1.15))}</span>
                   <span style={{ fontSize: 52, color: THEME.dim }}>% {e.note}</span>
                 </div>
                 {/* la linea del ritmo si disegna da sinistra: tratto pieno fino ad adesso, tratteggio sulla proiezione */}
@@ -77,7 +77,8 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Now</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 6 }}>
-                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em" }}>{e.n ?? 1}</span>
+                  {/* anche qui il numero sale da 0, come gli altri pannelli (Franz, 18/09 22:01) */}
+                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 1) * clamp(d * 2))}</span>
                   <span style={{ fontSize: 56, color: THEME.dim }}>working</span>
                 </div>
                 <div style={{ display: "flex", gap: 14, marginTop: 26 }}>
