@@ -11,7 +11,34 @@ mkdir -p out/consegna
 # GPU virtuale della VM (virgl): con --gl=egl il render va 2,5-3× più veloce di SwiftShader, qualità identica (master, 18/09 16:26:
 # 84 pixel di antialiasing su 2 milioni). GL=swangle per tornare al software in un colpo.
 GL=${GL:-egl}
-npx remotion render Film "out/consegna/$name.video.mp4" --muted --gl="$GL" "$@"
+# I tratti con 3D (ThreeCanvas) non rendono con egl: il contesto WebGL non si crea, serve swangle, che però costa 2,6 s a
+# fotogramma contro 0,6. Si rende il film in egl, i soli tratti 3D in swangle e si monta: 32 minuti invece di 96 (master, 22:24).
+# `gl3d.py` legge gli intervalli dalla scaletta, così non c'è un elenco da tenere aggiornato a mano.
+GL3D=${GL3D:-swangle}
+VCODEC=(--codec h264 --crf 18)
+mapfile -t tratti < <(python3 ../gl3d.py)
+if [ "${#tratti[@]}" -eq 0 ] || [ "$GL" = "$GL3D" ]; then
+  npx remotion render Film "out/consegna/$name.video.mp4" --muted --gl="$GL" "${VCODEC[@]}" "$@"
+else
+  total=$(python3 ../gl3d.py --total); ultimo=$((total - 1)); cur=0; n=0; rm -rf out/segmenti; mkdir -p out/segmenti
+  : > out/segmenti/lista.txt
+  extra=("$@")
+  seg() { # seg <primo> <ultimo> <renderer>
+    local f="out/segmenti/$(printf '%03d' "$n").mp4"
+    npx remotion render Film "$f" --muted --gl="$3" --frames="$1-$2" "${VCODEC[@]}" ${extra[@]+"${extra[@]}"}
+    echo "file '$(basename "$f")'" >> out/segmenti/lista.txt; n=$((n + 1))
+  }
+  for r in "${tratti[@]}"; do
+    read -r a b <<< "$r"
+    [ "$cur" -lt "$a" ] && seg "$cur" "$((a - 1))" "$GL"
+    seg "$a" "$b" "$GL3D"
+    cur=$((b + 1))
+  done
+  [ "$cur" -le "$ultimo" ] && seg "$cur" "$ultimo" "$GL"
+  ffmpeg -v error -y -f concat -safe 0 -i out/segmenti/lista.txt -c copy "out/consegna/$name.video.mp4"
+  atteso=$total; reso=$(ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 "out/consegna/$name.video.mp4")
+  [ "$reso" = "$atteso" ] || { echo "montaggio sbagliato: $reso fotogrammi invece di $atteso"; exit 1; }
+fi
 npx remotion render Film "out/consegna/$name.wav" --gl="$GL" "$@"
 # Loudness finale a due passate: prima si misura, poi si applica in modo lineare (niente compressione): -14 LUFS, picco -1 dB.
 m=$(ffmpeg -hide_banner -nostats -i "out/consegna/$name.wav" -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')
