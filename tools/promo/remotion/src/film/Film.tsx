@@ -13,7 +13,8 @@ import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
-import { Heroes, heroTravel } from "./ui/Heroes.tsx";
+import { Heroes, cameraAt } from "./ui/Heroes.tsx";
+import { Blink } from "./ui/Blink.tsx";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
@@ -39,10 +40,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
   const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero");
-  const leave = Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : Infinity);
+  // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
+  const leave = scene.out === "blink" ? Infinity : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : Infinity);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
-  const back = heroTravel(scene, GRID, frame);
+  const { zoom, focus } = cameraAt(scene, GRID, frame);
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
   const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -50,12 +52,12 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       {w && pose ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * (1 + 0.55 * back)})`, filter: back > 0 ? `blur(${8 * back}px) brightness(${1 - 0.55 * back})` : undefined }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
-      <Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * (1 + 0.55 * back) } : null} glassPx={THEME.frontGlassPx} />
+      <Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} />
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
@@ -84,6 +86,9 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
           <SceneView scene={s} {...fxLayers(s, GRID)} />
         </Sequence>
+      ))}
+      {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 16} durationInFrames={26} layout="none"><Blink word={s.text!.accent!} cut={16} /></Sequence>
       ))}
       {actChanges(TIMELINE.scenes).map((b) => (
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>

@@ -63,7 +63,8 @@
     ],
     "accent": "glance.",
     "at": 1
-   }
+   },
+   "out": "blink"
   },
   {
    "id": "list",
@@ -73,7 +74,8 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_list.mp4",
-    "clipStart": 10.5
+    "clipStart": 10.5,
+    "camera": "release"
    },
    "fx": [
     {

@@ -13,9 +13,13 @@ export type Fx =
   | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play" }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
   | { kind: "spoken"; at: number; len: number; voice: string; words: string };   // file in public/audio/
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+/** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
+ *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
+export type Camera = "close" | "release";
 export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean };
+/** Passaggio alla scena dopo (piano 4 §2 bis): `blink` = la parola in colore cresce fino a riempire il quadro e il suo nero è un battito di ciglia. */
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink" };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
 
 export class TimelineError extends Error {
@@ -57,7 +61,11 @@ export const validateTimeline = (raw: unknown): Timeline => {
       // Un'interfaccia da polso accelerata si vede (piano 4): le clip vanno a tempo reale, al massimo 1,25×.
       if (s.watch.rate !== undefined && !(s.watch.rate > 0 && s.watch.rate <= 1.25)) say(`velocità della clip ${s.watch.rate}: al massimo 1,25×`);
       if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
+      if (s.watch.camera !== undefined && !["close", "release"].includes(s.watch.camera)) say(`camera «${s.watch.camera}» sconosciuta`);
+      if (s.watch.camera === "release" && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero")) say("la camera «release» vuole un momento forte nella scena");
     }
+    if (s.out !== undefined && s.out !== "blink") say(`passaggio «${s.out}» sconosciuto`);
+    if (s.out === "blink" && !s.text?.accent) say("il battito di ciglia vuole una parola in colore da far crescere");
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);
       if (s.text.lines.some((l) => l.includes("…") || l.includes("..."))) say("puntini di sospensione nel testo");

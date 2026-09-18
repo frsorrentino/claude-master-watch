@@ -15,15 +15,28 @@ import { UiGauge } from "./UiGauge.tsx";
 /** Larghezza della card da protagonista e diametro del gauge da protagonista, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640;
 
-/** Quanto il momento forte di una scena è «fuori» in questo fotogramma (0 = niente in corso): l'orologio si avvicina di altrettanto. */
-export const heroTravel = (scene: Scene, g: Grid, frame: number): number => {
+/** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito) e quanto è
+ *  «fuori» (`travel`). Senza momento forte: p = −1, travel = 0. */
+export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; travel: number } => {
   for (const e of scene.fx ?? []) {
     if (e.kind !== "cardOut" && e.kind !== "gaugeHero") continue;
     const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
     const p = (frame - from) / len;
-    if (p >= 0 && p < 1) return (e.kind === "cardOut" ? cardOutAt(p) : gaugeHeroAt(p)).travel;
+    return { p, travel: p >= 0 && p < 1 ? (e.kind === "cardOut" ? cardOutAt(p) : gaugeHeroAt(p)).travel : 0 };
   }
-  return 0;
+  return { p: -1, travel: 0 };
+};
+
+/** La camera della scena (piano 4): `zoom` sull'orologio e `focus` (0 a fuoco, 1 sfocato e scuro dietro al protagonista). */
+export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; focus: number } => {
+  const { p, travel } = heroState(scene, g, frame);
+  if (scene.watch?.camera === "release") {
+    // si parte vicini (dopo il battito di ciglia); mentre il componente esce la camera torna indietro e resta lì
+    if (p < 0) return { zoom: 1.55, focus: 0 };
+    if (p >= 1) return { zoom: 1, focus: 0 };
+    return { zoom: 1 + 0.55 * (1 - travel), focus: 0 };
+  }
+  return { zoom: 1 + 0.55 * travel, focus: travel };
 };
 
 /** Un componente che vola dal display (rettangolo in unità del display, 480) al posto da protagonista (centro e scala nel quadro). */
