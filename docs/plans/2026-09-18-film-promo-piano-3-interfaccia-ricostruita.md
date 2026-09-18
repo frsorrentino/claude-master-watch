@@ -104,3 +104,24 @@ scartato al metro (Canvas 31,5 s: il componente sta davanti a un'interfaccia eno
 leggibile nella sosta), fantasma che sparisce prima della card (nessuno scatto: differenze 8→7→0 sugli ultimi fotogrammi).
 Aperto per Franz: durante la sosta le altre card della lista escono a ventaglio dietro la prima (proposta di master) o una sola.
 Limite noto: la deriva lenta dell'orologio avanza a scatti di un pixel (Chrome arrotonda la posizione): c'era già, si vede poco.
+
+## 8. Stato dei momenti forti (18/09, 05:15) e cosa dipende dalle riprese
+
+| Momento | Stato | Commit | Dipende dalla ripresa (piano 2) |
+|---|---|---|---|
+| 1 card che esce (list) | 6 giri, passa da fuori; punto di controllo A di Franz aperto (ventaglio di card o una sola) | 5d0c6fa | no: la lista è ferma dal secondo 4,5 della clip attuale (clip allungata con l'ultimo fotogramma) |
+| 5 gauge (limits) | 5 giri, fedeltà passata | 82f4588 | **sì**: il display è fermo (`freeze`) sulla card della quota; con la ripresa nuova lo scorrimento verso il grafico deve fermarsi sulla card dal battito 4 al 9 (il momento) e ripartire dopo |
+| 4 terminale (watch) | 4 giri, accettabile, sotto gli altri due (righe sciolte, non un oggetto) | e593880 | **sì**: righe che arrivano sul TICK ogni 0,5 s; **giro 5 da fare**: il pannello intero (`UiTerminal` con intestazione «Terminal · 08:08») parte dal rettangolo vero, esce come un solo oggetto a 900-1000 px con la camera che si avvicina, fuga simulata (skew e scala per riga, mai `rotateY`: Chrome rasterizza il testo 3D sgranato), le righe arrivano dentro sul TICK, il titolo esce prima, rientra pieno |
+| 3 onda della voce (speaks) | 1 giro | aae4842 | no; la voce vera arriverà dalla presa audio (piano 2 §3), rigenerare `question.env.json` con `envelope.py` |
+| 6 frustata (cambi d'atto) | 1 giro | 3d0f4b5 | no |
+| 2 tasti che nascono da contorno (answer) | **non fatto** | — | **sì**: la clip attuale mostra la notifica di sistema (tasti tutti celesti); serve la schermata della domanda dell'app con «1 · yes» pieno e «2 · no» scuro in vista e la pressione lunga vera. Ricetta: `UiOption` da `WideButton` (56 dp, pillola, `primary` #D3E3FD su #0A2050, tonale #23272E su #F2F4F7), corpo misurato sul fotogramma; nascono come contorno fuori dall'orologio, «1 yes» si riempie, l'anello della pressione lunga corre attorno al tasto con lo spessore che ha sul display, poi «Sent» |
+
+Lezioni misurate, valide anche per complicazione e tile se mai si ricostruiranno:
+- i componenti ricostruiti vanno impaginati alla grandezza finale (`zoom`) e solo rimpiccioliti: Chrome rasterizza alla
+  grandezza impaginata e ingrandire con `scale` un elemento da 104 px lo sgrana; niente `rotateY` sul testo;
+- `CircularProgressIndicator` di Wear M3 non è lineare: parte 5° dopo il binario, 3,09° per punto, e toglie uno stacco fisso in
+  pixel (18,4 px del display), che sull'anello interno vale più gradi; il binario è l'inchiostro al 22 % fuso sulla card;
+- i centri si misurano con un adattamento ai minimi quadrati sul binario, non a occhio (2 px di errore fanno sbucare gli archi veri);
+- la deriva lenta dell'orologio avanza a scatti di 1 px (Chrome arrotonda `left/top`): da provare `transform: translate3d()` con
+  `will-change: transform`, e se non basta render a `--scale 2` ridotto in consegna, solo sulla finale; verifica con la
+  differenza tra fotogrammi consecutivi (i 40k pixel ogni 3 fotogrammi devono sparire).
