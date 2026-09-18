@@ -5,6 +5,7 @@ import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
 import { UI } from "./UiTokens.ts";
+import { UiGauge } from "./UiGauge.tsx";
 import { soft } from "../moves.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
@@ -30,7 +31,28 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
         const d = soft(clamp((t - 0.12) / 0.45));                                        // il dato si disegna sul posto
         return (
           <div key={i} style={{ position: "absolute", left: THEME.leftMargin, top: height / 2, width: 760, translate: "0 -50%", opacity: a, fontFamily: "Inter", color: THEME.white }}>
-            {e.panel === "note" ? (
+            {e.panel === "quota" ? (
+              <>
+                <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Quota</div>
+                <div style={{ display: "flex", gap: 90, marginTop: 18 }}>
+                  {(e.rows ?? []).map((r, k) => {
+                    const p = clamp(d * 1.5 - k * 0.3);
+                    return (
+                      <div key={k} style={{ display: "flex", alignItems: "center", gap: 26 }}>
+                        <UiGauge size={150} outer={(r.pct / 100) * p} inner={((r.week ?? 0) / 100) * p} />
+                        <div>
+                          <div style={{ fontSize: 96, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
+                            {Math.round(r.pct * p)}<span style={{ fontSize: "0.45em", color: THEME.dim, marginLeft: 8 }}>%</span>
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: 34, color: THEME.dim }}>{r.name}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 26, fontSize: 38, color: THEME.dim }}>{e.note}</div>
+              </>
+            ) : e.panel === "note" ? (
               <div style={{ fontSize: 76, fontWeight: 600, lineHeight: 1.12, letterSpacing: "-0.02em" }}>
                 {(e.lines ?? []).map((l, k) => <div key={k} style={{ opacity: clamp(d * 2 - k * 0.5), translate: `0 ${(1 - clamp(d * 2 - k * 0.5)) * 18}px` }}>{k === (e.lines ?? []).length - 1 ? <span style={{ color: THEME.accent }}>{l}</span> : l}</div>)}
               </div>
@@ -66,14 +88,8 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
             ) : e.panel === "questions" ? (
               <>
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.waiting }}>Open questions</div>
-                {/* il numero non sta fermo: attorno gli corre l'anello dell'attesa, e sotto appare la domanda che aspetta */}
-                <div style={{ position: "relative", width: 260, height: 260, marginTop: 10 }}>
-                  <svg width={260} height={260} style={{ position: "absolute", inset: 0, rotate: "-90deg" }}>
-                    <circle cx={130} cy={130} r={112} fill="none" stroke="rgba(255,176,32,.18)" strokeWidth={10} />
-                    <circle cx={130} cy={130} r={112} fill="none" stroke={UI.waiting} strokeWidth={10} strokeLinecap="round" strokeDasharray={2 * Math.PI * 112} strokeDashoffset={2 * Math.PI * 112 * (1 - clamp(d * 1.3))} />
-                  </svg>
-                  <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 150, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.04em", color: UI.waiting, scale: String(0.86 + 0.14 * clamp(d * 3)) }}>{e.n ?? 1}</div>
-                </div>
+                {/* semplice passaggio da 0 a 1, senza anelli */}
+                <div style={{ fontSize: 190, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.04em", color: UI.waiting, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 1) * clamp(d * 2))}</div>
                 <div style={{ marginTop: 18, fontSize: 40, color: THEME.dim }}>{e.note}</div>
                 <div style={{ marginTop: 10, fontSize: 44, color: THEME.white, opacity: clamp(d * 1.6 - 0.5), maxWidth: 700 }}>{e.quote}</div>
               </>
@@ -90,8 +106,9 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                         <span>{r.name}</span>
                         <span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * p)} %</span>
                       </div>
-                      <div style={{ marginTop: 12, height: 16 + 900 * g2, borderRadius: 8 * (1 - g2), background: "rgba(139,180,247,.18)", position: "relative", left: -THEME.leftMargin * g2, width: 760 + (1920 - 760) * g2, transform: `translateY(${(k === 0 ? -1 : 1) * 420 * g2}px)` }}>
-                        <div style={{ width: `${r.pct * p + (100 - r.pct * p) * g2}%`, height: "100%", borderRadius: 8 * (1 - g2), background: UI.briefRing, opacity: 1 - 0.45 * g2 }} />
+                      {/* il finale: le due barre si allungano, si raddrizzano e si aprono come un sipario sulla scena dopo */}
+                      <div style={{ marginTop: 12, height: 16 + 40 * g2, borderRadius: 8, background: "rgba(139,180,247,.18)", position: "relative", left: -THEME.leftMargin * g2, width: 760 + (1400 - 760) * g2, transform: `translateY(${(k === 0 ? -1 : 1) * 260 * g2}px)`, opacity: 1 - g2 * 0.2 }}>
+                        <div style={{ width: `${r.pct * p + (100 - r.pct * p) * g2}%`, height: "100%", borderRadius: 8, background: UI.briefRing, opacity: 1 - 0.3 * g2 }} />
                       </div>
                     </div>
                   );

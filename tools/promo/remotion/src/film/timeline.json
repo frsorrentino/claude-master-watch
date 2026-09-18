@@ -380,7 +380,7 @@
   {
    "id": "limits",
    "at": 96,
-   "len": 38,
+   "len": 32,
    "act": "control",
    "watch": {
     "view": "front",
@@ -399,29 +399,36 @@
    },
    "fx": [
     {
-     "kind": "gaugeHero",
-     "at": 7,
-     "len": 6,
-     "cx": 385.6,
-     "cy": 240.2,
-     "size": 104,
-     "value": 11,
-     "week": 36,
-     "suffix": "%",
-     "phrase": "of your 5 hours"
+     "kind": "aside",
+     "at": 2,
+     "len": 8,
+     "panel": "quota",
+     "note": "of your 5 hours · 7d 36 % and 75 %",
+     "rows": [
+      {
+       "name": "personal",
+       "pct": 11,
+       "week": 36
+      },
+      {
+       "name": "work",
+       "pct": 38,
+       "week": 75
+      }
+     ]
     },
     {
      "kind": "aside",
-     "at": 17.5,
-     "len": 5,
+     "at": 10,
+     "len": 6,
      "panel": "pace",
      "n": 59,
      "note": "at 09:36, at this pace"
     },
     {
      "kind": "aside",
-     "at": 23,
-     "len": 4.5,
+     "at": 16,
+     "len": 5,
      "panel": "work",
      "n": 1,
      "note": "1 waits for you · 1 working",
@@ -433,7 +440,7 @@
     },
     {
      "kind": "aside",
-     "at": 27.5,
+     "at": 21,
      "len": 5,
      "panel": "questions",
      "n": 1,
@@ -442,8 +449,8 @@
     },
     {
      "kind": "aside",
-     "at": 32.5,
-     "len": 5.5,
+     "at": 26,
+     "len": 6,
      "panel": "context",
      "rows": [
       {
@@ -461,7 +468,7 @@
   },
   {
    "id": "new",
-   "at": 134,
+   "at": 128,
    "len": 10,
    "act": "control",
    "watch": {
@@ -481,7 +488,7 @@
   },
   {
    "id": "close",
-   "at": 144,
+   "at": 138,
    "len": 14,
    "act": "close",
    "watch": {
