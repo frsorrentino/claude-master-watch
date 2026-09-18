@@ -367,12 +367,12 @@
   {
    "id": "limits",
    "at": 90,
-   "len": 50,
+   "len": 33,
    "act": "control",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_overview_hold.mp4",
-    "clipStart": 1.2,
+    "clip": "scenes/n_overview_cut.mp4",
+    "clipStart": 0,
     "rate": 1.25,
     "enter": "slideIn"
    },
@@ -387,7 +387,7 @@
    "fx": [
     {
      "kind": "gaugeHero",
-     "at": 10,
+     "at": 7,
      "len": 6,
      "cx": 385.6,
      "cy": 240.2,
@@ -398,16 +398,10 @@
      "phrase": "of your 5 hours"
     },
     {
-     "kind": "panelHero",
-     "at": 35,
-     "len": 6,
+     "kind": "aside",
+     "at": 19,
+     "len": 5,
      "panel": "work",
-     "rect": [
-      26,
-      195,
-      449,
-      238
-     ],
      "n": 1,
      "note": "1 waits for you · 1 working",
      "bars": [
@@ -417,16 +411,18 @@
      ]
     },
     {
-     "kind": "panelHero",
-     "at": 44,
-     "len": 6,
+     "kind": "aside",
+     "at": 24,
+     "len": 4,
+     "panel": "questions",
+     "n": 1,
+     "note": "payments-api · for 5 m"
+    },
+    {
+     "kind": "aside",
+     "at": 27.5,
+     "len": 5.5,
      "panel": "context",
-     "rect": [
-      31,
-      232,
-      443,
-      247
-     ],
      "rows": [
       {
        "name": "payments-api",
@@ -436,13 +432,14 @@
        "name": "storefront",
        "pct": 18
       }
-     ]
+     ],
+     "out": "bars"
     }
    ]
   },
   {
    "id": "new",
-   "at": 140,
+   "at": 123,
    "len": 10,
    "act": "control",
    "watch": {
@@ -462,7 +459,7 @@
   },
   {
    "id": "close",
-   "at": 150,
+   "at": 133,
    "len": 14,
    "act": "close",
    "watch": {

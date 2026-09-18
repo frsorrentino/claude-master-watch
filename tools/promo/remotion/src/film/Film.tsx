@@ -10,6 +10,7 @@ import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
 import { SideWatch } from "./SideWatch.tsx";
 import { Floating } from "./ui/Floating.tsx";
+import { Aside } from "./ui/Aside.tsx";
 import { WordMask } from "./WordMask.tsx";
 import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
@@ -80,6 +81,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </div>
       ) : null}
       {w?.view !== "side" && (scene.fx ?? []).some((f) => f.kind === "float") ? <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} /></div> : null}
+      <Aside scene={scene} g={GRID} />
       <div style={{ position: "absolute", inset: 0, opacity: 1 - underTakeover }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}

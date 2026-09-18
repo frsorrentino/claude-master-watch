@@ -12,6 +12,7 @@ export type Fx =
   | { kind: "terminal"; at: number; every: number; lines: string[] }
   | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; fromOut?: boolean; toCenter?: boolean }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
+  | { kind: "aside"; at: number; len: number; panel: "work" | "questions" | "context"; n?: number; note?: string; bars?: number[]; rows?: { name: string; pct: number }[]; out?: "bars" }   // il dato della Panoramica compare fermo a sinistra e si anima sul posto; `out: "bars"`: le sue barre diventano il passaggio alla scena dopo
   | { kind: "panelHero"; at: number; len: number; panel: "work" | "context"; rect: [number, number, number, number]; n?: number; note?: string; bars?: number[]; rows?: { name: string; pct: number }[] }   // un pannello della Panoramica esce e si anima (barre che si riempiono, percentuali che contano)
   | { kind: "optionsBuild"; at: number; len: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
@@ -46,7 +47,7 @@ export class TimelineError extends Error {
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn", "side"];
 const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
-const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero"];
+const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero", "aside"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
 export const totalBeats = (t: Timeline): number => (t.scenes.length ? t.scenes[t.scenes.length - 1].at + t.scenes[t.scenes.length - 1].len : 0);
