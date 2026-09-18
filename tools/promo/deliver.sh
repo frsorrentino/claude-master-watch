@@ -9,7 +9,7 @@ cd "$(dirname "$0")/remotion"
 name="$1"; shift || true
 mkdir -p out/consegna
 npx remotion render Film "out/consegna/$name.video.mp4" --muted "$@"
-npx remotion render Film "out/consegna/$name.wav"
+npx remotion render Film "out/consegna/$name.wav" "$@"
 # Loudness finale a due passate: prima si misura, poi si applica in modo lineare (niente compressione): -14 LUFS, picco -1 dB.
 m=$(ffmpeg -hide_banner -nostats -i "out/consegna/$name.wav" -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')
 g() { echo "$m" | python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])"; }
