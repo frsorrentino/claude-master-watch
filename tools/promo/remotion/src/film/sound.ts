@@ -1,17 +1,19 @@
 import type { Timeline } from "./timeline.ts";
 
-export type SfxName = "notify" | "thump" | "tick" | "pressRise" | "whoosh";
+export type SfxName = "notify" | "thump" | "tick" | "pressRise" | "whoosh" | "shutter";
 export type SfxCue = { beat: number; name: SfxName; gainDb: number };
 
 export const dbToGain = (db: number): number => Math.pow(10, db / 20);
 
 /** Priorità quando due suoni cadono nello stesso battito: la notifica, poi la pressione, il tocco, il soffio. */
-const RANK: SfxName[] = ["notify", "pressRise", "tick", "whoosh", "thump"];
+const RANK: SfxName[] = ["notify", "shutter", "pressRise", "tick", "whoosh", "thump"];
 
 export const sfxCues = (t: Timeline): SfxCue[] => {
   const all: SfxCue[] = [];
   for (const s of t.scenes) {
     if (s.text && (s.text.size ?? "title") === "title" && !s.watch) all.push({ beat: s.at + (s.text.at ?? 0), name: "whoosh", gainDb: -26 });
+    // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09)
+    if (s.out === "blink") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
     for (const f of s.fx ?? []) {
       const beat = s.at + f.at;
       if (f.kind === "haptic") all.push({ beat, name: "notify", gainDb: -16 });
