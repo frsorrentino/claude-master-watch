@@ -112,7 +112,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
                 <div style={{ zoom: k }}>
                   <UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} />
                   <div style={{ height: gap / k }} />
-                  <UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.08)} />
+                  <UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.06)} />
                 </div>
               </div>
             </React.Fragment>

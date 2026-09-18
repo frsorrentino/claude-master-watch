@@ -39,9 +39,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
-  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero");
+  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
-  const leave = scene.out === "blink" ? Infinity : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : Infinity);
+  const leave = scene.out === "blink" ? total + 1000 : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom, focus } = cameraAt(scene, GRID, frame);
