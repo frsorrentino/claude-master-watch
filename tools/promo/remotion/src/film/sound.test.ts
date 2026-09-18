@@ -37,3 +37,16 @@ test("stop and go: la musica tace di colpo sul battito e rientra in tre fotogram
   assert.equal(stopGain(130, w), 0);
   assert.ok(stopGain(160, w) > 0 && stopGain(161, w) < 1 && stopGain(163, w) === 1);
 });
+
+test("il battito di ciglia ha il suo scatto, sul taglio con la scena dopo", () => {
+  const b = validateTimeline({
+    bpm: 100, fps: 30, offsetSeconds: 0,
+    scenes: [
+      { id: "a", at: 0, len: 8, act: "know", watch: { view: "front", clip: "scenes/x.mp4" }, text: { lines: ["One glance."], accent: "glance." }, out: "blink" },
+      { id: "b", at: 8, len: 4, act: "know", watch: { view: "front", clip: "scenes/x.mp4" } },
+    ],
+  } as unknown);
+  const s = sfxCues(b).find((c) => c.name === "shutter");
+  assert.ok(s, "lo scatto manca");
+  assert.equal(s!.beat, 8, "lo scatto cade sul taglio, non all'inizio della scena");
+});
