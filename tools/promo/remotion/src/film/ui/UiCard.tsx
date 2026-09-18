@@ -18,7 +18,7 @@ export const UiCard: React.FC<{ w: number; name: string; age: string; text: stri
           {icon === "play" ? <path d="M8.5 6v12l10-6z" fill="#000" /> : <path d="M5.5 12.5l4 4L18.5 7.5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />}
         </svg>
       </div>
-      <div style={{ fontFamily: "Noto Sans Mono", fontSize: 28, color: UI.text2, flex: 1, whiteSpace: "nowrap" }}>{name}</div>
+      <div style={{ fontFamily: "Cousine", fontSize: 29, color: UI.text2, flex: 1, whiteSpace: "nowrap" }}>{name}</div>
       <div style={{ fontSize: 33, color: UI.text2, whiteSpace: "nowrap" }}>{age}</div>
     </div>
     <div style={{ marginTop: 0, fontSize: 36, lineHeight: "46px", letterSpacing: -0.6 }}>{text}</div>

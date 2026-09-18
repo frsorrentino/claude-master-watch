@@ -1,0 +1,2 @@
+Cousine (Regular) - Copyright 2010 Google Inc. (Steve Matteson), Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0
+Copiato da /usr/share/fonts/chromeos/croscore/ il 18/09/2026: il monospazio più vicino al Droid Sans Mono dell'orologio, per il terminale e i nomi delle sessioni ricostruiti.

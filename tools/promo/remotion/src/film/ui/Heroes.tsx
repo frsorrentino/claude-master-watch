@@ -60,7 +60,9 @@ const Flying: React.FC<{ c: Flight; from: [number, number, number, number]; u: n
       <div style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity: c.alpha }}>
         {/* il componente è impaginato alla grandezza da protagonista (`zoom`) e poi solo rimpicciolito: Chrome rasterizza alla
             grandezza impaginata, e ingrandire con `scale` un elemento da 104 px lo sgrana */}
-        <div style={{ translate: "-50% -50%", width: "max-content", scale: String(scale / toScale) }}>
+        {/* il contenitore ha esattamente la misura del rettangolo di partenza (scalata): così il centro è quello del rettangolo
+            anche se il contenuto sporge (il terminale con le righe che arrivano) */}
+        <div style={{ translate: "-50% -50%", width: rw * toScale, height: rh * toScale, scale: String(scale / toScale) }}>
           <Plane3D ry={yaw} perspective={2600 / scale}><div style={{ zoom: toScale }}>{children}</div></Plane3D>
         </div>
       </div>
@@ -119,7 +121,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           if (c.alpha <= 0) return null;
           const every = spanFrames(g, scene.at, e.every);
           // le righe arrivano una per volta dal momento in cui il pannello è fuori; le prime due ci sono già (come sul display)
-          const shown = 2 + Math.max(0, (frame - from - len * 0.25) / every);
+          const shown = 3 + Math.max(0, (frame - from - len * 0.25) / every);   // sul display ci sono già tre righe quando il blocco si stacca
           return (
             <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={[THEME.leftMargin + HERO_TERMINAL_PX / 2, height / 2]} toScale={HERO_TERMINAL_PX / e.rect[2]}>
               <UiTerminalPanel w={e.rect[2]} header={e.header} title={e.title} lines={e.lines} shown={shown} morph={c.morph} />

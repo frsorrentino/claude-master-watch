@@ -7,6 +7,7 @@ const FACES: [string, string, string][] = [
   ["Noto Sans Mono", "fonts/NotoSansMono-Regular.ttf", "400"],
   ["Roboto", "fonts/Roboto-Regular.ttf", "400"],           // il carattere dell'interfaccia dell'orologio, per i componenti ricostruiti
   ["Roboto", "fonts/Roboto-Medium.ttf", "500"],
+  ["Cousine", "fonts/Cousine-Regular.ttf", "400"],       // il monospazio dell'orologio (Droid Sans Mono) ha Cousine come gemello
 ];
 
 /** Il render aspetta i caratteri: senza, i primi fotogrammi escono con il carattere di ripiego. */
