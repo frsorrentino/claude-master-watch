@@ -49,6 +49,17 @@ tratto entro un battito dai battiti della scena). Atti e movimento di camera: **
 atto solo dissolvenze e stacchi sul battito. Musica: `cut_track.py 1-7 16-27 28-45` (estremi esclusivi, come il taglio del piano 1) = 6 + 11 + 17 = 34 battute = 136
 battiti; lo stop costruito alla scena 7 prende il posto di una battuta della musica, non si aggiunge.
 
+## 2 bis. La catena dei passaggi (Franz, 08:37: continuità tra le scene con elementi che passano da interfaccia a grafica)
+
+Ogni passaggio ha **un oggetto che lo attraversa**; uno stacco nudo non esiste. Regola verificabile in tavola: nell'ultimo
+fotogramma di una scena e nel primo della dopo c'è lo stesso oggetto, in due stati.
+3→4 lo swipe della tile · 4→5 «glance.» cresce e il suo nero è il battito di ciglia · 5→6 il ▶ del badge di storefront diventa
+il ❓ della domanda · 6→7 il ❓ diventa il ▶ da toccare · 7→8 l'onda della voce si arrotola nell'anello attorno a «1 · yes» ·
+8→9 l'anello diventa la campanella · 9→10 la campanella diventa il ✓ che atterra nel segno · 10→11 il segno diventa il
+microfono · 11→12 le parole dettate scendono e diventano righe del terminale · 12→13 l'ultima riga si stira in una linea e
+diventa la linea del ritmo a 5 ore · 13→14 la linea diventa la pillola «New session» · 14→15 la card nuova si tuffa nel logo.
+Le frustate (7→8, 11→12) accompagnano l'oggetto, non lo sostituiscono.
+
 ## 3. Musica: stop and go costruito
 
 La traccia originale (45 battute) non ha silenzi ma ha un **breakdown alle battute 19-27** (−8/−11 dB). Taglio nuovo con

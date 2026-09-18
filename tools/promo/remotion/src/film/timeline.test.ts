@@ -59,3 +59,9 @@ test("al posto della clip una scena può mostrare un'immagine ferma, ma deve ess
   t.scenes[1].watch.still = "https://example.com/x.jpg";
   assert.match(problems(t).join("\n"), /list: immagine «https:\/\/example.com\/x.jpg»: attesa un PNG dentro public/);
 });
+
+test("una clip accelerata oltre 1,25× è un errore: al polso si vede", () => {
+  const t = base(); t.scenes[1].watch.rate = 1.4;
+  assert.match(problems(t).join("\n"), /velocità della clip 1.4/);
+  t.scenes[1].watch.rate = 1.25; assert.equal(problems(t).length, 0);
+});

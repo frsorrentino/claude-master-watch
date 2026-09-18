@@ -54,6 +54,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (!VIEWS.includes(s.watch.view)) say(`vista «${s.watch.view}» sconosciuta`);
       for (const m of [s.watch.enter, s.watch.exit]) if (m !== undefined && !MOVES.includes(m)) say(`movimento «${m}» sconosciuto`);
       if (!/^scenes\/[\w.-]+\.mp4$/.test(s.watch.clip)) say(`clip «${s.watch.clip}»: attesa scenes/<nome>.mp4`);
+      // Un'interfaccia da polso accelerata si vede (piano 4): le clip vanno a tempo reale, al massimo 1,25×.
+      if (s.watch.rate !== undefined && !(s.watch.rate > 0 && s.watch.rate <= 1.25)) say(`velocità della clip ${s.watch.rate}: al massimo 1,25×`);
       if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
     }
     if (s.text) {
