@@ -10,19 +10,23 @@ export type Fx =
   | { kind: "counter"; at: number; len: number; to: number; suffix: string }
   | { kind: "typed"; at: number; len: number; text: string }
   | { kind: "terminal"; at: number; every: number; lines: string[] }
-  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play" }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
+  | { kind: "cardOut"; at: number; len: number; rect: [number, number, number, number]; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; fromOut?: boolean }   // la card ferma sul display (rettangolo 0-480) esce e torna (piano 3); badge: colore dell'account, icona di stato
   | { kind: "gaugeHero"; at: number; len: number; cx: number; cy: number; size: number; value: number; week: number; suffix: string; phrase: string }   // il gauge della quota (centro e lato nel display) esce, si disegna col contatore, torna
   | { kind: "optionsBuild"; at: number; len: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
+  | { kind: "shake"; at: number }   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number };   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
 export type WatchCue = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
 export type Camera = "close" | "release";
-export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string };
+export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top" };   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
 /** Passaggio alla scena dopo (piano 4 §2 bis): `blink` = la parola in colore cresce fino a riempire il quadro e il suo nero è un battito di ciglia. */
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink" };
+/** Una chiave del passaggio (piano 4 §2 bis): dove sta e che forma ha l'oggetto che attraversa il taglio, nel display (0-480)
+ *  o nel quadro (`space: "frame"`). Il taglio interpola da `carryOut` della scena a `carryIn` della scena dopo. */
+export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x: number; y: number; w: number; h: number; color: string; glyph?: "play" | "question" | "check" | "bell" | "mic" | "none"; glyphColor?: string; stroke?: number; space?: "display" | "frame" };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
 
 export class TimelineError extends Error {
@@ -36,7 +40,7 @@ export class TimelineError extends Error {
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn"];
 const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
-const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane"];
+const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
 export const totalBeats = (t: Timeline): number => (t.scenes.length ? t.scenes[t.scenes.length - 1].at + t.scenes[t.scenes.length - 1].len : 0);
@@ -68,6 +72,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (s.watch.camera === "release" && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero")) say("la camera «release» vuole un momento forte nella scena");
     }
     if (s.out !== undefined && s.out !== "blink") say(`passaggio «${s.out}» sconosciuto`);
+    for (const k of [s.carryOut, s.carryIn]) if (k && (k.space ?? "display") === "display" && !(k.x >= 0 && k.x <= 480 && k.y >= 0 && k.y <= 480)) say(`chiave del passaggio (${k.x}, ${k.y}) fuori dal display`);
     if (s.out === "blink" && !s.text?.accent) say("il battito di ciglia vuole una parola in colore da far crescere");
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);
@@ -88,7 +93,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (!half(f.at) || !half(len)) say(`l'effetto ${f.kind} ha tempi che non sono mezzi battiti (at ${f.at})`);
       else if (f.at + len > s.len || f.at >= s.len) say(`l'effetto ${f.kind} al battito ${f.at} esce dalla scena`);
       if (f.kind === "tap" && !(f.x >= 0 && f.x <= 480 && f.y >= 0 && f.y <= 480)) say(`tocco (${f.x}, ${f.y}) fuori dallo schermo 480×480`);
-      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "cardOut" || f.kind === "gaugeHero") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
+      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "shake" || f.kind === "cardOut" || f.kind === "gaugeHero") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
       if (f.kind === "gaugeHero") {
         if (!(f.size > 0 && f.cx - f.size / 2 >= 0 && f.cy - f.size / 2 >= 0 && f.cx + f.size / 2 <= 480 && f.cy + f.size / 2 <= 480)) say(`il gauge (${f.cx}, ${f.cy}, ${f.size}) esce dallo schermo 480×480`);
         if (!(f.value >= 0 && f.value <= 100 && f.week >= 0 && f.week <= 100)) say("il gauge vuole valori in percentuale 0-100");
@@ -100,7 +105,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
         if (s.watch?.view !== "front") say("la card esce solo dal display frontale");
       }
       if (f.kind === "optionsBuild") for (const r of [f.yes, f.no]) if (!(r[0] >= 0 && r[1] >= 0 && r[2] > 0 && r[3] > 0 && r[0] + r[2] <= 480 && r[1] + r[3] <= 480)) say(`il tasto (${String(r)}) esce dallo schermo 480×480`);
-      const HERO = ["cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane"];
+      const HERO = ["cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake"];
       if (HERO.includes(f.kind) && (s.fx ?? []).filter((x) => HERO.includes(x.kind)).length > 1) say("un solo momento forte per scena");
     }
   }

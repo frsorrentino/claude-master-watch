@@ -13,8 +13,11 @@ import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
-import { Heroes, cameraAt } from "./ui/Heroes.tsx";
+import { Heroes, TerminalBackdrop, cameraAt } from "./ui/Heroes.tsx";
 import { Blink } from "./ui/Blink.tsx";
+import { Carry } from "./ui/Carry.tsx";
+import geo from "./mockup.geometry.json";
+import type { Key } from "./ui/carry.ts";
 import { fxLayers } from "./Fx.tsx";
 import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
@@ -34,25 +37,30 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
   const closing = scene.endCard ? closingAt(frame / beat) : null;
-  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit) : null;
+  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit, frame + beatToFrame(GRID, scene.at)) : null;
   const cx = (scene.text ? THEME.watchX : 0.5) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
-  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild" || f.kind === "terminalPlane");
+  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
   const leave = scene.out === "blink" ? total + 1000 : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
-  const { zoom, focus } = cameraAt(scene, GRID, frame);
+  const { zoom, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
+  // vibrazione: la notifica arriva e l'orologio trema per 10 fotogrammi (Franz, 13:13)
+  const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
+  const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
+  const shake = sh >= 0 && sh < 10 ? 4 * (1 - sh / 10) * Math.sin(sh * 2.6) : 0;
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
   const extraOut = interpolate(frame, [leave, leave + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
+      <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
@@ -62,9 +70,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: "center" }}>
-            <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.size} sub={scene.text.sub}
-              perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={leave - textAt} align={w ? "left" : "center"} />
+          <div style={{ position: "absolute", left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
+            <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub}
+              perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
         </Sequence>
@@ -77,6 +85,16 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
 export const actChanges = (scenes: Scene[]): number[] =>
   scenes.filter((s, i) => i > 0 && s.act !== scenes[i - 1].act && s.act !== "close" && scenes[i - 1].act !== "open").map((s) => s.at);
 
+/** Una chiave nel display diventa una chiave nel quadro: il display frontale sta al centro dell'orologio (`watchX` se c'è testo),
+ *  con 480 unità = 2·displayR·glassPx/(2·glassR) pixel, a riposo (posa senza movimenti né deriva: sui tagli l'orologio è fermo). */
+const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key => {
+  if (k.space === "frame") return k;
+  const u = ((THEME.frontGlassPx / (2 * geo.front.glassR)) * 2 * geo.front.displayR) / 480;
+  const cx = (scene.text ? THEME.watchX : 0.5) * 1920;
+  return { ...k, x: cx + (k.x - 240) * u, y: 540 + (k.y - 240) * u, w: k.w * u, h: k.h * u, stroke: (k.stroke ?? 4) * u };
+};
+const CARRY_FRAMES = 14;
+
 export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   useFilmFonts();
   return (
@@ -87,6 +105,12 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
           <SceneView scene={s} {...fxLayers(s, GRID)} />
         </Sequence>
       ))}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
+        if (!s.carryOut || !next?.carryIn) return null;
+        // centrato sul taglio: l'oggetto lascia la scena negli ultimi 7 fotogrammi e arriva nei primi 7 della dopo
+        return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
+      })}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 16} durationInFrames={26} layout="none"><Blink word={s.text!.accent!} cut={16} /></Sequence>
       ))}

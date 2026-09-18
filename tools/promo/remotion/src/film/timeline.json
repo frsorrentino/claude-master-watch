@@ -75,14 +75,14 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_list.mp4",
-    "clipStart": 12.9,
+    "clipStart": 13.0,
     "camera": "release"
    },
    "fx": [
     {
      "kind": "cardOut",
-     "at": 6.5,
-     "len": 3.5,
+     "at": 0,
+     "len": 10,
      "rect": [
       26,
       63,
@@ -93,9 +93,27 @@
      "age": "1 m",
      "text": "Run the checkout test suite after the Stripe webhook refactor",
      "badge": "#2ECC71",
-     "icon": "play"
+     "icon": "play",
+     "fromOut": true
     }
-   ]
+   ],
+   "text": {
+    "lines": [
+     "One glance."
+    ],
+    "accent": "glance.",
+    "place": "top"
+   },
+   "carryOut": {
+    "shape": "circle",
+    "x": 66,
+    "y": 107,
+    "w": 30,
+    "h": 30,
+    "color": "#2ECC71",
+    "glyph": "play",
+    "glyphColor": "#000"
+   }
   },
   {
    "id": "asks",
@@ -104,8 +122,8 @@
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_asks.mp4",
-    "clipStart": 9.2
+    "clip": "scenes/n_speaks.mp4",
+    "clipStart": 9.7
    },
    "text": {
     "lines": [
@@ -113,6 +131,32 @@
     ],
     "accent": "asks.",
     "at": 0.5
+   },
+   "fx": [
+    {
+     "kind": "shake",
+     "at": 2.5
+    }
+   ],
+   "carryIn": {
+    "shape": "square",
+    "x": 105,
+    "y": 89.5,
+    "w": 27,
+    "h": 27,
+    "color": "#3C81F2",
+    "glyph": "question",
+    "glyphColor": "#fff"
+   },
+   "carryOut": {
+    "shape": "square",
+    "x": 105,
+    "y": 89.5,
+    "w": 27,
+    "h": 27,
+    "color": "#3C81F2",
+    "glyph": "question",
+    "glyphColor": "#fff"
    }
   },
   {
@@ -151,7 +195,27 @@
      "at": 0.5,
      "len": 4
     }
-   ]
+   ],
+   "carryIn": {
+    "shape": "circle",
+    "x": 346.5,
+    "y": 89.5,
+    "w": 83,
+    "h": 83,
+    "color": "#23272E",
+    "glyph": "play",
+    "glyphColor": "#D3E3FD"
+   },
+   "carryOut": {
+    "shape": "line",
+    "space": "frame",
+    "x": 550,
+    "y": 840,
+    "w": 800,
+    "h": 0,
+    "color": "#D97757",
+    "stroke": 3.5
+   }
   },
   {
    "id": "answer",
@@ -195,7 +259,27 @@
      "yesLabel": "1 · yes",
      "noLabel": "2 · no"
     }
-   ]
+   ],
+   "carryIn": {
+    "shape": "pill",
+    "space": "frame",
+    "x": 530,
+    "y": 444,
+    "w": 760,
+    "h": 196,
+    "color": "#D3E3FD",
+    "glyph": "none"
+   },
+   "carryOut": {
+    "shape": "pill",
+    "space": "frame",
+    "x": 960,
+    "y": 540,
+    "w": 2600,
+    "h": 1400,
+    "color": "#D3E3FD",
+    "glyph": "none"
+   }
   },
   {
    "id": "follow",
@@ -214,6 +298,26 @@
     ],
     "accent": "matters.",
     "at": 0.5
+   },
+   "carryIn": {
+    "shape": "circle",
+    "x": 216.5,
+    "y": 96,
+    "w": 34,
+    "h": 34,
+    "color": "#FFE08A",
+    "glyph": "bell",
+    "glyphColor": "#1F1147"
+   },
+   "carryOut": {
+    "shape": "circle",
+    "x": 216.5,
+    "y": 96,
+    "w": 34,
+    "h": 34,
+    "color": "#FFE08A",
+    "glyph": "bell",
+    "glyphColor": "#1F1147"
    }
   },
   {
@@ -233,6 +337,26 @@
     ],
     "accent": "done.",
     "at": 0.5
+   },
+   "carryIn": {
+    "shape": "square",
+    "x": 66,
+    "y": 107,
+    "w": 30,
+    "h": 30,
+    "color": "#3C81F2",
+    "glyph": "check",
+    "glyphColor": "#fff"
+   },
+   "carryOut": {
+    "shape": "square",
+    "x": 66,
+    "y": 107,
+    "w": 30,
+    "h": 30,
+    "color": "#3C81F2",
+    "glyph": "check",
+    "glyphColor": "#fff"
    }
   },
   {
@@ -260,7 +384,27 @@
      "len": 8,
      "text": "Great now update the change log and tag the release"
     }
-   ]
+   ],
+   "carryIn": {
+    "shape": "circle",
+    "x": 239,
+    "y": 395.5,
+    "w": 100,
+    "h": 100,
+    "color": "#23272E",
+    "glyph": "mic",
+    "glyphColor": "#F2F4F7"
+   },
+   "carryOut": {
+    "shape": "circle",
+    "x": 239,
+    "y": 395.5,
+    "w": 100,
+    "h": 100,
+    "color": "#23272E",
+    "glyph": "mic",
+    "glyphColor": "#F2F4F7"
+   }
   },
   {
    "id": "watch",
@@ -282,8 +426,8 @@
    "fx": [
     {
      "kind": "terminalPlane",
-     "at": 3.5,
-     "len": 4.5,
+     "at": 1.5,
+     "len": 6.5,
      "rect": [
       26,
       163,
@@ -302,7 +446,27 @@
      ],
      "every": 0.75
     }
-   ]
+   ],
+   "carryIn": {
+    "shape": "circle",
+    "space": "frame",
+    "x": 240,
+    "y": 420,
+    "w": 40,
+    "h": 40,
+    "color": "#D97757",
+    "glyph": "none"
+   },
+   "carryOut": {
+    "shape": "line",
+    "space": "frame",
+    "x": 960,
+    "y": 700,
+    "w": 1200,
+    "h": 0,
+    "color": "#B0B8C4",
+    "stroke": 3
+   }
   },
   {
    "id": "limits",
@@ -325,8 +489,8 @@
    "fx": [
     {
      "kind": "gaugeHero",
-     "at": 1.5,
-     "len": 5,
+     "at": 3,
+     "len": 6.5,
      "cx": 385.6,
      "cy": 240.2,
      "size": 104,
@@ -335,7 +499,25 @@
      "suffix": "%",
      "phrase": "of your 5 hours"
     }
-   ]
+   ],
+   "carryIn": {
+    "shape": "arc",
+    "x": 385.6,
+    "y": 240.2,
+    "w": 92,
+    "h": 92,
+    "color": "#8BB4F7",
+    "stroke": 6
+   },
+   "carryOut": {
+    "shape": "arc",
+    "x": 385.6,
+    "y": 240.2,
+    "w": 92,
+    "h": 92,
+    "color": "#8BB4F7",
+    "stroke": 6
+   }
   },
   {
    "id": "new",
@@ -350,12 +532,20 @@
    },
    "text": {
     "lines": [
-     "Start",
-     "something",
-     "new."
+     "Start the",
+     "next one."
     ],
-    "accent": "new.",
+    "accent": "next",
     "at": 0.5
+   },
+   "carryIn": {
+    "shape": "pill",
+    "x": 240,
+    "y": 200.5,
+    "w": 300,
+    "h": 56,
+    "color": "#D3E3FD",
+    "glyph": "none"
    }
   },
   {

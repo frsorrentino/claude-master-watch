@@ -4,7 +4,7 @@ import { spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
 import type { Scene } from "./timeline.ts";
 import { THEME } from "./theme.ts";
-import { cardOutAt, gaugeHeroAt, terminalPlaneAt } from "./ui/heroes.ts";
+import { cardOutAt, gaugeHeroAt } from "./ui/heroes.ts";
 import { UiGauge } from "./ui/UiGauge.tsx";
 import { UI } from "./ui/UiTokens.ts";
 
@@ -47,10 +47,10 @@ export const HapticRings: React.FC = () => {
 
 /** Il posto lasciato dalla card che esce (piano 3): un fantasma del colore della superficie, senza testo, finché non rientra
  *  (una toppa nera si leggeva come un buco nel render: master, 18/09 02:22). */
-export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number }> = ({ rect, frames }) => {
+export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number; fromOut?: boolean }> = ({ rect, frames, fromOut }) => {
   const f = useCurrentFrame();
   const [x, y, w, h] = rect;
-  const patch = cardOutAt(f / frames).patch;
+  const patch = cardOutAt(f / frames, fromOut).patch;
   return (
     <>
       <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.bg, opacity: patch }} />
@@ -70,22 +70,15 @@ export const GaugeHole: React.FC<{ cx: number; cy: number; size: number; frames:
   );
 };
 
-/** Il posto lasciato dal terminale che esce: nero come lo sfondo della schermata, finché non rientra. */
-export const TerminalHole: React.FC<{ rect: [number, number, number, number]; frames: number }> = ({ rect, frames }) => {
-  const f = useCurrentFrame();
-  const [x, y, w, h] = rect;
-  return <div style={{ position: "absolute", left: x, top: y, width: w, height: h, background: UI.bg, opacity: terminalPlaneAt(f / frames).patch }} />;
-};
-
 export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; around: React.ReactNode } => {
   const at = (b: number) => spanFrames(g, scene.at, b);
   const fx = scene.fx ?? [];
   return {
     overlay: fx.map((e, i) =>
       e.kind === "tap" ? <Sequence key={i} from={at(e.at)} durationInFrames={14} layout="none"><TapDot x={e.x} y={e.y} /></Sequence>
-      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
+      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} fromOut={e.fromOut} /></Sequence>
       : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
-      : e.kind === "terminalPlane" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><TerminalHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} /></Sequence> : null),
+      : null),
     around: fx.map((e, i) =>
       e.kind === "longPress" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at) + 8} layout="none"><LongPressArc frames={at(e.at + e.len) - at(e.at)} /></Sequence>
       : e.kind === "haptic" ? <Sequence key={i} from={at(e.at)} durationInFrames={26} layout="none"><HapticRings /></Sequence> : null),

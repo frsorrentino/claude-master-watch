@@ -17,8 +17,9 @@ export const WordMask: React.FC<{
     const away = exitAt === undefined ? 0 : interpolate(frame, [exitAt, exitAt + 8], [0, -115], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
     // il punto finale del titolo è il segno dell'app (piano 4, filo 1): la parola perde il suo «.» e il segno le sta accanto,
     // alla larghezza di un punto, sulla linea di base; entra ed esce con la parola
-    const last = i === total - 1 && w.endsWith(".") && size === "title";
-    const text = last ? w.slice(0, -1) : w;
+    // il segno dell'app come punto finale del titolo (piano 4, filo 1) è stato tolto: Franz (18/09 13:13) lo leggeva come un refuso
+    const last = false;
+    const text = w;
     return (
       <span key={i} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom", padding: "0.08em 0 0.16em", marginRight: "0.26em" }}>
         <span style={{ display: "inline-block", translate: `0 ${up + away}%`, color: w === accent ? THEME.accent : THEME.white }}>

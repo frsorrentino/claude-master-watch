@@ -32,19 +32,28 @@ const moveAt = (m: Move, t: number): Pose => {
     // entrata della chiusura: l'orologio rimpicciolisce e sale, e lì RESTA (a fine entrata non torna a riposo) per lasciare il posto al cartello
     case "settleSmall": return { x: 0, y: -0.2 * inOut(t), scale: 1 - 0.5 * inOut(t), tilt: 0 };
     // uscita dell'apertura: dentro il quadrante della complication di sinistra, centro (85, 240,5) e raggio 63 su 480 (misurati sul
-    // fotogramma). Inquadratura finale simmetrica: il quadrante al centro del quadro a 3,4×, deriva di fine scena compensata.
-    case "zoomLeft": return { x: 0.1739 * inOut(t), y: 0.0078 * inOut(t), scale: 1 + 2.301 * inOut(t), tilt: 0 };
+    // fotogramma). Inquadratura finale simmetrica: il quadrante al centro del quadro a 3,4× (la deriva si spegne durante l'uscita).
+    case "zoomLeft": return { x: 0.1739 * inOut(t), y: -0.0022 * inOut(t), scale: 1 + 2.4 * inOut(t), tilt: 0 };
     // uscita della penultima scena: dentro lo schermo fino a riempire il quadro (il display al centro), verso il nero da cui nasce il logo
-    case "diveIn": return { x: -0.19 * in3(t), y: 0.01 * in3(t), scale: 1 + 6.3 * in3(t), tilt: 0 };
+    case "diveIn": return { x: -0.19 * in3(t), y: 0, scale: 1 + 6.52 * in3(t), tilt: 0 };
     case "pullOut": return { x: 0, y: 0, scale: 1 - 0.45 * inOut(t), tilt: 4 * inOut(t) };
   }
 };
 
-export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move): Pose => {
+/** La deriva lenta è una funzione del fotogramma ASSOLUTO del film, non della scena: ripartendo da zero a ogni scena faceva un
+ *  micro-scatto sui tagli (Franz, 18/09 13:13). Un respiro di 14 s, di pochi millesimi del quadro e un grado e mezzo. */
+export const driftAt = (absFrame: number): Pose => {
+  const t = (absFrame / 30) / 14 * 2 * Math.PI;
+  return { x: 0.006 * Math.sin(t), y: -0.005 + 0.005 * Math.cos(t * 0.7), scale: 1.015 + 0.015 * Math.sin(t * 0.5), tilt: 0.9 * Math.sin(t) };
+};
+
+export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move, absFrame = frame): Pose => {
   const a = enter ? moveAt(enter, clamp(frame / moveFrames)) : REST;
   const b = exit ? moveAt(exit, clamp((frame - (total - moveFrames)) / moveFrames)) : REST;
-  const p = clamp(frame / Math.max(1, total));
-  const drift: Pose = { x: 0.006 * Math.sin(p * Math.PI), y: -0.01 * p, scale: 1 + 0.03 * p, tilt: 1.5 * Math.sin(p * Math.PI) - 0.75 };
+  // durante un'uscita la deriva si spegne: l'inquadratura finale del movimento è esatta, senza il respiro sopra
+  const bw = exit ? 1 - clamp((frame - (total - moveFrames)) / moveFrames) : 1;
+  const d0 = driftAt(absFrame);
+  const drift: Pose = { x: d0.x * bw, y: d0.y * bw, scale: 1 + (d0.scale - 1) * bw, tilt: d0.tilt * bw };
   const tilt = Math.max(-10, Math.min(10, a.tilt + b.tilt + drift.tilt));
   return { x: a.x + b.x + drift.x, y: a.y + b.y + drift.y, scale: a.scale * b.scale * drift.scale, tilt };
 };
