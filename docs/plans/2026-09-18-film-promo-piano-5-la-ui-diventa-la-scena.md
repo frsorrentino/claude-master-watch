@@ -25,6 +25,22 @@ La scaletta ha preso una strada in parte diversa, decisa con Franz mentre si cos
   gauge che si apre in due campi). Il 13 è superato dalla tapparella.
 - **Aperti con Franz**: domanda corta per «It speaks», voce AI per la dettatura, chiusura (c'è una prova in 3D).
 
+### La durata: 128 battiti dichiarati, 155 nel film (84,5 s)
+
+Ricostruzione, battito per battito, di dove sono andati i 45 battiti in più rispetto alle scene elencate qui (110):
+- **limits +25** (10 → 35): Franz ha chiesto la Panoramica **dal video vero e per intero**, con i cinque dati che
+  compaiono fermi a sinistra uno dopo l'altro; cinque pannelli non stanno in 10 battiti. Più 8,5 di tapparella a cavallo.
+- **loop +8** (6 → 14): la scena laterale con l'orologio a terra sostituisce tre scene del piano (9, 10, 11) che ne
+  valevano 24: **il film ci ha guadagnato 10 battiti**, non li ha persi.
+- **accounts +6**: scena nuova, «Every account. One view.», chiesta da Franz perché altrimenti le schede duplicate
+  degli account non si capiscono.
+- **speaks +2, answer +2, list +2**: i tagli previsti qui (18 → 16, 14 → 12) non sono stati fatti perché la domanda
+  corta e la voce nuova non ci sono ancora; restano da fare.
+
+Quindi la crescita è la somma di richieste esplicite, non una deriva — con un'eccezione che resta aperta: **la durata
+totale non è mai stata ratificata**. Se 84,5 s sono troppi, i posti dove tagliare sono «It speaks» (18 battiti su uno
+schermo quasi fermo) e la coda della Panoramica.
+
 ## 1. Scaletta (110 bpm; battiti; clip del 18/09 a 1×)
 
 | # | Scena · titolo | Battiti | Sul display | Il passaggio alla scena dopo (≥ 3 battiti, dentro i battiti della scena) |
