@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { spanFrames } from "../beats.ts";
 import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
-import { railAt, railScroll } from "./heroes.ts";
+import { railAt, railScrollVar } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
 import { UI } from "./UiTokens.ts";
 import { THEME } from "../theme.ts";
@@ -27,14 +27,16 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
   const GAP = 150;                              // la corsia comincia sopra l'orologio, senza toccarlo
   const SPAN = 1.6;                             // quante schede si vedono insieme: il passo (389 px) resta maggiore dell'altezza di una scheda, così non si toccano mai
   const yBottom = glassY - GAP;
-  const offset = railScroll(p * (e.cards.length + SPAN - 1));
+  // la sosta la decide la scaletta, scheda per scheda: le card lunghe si leggono, le scritte passano più svelte
+  const offset = railScrollVar(p, [...e.cards.map((c) => c.hold ?? (c.kind === "text" ? 0.35 : 0.9)), 1.2, 0.6]);
   return (
     <>
       {e.cards.map((c, i) => {
-        const d = offset - i;                    // 0 = appena entrata in fondo alla corsia, SPAN = uscita in cima
-        if (d <= -0.05 || d >= SPAN) return null;
+        const d = offset - i;                    // 0 = appena entrata in fondo alla corsia, SPAN = in cima
         const u = d / SPAN;
         const y = yBottom - (yBottom - TOP) * u;
+        // la scheda non sparisce ai capi: resta piccola e appena trasparente finché non esce davvero dal quadro
+        if (d <= -0.06 || y < -240) return null;
         const rail = railAt(u);
         const isText = c.kind === "text";
         const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio

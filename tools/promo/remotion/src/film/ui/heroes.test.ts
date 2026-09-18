@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, terminalPlaneAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -49,8 +49,18 @@ test("la lista scorre di un passo alla volta e si sofferma su ogni scheda", () =
 });
 
 test("la corsia deforma come le liste di Wear OS: piccola sotto, larga al centro, piccola in cima", () => {
-  assert.ok(Math.abs(railAt(0).scale - 0.68) < 1e-9 && railAt(0).alpha === 0);
+  assert.ok(Math.abs(railAt(0).scale - 0.62) < 1e-9 && Math.abs(railAt(0).alpha - 0.45) < 1e-9, "ai capi resta piccola e visibile");
   assert.ok(Math.abs(railAt(0.5).scale - 1) < 1e-9 && railAt(0.5).alpha === 1);
-  assert.ok(Math.abs(railAt(1).scale - 0.68) < 1e-9 && railAt(1).alpha < 1e-9);
+  assert.ok(Math.abs(railAt(1).scale - 0.62) < 1e-9 && railAt(1).alpha > 0.4, "non sparisce mai");
   assert.ok(railAt(0.25).scale > 0.85 && railAt(0.25).scale < 1);
+});
+
+test("la sosta è diversa per scheda, e cade quando la scheda è al centro della corsia", () => {
+  const holds = [0.2, 1.2];
+  assert.ok(Math.abs(railScrollVar(0, holds) - (-0.2)) < 1e-9, "la prima parte da sotto il centro");
+  const firstDone = 0.45 / 2.3;
+  assert.ok(Math.abs(railScrollVar(firstDone, holds) - 0.8) < 1e-9, "ferma con la prima al centro");
+  assert.ok(Math.abs(railScrollVar(0.65 / 2.3, holds) - 0.8) < 1e-9, "resta ferma per tutta la sosta");
+  assert.ok(Math.abs(railScrollVar(1, holds) - 1.8) < 1e-9);
+  assert.ok(railScrollVar(0.9, holds) === railScrollVar(0.7, holds), "sosta lunga sulla seconda: non si muove");
 });

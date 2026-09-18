@@ -94,12 +94,30 @@ export const railScroll = (steps: number, dwell = 0.58): number => {
 };
 
 /**
+ * Lo stesso scorrimento ma con **sosta diversa per scheda** (Franz, 18/09 19:21: «poteva soffermarsi su una card un po' di più
+ * per farla leggere»): `holds[i]` è quanto la lista resta ferma sulla scheda `i`, nella stessa unità del movimento (`MOVE`).
+ * `p` 0-1 è il tempo della scena; il risultato è l'offset della lista.
+ */
+/** Il passo della lista: parte piano, accelera e frena a lungo (più «easing» di uno smoothstep, Franz 18/09 19:25). */
+const railEase = bezier(0.62, 0, 0.18, 1);
+export const RAIL_MOVE = 0.45;
+export const railScrollVar = (p: number, holds: number[], center = 0.8): number => {
+  const dur = holds.map((h) => RAIL_MOVE + Math.max(0, h));
+  const total = dur.reduce((a, b) => a + b, 0);
+  let t = clamp(p) * total, i = 0;
+  while (i < dur.length && t >= dur[i]) { t -= dur[i]; i++; }
+  // `center`: la sosta cade quando la scheda è al centro della corsia, non sul passo intero
+  if (i >= dur.length) return dur.length - (1 - center);
+  return i + railEase(clamp(t / RAIL_MOVE)) - (1 - center);
+};
+
+/**
  * La deformazione delle liste di Wear OS (`SurfaceTransformation`, Franz 18/09 18:40): una scheda entra piccola in basso, è
  * più larga al centro e torna piccola salendo; la scala dipende dalla QUOTA, non dal tempo. `t` 0-1 dal bordo basso della
  * corsia (0, dove la scheda nasce) alla cima (1, dove esce). Il testo non si deforma: sale liscio.
+ * Le schede ai capi NON spariscono (Franz, 18/09 19:19): restano piccole e appena trasparenti, come nella lista vera.
  */
 export const railAt = (t: number): { scale: number; alpha: number } => {
-  const u = clamp(t);
-  const bell = Math.sin(Math.PI * u);
-  return { scale: 0.68 + 0.32 * bell, alpha: Math.min(1, 1.6 * bell) };
+  const bell = Math.sin(Math.PI * clamp(t));
+  return { scale: 0.62 + 0.38 * bell, alpha: 0.45 + 0.55 * Math.min(1, 1.5 * bell) };
 };
