@@ -44,7 +44,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
   const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
-  const leave = scene.out === "blink" ? total + 1000 : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000);
+  const leave = scene.out === "blink" || scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
@@ -93,7 +93,7 @@ const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key =>
   const cx = (scene.text ? THEME.watchX : 0.5) * 1920;
   return { ...k, x: cx + (k.x - 240) * u, y: 540 + (k.y - 240) * u, w: k.w * u, h: k.h * u, stroke: (k.stroke ?? 4) * u };
 };
-const CARRY_FRAMES = 14;
+const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un lampo)
 
 export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   useFilmFonts();

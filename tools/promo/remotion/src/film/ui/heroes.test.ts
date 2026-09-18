@@ -28,10 +28,10 @@ test("il gauge parte pieno, si svuota in volo, si disegna fuori col numero, poi 
 });
 
 test("i tasti nascono, l'anello corre, il tasto si gonfia e poi diventa lo sfondo", () => {
-  assert.equal(optionsBuildAt(0.3).build, 1);
-  assert.ok(optionsBuildAt(0.5).ring > 0.4 && optionsBuildAt(0.68).ring === 1);
-  assert.ok(optionsBuildAt(0.73).pop > 0.9 && optionsBuildAt(0.8).pop < 0.01);
-  assert.ok(optionsBuildAt(0.84).fill === 0 && optionsBuildAt(0.999).fill > 0.99);
+  assert.equal(optionsBuildAt(0.2).build, 1);
+  assert.ok(optionsBuildAt(0.52).ring > 0.4 && optionsBuildAt(0.63).ring === 1);
+  assert.ok(optionsBuildAt(0.675).pop > 0.9 && optionsBuildAt(0.75).pop < 0.01);
+  assert.ok(optionsBuildAt(0.86).fill === 0 && optionsBuildAt(0.999).fill > 0.99);
 });
 
 test("il terminale del PC compare dietro e si ritira alla fine", () => {

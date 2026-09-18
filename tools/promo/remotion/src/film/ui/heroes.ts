@@ -67,12 +67,12 @@ export type OptionsBuild = { build: number; ring: number; alpha: number; travel:
 /** Dopo la pressione (`ring` 1) il tasto si gonfia un attimo (`pop`) e poi cresce fino a diventare lo sfondo (`fill`): la
  *  transizione alla scena dopo è il tasto stesso (Franz, 13:13). */
 export const optionsBuildAt = (p: number): OptionsBuild => ({
-  build: soft(ramp(p, 0, 0.3)),
-  ring: ramp(p, 0.3, 0.68),
-  pop: Math.sin(Math.PI * ramp(p, 0.68, 0.78)),
-  fill: soft(ramp(p, 0.84, 1)),
+  build: soft(ramp(p, 0, 0.2)),
+  ring: ramp(p, 0.42, 0.63),          // in tempo con la pressione lunga vera (battiti 4,5-6,5 su 10)
+  pop: Math.sin(Math.PI * ramp(p, 0.63, 0.72)),
+  fill: soft(ramp(p, 0.86, 1)),
   alpha: p < 0 || p >= 1 ? 0 : 1,
-  travel: p < 0 || p >= 1 ? 0 : soft(ramp(p, 0, 0.2)),
+  travel: p < 0 || p >= 1 ? 0 : soft(ramp(p, 0, 0.15)),
 });
 
 /** Il terminale lascia il display (0-0,25), resta fuori come finestra del PC mentre le righe arrivano, rientra (0,78-0,95).

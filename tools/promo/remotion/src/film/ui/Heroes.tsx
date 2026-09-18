@@ -145,7 +145,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           const k = HERO_OPTION_PX / e.yes[2], gap = (e.no[1] - (e.yes[1] + e.yes[3])) * k;
           const top = height / 2 - (e.yes[3] * k + gap + e.no[3] * k) / 2;
           // dopo la pressione il tasto «yes» si gonfia e poi cresce fino a coprire il quadro: è lui lo sfondo della scena dopo
-          const grow = 1 + 0.06 * o.pop + 6 * o.fill;
+          const grow = 1 + 0.06 * o.pop + 12 * o.fill;
           return (
             <React.Fragment key={i}>
               <div style={{ position: "absolute", inset: 0, opacity: 0.55 * o.travel * (1 - o.fill), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />

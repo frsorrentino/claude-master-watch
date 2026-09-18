@@ -28,11 +28,22 @@ export const radiusOf = (k: Key): number => (k.shape === "circle" ? Math.max(k.w
 
 /** Lo stato del contenitore a `t` 0-1 tra due chiavi: centro, misura, raggio e colore interpolati; glifi in dissolvenza incrociata
  *  a metà (0,35-0,65), così non si vedono mai due glifi sovrapposti a metà forza. */
+/** Quanto l'oggetto sale a protagonista a metà passaggio (Franz, 13:22: il morphing deve guidare l'attenzione): un piccolo
+ *  badge da 40 px passa per 220 px al centro del taglio, poi si posa alla misura d'arrivo. Gli oggetti già grandi non crescono. */
+export const HERO_MIN = 220;
 export const carryAt = (from: Key, to: Key, t: number) => {
   const e = carryEase(clamp(t));
+  const bell = Math.sin(Math.PI * clamp(t));
+  const w0 = lerp(from.w, to.w, e), h0 = lerp(from.h, to.h, e);
+  const boost = Math.max(0, HERO_MIN - Math.min(w0, h0)) * bell;
+  const w = w0 + boost, h = h0 + boost;
+  const rr = lerp(radiusOf(from), radiusOf(to), e);
+  // a metà passaggio l'oggetto si sposta verso il campo libero a sinistra dell'orologio (x 600, y 540 nel quadro): il morphing
+  // avviene davanti agli occhi, non sopra il display che lo coprirebbe
+  const lift = bell * bell;
   return {
-    x: lerp(from.x, to.x, e), y: lerp(from.y, to.y, e), w: lerp(from.w, to.w, e), h: lerp(from.h, to.h, e),
-    r: lerp(radiusOf(from), radiusOf(to), e), color: mixColor(from.color, to.color, e),
+    x: lerp(lerp(from.x, to.x, e), 600, lift * 0.85), y: lerp(lerp(from.y, to.y, e), 540, lift * 0.85), w, h,
+    r: rr * (w / Math.max(1, w0)), color: mixColor(from.color, to.color, e),
     fromGlyph: 1 - clamp((t - 0.35) / 0.3), toGlyph: clamp((t - 0.35) / 0.3),
   };
 };

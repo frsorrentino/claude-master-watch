@@ -9,8 +9,13 @@ const b: Key = { shape: "circle", x: 500, y: 300, w: 100, h: 100, color: "#23272
 test("il passaggio parte esatto dalla prima chiave e arriva esatto sulla seconda", () => {
   const s = carryAt(a, b, 0), e = carryAt(a, b, 1);
   assert.deepEqual([s.x, s.y, s.w, s.r], [100, 100, 30, radiusOf(a)]);
-  assert.deepEqual([e.x, e.y, e.w, e.r], [500, 300, 100, 50]);
+  for (const [v, want] of [[e.x, 500], [e.y, 300], [e.w, 100], [e.r, 50]] as [number, number][]) assert.ok(Math.abs(v - want) < 1e-9);
   assert.equal(s.color, "rgb(60,129,242)"); assert.equal(e.color, "rgb(35,39,46)");
+});
+
+test("a metà passaggio un badge piccolo sale a protagonista, agli estremi ha la misura delle chiavi", () => {
+  assert.equal(carryAt(a, b, 0).w, 30); assert.ok(Math.abs(carryAt(a, b, 1).w - 100) < 1e-9);
+  assert.ok(carryAt(a, b, 0.5).w >= 220, `a metà è ${carryAt(a, b, 0.5).w}`);
 });
 
 test("i glifi si scambiano a metà, mai due a metà forza", () => {

@@ -232,7 +232,7 @@
      "You answer."
     ],
     "accent": "answer.",
-    "at": 0.5
+    "place": "top"
    },
    "fx": [
     {
@@ -242,8 +242,8 @@
     },
     {
      "kind": "optionsBuild",
-     "at": 3,
-     "len": 5,
+     "at": 0.5,
+     "len": 9.5,
      "yes": [
       26,
       150,
@@ -421,7 +421,7 @@
      "Watch it work."
     ],
     "accent": "work.",
-    "at": 0.5
+    "place": "top"
    },
    "fx": [
     {
