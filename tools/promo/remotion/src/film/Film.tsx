@@ -68,10 +68,10 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.66 + pose.y * height}px, 0) scale(${pose.scale})` }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.78 + pose.y * height}px, 0) scale(${pose.scale})` }}>
           <SideWatch widthPx={THEME.sideCasePx} />
         </div>
-        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.66} /></div>
+        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.78} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn, filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>

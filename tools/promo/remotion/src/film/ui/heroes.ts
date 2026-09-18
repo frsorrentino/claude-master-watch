@@ -83,13 +83,14 @@ export type TerminalPlane = { show: number; exit: number };
 export const terminalPlaneAt = (p: number): TerminalPlane => ({ show: p < 0 ? 0 : soft(ramp(p, 0, 0.2)), exit: soft(ramp(p, 0.85, 1)) });
 
 /**
- * Il flusso della corsia (vista laterale): l'elemento `i` entra dal vetro quando `p` supera `i·gap` e sale a velocità costante,
- * percorrendo la corsia in `span`. Movimento continuo, senza gradini: `u` 0 è appena nato sul vetro, 1 è uscito in cima.
+ * Lo scorrimento della corsia (vista laterale): una LISTA vera, non elementi indipendenti (Franz, 18/09 19:03). Le schede
+ * stanno a passo costante e la lista scorre di un passo alla volta, **soffermandosi su ogni scheda**: dentro ogni passo il
+ * primo tratto è movimento (curva morbida), il resto è sosta. `steps` = tempo in passi; il risultato è l'offset della lista.
  */
-export type FloatCard = { u: number; bob: number };
-export const floatAt = (p: number, i: number, _n: number, gap = 0.2, span = 0.62): FloatCard => {
-  const u = (p - i * gap) / span;
-  return { u, bob: Math.sin(2 * Math.PI * (p - i * gap) * 0.9) };
+export const railScroll = (steps: number, dwell = 0.58): number => {
+  const k = Math.floor(steps), f = steps - k;
+  const m = clamp(f / (1 - dwell));
+  return k + m * m * (3 - 2 * m);
 };
 
 /**

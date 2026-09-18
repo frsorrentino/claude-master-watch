@@ -3,16 +3,16 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { spanFrames } from "../beats.ts";
 import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
-import { floatAt, railAt } from "./heroes.ts";
+import { railAt, railScroll } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
 import { UI } from "./UiTokens.ts";
 import { THEME } from "../theme.ts";
 
 /**
- * Le card che **scorrono sopra** l'orologio appoggiato a terra (Franz, 18/09 18:24). Coordinate di schermo, non del mockup:
- * ogni card nasce dal vetro (`glassY`), sale e continua a salire mentre arriva la successiva; chi arriva in cima esce dal quadro.
- * Un flusso, non un mucchio: a regime se ne vedono due o tre, la più bassa è la più nuova e la più nitida. Nel flusso le card
- * si alternano alle scritte (Franz, 18/09 18:30): il titolo della scena non sta più a lato, scorre anche lui.
+ * La corsia sopra l'orologio appoggiato a terra: una LISTA che scorre, come sul polso. Le schede stanno a passo costante
+ * (`PITCH`), la corsia comincia SOPRA l'orologio senza toccarlo (`GAP`), la lista avanza di un passo alla volta e si sofferma
+ * su ogni scheda (`railScroll`), e ogni scheda si deforma con la quota come nelle liste di Wear OS (`railAt`): stretta in
+ * basso, larga al centro, stretta in cima. Le scritte scorrono nella stessa corsia, alternate alle schede, ma non si deformano.
  */
 export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ scene, g, glassY }) => {
   const frame = useCurrentFrame();
@@ -22,19 +22,23 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
   const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
   const p = (frame - from) / len;
   if (p < 0) return null;
-  const W = 760, cx = width / 2;                // colonna centrale: le card e le scritte si alternano sopra l'orologio
-  const TOP = 60;                               // la corsia finisce qui: sopra, le schede sono uscite
+  const W = 760, cx = width / 2;                // colonna centrale: le schede e le scritte si alternano sopra l'orologio
+  const TOP = 70;                               // la corsia finisce qui: sopra, le schede sono uscite
+  const GAP = 150;                              // la corsia comincia sopra l'orologio, senza toccarlo
+  const SPAN = 2.4;                             // quante schede si vedono insieme: il passo è costante
+  const yBottom = glassY - GAP;
+  const offset = railScroll(p * (e.cards.length + SPAN - 1));
   return (
     <>
       {e.cards.map((c, i) => {
-        const f = floatAt(p, i, e.cards.length);
-        if (f.u <= 0 || f.u >= 1) return null;
-        // quota lineare nel tempo (scorrimento continuo); scala e opacità vengono dalla quota, come nella lista dell'orologio
-        const y = glassY - (glassY - TOP) * f.u + 6 * f.bob;
-        const rail = railAt(f.u);
+        const d = offset - i;                    // 0 = appena entrata in fondo alla corsia, SPAN = uscita in cima
+        if (d <= -0.05 || d >= SPAN) return null;
+        const u = d / SPAN;
+        const y = yBottom - (yBottom - TOP) * u;
+        const rail = railAt(u);
         const isText = c.kind === "text";
         const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio
-        const a = isText ? Math.min(1, Math.sin(Math.PI * f.u) * 2) : rail.alpha;
+        const a = isText ? Math.min(1, Math.sin(Math.PI * u) * 2.2) : rail.alpha;
         if (c.kind === "text") return (
           <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
             <div style={{ translate: "-50% -50%", width: W + 220, textAlign: "center", scale: String(s), fontFamily: "Inter", fontWeight: 600, fontSize: 82, lineHeight: 1.08, letterSpacing: "-0.02em", color: THEME.white }}>
@@ -45,7 +49,7 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY: number }> = ({ 
         return (
           <div key={i} style={{ position: "absolute", left: cx, top: y, width: 0, height: 0, opacity: a, zIndex: 10 + i }}>
             {/* ombra sul vetro solo per la card più bassa: è quella appoggiata alla luce del display */}
-            {f.u < 0.22 && !isText ? <div style={{ position: "absolute", left: -W / 2, top: glassY - y - 10, width: W, height: 26, borderRadius: "50%", background: "rgba(0,0,0,.5)", filter: "blur(12px)", opacity: 1 - f.u / 0.22 }} /> : null}
+
             <div style={{ translate: "-50% -50%", width: W, scale: String(s), perspective: 1600 }}>
               <div style={{ transform: "rotateX(10deg)", transformOrigin: "50% 100%", position: "relative" }}>
                 <div style={{ zoom: W / 427 }}>

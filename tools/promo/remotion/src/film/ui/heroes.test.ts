@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardOutAt, floatAt, gaugeHeroAt, optionsBuildAt, railAt, terminalPlaneAt } from "./heroes.ts";
+import { cardOutAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -40,11 +40,12 @@ test("il terminale del PC compare dietro e si ritira alla fine", () => {
   assert.ok(terminalPlaneAt(0.5).exit === 0 && terminalPlaneAt(0.99).exit > 0.9);
 });
 
-test("il flusso della corsia è continuo: ogni elemento entra dopo il precedente e sale a velocità costante", () => {
-  assert.ok(floatAt(0, 0, 3).u === 0 && floatAt(0, 1, 3).u < 0, "il secondo non è ancora nato");
-  assert.ok(Math.abs(floatAt(0.31, 0, 3).u - 0.5) < 1e-9, "a metà corsia");
-  assert.ok(floatAt(0.2, 1, 3).u === 0 && floatAt(0.51, 1, 3).u > 0.49, "il secondo segue di un passo");
-  assert.ok(floatAt(0.62, 0, 3).u >= 1, "il primo è uscito quando il terzo entra");
+test("la lista scorre di un passo alla volta e si sofferma su ogni scheda", () => {
+  assert.equal(railScroll(0), 0);
+  assert.ok(railScroll(0.2) > 0.2 && railScroll(0.42) === 1, "il passo si compie nel primo 42 % del tempo");
+  assert.equal(railScroll(0.8), 1, "poi resta ferma sulla scheda");
+  assert.equal(railScroll(1), 1);
+  assert.ok(railScroll(2.42) === 3, "ogni passo uguale");
 });
 
 test("la corsia deforma come le liste di Wear OS: piccola sotto, larga al centro, piccola in cima", () => {
