@@ -281,8 +281,8 @@
    "fx": [
     {
      "kind": "terminalPlane",
-     "at": 2.5,
-     "len": 5.5,
+     "at": 3.5,
+     "len": 4.5,
      "rect": [
       26,
       163,

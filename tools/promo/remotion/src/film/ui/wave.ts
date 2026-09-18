@@ -36,7 +36,9 @@ export const wavePathFrom = (from: [number, number], x0: number, x1: number, y: 
   // attraversa mai il testo sul display
   const [fx, fy] = from; const m = 24;
   const ty = top ?? fy - 260;
-  const P = [[fx, fy], [fx - 160, ty], [x1 - 140, ty + 60], [x1, y]];   // scende a sinistra del vetro, mai sopra il testo del display
+  // dal ■ (in alto a destra) esce dal vetro verso l'alto a destra, il punto di ghiera più vicino; gira sopra la cassa e scende a
+  // sinistra, fino alla colonna: mai sopra l'ora o il testo del display (master, 18/09 10:25)
+  const P = [[fx, fy], [fx + 150, ty - 20], [x1 - 160, ty - 30], [x1, y]];
   for (let k = 0; k <= m; k++) {
     const t = k / m, a = 1 - t;
     const x = a * a * a * P[0][0] + 3 * a * a * t * P[1][0] + 3 * a * t * t * P[2][0] + t * t * t * P[3][0];

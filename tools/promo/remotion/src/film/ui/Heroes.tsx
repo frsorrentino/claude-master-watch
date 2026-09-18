@@ -109,7 +109,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           const start = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
           return (
             <Sequence key={i} from={start} durationInFrames={len} layout="none">
-              <UiWaveFrom file={e.voice.replace(/\.wav$/, ".env.json")} from={from} x0={THEME.leftMargin} x1={THEME.leftMargin + 720} y={height / 2 + 300} top={dy - (glassPx / 2) * pose.scale - 50} />
+              <UiWaveFrom file={e.voice.replace(/\.wav$/, ".env.json")} from={from} x0={THEME.leftMargin} x1={THEME.leftMargin + 720} y={height / 2 + 300} top={dy - (glassPx / 2) * pose.scale - 70} />
             </Sequence>
           );
         }
