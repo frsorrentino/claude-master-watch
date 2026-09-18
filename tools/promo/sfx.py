@@ -97,17 +97,19 @@ def thump() -> np.ndarray:
     """La vibrazione al polso (Franz, 23:26: «non somiglia a una vibrazione»). Non è un tonfo grave: è un motore lineare,
     che gira attorno ai 180 Hz con l'ampiezza modulata a ~55 Hz — il ronzio ruvido che si sente sulla cassa — in due
     impulsi come la notifica di Wear OS, ciascuno con attacco e stacco netti."""
-    n = int(0.42 * SR)
+    n = int(0.52 * SR)
     t = np.arange(n) / SR
-    carrier = np.sin(2 * np.pi * 180 * t) + 0.35 * np.sin(2 * np.pi * 360 * t)
-    rough = 0.72 + 0.28 * np.sin(2 * np.pi * 55 * t)          # il motore non è liscio: batte
+    carrier = np.sin(2 * np.pi * 168 * t) + 0.35 * np.sin(2 * np.pi * 360 * t)
+    rough = 0.80 + 0.20 * np.sin(2 * np.pi * 42 * t)          # il motore non è liscio: batte
     gate = np.zeros(n)
-    for off, dur in ((0.0, 0.115), (0.185, 0.095)):           # bzz-bzz
+    # impulsi più lunghi e con i bordi smussati: Franz (23:43) la sentiva troppo secca
+    for off, dur in ((0.0, 0.165), (0.225, 0.135)):           # bzz-bzz
         i, j = int(off * SR), int((off + dur) * SR)
         m = j - i
-        gate[i:j] = np.clip(np.arange(m) / (0.008 * SR), 0, 1) * np.clip((m - np.arange(m)) / (0.02 * SR), 0, 1)
+        gate[i:j] = np.clip(np.arange(m) / (0.022 * SR), 0, 1) ** 0.7 * np.clip((m - np.arange(m)) / (0.05 * SR), 0, 1) ** 0.8
     body = 0.22 * lowpass(noise(n, 3), 400)                   # il corpo dell'orologio che risuona
-    return (carrier * rough + body) * gate
+    tail = 0.18 * np.sin(2 * np.pi * 168 * t) * env(n, 0.22, 0.12, 3.0)   # la cassa continua un attimo dopo il motore
+    return (carrier * rough + body) * gate + tail
 
 
 def press_rise() -> np.ndarray:
@@ -151,6 +153,36 @@ def press_hum() -> np.ndarray:
     return (x + hum) * np.clip((0.62 - t) / 0.06, 0, 1) + click
 
 
+def press_two() -> np.ndarray:
+    """Pressione lunga, variante C (Franz, 23:43: le prime due non convincono): la pressione NON suona. Un tocco morbido
+    quando il dito appoggia, silenzio mentre l'anello corre, e un click pieno con un filo di nota quando si conferma."""
+    n = int(0.68 * SR)
+    x = np.zeros(n)
+    m = int(0.08 * SR)
+    x[:m] += 0.5 * lowpass(noise(m, 41), 1400) * env(m, 0.004, 0.03, 3.0)         # il dito appoggia: opaco
+    i = int(0.56 * SR)
+    m = n - i
+    p = np.arange(m) / SR
+    x[i:] += lowpass(noise(m, 42), 2600) * env(m, 0.0008, 0.02, 4.0)              # il click
+    x[i:] += 0.35 * np.sin(2 * np.pi * G5 * p) * env(m, 0.003, 0.09, 3.0)         # e la sua nota, in Sol
+    return x
+
+
+def press_swell() -> np.ndarray:
+    """Pressione lunga, variante D: un respiro sordo che cresce da quasi niente mentre l'anello corre — nessun tono,
+    niente ronzio — e lo stesso click di conferma."""
+    n = int(0.68 * SR)
+    t = np.arange(n) / SR
+    k = np.clip(t / 0.54, 0, 1) ** 2.2
+    x = lowpass(noise(n, 43), 700) * k * 0.55
+    i = int(0.56 * SR)
+    m = n - i
+    p = np.arange(m) / SR
+    click = np.zeros(n)
+    click[i:] = lowpass(noise(m, 44), 2600) * env(m, 0.0008, 0.02, 4.0) + 0.3 * np.sin(2 * np.pi * G5 * p) * env(m, 0.003, 0.08, 3.0)
+    return x * np.clip((0.57 - t) / 0.05, 0, 1) + click
+
+
 def whoosh() -> np.ndarray:
     """Il soffio sotto un titolo che entra: rumore filtrato che passa e se ne va, senza sibilo."""
     n = int(0.5 * SR)
@@ -159,7 +191,7 @@ def whoosh() -> np.ndarray:
     return x * np.exp(-((t - 0.16) ** 2) / 0.006)
 
 
-SOUNDS = {"tick": tick, "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "pressHum": press_hum, "whoosh": whoosh}
+SOUNDS = {"tick": tick, "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "pressHum": press_hum, "pressTwo": press_two, "pressSwell": press_swell, "whoosh": whoosh}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
