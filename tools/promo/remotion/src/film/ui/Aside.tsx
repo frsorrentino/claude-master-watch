@@ -101,17 +101,17 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Context</div>
                 {(e.rows ?? []).map((r, k) => {
                   const p = clamp(d * 1.6 - k * 0.35);
-                  // l'ultima scheda non svanisce: le sue due barre si allungano e diventano i campi della scena dopo (Franz, 20:34)
-                  const g2 = e.out === "bars" ? soft(clamp((t - 0.72) / 0.28)) : 0;
+                  // l'ultima scheda non svanisce: le due barre si riempiono fino in fondo e da lì nasce la tapparella (Blinds)
+                  const g2 = e.out === "bars" ? soft(clamp((t - 0.42) / 0.14)) : 0;
                   return (
                     <div key={k} style={{ marginTop: k ? 34 : 18 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: 1 - (e.out === "bars" ? clamp((t - 0.72) / 0.18) : 0) }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: 1 - (e.out === "bars" ? clamp((t - 0.44) / 0.14) : 0) }}>
                         <span>{r.name}</span>
                         <span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * p)} %</span>
                       </div>
-                      {/* il finale: le due barre si allungano, si raddrizzano e si aprono come un sipario sulla scena dopo */}
-                      <div style={{ marginTop: 12, height: 16 + 40 * g2, borderRadius: 8, background: "rgba(139,180,247,.18)", position: "relative", left: -THEME.leftMargin * g2, width: 760 + (1400 - 760) * g2, transform: `translateY(${(k === 0 ? -1 : 1) * 260 * g2}px)`, opacity: 1 - g2 * 0.2 }}>
-                        <div style={{ width: `${r.pct * p + (100 - r.pct * p) * g2}%`, height: "100%", borderRadius: 8, background: UI.briefRing, opacity: 1 - 0.3 * g2 }} />
+                      {/* il finale: le barre si riempiono fino in fondo e restano ferme; da lì nasce la tapparella in Three */}
+                      <div style={{ marginTop: 12, height: 16, borderRadius: 8, background: "rgba(139,180,247,.18)", width: 760 }}>
+                        <div style={{ width: `${r.pct * p + (100 - r.pct * p) * g2}%`, height: "100%", borderRadius: 8, background: UI.briefRing }} />
                       </div>
                     </div>
                   );

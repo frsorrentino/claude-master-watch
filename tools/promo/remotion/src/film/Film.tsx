@@ -20,6 +20,8 @@ import { Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
+import { Blinds } from "./ui/Blinds.tsx";
+import { BLIND_CUT } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
 import type { Key } from "./ui/carry.ts";
 import { fxLayers } from "./Fx.tsx";
@@ -137,6 +139,13 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         if (!s.carryOut || !next?.carryIn) return null;
         // centrato sul taglio: l'oggetto lascia la scena negli ultimi 7 fotogrammi e arriva nei primi 7 della dopo
         return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
+      })}
+      {/* la tapparella: chiusa a BLIND_CUT dell'arco, e lì cade il taglio con la scena dopo (revisione 3D, momento 1) */}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
+        if (!s.blinds || !next) return null;
+        const frames = spanFrames(GRID, s.at, s.blinds.len);
+        return <Sequence key={`blinds-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * BLIND_CUT)} durationInFrames={frames + 1} layout="none"><Blinds frames={frames} /></Sequence>;
       })}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - 30} durationInFrames={40} layout="none"><Blink word={s.text!.accent!} cut={30} from={[387, 555]} to={[860, 130]} /></Sequence>

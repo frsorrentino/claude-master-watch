@@ -1,0 +1,55 @@
+import React from "react";
+import { useCurrentFrame, useVideoConfig } from "remotion";
+import { ThreeCanvas } from "@remotion/three";
+import { blindAt } from "./blinds.ts";
+import { UI } from "./UiTokens.ts";
+
+/** Quanti listelli e quanto sono spessi: dodici su 1080 px fanno 90 px l'uno, spessore 22 px — abbastanza per prendere luce di taglio. */
+export const BLIND_N = 12, BLIND_H = 90, BLIND_T = 22;
+/** I due listelli che ERANO le barre del Context: stessa riga, stessa larghezza, stesso colore (misurati sul fotogramma 2030). */
+const BAR = { w: 760, h: 16, x: -430, y: [-8, -130] as const };
+
+const mix = (a: string, b: string, t: number): string => {
+  const c = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [x, y] = [c(a), c(b)], k = Math.min(1, Math.max(0, t));
+  return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * k)).join(",")})`;
+};
+
+/**
+ * La tapparella (revisione 3D, momento 1): le due barre del Context diventano i primi due listelli, la tapparella si chiude
+ * sul quadro e si volta sul proprio asse scoprendo la scena dopo. In Three vero, non in CSS, per due motivi: i listelli hanno
+ * spessore e prendono la luce mentre girano, e la camera resta ferma davanti a un oggetto che ruota (in CSS si schiaccerebbe).
+ * Ogni movimento è guidato da `useCurrentFrame()` (regola della skill: niente `useFrame`, o il rendering sfarfalla).
+ */
+export const Blinds: React.FC<{ frames: number; bars?: [number, number] }> = ({ frames, bars = [6, 7] }) => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const p = Math.min(1, Math.max(0, frame / Math.max(1, frames)));
+  const dist = (height / 2) / Math.tan((16 * Math.PI) / 180);        // fov 32°: a z = 0 il quadro è alto esattamente `height`
+  return (
+    <ThreeCanvas width={width} height={height} camera={{ fov: 32, position: [0, 0, dist], near: 1, far: dist * 3 }}>
+      <ambientLight intensity={0.42} />
+      <directionalLight position={[-500, 1400, 260]} intensity={1.9} />
+      <directionalLight position={[700, -900, 500]} intensity={0.6} />
+      {Array.from({ length: BLIND_N }, (_, i) => {
+        const b = blindAt(p, i, BLIND_N, bars);
+        if (b.alpha <= 0.001 || b.born <= 0.001) return null;
+        const isBar = i === bars[0] || i === bars[1];
+        const yGrid = (BLIND_N / 2 - i - 0.5) * BLIND_H;
+        // la barra parte dove stava sul quadro e cresce fino al suo posto nella griglia; gli altri nascono già a posto e si stendono
+        const w = isBar ? BAR.w + (width * 1.15 - BAR.w) * b.spread : width * 1.15 * b.born;
+        const h = isBar ? BAR.h + (BLIND_H - BAR.h) * b.spread : BLIND_H;
+        const x = isBar ? BAR.x * (1 - b.spread) : 0;
+        const y = isBar ? BAR.y[i === bars[0] ? 0 : 1] + (yGrid - BAR.y[i === bars[0] ? 0 : 1]) * b.spread : yGrid;
+        // i due colori della quota: blu al centro (le barre) e viola verso i capi, così la tapparella è fatta dei dati appena visti
+        const far = Math.min(Math.abs(i - bars[0]), Math.abs(i - bars[1])) / (BLIND_N - 1);
+        return (
+          <mesh key={i} position={[x, y, 0]} rotation={[b.rot, 0, 0]} scale={[w, h, BLIND_T]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={mix(UI.briefRing, UI.briefWeek, far * 1.2)} roughness={0.42} metalness={0.18} transparent opacity={b.alpha} />
+          </mesh>
+        );
+      })}
+    </ThreeCanvas>
+  );
+};

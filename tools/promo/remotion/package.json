@@ -6,8 +6,12 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@remotion/animation-utils": "^4.0.490",
     "@remotion/cli": "4.0.490",
+    "@remotion/motion-blur": "^4.0.490",
+    "@remotion/noise": "^4.0.490",
     "@remotion/tailwind-v4": "4.0.490",
+    "@remotion/three": "4.0.490",
     "@remotion/transitions": "^4.0.490",
     "react": "19.2.3",
     "react-dom": "19.2.3",

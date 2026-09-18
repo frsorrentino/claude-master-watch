@@ -33,7 +33,9 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; blinds?: BlindsCue };
+/** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
+export type BlindsCue = { len: number };
 export type Timeline = Grid & { music?: string; scenes: Scene[] };
 
 export class TimelineError extends Error {
