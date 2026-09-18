@@ -8,8 +8,11 @@ set -euo pipefail
 cd "$(dirname "$0")/remotion"
 name="$1"; shift || true
 mkdir -p out/consegna
-npx remotion render Film "out/consegna/$name.video.mp4" --muted "$@"
-npx remotion render Film "out/consegna/$name.wav" "$@"
+# GPU virtuale della VM (virgl): con --gl=egl il render va 2,5-3× più veloce di SwiftShader, qualità identica (master, 18/09 16:26:
+# 84 pixel di antialiasing su 2 milioni). GL=swangle per tornare al software in un colpo.
+GL=${GL:-egl}
+npx remotion render Film "out/consegna/$name.video.mp4" --muted --gl="$GL" "$@"
+npx remotion render Film "out/consegna/$name.wav" --gl="$GL" "$@"
 # Loudness finale a due passate: prima si misura, poi si applica in modo lineare (niente compressione): -14 LUFS, picco -1 dB.
 m=$(ffmpeg -hide_banner -nostats -i "out/consegna/$name.wav" -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')
 g() { echo "$m" | python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])"; }
