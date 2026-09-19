@@ -21,6 +21,14 @@ export const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: nu
 /** Atterraggio morbido (Franz, 18/09): parte deciso e frena a lungo, come le entrate del testo. */
 export const soft = bezier(0.2, 0, 0, 1);
 
+/** Arrivo con un filo di rimbalzo (Franz, 19/09 09:59: «un po' di ease e un po' di bump»): l'oggetto supera il punto di
+ *  arrivo di `over` e ci torna sopra. 0,06 = sei per cento, quanto basta perché si senta il peso senza sembrare un gioco. */
+export const bump = (over = 0.06) => (t: number): number => {
+  const c = over * 10.5;
+  const u = t - 1;
+  return 1 + (c + 1) * u * u * u + c * u * u;
+};
+
 const REST: Pose = { x: 0, y: 0, scale: 1, tilt: 0 };
 
 const moveAt = (m: Move, t: number): Pose => {

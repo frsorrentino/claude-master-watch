@@ -1,8 +1,8 @@
 /** Il battito di ciglia (piano 5): funzione pura del fotogramma. */
-import { bezier, soft } from "../moves.ts";
+import { bump, soft } from "../moves.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
-const move = bezier(0.3, 0, 0.1, 1);
+const move = bump(0.055);   // la parola arriva in alto e si assesta con un filo di rimbalzo
 
 /**
  * La parola in colore lascia il titolo e va a posarsi come titolo in alto (Franz, 18/09 18:22: «fermarsi come titolo centrato
@@ -13,9 +13,9 @@ const move = bezier(0.3, 0, 0.1, 1);
  */
 export const blinkAt = (f: number, cut: number): { travel: number; lid: number; word: number; fade: number } => {
   const close = 7;                                   // le palpebre si chiudono negli ultimi 7 fotogrammi prima del taglio
-  const travel = move(clamp(f / Math.max(1, cut - close - 2)));
+  const travel = move(clamp(f / Math.max(1, cut - close - 4)));   // il movimento finisce appena prima della chiusura
   const lid = f < cut ? soft(clamp((f - (cut - close)) / close)) : 1 - soft(clamp((f - cut) / 9));
-  // la parola cresce e si spegne prima che la card sia sola al centro: due cose grandi nello stesso posto si coprirebbero
-  const fade = 1 - clamp((f - (cut - close - 26)) / 16);
+  // la parola NON si spegne: cresce e si ferma in alto al centro, dove non copre la card grande (Franz, 19/09 09:33)
+  const fade = 1;
   return { travel, lid, word: f < cut ? 1 : 0, fade };
 };

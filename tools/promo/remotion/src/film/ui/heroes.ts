@@ -1,9 +1,11 @@
 /** Coreografie dei momenti forti (piano 3): funzioni pure dell'avanzamento 0-1, come `moves.ts`. */
-import { bezier, soft } from "../moves.ts";
+import { bezier, bump, soft } from "../moves.ts";
 
 /** Strappo: un oggetto che si stacca prende velocità per un attimo e poi frena a lungo (la curva `soft` parte troppo secca: un
  *  quarto della strada nei primi tre fotogrammi, e senza sfocatura di movimento sembra un taglio). */
 const pull = bezier(0.35, 0, 0.15, 1);
+/** Lo stesso strappo, ma l'arrivo scavalca di poco il posto e ci si assesta: dà peso alla scheda che si ferma al centro. */
+const pullBump = bump(0.05);
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
@@ -26,7 +28,7 @@ export type Flight = { travel: number; swing: number; drift: number; patch: numb
  * ritira verso il posto del titolo prossimo rimpicciolendo, e lì diventa l'elemento grafico che quella scena riprende).
  */
 export const flightAt = (p: number, outEnd: number, exitFrom: number): Flight => {
-  const out = outEnd <= 0 ? (p >= 0 ? 1 : 0) : pull(ramp(p, 0, outEnd));
+  const out = outEnd <= 0 ? (p >= 0 ? 1 : 0) : (exitFrom >= 1 ? pullBump : pull)(ramp(p, 0, outEnd));
   // `exitFrom` oltre la fine = il componente NON se ne va: resta protagonista fino al taglio (la sosta di `cardOutAt`).
   // Senza questo caso `ramp(p, 2, 1)` ha gli estremi invertiti e restituisce 1: la card spariva invece di restare.
   const exit = exitFrom >= 1 ? 0 : soft(ramp(p, exitFrom, 1));

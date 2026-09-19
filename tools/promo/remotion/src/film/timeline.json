@@ -54,9 +54,8 @@
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_tile.mp4",
-    "clipStart": 3.05,
-    "freeze": true
+    "clip": "scenes/n_list.mp4",
+    "clipStart": 11.6
    },
    "text": {
     "lines": [
@@ -70,12 +69,12 @@
    "fx": [
     {
      "kind": "cardOut",
-     "at": 3,
-     "len": 5,
+     "at": 4,
+     "len": 4,
      "rect": [
       26,
-      145,
-      428,
+      63,
+      427,
       213
      ],
      "name": "storefront",
@@ -94,8 +93,8 @@
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_tile.mp4",
-    "clipStart": 3.05,
+    "clip": "scenes/n_list.mp4",
+    "clipStart": 14.5,
     "freeze": true,
     "camera": "around"
    },
@@ -106,12 +105,12 @@
      "len": 8,
      "rect": [
       26,
-      145,
-      428,
+      63,
+      427,
       213
      ],
      "name": "storefront",
-     "age": "3 m",
+     "age": "1 m",
      "text": "Run the checkout test suite after the Stripe webhook refactor",
      "badge": "#2ECC71",
      "icon": "play",
