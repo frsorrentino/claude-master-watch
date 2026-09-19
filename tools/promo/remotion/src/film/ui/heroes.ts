@@ -67,16 +67,20 @@ export const gaugeHeroAt = (p: number): GaugeHero => {
  * scuro), l'anello corallo della pressione lunga corre attorno a «1 · yes» in tempo con la pressione vera (0,3-0,68), poi
  * i tasti restano un attimo e si dissolvono (0,86-1) mentre sul display arriva «Sent». Non lasciano il display: sono l'eco.
  */
-export type OptionsBuild = { build: number; ring: number; alpha: number; travel: number; pop: number; fill: number };
+export type OptionsBuild = { build: number; ring: number; alpha: number; travel: number; pop: number; fill: number; press: number };
 /** Dopo la pressione (`ring` 1) il tasto si gonfia un attimo (`pop`) e poi cresce fino a diventare lo sfondo (`fill`): la
  *  transizione alla scena dopo è il tasto stesso (Franz, 13:13). */
 export const optionsBuildAt = (p: number): OptionsBuild => ({
-  build: soft(ramp(p, 0, 0.2)),
-  ring: ramp(p, 0.42, 0.63),          // in tempo con la pressione lunga vera (battiti 4,5-6,5 su 10)
-  pop: Math.sin(Math.PI * ramp(p, 0.63, 0.72)),
-  fill: soft(ramp(p, 0.86, 1)),
+  // i tasti ESCONO dall'orologio già fatti e si posano al centro con un filo di rimbalzo (Franz, 19/09 09:33), poi la
+  // pressione lunga corre e la selezione si chiude: tutto più svelto di prima (l'anello durava un quinto della scena)
+  build: soft(ramp(p, 0, 0.1)),
+  ring: ramp(p, 0.34, 0.46),
+  pop: Math.sin(Math.PI * ramp(p, 0.46, 0.53)),
+  // il tasto si schiaccia sotto il dito per tutta la corsa dell'anello e scatta quando si chiude (Franz, 19/09 11:03)
+  press: Math.min(1, ramp(p, 0.3, 0.36) * 1.2) * (1 - ramp(p, 0.46, 0.5)),
+  fill: soft(ramp(p, 0.53, 0.6)),
   alpha: p < 0 || p >= 1 ? 0 : 1,
-  travel: p < 0 || p >= 1 ? 0 : soft(ramp(p, 0, 0.15)),
+  travel: p < 0 || p >= 1 ? 0 : bump(0.05)(ramp(p, 0, 0.22)),
 });
 
 /** Il terminale lascia il display (0-0,25), resta fuori come finestra del PC mentre le righe arrivano, rientra (0,78-0,95).

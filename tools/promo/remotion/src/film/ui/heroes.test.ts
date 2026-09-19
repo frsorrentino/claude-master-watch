@@ -27,11 +27,14 @@ test("il gauge parte pieno, si svuota in volo, si disegna fuori col numero, poi 
   assert.ok(gaugeHeroAt(0.7).value === 1 && gaugeHeroAt(0.9).label === 0 && gaugeHeroAt(0.95).exit > 0.5);
 });
 
-test("i tasti nascono, l'anello corre, il tasto si gonfia e poi diventa lo sfondo", () => {
-  assert.equal(optionsBuildAt(0.2).build, 1);
-  assert.ok(optionsBuildAt(0.52).ring > 0.4 && optionsBuildAt(0.63).ring === 1);
-  assert.ok(optionsBuildAt(0.675).pop > 0.9 && optionsBuildAt(0.75).pop < 0.01);
-  assert.ok(optionsBuildAt(0.86).fill === 0 && optionsBuildAt(0.999).fill > 0.99);
+test("i tasti escono dall'orologio, l'anello corre svelto, il tasto si gonfia e si riempie", () => {
+  assert.equal(optionsBuildAt(0.12).build, 1, "a un ottavo della scena i tasti ci sono già");
+  assert.ok(optionsBuildAt(0.22).travel > 0.99, "e si sono posati al centro");
+  assert.ok(optionsBuildAt(0.4).ring > 0.4 && optionsBuildAt(0.46).ring === 1, "l'anello si chiude entro metà scena");
+  assert.ok(optionsBuildAt(0.495).pop > 0.9 && optionsBuildAt(0.56).pop < 0.01);
+  assert.ok(optionsBuildAt(0.53).fill === 0 && optionsBuildAt(0.6).fill > 0.99, "il celeste riempie subito dopo");
+  // e da lì in poi resta pieno: è quel campo che diventa lo sfondo della scena dopo
+  assert.equal(optionsBuildAt(0.9).fill, 1);
 });
 
 test("il terminale del PC compare dietro e si ritira alla fine", () => {

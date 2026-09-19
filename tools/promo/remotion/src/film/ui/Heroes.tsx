@@ -16,7 +16,7 @@ import { UiTerminalPanel } from "./UiTerminalPanel.tsx";
 import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
-export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760, HERO_TERMINAL_PX = 1700;
+export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 920, HERO_TERMINAL_PX = 1700;   // i tasti al centro più grandi (Franz, 19/09 11:07)
 /** La scheda che si ferma grande al centro (`toCenter`) e l'orologio che poi le compare attorno devono COMBACIARE: a
  *  zoom `AROUND_ZOOM` la card di 427 unità dentro il display misura 427 · 1,3258 · 1,42 = 804 px. Franz, 19/09 05:12:
  *  «la scheda esattamente nella stessa posizione grande centrata di prima». */
@@ -56,6 +56,9 @@ export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; 
     return { zoom: 1.35 - 0.35 * ease, focus: 0.35 * (1 - exit), watch: Math.min(1, frame / 24) };
   }
   if (p < 0 || p >= 1) return { zoom: 1, focus: 0, watch: 1 };
+  // con `steady` la camera non si avvicina: l'orologio resta esattamente dov'è e della misura che ha, perché il
+  // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»)
+  if (scene.watch?.steady) return { zoom: 1, focus: 0, watch: 1 };
   const near = travel * (1 - exit);
   return { zoom: 1 + 0.55 * near, focus: near, watch: 1 };
 };
@@ -153,24 +156,34 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
         if (e.kind === "optionsBuild") {
           const o = optionsBuildAt(p);
           if (o.alpha <= 0) return null;
+          // i tasti ESCONO dal display: partono dal loro rettangolo vero (stessa misura, stesso posto) e si posano al
+          // centro del quadro. L'orologio in questa scena sta fermo (`steady`), altrimenti il punto di partenza scivola.
           const k = HERO_OPTION_PX / e.yes[2], gap = (e.no[1] - (e.yes[1] + e.yes[3])) * k;
-          const top = height / 2 - (e.yes[3] * k + gap + e.no[3] * k) / 2;
-          const left = width / 2 - (e.yes[2] * k) / 2;                 // tasti al centro del quadro (Franz, 18/09 18:22)
-          // dopo la pressione il tasto «yes» si gonfia e poi cresce fino a coprire il quadro: è lui lo sfondo della scena dopo
-          const grow = 1 + 0.06 * o.pop + 12 * o.fill;
+          const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+          const centre = (r: [number, number, number, number]) => [dx + (r[0] + r[2] / 2 - 240) * u, dy + (r[1] + r[3] / 2 - 240) * u] as const;
+          const topH = e.yes[3] * k, botH = e.no[3] * k;
+          const toYes: readonly [number, number] = [width / 2, height / 2 - (topH + gap + botH) / 2 + topH / 2];
+          const toNo: readonly [number, number] = [width / 2, height / 2 + (topH + gap + botH) / 2 - botH / 2];
+          const place = (r: [number, number, number, number], to: readonly [number, number]) => {
+            const [x0, y0] = centre(r);
+            return { x: lerp(x0, to[0], o.travel), y: lerp(y0, to[1], o.travel), zoom: lerp(u, k, o.travel) };
+          };
+          const pYes = place(e.yes, toYes), pNo = place(e.no, toNo);
+          // il tasto si schiaccia sotto il dito, scatta quando l'anello si chiude, poi cresce fino a coprire il quadro
+          // il tasto NON si ingrandisce da solo: scatta e basta. A portarlo a tutto quadro è il campo del takeover, con la
+          // sua curva più lunga — prima crescevano tutti e due, uno in mezzo secondo (Franz, 19/09 13:51)
+          const grow = (1 + 0.07 * o.pop) * (1 - 0.045 * o.press);
           return (
             <React.Fragment key={i}>
               <div style={{ position: "absolute", inset: 0, opacity: 0.55 * o.travel * (1 - o.fill), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
-              <div style={{ position: "absolute", left, top, opacity: 1 - o.fill }}>
-                <div style={{ zoom: k }}>
-                  <div style={{ height: e.yes[3] }} />
-                  <div style={{ height: gap / k }} />
-                  <UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.06)} />
+              <div style={{ position: "absolute", left: pNo.x, top: pNo.y, width: 0, height: 0, opacity: 1 - o.fill }}>
+                <div style={{ translate: "-50% -50%", width: e.no[2] * pNo.zoom, height: e.no[3] * pNo.zoom }}>
+                  <div style={{ zoom: pNo.zoom }}><UiOption w={e.no[2]} h={e.no[3]} label={e.noLabel} build={Math.max(0, o.build - 0.06)} /></div>
                 </div>
               </div>
-              <div style={{ position: "absolute", left: left + (e.yes[2] * k) / 2, top: top + (e.yes[3] * k) / 2, width: 0, height: 0 }}>
-                <div style={{ translate: "-50% -50%", width: e.yes[2] * k, height: e.yes[3] * k, scale: String(grow) }}>
-                  <div style={{ zoom: k }}><UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} /></div>
+              <div style={{ position: "absolute", left: pYes.x, top: pYes.y, width: 0, height: 0 }}>
+                <div style={{ translate: "-50% -50%", width: e.yes[2] * pYes.zoom, height: e.yes[3] * pYes.zoom, scale: String(grow) }}>
+                  <div style={{ zoom: pYes.zoom }}><UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} /></div>
                 </div>
               </div>
             </React.Fragment>

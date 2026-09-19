@@ -1,8 +1,8 @@
 /**
  * Il takeover (piano 5 §2): un componente della UI prende tutto il quadro e si trasforma nella scena dopo. Quattro fasi su un
- * arco di `len` battiti a cavallo del taglio: grow (dal suo posto cresce fino a coprire il quadro, 0-0,45, `soft`), hold
- * (0,45-0,58), become (0,58-0,85: si trasforma nella cosa della scena dopo: sfondo pieno, pillole, righe…), settle
- * (0,85-1: la scena dopo si compone sopra, la base torna alla palette dell'atto). Funzione pura dell'avanzamento 0-1.
+ * arco di `len` battiti a cavallo del taglio: grow (dal suo posto cresce fino a coprire il quadro, 0-0,42, `soft`), hold
+ * (0,42-0,46, appena un respiro), become (0,46-0,72: si trasforma nella cosa della scena dopo), settle (0,72-1: la scena
+ * dopo si compone sopra). Il fermo è corto di proposito: con il campo pieno che durava mezzo secondo si vedeva un vuoto. Funzione pura dell'avanzamento 0-1.
  * Regola dei colori (master, 16:10): il colore del componente vive nel become; nel settle lo sfondo torna alla palette.
  */
 import { bezier, soft } from "../moves.ts";
@@ -20,10 +20,12 @@ export type Takeover = {
   cover: number;    // 0-1: quanto il quadro è coperto dal colore del componente (sale con grow, scende con settle)
 };
 export const takeoverAt = (p: number): Takeover => {
-  const grow = growEase(ramp(p, 0, 0.45));
-  const become = soft(ramp(p, 0.58, 0.85));
-  const settle = soft(ramp(p, 0.85, 1));
-  return { grow, hold: p >= 0.45 && p < 0.58 ? 1 : 0, become, settle, cover: grow * (1 - settle) };
+  const grow = growEase(ramp(p, 0, 0.42));
+  const become = soft(ramp(p, 0.44, 0.54));
+  // il campo pieno si dissolve SOPRA la scena dopo, che a quel punto è già composta: prima virava a un colore piatto e
+  // restava lì un secondo e mezzo prima che comparisse qualcosa (Franz, 19/09 11:25)
+  const settle = soft(ramp(p, 0.46, 0.62));
+  return { grow, hold: p >= 0.42 && p < 0.46 ? 1 : 0, become, settle, cover: grow * (1 - settle) };
 };
 /** Il taglio della scaletta cade a 0,58 dell'arco (fine del hold): così la scena dopo nasce dentro il become. */
-export const TAKEOVER_CUT = 0.58;
+export const TAKEOVER_CUT = 0.46;

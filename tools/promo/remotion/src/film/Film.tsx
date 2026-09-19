@@ -20,6 +20,7 @@ import { Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
+import { takeoverAt } from "./ui/takeover.ts";
 import { Blinds } from "./ui/Blinds.tsx";
 import { BLIND_CUT, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
@@ -43,7 +44,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
   const closing = scene.endCard ? closingAt(frame / beat) : null;
-  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit, frame + beatToFrame(GRID, scene.at)) : null;
+  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
   const cx = (scene.watch?.camera === "around" ? 0.5 : scene.text ? THEME.watchX : 0.5) * width;
@@ -68,7 +69,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const over = heroState(scene, GRID, frame).exit;
   // mentre il takeover cresce, il componente sotto sparisce: il takeover È quel componente, non una copia sopra
   const takeStart = scene.takeover ? total - Math.round(spanFrames(GRID, scene.at, scene.takeover.len) * TAKEOVER_CUT) : Infinity;
-  const underTakeover = frame >= takeStart ? Math.min(1, (frame - takeStart) / 4) : 0;
+  // il componente sotto sparisce quando il takeover lo ha COPERTO (metà della crescita), non appena parte: altrimenti fra
+  // i tasti che se ne vanno e il campo che arriva si vede lo sfondo della scena (Franz, 19/09 11:03: «c'è un buco»)
+  const underTakeover = scene.takeover && frame >= takeStart
+    ? Math.min(1, Math.max(0, (takeoverAt((frame - takeStart) / Math.max(1, spanFrames(GRID, scene.at, scene.takeover.len))).grow - 0.3) / 0.25))
+    : 0;
   // quando parte la tapparella il quadro si svuota e restano sole le due barre, che diventano i primi listelli:
   // è così che si vede il collegamento fra il grafico e la transizione (Franz, 18/09 22:28)
   const blindStart = scene.blinds ? total - Math.round(spanFrames(GRID, scene.at, scene.blinds.len) * BLIND_CUT) : Infinity;
@@ -85,7 +90,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 6 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
-      <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} />
+      <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>

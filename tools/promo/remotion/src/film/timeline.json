@@ -203,12 +203,13 @@
   {
    "id": "answer",
    "at": 49,
-   "len": 13,
+   "len": 5.5,
    "act": "act",
    "watch": {
     "view": "front",
     "clip": "scenes/n_answer.mp4",
-    "clipStart": 12.0
+    "clipStart": 12.3,
+    "steady": true
    },
    "text": {
     "lines": [
@@ -220,40 +221,52 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 3.5,
-     "len": 2
+     "at": 2.0,
+     "len": 1.5
     },
     {
      "kind": "optionsBuild",
      "at": 0.5,
-     "len": 11,
+     "len": 5,
      "yes": [
       26,
       150,
-      427,
-      110
+      428,
+      112
      ],
      "no": [
       26,
       270,
-      427,
-      110
+      428,
+      112
      ],
      "yesLabel": "1 · yes",
      "noLabel": "2 · no"
     }
-   ]
+   ],
+   "takeover": {
+    "len": 2.5,
+    "x": 960,
+    "y": 435,
+    "w": 920,
+    "h": 237,
+    "r": 118,
+    "color": "#D3E3FD",
+    "toColor": "#D3E3FD",
+    "body": "plain"
+   }
   },
   {
    "id": "loop",
-   "at": 62,
+   "at": 54.5,
    "len": 11,
    "act": "act",
    "watch": {
     "view": "side",
     "clip": "scenes/n_follow.mp4",
     "clipStart": 8.0,
-    "freeze": true
+    "freeze": true,
+    "enter": "riseIn"
    },
    "fx": [
     {
@@ -321,11 +334,13 @@
      "badge": "#3C81F2",
      "icon": "play"
     }
-   }
+   },
+   "bgFrom": "#D3E3FD",
+   "bgFadeBeats": 6
   },
   {
    "id": "watch",
-   "at": 73,
+   "at": 65.5,
    "len": 7,
    "act": "control",
    "watch": {
@@ -367,7 +382,7 @@
   },
   {
    "id": "accounts",
-   "at": 80,
+   "at": 72.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -380,8 +395,8 @@
   },
   {
    "id": "limits",
-   "at": 85,
-   "len": 25,
+   "at": 77.5,
+   "len": 32.5,
    "act": "control",
    "watch": {
     "view": "front",
@@ -402,7 +417,7 @@
     {
      "kind": "aside",
      "at": 2.5,
-     "len": 5,
+     "len": 6,
      "panel": "quota",
      "rows": [
       {
@@ -414,16 +429,16 @@
     },
     {
      "kind": "aside",
-     "at": 7.5,
-     "len": 4.5,
+     "at": 8.5,
+     "len": 5.5,
      "panel": "pace",
      "n": 59,
      "note": "at 09:36, at this pace"
     },
     {
      "kind": "aside",
-     "at": 12,
-     "len": 4,
+     "at": 14,
+     "len": 4.5,
      "panel": "work",
      "n": 1,
      "note": "1 waits for you · 1 working",
@@ -435,8 +450,8 @@
     },
     {
      "kind": "aside",
-     "at": 16,
-     "len": 3,
+     "at": 18.5,
+     "len": 3.5,
      "panel": "questions",
      "n": 1,
      "note": "payments-api · for 5 m",
@@ -444,8 +459,8 @@
     },
     {
      "kind": "aside",
-     "at": 19,
-     "len": 6,
+     "at": 22,
+     "len": 8,
      "panel": "context",
      "rows": [
       {
@@ -466,7 +481,7 @@
   },
   {
    "id": "new",
-   "at": 110,
+   "at": 110.0,
    "len": 8,
    "act": "control",
    "watch": {
@@ -486,7 +501,7 @@
   },
   {
    "id": "close",
-   "at": 118,
+   "at": 118.0,
    "len": 10,
    "act": "close",
    "watch": {

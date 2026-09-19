@@ -83,7 +83,9 @@ export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; aro
       : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
       : null),
     around: fx.map((e, i) =>
-      e.kind === "longPress" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at) + 8} layout="none"><LongPressArc frames={at(e.at + e.len) - at(e.at)} /></Sequence>
+      // l'anello attorno all'orologio era ridondante con quello che corre sul tasto ricostruito, che è più grande e si
+      // legge meglio: ne resta uno solo (Franz, 19/09 13:42)
+      e.kind === "longPress" ? null
       : e.kind === "haptic" ? <Sequence key={i} from={at(e.at)} durationInFrames={26} layout="none"><HapticRings /></Sequence> : null),
   };
 };
