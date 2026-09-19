@@ -33,14 +33,17 @@
     ]
   },
   "side": {
-    "width": 1280,
+    "width": 2800,
     "height": 720,
-    "caseX0": 266,
-    "caseX1": 1011,
-    "apexX": 600,
-    "apexY": 157,
-    "bottom": 442,
-    "displayCx": 638,
-    "displayCy": 169
+    "ext": 760,
+    "photoW": 1280,
+    "tilt": -0.935,
+    "caseX0": 1034,
+    "caseX1": 1764,
+    "apexX": 1385,
+    "apexY": 158,
+    "bottom": 441,
+    "displayCx": 1399,
+    "displayCy": 170
   }
 }

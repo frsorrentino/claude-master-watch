@@ -47,10 +47,13 @@ export const HapticRings: React.FC = () => {
 
 /** Il posto lasciato dalla card che esce (piano 3): un fantasma del colore della superficie, senza testo, finché non rientra
  *  (una toppa nera si leggeva come un buco nel render: master, 18/09 02:22). */
-export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number; fromOut?: boolean }> = ({ rect, frames, fromOut }) => {
+export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number; fromOut?: boolean; around?: boolean }> = ({ rect, frames, fromOut, around }) => {
   const f = useCurrentFrame();
   const [x, y, w, h] = rect;
-  const patch = cardOutAt(f / frames, fromOut, true).patch;
+  // con la camera «around» il fantasma se ne va mentre l'orologio si materializza: sotto c'è la scheda vera, che deve vedersi
+  // (altrimenti il display resta con un rettangolo vuoto al posto della card — visto nel giro del 19/09 05:45)
+  const t = Math.min(1, Math.max(0, f / 30));
+  const patch = cardOutAt(f / frames, fromOut, true).patch * (around ? 1 - t * t * (3 - 2 * t) : 1);
   return (
     <>
       <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 42, background: UI.bg, opacity: patch }} />
@@ -76,7 +79,7 @@ export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; aro
   return {
     overlay: fx.map((e, i) =>
       e.kind === "tap" ? <Sequence key={i} from={at(e.at)} durationInFrames={14} layout="none"><TapDot x={e.x} y={e.y} /></Sequence>
-      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} fromOut={e.fromOut} /></Sequence>
+      : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} fromOut={e.fromOut} around={scene.watch?.camera === "around"} /></Sequence>
       : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
       : null),
     around: fx.map((e, i) =>

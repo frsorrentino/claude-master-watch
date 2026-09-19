@@ -17,6 +17,10 @@ import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 760, HERO_TERMINAL_PX = 1700;
+/** La scheda che si ferma grande al centro (`toCenter`) e l'orologio che poi le compare attorno devono COMBACIARE: a
+ *  zoom `AROUND_ZOOM` la card di 427 unità dentro il display misura 427 · 1,3258 · 1,42 = 804 px. Franz, 19/09 05:12:
+ *  «la scheda esattamente nella stessa posizione grande centrata di prima». */
+export const HERO_CARD_CENTER_PX = 804, AROUND_ZOOM = 1.42;
 type Hero = Extract<Fx, { kind: "cardOut" | "gaugeHero" | "optionsBuild" | "panelHero" }>;
 const isHero = (e: Fx): e is Hero => e.kind === "cardOut" || e.kind === "gaugeHero" || e.kind === "optionsBuild" || e.kind === "panelHero";
 
@@ -43,7 +47,7 @@ export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; 
   if (scene.watch?.camera === "around") {
     // la card è ferma al centro dal battito di ciglia: l'orologio compare attorno, grande e centrato, e resta
     const t = Math.min(1, Math.max(0, frame / 30));
-    return { zoom: 1.5, focus: 0, watch: t * t * (3 - 2 * t) };
+    return { zoom: AROUND_ZOOM, focus: 0, watch: t * t * (3 - 2 * t) };
   }
   if (scene.watch?.camera === "release") {
     // dopo il battito di ciglia: card già al centro, l'orologio compare attorno e la camera torna indietro piano
@@ -175,9 +179,9 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
         if (e.kind === "cardOut") {
           const c = cardOutAt(p, e.fromOut, e.toCenter);
           if (c.alpha <= 0) return null;
-          const to: [number, number] = e.toCenter ? [width / 2, height / 2 + 60] : e.fromOut ? [width * 0.42, height / 2] : [THEME.leftMargin + HERO_CARD_PX / 2, height / 2];
+          const to: [number, number] = e.toCenter ? [width / 2, height / 2] : e.fromOut ? [width * 0.42, height / 2] : [THEME.leftMargin + HERO_CARD_PX / 2, height / 2];
           return (
-            <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={to} toScale={HERO_CARD_PX / e.rect[2]} exitTo={exitTo}>
+            <Flying key={i} c={c} from={e.rect} u={u} dx={dx} dy={dy} to={to} toScale={(e.toCenter ? HERO_CARD_CENTER_PX : HERO_CARD_PX) / e.rect[2]} exitTo={exitTo}>
               <UiCard w={e.rect[2]} name={e.name} age={e.age} text={e.text} badge={e.badge} icon={e.icon} light={c.travel} />
             </Flying>
           );

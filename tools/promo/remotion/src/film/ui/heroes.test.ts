@@ -81,3 +81,13 @@ test("il pannello della Panoramica esce vuoto, si disegna fuori e si consegna", 
   assert.equal(panelHeroAt(0.7).draw, 1);
   assert.ok(panelHeroAt(0.95).exit > 0.5);
 });
+
+test("la scheda che resta protagonista non se ne va: con la sosta l'uscita è zero e resta visibile fino alla fine", () => {
+  for (const p of [0.5, 0.86, 0.99]) {
+    const c = cardOutAt(p, false, true);
+    assert.equal(c.exit, 0, `a ${p} la card sta già uscendo`);
+    assert.ok(c.alpha > 0.99, `a ${p} la card è sparita (alpha ${c.alpha})`);
+    assert.ok(c.travel > 0.99, `a ${p} la card non è ancora arrivata`);
+  }
+  assert.ok(cardOutAt(0.99, false, false).exit > 0.5, "senza sosta la card se ne va davvero");
+});

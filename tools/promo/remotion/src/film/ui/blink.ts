@@ -11,9 +11,11 @@ const move = bezier(0.3, 0, 0.1, 1);
  * `f` fotogrammi dall'inizio, `cut` il fotogramma del taglio (la chiusura finisce lì).
  * `travel` 0-1: quanto la parola ha percorso verso il suo posto in alto; `lid` 0-1: palpebre chiuse.
  */
-export const blinkAt = (f: number, cut: number): { travel: number; lid: number; word: number } => {
+export const blinkAt = (f: number, cut: number): { travel: number; lid: number; word: number; fade: number } => {
   const close = 7;                                   // le palpebre si chiudono negli ultimi 7 fotogrammi prima del taglio
   const travel = move(clamp(f / Math.max(1, cut - close - 2)));
   const lid = f < cut ? soft(clamp((f - (cut - close)) / close)) : 1 - soft(clamp((f - cut) / 9));
-  return { travel, lid, word: f < cut ? 1 : 0 };
+  // la parola cresce e si spegne prima che la card sia sola al centro: due cose grandi nello stesso posto si coprirebbero
+  const fade = 1 - clamp((f - (cut - close - 26)) / 16);
+  return { travel, lid, word: f < cut ? 1 : 0, fade };
 };

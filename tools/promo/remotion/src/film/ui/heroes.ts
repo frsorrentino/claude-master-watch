@@ -27,7 +27,9 @@ export type Flight = { travel: number; swing: number; drift: number; patch: numb
  */
 export const flightAt = (p: number, outEnd: number, exitFrom: number): Flight => {
   const out = outEnd <= 0 ? (p >= 0 ? 1 : 0) : pull(ramp(p, 0, outEnd));
-  const exit = soft(ramp(p, exitFrom, 1));
+  // `exitFrom` oltre la fine = il componente NON se ne va: resta protagonista fino al taglio (la sosta di `cardOutAt`).
+  // Senza questo caso `ramp(p, 2, 1)` ha gli estremi invertiti e restituisce 1: la card spariva invece di restare.
+  const exit = exitFrom >= 1 ? 0 : soft(ramp(p, exitFrom, 1));
   return {
     travel: out,
     swing: outEnd <= 0 ? 0 : Math.sin(Math.PI * out),
@@ -42,7 +44,7 @@ export const flightAt = (p: number, outEnd: number, exitFrom: number): Flight =>
  *  battiti (57 fotogrammi) uscita e rientro durano 800 e 630 ms. */
 export type CardOut = Flight;
 /** `fromOut`: la card è già fuori (dopo il battito di ciglia) e l'orologio si materializza attorno. */
-export const cardOutAt = (p: number, fromOut = false, stay = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, stay ? 2 : 0.86);
+export const cardOutAt = (p: number, fromOut = false, stay = false): CardOut => flightAt(p, fromOut ? 0 : 0.42, stay ? 1 : 0.86);
 
 /**
  * Il gauge della quota lascia la card (0-0,3) svuotandosi mentre vola, fuori si disegna da zero al suo valore (0,34-0,62,

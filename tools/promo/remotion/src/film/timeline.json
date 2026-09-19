@@ -31,7 +31,7 @@
   {
    "id": "open-3",
    "at": 10,
-   "len": 6,
+   "len": 5,
    "act": "open",
    "watch": {
     "view": "front",
@@ -49,7 +49,7 @@
   },
   {
    "id": "glance",
-   "at": 16,
+   "at": 15,
    "len": 8,
    "act": "know",
    "watch": {
@@ -89,28 +89,29 @@
   },
   {
    "id": "list",
-   "at": 24,
-   "len": 10,
+   "at": 23,
+   "len": 8,
    "act": "know",
    "watch": {
     "view": "front",
-    "clip": "scenes/n_list.mp4",
-    "clipStart": 13.0,
+    "clip": "scenes/n_tile.mp4",
+    "clipStart": 3.05,
+    "freeze": true,
     "camera": "around"
    },
    "fx": [
     {
      "kind": "cardOut",
      "at": 0,
-     "len": 10,
+     "len": 8,
      "rect": [
       26,
-      63,
-      427,
+      145,
+      428,
       213
      ],
      "name": "storefront",
-     "age": "1 m",
+     "age": "3 m",
      "text": "Run the checkout test suite after the Stripe webhook refactor",
      "badge": "#2ECC71",
      "icon": "play",
@@ -140,8 +141,8 @@
   },
   {
    "id": "asks",
-   "at": 34,
-   "len": 6,
+   "at": 31,
+   "len": 5,
    "act": "know",
    "watch": {
     "view": "front",
@@ -164,7 +165,7 @@
   },
   {
    "id": "speaks",
-   "at": 40,
+   "at": 36,
    "len": 18,
    "act": "know",
    "watch": {
@@ -202,8 +203,8 @@
   },
   {
    "id": "answer",
-   "at": 58,
-   "len": 10,
+   "at": 54,
+   "len": 8,
    "act": "act",
    "watch": {
     "view": "front",
@@ -220,13 +221,13 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 4.5,
+     "at": 2.5,
      "len": 2
     },
     {
      "kind": "optionsBuild",
      "at": 0.5,
-     "len": 9.5,
+     "len": 7,
      "yes": [
       26,
       150,
@@ -246,8 +247,8 @@
   },
   {
    "id": "loop",
-   "at": 68,
-   "len": 14,
+   "at": 62,
+   "len": 11,
    "act": "act",
    "watch": {
     "view": "side",
@@ -259,7 +260,7 @@
     {
      "kind": "float",
      "at": 1,
-     "len": 12.5,
+     "len": 9.5,
      "cards": [
       {
        "kind": "text",
@@ -325,8 +326,8 @@
   },
   {
    "id": "watch",
-   "at": 82,
-   "len": 8,
+   "at": 73,
+   "len": 7,
    "act": "control",
    "watch": {
     "view": "front",
@@ -344,7 +345,7 @@
     {
      "kind": "terminalPlane",
      "at": 1.5,
-     "len": 6.5,
+     "len": 5.5,
      "rect": [
       26,
       163,
@@ -367,8 +368,8 @@
   },
   {
    "id": "accounts",
-   "at": 90,
-   "len": 6,
+   "at": 80,
+   "len": 5,
    "act": "control",
    "text": {
     "lines": [
@@ -380,8 +381,8 @@
   },
   {
    "id": "limits",
-   "at": 96,
-   "len": 35,
+   "at": 85,
+   "len": 25,
    "act": "control",
    "watch": {
     "view": "front",
@@ -401,8 +402,8 @@
    "fx": [
     {
      "kind": "aside",
-     "at": 3.5,
-     "len": 8,
+     "at": 2.5,
+     "len": 5,
      "panel": "quota",
      "rows": [
       {
@@ -414,16 +415,16 @@
     },
     {
      "kind": "aside",
-     "at": 10,
-     "len": 6,
+     "at": 7.5,
+     "len": 4.5,
      "panel": "pace",
      "n": 59,
      "note": "at 09:36, at this pace"
     },
     {
      "kind": "aside",
-     "at": 16,
-     "len": 5,
+     "at": 12,
+     "len": 4,
      "panel": "work",
      "n": 1,
      "note": "1 waits for you · 1 working",
@@ -435,8 +436,8 @@
     },
     {
      "kind": "aside",
-     "at": 21,
-     "len": 5,
+     "at": 16,
+     "len": 3,
      "panel": "questions",
      "n": 1,
      "note": "payments-api · for 5 m",
@@ -444,8 +445,8 @@
     },
     {
      "kind": "aside",
-     "at": 26,
-     "len": 9,
+     "at": 19,
+     "len": 6,
      "panel": "context",
      "rows": [
       {
@@ -461,13 +462,13 @@
     }
    ],
    "blinds": {
-    "len": 8.5
+    "len": 7
    }
   },
   {
    "id": "new",
-   "at": 131,
-   "len": 10,
+   "at": 110,
+   "len": 8,
    "act": "control",
    "watch": {
     "view": "front",
@@ -486,8 +487,8 @@
   },
   {
    "id": "close",
-   "at": 141,
-   "len": 14,
+   "at": 118,
+   "len": 10,
    "act": "close",
    "watch": {
     "view": "threeQuarter",
