@@ -20,7 +20,7 @@ export type Fx =
   | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "quota" | "note" | "pace" | "work" | "questions" | "context"; n?: number; note?: string; quote?: string; lines?: string[]; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number };   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; steady?: boolean; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; steady?: boolean; exitBeats?: number; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
 export type Camera = "close" | "release" | "around";   // around: l'orologio compare attorno alla card già ferma al centro, grande
@@ -33,10 +33,14 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; blackOutFrames?: number };
+/* `blackOutFrames`: un breve nero prima del taglio, quando la scena si chiude su un movimento e la musica riprende
+   subito dopo — il vuoto fa respirare lo stacco (Franz, 19/09 15:43). */
 /** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
 export type BlindsCue = { len: number };
-export type Timeline = Grid & { music?: string; scenes: Scene[] };
+/** `musicDelayBeats`: di quanti battiti la musica entra dopo l'inizio del film, per far cadere il culmine del crescendo
+ *  dove serve (Franz, 19/09 15:05: «la musica è una battuta avanti rispetto a quando serve»). */
+export type Timeline = Grid & { music?: string; musicDelayBeats?: number; scenes: Scene[] };
 
 export class TimelineError extends Error {
   problems: string[];
@@ -97,9 +101,10 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (s.watch && (s.text.size ?? "title") === "title") for (const l of s.text.lines) if (l.length > 14) say(`la riga «${l}» ha ${l.length} caratteri, al massimo 14 accanto all'orologio`);
       const words = s.text.lines.flatMap((l) => l.split(" "));
       // «desk.» tagliata nell'anteprima del 17/09: cinque parole a una per battito in una scena di quattro battiti
-      const perWord = s.watch ? 0.5 : 1;
+      const perWord = 0.5;   // mezzo battito a parola ovunque
       const room = s.len - (s.text.at ?? 0) - (s.watch?.exit ? 2 : 0);
-      if (words.length * perWord + 1 > room) say(`${words.length} parole a ${s.watch ? "mezzo battito l'una" : "una per battito"} più uno per leggerle fanno ${words.length * perWord + 1} battiti, la scena ne ha ${room}`);
+      // due battiti perché la frase intera resti ferma: è la pausa che la rende leggibile, non la velocità
+      if (words.length * perWord + 2 > room) say(`${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
       if (s.text.at !== undefined && (!half(s.text.at) || s.text.at >= s.len)) say(`il testo al battito ${s.text.at} esce dalla scena`);
     }

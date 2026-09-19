@@ -5,8 +5,8 @@ import { Sign } from "./ui/Sign.tsx";
 
 /** Ogni parola sale da una fessura con frenata morbida ed esce verso l'alto. Una sola parola in colore per frase. */
 export const WordMask: React.FC<{
-  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center"; fadeFrom?: number;
-}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left", fadeFrom }) => {
+  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center"; fadeFrom?: number; hideAccentFrom?: number;
+}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left", fadeFrom, hideAccentFrom }) => {
   const frame = useCurrentFrame();
   const px = size === "title" ? THEME.title : THEME.service;
   const total = lines.reduce((n, l) => n + l.split(" ").length, 0);
@@ -21,7 +21,9 @@ export const WordMask: React.FC<{
     const last = false;
     const text = w;
     return (
-      <span key={i} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom", padding: "0.08em 0 0.16em", marginRight: "0.26em" }}>
+      // la parola in colore sparisce nell'istante esatto in cui ne compare la copia che cresce: un fotogramma di
+      // sovrapposizione basta a far vedere due parole uguali (Franz, 19/09 16:16)
+      <span key={i} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom", padding: "0.08em 0 0.16em", marginRight: "0.26em", opacity: hideAccentFrom !== undefined && w === accent && frame >= hideAccentFrom ? 0 : 1 }}>
         <span style={{ display: "inline-block", translate: `0 ${up + away}%`, color: w === accent ? THEME.accent : THEME.white }}>
           {text}{last ? <Sign size={px * 0.5} style={{ marginLeft: "0.1em", verticalAlign: "-0.04em" }} /> : null}
         </span>

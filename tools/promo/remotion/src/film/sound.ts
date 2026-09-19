@@ -11,7 +11,7 @@ const RANK: SfxName[] = ["notify", "shutter", "pressRise", "tick", "whoosh", "th
 export const sfxCues = (t: Timeline): SfxCue[] => {
   const all: SfxCue[] = [];
   for (const s of t.scenes) {
-    if (s.text && (s.text.size ?? "title") === "title" && !s.watch) all.push({ beat: s.at + (s.text.at ?? 0), name: "whoosh", gainDb: -26 });
+    // niente soffio all'ingresso delle frasi: sotto la musica non aggiungeva nulla e si sentiva come un difetto (Franz, 19/09 16:00)
     // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09)
     if (s.out === "blink") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
     for (const f of s.fx ?? []) {

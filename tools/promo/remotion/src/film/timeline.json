@@ -31,25 +31,28 @@
   {
    "id": "open-3",
    "at": 10,
-   "len": 5,
+   "len": 6,
    "act": "open",
    "watch": {
     "view": "front",
     "clip": "scenes/n_tile.mp4",
     "clipStart": 6.0,
-    "exit": "zoomLeft"
+    "exit": "zoomLeft",
+    "exitBeats": 6
    },
    "text": {
     "lines": [
      "That’s fine."
     ],
     "accent": "fine.",
-    "at": 1
-   }
+    "at": 0
+   },
+   "fx": [],
+   "blackOutFrames": 5
   },
   {
    "id": "glance",
-   "at": 15,
+   "at": 16,
    "len": 8,
    "act": "know",
    "watch": {
@@ -88,7 +91,7 @@
   },
   {
    "id": "list",
-   "at": 23,
+   "at": 24,
    "len": 8,
    "act": "know",
    "watch": {
@@ -140,7 +143,7 @@
   },
   {
    "id": "asks",
-   "at": 31,
+   "at": 32,
    "len": 5,
    "act": "know",
    "watch": {
@@ -164,7 +167,7 @@
   },
   {
    "id": "speaks",
-   "at": 36,
+   "at": 37,
    "len": 13,
    "act": "know",
    "watch": {
@@ -202,7 +205,7 @@
   },
   {
    "id": "answer",
-   "at": 49,
+   "at": 50,
    "len": 5.5,
    "act": "act",
    "watch": {
@@ -258,7 +261,7 @@
   },
   {
    "id": "loop",
-   "at": 54.5,
+   "at": 55.5,
    "len": 11,
    "act": "act",
    "watch": {
@@ -340,7 +343,7 @@
   },
   {
    "id": "watch",
-   "at": 65.5,
+   "at": 66.5,
    "len": 7,
    "act": "control",
    "watch": {
@@ -382,7 +385,7 @@
   },
   {
    "id": "accounts",
-   "at": 72.5,
+   "at": 73.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -395,8 +398,8 @@
   },
   {
    "id": "limits",
-   "at": 77.5,
-   "len": 32.5,
+   "at": 78.5,
+   "len": 31,
    "act": "control",
    "watch": {
     "view": "front",
@@ -481,7 +484,7 @@
   },
   {
    "id": "new",
-   "at": 110.0,
+   "at": 109.5,
    "len": 8,
    "act": "control",
    "watch": {
@@ -501,7 +504,7 @@
   },
   {
    "id": "close",
-   "at": 118.0,
+   "at": 117.5,
    "len": 10,
    "act": "close",
    "watch": {
@@ -513,5 +516,6 @@
    "endCard": true
   }
  ],
- "music": "audio/music.wav"
+ "music": "audio/music.v9.wav",
+ "musicDelayBeats": 0
 }

@@ -44,7 +44,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
   const closing = scene.endCard ? closingAt(frame / beat) : null;
-  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * MOVE_BEATS, w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady) : null;
+  // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
+  // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
+  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
   const cx = (scene.watch?.camera === "around" ? 0.5 : scene.text ? THEME.watchX : 0.5) * width;
@@ -55,7 +57,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // i dati della Panoramica stanno dove sta il titolo: il titolo se ne va prima che entri il primo (Franz, 18/09 21:42)
   const firstAside = (scene.fx ?? []).find((f) => f.kind === "aside");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
-  const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - beat * MOVE_BEATS : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
+  const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - beat * (w.exitBeats ?? MOVE_BEATS) * 0.55 : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
@@ -87,7 +89,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const shake = sh >= 0 && sh < 10 ? 4 * (1 - sh / 10) * Math.sin(sh * 2.6) : 0;
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
-  const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 6 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
@@ -114,9 +116,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       {scene.text ? (
         <Sequence from={textAt} layout="none">
           <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
-            <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub}
+            <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub} hideAccentFrom={scene.out === "blink" ? leave - textAt : undefined}   /* dentro la sequenza del testo i fotogrammi ripartono da zero */
               fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
-              perWordFrames={w ? Math.round(beat / 2) : beat} exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
+              perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
         </Sequence>
@@ -163,6 +165,12 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         // centrato sul taglio: l'oggetto lascia la scena negli ultimi 7 fotogrammi e arriva nei primi 7 della dopo
         return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
       })}
+      {/* il piccolo nero che chiude una scena sul suo movimento, appena prima che il brano riprenda */}
+      {TIMELINE.scenes.filter((s) => s.blackOutFrames).map((s) => (
+        <Sequence key={`black-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - (s.blackOutFrames ?? 0)} durationInFrames={s.blackOutFrames} layout="none">
+          <AbsoluteFill style={{ background: "#000" }} />
+        </Sequence>
+      ))}
       {/* la tapparella: chiusa a BLIND_CUT dell'arco, e lì cade il taglio con la scena dopo (revisione 3D, momento 1) */}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];
@@ -173,7 +181,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
       {/* il battito di ciglia dura quanto la crescita della card, non 30 fotogrammi: parola e scheda crescono INSIEME
           (Franz, 19/09 05:12). La parola resta dov'è e si ingrandisce; le palpebre si chiudono negli ultimi 7. */}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
-        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text!.accent!} cut={BLINK_FRAMES} from={[387, 555]} to={[684, 140]} /></Sequence>
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text!.accent!} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
       {actChanges(TIMELINE.scenes).map((b) => (
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
