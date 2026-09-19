@@ -6,7 +6,8 @@ import type { Quad } from "./homography.ts";
 import { MAX_TILT } from "./moves.ts";
 import { Watch } from "../Watch";
 
-type Props = { view: "front" | "threeQuarter" | "drawn"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
+/** `light`: luminosità del display, 1 = normale (ui/sleep.ts: il display che dorme e si risveglia). */
+type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
 
 const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, still, overlay }) => {
   const video = <OffthreadVideo src={staticFile(clip)} muted trimBefore={Math.round(clipStart * 30)} playbackRate={rate} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
@@ -20,7 +21,7 @@ const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: b
   );
 };
 
-const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, tilt, overlay, around }) => {
+const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, tilt, overlay, around, light = 1 }) => {
   const G = geo.front;
   const k = glassPx / (2 * G.glassR);
   const disc = (r: number): React.CSSProperties => ({ position: "absolute", left: G.cx - r, top: G.cy - r, width: 2 * r, height: 2 * r, borderRadius: "50%" });
@@ -33,7 +34,7 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx,
         <Img src={staticFile("mockup/front_body.png")} style={{ position: "absolute", inset: 0, filter: "drop-shadow(26px 34px 34px rgba(4,5,12,.62))" }} />
         {/* vetro sintetico: nero sopra tutta la cupola tranne il bordo vero (la foto lì riflette il telefono) */}
         <div style={{ ...disc(G.coverR + 6), background: "radial-gradient(closest-side, #000 97%, rgba(0,0,0,0) 100%)" }} />
-        <div style={{ ...disc(G.displayR), ["--k" as string]: String((2 * G.displayR) / 480) }}><Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} still={still} overlay={overlay} /></div>
+        <div style={{ ...disc(G.displayR), ["--k" as string]: String((2 * G.displayR) / 480), filter: light === 1 ? undefined : `brightness(${light})` }}><Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} still={still} overlay={overlay} /></div>
         <div style={{ ...disc(G.coverR), overflow: "hidden", mixBlendMode: "screen" }}>
           {/* alone in alto a sinistra, finestra sfocata, lama di luce, filo sul bordo */}
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(47.5% 31% at 31% 24%, rgba(235,245,255,.18) 0%, rgba(235,245,255,.113) 50%, rgba(235,245,255,.048) 75%, rgba(235,245,255,.013) 90%, rgba(235,245,255,0) 100%)" }} />

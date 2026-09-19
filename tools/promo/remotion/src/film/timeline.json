@@ -128,10 +128,9 @@
     "accent": "glance.",
     "place": "top"
    },
-   "glow": {
-    "len": 3.5,
-    "cx": 0.5,
-    "cy": 0.5
+   "sleep": {
+    "len": 4,
+    "musicBackBeats": 4
    }
   },
   {
@@ -142,19 +141,18 @@
    "watch": {
     "view": "front",
     "clip": "scenes/n_speaks.mp4",
-    "clipStart": 9.7
+    "clipStart": 11.25
    },
    "text": {
     "lines": [
      "It asks."
     ],
-    "accent": "asks.",
-    "at": 0.5
+    "accent": "asks."
    },
    "fx": [
     {
      "kind": "shake",
-     "at": 2.5
+     "at": 0
     }
    ]
   },

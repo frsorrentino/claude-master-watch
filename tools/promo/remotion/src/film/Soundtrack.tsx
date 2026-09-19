@@ -2,7 +2,7 @@ import React from "react";
 import { Audio, Sequence, staticFile } from "remotion";
 import { beatToFrame } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { dbToGain, duckGain, sfxCues, stopGain } from "./sound.ts";
+import { dbToGain, duckGain, sfxCues, sleepGain, stopGain } from "./sound.ts";
 import type { Timeline } from "./timeline.ts";
 
 /** "nosfx": musica e voce, finché i suoni d'interfaccia non sono nel progetto. */
@@ -15,6 +15,13 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
   const on = (s: Stems) => stems === "all" || stems === s || (stems === "nosfx" && s !== "sfx");
   const spoken = t.scenes.flatMap((s) => (s.fx ?? []).flatMap((f) => (f.kind === "spoken" ? [{ from: beatToFrame(g, s.at + f.at), to: beatToFrame(g, s.at + f.at + f.len), voice: f.voice }] : [])));
   const windows = spoken.map((v) => [v.from, v.to] as [number, number]);
+  // il sonno del display: la musica scende con l'ambient e riparte sul risveglio (sound.ts, `sleepGain`)
+  const naps = t.scenes.flatMap((s, i) => {
+    const next = t.scenes[i + 1];
+    if (!s.sleep || !next) return [];
+    const frames = beatToFrame(g, s.at + s.sleep.len) - beatToFrame(g, s.at);
+    return [{ cut: beatToFrame(g, next.at), frames, back: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)) }];
+  });
   const stops = t.scenes.flatMap((s) => (s.fx ?? []).flatMap((f) => (f.kind === "musicStop" ? [[beatToFrame(g, s.at + f.at), beatToFrame(g, s.at + f.at + f.len)] as [number, number]] : [])));
   return (
     <>
@@ -23,7 +30,7 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
           anziché dalla prima». È anche ciò che rimette lo zoom della complication sulla pausa del brano. */}
       {on("music") && t.music ? (
         <Sequence from={Math.round(((t.musicDelayBeats ?? 0) * 60) / g.bpm * g.fps)} layout="none">
-          <Audio src={staticFile(t.music)} trimBefore={Math.round(MUSIC_INTRO_SECONDS * g.fps)} volume={(f) => dbToGain(-6) * duckGain(f, windows, -12, 9) * stopGain(f, stops)} />
+          <Audio src={staticFile(t.music)} trimBefore={Math.round(MUSIC_INTRO_SECONDS * g.fps)} volume={(f) => dbToGain(-6) * duckGain(f, windows, -12, 9) * stopGain(f, stops) * sleepGain(f, naps)} />
         </Sequence>
       ) : null}
       {on("voice") ? spoken.map((v, i) => <Sequence key={i} from={v.from} layout="none"><Audio src={staticFile(`audio/${v.voice}`)} volume={dbToGain(-3)} /></Sequence>) : null}

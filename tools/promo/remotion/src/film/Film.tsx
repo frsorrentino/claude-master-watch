@@ -16,13 +16,14 @@ import { THEME } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
-import { Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
+import { AROUND_ZOOM, Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { takeoverAt } from "./ui/takeover.ts";
 import { Flip } from "./ui/Flip.tsx";
 import { FLIP_CUT } from "./ui/flip.ts";
+import { SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./ui/sleep.ts";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
 import { Blinds } from "./ui/Blinds.tsx";
@@ -47,13 +48,26 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const total = spanFrames(GRID, scene.at, scene.len);
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
+  // il display che dorme (ui/sleep.ts): la finestra finisce sul taglio, e la scena dopo eredita il risveglio. La scena che
+  // dorme è anche quella che si sposta: al buio la camera passa all'inquadratura della scena dopo.
+  const idx = TIMELINE.scenes.indexOf(scene);
+  const prev = TIMELINE.scenes[idx - 1];
+  const next = TIMELINE.scenes[idx + 1];
+  const nap = scene.sleep ?? prev?.sleep;
+  const napOwn = Boolean(scene.sleep);
+  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total)) : null;
+  const light = sleep ? sleep.light : 1;
+  const halo = sleep ? sleep.halo : 1;
+  const mv = sleep && napOwn ? sleep.move : 0;
+  const titleOn = sleep && napOwn ? sleep.title : 1;
   const closing = scene.endCard ? closingAt(frame / beat) : null;
   // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
   // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
   const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
-  const cx = (scene.watch?.camera === "around" ? 0.5 : scene.text ? THEME.watchX : 0.5) * width;
+  const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
+  const cx = (watchColumn(scene) + (watchColumn(next) - watchColumn(scene)) * mv) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
@@ -64,7 +78,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - beat * (w.exitBeats ?? MOVE_BEATS) * 0.55 : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
-  const { zoom, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
+  const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
+  // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
+  const zoom = zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv;
   // quando l'orologio si materializza ATTORNO alla scheda ferma al centro, non è l'orologio a essere centrato: è la sua
   // scheda. Si sposta l'orologio di quanto la scheda dista dal centro del display, alla scala di quel momento.
   const aroundCard = scene.watch?.camera === "around" ? (scene.fx ?? []).find((f) => f.kind === "cardOut") : undefined;
@@ -98,7 +114,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
-      <Backdrop act={scene.act} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
+      <Backdrop act={scene.act} light={halo} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>
@@ -108,7 +124,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
+          <PhotoWatch view={w.view} light={light} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
@@ -119,9 +135,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (1 - underFlip) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
-      {scene.text ? (
+      {scene.text && !prev?.sleep ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo), left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
+          <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo) * titleOn, left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub} hideAccentFrom={scene.out === "blink" ? leave - textAt : undefined}   /* dentro la sequenza del testo i fotogrammi ripartono da zero */
               fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
               perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
@@ -211,6 +227,25 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text!.accent!} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
+      {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
+          solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si
+          risveglia non disegna il suo testo: lo disegna qui. */}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
+        if (!s.sleep || !next?.text) return null;
+        const frames = spanFrames(GRID, s.at, s.sleep.len);
+        const pre = Math.round(frames * (SLEEP_CUT - TITLE_AT));
+        const cut = beatToFrame(GRID, next.at);
+        const nextFrames = spanFrames(GRID, next.at, next.len);
+        const beat = spanFrames(GRID, next.at, 1);
+        return (
+          <Sequence key={`title-${s.id}`} from={cut - pre} durationInFrames={pre + nextFrames} layout="none">
+            <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
+              <WordMask lines={next.text.lines} accent={next.text.accent} size={next.text.size} sub={next.text.sub} perWordFrames={Math.round(beat / 2)} exitAt={pre + nextFrames - 8} align="left" />
+            </div>
+          </Sequence>
+        );
+      })}
       {actChanges(TIMELINE.scenes).map((b) => (
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
       ))}
