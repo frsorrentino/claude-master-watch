@@ -33,9 +33,14 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; blackOutFrames?: number };
 /* `blackOutFrames`: un breve nero prima del taglio, quando la scena si chiude su un movimento e la musica riprende
    subito dopo — il vuoto fa respirare lo stacco (Franz, 19/09 15:43). */
+/** La scheda che si volta e sul retro ha la domanda: `len` battiti a cavallo del taglio con la scena dopo. */
+export type FlipCue = { len: number; w: number; card: { name: string; age: string; text: string; badge?: string; icon?: "check" | "play" }; question: { name: string; age: string; text: string } };
+/** La luce della notifica che cresce dal display, copre il quadro e si ritira sull'inquadratura nuova: `len` battiti a
+ *  cavallo del taglio, `cx`/`cy` il centro del display in frazioni di quadro. */
+export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
 /** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
 export type BlindsCue = { len: number };
 /** `musicDelayBeats`: di quanti battiti la musica entra dopo l'inizio del film, per far cadere il culmine del crescendo

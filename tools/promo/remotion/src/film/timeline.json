@@ -128,17 +128,10 @@
     "accent": "glance.",
     "place": "top"
    },
-   "takeover": {
-    "len": 4,
-    "x": 600,
-    "y": 540,
-    "w": 900,
-    "h": 449,
-    "r": 88,
-    "color": "#23272E",
-    "toColor": "#242A42",
-    "body": "card",
-    "text": "Run the checkout test suite after the Stripe webhook refactor"
+   "glow": {
+    "len": 3.5,
+    "cx": 0.5,
+    "cy": 0.5
    }
   },
   {

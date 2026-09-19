@@ -21,6 +21,10 @@ import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { takeoverAt } from "./ui/takeover.ts";
+import { Flip } from "./ui/Flip.tsx";
+import { FLIP_CUT } from "./ui/flip.ts";
+import { Glow } from "./ui/Glow.tsx";
+import { GLOW_CUT } from "./ui/glow.ts";
 import { Blinds } from "./ui/Blinds.tsx";
 import { BLIND_CUT, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
@@ -73,6 +77,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const takeStart = scene.takeover ? total - Math.round(spanFrames(GRID, scene.at, scene.takeover.len) * TAKEOVER_CUT) : Infinity;
   // il componente sotto sparisce quando il takeover lo ha COPERTO (metà della crescita), non appena parte: altrimenti fra
   // i tasti che se ne vanno e il campo che arriva si vede lo sfondo della scena (Franz, 19/09 11:03: «c'è un buco»)
+  const flipStart = scene.flip ? total - Math.round(spanFrames(GRID, scene.at, scene.flip.len) * FLIP_CUT) : Infinity;
+  const underFlip = frame >= flipStart ? 1 : 0;
   const underTakeover = scene.takeover && frame >= takeStart
     ? Math.min(1, Math.max(0, (takeoverAt((frame - takeStart) / Math.max(1, spanFrames(GRID, scene.at, scene.takeover.len))).grow - 0.3) / 0.25))
     : 0;
@@ -110,7 +116,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Aside scene={scene} g={GRID} />
       {/* quando l'orologio si materializza attorno, la scheda ricostruita gli lascia il posto: dentro il display c'è la
           stessa scheda, nello stesso punto, e due copie sovrapposte si vedrebbero */}
-      <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
+      <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (1 - underFlip) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text ? (
@@ -164,6 +170,28 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         if (!s.carryOut || !next?.carryIn) return null;
         // centrato sul taglio: l'oggetto lascia la scena negli ultimi 7 fotogrammi e arriva nei primi 7 della dopo
         return <Sequence key={`carry-${s.id}`} from={beatToFrame(GRID, next.at) - CARRY_FRAMES / 2} durationInFrames={CARRY_FRAMES + 1} layout="none"><Carry from={toFrame(s.carryOut, s)} to={toFrame(next.carryIn, next)} frames={CARRY_FRAMES} /></Sequence>;
+      })}
+      {/* la luce della notifica: cresce dal display, copre, e sotto il quadro pieno l'inquadratura cambia */}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
+        if (!s.glow || !next) return null;
+        const frames = spanFrames(GRID, s.at, s.glow.len);
+        return (
+          <Sequence key={`glow-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * GLOW_CUT)} durationInFrames={frames + 1} layout="none">
+            <Glow frames={frames} cx={s.glow.cx} cy={s.glow.cy} color={s.glow.color} />
+          </Sequence>
+        );
+      })}
+      {/* la scheda che si volta: sul retro c'è la domanda della scena dopo */}
+      {TIMELINE.scenes.map((s, i) => {
+        const next = TIMELINE.scenes[i + 1];
+        if (!s.flip || !next) return null;
+        const frames = spanFrames(GRID, s.at, s.flip.len);
+        return (
+          <Sequence key={`flip-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * FLIP_CUT)} durationInFrames={frames + 1} layout="none">
+            <Flip frames={frames} w={s.flip.w} card={s.flip.card} question={s.flip.question} />
+          </Sequence>
+        );
       })}
       {/* il piccolo nero che chiude una scena sul suo movimento, appena prima che il brano riprenda */}
       {TIMELINE.scenes.filter((s) => s.blackOutFrames).map((s) => (
