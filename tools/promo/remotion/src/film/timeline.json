@@ -166,7 +166,7 @@
   {
    "id": "speaks",
    "at": 36,
-   "len": 18,
+   "len": 13,
    "act": "know",
    "watch": {
     "view": "front",
@@ -203,8 +203,8 @@
   },
   {
    "id": "answer",
-   "at": 54,
-   "len": 8,
+   "at": 49,
+   "len": 13,
    "act": "act",
    "watch": {
     "view": "front",
@@ -221,13 +221,13 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 2.5,
+     "at": 3.5,
      "len": 2
     },
     {
      "kind": "optionsBuild",
      "at": 0.5,
-     "len": 7,
+     "len": 11,
      "yes": [
       26,
       150,

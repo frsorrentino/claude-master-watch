@@ -105,7 +105,10 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (!FX.includes(f.kind)) { say(`effetto «${f.kind}» sconosciuto`); continue; }
       const len = "len" in f ? f.len : 0;
       if (!half(f.at) || !half(len)) say(`l'effetto ${f.kind} ha tempi che non sono mezzi battiti (at ${f.at})`);
-      else if (f.at + len > s.len || f.at >= s.len) say(`l'effetto ${f.kind} al battito ${f.at} esce dalla scena`);
+      // il parlato fa eccezione: l'audio è montato sul film, non sulla scena, e continua oltre il taglio — la voce legge
+      // le due risposte mentre il display è già sui tasti (Franz, 19/09 05:12: «più vicino alla lettura delle 2 risposte»)
+      else if (f.kind !== "spoken" && (f.at + len > s.len || f.at >= s.len)) say(`l'effetto ${f.kind} al battito ${f.at} esce dalla scena`);
+      else if (f.kind === "spoken" && f.at >= s.len) say(`il parlato comincia al battito ${f.at}, fuori dalla scena`);
       if (f.kind === "tap" && !(f.x >= 0 && f.x <= 480 && f.y >= 0 && f.y <= 480)) say(`tocco (${f.x}, ${f.y}) fuori dallo schermo 480×480`);
       if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "shake" || f.kind === "cardOut" || f.kind === "gaugeHero") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
       if (f.kind === "gaugeHero") {
