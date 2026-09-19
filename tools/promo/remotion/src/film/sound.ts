@@ -16,9 +16,10 @@ export const sfxCues = (t: Timeline): SfxCue[] => {
     if (s.out === "blink") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
     for (const f of s.fx ?? []) {
       const beat = s.at + f.at;
-      // la vibrazione della notifica oggi è `shake` (l'orologio trema), non più `haptic`: il suono va agganciato a quella,
-      // altrimenti campanella e tonfo non suonano mai — rilievo 19 dell'audit della v7
-      if (f.kind === "haptic" || f.kind === "shake") all.push({ beat, name: "notify", gainDb: -16 });
+      // campanella e tonfo restano SPENTI finché nel film non c'è l'evento che li giustifica (Franz, 19/09 05:58): oggi
+      // nessuna scena mostra una notifica con la campanella, e il tremito di «It asks» da solo non basta. Il suono esiste
+      // ed è pronto: si accende agganciando `haptic` alla scena che lo mostrerà.
+      if (f.kind === "haptic") all.push({ beat, name: "notify", gainDb: -16 });
       if (f.kind === "tap") all.push({ beat, name: "tick", gainDb: -20 });
       if (f.kind === "longPress") all.push({ beat, name: "pressRise", gainDb: -18 });
       if (f.kind === "terminal") f.lines.forEach((_, i) => all.push({ beat: beat + i * f.every, name: "tick", gainDb: -24 }));
