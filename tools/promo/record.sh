@@ -11,6 +11,8 @@ PKG=it.pixelbox.cmwatch; ACT=$PKG/.wear.MainActivity
 # adb senza fili cade senza avviso (17/09 02:23, a metà della scena 4): se il comando fallisce si ricollega e si riprova una volta.
 sh() { timeout 30 "$A" -s "$D" shell "$@" || { timeout 20 "$A" connect "$D" >/dev/null 2>&1; timeout 30 "$A" -s "$D" shell "$@"; }; }
 pause() { sleep "$1"; }
+# Tiene sveglio il display per <n> volte <ogni> secondi: KEYCODE_WAKEUP su uno schermo già acceso non cambia nulla.
+awake() { for _ in $(seq "$1"); do sh input keyevent KEYCODE_WAKEUP; pause "$2"; done; }
 # La corona: uno scatto alla volta con un ritmo da dito vero, non uno scatto secco.
 crown() { local n=$1 dir=$2 gap=${3:-0.16}; for _ in $(seq "$n"); do sh input rotaryencoder scroll --axis "SCROLL,$dir"; sleep "$gap"; done; }
 tap() { sh input tap "$1" "$2"; }
@@ -160,15 +162,23 @@ p2_asks() {   # lista ferma → arriva la domanda: l'app apre da sola la scherma
   fresh; go sessions; pause 2.6; snap lista
   step question 3.2; snap domanda
 }
-p2_speaks() {   # domanda in cima con ▶ → tocco ▶, il testo scorre lento fino ai tasti mentre legge, ■ torna ▶
+# Dal 19/09 la domanda è corta («Staging is green. Deploy 2.8.0?», due righe): i tasti sono già quasi in schermo e il
+# vecchio scorrimento in due tempi finiva oltre. Basta un trascinamento di 95 px, misurato sul fotogramma: «1 · yes» passa
+# da 244 a 150, dove il film lo ricostruisce, e «2 · no» entra intero. Lo scorrimento guidato (`scroll_px`) qui non vale:
+# la demo lo applica alla lista delle sessioni, non alla schermata della domanda (provato il 19/09 21:35).
+p2_speaks() {   # domanda in cima con ▶ → tocco ▶, la lista si assesta sui tasti mentre legge, ■ torna ▶
+  # la domanda resta in schermo un po' prima del tocco: nel film fra l'attacco della musica e la lettura ci vogliono due
+  # battute, e quel tempo deve esistere nel girato (Franz, 19/09 21:56)
   fresh; go sessions; pause 2.0; step question 3.0; snap domanda
-  tap 347 90; pause 1.2; snap legge
-  sh input swipe 240 420 240 200 2600; pause 2.6; snap scorre_1
-  sh input swipe 240 400 240 320 2200; pause 4.0; snap scorre_2
+  # durante la sosta lo schermo va in dormiveglia («mWakefulness=Dozing», 19/09 22:12) e i tocchi non arrivano più:
+  # `svc power stayon` vale solo in carica. Una sveglia ogni secondo e mezzo tiene il display attivo e non si vede.
+  awake 3 1.5; tap 347 90; pause 1.4; snap legge
+  sh input swipe 240 300 240 205 900; pause 1.6; snap tasti
+  pause 3.0; snap legge_2
 }
 p2_answer() {   # tasti in vista («1 · yes» pieno, «2 · no» scuro) → pressione lunga su yes → conferma, lista con ▶
   fresh; go sessions; pause 2.0; step question 3.0
-  sh input swipe 240 400 240 150 900; pause 2.0; snap tasti
+  sh input swipe 240 300 240 205 900; pause 1.4; snap tasti
   hold 240 205 1100; pause 0.6; snap inviato; pause 3.0; snap lista
 }
 p2_follow() {   # scheda di payments-api senza campanella → pressione lunga → campanella accesa (stato pulito: `fresh`)

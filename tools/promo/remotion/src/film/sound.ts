@@ -1,13 +1,13 @@
-import { AMBIENT, SLEEP_CUT, sleepAt } from "./ui/sleep.ts";
+import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import type { Timeline } from "./timeline.ts";
 
-export type SfxName = "notify" | "thump" | "tick" | "pressRise" | "whoosh" | "shutter";
+export type SfxName = "wearNotify" | "notify" | "thump" | "tick" | "pressRise" | "whoosh" | "shutter";
 export type SfxCue = { beat: number; name: SfxName; gainDb: number };
 
 export const dbToGain = (db: number): number => Math.pow(10, db / 20);
 
 /** Priorità quando due suoni cadono nello stesso battito: la notifica, poi la pressione, il tocco, il soffio. */
-const RANK: SfxName[] = ["notify", "shutter", "pressRise", "tick", "whoosh", "thump"];
+const RANK: SfxName[] = ["wearNotify", "notify", "shutter", "pressRise", "tick", "whoosh", "thump"];
 
 export const sfxCues = (t: Timeline): SfxCue[] => {
   const all: SfxCue[] = [];
@@ -20,9 +20,11 @@ export const sfxCues = (t: Timeline): SfxCue[] => {
       // campanella e tonfo restano SPENTI finché nel film non c'è l'evento che li giustifica (Franz, 19/09 05:58): oggi
       // nessuna scena mostra una notifica con la campanella, e il tremito di «It asks» da solo non basta. Il suono esiste
       // ed è pronto: si accende agganciando `haptic` alla scena che lo mostrerà.
-      // la campanella sta sul tremito: è lì che la notifica arriva nel film. `haptic` la tiene per le scene che mostrano
-      // anche gli anelli; `shake` la vuole da sola, senza disegnare nulla sopra l'orologio (Franz, 19/09 18:12).
-      if (f.kind === "haptic" || f.kind === "shake") all.push({ beat, name: "notify", gainDb: -2 });   // la notifica suona nel silenzio: sta davanti, non sotto la musica (Franz, 19/09 18:12)
+      // il tremito porta il suono di notifica VERO dell'orologio (`wearNotify`, Tethys.ogg tirato giù dal Pixel Watch 5 il
+      // 19/09: `settings get system notification_sound` lo dà come predefinito). `haptic` tiene la campanella del progetto
+      // per le scene che disegnano anche gli anelli.
+      if (f.kind === "shake") all.push({ beat, name: "wearNotify", gainDb: -2 });
+      if (f.kind === "haptic") all.push({ beat, name: "notify", gainDb: -2 });   // la notifica suona nel silenzio: sta davanti, non sotto la musica (Franz, 19/09 18:12)
       if (f.kind === "tap") all.push({ beat, name: "tick", gainDb: -20 });
       if (f.kind === "longPress") all.push({ beat, name: "pressRise", gainDb: -18 });
       if (f.kind === "terminal") f.lines.forEach((_, i) => all.push({ beat: beat + i * f.every, name: "tick", gainDb: -24 }));
@@ -57,14 +59,21 @@ export const duckGain = (frame: number, windows: [number, number][], depthDb: nu
  * fotogramma per via degli arrotondamenti.
  */
 export type Nap = { cut: number; frames: number; back: number };
+/** In quanti fotogrammi la musica cade: tre, non i otto della dissolvenza del display. Seguendo la luce lo stacco aveva
+ *  «una frazione di secondo di troppo» (Franz, 19/09 20:39): il display può calare piano, la musica no. */
+export const MUSIC_FALL = 3;
+/** Di quanto il silenzio ARRIVA PRIMA del battito: l'ultimo colpo del brano cadeva sul battito e lo stacco sembrava in
+ *  ritardo (Franz, 19/09 21:56). Cinque fotogrammi = 0,17 s. */
+export const MUSIC_EARLY = 5;
 export const sleepGain = (frame: number, naps: Nap[]): number => {
   let g = 1;
   for (const n of naps) {
     const p = SLEEP_CUT + (frame - n.cut) / n.frames;
     if (p < 0 || frame >= n.back + 2) continue;
+    const hush = n.cut - Math.round(n.frames * (SLEEP_CUT - HUSH)) - MUSIC_EARLY;   // il silenzio arriva un soffio prima del battito
     // rientro in due fotogrammi: sul battito la musica c'è già, ma senza lo schiocco di un taglio netto
     if (frame >= n.back) { g = Math.min(g, (frame - n.back + 1) / 2); continue; }
-    g = Math.min(g, p < SLEEP_CUT ? (Math.min(1, sleepAt(p).light) - AMBIENT) / (1 - AMBIENT) : 0);
+    g = Math.min(g, Math.max(0, Math.min(1, (hush - frame) / MUSIC_FALL)));
   }
   return Math.max(0, g);
 };

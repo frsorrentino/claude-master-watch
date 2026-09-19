@@ -57,12 +57,15 @@ export const driftAt = (absFrame: number): Pose => {
 
 /** `steady`: niente deriva. Serve quando un componente deve uscire ESATTAMENTE dal suo posto sul display: se l'orologio
  *  respira, il punto di partenza si sposta e l'incastro si perde (Franz, 19/09 11:03). */
-export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move, absFrame = frame, steady = false): Pose => {
+export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move, absFrame = frame, steady = false, driftScale = 1): Pose => {
   const a = enter ? moveAt(enter, clamp(frame / moveFrames)) : REST;
   const b = exit ? moveAt(exit, clamp((frame - (total - moveFrames)) / moveFrames)) : REST;
   // durante un'uscita la deriva si spegne: l'inquadratura finale del movimento è esatta, senza il respiro sopra
   const bw = exit ? 1 - clamp((frame - (total - moveFrames)) / moveFrames) : 1;
-  const d0 = steady ? REST : driftAt(absFrame);
+  // `driftScale` 0-1: quanto vale la deriva adesso. Serve a fermarla per un tratto senza farla saltare quando torna
+  //  (ui/sleep.ts, `still`): a 0 l'orologio è immobile, e il ritorno si fa scalando piano, non riaccendendola di colpo.
+  const d0raw = steady ? REST : driftAt(absFrame);
+  const d0: Pose = { x: d0raw.x * driftScale, y: d0raw.y * driftScale, scale: 1 + (d0raw.scale - 1) * driftScale, tilt: d0raw.tilt * driftScale };
   const drift: Pose = { x: d0.x * bw, y: d0.y * bw, scale: 1 + (d0.scale - 1) * bw, tilt: d0.tilt * bw };
   const tilt = Math.max(-10, Math.min(10, a.tilt + b.tilt + drift.tilt));
   return { x: a.x + b.x + drift.x, y: a.y + b.y + drift.y, scale: a.scale * b.scale * drift.scale, tilt };

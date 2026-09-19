@@ -1,5 +1,6 @@
 import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
+import { SLEEP_CUT, TITLE_AT } from "./ui/sleep.ts";
 
 /** La scaletta: scene in fila, in battiti. Dentro una scena i tempi (text.at, fx[].at) partono dall'inizio della scena; mezzi battiti ammessi. */
 export type Act = "open" | "know" | "act" | "control" | "close";
@@ -43,13 +44,19 @@ export type FlipCue = { len: number; w: number; card: { name: string; age: strin
 export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
 /** Il display che si addormenta e la notifica che lo risveglia: `len` battiti a cavallo del taglio. Il display cala ad
  *  ambient, nel buio la camera si sposta sull'inquadratura della scena dopo, e sul battito il display si riaccende.
- *  La musica si azzera con lui e rientra `musicBackBeats` battiti dopo il taglio (una battuta, 4 battiti, se non detto). */
-export type SleepCue = { len: number; musicBackBeats?: number };
+ *  La musica si azzera con lui e rientra `musicBackBeats` battiti dopo il taglio (una battuta, 4 battiti, se non detto).
+ *  `musicFrom`: il secondo della traccia da cui riparte. Dopo un silenzio la musica non riprende da dove sarebbe arrivata:
+ *  attacca il giro principale (Franz, 19/09 19:41). Misurato su `music.v9.wav`: l'attacco è a 8,699 s, +7,2 dB sulla
+ *  battuta prima. */
+export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number };
 /** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
 export type BlindsCue = { len: number };
 /** `musicDelayBeats`: di quanti battiti la musica entra dopo l'inizio del film, per far cadere il culmine del crescendo
  *  dove serve (Franz, 19/09 15:05: «la musica è una battuta avanti rispetto a quando serve»). */
-export type Timeline = Grid & { music?: string; musicDelayBeats?: number; scenes: Scene[] };
+/** `musicDelayFrames`: la fase della traccia, in fotogrammi. Misurata il 19/09 sui transienti di `music.v9.wav`: i battiti
+ *  del brano cadono 35 ms PRIMA di quelli della griglia (110,00 bpm esatti, quindi è fase, non deriva). Un fotogramma di
+ *  ritardo sulla traccia li rimette insieme a 2 ms, senza spostare di un fotogramma tutti i tagli già approvati. */
+export type Timeline = Grid & { music?: string; musicDelayBeats?: number; musicDelayFrames?: number; scenes: Scene[] };
 
 export class TimelineError extends Error {
   problems: string[];
@@ -75,6 +82,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
   if (typeof t.offsetSeconds !== "number") bad.push("offsetSeconds manca");
   const ids = new Set<string>();
   let end = 0;
+  let prev: Scene | undefined;
   for (const s of t.scenes ?? []) {
     const say = (m: string) => bad.push(`${s.id}: ${m}`);
     if (ids.has(s.id)) say("id doppio");
@@ -103,6 +111,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // il sonno del display: sotto i 2,5 battiti non c'è tempo per calare, restare al buio e riaccendersi sul battito
     if (s.sleep && !(half(s.sleep.len) && s.sleep.len >= 2.5)) say(`il sonno del display dura ${s.sleep.len} battiti: il minimo è 2,5, in battiti o mezzi battiti`);
     if (s.sleep && !s.watch) say("il sonno del display vuole l'orologio in scena");
+    if (s.sleep?.musicFrom !== undefined && !(s.sleep.musicFrom >= 0)) say(`la musica riparte dal secondo ${s.sleep.musicFrom} della traccia: serve un tempo dentro il brano`);
     if (s.sleep?.musicBackBeats !== undefined && !half(s.sleep.musicBackBeats)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dopo il taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
     if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
@@ -116,7 +125,10 @@ export const validateTimeline = (raw: unknown): Timeline => {
       const words = s.text.lines.flatMap((l) => l.split(" "));
       // «desk.» tagliata nell'anteprima del 17/09: cinque parole a una per battito in una scena di quattro battiti
       const perWord = 0.5;   // mezzo battito a parola ovunque
-      const room = s.len - (s.text.at ?? 0) - (s.watch?.exit ? 2 : 0);
+      // se la scena prima addormenta il display, il titolo di questa si scrive PRIMA del taglio (Film.tsx lo disegna a
+      // cavallo): quei battiti contano come spazio, se no una scena corta dopo il risveglio risulta troppo stretta
+      const early = prev?.sleep ? (SLEEP_CUT - TITLE_AT) * prev.sleep.len : 0;
+      const room = s.len + early - (s.text.at ?? 0) - (s.watch?.exit ? 2 : 0);
       // due battiti perché la frase intera resti ferma: è la pausa che la rende leggibile, non la velocità
       if (words.length * perWord + 2 > room) say(`${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
@@ -146,6 +158,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       const HERO = ["cardOut", "gaugeHero", "optionsBuild", "terminalPlane", "panelHero"];
       if (HERO.includes(f.kind) && (s.fx ?? []).filter((x) => HERO.includes(x.kind)).length > 1 && s.id !== "limits") say("un solo momento forte per scena");
     }
+    prev = s;
   }
   if (bad.length) throw new TimelineError(bad);
   return t;

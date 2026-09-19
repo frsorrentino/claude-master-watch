@@ -92,7 +92,7 @@
   {
    "id": "list",
    "at": 24,
-   "len": 8,
+   "len": 14,
    "act": "know",
    "watch": {
     "view": "front",
@@ -105,7 +105,7 @@
     {
      "kind": "cardOut",
      "at": 0,
-     "len": 8,
+     "len": 14,
      "rect": [
       26,
       63,
@@ -129,19 +129,20 @@
     "place": "top"
    },
    "sleep": {
-    "len": 4,
-    "musicBackBeats": 4
+    "len": 8,
+    "musicBackBeats": 2,
+    "musicFrom": 8.699
    }
   },
   {
    "id": "asks",
-   "at": 32,
-   "len": 5,
+   "at": 38,
+   "len": 3,
    "act": "know",
    "watch": {
     "view": "front",
     "clip": "scenes/n_speaks.mp4",
-    "clipStart": 11.25
+    "clipStart": 11.2
    },
    "text": {
     "lines": [
@@ -158,13 +159,13 @@
   },
   {
    "id": "speaks",
-   "at": 37,
+   "at": 41,
    "len": 13,
    "act": "know",
    "watch": {
     "view": "front",
     "clip": "scenes/n_speaks.mp4",
-    "clipStart": 13.0
+    "clipStart": 14.64
    },
    "text": {
     "lines": [
@@ -176,33 +177,28 @@
    "fx": [
     {
      "kind": "tap",
-     "at": 0.5,
+     "at": 7.5,
      "x": 347,
      "y": 90
     },
     {
      "kind": "spoken",
-     "at": 1,
-     "len": 17,
+     "at": 8,
+     "len": 9.5,
      "voice": "question.wav",
      "words": "question.words.json"
-    },
-    {
-     "kind": "musicStop",
-     "at": 0.5,
-     "len": 4
     }
    ]
   },
   {
    "id": "answer",
-   "at": 50,
+   "at": 54,
    "len": 5.5,
    "act": "act",
    "watch": {
     "view": "front",
     "clip": "scenes/n_answer.mp4",
-    "clipStart": 12.3,
+    "clipStart": 16.1,
     "steady": true
    },
    "text": {
@@ -224,15 +220,15 @@
      "len": 5,
      "yes": [
       26,
-      150,
+      167,
       428,
-      112
+      111
      ],
      "no": [
       26,
-      270,
+      287,
       428,
-      112
+      109
      ],
      "yesLabel": "1 · yes",
      "noLabel": "2 · no"
@@ -252,7 +248,7 @@
   },
   {
    "id": "loop",
-   "at": 55.5,
+   "at": 59.5,
    "len": 11,
    "act": "act",
    "watch": {
@@ -334,7 +330,7 @@
   },
   {
    "id": "watch",
-   "at": 66.5,
+   "at": 70.5,
    "len": 7,
    "act": "control",
    "watch": {
@@ -376,7 +372,7 @@
   },
   {
    "id": "accounts",
-   "at": 73.5,
+   "at": 77.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -389,7 +385,7 @@
   },
   {
    "id": "limits",
-   "at": 78.5,
+   "at": 82.5,
    "len": 31,
    "act": "control",
    "watch": {
@@ -475,7 +471,7 @@
   },
   {
    "id": "new",
-   "at": 109.5,
+   "at": 113.5,
    "len": 8,
    "act": "control",
    "watch": {
@@ -495,7 +491,7 @@
   },
   {
    "id": "close",
-   "at": 117.5,
+   "at": 121.5,
    "len": 10,
    "act": "close",
    "watch": {
@@ -508,5 +504,6 @@
   }
  ],
  "music": "audio/music.v9.wav",
- "musicDelayBeats": 0
+ "musicDelayBeats": 0,
+ "musicDelayFrames": 1
 }

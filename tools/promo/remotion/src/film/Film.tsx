@@ -60,10 +60,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const halo = sleep ? sleep.halo : 1;
   const mv = sleep && napOwn ? sleep.move : 0;
   const titleOn = sleep && napOwn ? sleep.title : 1;
+  const drift = sleep ? 1 - sleep.still : 1;   // la deriva si ferma nel sonno e torna piano dopo il risveglio
   const closing = scene.endCard ? closingAt(frame / beat) : null;
   // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
   // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
-  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady) : null;
+  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
   const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
@@ -85,7 +86,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // scheda. Si sposta l'orologio di quanto la scheda dista dal centro del display, alla scala di quel momento.
   const aroundCard = scene.watch?.camera === "around" ? (scene.fx ?? []).find((f) => f.kind === "cardOut") : undefined;
   const aroundDy = aroundCard && aroundCard.kind === "cardOut"
-    ? (240 - (aroundCard.rect[1] + aroundCard.rect[3] / 2)) * (((THEME.frontGlassPx / (2 * geo.front.glassR)) * 2 * geo.front.displayR) / 480) * zoom
+    // `(1 - mv)`: quando la camera lascia la scheda e va nella colonna di destra, questo scarto si annulla con il
+    // movimento. Senza, l'orologio restava 94 px più in basso per tutto il sonno e al risveglio saltava su (Franz, 22:20).
+    ? (240 - (aroundCard.rect[1] + aroundCard.rect[3] / 2)) * (((THEME.frontGlassPx / (2 * geo.front.glassR)) * 2 * geo.front.displayR) / 480) * zoom * (1 - mv)
     : 0;
   // quando un momento forte prende il quadro (il tasto che diventa sfondo) il titolo se ne va: sul chiaro non si leggerebbe
   const over = heroState(scene, GRID, frame).exit;
@@ -114,7 +117,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
-      <Backdrop act={scene.act} light={halo} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
+      <Backdrop act={scene.act} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>
@@ -124,7 +127,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} light={light} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
+          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

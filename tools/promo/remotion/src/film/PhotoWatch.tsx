@@ -6,8 +6,9 @@ import type { Quad } from "./homography.ts";
 import { MAX_TILT } from "./moves.ts";
 import { Watch } from "../Watch";
 
-/** `light`: luminosità del display, 1 = normale (ui/sleep.ts: il display che dorme e si risveglia). */
-type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
+/** `light`: luminosità del display, 1 = normale (ui/sleep.ts: il display che dorme e si risveglia).
+ *  `rim` 0-1: la luce dello schermo che batte sulla ghiera nei primi fotogrammi del risveglio. */
+type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; rim?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
 
 const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, still, overlay }) => {
   const video = <OffthreadVideo src={staticFile(clip)} muted trimBefore={Math.round(clipStart * 30)} playbackRate={rate} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
@@ -21,7 +22,7 @@ const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: b
   );
 };
 
-const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, tilt, overlay, around, light = 1 }) => {
+const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, tilt, overlay, around, light = 1, rim = 0 }) => {
   const G = geo.front;
   const k = glassPx / (2 * G.glassR);
   const disc = (r: number): React.CSSProperties => ({ position: "absolute", left: G.cx - r, top: G.cy - r, width: 2 * r, height: 2 * r, borderRadius: "50%" });
@@ -45,6 +46,9 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx,
           <div style={{ position: "absolute", inset: "-20%", rotate: "24deg", translate: `${blade}% 0`, opacity: bladeOn, background: "linear-gradient(90deg, rgba(0,0,0,0) 40%, rgba(255,255,255,.07) 48%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.07) 52%, rgba(0,0,0,0) 60%)" }} />
           <div style={{ position: "absolute", inset: 0, borderRadius: "50%", boxShadow: "inset 5px 5px 7px -3px rgba(235,244,255,.3)" }} />
         </div>
+        {/* il risveglio si vede anche fuori dal vetro: un filo di luce corre sulla ghiera per tre fotogrammi */}
+        {rim > 0 ? <div style={{ ...disc(G.caseR), mixBlendMode: "screen", opacity: rim,
+          background: "radial-gradient(closest-side, rgba(0,0,0,0) 84%, rgba(196,220,255,.5) 93%, rgba(0,0,0,0) 100%)" }} /> : null}
         {around ? <div style={{ position: "absolute", left: G.cx - A, top: G.cy - A, width: 2 * A, height: 2 * A }}>{around}</div> : null}
       </div>
     </div>

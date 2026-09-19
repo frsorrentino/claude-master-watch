@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { stopGain, dbToGain, duckGain, sfxCues, sleepGain } from "./sound.ts";
+import { stopGain, dbToGain, duckGain, sfxCues, sleepGain, MUSIC_FALL, MUSIC_EARLY } from "./sound.ts";
 import { validateTimeline } from "./timeline.ts";
 
 const t = validateTimeline({
@@ -51,14 +51,15 @@ test("il battito di ciglia ha il suo scatto, sul taglio con la scena dopo", () =
   assert.equal(s!.beat, 8, "lo scatto cade sul taglio, non all'inizio della scena");
 });
 
-test("la musica si azzera con il display e rientra una battuta dopo la notifica", () => {
-  const cut = 140, back = 180, naps = [{ cut, frames: 65, back }];
+test("la musica si azzera sul battito e rientra dopo la notifica", () => {
+  const cut = 300, back = 333, naps = [{ cut, frames: 131, back }];   // due battute a 110 bpm
   const at = (f: number) => sleepGain(f, naps);
-  assert.equal(at(99), 1, "prima della finestra la musica è al suo livello");
-  assert.ok(at(110) < 0.5, "mentre il display cala, la musica è già sotto");
-  assert.equal(at(130), 0, "a display addormentato la musica è azzerata");
-  assert.equal(at(cut), 0, "sul risveglio c'è solo la notifica: la musica tace");
+  const hush = cut - Math.round(131 * (0.75 - 0.125)) - MUSIC_EARLY;  // il fotogramma in cui deve esserci silenzio
+  assert.equal(at(hush - MUSIC_FALL), 1, "fino a tre fotogrammi prima la musica è piena");
+  assert.ok(at(hush - 2) < 0.7 && at(hush - 2) > 0, "e cade in tre fotogrammi, non in otto");
+  assert.equal(at(hush), 0, "un soffio prima del battito è già silenzio");
+  assert.equal(at(cut), 0, "sul risveglio si sente solo la notifica");
   assert.equal(at(back - 1), 0, "tace fino al battito del rientro");
   assert.ok(at(back) > 0 && at(back + 1) === 1, "e rientra lì, in due fotogrammi");
-  assert.equal(at(300), 1, "fuori dalla finestra non tocca niente");
+  assert.equal(at(600), 1, "fuori dalla finestra non tocca niente");
 });

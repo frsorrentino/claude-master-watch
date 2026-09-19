@@ -9,7 +9,7 @@ import { UI } from "./UiTokens.ts";
  * e luce dall'alto a sinistra, come sul vetro dell'orologio; sul display non ce n'è).
  */
 export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; light?: number }> = ({ w, name, age, text, badge = UI.badge, icon = "check", light = 0 }) => (
-  <div style={{ width: w, boxSizing: "border-box", padding: "24px 24px 19px", borderRadius: 42, background: UI.surface, color: UI.text, fontFamily: "Roboto",
+  <div style={{ width: w, boxSizing: "border-box", padding: "24px 24px 24.5px", borderRadius: 42, background: UI.surface, color: UI.text, fontFamily: "Roboto",
     boxShadow: `inset 1px 1px 0 rgba(235,244,255,${0.16 * light}), ${16 * light}px ${24 * light}px ${44 * light}px ${-6 * light}px rgba(4,5,12,${0.62 * light})` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 16, height: 36 }}>
       {/* badge come `SessionBadge`: quadrato con angoli al 23 % per il lavoro, tondo per il personale; ✓ = finita, ▶ = al lavoro */}
@@ -21,6 +21,9 @@ export const UiCard: React.FC<{ w: number; name: string; age: string; text: stri
       <div style={{ fontFamily: "Cousine", fontSize: 29, color: UI.text2, flex: 1, whiteSpace: "nowrap" }}>{name}</div>
       <div style={{ fontSize: 33, color: UI.text2, whiteSpace: "nowrap" }}>{age}</div>
     </div>
-    <div style={{ marginTop: 0, fontSize: 36, lineHeight: "46px", letterSpacing: -0.6 }}>{text}</div>
+    {/* il corpo sale di 9,5 unità sotto l'intestazione: misurato il 19/09 con la correlazione 2D fra la card costruita e
+        quella dentro il display (18 px di quadro a zoom 1,42 = 9,6 unità). Badge e nome combaciavano già; scendeva il testo.
+        Il riempimento in basso cresce di altrettanto, così la card resta alta 213 unità come quella vera. */}
+    <div style={{ marginTop: -9.5, fontSize: 36, lineHeight: "46px", letterSpacing: -0.6 }}>{text}</div>
   </div>
 );

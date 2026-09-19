@@ -9,7 +9,7 @@ package it.pixelbox.cmwatch.wear
 object DemoText {
     private val sostituzioni = listOf(
         "Deploy ready, waiting for the client's ok. Deploy now?" to
-            "Refund endpoint is ready and staging checks passed. Deploy version 2.8.0 to production now?",
+            "Staging is green. Deploy 2.8.0?",
         "Esito: migrations 008-011 applied, tests green.\\nThe test seeds and the admin page are still to review." to
             "Applied migrations 008-011 for saved carts and gift cards; all 214 tests are green.\\nThe seed data and the new orders admin page are still to review, and the gift card flow needs a manual check on staging.",
         "Esito: README rewritten with the three sections asked for." to
