@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Gli stati della storia dei video promozionali (piano 16/09): uno per scena, raggiungibili via adb. */
-enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, TICK, BLOG }
+enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, TICK, BLOG, NEW }
 
 /**
  * Legge le fixture del contratto e simula il PC. Gli scarti temporali delle fixture 1 e 2 vengono riportati
@@ -27,6 +27,7 @@ class FakeTransport(
     private val base = ContractJson.decodeState(load("state-1-question"))
     private val deployId = base.sessions[0].id
     private val blogId = base.sessions[2].id
+    private val newId = base.sessions[3].id
     private val originalQuestion = base.sessions[0].question
     private var screenGrowth = 0
     /** Acceso da FOLLOWUP: il terminale della sessione del deploy cresce a ogni cattura e TICK fa avanzare il lavoro. */
@@ -69,6 +70,14 @@ class FakeTransport(
                 at(deployId) { it.copy(since = t, tool = tool, toolNote = note) }
             }
             DemoStep.BLOG -> at(blogId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, toolNote = "Draft a post about the 2.8.0 release") }
+            // L'ultima scena del film («Start the next one»): una sessione appena nata, su un lavoro NUOVO — non una
+            // correzione (Franz, 19/09 12:06). Il testo sta in due righe e lascia una barra di quota sulla tile.
+            DemoStep.NEW -> s.copy(ts = t, sessions = Order.sessions(s.sessions.map {
+                if (it.id == newId) it.copy(
+                    state = SessionState.BUSY, question = null, since = t - 120, turnStarted = t - 120, followed = false,
+                    tool = "Edit", toolNote = "Sketch the new pricing page for the App Store listing",
+                ) else it.copy(state = SessionState.IDLE, question = null, followed = false)
+            }))
         }
     }
 

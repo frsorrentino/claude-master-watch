@@ -24,12 +24,13 @@ sealed class Freshness {
 }
 
 object Durations {
-    fun since(from: Long, now: Long): String {
+    /** La lettera dei giorni la decide la lingua di chi disegna: «g» in italiano, «d» in inglese (le altre coincidono). */
+    fun since(from: Long, now: Long, days: String = "g"): String {
         val s = (now - from).coerceAtLeast(0)
         return when {
             s < 3600 -> "${s / 60} m"
             s < 86400 -> "%d h %02d".format(s / 3600, (s % 3600) / 60)
-            else -> "${s / 86400} g"
+            else -> "${s / 86400} $days"
         }
     }
 }

@@ -26,7 +26,7 @@ object DemoText {
         "ledger-api" to "payments-api",
         "atlas-shop" to "storefront",
         "field-notes" to "blog",
-        "orbit-docs" to "ios-app",
+        "orbit-docs" to "pricing-page",
         "crostini-demo" to "dev-laptop",
         // La quota di lavoro della fixture è «stale» e senza finestra di 5 ore: nel video sembrava un errore (17/09 02:30).
         "\"h5\": null,\n      \"w7\": 75," to "\"h5\": 38,\n      \"w7\": 75,",

@@ -1,5 +1,6 @@
 <resources>
     <!-- English, for the public README cards (Franz, 14/09/2026 22:39). The default stays Italian in values/. -->
+    <string name="unit_days">d</string>
     <string name="app_name">Claude Master</string>
     <string name="sessions_title">Sessions</string>
     <string name="sessions_empty">No sessions</string>
