@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RAIL_MOVE, cardOutAt, panelHeroAt, gaugeHeroAt, optionsBuildAt, railAt, railScroll, railScrollVar, railStackPx, terminalPlaneAt } from "./heroes.ts";
+import { RAIL_MOVE, cardOutAt, cardUnits, gaugeHeroAt, laneY, optionsBuildAt, panelHeroAt, railAt, railScroll, railScrollVar, railStackPx, stackAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -93,4 +93,49 @@ test("la scheda che resta protagonista non se ne va: con la sosta l'uscita è ze
     assert.ok(c.travel > 0.99, `a ${p} la card non è ancora arrivata`);
   }
   assert.ok(cardOutAt(0.99, false, false).exit > 0.5, "senza sosta la card se ne va davvero");
+});
+
+test("l'altezza della scheda viene dal suo testo, come sul display", () => {
+  assert.equal(cardUnits("Run the checkout test suite after the Stripe webhook refactor"), 213, "tre righe: 213 unità, come il rettangolo misurato sul fotogramma");
+  assert.equal(cardUnits("Deployed 2.8.0, smoke tests green"), 167, "due righe: 167");
+  assert.ok(cardUnits("Short one") < cardUnits("Deployed 2.8.0, smoke tests green"), "una riga sta in meno");
+});
+
+test("nella corsia fra due voci vicine resta sempre lo stacco, a qualunque punto dello scorrimento", () => {
+  const h = [219, 108, 279, 167], flat = [false, true, false, false], gap = 12, yB = 600;
+  for (const offset of [0, 0.3, 0.8, 1.2, 1.9, 2.5, 3]) {
+    const lane = laneY(offset, h, gap, yB, flat);
+    for (let i = 0; i + 1 < h.length; i++) {
+      const a = lane.y[i], b = lane.y[i + 1];
+      if (a === null || b === null) continue;
+      const vuoto = b - a - (h[i] * lane.scale[i]) / 2 - (h[i + 1] * lane.scale[i + 1]) / 2;
+      assert.ok(Math.abs(vuoto - gap) < 0.001, `offset ${offset}, voci ${i}-${i + 1}: vuoto ${vuoto.toFixed(1)} invece di ${gap}`);
+    }
+  }
+});
+
+test("in corsia ci sono al massimo due voci: quella davanti piena e una sopra, più piccola e trasparente", () => {
+  assert.equal(stackAt(0).scale, 1, "chi è davanti è pieno");
+  assert.equal(stackAt(0).alpha, 1, "e opaco");
+  assert.ok(stackAt(1).scale < 1, "quella sopra è più piccola");
+  assert.ok(stackAt(1).alpha > 0.75 && stackAt(1).alpha < 0.95, `e appena più trasparente (${stackAt(1).alpha.toFixed(2)}), non un fantasma`);
+  assert.ok(stackAt(1.8).alpha < 0.5, "e si spegne solo in fondo alla salita");
+  assert.equal(stackAt(2).alpha, 0, "quella ancora prima è sparita");
+  const h = [219, 219, 219, 219], gap = 12, yB = 600;
+  for (const offset of [1.2, 2.0, 2.7, 3.4]) {
+    const lane = laneY(offset, h, gap, yB);
+    const vive = lane.y.filter((v, i) => v !== null && lane.alpha[i] > 0.02).length;
+    assert.ok(vive <= 2, `a offset ${offset} ci sono ${vive} voci in quadro`);
+  }
+});
+
+test("la corsia non salta quando il turno passa alla voce dopo", () => {
+  const h = [219, 108, 279, 167, 219], flat = [false, true, false, false, false], gap = 12, yB = 600;
+  let prev: number | null = null, max = 0;
+  for (let k = 0; k <= 400; k++) {
+    const y = laneY((k * 4) / 400, h, gap, yB, flat).y[1];
+    if (y !== null && prev !== null) max = Math.max(max, Math.abs(y - prev));
+    prev = y;
+  }
+  assert.ok(max < 6, `il passo più grande fra due campioni è ${max.toFixed(1)} px: nessuno scatto`);
 });

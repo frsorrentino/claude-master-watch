@@ -125,14 +125,18 @@ export const railScroll = (steps: number, dwell = 0.58): number => {
 /** Il passo della lista: parte piano, accelera e frena a lungo (più «easing» di uno smoothstep, Franz 18/09 19:25). */
 const railEase = bezier(0.45, 0, 0.22, 1);
 export const RAIL_MOVE = 0.66;          // il movimento occupa più tempo della sosta: scorre, non scatta
-export const railScrollVar = (p: number, holds: number[], center = 0.8): number => {
-  const dur = holds.map((h) => RAIL_MOVE + Math.max(0, h));
+export const railScrollVar = (p: number, holds: number[], center = 0.8, weights: number[] = []): number => {
+  // `weights[i]`: quanto è LUNGO in pixel il passo i rispetto alla media. Con le altezze vere un passo vale il doppio di
+  // un altro: a tempo uguale la lista strisciava sulle scritte e correva sulle schede (Franz, 20/09 14:40). Dando a ogni
+  // passo un tempo proporzionale alla sua lunghezza, la velocità in pixel resta la stessa.
+  const w = (i: number) => (weights.length ? (weights[i] ?? 1) : 1);
+  const dur = holds.map((h, i) => RAIL_MOVE * w(i) + Math.max(0, h));
   const total = dur.reduce((a, b) => a + b, 0);
   let t = clamp(p) * total, i = 0;
   while (i < dur.length && t >= dur[i]) { t -= dur[i]; i++; }
   // `center`: la sosta cade quando la scheda è al centro della corsia, non sul passo intero
   if (i >= dur.length) return dur.length - (1 - center);
-  return i + railEase(clamp(t / RAIL_MOVE)) - (1 - center);
+  return i + railEase(clamp(t / (RAIL_MOVE * w(i)))) - (1 - center);
 };
 
 /**
@@ -144,6 +148,68 @@ export const railScrollVar = (p: number, holds: number[], center = 0.8): number 
 export const railAt = (t: number): { scale: number; alpha: number } => {
   const bell = Math.sin(Math.PI * clamp(t));
   return { scale: 0.62 + 0.38 * bell, alpha: 0.45 + 0.55 * Math.min(1, 1.5 * bell) };
+};
+
+/**
+ * L'altezza di una scheda della lista, in unità di display, dal suo testo: riempimento 24 sopra e 24,5 sotto, intestazione
+ * 36, e il corpo che va a capo ogni `perLine` caratteri (23, misurati sul fotogramma della card vera) con interlinea 46 (il corpo sale di 9,5 sotto l'intestazione).
+ * Misurata sulla card vera: 3 righe = 213 unità, come il rettangolo preso sul fotogramma. Serve alla corsia laterale, dove
+ * le schede devono stare vicine come sul polso: con un'altezza fissa per tutte, quelle a due righe lasciavano mezzo buco
+ * (Franz, 20/09 10:38: «quasi a sfioro»).
+ */
+export const cardUnits = (text: string, perLine = 23): number => {
+  let n = 1, len = 0;
+  for (const w of text.split(" ")) {
+    if (len === 0) { len = w.length; continue; }
+    if (len + 1 + w.length <= perLine) len += 1 + w.length; else { n++; len = w.length; }
+  }
+  return 24 + 36 + (n * 46 - 9.5) + 24.5;
+};
+
+
+/**
+ * Le quote delle schede della corsia, in pixel, per il fotogramma corrente: una catena dal basso verso l'alto in cui fra i
+ * bordi di due schede vicine resta SEMPRE `gap`, qualunque sia la scala con cui sono disegnate in quell'istante. È il modo
+ * esatto: calcolando il passo sugli indici (e non sulla posizione vera) le schede si deformavano scorrendo e finivano una
+ * sull'altra (Franz, 20/09 11:39).
+ * - `offset`: avanzamento della lista in passi (0 = la prima scheda appoggiata in fondo alla corsia);
+ * - `heights[i]`: altezza della scheda i alla scala piena; `flat[i]`: non si deforma (le scritte);
+ * - il risultato è il CENTRO di ogni scheda, dall'alto del quadro; `null` per quelle non ancora entrate.
+ */
+/**
+ * La deformazione della corsia sopra l'orologio (Franz, 20/09 15:24): chi arriva sta in primo piano, pieno e opaco; quella
+ * prima scivola sopra, **più piccola e più trasparente**; quella ancora prima **sparisce**. In quadro non ce ne sono mai
+ * più di due. `d` = quanti passi sono passati da quando la voce era davanti (0 = è lei).
+ */
+export const stackAt = (d: number): { scale: number; alpha: number } => {
+  const x = Math.max(0, Math.min(2, d));
+  // la voce sopra resta visibile ma staccata (Franz, 20/09 16:23): 80 % dopo un passo, e si spegne solo
+  // nell'ultimo quinto, appena prima di uscire.
+  return { scale: 1 - 0.26 * (x / 2), alpha: x <= 1.6 ? 1 - 0.2 * x : Math.max(0, (0.68 * (2 - x)) / 0.4) };
+};
+
+/**
+ * Le quote delle voci della corsia, in pixel, per il fotogramma corrente: una catena dal basso verso l'alto in cui fra i
+ * bordi di due voci vicine resta SEMPRE `gap`. La scala viene da `stackAt`, cioè da quanti passi sono passati, non dalla
+ * quota: così la voce davanti è sempre piena e quella sopra sempre più piccola, qualunque sia l'altezza delle schede.
+ * - `offset`: avanzamento della lista in passi (0 = la prima voce appoggiata in fondo alla corsia);
+ * - `heights[i]`: altezza della voce i alla scala piena; `flat[i]`: non si deforma (le scritte restano a grandezza piena);
+ * - il risultato dà centro, scala e trasparenza di ognuna; `y` è `null` per quelle fuori quadro.
+ */
+export const laneY = (offset: number, heights: number[], gap: number, yBottom: number, flat: boolean[] = []): { y: (number | null)[]; scale: number[]; alpha: number[] } => {
+  const n = heights.length;
+  const iB = Math.max(0, Math.min(n - 1, Math.floor(offset)));      // la voce appoggiata in fondo
+  const f = Math.max(0, Math.min(1, offset - iB));                   // quanto è già salita verso la prossima
+  const st = heights.map((_, i) => stackAt(offset - i));
+  const sc = st.map((x, i) => (flat[i] ? 1 : x.scale));
+  const hOf = (i: number) => heights[Math.max(0, Math.min(n - 1, i))] * sc[Math.max(0, Math.min(n - 1, i))];
+  const y: (number | null)[] = new Array(n).fill(null);
+  // la voce in fondo sale di quanto occupa quella che ARRIVA sotto di lei: al cambio di turno la quota combacia
+  y[iB] = yBottom - hOf(iB) / 2 - f * (hOf(iB + 1) + gap);
+  for (let i = iB - 1; i >= 0; i--) y[i] = (y[i + 1] as number) - (hOf(i + 1) + hOf(i)) / 2 - gap;
+  const alpha = st.map((x, i) => (y[i] === null ? 0 : x.alpha));
+  for (let i = 0; i < n; i++) if (alpha[i] <= 0) y[i] = null;        // sparita: non si disegna più
+  return { y, scale: sc, alpha };
 };
 
 /**

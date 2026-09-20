@@ -236,14 +236,14 @@
     "h": 237,
     "r": 118,
     "color": "#D3E3FD",
-    "toColor": "#D3E3FD",
+    "toColor": "#C2D6F6",
     "body": "plain"
    }
   },
   {
    "id": "loop",
    "at": 60.5,
-   "len": 11,
+   "len": 12,
    "act": "act",
    "watch": {
     "view": "side",
@@ -298,11 +298,11 @@
     }
    ],
    "takeover": {
-    "len": 4,
+    "len": 5.5,
     "x": 960,
-    "y": 373,
-    "w": 556,
-    "h": 277,
+    "y": 466,
+    "w": 560,
+    "h": 279,
     "r": 55,
     "color": "#23272E",
     "toColor": "#15393F",
@@ -319,12 +319,12 @@
      "icon": "play"
     }
    },
-   "bgFrom": "#D3E3FD",
-   "bgFadeBeats": 6
+   "bgFrom": "#C2D6F6",
+   "bgKeep": true
   },
   {
    "id": "watch",
-   "at": 71.5,
+   "at": 72.5,
    "len": 7,
    "act": "control",
    "watch": {
@@ -366,7 +366,7 @@
   },
   {
    "id": "accounts",
-   "at": 78.5,
+   "at": 79.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -379,7 +379,7 @@
   },
   {
    "id": "limits",
-   "at": 83.5,
+   "at": 84.5,
    "len": 31,
    "act": "control",
    "watch": {
@@ -465,7 +465,7 @@
   },
   {
    "id": "new",
-   "at": 114.5,
+   "at": 115.5,
    "len": 8,
    "act": "control",
    "watch": {
@@ -485,7 +485,7 @@
   },
   {
    "id": "close",
-   "at": 122.5,
+   "at": 123.5,
    "len": 10,
    "act": "close",
    "watch": {

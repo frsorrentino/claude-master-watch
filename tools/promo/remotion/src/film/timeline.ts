@@ -34,7 +34,9 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+/* `bgKeep`: il campo di colore della scena prima NON si dissolve, resta il fondo per tutta la scena (Franz, 20/09 10:10:
+   «lasciare sempre il fondo celeste»). Senza, il campo scivola nel colore dell'atto in `bgFadeBeats` fotogrammi. */
 /* `blackOutFrames`: un breve nero prima del taglio, quando la scena si chiude su un movimento e la musica riprende
    subito dopo — il vuoto fa respirare lo stacco (Franz, 19/09 15:43). */
 /** La scheda che si volta e sul retro ha la domanda: `len` battiti a cavallo del taglio con la scena dopo. */
@@ -111,6 +113,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // il sonno del display: sotto i 2,5 battiti non c'è tempo per calare, restare al buio e riaccendersi sul battito
     if (s.sleep && !(half(s.sleep.len) && s.sleep.len >= 2.5)) say(`il sonno del display dura ${s.sleep.len} battiti: il minimo è 2,5, in battiti o mezzi battiti`);
     if (s.sleep && !s.watch) say("il sonno del display vuole l'orologio in scena");
+    if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
     if (s.sleep?.musicFrom !== undefined && !(s.sleep.musicFrom >= 0)) say(`la musica riparte dal secondo ${s.sleep.musicFrom} della traccia: serve un tempo dentro il brano`);
     if (s.sleep?.musicBackBeats !== undefined && !half(s.sleep.musicBackBeats)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dopo il taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
