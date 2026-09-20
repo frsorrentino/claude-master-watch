@@ -17,6 +17,7 @@ import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
 import { AROUND_ZOOM, Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
+import { AskDots } from "./ui/Dots.tsx";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
@@ -245,6 +246,8 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
           <Sequence key={`title-${s.id}`} from={cut - pre} durationInFrames={pre + nextFrames} layout="none">
             <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
               <WordMask lines={next.text.lines} accent={next.text.accent} size={next.text.size} sub={next.text.sub} perWordFrames={Math.round(beat / 2)} exitAt={pre + nextFrames - 8} align="left" />
+              {/* l'attesa non è vuota: sotto la frase la sessione sta scrivendo (ui/dots.ts) */}
+              <AskDots pre={pre} frames={frames} />
             </div>
           </Sequence>
         );

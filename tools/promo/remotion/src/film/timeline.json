@@ -121,13 +121,6 @@
      "toCenter": true
     }
    ],
-   "text": {
-    "lines": [
-     "One glance."
-    ],
-    "accent": "glance.",
-    "place": "top"
-   },
    "sleep": {
     "len": 8,
     "musicBackBeats": 2,
@@ -193,7 +186,7 @@
   {
    "id": "answer",
    "at": 54,
-   "len": 5.5,
+   "len": 6.5,
    "act": "act",
    "watch": {
     "view": "front",
@@ -211,13 +204,13 @@
    "fx": [
     {
      "kind": "longPress",
-     "at": 2.0,
+     "at": 3.5,
      "len": 1.5
     },
     {
      "kind": "optionsBuild",
      "at": 0.5,
-     "len": 5,
+     "len": 6,
      "yes": [
       26,
       167,
@@ -231,7 +224,8 @@
       109
      ],
      "yesLabel": "1 · yes",
-     "noLabel": "2 · no"
+     "noLabel": "2 · no",
+     "pressAt": 3.5
     }
    ],
    "takeover": {
@@ -248,7 +242,7 @@
   },
   {
    "id": "loop",
-   "at": 59.5,
+   "at": 60.5,
    "len": 11,
    "act": "act",
    "watch": {
@@ -330,7 +324,7 @@
   },
   {
    "id": "watch",
-   "at": 70.5,
+   "at": 71.5,
    "len": 7,
    "act": "control",
    "watch": {
@@ -372,7 +366,7 @@
   },
   {
    "id": "accounts",
-   "at": 77.5,
+   "at": 78.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -385,7 +379,7 @@
   },
   {
    "id": "limits",
-   "at": 82.5,
+   "at": 83.5,
    "len": 31,
    "act": "control",
    "watch": {
@@ -471,7 +465,7 @@
   },
   {
    "id": "new",
-   "at": 113.5,
+   "at": 114.5,
    "len": 8,
    "act": "control",
    "watch": {
@@ -491,7 +485,7 @@
   },
   {
    "id": "close",
-   "at": 121.5,
+   "at": 122.5,
    "len": 10,
    "act": "close",
    "watch": {

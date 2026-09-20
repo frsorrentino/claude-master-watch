@@ -70,15 +70,20 @@ export const gaugeHeroAt = (p: number): GaugeHero => {
 export type OptionsBuild = { build: number; ring: number; alpha: number; travel: number; pop: number; fill: number; press: number };
 /** Dopo la pressione (`ring` 1) il tasto si gonfia un attimo (`pop`) e poi cresce fino a diventare lo sfondo (`fill`): la
  *  transizione alla scena dopo è il tasto stesso (Franz, 13:13). */
-export const optionsBuildAt = (p: number): OptionsBuild => ({
+/**
+ * `pressFrom` 0-1: dove, nell'arco dei tasti, comincia la pressione lunga. Di suo a 0,34; si sposta quando la pressione
+ * deve cadere dopo che la voce ha finito di leggere le due risposte (Franz, 20/09 08:57). Tutte le fasi che seguono —
+ * anello, scatto, riempimento — si spostano con lei, così la coreografia resta la stessa, solo più in là.
+ */
+export const optionsBuildAt = (p: number, pressFrom = 0.34): OptionsBuild => ({
   // i tasti ESCONO dall'orologio già fatti e si posano al centro con un filo di rimbalzo (Franz, 19/09 09:33), poi la
   // pressione lunga corre e la selezione si chiude: tutto più svelto di prima (l'anello durava un quinto della scena)
   build: soft(ramp(p, 0, 0.1)),
-  ring: ramp(p, 0.34, 0.46),
-  pop: Math.sin(Math.PI * ramp(p, 0.46, 0.53)),
+  ring: ramp(p, pressFrom, pressFrom + 0.12),
+  pop: Math.sin(Math.PI * ramp(p, pressFrom + 0.12, pressFrom + 0.19)),
   // il tasto si schiaccia sotto il dito per tutta la corsa dell'anello e scatta quando si chiude (Franz, 19/09 11:03)
-  press: Math.min(1, ramp(p, 0.3, 0.36) * 1.2) * (1 - ramp(p, 0.46, 0.5)),
-  fill: soft(ramp(p, 0.53, 0.6)),
+  press: Math.min(1, ramp(p, pressFrom - 0.04, pressFrom + 0.02) * 1.2) * (1 - ramp(p, pressFrom + 0.12, pressFrom + 0.16)),
+  fill: soft(ramp(p, pressFrom + 0.19, pressFrom + 0.26)),
   alpha: p < 0 || p >= 1 ? 0 : 1,
   travel: p < 0 || p >= 1 ? 0 : bump(0.05)(ramp(p, 0, 0.22)),
 });

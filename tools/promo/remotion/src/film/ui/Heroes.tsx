@@ -34,7 +34,7 @@ export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; tr
     if (p < 0 || p >= 1) return { p, travel: 0, exit: p >= 1 ? 1 : 0 };
     if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut, e.toCenter); return { p, travel: c.travel, exit: c.exit }; }
     if (e.kind === "gaugeHero") { const c = gaugeHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
-    if (e.kind === "optionsBuild") { const c = optionsBuildAt(p); return { p, travel: c.travel, exit: c.fill }; }
+    if (e.kind === "optionsBuild") { const c = optionsBuildAt(p, e.pressAt !== undefined ? e.pressAt / e.len : undefined); return { p, travel: c.travel, exit: c.fill }; }
     if (e.kind === "panelHero") { const c = panelHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
   }
   return { p: -1, travel: 0, exit: 0 };
@@ -57,8 +57,10 @@ export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; 
   }
   if (p < 0 || p >= 1) return { zoom: 1, focus: 0, watch: 1 };
   // con `steady` la camera non si avvicina: l'orologio resta esattamente dov'è e della misura che ha, perché il
-  // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»)
-  if (scene.watch?.steady) return { zoom: 1, focus: 0, watch: 1 };
+  // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»).
+  // La messa a fuoco però si muove: quando i tasti si sollevano, l'orologio dietro va fuori fuoco (Franz, 20/09 08:40,
+  // poi 09:28: «sfocherei maggiormente»). Metà della sfocatura piena: 4 px e un terzo di luce in meno, i tasti staccano.
+  if (scene.watch?.steady) return { zoom: 1, focus: 0.5 * travel * (1 - exit), watch: 1 };
   const near = travel * (1 - exit);
   return { zoom: 1 + 0.55 * near, focus: near, watch: 1 };
 };
@@ -154,7 +156,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;
         if (e.kind === "optionsBuild") {
-          const o = optionsBuildAt(p);
+          const o = optionsBuildAt(p, e.pressAt !== undefined ? e.pressAt / e.len : undefined);
           if (o.alpha <= 0) return null;
           // i tasti ESCONO dal display: partono dal loro rettangolo vero (stessa misura, stesso posto) e si posano al
           // centro del quadro. L'orologio in questa scena sta fermo (`steady`), altrimenti il punto di partenza scivola.
