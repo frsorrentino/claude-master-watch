@@ -5,14 +5,15 @@ import { Sign } from "./ui/Sign.tsx";
 
 /** Ogni parola sale da una fessura con frenata morbida ed esce verso l'alto. Una sola parola in colore per frase. */
 export const WordMask: React.FC<{
-  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center"; fadeFrom?: number; hideAccentFrom?: number;
-}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left", fadeFrom, hideAccentFrom }) => {
+  lines: string[]; accent?: string; size?: "title" | "service"; perWordFrames: number; exitAt?: number; sub?: string; align?: "left" | "center"; fadeFrom?: number; hideAccentFrom?: number; carry?: number;
+}> = ({ lines, accent, size = "title", perWordFrames, exitAt, sub, align = "left", fadeFrom, hideAccentFrom, carry = 0 }) => {
   const frame = useCurrentFrame();
   const px = size === "title" ? THEME.title : THEME.service;
   const total = lines.reduce((n, l) => n + l.split(" ").length, 0);
   let k = 0;
   const word = (w: string, i: number) => {
-    const start = i * perWordFrames;
+    // le prime `carry` parole vengono dalla scena prima: partono già risalite, si anima solo il resto della frase
+    const start = (i - carry) * perWordFrames;
     const up = interpolate(frame, [start, start + 14], [110, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) });
     const away = exitAt === undefined ? 0 : interpolate(frame, [exitAt, exitAt + 8], [0, -115], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
     // il punto finale del titolo è il segno dell'app (piano 4, filo 1): la parola perde il suo «.» e il segno le sta accanto,
@@ -31,7 +32,7 @@ export const WordMask: React.FC<{
     );
   };
   const subOut = exitAt === undefined ? 1 : interpolate(frame, [exitAt, exitAt + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const subIn = interpolate(frame, [total * perWordFrames + 6, total * perWordFrames + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const subIn = interpolate(frame, [(total - carry) * perWordFrames + 6, (total - carry) * perWordFrames + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   // `fadeFrom`: da quel fotogramma il titolo se ne va perché la sua parola in colore sta crescendo a tutto quadro (battito di ciglia)
   return (
     <div style={{ fontFamily: "Inter", fontWeight: 600, fontSize: px, lineHeight: 1.04, letterSpacing: "-0.02em", textAlign: align, whiteSpace: "nowrap", opacity: fadeFrom === undefined ? 1 : interpolate(frame, [fadeFrom, fadeFrom + 4], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>

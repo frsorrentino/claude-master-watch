@@ -12,7 +12,7 @@ const short = t.scenes.flatMap((s) => {
   if (!s.watch || s.watch.freeze || s.watch.still) return [];
   const file = `${here}../../public/${s.watch.clip}`;
   const dur = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file], { encoding: "utf8" }));
-  const need = (s.watch.clipStart ?? 0) + ((s.len * 60) / t.bpm) * (s.watch.rate ?? 1);
+  const need = (s.watch.clipStart ?? 0) + (((s.len - (s.watch.hold ?? 0)) * 60) / t.bpm) * (s.watch.rate ?? 1);
   return need > dur - 0.04 ? [`${s.id}: servono ${need.toFixed(2)} s di ${s.watch.clip}, che ne dura ${dur.toFixed(2)}`] : [];
 });
 if (short.length) { console.error(short.join("\n")); process.exit(1); }

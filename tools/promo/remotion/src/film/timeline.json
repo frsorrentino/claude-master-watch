@@ -1,507 +1,571 @@
 {
- "bpm": 110,
- "fps": 30,
- "offsetSeconds": 0.0075,
- "scenes": [
-  {
-   "id": "open-1",
-   "at": 0,
-   "len": 4,
-   "act": "open",
-   "text": {
-    "lines": [
-     "Claude is working."
-    ],
-    "accent": "working."
-   }
-  },
-  {
-   "id": "open-2",
-   "at": 4,
-   "len": 6,
-   "act": "open",
-   "text": {
-    "lines": [
-     "You’re not",
-     "at your desk."
-    ],
-    "accent": "desk."
-   }
-  },
-  {
-   "id": "open-3",
-   "at": 10,
-   "len": 6,
-   "act": "open",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_tile.mp4",
-    "clipStart": 6.0,
-    "exit": "zoomLeft",
-    "exitBeats": 6
-   },
-   "text": {
-    "lines": [
-     "That’s fine."
-    ],
-    "accent": "fine.",
-    "at": 0
-   },
-   "fx": [],
-   "blackOutFrames": 5
-  },
-  {
-   "id": "glance",
-   "at": 16,
-   "len": 8,
-   "act": "know",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_list.mp4",
-    "clipStart": 11.6
-   },
-   "text": {
-    "lines": [
-     "Every session.",
-     "One glance."
-    ],
-    "accent": "glance.",
-    "at": 1
-   },
-   "out": "blink",
-   "fx": [
+  "bpm": 110,
+  "fps": 30,
+  "offsetSeconds": 0.0075,
+  "scenes": [
     {
-     "kind": "cardOut",
-     "at": 4,
-     "len": 4,
-     "rect": [
-      26,
-      63,
-      427,
-      213
-     ],
-     "name": "storefront",
-     "age": "1 m",
-     "text": "Run the checkout test suite after the Stripe webhook refactor",
-     "badge": "#2ECC71",
-     "icon": "play",
-     "toCenter": true
-    }
-   ]
-  },
-  {
-   "id": "list",
-   "at": 24,
-   "len": 14,
-   "act": "know",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_list.mp4",
-    "clipStart": 14.5,
-    "freeze": true,
-    "camera": "around"
-   },
-   "fx": [
-    {
-     "kind": "cardOut",
-     "at": 0,
-     "len": 14,
-     "rect": [
-      26,
-      63,
-      427,
-      213
-     ],
-     "name": "storefront",
-     "age": "1 m",
-     "text": "Run the checkout test suite after the Stripe webhook refactor",
-     "badge": "#2ECC71",
-     "icon": "play",
-     "fromOut": true,
-     "toCenter": true
-    }
-   ],
-   "sleep": {
-    "len": 8,
-    "musicBackBeats": 2,
-    "musicFrom": 8.699
-   }
-  },
-  {
-   "id": "asks",
-   "at": 38,
-   "len": 3,
-   "act": "know",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_speaks.mp4",
-    "clipStart": 11.2
-   },
-   "text": {
-    "lines": [
-     "It asks."
-    ],
-    "accent": "asks."
-   },
-   "fx": [
-    {
-     "kind": "shake",
-     "at": 0
-    }
-   ]
-  },
-  {
-   "id": "speaks",
-   "at": 41,
-   "len": 13,
-   "act": "know",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_speaks.mp4",
-    "clipStart": 14.64
-   },
-   "text": {
-    "lines": [
-     "It speaks."
-    ],
-    "accent": "speaks.",
-    "at": 0.5
-   },
-   "fx": [
-    {
-     "kind": "tap",
-     "at": 7.5,
-     "x": 347,
-     "y": 90
-    },
-    {
-     "kind": "spoken",
-     "at": 8,
-     "len": 9.5,
-     "voice": "question.wav",
-     "words": "question.words.json"
-    }
-   ]
-  },
-  {
-   "id": "answer",
-   "at": 54,
-   "len": 6.5,
-   "act": "act",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_answer.mp4",
-    "clipStart": 16.1,
-    "steady": true
-   },
-   "text": {
-    "lines": [
-     "You answer."
-    ],
-    "accent": "answer.",
-    "place": "top"
-   },
-   "fx": [
-    {
-     "kind": "longPress",
-     "at": 3.5,
-     "len": 1.5
-    },
-    {
-     "kind": "optionsBuild",
-     "at": 0.5,
-     "len": 6,
-     "yes": [
-      26,
-      167,
-      428,
-      111
-     ],
-     "no": [
-      26,
-      287,
-      428,
-      109
-     ],
-     "yesLabel": "1 · yes",
-     "noLabel": "2 · no",
-     "pressAt": 3.5
-    }
-   ],
-   "takeover": {
-    "len": 2.5,
-    "x": 960,
-    "y": 435,
-    "w": 920,
-    "h": 237,
-    "r": 118,
-    "color": "#D3E3FD",
-    "toColor": "#C2D6F6",
-    "body": "plain"
-   }
-  },
-  {
-   "id": "loop",
-   "at": 60.5,
-   "len": 12,
-   "act": "act",
-   "watch": {
-    "view": "side",
-    "clip": "scenes/n_follow.mp4",
-    "clipStart": 8.0,
-    "freeze": true,
-    "enter": "riseIn"
-   },
-   "fx": [
-    {
-     "kind": "float",
-     "at": 1,
-     "len": 9.5,
-     "cards": [
-      {
-       "kind": "text",
-       "lines": [
-        "It keeps you",
-        "in the loop."
-       ],
-       "accent": "loop."
-      },
-      {
-       "name": "payments-api",
-       "age": "14 m",
-       "text": "Running the staging checks for 2.8.0",
-       "badge": "#3C81F2",
-       "icon": "bell"
-      },
-      {
-       "name": "payments-api",
-       "age": "0 m",
-       "text": "Deployed 2.8.0, smoke tests green",
-       "badge": "#3C81F2",
-       "icon": "check"
-      },
-      {
-       "kind": "text",
-       "lines": [
-        "Say what's next."
-       ],
-       "accent": "next."
-      },
-      {
-       "name": "payments-api",
-       "age": "0 m",
-       "text": "Great. Now update the changelog and tag the release",
-       "badge": "#3C81F2",
-       "icon": "play"
+      "id": "open-1",
+      "at": 0,
+      "len": 4,
+      "act": "open",
+      "text": {
+        "lines": [
+          "Claude is working."
+        ],
+        "accent": "working."
       }
-     ]
-    }
-   ],
-   "takeover": {
-    "len": 5.5,
-    "x": 960,
-    "y": 466,
-    "w": 560,
-    "h": 279,
-    "r": 55,
-    "color": "#23272E",
-    "toColor": "#23272E",
-    "body": "words",
-    "words": [
-     "Great. Now update the",
-     "changelog and tag the release"
-    ],
-    "card": {
-     "name": "payments-api",
-     "age": "0 m",
-     "text": "Great. Now update the changelog and tag the release",
-     "badge": "#3C81F2",
-     "icon": "play"
-    }
-   },
-   "bgFrom": "#C2D6F6",
-   "bgKeep": true
-  },
-  {
-   "id": "watch",
-   "at": 72.5,
-   "len": 10,
-   "act": "control",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_watch.mp4",
-    "clipStart": 14.2,
-    "rate": 1.25
-   },
-   "text": {
-    "lines": [
-     "Watch it work."
-    ],
-    "accent": "work.",
-    "at": 0.5
-   },
-   "fx": [
+    },
     {
-     "kind": "terminalPlane",
-     "at": 3,
-     "len": 6.5,
-     "rect": [
-      26,
-      163,
-      427,
-      150
-     ],
-     "header": "Terminal · 07:36",
-     "title": "payments-api — claude",
-     "lines": [
-      "⏺ Reading the checklist",
-      "Read(RELEASE.md)",
-      "⏺ Updating the changelog",
-      "Edit(CHANGELOG.md)",
-      "⏺ Tagging the release",
-      "Bash(git tag v2.8.0)"
-     ],
-     "every": 2.4,
-     "start": 5
-    }
-   ],
-   "bgFrom": "#23272E",
-   "bgKeep": true
-  },
-  {
-   "id": "accounts",
-   "at": 82.5,
-   "len": 5,
-   "act": "control",
-   "text": {
-    "lines": [
-     "Every account.",
-     "One view."
-    ],
-    "accent": "view."
-   }
-  },
-  {
-   "id": "limits",
-   "at": 87.5,
-   "len": 31,
-   "act": "control",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_overview_cut.mp4",
-    "clipStart": 0,
-    "rate": 1.14,
-    "enter": "slideIn"
-   },
-   "text": {
-    "lines": [
-     "Know your",
-     "limits."
-    ],
-    "accent": "limits.",
-    "at": 0.5
-   },
-   "fx": [
-    {
-     "kind": "aside",
-     "at": 2.5,
-     "len": 6,
-     "panel": "quota",
-     "rows": [
-      {
-       "name": "personal",
-       "pct": 11,
-       "week": 36
+      "id": "open-2",
+      "at": 4,
+      "len": 6,
+      "act": "open",
+      "text": {
+        "lines": [
+          "You’re not",
+          "at your desk."
+        ],
+        "accent": "desk."
       }
-     ]
     },
     {
-     "kind": "aside",
-     "at": 8.5,
-     "len": 5.5,
-     "panel": "pace",
-     "n": 59,
-     "note": "at 09:36, at this pace"
-    },
-    {
-     "kind": "aside",
-     "at": 14,
-     "len": 4.5,
-     "panel": "work",
-     "n": 1,
-     "note": "1 waits for you · 1 working",
-     "bars": [
-      1,
-      1,
-      1
-     ]
-    },
-    {
-     "kind": "aside",
-     "at": 18.5,
-     "len": 3.5,
-     "panel": "questions",
-     "n": 1,
-     "note": "payments-api · for 5 m",
-     "quote": "Deploy version 2.8.0 to production now?"
-    },
-    {
-     "kind": "aside",
-     "at": 22,
-     "len": 8,
-     "panel": "context",
-     "rows": [
-      {
-       "name": "payments-api",
-       "pct": 62
+      "id": "open-3",
+      "at": 10,
+      "len": 6,
+      "act": "open",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_tile.mp4",
+        "clipStart": 6.0,
+        "exit": "zoomLeft",
+        "exitBeats": 6
       },
-      {
-       "name": "storefront",
-       "pct": 18
+      "text": {
+        "lines": [
+          "That’s fine."
+        ],
+        "accent": "fine.",
+        "at": 0
+      },
+      "fx": [],
+      "blackOutFrames": 5
+    },
+    {
+      "id": "glance",
+      "at": 16,
+      "len": 8,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_list.mp4",
+        "clipStart": 11.6
+      },
+      "text": {
+        "lines": [
+          "Every session.",
+          "One glance."
+        ],
+        "accent": "glance.",
+        "at": 1
+      },
+      "out": "blink",
+      "fx": [
+        {
+          "kind": "cardOut",
+          "at": 4,
+          "len": 4,
+          "rect": [
+            26,
+            63,
+            427,
+            213
+          ],
+          "name": "storefront",
+          "age": "1 m",
+          "text": "Run the checkout test suite after the Stripe webhook refactor",
+          "badge": "#2ECC71",
+          "icon": "play",
+          "toCenter": true
+        }
+      ]
+    },
+    {
+      "id": "list",
+      "at": 24,
+      "len": 14,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_list.mp4",
+        "clipStart": 14.5,
+        "freeze": true,
+        "camera": "around"
+      },
+      "fx": [
+        {
+          "kind": "cardOut",
+          "at": 0,
+          "len": 14,
+          "rect": [
+            26,
+            63,
+            427,
+            213
+          ],
+          "name": "storefront",
+          "age": "1 m",
+          "text": "Run the checkout test suite after the Stripe webhook refactor",
+          "badge": "#2ECC71",
+          "icon": "play",
+          "fromOut": true,
+          "toCenter": true
+        }
+      ],
+      "sleep": {
+        "len": 8,
+        "musicBackBeats": 2,
+        "musicFrom": 8.699
       }
-     ],
-     "out": "bars"
+    },
+    {
+      "id": "asks",
+      "at": 38,
+      "len": 3,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_speaks.mp4",
+        "clipStart": 11.2
+      },
+      "text": {
+        "lines": [
+          "It asks."
+        ],
+        "accent": "asks."
+      },
+      "fx": [
+        {
+          "kind": "shake",
+          "at": 0
+        }
+      ]
+    },
+    {
+      "id": "speaks",
+      "at": 41,
+      "len": 13,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_speaks.mp4",
+        "clipStart": 14.64
+      },
+      "text": {
+        "lines": [
+          "It speaks."
+        ],
+        "accent": "speaks.",
+        "at": 0.5
+      },
+      "fx": [
+        {
+          "kind": "tap",
+          "at": 7.5,
+          "x": 347,
+          "y": 90
+        },
+        {
+          "kind": "spoken",
+          "at": 8,
+          "len": 9.5,
+          "voice": "question.wav",
+          "words": "question.words.json"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "at": 54,
+      "len": 6.5,
+      "act": "act",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_answer.mp4",
+        "clipStart": 16.1,
+        "steady": true
+      },
+      "text": {
+        "lines": [
+          "You answer."
+        ],
+        "accent": "answer.",
+        "place": "top"
+      },
+      "fx": [
+        {
+          "kind": "longPress",
+          "at": 3.5,
+          "len": 1.5
+        },
+        {
+          "kind": "optionsBuild",
+          "at": 0.5,
+          "len": 6,
+          "yes": [
+            26,
+            167,
+            428,
+            111
+          ],
+          "no": [
+            26,
+            287,
+            428,
+            109
+          ],
+          "yesLabel": "1 · yes",
+          "noLabel": "2 · no",
+          "pressAt": 3.5
+        }
+      ],
+      "takeover": {
+        "len": 2.5,
+        "x": 960,
+        "y": 435,
+        "w": 920,
+        "h": 237,
+        "r": 118,
+        "color": "#D3E3FD",
+        "toColor": "#C2D6F6",
+        "body": "plain"
+      }
+    },
+    {
+      "id": "loop",
+      "at": 60.5,
+      "len": 12,
+      "act": "act",
+      "watch": {
+        "view": "side",
+        "clip": "scenes/n_follow.mp4",
+        "clipStart": 8.0,
+        "freeze": true,
+        "enter": "riseIn"
+      },
+      "fx": [
+        {
+          "kind": "float",
+          "at": 1,
+          "len": 9.5,
+          "cards": [
+            {
+              "kind": "text",
+              "lines": [
+                "It keeps you",
+                "in the loop."
+              ],
+              "accent": "loop."
+            },
+            {
+              "name": "payments-api",
+              "age": "14 m",
+              "text": "Running the staging checks for 2.8.0",
+              "badge": "#3C81F2",
+              "icon": "bell"
+            },
+            {
+              "name": "payments-api",
+              "age": "0 m",
+              "text": "Deployed 2.8.0, smoke tests green",
+              "badge": "#3C81F2",
+              "icon": "check"
+            },
+            {
+              "kind": "text",
+              "lines": [
+                "Say what's next."
+              ],
+              "accent": "next."
+            },
+            {
+              "name": "payments-api",
+              "age": "0 m",
+              "text": "Great. Now update the changelog and tag the release",
+              "badge": "#3C81F2",
+              "icon": "play"
+            }
+          ]
+        }
+      ],
+      "takeover": {
+        "len": 5.5,
+        "x": 960,
+        "y": 466,
+        "w": 560,
+        "h": 279,
+        "r": 55,
+        "color": "#23272E",
+        "toColor": "#23272E",
+        "body": "words",
+        "words": [
+          "Great. Now update the",
+          "changelog and tag the release"
+        ],
+        "card": {
+          "name": "payments-api",
+          "age": "0 m",
+          "text": "Great. Now update the changelog and tag the release",
+          "badge": "#3C81F2",
+          "icon": "play"
+        }
+      },
+      "bgFrom": "#C2D6F6",
+      "bgKeep": true
+    },
+    {
+      "id": "watch",
+      "at": 72.5,
+      "len": 10,
+      "act": "control",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_watch.mp4",
+        "clipStart": 14.2,
+        "rate": 1.25,
+        "fadeOut": 1.5
+      },
+      "text": {
+        "lines": [
+          "Watch it work."
+        ],
+        "accent": "work.",
+        "at": 0.5
+      },
+      "fx": [
+        {
+          "kind": "terminalPlane",
+          "at": 3,
+          "len": 6.5,
+          "rect": [
+            26,
+            163,
+            427,
+            150
+          ],
+          "header": "Terminal · 07:36",
+          "title": "payments-api — claude",
+          "lines": [
+            "⏺ Reading the checklist",
+            "Read(RELEASE.md)",
+            "⏺ Updating the changelog",
+            "Edit(CHANGELOG.md)",
+            "⏺ Tagging the release",
+            "Bash(git tag v2.8.0)"
+          ],
+          "every": 2.4,
+          "start": 5,
+          "keep": true
+        }
+      ],
+      "bgFrom": "#23272E",
+      "bgKeep": true
+    },
+    {
+      "id": "accounts",
+      "at": 82.5,
+      "len": 8,
+      "act": "control",
+      "text": {
+        "lines": [
+          "All accounts,",
+          "in one place."
+        ],
+        "accent": "place.",
+        "at": 3,
+        "keep": true
+      },
+      "bgFrom": "#23272E",
+      "bgKeep": true,
+      "split": {
+        "open": 2.5,
+        "hold": 2,
+        "close": 2,
+        "left": {
+          "color": "#23272E",
+          "tabs": [
+            "payments-api",
+            "storefront"
+          ],
+          "lines": [
+            "⏺ Reading the checklist",
+            "Read(RELEASE.md)",
+            "⏺ Updating the changelog",
+            "Edit(CHANGELOG.md)",
+            "⏺ Tagging the release",
+            "Bash(git tag v2.8.0)"
+          ],
+          "dot": "#3C81F2",
+          "session": "payments-api",
+          "status": "Opus 5 · context 41 % · bypass permissions on",
+          "account": "work"
+        },
+        "right": {
+          "color": "#23272E",
+          "tabs": [
+            "blog",
+            "pricing-page",
+            "dev-laptop"
+          ],
+          "lines": [
+            "⏺ Rewriting the intro",
+            "Edit(posts/edge-caching.md)",
+            "⏺ Checking the links",
+            "Bash(npm run lint:links)",
+            "⏺ Adding the benchmark table",
+            "Edit(posts/edge-caching.md)"
+          ],
+          "dot": "#2ECC71",
+          "session": "blog",
+          "status": "Opus 5 · context 12 % · bypass permissions on",
+          "account": "personal",
+          "to": "#15393F"
+        }
+      },
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_overview_fit.mp4",
+        "clipStart": 0,
+        "rate": 1.0,
+        "enter": "slideIn",
+        "enterAt": 4.5,
+        "freeze": true
+      }
+    },
+    {
+      "id": "limits",
+      "at": 90.5,
+      "len": 31,
+      "act": "control",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_overview_fit.mp4",
+        "clipStart": 0,
+        "rate": 1.0,
+        "hold": 2.5
+      },
+      "text": {
+        "lines": [
+          "All accounts,",
+          "in one place.",
+          "The full view."
+        ],
+        "accent": "place.",
+        "at": 0,
+        "carry": 5
+      },
+      "fx": [
+        {
+          "kind": "aside",
+          "at": 2.5,
+          "len": 6,
+          "panel": "quota",
+          "rows": [
+            {
+              "name": "personal",
+              "pct": 11,
+              "week": 36
+            }
+          ]
+        },
+        {
+          "kind": "aside",
+          "at": 8.5,
+          "len": 5.5,
+          "panel": "pace",
+          "n": 59,
+          "note": "at 09:36, at this pace"
+        },
+        {
+          "kind": "aside",
+          "at": 14,
+          "len": 4.5,
+          "panel": "work",
+          "n": 1,
+          "note": "1 waits for you · 1 working",
+          "bars": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "kind": "aside",
+          "at": 18.5,
+          "len": 3.5,
+          "panel": "questions",
+          "n": 1,
+          "note": "payments-api · for 5 m",
+          "quote": "Deploy version 2.8.0 to production now?"
+        },
+        {
+          "kind": "aside",
+          "at": 22,
+          "len": 8,
+          "panel": "context",
+          "rows": [
+            {
+              "name": "payments-api",
+              "pct": 62
+            },
+            {
+              "name": "storefront",
+              "pct": 18
+            }
+          ],
+          "out": "bars"
+        }
+      ],
+      "blinds": {
+        "len": 7
+      },
+      "bgFrom": "#15393F",
+      "bgFadeBeats": 4
+    },
+    {
+      "id": "new",
+      "at": 121.5,
+      "len": 8,
+      "act": "control",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_new.mp4",
+        "clipStart": 13.0,
+        "exit": "diveIn"
+      },
+      "text": {
+        "lines": [
+          "Start the",
+          "next one."
+        ],
+        "accent": "next",
+        "at": 0.5
+      }
+    },
+    {
+      "id": "close",
+      "at": 129.5,
+      "len": 10,
+      "act": "close",
+      "watch": {
+        "view": "threeQuarter",
+        "clip": "scenes/s1_list.mp4",
+        "clipStart": 0.2,
+        "still": "icon/black.png"
+      },
+      "endCard": true
     }
-   ],
-   "blinds": {
-    "len": 7
-   }
-  },
-  {
-   "id": "new",
-   "at": 118.5,
-   "len": 8,
-   "act": "control",
-   "watch": {
-    "view": "front",
-    "clip": "scenes/n_new.mp4",
-    "clipStart": 13.0,
-    "exit": "diveIn"
-   },
-   "text": {
-    "lines": [
-     "Start the",
-     "next one."
-    ],
-    "accent": "next",
-    "at": 0.5
-   }
-  },
-  {
-   "id": "close",
-   "at": 126.5,
-   "len": 10,
-   "act": "close",
-   "watch": {
-    "view": "threeQuarter",
-    "clip": "scenes/s1_list.mp4",
-    "clipStart": 0.2,
-    "still": "icon/black.png"
-   },
-   "endCard": true
-  }
- ],
- "music": "audio/music.v9.wav",
- "musicDelayBeats": 0,
- "musicDelayFrames": 1
+  ],
+  "music": "audio/music.v9.wav",
+  "musicDelayBeats": 0,
+  "musicDelayFrames": 1
 }

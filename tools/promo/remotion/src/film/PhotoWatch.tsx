@@ -1,5 +1,5 @@
 import React from "react";
-import { Freeze, Img, OffthreadVideo, staticFile } from "remotion";
+import { Freeze, Img, OffthreadVideo, Sequence, staticFile, useCurrentFrame } from "remotion";
 import geo from "./mockup.geometry.json";
 import { applyH, homography, toMatrix3d } from "./homography.ts";
 import type { Quad } from "./homography.ts";
@@ -8,13 +8,15 @@ import { Watch } from "../Watch";
 
 /** `light`: luminosità del display, 1 = normale (ui/sleep.ts: il display che dorme e si risveglia).
  *  `rim` 0-1: la luce dello schermo che batte sulla ghiera nei primi fotogrammi del risveglio. */
-type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; rim?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
+type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; rim?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
 
-const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, still, overlay }) => {
+const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, hold, still, overlay }) => {
+  const now = useCurrentFrame();
   const video = <OffthreadVideo src={staticFile(clip)} muted trimBefore={Math.round(clipStart * 30)} playbackRate={rate} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
   return (
   <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", background: "#000" }}>
-    {still ? <Img src={staticFile(still)} style={{ width: "100%", height: "100%" }} /> : freeze ? <Freeze frame={0}>{video}</Freeze> : video}
+    {still ? <Img src={staticFile(still)} style={{ width: "100%", height: "100%" }} /> : freeze ? <Freeze frame={0}>{video}</Freeze>
+      : hold ? <Freeze frame={hold} active={now < hold}><Sequence from={hold} layout="none">{video}</Sequence></Freeze> : video}
     {overlay ? <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", scale: "var(--k)" }}>{overlay}</div> : null}
     {/* ombra interna: lo schermo sta sotto la cupola, ai bordi scurisce */}
     <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(0,0,0,0) 80%, rgba(0,0,0,.55) 100%)" }} />
@@ -22,7 +24,7 @@ const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: b
   );
 };
 
-const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, tilt, overlay, around, light = 1, rim = 0 }) => {
+const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, still, glassPx, tilt, overlay, around, light = 1, rim = 0 }) => {
   const G = geo.front;
   const k = glassPx / (2 * G.glassR);
   const disc = (r: number): React.CSSProperties => ({ position: "absolute", left: G.cx - r, top: G.cy - r, width: 2 * r, height: 2 * r, borderRadius: "50%" });
@@ -35,7 +37,7 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx,
         <Img src={staticFile("mockup/front_body.png")} style={{ position: "absolute", inset: 0, filter: "drop-shadow(26px 34px 34px rgba(4,5,12,.62))" }} />
         {/* vetro sintetico: nero sopra tutta la cupola tranne il bordo vero (la foto lì riflette il telefono) */}
         <div style={{ ...disc(G.coverR + 6), background: "radial-gradient(closest-side, #000 97%, rgba(0,0,0,0) 100%)" }} />
-        <div style={{ ...disc(G.displayR), ["--k" as string]: String((2 * G.displayR) / 480), filter: light === 1 ? undefined : `brightness(${light})` }}><Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} still={still} overlay={overlay} /></div>
+        <div style={{ ...disc(G.displayR), ["--k" as string]: String((2 * G.displayR) / 480), filter: light === 1 ? undefined : `brightness(${light})` }}><Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} hold={hold} still={still} overlay={overlay} /></div>
         <div style={{ ...disc(G.coverR), overflow: "hidden", mixBlendMode: "screen" }}>
           {/* alone in alto a sinistra, finestra sfocata, lama di luce, filo sul bordo */}
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(47.5% 31% at 31% 24%, rgba(235,245,255,.18) 0%, rgba(235,245,255,.113) 50%, rgba(235,245,255,.048) 75%, rgba(235,245,255,.013) 90%, rgba(235,245,255,0) 100%)" }} />
@@ -55,7 +57,7 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx,
   );
 };
 
-const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, glassPx, overlay, reveal = 1, bodyOpacity = 1, contentOpacity = 1, focus = 0 }) => {
+const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, still, glassPx, overlay, reveal = 1, bodyOpacity = 1, contentOpacity = 1, focus = 0 }) => {
   const Q = geo.q34;
   const k = glassPx / (2 * Q.b);
   const H = homography(480, Q.quad as Quad);
@@ -74,7 +76,7 @@ const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, still, g
       <div style={{ width: Q.size, height: Q.size, position: "relative", transformOrigin: "0 0", scale: String(k) }}>
         <Img src={staticFile("mockup/q34_body.png")} style={{ position: "absolute", inset: 0, opacity: bodyOpacity, filter: "drop-shadow(30px 36px 36px rgba(4,5,12,.62))" }} />
         <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", transform: toMatrix3d(M), opacity: contentOpacity, filter: "blur(0.4px) brightness(.95)", ["--k" as string]: "1" }}>
-          <Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} still={still} overlay={overlay} />
+          <Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} hold={hold} still={still} overlay={overlay} />
         </div>
         {/* qui il telefono non c'è: i riflessi VERI della foto sopra l'interfaccia */}
         <Img src={staticFile("mockup/q34_reflections.png")} style={{ position: "absolute", inset: 0, mixBlendMode: "screen", opacity: bodyOpacity }} />

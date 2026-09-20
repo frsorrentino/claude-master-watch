@@ -119,7 +119,10 @@ export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g
   const e = (scene.fx ?? []).find((f) => f.kind === "terminalPlane");
   if (!e || e.kind !== "terminalPlane") return null;
   const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
-  const c = terminalPlaneAt((frame - from) / len);
+  const c0 = terminalPlaneAt((frame - from) / len);
+  // `keep`: il terminale NON si ritira a fine scena, perché la scena dopo lo riprende con le stesse righe e ci costruisce
+  // attorno la finestra: spegnendolo si vedeva il testo sparire e ricomparire (Franz, 20/09 19:55)
+  const c = e.keep ? { show: c0.show, exit: 0 } : c0;
   if (c.show <= 0) return null;
   const every = spanFrames(g, scene.at, e.every);
   // le righe che il display sta GIÀ mostrando quando il terminale compare, più quelle che arrivano dopo: il fondo e

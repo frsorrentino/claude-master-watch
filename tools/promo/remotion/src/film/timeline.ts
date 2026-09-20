@@ -20,12 +20,12 @@ export type Fx =
   | { kind: "shake"; at: number }
   | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "quota" | "note" | "pace" | "work" | "questions" | "context"; n?: number; note?: string; quote?: string; lines?: string[]; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
-  | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number; start?: number };   // `start`: righe già presenti quando il terminale compare (quelle che il display sta già mostrando)   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; still?: string; steady?: boolean; exitBeats?: number; enter?: Move; exit?: Move; camera?: Camera };   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)
+  | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number; start?: number; keep?: boolean };   // `keep`: non si spegne in coda — la scena dopo lo riprende com'è   // `start`: righe già presenti quando il terminale compare (quelle che il display sta già mostrando)   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; steady?: boolean; exitBeats?: number; fadeOut?: number; enterAt?: number; enter?: Move; exit?: Move; camera?: Camera };   // `fadeOut`: battiti di dissolvenza in coda; `enterAt`: a che battito della scena comincia l'entrata (prima non c'è)   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)   // `hold`: battiti di schermo fermo a inizio scena, poi il filmato parte (il display e i pannelli raccontano lo stesso punto)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
 export type Camera = "close" | "release" | "around";   // around: l'orologio compare attorno alla card già ferma al centro, grande
-export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top" };   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
+export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top"; keep?: boolean; carry?: number };   // `keep`: la frase non esce a fine scena, la riprende quella dopo   // `carry`: quante parole arrivano già scritte dalla scena prima (restano ferme, si anima solo il resto)   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
 /** Passaggio alla scena dopo (piano 4 §2 bis): `blink` = la parola in colore cresce fino a riempire il quadro e il suo nero è un battito di ciglia. */
 /** Una chiave del passaggio (piano 4 §2 bis): dove sta e che forma ha l'oggetto che attraversa il taglio, nel display (0-480)
  *  o nel quadro (`space: "frame"`). Il taglio interpola da `carryOut` della scena a `carryIn` della scena dopo. */
@@ -34,7 +34,7 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
 /* `bgKeep`: il campo di colore della scena prima NON si dissolve, resta il fondo per tutta la scena (Franz, 20/09 10:10:
    «lasciare sempre il fondo celeste»). Senza, il campo scivola nel colore dell'atto in `bgFadeBeats` fotogrammi. */
 /* `blackOutFrames`: un breve nero prima del taglio, quando la scena si chiude su un movimento e la musica riprende
@@ -51,6 +51,13 @@ export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
  *  attacca il giro principale (Franz, 19/09 19:41). Misurato su `music.v9.wav`: l'attacco è a 8,699 s, +7,2 dB sulla
  *  battuta prima. */
 export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number };
+/** Le due bande degli account: il campo si apre in due (lavoro a sinistra, personale a destra) e alla fine quella di
+ *  sinistra si riprende il quadro, diventando il fondo della sezione dopo. `open` e `win` in battiti. */
+export type BandsCue = { left: string; right: string; open: number; win: number };
+/** I due terminali degli account: il primo si stringe da destra fino a metà, il secondo entra, poi il lato chiude a
+ *  sinistra e resta il secondo (che è il fondo della scena dopo). `open`, `hold`, `close` in battiti. */
+export type SplitCue = { open: number; hold: number; close: number; left: SplitPanel; right: SplitPanel };
+export type SplitPanel = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[] };
 /** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
 export type BlindsCue = { len: number };
 /** `musicDelayBeats`: di quanti battiti la musica entra dopo l'inizio del film, per far cadere il culmine del crescendo
@@ -114,6 +121,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.sleep && !(half(s.sleep.len) && s.sleep.len >= 2.5)) say(`il sonno del display dura ${s.sleep.len} battiti: il minimo è 2,5, in battiti o mezzi battiti`);
     if (s.sleep && !s.watch) say("il sonno del display vuole l'orologio in scena");
     if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
+    if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
+    if (s.bands && !(half(s.bands.open) && half(s.bands.win) && s.bands.open + s.bands.win <= s.len)) say(`le bande (apre ${s.bands.open}, vince ${s.bands.win}) non stanno nei ${s.len} battiti della scena`);
     if (s.sleep?.musicFrom !== undefined && !(s.sleep.musicFrom >= 0)) say(`la musica riparte dal secondo ${s.sleep.musicFrom} della traccia: serve un tempo dentro il brano`);
     if (s.sleep?.musicBackBeats !== undefined && !half(s.sleep.musicBackBeats)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dopo il taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
@@ -126,6 +135,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
       // accanto all'orologio restano ~735 px: a 110 px sono 14 caratteri (misurato: «Every session.» entra, «Know your limits.» no)
       if (s.watch && (s.text.size ?? "title") === "title") for (const l of s.text.lines) if (l.length > 14) say(`la riga «${l}» ha ${l.length} caratteri, al massimo 14 accanto all'orologio`);
       const words = s.text.lines.flatMap((l) => l.split(" "));
+      if (s.text.carry !== undefined && !(Number.isInteger(s.text.carry) && s.text.carry >= 0 && s.text.carry < words.length)) say(`${s.text.carry} parole portate dalla scena prima: servono meno delle ${words.length} della frase`);
+      if (s.text.carry && !prev?.text?.keep) say("la frase continua dalla scena prima, ma quella non la tiene in quadro (`keep`)");
       // «desk.» tagliata nell'anteprima del 17/09: cinque parole a una per battito in una scena di quattro battiti
       const perWord = 0.5;   // mezzo battito a parola ovunque
       // se la scena prima addormenta il display, il titolo di questa si scrive PRIMA del taglio (Film.tsx lo disegna a

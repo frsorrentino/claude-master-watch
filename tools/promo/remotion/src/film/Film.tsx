@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import raw from "./timeline.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
@@ -27,6 +27,9 @@ import { FLIP_CUT } from "./ui/flip.ts";
 import { SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./ui/sleep.ts";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
+import { Bands } from "./ui/Bands.tsx";
+import { Split } from "./ui/Split.tsx";
+import { splitAt } from "./ui/split.ts";
 import { Blinds } from "./ui/Blinds.tsx";
 import { BLIND_CUT, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
@@ -61,11 +64,16 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const halo = sleep ? sleep.halo : 1;
   const mv = sleep && napOwn ? sleep.move : 0;
   const titleOn = sleep && napOwn ? sleep.title : 1;
-  const drift = sleep ? 1 - sleep.still : 1;   // la deriva si ferma nel sonno e torna piano dopo il risveglio
+  const drift = sleep ? 1 - sleep.still : 1;
+  // nella chiusura delle due finestre la frase cammina verso la colonna dei titoli, dove la scena dopo metterà la sua
+  const lift = scene.text?.carry ? interpolate(frame - spanFrames(GRID, scene.at, scene.text.at ?? 0), [0, 14], [0, -THEME.title * 1.04], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) }) : 0;
+  const chiude = scene.split ? Math.min(1, Math.max(0, (0.5 - splitAt(frame / Math.max(1, total), scene.split.open, scene.split.hold, scene.split.close, total / beat).edge) / 0.5)) : 1;   // senza le due finestre la frase è già alla sua colonna   // la deriva si ferma nel sonno e torna piano dopo il risveglio
   const closing = scene.endCard ? closingAt(frame / beat) : null;
   // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
   // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
-  const pose = closing ? closing.pose : w ? poseAt(frame, total, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift) : null;
+  // `enterAt`: l'orologio entra a scena iniziata — qui rientra mentre la frase cammina verso sinistra (Franz, 20/09 20:28)
+  const eAt = w?.enterAt ? spanFrames(GRID, scene.at, w.enterAt) : 0;
+  const pose = closing ? closing.pose : w ? poseAt(frame - eAt, total - eAt, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
   const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
@@ -82,6 +90,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
+  // `fadeOut`: l'orologio se ne va in dissolvenza PRIMA del taglio, sfalsato rispetto a quello che resta in quadro
+  // (il terminale): sparendo insieme sembrava uno stacco, non un passaggio (Franz, 20/09 20:09)
+  const fadeOut = w?.fadeOut ? 1 - Math.min(1, Math.max(0, (frame - (total - spanFrames(GRID, scene.at, w.fadeOut))) / spanFrames(GRID, scene.at, w.fadeOut))) : 1;
   // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
   const zoom = zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv;
   // quando l'orologio si materializza ATTORNO alla scheda ferma al centro, non è l'orologio a essere centrato: è la sua
@@ -120,6 +131,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   return (
     <AbsoluteFill>
       <Backdrop act={scene.act} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} keep={scene.bgKeep} shadeIn={w?.enter ? beat * MOVE_BEATS : 0} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
+      {scene.split ? <Split left={scene.split.left} right={scene.split.right} open={scene.split.open} hold={scene.split.hold} close={scene.split.close} total={total} beat={beat} /> : null}
+      {scene.bands ? <Bands left={scene.bands.left} right={scene.bands.right} openFrames={scene.bands.open} winFrames={scene.bands.win} total={total} /> : null}
       <TerminalBackdrop scene={scene} g={GRID} />
       {w && pose && w.view === "side" ? (<>
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>
@@ -128,8 +141,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
+          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}
@@ -142,10 +155,17 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text && !prev?.sleep ? (
         <Sequence from={textAt} layout="none">
-          <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo) * titleOn, left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" ? "flex-start" : "center" }}>
+          {/* con i due terminali la frase sta in ALTO e al centro: sotto ci sono le schede dei due account (Franz, 19:06) */}
+          <div style={{ position: "absolute", opacity: (1 - Math.min(1, over * 2.5)) * (1 - solo) * titleOn, left: w ? THEME.leftMargin : 0, right: w ? undefined : 0, top: scene.split ? height * (0.66 - 0.266 * chiude) : scene.text.carry ? height * 0.394 : scene.text.place === "top" ? 110 : 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: w ? "flex-start" : "center", justifyContent: scene.text.place === "top" || scene.split || scene.text.carry ? "flex-start" : "center" }}>
+            {/* con l'orologio in scena il blocco è ancorato alla colonna dei titoli: la frase PARTE spostata al centro e
+                torna al suo posto mentre le finestre si chiudono, arrivando dove la scena dopo mette il suo titolo */}
+            {/* la frase arriva alla colonna prima che le finestre finiscano di chiudersi (Franz, 21:31): due terzi della corsa,
+                con frenata morbida; e sale di una riga quando la terza riga entra, così il blocco resta dov'era */}
+            <span style={{ display: "block", translate: `${(width / 2 - THEME.leftMargin - 340) * (1 - Easing.bezier(0.2, 0, 0, 1)(Math.min(1, chiude / 0.66)))}px ${lift}px` }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub} hideAccentFrom={scene.out === "blink" ? leave - textAt : undefined}   /* dentro la sequenza del testo i fotogrammi ripartono da zero */
               fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
-              perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" ? undefined : leave - textAt} align={w ? "left" : "center"} />
+              perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" || scene.text.keep ? undefined : leave - textAt} carry={scene.text.carry} align={w ? "left" : "center"} />
+            </span>
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
         </Sequence>
