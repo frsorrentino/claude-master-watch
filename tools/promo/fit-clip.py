@@ -15,7 +15,11 @@ dalla registrazione n_overview_cut.mp4 (le due soste sulla Quota diventano una):
 
   cd tools/promo/remotion/public/scenes
   python3 ../../../fit-clip.py n_overview_cut.mp4 n_overview_fit.mp4 \
-    "0.2-1.2:1.0,2.2-4.9+5.5-8.5:2.27,8.5-9.1:1.8,9.1-11.8:1.2,11.8-13.06:1.26,13.8-16.5:1.2,16.5-21.8:6.9"
+    "0.2-2.2:1.8,2.2-4.9+5.5-8.5:1.47,8.5-9.1:1.8,9.1-11.8:1.2,11.8-13.06:1.26,13.8-16.5:1.2,16.5-18.6:1.67,18.6-21.25:1.2,21.25-21.8:4.16"
+
+Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre
+la card è ancora ferma), non quanto il dito ci si era fermato: la Quota tiene 1,8 s e l'ultima
+sosta si spezza in tre (Open questions, scorrimento, Context) perché i pannelli sono due.
 """
 import subprocess, sys, tempfile, os
 
