@@ -71,9 +71,10 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
   const cx = (watchColumn(scene) + (watchColumn(next) - watchColumn(scene)) * mv) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
+  // il titolo lascia il posto anche alle righe del terminale, che arrivano nella sua stessa colonna (Franz, 20/09 16:36)
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
-  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild");
+  const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild" || f.kind === "terminalPlane");
   // i dati della Panoramica stanno dove sta il titolo: il titolo se ne va prima che entri il primo (Franz, 18/09 21:42)
   const firstAside = (scene.fx ?? []).find((f) => f.kind === "aside");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)

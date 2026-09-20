@@ -196,8 +196,11 @@ p2_say() {   # fondo dell'esito, «Write» → dettatura (demo, o Franz con la t
   tap 240 315; pause "${SAY_WAIT:-3.0}"; snap inviato
 }
 p2_watch() {   # card al lavoro → terminale con le righe che arrivano sul TICK
+  # Più righe e più fitte (Franz, 20/09 17:03): nel film il terminale del fondo e quello sul polso devono aggiungere la
+  # stessa riga nello stesso istante, e in una scena da quattro secondi ci devono stare due o tre arrivi.
   step followup 1.0; go terminal/payments-api; pause 2.4; scroll 3000 2600 0.5; snap terminale
-  for _ in 1 2 3 4 5; do step tick 0.7; done; pause 1.5; snap terminale_cresce
+  for _ in 1 2 3 4 5 6 7 8 9 10; do step tick 0.35; sh input keyevent KEYCODE_WAKEUP; done
+  pause 1.5; snap terminale_cresce
 }
 p2_limits() {   # panoramica, card «Quota» → scorrimento lento → grafico del ritmo a cinque ore
   go quota; pause 2.6; snap panoramica; scroll 380 2600; pause 1.0; snap ritmo

@@ -12,7 +12,7 @@ import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
 import { UiOption } from "./UiOption.tsx";
-import { UiTerminalPanel } from "./UiTerminalPanel.tsx";
+import { UI } from "./UiTokens.ts";
 import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
@@ -115,23 +115,50 @@ const GaugeHeroView: React.FC<{ e: Extract<Fx, { kind: "gaugeHero" }>; value: nu
  */
 export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
   const frame = useCurrentFrame();
-  const { width, height } = useVideoConfig();
+  const { width } = useVideoConfig();
   const e = (scene.fx ?? []).find((f) => f.kind === "terminalPlane");
   if (!e || e.kind !== "terminalPlane") return null;
   const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
   const c = terminalPlaneAt((frame - from) / len);
   if (c.show <= 0) return null;
   const every = spanFrames(g, scene.at, e.every);
-  const shown = 3 + Math.max(0, (frame - from - len * 0.2) / every);
-  const k = HERO_TERMINAL_PX / e.rect[2];
+  // le righe che il display sta GIÀ mostrando quando il terminale compare, più quelle che arrivano dopo: il fondo e
+  // l'orologio devono dire la stessa cosa nello stesso momento (Franz, 20/09 16:47).
+  const start = e.start ?? 0;
+  // non in tempo reale, ma sfalsato di poco (Franz, 20/09 17:14): la riga la scrive il PC e il polso la ripete sei
+  // fotogrammi dopo. Perfettamente sincroni sembravano lo stesso oggetto, non due schermi collegati.
+  const LEAD = 6;
+  // Le righe già scritte non compaiono tutte insieme: si posano una alla volta mentre il terminale entra in quadro
+  // (Franz, 20/09 17:39), dieci fotogrammi l'una. Quelle nuove arrivano invece al ritmo vero del polso, sei fotogrammi
+  // prima di lui.
+  const BACKFILL = 7;
+  // la prima riga NUOVA arriva un `every` dopo l'inizio, non subito: prima il terminale si riempie di quelle già scritte
+  const arrivo = (i: number) => (i < start ? from + i * BACKFILL : from + (i - start + 1) * every - LEAD);
   const a = c.show * (1 - c.exit);
+  // Come Claude Code sul PC (Franz, 20/09 17:23): le frasi di Claude col punto in verde, le chiamate agli strumenti in
+  // grigio. Il testo esce a BLOCCHI DI FRASE, non lettera per lettera (Franz, 17:57 e 18:01): due parole alla volta,
+  // come lo streaming di Claude Code. E chi è avanti è il fondo: il polso ripete dopo (`LEAD`).
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+  const ultima = e.lines.reduce((acc, _, i) => (frame >= arrivo(i) ? i : acc), -1);
+  const cursore = frame % 30 < 16;
   return (
-    <div style={{ position: "absolute", left: width / 2, top: height / 2, width: 0, height: 0, opacity: a, filter: `blur(${1.5 * (1 - c.show) + 2 * c.exit}px)` }}>
-      <div style={{ translate: "-50% -50%", width: e.rect[2] * k, scale: String(0.94 + 0.06 * c.show - 0.05 * c.exit) }}>
-        <div style={{ zoom: k }}>
-          <UiTerminalPanel w={e.rect[2]} header={e.header} title={e.title} lines={e.lines} shown={shown} morph={1} />
-        </div>
-      </div>
+    <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, width: width * 0.46, display: "flex", flexDirection: "column", justifyContent: "center", opacity: a, fontFamily: "Cousine", fontSize: 42, lineHeight: "64px", whiteSpace: "pre-wrap", letterSpacing: "0.01em" }}>
+      {e.lines.map((l, i) => {
+        if (frame < arrivo(i) - 1) return null;
+        const dice = l.startsWith("⏺");                       // una frase di Claude; le altre sono chiamate a strumenti
+        const testo = dice ? l.slice(1).trimStart() : l;
+        const blocchi: string[] = [];                          // la riga in gruppi di due parole
+        testo.split(" ").forEach((w, n) => { if (n % 2 === 0) blocchi.push(w); else blocchi[blocchi.length - 1] += " " + w; });
+        const usciti = Math.floor(clamp01((frame - arrivo(i)) / 9) * blocchi.length + 0.999);   // un blocco ogni tre fotogrammi
+        const entra = clamp01((frame - arrivo(i)) / 2);
+        return (
+          <div key={i} style={{ color: dice ? THEME.white : UI.text2, opacity: entra, translate: `0 ${(1 - entra) * 10}px` }}>
+            {dice ? <span style={{ color: UI.briefGood }}>⏺ </span> : null}
+            {blocchi.slice(0, Math.max(1, usciti)).join(" ")}
+            {i === ultima && cursore ? <span style={{ color: UI.briefGood }}>▌</span> : null}
+          </div>
+        );
+      })}
     </div>
   );
 };

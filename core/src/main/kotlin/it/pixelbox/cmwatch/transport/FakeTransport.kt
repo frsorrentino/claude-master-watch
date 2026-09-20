@@ -188,9 +188,12 @@ class FakeTransport(
             CmdOp.RESUME -> if (ses?.state == SessionState.GONE) ko("${ses.name} is gone: use launch") else ok("resumed")
             CmdOp.SCREEN -> if (ses == null) ko("no session ${cmd.session}") else {
                 // Dopo il passo FOLLOWUP il terminale cresce a ogni cattura: nel video le righe arrivano dal vivo.
-                val extra = listOf("Edit CHANGELOG.md", "+ ## 2.8.0 — refund endpoint, webhook retries", "$ git tag v2.8.0", "$ git push --tags", "Tag v2.8.0 pushed")
+                // Nel video il terminale deve mostrare quello che Claude SCRIVE mentre lavora — le sue frasi e le chiamate
+                // agli strumenti — non un log di shell né la risposta finale (Franz, 20/09 17:23). Righe sotto i 28
+                // caratteri, la larghezza del polso.
+                val extra = listOf("⏺ Updating the changelog", "Edit(CHANGELOG.md)", "⏺ Tagging the release", "Bash(git tag v2.8.0)", "⏺ Pushing the tag", "Bash(git push --tags)")
                 val righe = if (ses.id == deployId && growing) extra.take(screenGrowth++.coerceAtMost(extra.size)) else listOf("Edit app/admin.py", "Read app/seed.py")
-                ok((listOf("$ pytest -q tests", "42 passed in 3.1s") + righe).joinToString("\n"))
+                ok((listOf("⏺ Reading the checklist", "Read(RELEASE.md)") + righe).joinToString("\n"))
             }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")

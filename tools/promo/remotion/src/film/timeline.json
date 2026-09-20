@@ -305,7 +305,7 @@
     "h": 279,
     "r": 55,
     "color": "#23272E",
-    "toColor": "#15393F",
+    "toColor": "#23272E",
     "body": "words",
     "words": [
      "Great. Now update the",
@@ -325,25 +325,26 @@
   {
    "id": "watch",
    "at": 72.5,
-   "len": 7,
+   "len": 10,
    "act": "control",
    "watch": {
     "view": "front",
     "clip": "scenes/n_watch.mp4",
-    "clipStart": 7.5
+    "clipStart": 14.2,
+    "rate": 1.25
    },
    "text": {
     "lines": [
      "Watch it work."
     ],
     "accent": "work.",
-    "place": "top"
+    "at": 0.5
    },
    "fx": [
     {
      "kind": "terminalPlane",
-     "at": 1.5,
-     "len": 5.5,
+     "at": 3,
+     "len": 6.5,
      "rect": [
       26,
       163,
@@ -353,20 +354,23 @@
      "header": "Terminal · 07:36",
      "title": "payments-api — claude",
      "lines": [
-      "$ pytest -q tests",
-      "42 passed in 3.1s",
-      "Edit CHANGELOG.md",
-      "+ ## 2.8.0 — refund endpoint, webhook retries",
-      "$ git tag v2.8.0",
-      "$ git push --tags"
+      "⏺ Reading the checklist",
+      "Read(RELEASE.md)",
+      "⏺ Updating the changelog",
+      "Edit(CHANGELOG.md)",
+      "⏺ Tagging the release",
+      "Bash(git tag v2.8.0)"
      ],
-     "every": 0.75
+     "every": 2.4,
+     "start": 5
     }
-   ]
+   ],
+   "bgFrom": "#23272E",
+   "bgKeep": true
   },
   {
    "id": "accounts",
-   "at": 79.5,
+   "at": 82.5,
    "len": 5,
    "act": "control",
    "text": {
@@ -379,7 +383,7 @@
   },
   {
    "id": "limits",
-   "at": 84.5,
+   "at": 87.5,
    "len": 31,
    "act": "control",
    "watch": {
@@ -465,7 +469,7 @@
   },
   {
    "id": "new",
-   "at": 115.5,
+   "at": 118.5,
    "len": 8,
    "act": "control",
    "watch": {
@@ -485,7 +489,7 @@
   },
   {
    "id": "close",
-   "at": 123.5,
+   "at": 126.5,
    "len": 10,
    "act": "close",
    "watch": {
