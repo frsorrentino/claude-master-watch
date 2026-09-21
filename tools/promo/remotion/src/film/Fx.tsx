@@ -11,11 +11,13 @@ import { UI } from "./ui/UiTokens.ts";
 const clampBoth = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 /** Il punto del tocco: compare pieno, si allarga e svanisce in 12 fotogrammi. */
+/** Il dito sul display: il cerchio grigio del «mostra tocchi» di Android, come nella risposta e nella dettatura (Franz,
+ *  21/09 23:33: tutti i tocchi uguali), grande quanto un polpastrello in unità del display. Si posa, resta, si alza. */
 export const TapDot: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   const f = useCurrentFrame();
-  const s = interpolate(f, [0, 12], [0.55, 1.25], { ...clampBoth, easing: Easing.out(Easing.cubic) });
-  const o = interpolate(f, [0, 3, 12], [0, 0.55, 0], clampBoth);
-  return <div style={{ position: "absolute", left: x - 34, top: y - 34, width: 68, height: 68, borderRadius: "50%", background: "#fff", opacity: o, scale: String(s) }} />;
+  const on = interpolate(f, [0, 3, 9, 13], [0, 1, 1, 0], clampBoth);
+  const s = interpolate(f, [0, 3], [0.9, 1], clampBoth);
+  return <div style={{ position: "absolute", left: x - 40, top: y - 40, width: 80, height: 80, borderRadius: "50%", background: "rgba(58,60,70,.38)", boxShadow: "0 0 0 2px rgba(255,255,255,.75)", opacity: on, scale: String(s) }} />;
 };
 
 /** L'arco della pressione lunga si chiude attorno alla cassa, partendo dalle ore 12. */
