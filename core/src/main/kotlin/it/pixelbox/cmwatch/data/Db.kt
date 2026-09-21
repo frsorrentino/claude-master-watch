@@ -34,6 +34,7 @@ import it.pixelbox.cmwatch.rules.QuotaHistory
     @Upsert suspend fun putQuotaSample(row: QuotaSampleRow)
     @Query("SELECT * FROM quota_samples WHERE ts >= :since ORDER BY ts") suspend fun quotaSamples(since: Long): List<QuotaSampleRow>
     @Query("DELETE FROM quota_samples WHERE ts < :olderThan") suspend fun pruneQuotaSamples(olderThan: Long)
+    @Query("DELETE FROM quota_samples WHERE account = :account") suspend fun clearQuotaSamples(account: String)
 }
 
 @Database(entities = [StateRow::class, EventRow::class, PendingRow::class, QuotaSampleRow::class], version = 2, exportSchema = true)
@@ -79,4 +80,5 @@ class RoomStore(private val dao: CmDao) : Store {
     override suspend fun loadQuotaSamples(since: Long): Map<String, List<QuotaHistory.Sample>> = dao.quotaSamples(since)
         .groupBy({ row -> row.account }, { row -> QuotaHistory.Sample(row.ts, row.pct) })
     override suspend fun pruneQuotaSamples(olderThan: Long) = dao.pruneQuotaSamples(olderThan)
+    override suspend fun clearQuotaSamples(account: String) = dao.clearQuotaSamples(account)
 }

@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.data
 
 import it.pixelbox.cmwatch.Fixtures
+import it.pixelbox.cmwatch.rules.QuotaHistory
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.transport.*
 import kotlinx.coroutines.delay
@@ -187,6 +188,20 @@ class RepoTest {
         assertTrue(repo.snapshot.value.pending.isEmpty())                 // inviato
         assertTrue(store.loadPending().isEmpty())
     }
+
+    /**
+     * Ogni accensione della demo semina una rampa sulle ultime tre ore. Aggiunte una all'altra, rampe di orari diversi si
+     * intrecciano e il grafico del ritmo diventava un dente di sega (ripresa della Panoramica, 21/09): la demo sostituisce.
+     */
+    @Test fun seedingTheDemoTwiceReplacesTheRampInsteadOfStackingIt() = runTest {
+        val store = MemoryStore()
+        val repo = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        val prima = (0..9).map { k -> QuotaHistory.Sample(clock - 10_000 + k * 1000L, 2 + k * 2) }
+        val dopo = (0..9).map { k -> QuotaHistory.Sample(clock - 9_500 + k * 1000L, 3 + k * 2) }
+        repo.seedQuotaSamples(mapOf("personal" to prima))
+        repo.seedQuotaSamples(mapOf("personal" to dopo))
+        assertEquals(dopo, repo.quotaSamples.value["personal"])
+    }
 }
 
 class MemoryStore : Store {
@@ -205,4 +220,5 @@ class MemoryStore : Store {
     override suspend fun loadQuotaSamples(since: Long) =
         samples.filter { it.second.ts >= since }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.sortedBy { it.ts } }
     override suspend fun pruneQuotaSamples(olderThan: Long) { samples.removeAll { it.second.ts < olderThan } }
+    override suspend fun clearQuotaSamples(account: String) { samples.removeAll { it.first == account } }
 }

@@ -112,9 +112,16 @@ class Repo(
         recordQuota(ordered)
     }
 
-    /** Demo per i video: i campioni che l'orologio avrebbe registrato, perché nella demo lo stato non cambia mai. */
+    /**
+     * Demo per i video: i campioni che l'orologio avrebbe registrato, perché nella demo lo stato non cambia mai. Sostituiscono
+     * quelli dell'account: aggiunti, le rampe di più accensioni si intrecciavano e il grafico diventava un dente di sega
+     * (ripresa della Panoramica, 21/09).
+     */
     suspend fun seedQuotaSamples(samples: Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>) {
-        for ((account, list) in samples) for (s in list) store.saveQuotaSample(account, s)
+        for ((account, list) in samples) {
+            store.clearQuotaSamples(account)
+            for (s in list) store.saveQuotaSample(account, s)
+        }
         _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
     }
 

@@ -19,4 +19,6 @@ interface Store {
     /** I campioni dal più vecchio, per account, a partire da `since`. */
     suspend fun loadQuotaSamples(since: Long): Map<String, List<it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>
     suspend fun pruneQuotaSamples(olderThan: Long)
+    /** Toglie tutti i campioni di un account: la demo sostituisce la sua rampa invece di aggiungerne una. */
+    suspend fun clearQuotaSamples(account: String)
 }
