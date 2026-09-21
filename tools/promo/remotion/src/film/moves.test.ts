@@ -41,7 +41,10 @@ test("zoomLeft finisce centrato sul quadrante della complication: simmetrico, de
 
 test("chiusura: prima solo il logo grande, poi si inclina e compare l'orologio, poi si allontana fino all'inquadratura finale", () => {
   assert.equal(closingAt(0).logo, 0); assert.equal(closingAt(2).logo, 1);
-  assert.equal(closingAt(3).tilt, 0); assert.equal(closingAt(3).body, 0); assert.equal(closingAt(5).tilt, 1); assert.equal(closingAt(5).body, 1);
+  assert.equal(closingAt(2.2).tilt, 0); assert.equal(closingAt(2.2).body, 0); assert.equal(closingAt(3.6).tilt, 1); assert.equal(closingAt(3.9).body, 1);
+  // i tre movimenti si sovrappongono: a metà rotazione l'allontanamento è già cominciato (Franz, 21/09)
+  const m = closingAt(3);
+  assert.ok(m.tilt > 0 && m.tilt < 1 && m.body > 0 && m.body < 1 && m.pose.scale < closingAt(2.5).pose.scale);
   const a = closingAt(1), z = closingAt(9);
   assert.ok(a.focus === 1 && a.pose.scale > 1.5 && a.pose.y === 0);
   assert.ok(z.focus === 0 && Math.abs(z.pose.scale - 0.5) < 1e-9 && Math.abs(z.pose.y + 0.2) < 1e-9);
@@ -60,8 +63,8 @@ test("chiusura speculare: il logo compare mentre ci si allontana da vicino, e il
 
 test("i movimenti finali atterrano morbidi: nell'ultimo quinto del tempo resta meno del 3 % della strada", () => {
   const scaleAt = (b: number) => closingAt(b).pose.scale;
-  const left = (scaleAt(7.4) - scaleAt(8)) / (scaleAt(5) - scaleAt(8));          // allontanamento: battiti 5-8
+  const left = (scaleAt(4.34) - scaleAt(4.8)) / (scaleAt(2.5) - scaleAt(4.8));   // allontanamento: battiti 2,5-4,8
   assert.ok(left > 0 && left < 0.03, `allontanamento: resta ${left}`);
-  const tiltLeft = 1 - closingAt(4.6).tilt;                                        // inclinazione: battiti 3-5
+  const tiltLeft = 1 - closingAt(3.32).tilt;                                       // inclinazione: battiti 2,2-3,6
   assert.ok(tiltLeft > 0 && tiltLeft < 0.03, `inclinazione: resta ${tiltLeft}`);
 });

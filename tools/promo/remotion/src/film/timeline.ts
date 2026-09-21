@@ -108,7 +108,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (s.watch.rate !== undefined && !(s.watch.rate > 0 && s.watch.rate <= 1.25)) say(`velocità della clip ${s.watch.rate}: al massimo 1,25×`);
       if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
       if (s.watch.camera !== undefined && !["close", "release", "around"].includes(s.watch.camera)) say(`camera «${s.watch.camera}» sconosciuta`);
-      if ((s.watch.camera === "release" || s.watch.camera === "around") && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero")) say(`la camera «${s.watch.camera}» vuole un momento forte nella scena`);
+      if ((s.watch.camera === "release" || s.watch.camera === "around") && !(s.fx ?? []).some((f) => f.kind === "cardOut" || f.kind === "gaugeHero") && prev?.out !== "blink") say(`la camera «${s.watch.camera}» vuole un momento forte nella scena`);   // dopo un battito di ciglia la camera tiene l'inquadratura di prima: l'orologio non cambia misura attraverso le palpebre (Franz, 21/09)
     }
     if (s.out !== undefined && s.out !== "blink") say(`passaggio «${s.out}» sconosciuto`);
     for (const k of [s.carryOut, s.carryIn]) if (k && (k.space ?? "display") === "display" && !(k.x >= 0 && k.x <= 480 && k.y >= 0 && k.y <= 480)) say(`chiave del passaggio (${k.x}, ${k.y}) fuori dal display`);
@@ -128,7 +128,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
     if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
     if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
-    if (s.out === "blink" && !s.text?.accent) say("il battito di ciglia vuole una parola in colore da far crescere");
+    if (s.out === "blink" && s.text && !s.text.accent) say("il battito di ciglia vuole una parola in colore da far crescere");   // senza testo sono le sole palpebre: il passaggio fra due schermate dello stesso momento (Franz, 21/09)
     if (s.text) {
       if (s.text.lines.length < 1 || s.text.lines.length > 3) say(`${s.text.lines.length} righe di testo: da 1 a 3`);
       if (s.text.lines.some((l) => l.includes("…") || l.includes("..."))) say("puntini di sospensione nel testo");

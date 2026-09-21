@@ -97,7 +97,17 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const zoom = zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv;
   // quando l'orologio si materializza ATTORNO alla scheda ferma al centro, non è l'orologio a essere centrato: è la sua
   // scheda. Si sposta l'orologio di quanto la scheda dista dal centro del display, alla scala di quel momento.
-  const aroundCard = scene.watch?.camera === "around" ? (scene.fx ?? []).find((f) => f.kind === "cardOut") : undefined;
+  // dopo un battito di ciglia la scena che si riapre non ha la sua scheda (è un'altra schermata): tiene lo scarto di quella
+  // di prima, se no l'orologio salta in verticale attraverso le palpebre (Franz, 21/09 04:23: «posizione identica»).
+  const aroundCard = (() => {
+    if (scene.watch?.camera !== "around") return undefined;
+    for (let k = idx; k >= 0; k--) {
+      const card = (TIMELINE.scenes[k].fx ?? []).find((f) => f.kind === "cardOut");
+      if (card) return card;
+      if (TIMELINE.scenes[k - 1]?.out !== "blink") return undefined;   // si risale solo attraverso le palpebre
+    }
+    return undefined;
+  })();
   const aroundDy = aroundCard && aroundCard.kind === "cardOut"
     // `(1 - mv)`: quando la camera lascia la scheda e va nella colonna di destra, questo scarto si annulla con il
     // movimento. Senza, l'orologio restava 94 px più in basso per tutto il sonno e al risveglio saltava su (Franz, 22:20).
@@ -152,7 +162,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
           stessa scheda, nello stesso punto, e due copie sovrapposte si vedrebbero */}
       <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (1 - underFlip) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
-      {scene.endCard ? <Sequence from={beat * 7} layout="none"><EndCard beat={beat} /></Sequence> : null}
+      {scene.endCard ? <Sequence from={beat * 4} layout="none"><EndCard beat={beat} /></Sequence> : null}
       {scene.text && !prev?.sleep ? (
         <Sequence from={textAt} layout="none">
           {/* con i due terminali la frase sta in ALTO e al centro: sotto ci sono le schede dei due account (Franz, 19:06) */}
@@ -250,7 +260,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
       {/* il battito di ciglia dura quanto la crescita della card, non 30 fotogrammi: parola e scheda crescono INSIEME
           (Franz, 19/09 05:12). La parola resta dov'è e si ingrandisce; le palpebre si chiudono negli ultimi 7. */}
       {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
-        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text!.accent!} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text?.accent ?? ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si

@@ -72,17 +72,20 @@ export const poseAt = (frame: number, total: number, moveFrames: number, enter?:
 };
 
 /** La chiusura (Franz, 17/09 23:52): solo il logo grande in dissolvenza, poi si inclina e sotto compare l'orologio, poi ci si
- *  allontana fino all'inquadratura finale con l'orologio piccolo in alto. `beats` = battiti dall'inizio della scena. */
+ *  allontana fino all'inquadratura finale con l'orologio piccolo in alto. `beats` = battiti dall'inizio della scena.
+ *  Franz, 21/09 02:18: i tre movimenti finali NON sono più in fila — inclinazione, corpo e allontanamento partono a 2,2, 2,35
+ *  e 2,5 e finiscono insieme: uno sfalsamento di poco, non tre annunci. Sono la stessa rivelazione (quel logo sta sul display
+ *  di un orologio, e l'orologio è lontano), quindi si dicono insieme. L'arco resta solo fino al battito 3: è la firma. */
 export type Closing = { pose: Pose; logo: number; draw: number; tilt: number; body: number; focus: number };
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 export const closingAt = (beats: number): Closing => {
-  const out = soft(ramp(beats, 5, 8));
+  const out = soft(ramp(beats, 2.5, 4.8));
   const near = 1 - out3(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
   return {
     logo: ramp(beats, 0, 2),
     draw: inOut(ramp(beats, 0.5, 3)),              // l'arco del logo si disegna da zero al suo 70 %, come un gauge che si riempie
-    tilt: soft(ramp(beats, 3, 5)),
-    body: ramp(beats, 3.5, 5) >= 1 ? 1 : inOut(ramp(beats, 3.5, 5)) * (beats <= 3 ? 0 : 1),
+    tilt: soft(ramp(beats, 2.2, 3.6)),
+    body: ramp(beats, 2.35, 3.9) >= 1 ? 1 : inOut(ramp(beats, 2.35, 3.9)) * (beats <= 2.2 ? 0 : 1),
     focus: 1 - out,
     pose: { x: 0, y: -0.2 * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
   };

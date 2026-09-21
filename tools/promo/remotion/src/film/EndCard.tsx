@@ -12,9 +12,9 @@ export const EndCard: React.FC<{ beat: number }> = ({ beat }) => {
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 22, paddingTop: 330 }}>
       <WordMask lines={["Claude Master"]} perWordFrames={beat} align="center" />
-      <div style={{ ...small, fontSize: THEME.service, color: THEME.white, opacity: o(beat * 3) }}>Free. <span style={{ color: THEME.accent }}>Open source.</span></div>
-      <div style={{ ...small, fontSize: 34, opacity: o(beat * 5) }}>{REPO}</div>
-      <div style={{ ...small, position: "absolute", bottom: 64, left: 0, right: 0, fontSize: 22, lineHeight: 1.5, opacity: o(beat * 6) }}>
+      <div style={{ ...small, fontSize: THEME.service, color: THEME.white, opacity: o(beat * 4) }}>Free. <span style={{ color: THEME.accent }}>Open source.</span></div>
+      <div style={{ ...small, fontSize: 34, opacity: o(beat * 7) }}>{REPO}</div>
+      <div style={{ ...small, position: "absolute", bottom: 64, left: 0, right: 0, fontSize: 22, lineHeight: 1.5, opacity: o(beat * 9) }}>
         An independent project, not affiliated with Anthropic.<br />Wear OS by Google and Pixel Watch are trademarks of Google LLC. Synthetic voice.
       </div>
     </AbsoluteFill>

@@ -92,7 +92,7 @@
     {
       "id": "list",
       "at": 24,
-      "len": 14,
+      "len": 6,
       "act": "know",
       "watch": {
         "view": "front",
@@ -105,7 +105,7 @@
         {
           "kind": "cardOut",
           "at": 0,
-          "len": 14,
+          "len": 6,
           "rect": [
             26,
             63,
@@ -121,6 +121,32 @@
           "toCenter": true
         }
       ],
+      "out": "blink"
+    },
+    {
+      "id": "tile",
+      "at": 30,
+      "len": 4,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_tile_cm.mp4",
+        "still": "shots/w_tile.png",
+        "camera": "around"
+      },
+      "out": "blink"
+    },
+    {
+      "id": "card-sleep",
+      "at": 34,
+      "len": 8,
+      "act": "know",
+      "watch": {
+        "view": "front",
+        "clip": "scenes/n_tile_cm.mp4",
+        "still": "shots/w_session.png",
+        "camera": "around"
+      },
       "sleep": {
         "len": 8,
         "musicBackBeats": 2,
@@ -129,7 +155,7 @@
     },
     {
       "id": "asks",
-      "at": 38,
+      "at": 42,
       "len": 3,
       "act": "know",
       "watch": {
@@ -152,7 +178,7 @@
     },
     {
       "id": "speaks",
-      "at": 41,
+      "at": 45,
       "len": 13,
       "act": "know",
       "watch": {
@@ -185,7 +211,7 @@
     },
     {
       "id": "answer",
-      "at": 54,
+      "at": 58,
       "len": 6.5,
       "act": "act",
       "watch": {
@@ -242,7 +268,7 @@
     },
     {
       "id": "loop",
-      "at": 60.5,
+      "at": 64.5,
       "len": 12,
       "act": "act",
       "watch": {
@@ -324,7 +350,7 @@
     },
     {
       "id": "watch",
-      "at": 72.5,
+      "at": 76.5,
       "len": 10,
       "act": "control",
       "watch": {
@@ -372,7 +398,7 @@
     },
     {
       "id": "accounts",
-      "at": 82.5,
+      "at": 86.5,
       "len": 8,
       "act": "control",
       "text": {
@@ -443,7 +469,7 @@
     },
     {
       "id": "limits",
-      "at": 90.5,
+      "at": 94.5,
       "len": 31,
       "act": "control",
       "watch": {
@@ -533,7 +559,7 @@
     },
     {
       "id": "new",
-      "at": 121.5,
+      "at": 125.5,
       "len": 8,
       "act": "control",
       "watch": {
@@ -553,8 +579,8 @@
     },
     {
       "id": "close",
-      "at": 129.5,
-      "len": 10,
+      "at": 133.5,
+      "len": 22,
       "act": "close",
       "watch": {
         "view": "threeQuarter",
