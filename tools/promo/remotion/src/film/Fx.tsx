@@ -80,6 +80,16 @@ export const CardHole: React.FC<{ rect: [number, number, number, number]; frames
   );
 };
 
+/** Il posto lasciato dai tasti che escono: il fondo del display sopra i due tasti veri della registrazione, dal decollo
+ *  in poi. Così dal display se ne va UNA coppia di tasti, e non ne resta una seconda ferma sotto quella che parte. */
+export const OptionsHole: React.FC<{ yes: [number, number, number, number]; no: [number, number, number, number] }> = ({ yes, no }) => (
+  <>
+    {[yes, no].map(([x, y, w, h], k) => (
+      <div key={k} style={{ position: "absolute", left: x - 2, top: y - 2, width: w + 4, height: h + 4, borderRadius: (h + 4) / 2, background: UI.bg }} />
+    ))}
+  </>
+);
+
 /** Il posto lasciato dal gauge che esce: la superficie della card sopra gli anelli, con i soli binari in trasparenza. */
 export const GaugeHole: React.FC<{ cx: number; cy: number; size: number; frames: number }> = ({ cx, cy, size, frames }) => {
   const f = useCurrentFrame();
@@ -99,6 +109,7 @@ export const fxLayers = (scene: Scene, g: Grid, _prev?: Scene): { overlay: React
       e.kind === "tap" ? <Sequence key={i} from={at(e.at)} durationInFrames={14} layout="none"><TapDot x={e.x} y={e.y} /></Sequence>
       : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} fromOut={e.fromOut} around={scene.watch?.camera === "around"} /></Sequence>
       : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
+      : e.kind === "optionsBuild" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><OptionsHole yes={e.yes} no={e.no} /></Sequence>
       : null),
     around: fx.map((e, i) =>
       // l'anello attorno all'orologio era ridondante con quello che corre sul tasto ricostruito, che è più grande e si

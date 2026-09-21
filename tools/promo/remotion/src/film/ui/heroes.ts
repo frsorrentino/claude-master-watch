@@ -78,7 +78,9 @@ export type OptionsBuild = { build: number; ring: number; alpha: number; travel:
 export const optionsBuildAt = (p: number, pressFrom = 0.34): OptionsBuild => ({
   // i tasti ESCONO dall'orologio già fatti e si posano al centro con un filo di rimbalzo (Franz, 19/09 09:33), poi la
   // pressione lunga corre e la selezione si chiude: tutto più svelto di prima (l'anello durava un quinto della scena)
-  build: soft(ramp(p, 0, 0.1)),
+  // pieni dal primo fotogramma: con il contorno che si riempiva, al decollo si vedevano due coppie di tasti sovrapposte,
+  // quella vera ferma sul display e quella che partiva (Franz, 21/09 18:00: «un movimento dei tasti nell'orologio»)
+  build: p < 0 ? 0 : 1,
   ring: ramp(p, pressFrom, pressFrom + 0.12),
   pop: Math.sin(Math.PI * ramp(p, pressFrom + 0.12, pressFrom + 0.19)),
   // il tasto si schiaccia sotto il dito per tutta la corsa dell'anello e scatta quando si chiude (Franz, 19/09 11:03)

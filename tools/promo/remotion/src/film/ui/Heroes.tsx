@@ -204,7 +204,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           // il tasto si schiaccia sotto il dito, scatta quando l'anello si chiude, poi cresce fino a coprire il quadro
           // il tasto NON si ingrandisce da solo: scatta e basta. A portarlo a tutto quadro è il campo del takeover, con la
           // sua curva più lunga — prima crescevano tutti e due, uno in mezzo secondo (Franz, 19/09 13:51)
-          const grow = (1 + 0.07 * o.pop) * (1 - 0.045 * o.press);
+          const grow = (1 + 0.13 * o.pop) * (1 - 0.045 * o.press);   // lo scatto alla fine della pressione: +13 % (era 7: Franz, 21/09 17:18)
           return (
             <React.Fragment key={i}>
               <div style={{ position: "absolute", inset: 0, opacity: 0.55 * o.travel * (1 - o.fill), background: "radial-gradient(60% 60% at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%)" }} />
@@ -217,6 +217,14 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
                 <div style={{ translate: "-50% -50%", width: e.yes[2] * pYes.zoom, height: e.yes[3] * pYes.zoom, scale: String(grow) }}>
                   <div style={{ zoom: pYes.zoom }}><UiOption w={e.yes[2]} h={e.yes[3]} label={e.yesLabel} primary build={o.build} ring={o.ring} /></div>
                 </div>
+                {/* il dito, come il «mostra tocchi» degli screencast Android (Franz, 21/09 17:19): un cerchio grigio
+                    semitrasparente si posa sul tasto quando la pressione comincia, resta finché il dito preme e sparisce
+                    al rilascio. Fuori dallo scatto del tasto: il dito non si gonfia con lui. A destra dell'etichetta. */}
+                {o.press > 0.001 ? (
+                  <div style={{ position: "absolute", left: e.yes[2] * pYes.zoom * 0.2, top: 0, width: e.yes[2] * pYes.zoom * 0.22, height: e.yes[2] * pYes.zoom * 0.22, translate: "-50% -50%",   /* un polpastrello sul tasto del polso: poco più di un quinto della sua larghezza */
+                    borderRadius: "50%", background: "rgba(58,60,70,.38)", boxShadow: "0 0 0 2px rgba(255,255,255,.75)",
+                    opacity: Math.min(1, o.press * 3), scale: String(0.9 + 0.1 * Math.min(1, o.press * 3)) }} />
+                ) : null}
               </div>
             </React.Fragment>
           );
