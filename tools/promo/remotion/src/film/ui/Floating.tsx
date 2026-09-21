@@ -5,6 +5,7 @@ import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { cardUnits, laneY, railScrollVar } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
+import { UiDictation } from "./UiDictation.tsx";
 import { UiBriefContext, UiBriefQuestions, UiBriefWork } from "./UiBrief.tsx";
 import { UI } from "./UiTokens.ts";
 import { TAKEOVER_CUT, takeoverAt } from "./takeover.ts";
@@ -24,7 +25,9 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({
   const lit = scene.bgKeep ? 1 : scene.bgFrom ? 1 - (() => { const t = Math.min(1, frame / Math.max(1, fadeF)); return t * t * (3 - 2 * t); })() : 0;
   const inkText = mix(THEME.white, INK.text, lit);
   const inkAccent = mix(THEME.accent, INK.accent, lit);
-  const { width, height } = useVideoConfig();
+  const { width, height, fps } = useVideoConfig();
+  // la voce della scena, se c'è: la card che detta ne mostra le parole (Franz, 21/09 18:55)
+  const voice = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "spoken" }> => f.kind === "spoken");
   const e = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "float" }> => f.kind === "float");
   if (!e) return null;
   const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
@@ -91,6 +94,10 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({
                     c.panel === "work" ? <UiBriefWork w={427} n={c.n ?? 1} note={c.note ?? ""} bars={c.bars ?? [1, 1, 1]} />
                     : c.panel === "questions" ? <UiBriefQuestions w={427} n={c.n ?? 1} note={c.note ?? ""} />
                     : <UiBriefContext w={427} rows={c.rows ?? []} />
+                  ) : c.dictation && voice ? (
+                    <UiDictation w={427} name={c.name} words={voice.words} envelope={voice.voice.replace(/\.wav$/, ".env.json")}
+                      t={frame / fps} tap={spanFrames(g, scene.at, c.dictation.tap) / fps} voice={spanFrames(g, scene.at, voice.at) / fps}
+                      confirm={c.dictation.confirm !== undefined ? spanFrames(g, scene.at, c.dictation.confirm) / fps : 1e9} beat={60 / g.bpm} light={1} />
                   ) : (
                     <UiCard w={427} name={c.name} age={c.age} text={c.text} badge={c.badge} icon={c.icon === "bell" ? "check" : c.icon} light={1} />
                   )}

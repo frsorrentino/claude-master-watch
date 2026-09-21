@@ -29,3 +29,21 @@ export const takeoverAt = (p: number): Takeover => {
 };
 /** Il taglio della scaletta cade a 0,58 dell'arco (fine del hold): così la scena dopo nasce dentro il become. */
 export const TAKEOVER_CUT = 0.46;
+
+/** L'invio della dettatura (Franz, 21/09 19:46): il dito sul ✓ grande (`finger`), il tasto che si schiaccia sotto il dito
+ *  (`squash`) e scatta al rilascio (`pop`), come il «yes» della risposta; al taglio il cerchio che si apre dal ✓ e rivela il
+ *  terminale del PC (`reveal`, mezzo battito: il nero è l'orologio, il grigio il PC) e il testo che vola a posarsi sul prompt
+ *  (`fly`). Fotogrammi dall'inizio del takeover: `press` il tocco, `cut` il taglio, `beat` un battito. */
+export type Send = { finger: number; squash: number; pop: number; ripple: number; reveal: number; reformat: number; fly: number };
+export const sendAt = (f: number, press: number, cut: number, beat: number): Send => ({
+  finger: ramp(f, press - 0.12 * beat, press) * (1 - ramp(f, press + 0.35 * beat, press + 0.45 * beat)),
+  squash: ramp(f, press - 0.04 * beat, press + 0.02 * beat) * (1 - ramp(f, press + 0.3 * beat, press + 0.36 * beat)),
+  pop: Math.sin(Math.PI * ramp(f, press + 0.3 * beat, press + 0.55 * beat)),
+  reveal: growEase(ramp(f, cut, cut + 0.5 * beat)),
+  // l'onda chiara dentro il ✓, dal punto del dito, come i tasti di Wear OS (Franz, 21/09 20:16)
+  ripple: ramp(f, press, press + 0.3 * beat),
+  // al taglio la frase si ricompone sul posto come testo del terminale («> », monospazio, evidenziata) e poi va al suo
+  // posto sopra la casella: diventa il prompt, e si vede (Franz, 21/09 20:22)
+  reformat: soft(ramp(f, cut, cut + 0.15 * beat)),
+  fly: soft(ramp(f, cut + 0.15 * beat, cut + 0.45 * beat)),
+});

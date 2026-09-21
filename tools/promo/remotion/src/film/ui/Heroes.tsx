@@ -12,8 +12,9 @@ import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { UiGauge } from "./UiGauge.tsx";
 import { UiOption } from "./UiOption.tsx";
-import { UI } from "./UiTokens.ts";
 import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
+import { UiClaudeCode } from "./UiClaudeCode.tsx";
+import { CC } from "./claudeCode.ts";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_TERMINAL_PX = 1700;   // HERO_OPTION_PX sta in heroes.ts, con il posto dei tasti
@@ -124,7 +125,10 @@ export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g
   // `keep`: il terminale NON si ritira a fine scena, perché la scena dopo lo riprende con le stesse righe e ci costruisce
   // attorno la finestra: spegnendolo si vedeva il testo sparire e ricomparire (Franz, 20/09 19:55)
   const c = e.keep ? { show: c0.show, exit: 0 } : c0;
-  if (c.show <= 0) return null;
+  // Claude Code (Franz, 21/09 19:46): intestazione, prompt e casella ci sono dal primo fotogramma — il cerchio dell'invio
+  // li rivela, e sul prompt si posa il testo dettato (`promptAt`). Le righe arrivano come prima.
+  const cc = Boolean(e.prompt);
+  if (c.show <= 0 && !cc) return null;
   const every = spanFrames(g, scene.at, e.every);
   // le righe che il display sta GIÀ mostrando quando il terminale compare, più quelle che arrivano dopo: il fondo e
   // l'orologio devono dire la stessa cosa nello stesso momento (Franz, 20/09 16:47).
@@ -134,35 +138,30 @@ export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g
   const LEAD = 6;
   // Le righe già scritte non compaiono tutte insieme: si posano una alla volta mentre il terminale entra in quadro
   // (Franz, 20/09 17:39), dieci fotogrammi l'una. Quelle nuove arrivano invece al ritmo vero del polso, sei fotogrammi
-  // prima di lui.
+  // prima di lui. I risultati «⎿» non contano nel ritmo: seguono la loro riga dieci fotogrammi dopo.
   const BACKFILL = 7;
-  // la prima riga NUOVA arriva un `every` dopo l'inizio, non subito: prima il terminale si riempie di quelle già scritte
-  const arrivo = (i: number) => (i < start ? from + i * BACKFILL : from + (i - start + 1) * every - LEAD);
+  const main = e.lines.map((l) => !l.startsWith("⎿"));
+  let n = -1;
+  const idx = e.lines.map((_, i) => (main[i] ? ++n : n));
+  // con `times` il PC scrive ogni riga al suo battito: il polso la ripete dopo, e prima non la mostra (Franz, 21/09 20:40:
+  // «il testo del terminale viene prima»)
+  const arrivo = (i: number) => {
+    if (e.times) return spanFrames(g, scene.at, e.times[i]);
+    const m = idx[i];
+    const base = m < start ? from + m * BACKFILL : from + (m - start + 1) * every - LEAD;
+    return main[i] ? base : base + 10;
+  };
   const a = c.show * (1 - c.exit);
-  // Come Claude Code sul PC (Franz, 20/09 17:23): le frasi di Claude col punto in verde, le chiamate agli strumenti in
-  // grigio. Il testo esce a BLOCCHI DI FRASE, non lettera per lettera (Franz, 17:57 e 18:01): due parole alla volta,
-  // come lo streaming di Claude Code. E chi è avanti è il fondo: il polso ripete dopo (`LEAD`).
+  // Come Claude Code sul PC: ogni frase nasce INTERA in fondo, sopra la casella, e cresce spingendo su le altre (Franz, 21/09
+  // 20:24: «a blocchi di frasi … e salire verso l'alto»); prima uscivano due parole alla volta in una colonna che scendeva.
+  // E chi è avanti è il fondo: il polso ripete dopo (`LEAD`).
   const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-  const ultima = e.lines.reduce((acc, _, i) => (frame >= arrivo(i) ? i : acc), -1);
-  const cursore = frame % 30 < 16;
+  const rows = e.lines.map((l, i) => ({ text: l, on: frame < arrivo(i) ? 0 : clamp01((frame - arrivo(i) + 1) / 7) * (cc ? 1 : a) }));
+  const promptOn = e.promptAt !== undefined ? clamp01((frame - spanFrames(g, scene.at, e.promptAt)) / 2) : 1;
   return (
-    <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, width: width * 0.46, display: "flex", flexDirection: "column", justifyContent: "center", opacity: a, fontFamily: "Cousine", fontSize: 42, lineHeight: "64px", whiteSpace: "pre-wrap", letterSpacing: "0.01em" }}>
-      {e.lines.map((l, i) => {
-        if (frame < arrivo(i) - 1) return null;
-        const dice = l.startsWith("⏺");                       // una frase di Claude; le altre sono chiamate a strumenti
-        const testo = dice ? l.slice(1).trimStart() : l;
-        const blocchi: string[] = [];                          // la riga in gruppi di due parole
-        testo.split(" ").forEach((w, n) => { if (n % 2 === 0) blocchi.push(w); else blocchi[blocchi.length - 1] += " " + w; });
-        const usciti = Math.floor(clamp01((frame - arrivo(i)) / 9) * blocchi.length + 0.999);   // un blocco ogni tre fotogrammi
-        const entra = clamp01((frame - arrivo(i)) / 2);
-        return (
-          <div key={i} style={{ color: dice ? THEME.white : UI.text2, opacity: entra, translate: `0 ${(1 - entra) * 10}px` }}>
-            {dice ? <span style={{ color: UI.briefGood }}>⏺ </span> : null}
-            {blocchi.slice(0, Math.max(1, usciti)).join(" ")}
-            {i === ultima && cursore ? <span style={{ color: UI.briefGood }}>▌</span> : null}
-          </div>
-        );
-      })}
+    <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, width: width * CC.column }}>
+      <UiClaudeCode width={width * CC.column} header={cc ? { path: e.path ?? "", model: e.model ?? "" } : undefined} chrome={cc ? 1 : a}
+        prompt={e.prompt} promptOn={promptOn} rows={rows} status={e.status} frame={frame} />
     </div>
   );
 };

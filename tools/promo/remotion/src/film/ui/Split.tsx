@@ -5,8 +5,10 @@ import { UI } from "./UiTokens.ts";
 import { bump } from "../moves.ts";
 import { mixColor } from "./carry.ts";
 import { THEME } from "../theme.ts";
+import { UiClaudeCode } from "./UiClaudeCode.tsx";
+import { CC } from "./claudeCode.ts";
 
-export type SplitSide = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[] };
+export type SplitSide = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[]; prompt?: string; path?: string; model?: string };
 
 /**
  * I due terminali degli account (ui/split.ts per i tempi). Ognuno è una finestra di terminale come quella di Crostini
@@ -49,33 +51,13 @@ export const Split: React.FC<{ left: SplitSide; right: SplitSide; open: number; 
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "0 22px", color: UI.text2, fontSize: 22, opacity: 0.8 }}>— □ ×</div>
         </div>
-        {/* il corpo: le stesse righe della scena prima, che vanno a capo mentre la finestra si stringe */}
-        {/* a finestra non ancora formata il testo sta dove stava nella scena prima: in mezzo al quadro. Mentre la
-            finestra si forma sale sotto la barra delle schede, come il contenuto di un terminale vero. */}
-        <div style={{ position: "absolute", left: pad, right: pad, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center", opacity: leggibile, fontFamily: "Cousine", fontSize: 42, lineHeight: "64px", whiteSpace: "pre-wrap",
-          translate: `0 ${-(height / 2 - 98 - (side.lines.length * 64) / 2) * chrome}px` }}>
-          {side.lines.map((l, i) => {
-            const on = lato === "left" ? 1 : entra(i + 1);          // a sinistra le righe c'erano già: sono quelle di prima
-            const dice = l.startsWith("⏺");
-            return (
-              <div key={i} style={{ opacity: on, color: dice ? THEME.white : UI.text2, translate: `0 ${(1 - on) * 10}px` }}>
-                {dice ? <span style={{ color: UI.briefGood }}>● </span> : null}{dice ? l.slice(1).trimStart() : l}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ position: "absolute", left: pad, right: pad, bottom: 26, opacity: chrome * leggibile, fontFamily: "Cousine", fontSize: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, color: UI.text2, opacity: 0.5 }}>
-            {/* chi è questa finestra: l'account, col suo colore, e la sessione — come la riga di stato di una shell */}
-            <div style={{ flex: 1, height: 1, background: UI.line }} />
-            <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: side.dot, marginRight: 4 }} />
-            <span style={{ color: side.dot, opacity: 0.9 }}>{side.account}</span>{" · "}{side.session}
-          </div>
-          <div style={{ color: THEME.white, marginTop: 12 }}>
-            <span style={{ color: UI.accent }}>❯ </span>
-            <span style={{ display: "inline-block", width: 14, height: 26, background: UI.accent, verticalAlign: "-4px", opacity: frame % 30 < 16 ? 1 : 0.15 }} />
-          </div>
-          <div style={{ color: UI.text2, opacity: 0.55, marginTop: 10, fontSize: 21 }}>{side.status}</div>
+        {/* il corpo è il terminale di Claude Code della scena prima (Franz, 21/09 19:46), nella stessa colonna: a finestra
+            piena combacia riga per riga, e mentre la finestra si stringe il testo va a capo davvero */}
+        <div style={{ position: "absolute", left: pad, top: 0, bottom: 0, width: Math.min(width * CC.column, w - pad - 46), opacity: leggibile }}>
+          <UiClaudeCode width={Math.min(width * CC.column, w - pad - 46)} header={side.path ? { path: side.path, model: side.model ?? "" } : undefined}
+            chrome={lato === "left" ? 1 : entra(0)} prompt={side.prompt} promptOn={lato === "left" ? 1 : entra(0)}
+            rows={side.lines.map((l, i) => ({ text: l, on: lato === "left" ? 1 : entra(i + 1) }))}
+            status={side.status} account={{ dot: side.dot, label: `${side.account} · ${side.session}` }} frame={frame} />
         </div>
       </div>
     );

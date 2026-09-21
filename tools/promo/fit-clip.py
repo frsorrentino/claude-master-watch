@@ -20,6 +20,16 @@ film non usa):
   python3 ../../../fit-clip.py n_overview6_cut.mp4 n_overview_fit.mp4 \
     "0.0-2.1:2.0,2.1-4.4:1.27,4.4-6.0:2.0,6.0-8.4:1.0,8.4-10.0:1.7,10.0-11.9:0.75,11.9-13.5:1.2,13.5-15.3:0.71,15.3-17.1:5.58"
 
+La clip del polso di «Watch it work.» si rifà dalla registrazione `n_watch.mp4` (21/09): il PC scrive prima e il polso
+ripete sei fotogrammi dopo, quindi il display resta nero finché il terminale non ha scritto le prime due righe, poi le
+righe nuove arrivano una a battito (le animazioni restano a velocità vera, si accorciano le soste):
+
+  python3 ../../../fit-clip.py n_watch.mp4 /tmp/nw_part.mp4 \
+    "1.72-8.88:0.800,8.88-9.26:0.38,9.26-11.85:0.164,11.85-12.23:0.38,12.23-14.85:0.164,14.85-15.23:0.38,15.23-17.85:0.164,17.85-18.25:0.40,18.25-20.85:0.95"
+  ffmpeg -f lavfi -i "color=c=black:s=480x480:r=30:d=0.818" -i /tmp/nw_part.mp4 -filter_complex \
+    "[0:v]format=yuv420p,setsar=1[a];[1:v]format=yuv420p,setsar=1[b];[a][b]concat=n=2:v=1:a=0[out]" -map "[out]" -r 30 \
+    -c:v libx264 -crf 18 -g 15 -keyint_min 15 -sc_threshold 0 -pix_fmt yuv420p n_watch_fit.mp4
+
 Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre la card è ancora ferma),
 e ogni scheda si ferma da sola, al centro: Quota, 5-hour pace, Work, Open questions, Context.
 Il risultato ha un fotogramma chiave ogni mezzo secondo: con quelli radi di screenrecord il film non riusciva a leggere

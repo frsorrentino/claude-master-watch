@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TAKEOVER_CUT, takeoverAt } from "./takeover.ts";
+import { TAKEOVER_CUT, sendAt, takeoverAt } from "./takeover.ts";
 
 test("il takeover cresce, tiene un respiro, diventa la scena dopo e si posa: il quadro non resta mai vuoto", () => {
   assert.deepEqual(takeoverAt(0), { grow: 0, hold: 0, become: 0, settle: 0, cover: 0 });
@@ -15,4 +15,21 @@ test("il takeover cresce, tiene un respiro, diventa la scena dopo e si posa: il 
   assert.ok(held <= 3 && takeoverAt(0.5).hold === 0);
   // e quando il campo è ancora pieno la scena dopo ha già cominciato a vedersi: mai un colore piatto da solo
   assert.ok(takeoverAt(0.55).settle > 0.3 && takeoverAt(0.65).settle > 0.95, "il campo scopre la scena in fretta");
+});
+
+test("l'invio: il dito sul ✓, il tasto si schiaccia e scatta; al taglio il cerchio si apre in mezzo battito e il testo vola sul prompt", () => {
+  const B = 16.36, P = 40, C = 50;
+  const a = sendAt(P - 0.3 * B, P, C, B);
+  assert.ok(a.finger === 0 && a.squash === 0 && a.pop === 0 && a.reveal === 0 && a.fly === 0);
+  assert.equal(sendAt(P, P, C, B).finger, 1);
+  assert.ok(sendAt(P + 0.1 * B, P, C, B).squash === 1, "sotto il dito il tasto è schiacciato");
+  assert.ok(sendAt(P + 0.42 * B, P, C, B).pop > 0.9, "al rilascio scatta");
+  assert.equal(sendAt(C, P, C, B).reveal, 0);
+  assert.equal(sendAt(C + 0.5 * B, P, C, B).reveal, 1);
+  assert.equal(sendAt(P, P, C, B).ripple, 0);
+  assert.equal(sendAt(P + 0.3 * B, P, C, B).ripple, 1, "l'onda della pressione riempie il ✓ in un terzo di battito");
+  assert.equal(sendAt(C, P, C, B).reformat, 0);
+  assert.equal(sendAt(C + 0.15 * B, P, C, B).reformat, 1, "la frase è già testo del terminale prima di muoversi");
+  assert.equal(sendAt(C + 0.15 * B, P, C, B).fly, 0);
+  assert.equal(sendAt(C + 0.45 * B, P, C, B).fly, 1, "e si posa sul prompt prima che il cerchio finisca di aprirsi");
 });

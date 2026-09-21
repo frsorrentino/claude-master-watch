@@ -186,9 +186,10 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   );
 };
 
-/** I battiti in cui cambia l'atto (senza apertura e chiusura, che hanno la loro cornice): lì passa la frustata. */
+/** I battiti in cui cambia l'atto (senza apertura e chiusura, che hanno la loro cornice): lì passa la frustata. Non dove il
+ *  passaggio lo racconta già l'invio della dettatura: la fascia passava proprio sullo scatto del ✓ (Franz, 21/09 20:16). */
 export const actChanges = (scenes: Scene[]): number[] =>
-  scenes.filter((s, i) => i > 0 && s.act !== scenes[i - 1].act && s.act !== "close" && scenes[i - 1].act !== "open").map((s) => s.at);
+  scenes.filter((s, i) => i > 0 && s.act !== scenes[i - 1].act && s.act !== "close" && scenes[i - 1].act !== "open" && scenes[i - 1].takeover?.body !== "screen").map((s) => s.at);
 
 /** Una chiave nel display diventa una chiave nel quadro: il display frontale sta al centro dell'orologio (`watchX` se c'è testo),
  *  con 480 unità = 2·displayR·glassPx/(2·glassR) pixel, a riposo (posa senza movimenti né deriva: sui tagli l'orologio è fermo). */
@@ -215,8 +216,12 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         const next = TIMELINE.scenes[i + 1];
         if (!s.takeover || !next) return null;
         const k = s.takeover, frames = spanFrames(GRID, s.at, k.len);
-        const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : { kind: "plain" as const };
-        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} frames={frames} body={body} /></Sequence>;
+        const startF = beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT);
+        // l'invio della dettatura si posa sul prompt del terminale della scena dopo
+        const term = (next.fx ?? []).find((f) => f.kind === "terminalPlane");
+        const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : k.body === "screen" ? { kind: "screen" as const, lines: k.words ?? [] } : { kind: "plain" as const };
+        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} frames={frames} body={body}
+          press={k.press !== undefined ? beatToFrame(GRID, s.at + k.press) - startF : undefined} beat={spanFrames(GRID, s.at, 1)} land={term && term.kind === "terminalPlane" ? term.prompt : undefined} /></Sequence>;
       })}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];

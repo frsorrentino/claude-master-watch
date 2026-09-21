@@ -265,7 +265,7 @@
     {
       "id": "loop",
       "at": 56,
-      "len": 12,
+      "len": 16,
       "act": "act",
       "watch": {
         "view": "side",
@@ -278,7 +278,7 @@
         {
           "kind": "float",
           "at": 1,
-          "len": 9.5,
+          "len": 13,
           "cards": [
             {
               "kind": "text",
@@ -314,46 +314,52 @@
               "age": "0 m",
               "text": "Great. Now update the changelog and tag the release",
               "badge": "#3C81F2",
-              "icon": "play"
+              "icon": "play",
+              "hold": 5.6,
+              "dictation": {
+                "tap": 6.5
+              }
             }
           ]
+        },
+        {
+          "kind": "spoken",
+          "at": 7.0,
+          "len": 6.0,
+          "voice": "say.wav",
+          "words": "say.words.json"
         }
       ],
       "takeover": {
-        "len": 5.5,
+        "len": 6.5,
         "x": 960,
         "y": 466,
         "w": 560,
         "h": 279,
         "r": 55,
-        "color": "#23272E",
+        "color": "#000000",
         "toColor": "#23272E",
-        "body": "words",
+        "body": "screen",
         "words": [
           "Great. Now update the",
-          "changelog and tag the release"
+          "changelog and tag the",
+          "release"
         ],
-        "card": {
-          "name": "payments-api",
-          "age": "0 m",
-          "text": "Great. Now update the changelog and tag the release",
-          "badge": "#3C81F2",
-          "icon": "play"
-        }
+        "press": 15.5
       },
       "bgFrom": "#C2D6F6",
       "bgKeep": true
     },
     {
       "id": "watch",
-      "at": 68,
+      "at": 72,
       "len": 8,
       "act": "control",
       "watch": {
         "view": "front",
-        "clip": "scenes/n_watch.mp4",
-        "clipStart": 14.2,
-        "rate": 1.25,
+        "clip": "scenes/n_watch_fit.mp4",
+        "clipStart": 0,
+        "rate": 1.0,
         "fadeOut": 1.5
       },
       "text": {
@@ -379,14 +385,31 @@
           "lines": [
             "⏺ Reading the checklist",
             "Read(RELEASE.md)",
+            "⎿ Read 38 lines",
             "⏺ Updating the changelog",
             "Edit(CHANGELOG.md)",
+            "⎿ Updated CHANGELOG.md with 9 additions",
             "⏺ Tagging the release",
             "Bash(git tag v2.8.0)"
           ],
           "every": 2.4,
           "start": 5,
-          "keep": true
+          "keep": true,
+          "prompt": "Great. Now update the changelog and tag the release",
+          "promptAt": 0.45,
+          "path": "~/code/payments-api",
+          "model": "Opus 5 · Claude Max",
+          "status": "⏵⏵ bypass permissions on",
+          "times": [
+            0.8,
+            1.1,
+            2.5,
+            2.6,
+            3.6,
+            3.8,
+            4.6,
+            5.6
+          ]
         }
       ],
       "bgFrom": "#23272E",
@@ -394,7 +417,7 @@
     },
     {
       "id": "accounts",
-      "at": 76,
+      "at": 80,
       "len": 8,
       "act": "control",
       "text": {
@@ -421,15 +444,20 @@
           "lines": [
             "⏺ Reading the checklist",
             "Read(RELEASE.md)",
+            "⎿ Read 38 lines",
             "⏺ Updating the changelog",
             "Edit(CHANGELOG.md)",
+            "⎿ Updated CHANGELOG.md with 9 additions",
             "⏺ Tagging the release",
             "Bash(git tag v2.8.0)"
           ],
           "dot": "#3C81F2",
           "session": "payments-api",
-          "status": "Opus 5 · context 41 % · bypass permissions on",
-          "account": "work"
+          "status": "⏵⏵ bypass permissions on",
+          "account": "work",
+          "prompt": "Great. Now update the changelog and tag the release",
+          "path": "~/code/payments-api",
+          "model": "Opus 5 · Claude Max"
         },
         "right": {
           "color": "#23272E",
@@ -448,9 +476,12 @@
           ],
           "dot": "#2ECC71",
           "session": "blog",
-          "status": "Opus 5 · context 12 % · bypass permissions on",
+          "status": "⏵⏵ bypass permissions on",
           "account": "personal",
-          "to": "#15393F"
+          "to": "#15393F",
+          "prompt": "Polish the edge caching post and check the links",
+          "path": "~/code/blog",
+          "model": "Opus 5 · Claude Pro"
         }
       },
       "watch": {
@@ -465,7 +496,7 @@
     },
     {
       "id": "limits",
-      "at": 84,
+      "at": 88,
       "len": 32,
       "act": "control",
       "watch": {
@@ -559,7 +590,7 @@
     },
     {
       "id": "new",
-      "at": 116,
+      "at": 120,
       "len": 8,
       "act": "control",
       "watch": {
@@ -579,7 +610,7 @@
     },
     {
       "id": "close",
-      "at": 124,
+      "at": 128,
       "len": 22,
       "act": "close",
       "watch": {

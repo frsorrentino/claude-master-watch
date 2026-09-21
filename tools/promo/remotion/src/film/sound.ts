@@ -21,6 +21,11 @@ export const sfxCues = (t: Timeline): SfxCue[] => {
     // niente soffio all'ingresso delle frasi: sotto la musica non aggiungeva nulla e si sentiva come un difetto (Franz, 19/09 16:00)
     // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09)
     if (s.out === "blink") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
+    // l'invio della dettatura: il dito sul ✓ grande e il cerchio che si apre sul terminale (Franz, 21/09 19:46)
+    if (s.takeover?.press !== undefined) {
+      all.push({ beat: s.at + s.takeover.press, name: "tick", gainDb: -20 });
+      if (s.takeover.body === "screen") all.push({ beat: s.at + s.len, name: "whoosh", gainDb: -16 });
+    }
     for (const f of s.fx ?? []) {
       const beat = s.at + f.at;
       // campanella e tonfo restano SPENTI finché nel film non c'è l'evento che li giustifica (Franz, 19/09 05:58): oggi
@@ -32,6 +37,7 @@ export const sfxCues = (t: Timeline): SfxCue[] => {
       if (f.kind === "shake") all.push({ beat, name: "wearNotify", gainDb: -2 });
       if (f.kind === "haptic") all.push({ beat, name: "notify", gainDb: -2 });   // la notifica suona nel silenzio: sta davanti, non sotto la musica (Franz, 19/09 18:12)
       if (f.kind === "tap") all.push({ beat, name: "tick", gainDb: -20 });
+      if (f.kind === "float") for (const c of f.cards) if (c.kind !== "text" && c.kind !== "brief" && c.dictation) all.push({ beat: s.at + c.dictation.tap, name: "tick", gainDb: -20 });   // il dito sul microfono
       if (f.kind === "longPress") all.push({ beat, name: "pressRise", gainDb: -18 });
       if (f.kind === "terminal") f.lines.forEach((_, i) => all.push({ beat: beat + i * f.every, name: "tick", gainDb: -24 }));
     }
