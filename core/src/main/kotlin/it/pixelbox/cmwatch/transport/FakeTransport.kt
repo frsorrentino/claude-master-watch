@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Gli stati della storia dei video promozionali (piano 16/09): uno per scena, raggiungibili via adb. */
-enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, TICK, BLOG, NEW }
+enum class DemoStep { CALM, QUESTION, DEPLOYED, FOLLOWUP, TICK, BLOG, NEW, SHOPASK }
 
 /**
  * Legge le fixture del contratto e simula il PC. Gli scarti temporali delle fixture 1 e 2 vengono riportati
@@ -26,6 +26,7 @@ class FakeTransport(
     // scrive il post. Per id e non per posizione: ogni risposta riordina la lista.
     private val base = ContractJson.decodeState(load("state-1-question"))
     private val deployId = base.sessions[0].id
+    private val shopId = base.sessions[1].id
     private val blogId = base.sessions[2].id
     private val newId = base.sessions[3].id
     private val originalQuestion = base.sessions[0].question
@@ -68,6 +69,17 @@ class FakeTransport(
             DemoStep.TICK -> if (!growing) s.copy(ts = t) else {
                 val (note, tool) = ticks[tick % ticks.size]; tick++
                 at(deployId) { it.copy(since = t, tool = tool, toolNote = note) }
+            }
+            // La Panoramica del film arriva DOPO che la domanda del deploy è stata risposta: la domanda aperta che mostra
+            // deve essere di un'altra sessione, se no si vede come aperta una cosa già chiusa (Franz, 21/09 08:44).
+            DemoStep.SHOPASK -> at(shopId) {
+                it.copy(
+                    state = SessionState.WAITING, since = t,
+                    question = originalQuestion?.copy(
+                        id = "shop-$t", askedAt = t,
+                        text = "The checkout tests pass. Ship the Stripe webhook change?",
+                    ),
+                )
             }
             DemoStep.BLOG -> at(blogId) { it.copy(state = SessionState.BUSY, turnStarted = t, since = t, toolNote = "Draft a post about the 2.8.0 release") }
             // L'ultima scena del film («Start the next one»): una sessione appena nata, su un lavoro NUOVO — non una
