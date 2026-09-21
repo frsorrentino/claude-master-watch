@@ -1,6 +1,7 @@
 import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
 import { TITLE_LEAD } from "./ui/dots.ts";
+import { THEME } from "./theme.ts";
 
 /** La scaletta: scene in fila, in battiti. Dentro una scena i tempi (text.at, fx[].at) partono dall'inizio della scena; mezzi battiti ammessi. */
 export type Act = "open" | "know" | "act" | "control" | "close";
@@ -21,7 +22,7 @@ export type Fx =
   | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "quota" | "note" | "pace" | "work" | "questions" | "context"; n?: number; note?: string; quote?: string; lines?: string[]; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number; start?: number; keep?: boolean };   // `keep`: non si spegne in coda — la scena dopo lo riprende com'è   // `start`: righe già presenti quando il terminale compare (quelle che il display sta già mostrando)   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
-export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; steady?: boolean; exitBeats?: number; exitHold?: number; fadeOut?: number; enterAt?: number; enter?: Move; exit?: Move; camera?: Camera };   // `fadeOut`: battiti di dissolvenza in coda; `enterAt`: a che battito della scena comincia l'entrata (prima non c'è)   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)   // `hold`: battiti di schermo fermo a inizio scena, poi il filmato parte (il display e i pannelli raccontano lo stesso punto)
+export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; column?: "right"; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; steady?: boolean; exitBeats?: number; exitHold?: number; fadeOut?: number; enterAt?: number; enter?: Move; exit?: Move; camera?: Camera };   // `column`: «right» tiene l'orologio nella colonna di destra anche senza testo   // `fadeOut`: battiti di dissolvenza in coda; `enterAt`: a che battito della scena comincia l'entrata (prima non c'è)   // freeze: la clip resta ferma su clipStart (schermo fermo durante la lettura)   // `hold`: battiti di schermo fermo a inizio scena, poi il filmato parte (il display e i pannelli raccontano lo stesso punto)
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
 export type Camera = "close" | "release" | "around";   // around: l'orologio compare attorno alla card già ferma al centro, grande
@@ -33,8 +34,15 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
 /** Il takeover che chiude la scena (piano 5 §2): il componente, già protagonista nel quadro (`x`, `y`, `w`, `h`, raggio `r`,
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
-export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce
+export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; tilt?: number; color: string; toColor: string; body?: "card" | "words" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce   // `tilt`: inclinazione di partenza in gradi, 10 come le schede della corsia (di suo), 0 per un tasto dritto
 export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+
+/** Dove sta l'orologio in orizzontale, in frazione del quadro. Con la camera «around» è CENTRATO (è la scheda ferma al centro
+ *  che detta il posto, il titolo resta in alto a sinistra: Franz, 19/09 05:12); con il testo a sinistra sta nella colonna di
+ *  destra; senza testo al centro — salvo `column: "right"`, per una scena che non ha testo ma non deve spostare l'orologio
+ *  (la risposta, dopo «It speaks»: Franz, 21/09 19:03). */
+export const watchColumn = (sc?: Scene): number =>
+  sc?.watch?.camera === "around" ? 0.5 : sc?.text || sc?.watch?.column === "right" ? THEME.watchX : 0.5;
 /* `bgKeep`: il campo di colore della scena prima NON si dissolve, resta il fondo per tutta la scena (Franz, 20/09 10:10:
    «lasciare sempre il fondo celeste»). Senza, il campo scivola nel colore dell'atto in `bgFadeBeats` fotogrammi. */
 /* `blackOutFrames`: un breve nero prima del taglio, quando la scena si chiude su un movimento e la musica riprende

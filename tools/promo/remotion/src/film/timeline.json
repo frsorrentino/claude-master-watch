@@ -213,10 +213,11 @@
     {
       "id": "answer",
       "at": 49.0,
-      "len": 7.5,
+      "len": 7,
       "act": "act",
       "watch": {
         "view": "front",
+        "column": "right",
         "clip": "scenes/n_answer.mp4",
         "clipStart": 15.554,
         "steady": true
@@ -224,13 +225,13 @@
       "fx": [
         {
           "kind": "longPress",
-          "at": 4.5,
+          "at": 4.0,
           "len": 1.5
         },
         {
           "kind": "optionsBuild",
           "at": 0.5,
-          "len": 7,
+          "len": 6.5,
           "yes": [
             26,
             167,
@@ -245,16 +246,17 @@
           ],
           "yesLabel": "1 · yes",
           "noLabel": "2 · no",
-          "pressAt": 4.5
+          "pressAt": 4.0
         }
       ],
       "takeover": {
         "len": 2.5,
         "x": 960,
-        "y": 435,
+        "y": 413,
         "w": 920,
-        "h": 237,
-        "r": 118,
+        "h": 239,
+        "r": 119,
+        "tilt": 0,
         "color": "#D3E3FD",
         "toColor": "#C2D6F6",
         "body": "plain"
@@ -262,7 +264,7 @@
     },
     {
       "id": "loop",
-      "at": 56.5,
+      "at": 56,
       "len": 12,
       "act": "act",
       "watch": {
@@ -344,7 +346,7 @@
     },
     {
       "id": "watch",
-      "at": 68.5,
+      "at": 68,
       "len": 8,
       "act": "control",
       "watch": {
@@ -392,7 +394,7 @@
     },
     {
       "id": "accounts",
-      "at": 76.5,
+      "at": 76,
       "len": 8,
       "act": "control",
       "text": {
@@ -463,8 +465,8 @@
     },
     {
       "id": "limits",
-      "at": 84.5,
-      "len": 31,
+      "at": 84,
+      "len": 32,
       "act": "control",
       "watch": {
         "view": "front",
@@ -530,7 +532,7 @@
         {
           "kind": "aside",
           "at": 22,
-          "len": 8,
+          "len": 9,
           "panel": "context",
           "rows": [
             {
@@ -557,7 +559,7 @@
     },
     {
       "id": "new",
-      "at": 115.5,
+      "at": 116,
       "len": 8,
       "act": "control",
       "watch": {
@@ -577,7 +579,7 @@
     },
     {
       "id": "close",
-      "at": 123.5,
+      "at": 124,
       "len": 22,
       "act": "close",
       "watch": {

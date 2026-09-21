@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TimelineError, totalBeats, validateTimeline } from "./timeline.ts";
+import { readFileSync } from "node:fs";
+import { TimelineError, totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 
 const base = (): any => ({
   bpm: 100, fps: 30, offsetSeconds: 0,
@@ -64,4 +65,12 @@ test("una clip accelerata oltre 1,25× è un errore: al polso si vede", () => {
   const t = base(); t.scenes[1].watch.rate = 1.4;
   assert.match(problems(t).join("\n"), /velocità della clip 1.4/);
   t.scenes[1].watch.rate = 1.25; assert.equal(problems(t).length, 0);
+});
+
+test("la risposta tiene l'orologio dove l'ha lasciato «It speaks»: senza testo non scivola al centro", () => {
+  // 21/09 19:03, Franz: «all'inizio della scena è a destra, poi diventa centrale, deve rimanere al suo posto». Tolta la
+  // riga «You answer.», la colonna (che segue il testo) era passata al centro.
+  const t = JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8"));
+  const by = (id: string) => t.scenes.find((s: { id: string }) => s.id === id);
+  assert.equal(watchColumn(by("answer")), watchColumn(by("speaks")));
 });

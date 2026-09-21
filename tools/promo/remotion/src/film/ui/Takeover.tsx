@@ -15,8 +15,8 @@ export type TakeoverBody = { kind: "card"; text: string } | { kind: "words"; wor
  * Disegnato a livello del film, sopra le due scene, centrato sul taglio (il taglio cade a `TAKEOVER_CUT` dell'arco).
  */
 export const Takeover: React.FC<{
-  x: number; y: number; w: number; h: number; r: number; color: string; toColor: string; frames: number; body?: TakeoverBody;
-}> = ({ x, y, w, h, r, color, toColor, frames, body = { kind: "plain" } }) => {
+  x: number; y: number; w: number; h: number; r: number; tilt?: number; color: string; toColor: string; frames: number; body?: TakeoverBody;
+}> = ({ x, y, w, h, r, tilt: tilt0 = 10, color, toColor, frames, body = { kind: "plain" } }) => {
   const f = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const t = takeoverAt(f / Math.max(1, frames));
@@ -32,7 +32,8 @@ export const Takeover: React.FC<{
   const col = mixColor(color, toColor, t.become);
   // la scheda nella corsia è inclinata di 10° (prospettiva): il takeover parte con la STESSA inclinazione e si raddrizza
   // mentre cresce, se no nel primo fotogramma il contenuto si scosta di qualche pixel (Franz, 20/09 16:12)
-  const tiltDeg = 10 * (1 - Math.min(1, t.grow / 0.35));
+  // (il tasto della risposta invece è dritto: partiva storto e sembrava cambiare posto, Franz 21/09 18:59)
+  const tiltDeg = tilt0 * (1 - Math.min(1, t.grow / 0.35));
   const tilt = `perspective(1600px) rotateX(${tiltDeg}deg)`;
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", opacity: 1 - t.settle }}>

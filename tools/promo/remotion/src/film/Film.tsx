@@ -4,7 +4,7 @@ import raw from "./timeline.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
 import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
-import { totalBeats, validateTimeline } from "./timeline.ts";
+import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import type { Scene } from "./timeline.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
@@ -75,9 +75,6 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // `enterAt`: l'orologio entra a scena iniziata — qui rientra mentre la frase cammina verso sinistra (Franz, 20/09 20:28)
   const eAt = w?.enterAt ? spanFrames(GRID, scene.at, w.enterAt) : 0;
   const pose = closing ? closing.pose : w ? poseAt(frame - eAt, total - eAt, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift, beat * (w.exitHold ?? 0)) : null;
-  // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
-  // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
-  const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
   const cx = (watchColumn(scene) + (watchColumn(next) - watchColumn(scene)) * mv) * width;
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // il titolo lascia il posto anche alle righe del terminale, che arrivano nella sua stessa colonna (Franz, 20/09 16:36)
@@ -219,7 +216,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         if (!s.takeover || !next) return null;
         const k = s.takeover, frames = spanFrames(GRID, s.at, k.len);
         const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : { kind: "plain" as const };
-        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} color={k.color} toColor={k.toColor} frames={frames} body={body} /></Sequence>;
+        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} frames={frames} body={body} /></Sequence>;
       })}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];

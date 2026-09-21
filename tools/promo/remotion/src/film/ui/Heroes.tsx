@@ -6,7 +6,7 @@ import type { Grid } from "../beats.ts";
 import type { Pose } from "../moves.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
-import { cardOutAt, gaugeHeroAt, optionsBuildAt, panelHeroAt, terminalPlaneAt } from "./heroes.ts";
+import { HERO_OPTION_PX, cardOutAt, gaugeHeroAt, optionsBuildAt, optionsRest, panelHeroAt, terminalPlaneAt } from "./heroes.ts";
 import type { Flight } from "./heroes.ts";
 import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
@@ -16,7 +16,7 @@ import { UI } from "./UiTokens.ts";
 import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
-export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_OPTION_PX = 920, HERO_TERMINAL_PX = 1700;   // i tasti al centro più grandi (Franz, 19/09 11:07)
+export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_TERMINAL_PX = 1700;   // HERO_OPTION_PX sta in heroes.ts, con il posto dei tasti
 /** La scheda che si ferma grande al centro (`toCenter`) e l'orologio che poi le compare attorno devono COMBACIARE: a
  *  zoom `AROUND_ZOOM` la card di 427 unità dentro il display misura 427 · 1,3258 · 1,42 = 804 px. Franz, 19/09 05:12:
  *  «la scheda esattamente nella stessa posizione grande centrata di prima». */
@@ -59,8 +59,9 @@ export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; 
   // con `steady` la camera non si avvicina: l'orologio resta esattamente dov'è e della misura che ha, perché il
   // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»).
   // La messa a fuoco però si muove: quando i tasti si sollevano, l'orologio dietro va fuori fuoco (Franz, 20/09 08:40,
-  // poi 09:28: «sfocherei maggiormente»). Metà della sfocatura piena: 4 px e un terzo di luce in meno, i tasti staccano.
-  if (scene.watch?.steady) return { zoom: 1, focus: 0.5 * travel * (1 - exit), watch: 1 };
+  // poi 09:28: «sfocherei maggiormente»; 21/09 19:04: «sfoca un po' di più»). Sette decimi della sfocatura piena: 5,6 px e
+  // quasi due quinti di luce in meno, i tasti staccano.
+  if (scene.watch?.steady) return { zoom: 1, focus: 0.7 * travel * (1 - exit), watch: 1 };
   const near = travel * (1 - exit);
   return { zoom: 1 + 0.55 * near, focus: near, watch: 1 };
 };
@@ -190,12 +191,11 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
           if (o.alpha <= 0) return null;
           // i tasti ESCONO dal display: partono dal loro rettangolo vero (stessa misura, stesso posto) e si posano al
           // centro del quadro. L'orologio in questa scena sta fermo (`steady`), altrimenti il punto di partenza scivola.
-          const k = HERO_OPTION_PX / e.yes[2], gap = (e.no[1] - (e.yes[1] + e.yes[3])) * k;
+          const rest = optionsRest(e.yes, e.no, HERO_OPTION_PX, width, height), k = rest.k;
           const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
           const centre = (r: [number, number, number, number]) => [dx + (r[0] + r[2] / 2 - 240) * u, dy + (r[1] + r[3] / 2 - 240) * u] as const;
-          const topH = e.yes[3] * k, botH = e.no[3] * k;
-          const toYes: readonly [number, number] = [width / 2, height / 2 - (topH + gap + botH) / 2 + topH / 2];
-          const toNo: readonly [number, number] = [width / 2, height / 2 + (topH + gap + botH) / 2 - botH / 2];
+          const toYes: readonly [number, number] = [rest.yes.x, rest.yes.y];
+          const toNo: readonly [number, number] = [rest.no.x, rest.no.y];
           const place = (r: [number, number, number, number], to: readonly [number, number]) => {
             const [x0, y0] = centre(r);
             return { x: lerp(x0, to[0], o.travel), y: lerp(y0, to[1], o.travel), zoom: lerp(u, k, o.travel) };

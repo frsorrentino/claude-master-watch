@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RAIL_MOVE, cardOutAt, cardUnits, gaugeHeroAt, laneY, optionsBuildAt, panelHeroAt, railAt, railScroll, railScrollVar, railStackPx, stackAt, terminalPlaneAt } from "./heroes.ts";
+import { readFileSync } from "node:fs";
+import { HERO_OPTION_PX, RAIL_MOVE, cardOutAt, cardUnits, gaugeHeroAt, laneY, optionsBuildAt, optionsRest, panelHeroAt, railAt, railScroll, railScrollVar, railStackPx, stackAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -138,4 +139,17 @@ test("la corsia non salta quando il turno passa alla voce dopo", () => {
     prev = y;
   }
   assert.ok(max < 6, `il passo più grande fra due campioni è ${max.toFixed(1)} px: nessuno scatto`);
+});
+
+test("il takeover della risposta parte dal tasto «yes» posato: stesso centro, stessa misura, dritto", () => {
+  // 21/09 18:59, Franz: «al momento dell'animazione dei tasti cambia posizione e diventa centrale». Il rettangolo del takeover
+  // era scritto a mano (y 435) e il tasto posato stava a 413; in più partiva inclinato di 10° come le schede della corsia.
+  const t = JSON.parse(readFileSync(new URL("../timeline.json", import.meta.url), "utf8"));
+  const s = t.scenes.find((x: { takeover?: unknown; fx?: { kind: string }[] }) => x.takeover && (x.fx ?? []).some((f) => f.kind === "optionsBuild"));
+  const o = s.fx.find((f: { kind: string }) => f.kind === "optionsBuild");
+  const rest = optionsRest(o.yes, o.no, HERO_OPTION_PX, 1920, 1080).yes;
+  for (const [key, v] of [["x", rest.x], ["y", rest.y], ["w", rest.w], ["h", rest.h]] as const) {
+    assert.ok(Math.abs(s.takeover[key] - v) < 1, `${key}: takeover ${s.takeover[key]}, tasto posato ${v.toFixed(1)}`);
+  }
+  assert.equal(s.takeover.tilt, 0, "il tasto non è inclinato come le schede della corsia");
 });

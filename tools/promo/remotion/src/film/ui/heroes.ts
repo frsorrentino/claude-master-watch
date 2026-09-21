@@ -67,6 +67,18 @@ export const gaugeHeroAt = (p: number): GaugeHero => {
  * scuro), l'anello corallo della pressione lunga corre attorno a «1 · yes» in tempo con la pressione vera (0,3-0,68), poi
  * i tasti restano un attimo e si dissolvono (0,86-1) mentre sul display arriva «Sent». Non lasciano il display: sono l'eco.
  */
+/** I tasti usciti dal display si posano al centro del quadro, uno sopra l'altro con lo stacco vero fra i due, alla scala che
+ *  porta «yes» a `px` di larghezza: centro e misura di ciascuno in pixel di quadro. Da qui parte anche il takeover della
+ *  risposta, che deve combaciare con il tasto (21/09: scritto a mano era 22 px più in basso). */
+export const HERO_OPTION_PX = 920;   // i tasti al centro più grandi (Franz, 19/09 11:07)
+type Rect = [number, number, number, number];
+export type OptionRest = { x: number; y: number; w: number; h: number };
+export const optionsRest = (yes: Rect, no: Rect, px: number, width: number, height: number): { k: number; yes: OptionRest; no: OptionRest } => {
+  const k = px / yes[2], gap = (no[1] - (yes[1] + yes[3])) * k;
+  const topH = yes[3] * k, botH = no[3] * k, half = (topH + gap + botH) / 2;
+  return { k, yes: { x: width / 2, y: height / 2 - half + topH / 2, w: yes[2] * k, h: topH }, no: { x: width / 2, y: height / 2 + half - botH / 2, w: no[2] * k, h: botH } };
+};
+
 export type OptionsBuild = { build: number; ring: number; alpha: number; travel: number; pop: number; fill: number; press: number };
 /** Dopo la pressione (`ring` 1) il tasto si gonfia un attimo (`pop`) e poi cresce fino a diventare lo sfondo (`fill`): la
  *  transizione alla scena dopo è il tasto stesso (Franz, 13:13). */

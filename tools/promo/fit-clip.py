@@ -18,7 +18,7 @@ film non usa):
   cd tools/promo/remotion/public/scenes
   ffmpeg -fflags +genpts -i ../../../out/clips/overview6.mp4 -vsync cfr -r 30 -c:v libx264 -crf 18 n_overview6_cut.mp4
   python3 ../../../fit-clip.py n_overview6_cut.mp4 n_overview_fit.mp4 \
-    "0.0-2.1:2.0,2.1-4.4:1.27,4.4-6.0:2.0,6.0-8.4:1.0,8.4-10.0:1.7,10.0-11.9:0.75,11.9-13.5:1.2,13.5-15.3:0.71,15.3-17.1:5.03"
+    "0.0-2.1:2.0,2.1-4.4:1.27,4.4-6.0:2.0,6.0-8.4:1.0,8.4-10.0:1.7,10.0-11.9:0.75,11.9-13.5:1.2,13.5-15.3:0.71,15.3-17.1:5.58"
 
 Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre la card è ancora ferma),
 e ogni scheda si ferma da sola, al centro: Quota, 5-hour pace, Work, Open questions, Context.
