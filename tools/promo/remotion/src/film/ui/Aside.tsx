@@ -70,12 +70,18 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                   <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 0) * clamp(d * 1.15))}</span>
                   <span style={{ fontSize: 52, color: THEME.dim }}>% {e.note}</span>
                 </div>
-                {/* la linea del ritmo si disegna da sinistra: tratto pieno fino ad adesso, tratteggio sulla proiezione */}
-                <svg width={700} height={190} style={{ marginTop: 22, overflow: "visible" }}>
+                {/* Lo stesso grafico del polso (ripresa del 21/09 sera, dati della demo puliti): una retta dalla base alle 05:17
+                    fino ad adesso, il punto sulla tacca tratteggiata, poi la proiezione tratteggiata con la stessa pendenza
+                    fino al reset. Misure prese sul fotogramma (riquadro 364×79 del display) in scala uguale sui due assi. */}
+                <svg width={700} height={236} style={{ marginTop: 22, overflow: "visible" }}>
+                  <line x1={0} y1={36} x2={700} y2={36} stroke="rgba(235,244,255,.18)" strokeWidth={2} />
                   <line x1={0} y1={188} x2={700} y2={188} stroke="rgba(235,244,255,.18)" strokeWidth={2} />
-                  <path d="M 0 176 L 250 128 L 430 96" fill="none" stroke={UI.briefRing} strokeWidth={6} strokeLinecap="round" strokeDasharray={520} strokeDashoffset={520 * (1 - clamp(d * 1.5))} />
-                  <path d="M 430 96 L 700 8" fill="none" stroke={UI.briefRing} strokeWidth={6} strokeLinecap="round" strokeDasharray="14 16" opacity={clamp(d * 1.5 - 0.7) * 0.8} />
-                  <circle cx={430} cy={96} r={12} fill={UI.briefRing} opacity={clamp(d * 1.5 - 0.6)} />
+                  <line x1={416} y1={40} x2={416} y2={186} stroke="rgba(235,244,255,.32)" strokeWidth={3} strokeDasharray="8 8" opacity={clamp(d * 1.5 - 0.3)} />
+                  <path d="M 0 186 L 419 130" fill="none" stroke={UI.briefRing} strokeWidth={8} strokeLinecap="round" strokeDasharray={430} strokeDashoffset={430 * (1 - clamp(d * 1.5))} />
+                  <path d="M 419 130 L 700 90" fill="none" stroke={UI.briefRing} strokeWidth={6} strokeLinecap="round" strokeDasharray="14 16" opacity={clamp(d * 1.5 - 0.7) * 0.8} />
+                  <circle cx={419} cy={130} r={13} fill={UI.briefRing} opacity={clamp(d * 1.5 - 0.6)} />
+                  <text x={0} y={232} fontSize={34} fill={THEME.dim}>05:17</text>
+                  <text x={700} y={232} fontSize={34} fill={THEME.dim} textAnchor="end">10:17</text>
                 </svg>
               </>
             ) : e.panel === "work" ? (

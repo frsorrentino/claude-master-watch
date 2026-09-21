@@ -536,8 +536,8 @@
           "at": 8.5,
           "len": 5.5,
           "panel": "pace",
-          "n": 26,
-          "note": "at 10:19, at this pace"
+          "n": 62,
+          "note": "at 10:17, at this pace"
         },
         {
           "kind": "aside",
@@ -623,7 +623,7 @@
       "endCard": true
     }
   ],
-  "music": "audio/music.v8.wav",
+  "music": "audio/music.v11.wav",
   "musicDelayBeats": 0,
   "musicDelayFrames": 1
 }

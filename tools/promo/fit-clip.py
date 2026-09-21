@@ -11,24 +11,16 @@ Uso: fit-clip.py sorgente.mp4 destinazione.mp4 "a-b:durata[,a-b:durata...]"
      (tempi in secondi del sorgente; un segmento «a-b+c-d:durata» cuce due pezzi)
 
 La cartella public/scenes/ non sta nel repo: la clip della Panoramica si rifà così, dalla registrazione
-fatta al polso il 21/09 (demo in stato DEPLOYED → FOLLOWUP → SHOPASK, domanda aperta di storefront; scorrimenti a
-passo di 300 px, che è la distanza vera fra una scheda e l'altra, con un salto da 900 px oltre le due schede che il
-film non usa):
+fatta al polso il 21/09 sera (overview9: demo accesa con l'orologio alle 08:17, così i campioni del ritmo sono una rampa
+sola e il grafico è una retta; stato DEPLOYED → FOLLOWUP → SHOPASK, domanda aperta di storefront; scorrimenti a passo di
+300 px, che è la distanza vera fra una scheda e l'altra, con un salto da 900 px oltre le due schede che il film non usa).
+I punti della ricetta stanno alla stessa distanza dagli scorrimenti della ripresa del mattino (overview6), con le stesse
+durate: le schede si fermano sugli stessi battiti (misurato: scarto verticale 0 px in tutte le soste).
 
   cd tools/promo/remotion/public/scenes
-  ffmpeg -fflags +genpts -i ../../../out/clips/overview6.mp4 -vsync cfr -r 30 -c:v libx264 -crf 18 n_overview6_cut.mp4
-  python3 ../../../fit-clip.py n_overview6_cut.mp4 n_overview_fit.mp4 \
-    "0.0-2.1:2.0,2.1-4.4:1.27,4.4-6.0:2.0,6.0-8.4:1.0,8.4-10.0:1.7,10.0-11.9:0.75,11.9-13.5:1.2,13.5-15.3:0.71,15.3-17.1:5.58"
-
-La clip del polso di «Watch it work.» si rifà dalla registrazione `n_watch.mp4` (21/09): il PC scrive prima e il polso
-ripete sei fotogrammi dopo, quindi il display resta nero finché il terminale non ha scritto le prime due righe, poi le
-righe nuove arrivano una ogni battito e un quarto (le animazioni restano a velocità vera, si accorciano le soste):
-
-  python3 ../../../fit-clip.py n_watch.mp4 /tmp/nw_part.mp4 \
-    "1.72-8.88:1.565,8.88-9.26:0.38,9.26-11.85:0.30,11.85-12.23:0.38,12.23-14.85:0.30,14.85-15.23:0.38,15.23-17.85:0.30,17.85-18.25:0.40,18.25-20.85:1.40"
-  ffmpeg -f lavfi -i "color=c=black:s=480x480:r=30:d=1.364" -i /tmp/nw_part.mp4 -filter_complex \
-    "[0:v]format=yuv420p,setsar=1[a];[1:v]format=yuv420p,setsar=1[b];[a][b]concat=n=2:v=1:a=0[out]" -map "[out]" -r 30 \
-    -c:v libx264 -crf 18 -g 15 -keyint_min 15 -sc_threshold 0 -pix_fmt yuv420p n_watch_fit.mp4
+  ffmpeg -fflags +genpts -i ../../../out/clips/overview9.mp4 -vsync cfr -r 30 -c:v libx264 -crf 18 n_overview9_cut.mp4
+  python3 ../../../fit-clip.py n_overview9_cut.mp4 n_overview_fit.mp4 \
+    "0.0-2.03:2.0,2.03-4.3:1.27,4.3-6.13:2.0,6.13-8.53:1.0,8.53-10.33:1.7,10.33-12.23:0.75,12.23-13.83:1.2,13.83-15.67:0.71,15.67-17.47:5.58"
 
 Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre la card è ancora ferma),
 e ogni scheda si ferma da sola, al centro: Quota, 5-hour pace, Work, Open questions, Context.
