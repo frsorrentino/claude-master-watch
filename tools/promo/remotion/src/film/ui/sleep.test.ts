@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AMBIENT, BREATH, FIELD, HALO, HALO_R, HUSH, SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./sleep.ts";
+import { AMBIENT, BREATH, DOTS_GAP, FIELD, HALO, HALO_R, HUSH, SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./sleep.ts";
 
 const inBreath = (v: number) => v >= AMBIENT - 1e-9 && v <= AMBIENT + BREATH + 1e-9;
 
@@ -81,7 +81,7 @@ test("il risveglio accende anche la ghiera, per pochi fotogrammi", () => {
 });
 
 test("con la lunghezza in battiti il display respira sui puntini, ogni volta più forte", () => {
-  const L = 6.5, at = (b: number) => SLEEP_CUT + b / L;
+  const L = 6.5, at = (b: number) => SLEEP_CUT + (b - (DOTS_GAP - 1)) / L;
   const l1 = sleepAt(at(-3), L).light, l2 = sleepAt(at(-2), L).light, l3 = sleepAt(at(-1), L).light;
   assert.ok(l1 > AMBIENT && l2 > l1 && l3 > l2, `i tre respiri crescono: ${l1.toFixed(3)} ${l2.toFixed(3)} ${l3.toFixed(3)}`);
   assert.ok(Math.abs(sleepAt(at(-2.5), L).light - AMBIENT) < 1e-9, "fra un respiro e l'altro torna ad ambient");

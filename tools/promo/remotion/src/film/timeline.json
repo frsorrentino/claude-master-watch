@@ -150,7 +150,7 @@
       },
       "sleep": {
         "len": 6.5,
-        "musicBackBeats": 2.0,
+        "musicBackBeats": 0,
         "musicFrom": 10.92
       }
     },
@@ -173,7 +173,7 @@
       "fx": [
         {
           "kind": "shake",
-          "at": 0
+          "at": 1
         }
       ]
     },

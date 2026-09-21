@@ -53,10 +53,12 @@ const breathAt = (p: number): number => {
 /** Con la lunghezza del sonno in battiti il respiro si aggancia ai puntini (uno per battito, 3, 2 e 1 prima della
  *  notifica) e cresce a ogni passo: mezzo, uno, uno e otto decimi del respiro normale (Franz, 21/09 15:40). */
 const RISE = [0.5, 1, 1.8];
+/** Battiti fra l'ultimo puntino e la notifica: 1 = la notifica è il quarto tempo; 2 = in mezzo entra la musica (prova 21/09 16:42). */
+export const DOTS_GAP = 1;
 const breathOnDots = (b: number): number => {
   let v = 0;
   for (let i = 0; i < 3; i++) {
-    const d = Math.abs(b + (3 - i)) / 0.5;
+    const d = Math.abs(b + (3 - i) + (DOTS_GAP - 1)) / 0.5;
     if (d < 1) v = Math.max(v, RISE[i] * (0.5 + 0.5 * Math.cos(Math.PI * d)));
   }
   return v;

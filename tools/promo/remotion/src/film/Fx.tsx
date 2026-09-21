@@ -91,7 +91,7 @@ export const GaugeHole: React.FC<{ cx: number; cy: number; size: number; frames:
   );
 };
 
-export const fxLayers = (scene: Scene, g: Grid, prev?: Scene): { overlay: React.ReactNode; around: React.ReactNode } => {
+export const fxLayers = (scene: Scene, g: Grid, _prev?: Scene): { overlay: React.ReactNode; around: React.ReactNode } => {
   const at = (b: number) => spanFrames(g, scene.at, b);
   const fx = scene.fx ?? [];
   return {
@@ -108,7 +108,8 @@ export const fxLayers = (scene: Scene, g: Grid, prev?: Scene): { overlay: React.
       // l'onda dei puntini: tre nella scena che dorme (3, 2 e 1 battito prima del taglio, come ui/dots.ts) e la quarta,
       // quella della notifica, al primo fotogramma della scena che si risveglia
       // sulla notifica, e solo lì, anelli concentrici attorno all'orologio: il suono e la vibrazione che arrivano al polso.
-      // Sui puntini niente anelli: bastano il loro crescendo e il respiro del display (Franz, 21/09 16:18)
-      .concat(prev?.sleep ? [<Sequence key="notify-rings" from={0} durationInFrames={40} layout="none"><NotifyRings /></Sequence>] : []),
+      // Nascono col tremito della notifica (`shake`), che può cadere anche dopo il risveglio del display: il display si
+      // accende con la musica e la notifica arriva un battito dopo (Franz, 21/09 16:58)
+      .concat(fx.flatMap((e, i) => e.kind === "shake" ? [<Sequence key={`notify-rings-${i}`} from={at(e.at)} durationInFrames={40} layout="none"><NotifyRings /></Sequence>] : [])),
   };
 };

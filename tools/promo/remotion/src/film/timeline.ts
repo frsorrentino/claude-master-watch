@@ -124,7 +124,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
     if (s.bands && !(half(s.bands.open) && half(s.bands.win) && s.bands.open + s.bands.win <= s.len)) say(`le bande (apre ${s.bands.open}, vince ${s.bands.win}) non stanno nei ${s.len} battiti della scena`);
     if (s.sleep?.musicFrom !== undefined && !(s.sleep.musicFrom >= 0)) say(`la musica riparte dal secondo ${s.sleep.musicFrom} della traccia: serve un tempo dentro il brano`);
-    if (s.sleep?.musicBackBeats !== undefined && !half(s.sleep.musicBackBeats)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dopo il taglio: servono battiti o mezzi battiti`);
+    // può anche essere negativo: la musica rientra PRIMA della notifica, ancora col display addormentato (prova 21/09 16:42)
+    if (s.sleep?.musicBackBeats !== undefined && !Number.isInteger(s.sleep.musicBackBeats * 2)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dal taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
     if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
     if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
