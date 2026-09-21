@@ -14,10 +14,16 @@ test("all'inizio ci sono solo le due barre, e il resto del quadro se ne va subit
 });
 
 test("le barre diventano listelli PRIMA che nascano gli altri: il collegamento si vede", () => {
-  const bar = blindAt(0.36, 6, N, BARS);
-  assert.ok(bar.spread > 0.99, "la barra è già un listello a 0,36");
+  const bar = blindAt(0.28, 6, N, BARS);
+  assert.ok(bar.spread > 0.99, "la barra è già un listello a 0,28");
   assert.ok(bar.wink > 0.5, "e sta facendo l'accenno di voltata");
-  for (let i = 0; i < N; i++) if (i !== BARS[0] && i !== BARS[1]) assert.equal(blindAt(0.36, i, N, BARS).born, 0, `listello ${i} nato troppo presto`);
+  for (let i = 0; i < N; i++) if (i !== BARS[0] && i !== BARS[1]) assert.equal(blindAt(0.28, i, N, BARS).born, 0, `listello ${i} nato troppo presto`);
+});
+
+test("a larghezza piena il quadro non resta fermo: l'accenno è già in corso e gli altri nascono subito dopo", () => {
+  // Franz, 21/09 12:46: fra le barre larghe quanto lo schermo e il resto dell'animazione c'era una stasi
+  assert.ok(blindAt(0.27, 6, N, BARS).wink > 0.3, "l'accenno parte prima che le barre finiscano di allargarsi");
+  assert.ok(blindAt(0.4, 5, N, BARS).born > 0.3, "subito dopo l'accenno i vicini stanno già nascendo (prima a 0,4 non erano ancora partiti)");
 });
 
 test("al taglio la tapparella è piena e ancora dritta", () => {
@@ -41,4 +47,13 @@ test("il ritardo cresce con la distanza dalle barre ed è nullo sulle barre", ()
   assert.equal(blindDelay(6, N, BARS), 0);
   assert.equal(blindDelay(7, N, BARS), 0);
   assert.ok(blindDelay(0, N, BARS) > blindDelay(4, N, BARS));
+});
+
+test("i listelli che nascono dalle barre sono tanti quante le righe del Context, attorno al centro della griglia", async () => {
+  const { blindBars } = await import("./blinds.ts");
+  assert.deepEqual(blindBars(2), [6, 7]);
+  assert.deepEqual(blindBars(3), [5, 6, 7]);
+  // con tre barre la terza nasce insieme alle altre due, e i listelli vicini partono dopo di lei, non prima
+  assert.equal(blindAt(0.5, 5, 12, [5, 6, 7]).born, 1);
+  assert.ok(blindDelay(4, 12, [5, 6, 7]) < blindDelay(4, 12, [6, 7]));
 });

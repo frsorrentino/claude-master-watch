@@ -45,6 +45,24 @@ export const HapticRings: React.FC = () => {
   );
 };
 
+/**
+ * La notifica che arriva al polso (Franz, 21/09 16:18): tre anelli concentrici nascono dal bordo della cassa uno dopo
+ * l'altro e si sciolgono allargandosi, come un suono che vibra. Stesso disegno di HapticRings (la cassa ha raggio 100/3 nel
+ * riquadro attorno all'orologio), più ampi e con un anello in più: questa è LA notifica del film.
+ */
+export const NotifyRings: React.FC = () => {
+  const f = useCurrentFrame();
+  return (
+    <svg viewBox="0 0 100 100" style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+      {[0, 5, 10].map((d, i) => {
+        const r = interpolate(f - d, [0, 24], [100 / 3, 100 / 3 + 13], { ...clampBoth, easing: Easing.out(Easing.cubic) });
+        const o = interpolate(f - d, [0, 2, 24], [0, 0.6 - 0.12 * i, 0], clampBoth);
+        return <circle key={d} cx="50" cy="50" r={r} fill="none" stroke="#fff" strokeWidth={0.55 - 0.1 * i} opacity={o} />;
+      })}
+    </svg>
+  );
+};
+
 /** Il posto lasciato dalla card che esce (piano 3): un fantasma del colore della superficie, senza testo, finché non rientra
  *  (una toppa nera si leggeva come un buco nel render: master, 18/09 02:22). */
 export const CardHole: React.FC<{ rect: [number, number, number, number]; frames: number; fromOut?: boolean; around?: boolean }> = ({ rect, frames, fromOut, around }) => {
@@ -73,7 +91,7 @@ export const GaugeHole: React.FC<{ cx: number; cy: number; size: number; frames:
   );
 };
 
-export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; around: React.ReactNode } => {
+export const fxLayers = (scene: Scene, g: Grid, prev?: Scene): { overlay: React.ReactNode; around: React.ReactNode } => {
   const at = (b: number) => spanFrames(g, scene.at, b);
   const fx = scene.fx ?? [];
   return {
@@ -86,6 +104,11 @@ export const fxLayers = (scene: Scene, g: Grid): { overlay: React.ReactNode; aro
       // l'anello attorno all'orologio era ridondante con quello che corre sul tasto ricostruito, che è più grande e si
       // legge meglio: ne resta uno solo (Franz, 19/09 13:42)
       e.kind === "longPress" ? null
-      : e.kind === "haptic" ? <Sequence key={i} from={at(e.at)} durationInFrames={26} layout="none"><HapticRings /></Sequence> : null),
+      : e.kind === "haptic" ? <Sequence key={i} from={at(e.at)} durationInFrames={26} layout="none"><HapticRings /></Sequence> : null)
+      // l'onda dei puntini: tre nella scena che dorme (3, 2 e 1 battito prima del taglio, come ui/dots.ts) e la quarta,
+      // quella della notifica, al primo fotogramma della scena che si risveglia
+      // sulla notifica, e solo lì, anelli concentrici attorno all'orologio: il suono e la vibrazione che arrivano al polso.
+      // Sui puntini niente anelli: bastano il loro crescendo e il respiro del display (Franz, 21/09 16:18)
+      .concat(prev?.sleep ? [<Sequence key="notify-rings" from={0} durationInFrames={40} layout="none"><NotifyRings /></Sequence>] : []),
   };
 };

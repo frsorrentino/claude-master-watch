@@ -57,9 +57,12 @@ export const driftAt = (absFrame: number): Pose => {
 
 /** `steady`: niente deriva. Serve quando un componente deve uscire ESATTAMENTE dal suo posto sul display: se l'orologio
  *  respira, il punto di partenza si sposta e l'incastro si perde (Franz, 19/09 11:03). */
-export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move, absFrame = frame, steady = false, driftScale = 1): Pose => {
+export const poseAt = (frame: number, total: number, moveFrames: number, enter?: Move, exit?: Move, absFrame = frame, steady = false, driftScale = 1, exitHold = 0): Pose => {
   const a = enter ? moveAt(enter, clamp(frame / moveFrames)) : REST;
-  const b = exit ? moveAt(exit, clamp((frame - (total - moveFrames)) / moveFrames)) : REST;
+  // `exitHold`: fotogrammi in cui il movimento è GIÀ finito e l'inquadratura resta al culmine, prima del taglio. Senza,
+  // lo zoom arriva in fondo nell'ultimo fotogramma e l'orologio sparisce sul più bello (Franz, 21/09 12:05).
+  const run = Math.max(1, moveFrames - exitHold);
+  const b = exit ? moveAt(exit, clamp((frame - (total - moveFrames)) / run)) : REST;
   // durante un'uscita la deriva si spegne: l'inquadratura finale del movimento è esatta, senza il respiro sopra
   const bw = exit ? 1 - clamp((frame - (total - moveFrames)) / moveFrames) : 1;
   // `driftScale` 0-1: quanto vale la deriva adesso. Serve a fermarla per un tratto senza farla saltare quando torna

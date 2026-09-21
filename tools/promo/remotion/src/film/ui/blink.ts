@@ -12,9 +12,13 @@ const move = bump(0.055);   // la parola arriva in alto e si assesta con un filo
  * `travel` 0-1: quanto la parola ha percorso verso il suo posto in alto; `lid` 0-1: palpebre chiuse.
  */
 export const blinkAt = (f: number, cut: number): { travel: number; lid: number; word: number; fade: number } => {
-  const close = 7;                                   // le palpebre si chiudono negli ultimi 7 fotogrammi prima del taglio
-  const travel = move(clamp(f / Math.max(1, cut - close - 4)));   // il movimento finisce appena prima della chiusura
-  const lid = f < cut ? soft(clamp((f - (cut - close)) / close)) : 1 - soft(clamp((f - cut) / 9));
+  const close = 5;                                   // le palpebre si chiudono negli ultimi 5 fotogrammi prima del taglio
+  // la parola sale INSIEME alla card che esce dal display e arriva al suo posto un filo prima di lei (Franz, 21/09 14:25):
+  // il blink comincia sul battito in cui parte la card, e il viaggio della card al centro dura il 42 % dei suoi 3 battiti
+  // (≈ 20 fotogrammi): la parola ne impiega 16. La frase intera è già rimasta in quadro fino a qui.
+  const TRAVEL = 16;
+  const travel = move(clamp(f / Math.min(TRAVEL, Math.max(1, cut - close - 4))));
+  const lid = f < cut ? soft(clamp((f - (cut - close)) / close)) : 1 - soft(clamp((f - cut) / 7));
   // la parola NON si spegne: cresce e si ferma in alto al centro, dove non copre la card grande (Franz, 19/09 09:33)
   const fade = 1;
   return { travel, lid, word: f < cut ? 1 : 0, fade };

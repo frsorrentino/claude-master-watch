@@ -1,28 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DOTS_FROM, dotsAt } from "./dots.ts";
-import { SLEEP_CUT, TITLE_AT } from "./sleep.ts";
+import { DOTS_FROM, DOT_STEP, TITLE_LEAD, dotsAt } from "./dots.ts";
+import { SLEEP_CUT } from "./sleep.ts";
+
+const L = 6.5;                                                 // il sonno del film: 6,5 battiti
+const at = (beatsToCut: number) => SLEEP_CUT + beatsToCut / L; // p a tanti battiti dalla notifica
 
 test("i puntini entrano dopo la frase e se ne vanno sulla notifica", () => {
-  assert.equal(dotsAt(TITLE_AT).alpha, 0, "mentre la frase si scrive non ci sono");
-  assert.ok(dotsAt(DOTS_FROM + 0.02).alpha > 0.99, "subito dopo sono in quadro");
-  assert.ok(dotsAt(SLEEP_CUT - 0.01).alpha > 0.99, "e restano per tutta l'attesa");
-  assert.equal(dotsAt(SLEEP_CUT + 0.01).alpha, 0, "dopo la notifica non ci sono più");
+  assert.equal(dotsAt(at(-TITLE_LEAD), L).alpha, 0, "quando la frase comincia a scriversi non ci sono");
+  assert.ok(dotsAt(at(DOTS_FROM + 0.3), L).alpha > 0.99, "subito dopo sono in quadro");
+  assert.ok(dotsAt(at(-0.05), L).alpha > 0.99, "e restano per tutta l'attesa");
+  assert.equal(dotsAt(at(0.1), L).alpha, 0, "dopo la notifica non ci sono più");
 });
 
-test("pulsano a turno, e il terzo culmina sul battito della notifica", () => {
-  const period = (SLEEP_CUT - DOTS_FROM) / 3;
+test("culminano uno per battito: 3, 2 e 1 prima della notifica (33 · 34 · 35 con la notifica al 36)", () => {
   for (const i of [0, 1, 2]) {
-    const top = dotsAt(DOTS_FROM + (i + 1) * period).on;
+    const top = dotsAt(at(-DOT_STEP * (3 - i)), L).on;
     assert.ok(top[i] > 0.99, `il puntino ${i + 1} è al culmine nel suo turno`);
-    for (const j of [0, 1, 2]) if (j !== i) assert.ok(top[j] < top[i], `e gli altri sono più spenti`);
+    for (const j of [0, 1, 2]) if (j !== i) assert.ok(top[j] < top[i], "e gli altri sono più spenti");
   }
-  assert.ok(dotsAt(SLEEP_CUT).on[2] > 0.99, "il terzo culmina esattamente sul taglio");
 });
 
-test("sulla notifica i tre diventano un punto di luce che si allarga e sparisce", () => {
-  assert.equal(dotsAt(SLEEP_CUT - 0.001).collapse, 0, "prima del battito non c'è");
-  assert.equal(dotsAt(SLEEP_CUT).collapse, 1, "sul battito è pieno");
-  assert.ok(dotsAt(SLEEP_CUT + 0.02).collapse < 0.6, "e si spegne subito");
-  assert.equal(dotsAt(SLEEP_CUT + 0.04).collapse, 0, "in pochi fotogrammi non c'è più");
+test("sulla notifica i puntini spariscono e non lasciano nessun punto al posto del primo", () => {
+  assert.ok(dotsAt(at(-0.05), L).alpha > 0.99, "fino alla notifica ci sono");
+  assert.ok(dotsAt(at(0.1), L).alpha < 1e-9, "subito dopo non ci sono più");
+  for (const b of [0, 0.2, 0.5]) assert.equal(dotsAt(at(b), L).collapse, 0, `a ${b} battiti dalla notifica nessun punto di luce`);
+});
+
+test("crescendo: dopo il suo battito ogni puntino resta acceso, e prima del quarto tempo sono accesi tutti e tre", async () => {
+  const { DOT_HOLD } = await import("./dots.ts");
+  const mid = dotsAt(at(-1.5), L).on;                   // fra il secondo e il terzo
+  assert.ok(mid[0] >= DOT_HOLD && mid[1] >= DOT_HOLD && mid[2] < DOT_HOLD, "●●○");
+  const last = dotsAt(at(-0.4), L).on;                  // subito prima della notifica
+  assert.ok(last.every((v) => v >= DOT_HOLD), "●●●");
 });

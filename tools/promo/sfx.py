@@ -81,6 +81,15 @@ def tick() -> np.ndarray:
     return body + tone
 
 
+def tick_up(semis: int) -> np.ndarray:
+    """Il tick dei puntini dell'attesa: lo stesso click, `semis` semitoni più su — il conto alla rovescia sale (Franz, 21/09 16:01)."""
+    k = 2 ** (semis / 12)
+    n = int(0.05 * SR)
+    body = lowpass(noise(n, 1), 2600 * k) * env(n, 0.0008, 0.018, 4.0)
+    tone = np.sin(2 * np.pi * 1200 * k * np.arange(n) / SR) * env(n, 0.0005, 0.012, 5.0) * 0.5
+    return body + tone
+
+
 def shutter() -> np.ndarray:
     """Il click fotografico del battito di ciglia: due scatti a 55 ms, il secondo più chiuso."""
     n = int(0.22 * SR)
@@ -202,7 +211,7 @@ def whoosh() -> np.ndarray:
     return x * np.exp(-((t - 0.16) ** 2) / 0.006)
 
 
-SOUNDS = {"tick": tick, "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "pressHum": press_hum, "pressTwo": press_two, "pressSwell": press_swell, "whoosh": whoosh}
+SOUNDS = {"tick": tick, "tick2": lambda: tick_up(2), "tick4": lambda: tick_up(4), "shutter": shutter, "notify": bell, "thump": thump, "pressRise": press_rise, "pressHum": press_hum, "pressTwo": press_two, "pressSwell": press_swell, "whoosh": whoosh}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

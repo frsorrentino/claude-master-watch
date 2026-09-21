@@ -28,6 +28,7 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
       back: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
       hush: cut - Math.round(frames * (SLEEP_CUT - HUSH)),   // il fotogramma in cui la musica è già a zero
       from: s.sleep.musicFrom,
+      fadeIn: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4) + (s.sleep.musicFadeIn ?? 0)) - beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
     }];
   });
   const stops = t.scenes.flatMap((s) => (s.fx ?? []).flatMap((f) => (f.kind === "musicStop" ? [[beatToFrame(g, s.at + f.at), beatToFrame(g, s.at + f.at + f.len)] as [number, number]] : [])));
@@ -50,7 +51,8 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
             <Audio src={src} volume={(f) => vol(f + start) * sleepGain(f + start, naps)} />
           </Sequence>
           <Sequence from={nap.back} layout="none">
-            <Audio src={src} trimBefore={Math.round((nap.from ?? 0) * g.fps)} volume={(f) => vol(f + nap.back)} />
+            {/* la musica può rientrare risalendo invece che piena: così non si scontra con il suono della notifica (Franz, 21/09 15:18) */}
+            <Audio src={src} trimBefore={Math.round((nap.from ?? 0) * g.fps)} volume={(f) => vol(f + nap.back) * (nap.fadeIn > 0 ? Math.min(1, f / nap.fadeIn) ** 2 : 1)} />
           </Sequence>
         </>);
       })() : null}

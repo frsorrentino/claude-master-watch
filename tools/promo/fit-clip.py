@@ -10,16 +10,20 @@ scorrimenti che la circondano. Così la card sul polso si ferma sul battito del 
 Uso: fit-clip.py sorgente.mp4 destinazione.mp4 "a-b:durata[,a-b:durata...]"
      (tempi in secondi del sorgente; un segmento «a-b+c-d:durata» cuce due pezzi)
 
-La cartella public/scenes/ non sta nel repo: la clip della Panoramica si rifà così,
-dalla registrazione n_overview_cut.mp4 (le due soste sulla Quota diventano una):
+La cartella public/scenes/ non sta nel repo: la clip della Panoramica si rifà così, dalla registrazione
+fatta al polso il 21/09 (demo in stato DEPLOYED → FOLLOWUP → SHOPASK, domanda aperta di storefront; scorrimenti a
+passo di 300 px, che è la distanza vera fra una scheda e l'altra, con un salto da 900 px oltre le due schede che il
+film non usa):
 
   cd tools/promo/remotion/public/scenes
-  python3 ../../../fit-clip.py n_overview_cut.mp4 n_overview_fit.mp4 \
-    "0.2-2.2:1.8,2.2-4.9+5.5-8.5:1.47,8.5-9.1:1.8,9.1-11.8:1.2,11.8-13.06:1.26,13.8-16.5:1.2,16.5-18.6:1.67,18.6-21.25:1.2,21.25-21.8:4.16"
+  ffmpeg -fflags +genpts -i ../../../out/clips/overview6.mp4 -vsync cfr -r 30 -c:v libx264 -crf 18 n_overview6_cut.mp4
+  python3 ../../../fit-clip.py n_overview6_cut.mp4 n_overview_fit.mp4 \
+    "0.0-2.1:2.0,2.1-4.4:1.27,4.4-6.0:2.0,6.0-8.4:1.0,8.4-10.0:1.7,10.0-11.9:0.75,11.9-13.5:1.2,13.5-15.3:0.71,15.3-17.1:5.03"
 
-Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre
-la card è ancora ferma), non quanto il dito ci si era fermato: la Quota tiene 1,8 s e l'ultima
-sosta si spezza in tre (Open questions, scorrimento, Context) perché i pannelli sono due.
+Ogni sosta dura quanto il conteggio del pannello accanto (il numero finisce di salire mentre la card è ancora ferma),
+e ogni scheda si ferma da sola, al centro: Quota, 5-hour pace, Work, Open questions, Context.
+Il risultato ha un fotogramma chiave ogni mezzo secondo: con quelli radi di screenrecord il film non riusciva a leggere
+un fotogramma in tempo e il render si fermava su un delayRender scaduto (21/09).
 """
 import subprocess, sys, tempfile, os
 
@@ -44,7 +48,7 @@ def main() -> int:
         parts.append(f"[s{n}]"); n += 1
     filt.append("".join(parts) + f"concat=n={len(parts)}:v=1:a=0[out]")
     cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", src, "-filter_complex", ";".join(filt),
-           "-map", "[out]", "-r", "30", "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", dst]
+           "-map", "[out]", "-r", "30", "-c:v", "libx264", "-crf", "18", "-g", "15", "-keyint_min", "15", "-sc_threshold", "0", "-pix_fmt", "yuv420p", dst]
     subprocess.run(cmd, check=True)
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", dst],
                          capture_output=True, text=True, check=True).stdout.strip()

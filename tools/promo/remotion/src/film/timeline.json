@@ -6,7 +6,7 @@
     {
       "id": "open-1",
       "at": 0,
-      "len": 4,
+      "len": 3.5,
       "act": "open",
       "text": {
         "lines": [
@@ -17,8 +17,8 @@
     },
     {
       "id": "open-2",
-      "at": 4,
-      "len": 6,
+      "at": 3.5,
+      "len": 4.5,
       "act": "open",
       "text": {
         "lines": [
@@ -30,15 +30,16 @@
     },
     {
       "id": "open-3",
-      "at": 10,
-      "len": 6,
+      "at": 8.0,
+      "len": 4,
       "act": "open",
       "watch": {
         "view": "front",
         "clip": "scenes/n_tile.mp4",
         "clipStart": 6.0,
         "exit": "zoomLeft",
-        "exitBeats": 6
+        "exitBeats": 1,
+        "exitHold": 0.5
       },
       "text": {
         "lines": [
@@ -48,12 +49,12 @@
         "at": 0
       },
       "fx": [],
-      "blackOutFrames": 5
+      "blackOutFrames": 3
     },
     {
       "id": "glance",
-      "at": 16,
-      "len": 8,
+      "at": 12.0,
+      "len": 12,
       "act": "know",
       "watch": {
         "view": "front",
@@ -72,8 +73,8 @@
       "fx": [
         {
           "kind": "cardOut",
-          "at": 4,
-          "len": 4,
+          "at": 9,
+          "len": 3,
           "rect": [
             26,
             63,
@@ -91,8 +92,8 @@
     },
     {
       "id": "list",
-      "at": 24,
-      "len": 6,
+      "at": 24.0,
+      "len": 4,
       "act": "know",
       "watch": {
         "view": "front",
@@ -105,7 +106,7 @@
         {
           "kind": "cardOut",
           "at": 0,
-          "len": 6,
+          "len": 4,
           "rect": [
             26,
             63,
@@ -125,7 +126,7 @@
     },
     {
       "id": "tile",
-      "at": 30,
+      "at": 28.0,
       "len": 4,
       "act": "know",
       "watch": {
@@ -138,8 +139,8 @@
     },
     {
       "id": "card-sleep",
-      "at": 34,
-      "len": 8,
+      "at": 32.0,
+      "len": 4,
       "act": "know",
       "watch": {
         "view": "front",
@@ -148,14 +149,14 @@
         "camera": "around"
       },
       "sleep": {
-        "len": 8,
-        "musicBackBeats": 2,
-        "musicFrom": 8.699
+        "len": 6.5,
+        "musicBackBeats": 2.0,
+        "musicFrom": 10.92
       }
     },
     {
       "id": "asks",
-      "at": 42,
+      "at": 36.0,
       "len": 3,
       "act": "know",
       "watch": {
@@ -178,13 +179,13 @@
     },
     {
       "id": "speaks",
-      "at": 45,
-      "len": 13,
+      "at": 39.0,
+      "len": 11,
       "act": "know",
       "watch": {
         "view": "front",
         "clip": "scenes/n_speaks.mp4",
-        "clipStart": 14.64
+        "clipStart": 15.731
       },
       "text": {
         "lines": [
@@ -196,13 +197,13 @@
       "fx": [
         {
           "kind": "tap",
-          "at": 7.5,
+          "at": 5.5,
           "x": 347,
           "y": 90
         },
         {
           "kind": "spoken",
-          "at": 8,
+          "at": 6,
           "len": 9.5,
           "voice": "question.wav",
           "words": "question.words.json"
@@ -211,7 +212,7 @@
     },
     {
       "id": "answer",
-      "at": 58,
+      "at": 50.0,
       "len": 6.5,
       "act": "act",
       "watch": {
@@ -268,7 +269,7 @@
     },
     {
       "id": "loop",
-      "at": 64.5,
+      "at": 56.5,
       "len": 12,
       "act": "act",
       "watch": {
@@ -350,8 +351,8 @@
     },
     {
       "id": "watch",
-      "at": 76.5,
-      "len": 10,
+      "at": 68.5,
+      "len": 8,
       "act": "control",
       "watch": {
         "view": "front",
@@ -370,8 +371,8 @@
       "fx": [
         {
           "kind": "terminalPlane",
-          "at": 3,
-          "len": 6.5,
+          "at": 2.5,
+          "len": 5.5,
           "rect": [
             26,
             163,
@@ -398,7 +399,7 @@
     },
     {
       "id": "accounts",
-      "at": 86.5,
+      "at": 76.5,
       "len": 8,
       "act": "control",
       "text": {
@@ -469,7 +470,7 @@
     },
     {
       "id": "limits",
-      "at": 94.5,
+      "at": 84.5,
       "len": 31,
       "act": "control",
       "watch": {
@@ -508,8 +509,8 @@
           "at": 8.5,
           "len": 5.5,
           "panel": "pace",
-          "n": 59,
-          "note": "at 09:36, at this pace"
+          "n": 26,
+          "note": "at 10:19, at this pace"
         },
         {
           "kind": "aside",
@@ -530,8 +531,8 @@
           "len": 3.5,
           "panel": "questions",
           "n": 1,
-          "note": "payments-api · for 5 m",
-          "quote": "Deploy version 2.8.0 to production now?"
+          "note": "storefront · for 0 m",
+          "quote": "The checkout tests pass. Ship the Stripe webhook change?"
         },
         {
           "kind": "aside",
@@ -546,6 +547,10 @@
             {
               "name": "storefront",
               "pct": 18
+            },
+            {
+              "name": "blog",
+              "pct": 4
             }
           ],
           "out": "bars"
@@ -559,7 +564,7 @@
     },
     {
       "id": "new",
-      "at": 125.5,
+      "at": 115.5,
       "len": 8,
       "act": "control",
       "watch": {
@@ -579,7 +584,7 @@
     },
     {
       "id": "close",
-      "at": 133.5,
+      "at": 123.5,
       "len": 22,
       "act": "close",
       "watch": {
@@ -591,7 +596,7 @@
       "endCard": true
     }
   ],
-  "music": "audio/music.v9.wav",
+  "music": "audio/music.v8.wav",
   "musicDelayBeats": 0,
   "musicDelayFrames": 1
 }

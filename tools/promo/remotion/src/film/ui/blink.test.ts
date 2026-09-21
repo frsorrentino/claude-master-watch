@@ -5,12 +5,13 @@ import { blinkAt } from "./blink.ts";
 test("la parola arriva al suo posto prima che le palpebre si chiudano, e si riaprono dopo il taglio", () => {
   const a = blinkAt(0, 30);
   assert.ok(Math.abs(a.travel) < 1e-9, "la parola parte ferma");
+  assert.ok(blinkAt(8, 49).travel > 0.3 && blinkAt(16, 49).travel === 1, "sale insieme alla card e arriva in 16 fotogrammi, prima di lei");
   assert.equal(a.lid, 0);
   assert.equal(a.word, 1);
   assert.ok(blinkAt(22, 30).travel === 1, "ferma prima della chiusura");
-  assert.equal(blinkAt(24, 30).lid > 0, true);
+  assert.equal(blinkAt(26, 30).lid > 0, true);
   assert.ok(Math.abs(blinkAt(30, 30).lid - 1) < 1e-9 && blinkAt(30, 30).word === 0, "al taglio buio");
-  assert.ok(blinkAt(35, 30).lid < 0.6 && blinkAt(39, 30).lid === 0, "riaperte in nove fotogrammi");
+  assert.ok(blinkAt(35, 30).lid < 0.6 && blinkAt(37, 30).lid === 0, "riaperte in sette fotogrammi");
 });
 
 test("la parola resta piena per tutta la corsa: si ferma in alto al centro, non copre la scheda e non sfuma", () => {

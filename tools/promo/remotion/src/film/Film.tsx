@@ -18,20 +18,21 @@ import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
 import { AROUND_ZOOM, Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { AskDots } from "./ui/Dots.tsx";
+import { TITLE_LEAD } from "./ui/dots.ts";
 import { Blink } from "./ui/Blink.tsx";
 import { Carry } from "./ui/Carry.tsx";
 import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { takeoverAt } from "./ui/takeover.ts";
 import { Flip } from "./ui/Flip.tsx";
 import { FLIP_CUT } from "./ui/flip.ts";
-import { SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./ui/sleep.ts";
+import { sleepAt, sleepP } from "./ui/sleep.ts";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
 import { Bands } from "./ui/Bands.tsx";
 import { Split } from "./ui/Split.tsx";
 import { splitAt } from "./ui/split.ts";
 import { Blinds } from "./ui/Blinds.tsx";
-import { BLIND_CUT, blindSoloAt } from "./ui/blinds.ts";
+import { BLIND_CUT, blindBars, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
 import type { Key } from "./ui/carry.ts";
 import { fxLayers } from "./Fx.tsx";
@@ -59,7 +60,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const next = TIMELINE.scenes[idx + 1];
   const nap = scene.sleep ?? prev?.sleep;
   const napOwn = Boolean(scene.sleep);
-  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total)) : null;
+  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total), nap.len) : null;
   const light = sleep ? sleep.light : 1;
   const halo = sleep ? sleep.halo : 1;
   const mv = sleep && napOwn ? sleep.move : 0;
@@ -73,7 +74,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
   // `enterAt`: l'orologio entra a scena iniziata — qui rientra mentre la frase cammina verso sinistra (Franz, 20/09 20:28)
   const eAt = w?.enterAt ? spanFrames(GRID, scene.at, w.enterAt) : 0;
-  const pose = closing ? closing.pose : w ? poseAt(frame - eAt, total - eAt, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift) : null;
+  const pose = closing ? closing.pose : w ? poseAt(frame - eAt, total - eAt, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift, beat * (w.exitHold ?? 0)) : null;
   // con la camera «around» l'orologio è CENTRATO sul quadro (è la scheda ferma al centro che detta il posto), non nella
   // colonna di destra: il titolo resta in alto a sinistra (Franz, 19/09 05:12)
   const watchColumn = (sc?: Scene) => (sc?.watch?.camera === "around" ? 0.5 : sc?.text ? THEME.watchX : 0.5);
@@ -83,10 +84,14 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
   // e se una card esce dal display (piano 3) prende lei il centro sinistro: il titolo le lascia il posto un attimo prima che si stacchi
   const hero = (scene.fx ?? []).find((f) => f.kind === "cardOut" || f.kind === "gaugeHero" || f.kind === "optionsBuild" || f.kind === "terminalPlane");
+  // quanto prima del taglio il titolo comincia ad andarsene. Con un'uscita lunga se ne va a metà del movimento; con una
+  // rapida (sotto i due battiti) deve essere GIÀ fuori quando il movimento parte, se no la sua dissolvenza si mescola
+  // allo zoom (Franz, 21/09 12:26: «That's fine» si sovrapponeva allo zoom dell'orologio)
+  const exitLead = (moveF: number, b: number) => (moveF < 2 * b ? moveF + 8 : moveF * 0.55);
   // i dati della Panoramica stanno dove sta il titolo: il titolo se ne va prima che entri il primo (Franz, 18/09 21:42)
   const firstAside = (scene.fx ?? []).find((f) => f.kind === "aside");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
-  const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - beat * (w.exitBeats ?? MOVE_BEATS) * 0.55 : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
+  const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - exitLead(beat * (w.exitBeats ?? MOVE_BEATS), beat) : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
@@ -174,7 +179,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
             <span style={{ display: "block", translate: `${(width / 2 - THEME.leftMargin - 340) * (1 - Easing.bezier(0.2, 0, 0, 1)(Math.min(1, chiude / 0.66)))}px ${lift}px` }}>
             <WordMask lines={scene.text.lines} accent={scene.text.accent} size={scene.text.place === "top" ? "service" : scene.text.size} sub={scene.text.sub} hideAccentFrom={scene.out === "blink" ? leave - textAt : undefined}   /* dentro la sequenza del testo i fotogrammi ripartono da zero */
               fadeFrom={scene.out === "blink" ? total - 30 - textAt : undefined}
-              perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" || scene.text.keep ? undefined : leave - textAt} carry={scene.text.carry} align={w ? "left" : "center"} />
+              perWordFrames={Math.round(beat / 2)}   /* mezzo battito a parola anche sui cartelli: la frase si compone in metà tempo e poi resta ferma (Franz, 19/09 14:22) */ exitAt={scene.text.place === "top" || scene.text.keep ? undefined : leave - textAt - (scene.out === "blink" ? 8 : 0)}   /* col blink le altre parole sono GIÀ uscite quando parte la card: se ne vanno negli 8 fotogrammi prima (Franz, 21/09 14:00) */ carry={scene.text.carry} align={w ? "left" : "center"} />
             </span>
             <div style={{ marginTop: 40, opacity: extraOut }}>{watchTextFor(scene, GRID, textAt)}</div>
           </div>
@@ -196,7 +201,7 @@ const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key =>
   const cx = (scene.text ? THEME.watchX : 0.5) * 1920;
   return { ...k, x: cx + (k.x - 240) * u, y: 540 + (k.y - 240) * u, w: k.w * u, h: k.h * u, stroke: (k.stroke ?? 4) * u };
 };
-const BLINK_FRAMES = 78;   // 2,6 s: la parola cresce per tutta la crescita della card, non solo nell'ultimo secondo
+const BLINK_FRAMES = 49;   // 3 battiti (era 78, 2,6 s): la frase se ne va solo quando parte la card, e la parola corre in sincrono con lei (Franz, 21/09 14:00: la card copriva la frase ancora in quadro)
 const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un lampo)
 
 export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
@@ -204,9 +209,9 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
-      {TIMELINE.scenes.map((s) => (
+      {TIMELINE.scenes.map((s, i) => (
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
-          <SceneView scene={s} {...fxLayers(s, GRID)} />
+          <SceneView scene={s} {...fxLayers(s, GRID, TIMELINE.scenes[i - 1])} />
         </Sequence>
       ))}
       {TIMELINE.scenes.map((s, i) => {
@@ -255,7 +260,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         const next = TIMELINE.scenes[i + 1];
         if (!s.blinds || !next) return null;
         const frames = spanFrames(GRID, s.at, s.blinds.len);
-        return <Sequence key={`blinds-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * BLIND_CUT)} durationInFrames={frames + 1} layout="none"><Blinds frames={frames} /></Sequence>;
+        return <Sequence key={`blinds-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * BLIND_CUT)} durationInFrames={frames + 1} layout="none"><Blinds frames={frames} bars={blindBars(((s.fx ?? []).find((e) => e.kind === "aside" && e.out === "bars") as { rows?: unknown[] } | undefined)?.rows?.length ?? 2)} /></Sequence>;
       })}
       {/* il battito di ciglia dura quanto la crescita della card, non 30 fotogrammi: parola e scheda crescono INSIEME
           (Franz, 19/09 05:12). La parola resta dov'è e si ingrandisce; le palpebre si chiudono negli ultimi 7. */}
@@ -269,7 +274,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         const next = TIMELINE.scenes[i + 1];
         if (!s.sleep || !next?.text) return null;
         const frames = spanFrames(GRID, s.at, s.sleep.len);
-        const pre = Math.round(frames * (SLEEP_CUT - TITLE_AT));
+        const pre = beatToFrame(GRID, next.at) - beatToFrame(GRID, next.at - TITLE_LEAD);   // la frase si scrive TITLE_LEAD battiti prima della notifica
         const cut = beatToFrame(GRID, next.at);
         const nextFrames = spanFrames(GRID, next.at, next.len);
         const beat = spanFrames(GRID, next.at, 1);
@@ -278,7 +283,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
             <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
               <WordMask lines={next.text.lines} accent={next.text.accent} size={next.text.size} sub={next.text.sub} perWordFrames={Math.round(beat / 2)} exitAt={pre + nextFrames - 8} align="left" />
               {/* l'attesa non è vuota: sotto la frase la sessione sta scrivendo (ui/dots.ts) */}
-              <AskDots pre={pre} frames={frames} />
+              <AskDots pre={pre} frames={frames} len={s.sleep.len} />
             </div>
           </Sequence>
         );
