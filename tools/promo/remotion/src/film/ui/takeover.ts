@@ -39,11 +39,12 @@ export const sendAt = (f: number, press: number, cut: number, beat: number): Sen
   finger: ramp(f, press - 0.12 * beat, press) * (1 - ramp(f, press + 0.35 * beat, press + 0.45 * beat)),
   squash: ramp(f, press - 0.04 * beat, press + 0.02 * beat) * (1 - ramp(f, press + 0.3 * beat, press + 0.36 * beat)),
   pop: Math.sin(Math.PI * ramp(f, press + 0.3 * beat, press + 0.55 * beat)),
-  reveal: growEase(ramp(f, cut, cut + 0.5 * beat)),
+  reveal: growEase(ramp(f, cut, cut + 0.75 * beat)),
   // l'onda chiara dentro il ✓, dal punto del dito, come i tasti di Wear OS (Franz, 21/09 20:16)
   ripple: ramp(f, press, press + 0.3 * beat),
   // al taglio la frase si ricompone sul posto come testo del terminale («> », monospazio, evidenziata) e poi va al suo
   // posto sopra la casella: diventa il prompt, e si vede (Franz, 21/09 20:22)
-  reformat: soft(ramp(f, cut, cut + 0.15 * beat)),
-  fly: soft(ramp(f, cut + 0.15 * beat, cut + 0.45 * beat)),
+  // più lento (21/09 21:16: «forse un po' rapide»): il momento in cui la frase diventa prompt deve leggersi
+  reformat: soft(ramp(f, cut + 0.1 * beat, cut + 0.45 * beat)),
+  fly: soft(ramp(f, cut + 0.45 * beat, cut + 1.1 * beat)),
 });

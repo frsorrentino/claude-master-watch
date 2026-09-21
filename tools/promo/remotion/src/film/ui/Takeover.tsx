@@ -24,7 +24,9 @@ export const Takeover: React.FC<{
   const f = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const t = takeoverAt(f / Math.max(1, frames));
-  if (t.settle >= 1) return null;
+  // l'invio finisce dopo il resto del takeover: il testo si posa sul prompt più di mezzo battito dopo il taglio
+  const sending = body.kind === "screen" && press !== undefined && f <= Math.round(frames * TAKEOVER_CUT) + 1.1 * beat + 3;
+  if (t.settle >= 1 && !sending) return null;
   // La card si INGRANDISCE: un oggetto solo che cresce di scala, non un rettangolo che esce da dentro. Un fattore unico per
   // le due dimensioni, e con lui crescono raggio e filo di luce sul bordo — se il raggio si spegne e le proporzioni
   // cambiano, quello che si vede è un rettangolo grigio, non la scheda (Franz, 20/09 12:57).
@@ -117,7 +119,7 @@ export const Takeover: React.FC<{
         const blockH = land ? ccStackBottom(height) - top : 0;                 // le righe del prompt × la riga
         const dx0 = tx0 - (colW * big) / 2 - THEME.leftMargin, dy0 = ty0 - (blockH * big) / 2 - top;
         const sc = big + (1 - big) * fly, dx = dx0 * (1 - fly), dy = dy0 * (1 - fly);
-        const flyEnd = cutF + 0.45 * beat;
+        const flyEnd = cutF + 1.1 * beat;
         // prima esce la frase, poi entra il blocco: sovrapposti si leggevano due testi con gli a capo diversi (21/09 20:30)
         const blockOn = land ? Math.min(1, Math.max(0, (reformat - 0.45) / 0.55)) * (1 - Math.min(1, Math.max(0, (f - flyEnd) / 2))) : 0;
         return (

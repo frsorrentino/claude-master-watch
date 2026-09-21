@@ -8,7 +8,7 @@ import { THEME } from "../theme.ts";
 import { UiClaudeCode } from "./UiClaudeCode.tsx";
 import { CC } from "./claudeCode.ts";
 
-export type SplitSide = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[]; prompt?: string; path?: string; model?: string };
+export type SplitSide = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[]; prompt?: string; path?: string; model?: string; live?: number };   // `live`: le ultime righe che arrivano mentre la finestra è aperta
 
 /**
  * I due terminali degli account (ui/split.ts per i tempi). Ognuno è una finestra di terminale come quella di Crostini
@@ -35,6 +35,13 @@ export const Split: React.FC<{ left: SplitSide; right: SplitSide; open: number; 
     // sotto un quarto di quadro il testo andrebbe a capo ogni due parole: la finestra si sta chiudendo, il contenuto
     // si spegne prima di diventare coriandoli
     const leggibile = Math.min(1, Math.max(0, (w / width - 0.12) / 0.14)) * resta;
+    // La finestra dell'altro account entra GIÀ PIENA e continua a lavorare: una sessione appena nata non tornava con il
+    // racconto (Franz, 21/09 21:22). Solo le ultime `live` righe arrivano mentre è aperta, una a battito da quando si ferma.
+    const vive = (sd: SplitSide, i: number) => {
+      const live = sd.live ?? 0, n = sd.lines.length;
+      if (i < n - live) return 1;
+      return Math.min(1, Math.max(0, (frame - (open + (i - (n - live))) * beat) / 12));
+    };
     const salto = (t: number) => bump(0.16)(t * t * (3 - 2 * t));
     const entra = (i: number) => salto(Math.min(1, Math.max(0, (s.cards - i * 0.16) / 0.5)));
     return (
@@ -55,8 +62,8 @@ export const Split: React.FC<{ left: SplitSide; right: SplitSide; open: number; 
             piena combacia riga per riga, e mentre la finestra si stringe il testo va a capo davvero */}
         <div style={{ position: "absolute", left: pad, top: 0, bottom: 0, width: Math.min(width * CC.column, w - pad - 46), opacity: leggibile }}>
           <UiClaudeCode width={Math.min(width * CC.column, w - pad - 46)} header={side.path ? { path: side.path, model: side.model ?? "" } : undefined}
-            chrome={lato === "left" ? 1 : entra(0)} prompt={side.prompt} promptOn={lato === "left" ? 1 : entra(0)}
-            rows={side.lines.map((l, i) => ({ text: l, on: lato === "left" ? 1 : entra(i + 1) }))}
+            chrome={1} prompt={side.prompt} promptOn={1}
+            rows={side.lines.map((l, i) => ({ text: l, on: vive(side, i) }))}
             status={side.status} account={{ dot: side.dot, label: `${side.account} · ${side.session}` }} frame={frame} />
         </div>
       </div>

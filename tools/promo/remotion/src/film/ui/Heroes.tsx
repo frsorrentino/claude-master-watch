@@ -156,7 +156,8 @@ export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g
   // 20:24: «a blocchi di frasi … e salire verso l'alto»); prima uscivano due parole alla volta in una colonna che scendeva.
   // E chi è avanti è il fondo: il polso ripete dopo (`LEAD`).
   const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-  const rows = e.lines.map((l, i) => ({ text: l, on: frame < arrivo(i) ? 0 : clamp01((frame - arrivo(i) + 1) / 7) * (cc ? 1 : a) }));
+  // dodici fotogrammi per nascere: con sette sembrava uno scatto (Franz, 21/09 21:16)
+  const rows = e.lines.map((l, i) => ({ text: l, on: frame < arrivo(i) ? 0 : clamp01((frame - arrivo(i) + 1) / 12) * (cc ? 1 : a) }));
   const promptOn = e.promptAt !== undefined ? clamp01((frame - spanFrames(g, scene.at, e.promptAt)) / 2) : 1;
   return (
     <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, width: width * CC.column }}>

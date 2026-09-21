@@ -25,11 +25,11 @@ test("l'invio: il dito sul ✓, il tasto si schiaccia e scatta; al taglio il cer
   assert.ok(sendAt(P + 0.1 * B, P, C, B).squash === 1, "sotto il dito il tasto è schiacciato");
   assert.ok(sendAt(P + 0.42 * B, P, C, B).pop > 0.9, "al rilascio scatta");
   assert.equal(sendAt(C, P, C, B).reveal, 0);
-  assert.equal(sendAt(C + 0.5 * B, P, C, B).reveal, 1);
+  assert.equal(sendAt(C + 0.75 * B, P, C, B).reveal, 1, "il cerchio si apre in tre quarti di battito (21/09 21:16: era troppo rapido)");
   assert.equal(sendAt(P, P, C, B).ripple, 0);
   assert.equal(sendAt(P + 0.3 * B, P, C, B).ripple, 1, "l'onda della pressione riempie il ✓ in un terzo di battito");
-  assert.equal(sendAt(C, P, C, B).reformat, 0);
-  assert.equal(sendAt(C + 0.15 * B, P, C, B).reformat, 1, "la frase è già testo del terminale prima di muoversi");
-  assert.equal(sendAt(C + 0.15 * B, P, C, B).fly, 0);
-  assert.equal(sendAt(C + 0.45 * B, P, C, B).fly, 1, "e si posa sul prompt prima che il cerchio finisca di aprirsi");
+  assert.equal(sendAt(C + 0.1 * B, P, C, B).reformat, 0);
+  assert.equal(sendAt(C + 0.45 * B, P, C, B).reformat, 1, "la frase diventa testo del terminale in un terzo di battito, e si legge");
+  assert.equal(sendAt(C + 0.45 * B, P, C, B).fly, 0, "solo dopo si muove");
+  assert.equal(sendAt(C + 1.1 * B, P, C, B).fly, 1, "e si posa sul prompt in due terzi di battito");
 });
