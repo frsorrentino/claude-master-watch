@@ -1,4 +1,4 @@
-import { DOTS_GAP, HUSH, SLEEP_CUT } from "./ui/sleep.ts";
+import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import type { Timeline } from "./timeline.ts";
 
 export type SfxName = "wearNotify" | "notify" | "thump" | "tick" | "tick2" | "tick4" | "pressRise" | "whoosh" | "shutter";
@@ -11,12 +11,8 @@ const RANK: SfxName[] = ["wearNotify", "notify", "shutter", "pressRise", "tick",
 
 export const sfxCues = (t: Timeline): SfxCue[] => {
   const all: SfxCue[] = [];
-  t.scenes.forEach((s, k) => {
-    // i tre puntini dell'attesa tengono il tempo: un tick per puntino, ognuno più forte e due semitoni più su, e la
-    // notifica arriva come quarto tempo (Franz, 21/09 16:01). Stessi battiti di ui/dots.ts: 3, 2 e 1 prima della notifica.
-    const next = t.scenes[k + 1];
-    if (s.sleep && next) (["tick", "tick2", "tick4"] as const).forEach((name, i) => all.push({ beat: next.at - (3 - i) - (DOTS_GAP - 1), name, gainDb: -24 + 4 * i }));
-  });
+  // i tre puntini dell'attesa, sul display in ambient, restano muti: il ticchettio che teneva il tempo (21/09 16:01) si
+  // sentiva come un rumore sopra il silenzio (Franz, 22/09 09:37)
   for (const s of t.scenes) {
     // niente soffio all'ingresso delle frasi: sotto la musica non aggiungeva nulla e si sentiva come un difetto (Franz, 19/09 16:00)
     // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09)
