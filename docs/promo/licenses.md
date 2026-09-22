@@ -10,6 +10,23 @@ Pixabay vieta di ridistribuire il contenuto da solo): restano in `tools/promo/ma
 - **Noto Sans Mono** — SIL Open Font License 1.1. Testo: `tools/promo/remotion/public/fonts/OFL-NotoSansMono.txt`, preso il
   17/09/2026 da `https://raw.githubusercontent.com/notofonts/latin-greek-cyrillic/main/OFL.txt`.
 
+## Suono di notifica
+
+- **Tethys (Android Open Source Project)** — Apache License 2.0. File: `tools/promo/materiali/wear-sfx/Tethys-aosp.ogg`,
+  preso il 22/09/2026 da
+  `https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/data/sounds/notifications/ogg/Tethys.ogg`;
+  `data/sounds/Android.bp` dichiara `default_applicable_licenses: ["Android-Apache-2.0"]`. Nel film diventa
+  `remotion/public/audio/sfx/wearNotify.wav`: tolti i 29,5 ms di silenzio iniziale (l'attacco resta sul tremito) e abbassato
+  di 3,3 dB, così ha lo stesso volume percepito del suono che sostituisce (−16,1 LUFS). Credito sulla pagina: «Notification
+  sound: Tethys, Android Open Source Project (Apache 2.0)».
+- Fino al 22/09/2026 il film usava il Tethys del Pixel Watch 5 (`materiali/wear-sfx/Tethys.ogg`, preso dall'orologio con
+  `adb pull`): è un suono di sistema proprietario di Google, diverso da quello di AOSP (1,26 s contro 0,80 s, correlazione
+  0,13), e non abbiamo una licenza per usarlo. Franz ha deciso di sostituirlo il 22/09 alle 17:04, anche nella versione
+  già pubblicata (online dalle 17:45 circa); alle 18:40 ha chiesto al sito di tornare alla versione precedente, e il sito
+  serve di nuovo i file con il Tethys del Pixel (`out/consegna/*.pixel-tethys.mp4`), senza la riga di credito AOSP.
+- Gli altri suoni d'interfaccia li genera `tools/promo/sfx.py`: nel film non ci sono suoni Material Design, quindi non
+  serve il credito CC-BY previsto dal design.
+
 ## Musica: candidate da Pixabay
 
 Primo giro (17/09/2026 19:41, quattro tracce «calde e minimali»): bocciato da Franz alle 20:12, «troppo calme e basilari».
