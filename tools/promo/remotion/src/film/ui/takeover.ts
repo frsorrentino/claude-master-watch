@@ -27,6 +27,11 @@ export const takeoverAt = (p: number): Takeover => {
   const settle = soft(ramp(p, 0.46, 0.62));
   return { grow, hold: p >= 0.42 && p < 0.46 ? 1 : 0, become, settle, cover: grow * (1 - settle) };
 };
+/** Quando il colore del componente vira verso `toColor`. `become` (la regola di sempre): dopo la crescita, a quadro pieno.
+ *  `grow`: MENTRE cresce — il «yes» parte celeste, così il tocco si legge, e quando copre il quadro è già il blu scuro
+ *  dell'atto, senza il campo celeste che restava sotto la scena dopo (Franz, 22/09 21:07). */
+export type TintMode = "become" | "grow";
+export const tintAt = (p: number, mode: TintMode): number => (mode === "grow" ? soft(ramp(p, 0.06, 0.42)) : takeoverAt(p).become);
 /** Il taglio della scaletta cade a 0,58 dell'arco (fine del hold): così la scena dopo nasce dentro il become. */
 export const TAKEOVER_CUT = 0.46;
 

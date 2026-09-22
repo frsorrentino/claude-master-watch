@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { TAKEOVER_CUT, sendAt, takeoverAt } from "./takeover.ts";
+import { TAKEOVER_CUT, sendAt, takeoverAt, tintAt } from "./takeover.ts";
 import { CC, ccPromptTop, ccStackBottom } from "./claudeCode.ts";
 import { CcPrompt } from "./UiClaudeCode.tsx";
 import { THEME } from "../theme.ts";
@@ -18,9 +18,9 @@ export type TakeoverBody = { kind: "card"; text: string } | { kind: "words"; wor
  * Disegnato a livello del film, sopra le due scene, centrato sul taglio (il taglio cade a `TAKEOVER_CUT` dell'arco).
  */
 export const Takeover: React.FC<{
-  x: number; y: number; w: number; h: number; r: number; tilt?: number; color: string; toColor: string; frames: number; body?: TakeoverBody;
+  x: number; y: number; w: number; h: number; r: number; tilt?: number; color: string; toColor: string; tint?: "grow"; frames: number; body?: TakeoverBody;
   press?: number; beat?: number; land?: string;   // l'invio della schermata: il tocco su ✓ e il battito in fotogrammi, il prompt dove si posa il testo
-}> = ({ x, y, w, h, r, tilt: tilt0 = 10, color, toColor, frames, body = { kind: "plain" }, press, beat = 16.36, land }) => {
+}> = ({ x, y, w, h, r, tilt: tilt0 = 10, color, toColor, tint, frames, body = { kind: "plain" }, press, beat = 16.36, land }) => {
   const f = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const t = takeoverAt(f / Math.max(1, frames));
@@ -35,7 +35,7 @@ export const Takeover: React.FC<{
   const W = w * k, H = h * k;
   const cx = x + (width / 2 - x) * t.grow, cy = y + (height / 2 - y) * t.grow;
   const rad = r * k;
-  const col = mixColor(color, toColor, t.become);
+  const col = mixColor(color, toColor, tintAt(f / Math.max(1, frames), tint ?? "become"));
   // la scheda nella corsia è inclinata di 10° (prospettiva): il takeover parte con la STESSA inclinazione e si raddrizza
   // mentre cresce, se no nel primo fotogramma il contenuto si scosta di qualche pixel (Franz, 20/09 16:12)
   // (il tasto della risposta invece è dritto: partiva storto e sembrava cambiare posto, Franz 21/09 18:59)

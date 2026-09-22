@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TAKEOVER_CUT, sendAt, takeoverAt } from "./takeover.ts";
+import { TAKEOVER_CUT, sendAt, takeoverAt, tintAt } from "./takeover.ts";
 
 test("il takeover cresce, tiene un respiro, diventa la scena dopo e si posa: il quadro non resta mai vuoto", () => {
   assert.deepEqual(takeoverAt(0), { grow: 0, hold: 0, become: 0, settle: 0, cover: 0 });
@@ -32,4 +32,13 @@ test("l'invio: il dito sul ✓, il tasto si schiaccia e scatta; al taglio il cer
   assert.equal(sendAt(C + 0.45 * B, P, C, B).reformat, 1, "la frase diventa testo del terminale in un terzo di battito, e si legge");
   assert.equal(sendAt(C + 0.45 * B, P, C, B).fly, 0, "solo dopo si muove");
   assert.equal(sendAt(C + 1.1 * B, P, C, B).fly, 1, "e si posa sul prompt in due terzi di battito");
+});
+
+test("il colore vira MENTRE il tasto cresce (Franz, 22/09 21:07): chiaro al tocco, pieno quando copre il quadro", () => {
+  assert.equal(tintAt(0, "grow"), 0, "al tocco il tasto ha ancora il suo colore");
+  assert.equal(tintAt(0.05, "grow"), 0, "il primo istante della crescita resta chiaro: si legge il tasto premuto");
+  const mid = tintAt(0.25, "grow"); assert.ok(mid > 0.2 && mid < 0.9, "a metà crescita il colore è a metà strada");
+  assert.equal(tintAt(0.42, "grow"), 1, "quando il quadro è coperto il colore è già quello della scena dopo");
+  for (let p = 0; p < 1; p += 0.02) assert.ok(tintAt(p + 0.02, "grow") >= tintAt(p, "grow"), "non torna mai indietro");
+  for (const p of [0, 0.3, 0.5, 0.7, 1]) assert.equal(tintAt(p, "become"), takeoverAt(p).become, "senza la regola nuova resta il become di sempre");
 });

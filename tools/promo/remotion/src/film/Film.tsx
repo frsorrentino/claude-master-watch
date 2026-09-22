@@ -220,7 +220,7 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         // l'invio della dettatura si posa sul prompt del terminale della scena dopo
         const term = (next.fx ?? []).find((f) => f.kind === "terminalPlane");
         const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : k.body === "screen" ? { kind: "screen" as const, lines: k.words ?? [] } : { kind: "plain" as const };
-        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} frames={frames} body={body}
+        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} tint={k.tint} frames={frames} body={body}
           press={k.press !== undefined ? beatToFrame(GRID, s.at + k.press) - startF : undefined} beat={spanFrames(GRID, s.at, 1)} land={term && term.kind === "terminalPlane" ? term.prompt : undefined} /></Sequence>;
       })}
       {TIMELINE.scenes.map((s, i) => {
