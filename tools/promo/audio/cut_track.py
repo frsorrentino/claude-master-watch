@@ -1,6 +1,6 @@
 """Taglia la traccia sulle battute (introduzione, corpo, salto al finale vero) con dissolvenze a pari potenza di 15 ms
 centrate sul battito: la griglia resta uniforme attraverso le giunte e la musica finisce con il film, non sfuma.
-Uso: python3 cut_track.py <traccia> <scheda.card.json> 0-4 10-24 40-47"""
+Uso: python3 cut_track.py <traccia> <scheda.card.json> 0-4 10-24 40-47 [--out=FILE]"""
 import json, sys, tempfile, wave
 from pathlib import Path
 import numpy as np
@@ -16,10 +16,12 @@ def cut(x, sr, bpm, first_beat_s, segments, fade_ms=15):
     return out[:len(out) - h]
 
 if __name__ == "__main__":
-    src, card = Path(sys.argv[1]), json.loads(Path(sys.argv[2]).read_text()); segs = [tuple(int(v) for v in s.split("-")) for s in sys.argv[3:]]
+    src, card = Path(sys.argv[1]), json.loads(Path(sys.argv[2]).read_text())
+    segs = [tuple(int(v) for v in s.split("-")) for s in sys.argv[3:] if not s.startswith("--")]
+    out = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--out=")), None)   # il corto ha la sua traccia (23/09)
     with tempfile.TemporaryDirectory() as d: sr, x = M.read_wav(M.to_wav(src, Path(d) / "t.wav"))
     y = cut(x, sr, card["bpm"], card["first_beat_s"], segs)
-    dst = Path(__file__).resolve().parent.parent / "remotion/public/audio/music.wav"; dst.parent.mkdir(parents=True, exist_ok=True)
+    dst = Path(out).resolve() if out else Path(__file__).resolve().parent.parent / "remotion/public/audio/music.wav"; dst.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(dst), "wb") as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())
     offset = card['first_beat_s'] if segs[0][0] == 0 else 0.015 / 2          # se si parte da una battuta interna, il primo battito cade dopo mezza dissolvenza
     print(f"{dst}: {len(y) / sr:.2f} s · bpm {card['bpm']} · offsetSeconds {offset:.4f}")
