@@ -44,6 +44,9 @@ npx remotion render Film "out/consegna/$name.wav" --gl="$([ "${#tratti[@]}" -gt 
 # Loudness finale: guadagno costante fino a -14 LUFS e limitatore solo sui picchi (True Peak -1 dB). Fino al 22/09 era
 # loudnorm "linear", che con questo mix ripiegava da solo sul modo dinamico (vedi audio/normalize.py).
 python3 ../audio/normalize.py "out/consegna/$name.wav" "out/consegna/$name.norm.wav"
-ffmpeg -v error -y -i "out/consegna/$name.video.mp4" -i "out/consegna/$name.norm.wav" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -movflags +faststart "out/consegna/$name.mp4"
+# AAC: il codificatore di ffmpeg con il coder di default (twoloop) lascia scatti isolati fino a 0 dBFS a 128-192k
+# (misurato il 23/09 sul decodificato contro il WAV: -0,1 dBFS a 65,5 s); il coder "fast" no (scarto massimo -28,5 dBFS a 256k).
+# La versione leggera (720p, sotto i 10 MB) usa 224k e un WAV normalizzato a TP -2: la codifica aggiunge circa 1 dB sui transitori.
+ffmpeg -v error -y -i "out/consegna/$name.video.mp4" -i "out/consegna/$name.norm.wav" -map 0:v -map 1:a -c:v copy -c:a aac -aac_coder fast -b:a 256k -movflags +faststart "out/consegna/$name.mp4"
 ffmpeg -v error -y -i "out/consegna/$name.mp4" -an -c:v copy "out/consegna/$name.muto.mp4"
 ffprobe -v error -show_entries format=duration,size -of csv=p=0 "out/consegna/$name.mp4"
