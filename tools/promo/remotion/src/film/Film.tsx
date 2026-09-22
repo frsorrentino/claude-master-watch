@@ -13,7 +13,7 @@ import { SideWatch } from "./SideWatch.tsx";
 import { Floating } from "./ui/Floating.tsx";
 import { Aside } from "./ui/Aside.tsx";
 import { WordMask } from "./WordMask.tsx";
-import { THEME } from "./theme.ts";
+import { THEME, actColors } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { LogoMark } from "./LogoMark.tsx";
@@ -146,7 +146,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
-      <Backdrop act={scene.act} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} keep={scene.bgKeep} shadeIn={w?.enter ? beat * MOVE_BEATS : 0} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
+      <Backdrop act={scene.act} colors={actColors(scene.act, TIMELINE.palette)} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} keep={scene.bgKeep} shadeIn={w?.enter ? beat * MOVE_BEATS : 0} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
       {scene.split ? <Split left={scene.split.left} right={scene.split.right} open={scene.split.open} hold={scene.split.hold} close={scene.split.close} total={total} beat={beat} /> : null}
       {scene.bands ? <Bands left={scene.bands.left} right={scene.bands.right} openFrames={scene.bands.open} winFrames={scene.bands.win} total={total} /> : null}
       <TerminalBackdrop scene={scene} g={GRID} />

@@ -34,3 +34,9 @@ export const ACT_BG: Record<Act, [string, string, string, string]> = {
   control: ["#1F5A5E", "#15393F", "#0C1F26", "rgb(18,52,54)"],
   close: ["#000000", "#000000", "#000000", "rgb(0,0,0)"],
 };
+
+/** La tavolozza di una scaletta: i colori degli atti che nomina sostituiscono quelli di `ACT_BG` (il corto usa un solo
+ *  blu per tutto il film, 22/09). */
+export type Palette = Partial<Record<Act, [string, string, string, string]>>;
+/** I colori di un atto: quelli della scaletta se li dà, altrimenti quelli di sempre. */
+export const actColors = (act: Act, palette?: Palette): [string, string, string, string] => palette?.[act] ?? ACT_BG[act];

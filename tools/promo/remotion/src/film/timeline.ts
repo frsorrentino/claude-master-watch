@@ -2,6 +2,7 @@ import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
 import { TITLE_LEAD } from "./ui/dots.ts";
 import { THEME } from "./theme.ts";
+import type { Palette } from "./theme.ts";
 
 /** La scaletta: scene in fila, in battiti. Dentro una scena i tempi (text.at, fx[].at) partono dall'inizio della scena; mezzi battiti ammessi. */
 export type Act = "open" | "know" | "act" | "control" | "close";
@@ -73,7 +74,7 @@ export type BlindsCue = { len: number };
 /** `musicDelayFrames`: la fase della traccia, in fotogrammi. Misurata il 19/09 sui transienti di `music.v9.wav`: i battiti
  *  del brano cadono 35 ms PRIMA di quelli della griglia (110,00 bpm esatti, quindi è fase, non deriva). Un fotogramma di
  *  ritardo sulla traccia li rimette insieme a 2 ms, senza spostare di un fotogramma tutti i tagli già approvati. */
-export type Timeline = Grid & { music?: string; musicDelayBeats?: number; musicDelayFrames?: number; scenes: Scene[] };
+export type Timeline = Grid & { music?: string; musicDelayBeats?: number; musicDelayFrames?: number; palette?: Palette; scenes: Scene[] };
 
 export class TimelineError extends Error {
   problems: string[];
@@ -97,6 +98,11 @@ export const validateTimeline = (raw: unknown): Timeline => {
   if (!(t.bpm >= 60 && t.bpm <= 160)) bad.push(`bpm ${t.bpm} fuori da 60-160`);
   if (t.fps !== 30) bad.push(`fps ${t.fps}: il film è a 30`);
   if (typeof t.offsetSeconds !== "number") bad.push("offsetSeconds manca");
+  // la tavolozza: quattro colori per atto (centro, mezzo, bordo del gradiente, alone), esadecimali o rgb()
+  const COLOR = /^#[0-9A-Fa-f]{6}$|^rgb\(\d{1,3},\s?\d{1,3},\s?\d{1,3}\)$/;
+  for (const [act, cols] of Object.entries(t.palette ?? {})) {
+    if (!Array.isArray(cols) || cols.length !== 4 || cols.some((c) => typeof c !== "string" || !COLOR.test(c))) bad.push(`tavolozza: i colori di «${act}» non sono 4 colori validi`);
+  }
   const ids = new Set<string>();
   let end = 0;
   let prev: Scene | undefined;

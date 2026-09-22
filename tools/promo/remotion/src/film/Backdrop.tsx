@@ -23,9 +23,9 @@ const isLight = (hex: string): boolean => {
   const n = parseInt(hex.slice(1, 7), 16);
   return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.5;
 };
-export const Backdrop: React.FC<{ act: Act; glowX?: number; from?: string; fade?: number; keep?: boolean; light?: number; haloR?: number; field?: number; shadeIn?: number }> = ({ act, glowX = THEME.watchX, from, fade = 60, keep = false, light = 1, haloR = 1, field = 1, shadeIn = 0 }) => {
+export const Backdrop: React.FC<{ act: Act; glowX?: number; from?: string; fade?: number; keep?: boolean; light?: number; haloR?: number; field?: number; shadeIn?: number; colors?: [string, string, string, string] }> = ({ act, glowX = THEME.watchX, from, fade = 60, keep = false, light = 1, haloR = 1, field = 1, shadeIn = 0, colors }) => {
   const frame = useCurrentFrame();
-  const [c0, c1, c2, glow] = ACT_BG[act];
+  const [c0, c1, c2, glow] = colors ?? ACT_BG[act];   // `colors`: la tavolozza della scaletta, se ne ha una
   // `keep`: il campo di colore resta, il colore dell'atto non entra mai (Franz, 20/09 10:10)
   const t = keep ? 0 : from ? Math.min(1, Math.max(0, frame / Math.max(1, fade))) : 1;
   const e = t * t * (3 - 2 * t);

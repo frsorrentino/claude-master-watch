@@ -18,6 +18,14 @@ const problems = (raw: unknown): string[] => {
 test("una scaletta giusta passa e dice quanto dura", () => {
   assert.equal(totalBeats(validateTimeline(base())), 16);
 });
+test("una tavolozza con un colore che non è un colore è un errore", () => {
+  const t = base(); t.palette = { act: ["#3A4468", "blu", "#14172A", "rgb(30,35,60)"] };
+  assert.match(problems(t).join("\n"), /tavolozza: i colori di «act» non sono 4 colori validi/);
+});
+test("una tavolozza giusta passa", () => {
+  const t = base(); t.palette = { act: ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"] };
+  assert.deepEqual(problems(t), []);
+});
 test("un buco o una sovrapposizione tra scene è un errore", () => {
   const t = base(); t.scenes[1].at = 9;
   assert.match(problems(t).join("\n"), /list: inizia al battito 9, la scena prima finisce a 8/);
