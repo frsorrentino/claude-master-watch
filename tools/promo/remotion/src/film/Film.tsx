@@ -4,8 +4,9 @@ import raw from "./timeline.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
 import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
-import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
-import type { Scene } from "./timeline.ts";
+import { validateTimeline, watchColumn } from "./timeline.ts";
+import type { Scene, Timeline } from "./timeline.ts";
+import { framesOf, gridOf } from "./cut.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
 import { SideWatch } from "./SideWatch.tsx";
@@ -42,12 +43,15 @@ import { Whip } from "./ui/Whip.tsx";
 import type { Stems } from "./Soundtrack.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
-export const TIMELINE = validateTimeline(raw);
-export const GRID: Grid = { bpm: TIMELINE.bpm, fps: TIMELINE.fps, offsetSeconds: TIMELINE.offsetSeconds };
+export const FILM_TIMELINE = validateTimeline(raw);
+/** La scaletta che il motore sta rendendo: la passa la composizione (il film lungo o il corto, 23/09). */
+export const FilmTimeline = React.createContext<Timeline>(FILM_TIMELINE);
 /** I fotogrammi sono assoluti: la musica parte dal fotogramma 0 e il battito 0 cade a offsetSeconds. */
-export const filmFrames = (): number => beatToFrame(GRID, totalBeats(TIMELINE));
+export const filmFrames = (): number => framesOf(FILM_TIMELINE);
 
 export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; around?: React.ReactNode }> = ({ scene, overlay, around }) => {
+  const TIMELINE = React.useContext(FilmTimeline);
+  const GRID: Grid = gridOf(TIMELINE);
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const total = spanFrames(GRID, scene.at, scene.len);
@@ -202,9 +206,12 @@ const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key =>
 const BLINK_FRAMES = 49;   // 3 battiti (era 78, 2,6 s): la frase se ne va solo quando parte la card, e la parola corre in sincrono con lei (Franz, 21/09 14:00: la card copriva la frase ancora in quadro)
 const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un lampo)
 
-export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
+export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, timeline = FILM_TIMELINE }) => {
   useFilmFonts();
+  const TIMELINE = timeline;
+  const GRID: Grid = gridOf(timeline);
   return (
+    <FilmTimeline.Provider value={timeline}>
     <AbsoluteFill style={{ background: "#000" }}>
       <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
       {TIMELINE.scenes.map((s, i) => (
@@ -294,5 +301,6 @@ export const Film: React.FC<{ stems?: Stems }> = ({ stems }) => {
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
       ))}
     </AbsoluteFill>
+    </FilmTimeline.Provider>
   );
 };
