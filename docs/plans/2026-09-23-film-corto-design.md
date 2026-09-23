@@ -1,10 +1,10 @@
 # Film corto: design (documento A)
 
-23/09/2026. Il corto si aggiunge al film da 81,8 s, che resta com'è. Le decisioni sono di Franz, prese il 22 e il 23/09 una per una. Questo documento le raccoglie insieme all'analisi del movimento. L'analisi completa (inventario degli strumenti con la documentazione ufficiale, confronto con i quattro film di esempio) è stata consegnata a Franz il 23/09 alle 00:40.
+23/09/2026. Il corto si aggiunge al film da 81,8 s, che resta com'è. Le decisioni sono di Franz, prese il 22 e il 23/09 una per una. Questo documento le raccoglie insieme all'analisi del movimento. **Revisione del 23/09 pomeriggio:** dopo le bozze 2-7 Franz ha rifatto apertura e finale (14:23) e ha approvato la fusione fra le sue note e i punti 1-8 dell'analisi, più la prova del punto 10 (14:44-14:52). Le sezioni 2-5, 7 e 8 sono già quelle nuove. L'analisi completa (inventario degli strumenti con la documentazione ufficiale, confronto con i quattro film di esempio) è stata consegnata a Franz il 23/09 alle 00:40.
 
 ## 1. Obiettivo
 
-In 37 s, lo stile motion graphic dei film di prodotto di Apple e Google: scene di effetto, sempre al servizio del racconto, con passaggi fluidi da una scena all'altra. Il messaggio principale arriva nei primi 3 secondi.
+In meno di 40 s, lo stile motion graphic dei film di prodotto di Apple e Google: scene di effetto, sempre al servizio del racconto, con passaggi fluidi da una scena all'altra. Il messaggio principale arriva nei primi 3 secondi: il titolo apre il film.
 
 **Il criterio di Franz (23/09):** i movimenti nello spazio sono il cuore della richiesta, non un extra:
 - la camera che si muove;
@@ -18,72 +18,81 @@ Nei film di esempio la continuità conta più dell'effetto: Ask ha 2 tagli in 87
 
 | Tema | Decisione | Quando |
 |---|---|---|
-| Rapporto con l'84 s | Film separato; l'84 s (oggi 81,8 s) resta com'è | 22/09 15:27 |
-| Apertura | L'azione: il polso vibra e arriva la domanda; il titolo entro 2,7 s | 22/09 15:30 |
-| Tavolozza | Un solo blu notte, quello di «It speaks», in tutte le scene. Si passa al bianco e nero cambiando pochi valori. Nessun momento chiaro: il «yes» vira nel blu mentre cresce | 22/09 15:33 |
-| Struttura | Una storia sola, in tre blocchi, ogni inquadratura usata una volta sola | 22/09 15:45, 15:54 |
-| Chiusura | Card ✓ con una seconda vibrazione, poi «Shipped. From your wrist.»; nel cartello il ✓ diventa il logo (versione A) | 22/09 16:21; 23/09 00:35 |
+| Rapporto con l'84 s | Film separato; l'84 s (oggi 81,8 s, su www) resta com'è | 22/09 15:27 |
+| Tavolozza | Un solo blu notte, quello di «It speaks», in tutte le scene. Il «yes» vira nel blu mentre cresce | 22/09 15:33 |
+| Struttura | Una storia sola; ogni inquadratura usata una volta sola | 22/09 15:45, 15:54 |
+| Apertura | L'orologio in ambient a luce ferma, senza il respiro del film lungo (lì serviva allo stop and go della musica, qui non c'è), con il titolo «Claude Code, on your wrist.»; poi la notifica e «It asks.», con un tratto più corto fino a «It speaks.» | 23/09 14:23, 14:34 |
+| Terminale | Intero, con le righe e i tempi del film lungo | 23/09 07:10 |
+| Colpo della musica | Sull'animazione dopo il «yes», cioè sulla card «Deployed» che entra con la corsia; non sulla pressione | 23/09 10:42, 11:28 |
+| Schermate del polso | In fila, senza tornare a una schermata già lasciata | 23/09 13:01 |
+| Finale | Via la card del rilascio con la seconda vibrazione e via «Shipped. From your wrist.»: il tempo va alla carrellata «Every session, at a glance.» | 23/09 14:23 |
+| Esito | L'esito del lavoro resta come riga della lista sul polso: la card di payments-api dice «Released 2.8.0…» con il ✓ disegnato | 23/09 14:44 |
+| Carrellata | Blink a tempo fra le schermate del polso (lista, Panoramica); l'ultima transizione è la tapparella a 3 barre del film lungo, nata dalla scheda Context | 23/09 14:23, 13:25 |
+| Cartello | Logo ritagliato sul blu, senza disco nero; il cinturino esce intero dal bordo in alto, senza sfumare | 23/09 14:23 |
+| Fusione con l'analisi | Punti 1-8 dell'analisi del movimento, più la prova del punto 10 (sfocatura di movimento); fuori il 9 (3D, in attesa) e l'11-12 | 23/09 14:44-14:52 |
 | Testo glance | «Every session, at a glance.» | 22/09 21:04 |
-| Musica | «Brick By Brick», 110 bpm, taglio nuovo (sezione 4) | 22/09 20:55, 20:59 |
-| Notifica | Il Tethys del Pixel, lo stesso del film lungo. Senza riga di credito | 22/09 20:59 |
+| Musica | «Brick By Brick», 110 bpm, taglio della sezione 4 | 22/09 20:55; 23/09 |
+| Notifica | Il Tethys del Pixel, una volta sola. Senza riga di credito | 22/09 20:59; 23/09 14:23 |
 | Loudness | Guadagno costante più limitatore (`audio/normalize.py`); AAC con il coder «fast» | 22/09 21:34; 23/09 01:40 |
-| 3D | Prova con la scansione gratuita del Pixel Watch 4 prima di decidere. Se regge, Franz compra il modello del Pixel Watch 5 per la versione finale (sezione 6) | 23/09 01:21 |
+| 3D | In attesa della scelta di Franz sul modello (sezione 6) | 23/09 |
 
-## 3. Scaletta (76 battiti = 41,5 s a 110 bpm)
+## 3. Scaletta (71 battiti = 38,7 s a 110 bpm)
 
-**Modifica di Franz, 23/09 07:10, dopo la bozza 2:** il terminale torna intero, come nel film lungo, e le scene dopo si accorciano per fargli posto. Le righe sotto sono già quelle nuove.
+Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e la frase resta ferma 2 battiti. I numeri fra parentesi sono i punti dell'analisi del movimento.
 
-Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e la frase resta ferma 2 battiti.
+| Battiti | s | Scena | Cosa si vede | Testo |
+|---|---|---|---|---|
+| 0–5 | 0–2,7 | apertura | orologio frontale in ambient, luce ferma, già nella colonna di destra; la camera si avvicina piano (1); silenzio | «Claude Code, on your wrist.» |
+| 5–9 | 2,7–4,9 | asks | notifica Pixel: il display si accende sulla domanda; la camera si ferma di colpo sul tremito (1); la frase arriva da sfocata a nitida; la musica entra al 7 | «It asks.» |
+| 9–19 | 4,9–10,4 | speaks | tocco su ▶ al battito 4; l'onda della voce nasce dal tasto ▶ ed entra nel quadro (8); la voce della domanda da 4,5 | «It speaks.» |
+| 19–26 | 10,4–14,2 | answer | «1 · yes» / «2 · no» si staccano dal vetro con l'ombra sul display (6); pressione lunga al 23, il «yes» affonda, cresce e vira nel blu mentre la musica si ferma (25,25–25,75); sfocatura di movimento sull'espansione (10, prova) | — |
+| 26–40 | 14,2–21,8 | corsia | l'orologio laterale sale sulla risalita; la card «Deployed 2.8.0, smoke tests green» sul colpo della musica (27); le card salgono a velocità diverse e la camera con loro (5); «Say what's next.»; dettatura con la voce | «Say what's next.» |
+| 40–50,5 | 21,8–27,5 | lavoro | il terminale del PC, inclinato di circa 20°, con la camera che scorre accanto al cursore mentre Claude scrive (2); il polso ripete le righe; righe e tempi del film lungo | «Watch it work.» |
+| 50,5–52,5 | 27,5–28,6 | al polso | la finestra del terminale si rimpicciolisce ed entra nel display come card di payments-api in cima alla lista, «Released 2.8.0. Changelog updated, tagged v2.8.0», con il ✓ che si disegna mentre si posa (3); sfocatura di movimento sul volo (10, prova) | — |
+| 52,5–57 | 28,6–31,1 | lista | sotto la card ✓ scorrono storefront e blog | «Every session, at a glance.» |
+| 57–59 | 31,1–32,2 | Work | blink sul battito: il display si riapre su «Work» della Panoramica | — |
+| 59–63 | 32,2–34,4 | Context | blink: «Context» sul display; a sinistra la scheda Context del film lungo, con le barre che si riempiono (62 %, 18 %, 4 %); da 59,5 il resto del quadro sfuma e le 3 barre, piene, crescono fino a diventare i listelli della tapparella, che si chiude sul taglio | — |
+| 63–71 | 34,4–38,7 | cartello | i listelli si voltano fino a 65,5 e scoprono il cartello; il logo ritagliato sul blu, senza disco nero, da 64,5; l'orologio di tre quarti col cinturino intero fuori dal bordo in alto; «Free. Open source.», repo; avvisi da 67, leggibili per 4 battiti | — |
 
-| Battiti | s | Scena | Cosa si vede | Testo | Movimento (analisi, priorità) |
-|---|---|---|---|---|---|
-| 0–2 | 0–1,1 | risveglio | orologio frontale, display spento, silenzio | — | la camera si avvicina lentamente (1) |
-| 2–5 | 1,1–2,7 | asks | vibrazione con la notifica Pixel; il display si accende sulla domanda | «It asks.» | la camera si ferma sul tremito |
-| 5–10 | 2,7–5,5 | titolo | domanda ferma sul quadrante | «Claude Code, on your wrist.» | la camera arretra e scopre l'orologio (1) |
-| 10–20 | 5,5–10,9 | speaks | tocco su ▶ al battito 4, la voce della domanda da 4,5 | «It speaks.» | l'onda della voce nasce dal ▶ (8) |
-| 20–27 | 10,9–14,7 | answer | «1 · yes» / «2 · no»; pressione lunga al battito 24; il «yes» cresce e riempie il quadro mentre la musica si ferma (lo stacco, 26,25–26,75) | — | i tasti si staccano dal vetro (6); il «yes» cresce e vira nel blu |
-| 27–41 | 14,7–22,4 | corsia | orologio laterale che sale sulla risalita; card «Deployed 2.8.0, smoke tests green» **sul colpo della musica, al battito 28** (Franz, 23/09 11:28: il colpo va sull'animazione dopo la pressione, non sulla pressione); «Say what's next.»; dettatura con la voce; ✓ | «Say what's next.» | parallasse e carrellata verso l'alto (5); il ✓ apre il terminale |
-| 41–51,5 | 22,4–28,1 | lavoro | terminale del PC e orologio frontale, con le righe e i tempi del film lungo | «Watch it work.» | terminale in prospettiva, la camera scorre accanto al cursore (2) |
-| 51,5–60 | 28,1–32,7 | glance | la Panoramica sul polso, da «Open questions» a «Context»; finito il titolo, a sinistra, la scheda Context con le barre che si riempiono, come nel film lungo (Franz, 23/09 13:25: la Panoramica torna, e prende una battuta) | «Every session, at a glance.» | il terminale rimpicciolisce e diventa la card di payments-api; la lista si compone (3) |
-| 60–64 | 32,7–34,9 | fatto | la Panoramica resta ferma dove l'ha lasciata «glance»; la card ✓ «Released 2.8.0…» sale sopra la Panoramica con la seconda vibrazione, senza tornare alla card «Deployed» (Franz, 23/09 13:01: le schermate del polso vanno in fila) | — | il segno ✓ si disegna (4) |
-| 64–68 | 34,9–37,1 | shipped | orologio con la card ✓ sulla stessa schermata | «Shipped. From your wrist.» | la camera arretra (1) |
-| 68–76 | 37,1–41,5 | cartello | l'orologio rimpicciolisce e sale; logo, «Free. Open source.», repo, avvisi | — | il ✓ diventa il logo (4) |
+**Su tutto il corto:** la camera respira in ogni inquadratura ferma, con una deriva dell'1–2 % (7); l'ambient dell'apertura resta fermo.
 
-**Su tutto il film:** la camera respira in ogni inquadratura ferma, con una deriva dell'1–2 % (7). Sfocatura di movimento solo sui 2–3 scatti veloci, dopo una prova su un tratto (10).
-
+**Blink:** quelli del film lungo, le palpebre che si chiudono sul battito e si riaprono sulla schermata dopo. La frase di «lista» se ne va prima del blink; nessuna parola vola in alto.
 
 ## 4. Musica e suoni
 
-**Taglio** dalla traccia originale (scheda: 110 bpm, primo battito a 0,025 s): battute `0-1`, `0-1`, `0-11`, `9-10`, `11-13`, `43-45`. Sono 18 battute, 72 battiti: la musica parte al battito 4 del film e finisce con l'ultimo. La battuta 0 suonata tre volte allunga l'introduzione di una battuta, così il colpo cade sull'entrata della corsia (28) e non sulla pressione del «yes»; la battuta 9 ripetuta è quella della Panoramica: la traccia alterna due battute, A e B, e dopo la 10 (A) viene una B, così il giro resta intero.
+**Taglio** dalla traccia originale (scheda: 110 bpm, primo battito a 0,025 s): battute `0-1`, `0-11`, `9-10`, `11-12`, `43-45`. Sono 16 battute, 64 battiti: la musica entra al battito 7 del film, due battiti dopo la notifica, e finisce con l'ultimo.
 
 | Battiti del film | Traccia |
 |---|---|
-| 0–4 | silenzio: solo la notifica |
-| 4–28 | introduzione, 6 battute: la battuta 0 tre volte, poi 1–3; nell'ultima la musica si ferma a 26,25–26,75 e risale |
-| 28 | colpo della parte forte, sulla card «Deployed» della corsia |
-| 28–60 | parte forte, battute 4–10 più la 9 ripetuta (56–60, la Panoramica), 12 dB sotto le voci |
-| 60–64 | battuta quieta (11), sulla card ✓ |
-| 64–68 | ripresa forte (12), su «Shipped.» |
-| 68–76 | il finale vero (43–44) sotto il cartello, fino all'ultimo fotogramma |
+| 0–7 | silenzio: il titolo in ambient, poi la notifica |
+| 7–27 | introduzione, 5 battute: la battuta 0 ripetuta, poi 1–3; nell'ultima la musica si ferma a 25,25–25,75 mentre il «yes» riempie il quadro, e risale mentre l'orologio laterale sale |
+| 27 | colpo della parte forte, sulla card «Deployed» |
+| 27–59 | parte forte: battute 4–10, poi la 9 ripetuta (55–59), un giro A/B intero, sotto la lista e «Work»; 12 dB sotto le voci |
+| 59–63 | battuta quieta (11) con la sua risalita, sotto la scheda Context e la tapparella |
+| 63–71 | il finale vero (43–44) sotto il cartello, fino all'ultimo fotogramma |
 
-**Suoni:** gli stessi del film lungo: tocchi, pressione lunga, soffio all'apertura del terminale, tick delle righe. La notifica è quella del Pixel, due volte. Voci: `question.wav` e `say.wav`, già registrate.
+**Suoni:** gli stessi del film lungo: tocchi, pressione lunga, soffio all'apertura del terminale, tick delle righe. La notifica è quella del Pixel, una volta. Voci: `question.wav` e `say.wav`, già registrate.
 
 ## 5. Architettura
 
-- **Composizione `Short`** accanto a `Film`, con la sua scaletta (`timeline.short.json`) e la sua musica (`music.short.wav`). La scaletta passa per le stesse regole di `validateTimeline` e per `check.ts`.
-- **Il motore diventa parametrico.** Oggi `Film.tsx` legge una costante di modulo (`TIMELINE`, `GRID`); diventa un contesto passato dalla composizione.
-  - **Verifica:** l'84 s deve restare identico, fotogramma per fotogramma, su un campione di fotogrammi resi prima e dopo il riordino.
-- **Tavolozza per scaletta.** Un campo `palette` sostituisce `ACT_BG` per quella scaletta. Il corto usa lo stesso blu per tutti gli atti.
-- **Pezzi nuovi**, ciascuno con i suoi test scritti prima:
-  1. `sleep` che parte già al buio;
-  2. camera che si avvicina e arretra per scena (zoom da / a, con curva);
-  3. terminale in prospettiva con la camera che lo segue;
-  4. takeover al contrario (il terminale diventa una card sul display);
-  5. card ✓ sul display con il tratto che si disegna (`@remotion/paths`, `evolvePath`);
-  6. il ✓ che diventa il logo (`interpolatePath` sul logo SVG);
-  7. tasti in profondità;
-  8. parallasse della corsia;
-  9. camera che respira (`@remotion/noise` o le curve che ci sono).
+- **Composizione `Short`** accanto a `Film`, con la sua scaletta (`timeline.short.json`) e la sua musica (`music.short.wav`); motore parametrico, tavolozza per scaletta. Fatto nei piani 1-2.
+- **Il film lungo non cambia:** ogni pezzo nuovo è un campo opzionale della scaletta, senza valori di default che tocchino le scene esistenti. Verifica: i 4 fotogrammi di regressione identici dopo ogni pezzo.
+- **Piano 3, la struttura** (una bozza intera alla fine):
+  1. apertura: ambient a luce ferma già dal fotogramma 0 e già nella colonna di destra, titolo sopra, che resta fino alla notifica; il respiro dell'ambient si spegne con un campo della scaletta;
+  2. scene spostate secondo la sezione 3; via «done» e «shipped»;
+  3. la card ✓ di payments-api ferma in cima alla lista (senza ancora il volo dal terminale): l'esito c'è fin dalla prima bozza;
+  4. carrellata in tre scene con i blink del film lungo, solo palpebre;
+  5. scheda Context con le barre che diventano la tapparella, e la tapparella che apre il cartello: la tapparella del film lungo dura 7 battiti, qui 6 a cavallo del taglio (da 59,5 a 65,5), perché la scena Context ne ha 4;
+  6. cartello: logo ritagliato e cinturino che esce dal bordo, come opzioni che il film lungo non usa, e un passo del cartello che parte mentre i listelli si voltano (logo a 1,5 battiti dal taglio, avvisi a 4);
+  7. musica tagliata secondo la sezione 4.
+- **Piano 4, il movimento** (una bozza dopo ogni punto, per giudicarli uno alla volta), in ordine d'impatto:
+  1. (3) takeover al contrario: la finestra del terminale entra nel display e diventa la card ✓;
+  2. (2) terminale in prospettiva con la camera che scorre;
+  3. (6) tasti che si staccano dal vetro;
+  4. (5) parallasse della corsia;
+  5. (7) camera che respira;
+  6. (8) onda della voce dal ▶;
+  7. (10) sfocatura di movimento, prima sull'espansione del «yes», poi sul volo del terminale: si misura il costo di resa e si confronta il colore prima e dopo; resta solo se Franz la approva.
 - **Consegna:** `deliver.sh` riceve il nome della composizione. Due versioni: piena e sotto i 10 MB.
 
 ## 6. Il 3D dell'orologio
@@ -109,12 +118,16 @@ La differenza principale rispetto agli esempi è l'orologio che ruota nello spaz
 
 ## 7. Verifica
 
-1. `npm run check`: verde, con tutte e due le scaletta.
-2. L'84 s identico dopo il riordino del motore (campione di fotogrammi confrontati pixel per pixel).
-3. I fotogrammi chiave del corto, uno per scena, approvati da Franz prima della resa intera.
-4. Anteprima a mezza risoluzione con audio.
-5. Il file finale: 37,1 s (o 39,3), −14 LUFS, picco ≤ −1 dB, sincronia 0,0 ms, versione leggera sotto i 10 MB, nessuno scatto dell'AAC (decodificato confrontato con il WAV).
+1. `npm run check` verde, con tutte e due le scalette; ogni pezzo con i suoi test scritti prima.
+2. Il film lungo identico: i 4 fotogrammi di regressione, pixel per pixel, dopo ogni pezzo.
+3. Una bozza a mezza risoluzione con audio alla fine del piano 3 e dopo ogni punto del piano 4.
+4. Misure sulla bozza: il colpo della musica sulla card «Deployed»; lo stacco dentro l'espansione del «yes»; la tapparella sull'inizio del finale; l'ambient senza variazioni di luce prima della notifica.
+5. Il file finale: 38,7 s, −14 LUFS, picco ≤ −1 dB, sincronia 0,0 ms, versione leggera sotto i 10 MB, nessuno scatto dell'AAC.
 
 ## 8. Fuori perimetro
 
-Effetti WebGL (`@remotion/effects`, da installare e mai provati qui), particellari, lampi di luce, lettere che esplodono, 3D fotorealistico da reel. Si riaprono solo su richiesta di Franz.
+- Il 3D dell'orologio (9): aspetta la scelta di Franz sul modello.
+- Effetti WebGL (11), 3D fotorealistico da reel (12), particellari, lampi di luce, lettere che esplodono.
+- Il ✓ che diventa il logo: nel finale nuovo la tapparella lega le barre al marchio.
+
+Si riaprono solo su richiesta di Franz.
