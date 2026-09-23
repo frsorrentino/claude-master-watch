@@ -102,3 +102,14 @@ test("la risposta tiene l'orologio dove l'ha lasciato «It speaks»: senza testo
   const by = (id: string) => t.scenes.find((s: { id: string }) => s.id === id);
   assert.equal(watchColumn(by("answer")), watchColumn(by("speaks")));
 });
+
+test("il respiro del sonno si spegne con false; altri valori sono un errore", () => {
+  const t = base();
+  t.scenes = [
+    { id: "wake", at: 0, len: 5, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, text: { lines: ["Claude Code,", "on your wrist."], accent: "wrist.", at: 0.5 }, sleep: { len: 8, titleLead: 0, breath: "no" } },
+    { id: "asks", at: 5, len: 4, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, text: { lines: ["It asks."], accent: "asks." } },
+  ];
+  assert.match(problems(t).join("\n"), /wake: il respiro del sonno è «no»: serve true o false/);
+  t.scenes[0].sleep.breath = false;
+  assert.deepEqual(problems(t), []);
+});

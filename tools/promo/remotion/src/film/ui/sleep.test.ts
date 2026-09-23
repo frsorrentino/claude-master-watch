@@ -86,3 +86,15 @@ test("con la lunghezza in battiti il display respira sui puntini, ogni volta pi�
   assert.ok(l1 > AMBIENT && l2 > l1 && l3 > l2, `i tre respiri crescono: ${l1.toFixed(3)} ${l2.toFixed(3)} ${l3.toFixed(3)}`);
   assert.ok(Math.abs(sleepAt(at(-2.5), L).light - AMBIENT) < 1e-9, "fra un respiro e l'altro torna ad ambient");
 });
+
+test("senza respiro l'ambient resta a luce ferma fino al taglio (corto, Franz 23/09 14:34)", () => {
+  for (let p = HUSH; p < SLEEP_CUT; p += 0.01) {
+    assert.ok(about(sleepAt(p, 8, false).light, AMBIENT), `a ${p.toFixed(2)} la luce è ${sleepAt(p, 8, false).light}`);
+    assert.ok(about(sleepAt(p, 8, false).halo, HALO), `a ${p.toFixed(2)} l'alone è ${sleepAt(p, 8, false).halo}`);
+  }
+  assert.ok(sleepAt(SLEEP_CUT, 8, false).light > 1.2, "la notifica riaccende il display come sempre");
+});
+test("con il respiro, com'è nel film lungo, la luce dell'ambient sale sui puntini", () => {
+  const top = Math.max(...Array.from({ length: 60 }, (_, k) => sleepAt(HUSH + (SLEEP_CUT - HUSH) * (k / 60), 8).light));
+  assert.ok(top > AMBIENT + 0.01, `il respiro arriva a ${top}`);
+});

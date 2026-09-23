@@ -3,30 +3,23 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import { TAKEOVER_CUT } from "./ui/takeover.ts";
+import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
+import { dollyAt } from "./dolly.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
-test("il corto dura 76 battiti (41,5 s: la Panoramica ha preso una battuta), con la musica fino all'ultimo fotogramma", () => assert.equal(totalBeats(short), 76));
+test("il corto dura 75 battiti dopo l'apertura nuova; il piano 3 lo porta a 71 con la carrellata (Task 2)", () => assert.equal(totalBeats(short), 75));
 test("il colpo della musica cade sull'entrata della corsia, non sulla pressione: la card «Deployed» compare sul colpo (Franz, 23/09 11:28)", () => {
-  // taglio 0-1 0-1 0-11 11-13 43-45: sei battute d'introduzione, il colpo (la battuta 4 della traccia) al battito 28. Lo
-  // stacco (la musica si ferma a 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro, la
-  // risalita mentre l'orologio laterale sale, il colpo sulla card
+  // taglio 0-1 0-11 9-10 11-12 43-45 dal battito 7: cinque battute d'introduzione, il colpo (la battuta 4 della traccia) al 27.
+  // Lo stacco (la musica si ferma a 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number };
-  const drop = (short.musicDelayBeats ?? 0) + 6 * 4, stop = drop - 4 + 2.25;
+  const drop = (short.musicDelayBeats ?? 0) + 5 * 4, stop = drop - 4 + 2.25;
   const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
-  assert.equal(drop, 28);
+  assert.equal(drop, 27);
   assert.equal(loop.at + fl.at, drop);
   assert.ok(loop.at < drop && drop - loop.at <= 1, `la corsia entra al battito ${loop.at}, il colpo è al ${drop}`);
   assert.ok(burst <= stop && stop <= filled, `il «yes» cresce da ${burst} a ${filled}, lo stacco è al ${stop}`);
-});
-test("la seconda vibrazione cade sulla battuta quieta (60) e «Shipped.» sulla ripresa (64)", () => {
-  // taglio della musica 0-1 0-1 0-11 9-10 11-13 43-45: 14 battute prima di quella quieta (la 11 della traccia; la 9
-  // ripetuta è la battuta della Panoramica), poi la ripresa (la 12) e il finale (43-44) sotto il cartello
-  assert.equal(short.scenes.find((s) => s.id === "done")!.at, 60);
-  assert.equal(short.scenes.find((s) => s.id === "shipped")!.at, 64);
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 1 + 11 + 1) * 4, 60);
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 1 + 11 + 1 + 2 + 2) * 4, totalBeats(short));
 });
 
 const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
@@ -44,12 +37,12 @@ test("la corsia comincia dopo l'espansione, ma card, voce, dettatura e invio res
   const loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; cards: { dictation?: { tap: number } }[] };
   const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
-  assert.equal(loop.at + fl.at, 28);
-  assert.equal(loop.at + fl.at + fl.len, 40);
-  assert.equal(loop.at + say.at, 32);
-  assert.equal(loop.at + fl.cards.find((c) => c.dictation)!.dictation!.tap, 31.5);
-  assert.equal(loop.at + loop.takeover!.press!, 40.5);
-  assert.equal(loop.at + loop.len, 41);
+  assert.equal(loop.at + fl.at, 27);
+  assert.equal(loop.at + fl.at + fl.len, 39);
+  assert.equal(loop.at + say.at, 31);
+  assert.equal(loop.at + fl.cards.find((c) => c.dictation)!.dictation!.tap, 30.5);
+  assert.equal(loop.at + loop.takeover!.press!, 39.5);
+  assert.equal(loop.at + loop.len, 40);
 });
 test("attorno alla card ✓ l'orologio resta nella stessa colonna: niente salti ai tagli", () => {
   assert.equal(watchColumn(byId("done")), watchColumn(byId("glance")));
@@ -97,4 +90,22 @@ test("la Panoramica torna nel corto: dopo il titolo, a sinistra, la scheda Conte
   const clipAt = (w: { clipStart?: number; hold?: number; rate?: number }, beat: number) => (w.clipStart ?? 0) + Math.max(0, beat - (w.hold ?? 0)) * (60 / short.bpm) * (w.rate ?? 1);
   const inLong = clipAt(limits.watch!, lf.at), inShort = clipAt(glance.watch!, aside.at);
   assert.ok(Math.abs(inShort - inLong) <= 0.5, `sul display la scheda Context è a ${inLong.toFixed(2)} s della clip, nel corto la scheda compare a ${inShort.toFixed(2)} s`);
+});
+
+test("l'apertura: il titolo sull'orologio in ambient a luce ferma, poi la notifica e «It asks.» (Franz, 23/09 14:23)", () => {
+  const wake = byId("wake"), asks = byId("asks"), speaks = byId("speaks");
+  assert.deepEqual(wake.text?.lines, ["Claude Code,", "on your wrist."]);
+  assert.equal(wake.sleep?.breath, false);
+  assert.equal(wake.sleep?.titleLead, 0);
+  // già ad ambient al fotogramma 0: la finestra del sonno comincia prima del film e il display cala entro HUSH (ui/sleep.ts)
+  const windowStart = wake.at + wake.len - SLEEP_CUT * wake.sleep!.len;
+  assert.ok(windowStart + HUSH * wake.sleep!.len <= 0, `il display arriva ad ambient al battito ${windowStart + HUSH * wake.sleep!.len}`);
+  assert.equal(asks.at, wake.at + wake.len);
+  assert.ok(speaks.at + (speaks.text?.at ?? 0) - asks.at <= 5, "da «It asks.» a «It speaks.» al più 5 battiti");
+  assert.equal(short.scenes.find((s) => s.id === "title"), undefined);
+});
+test("la camera passa da una scena all'altra senza scatti: apertura, «It asks.», «It speaks.»", () => {
+  const [a, b, c] = ["wake", "asks", "speaks"].map(byId);
+  assert.equal(dollyAt(a.watch!.dolly, 1), dollyAt(b.watch!.dolly, 0));
+  assert.equal(dollyAt(b.watch!.dolly, 1), dollyAt(c.watch!.dolly, 0));
 });

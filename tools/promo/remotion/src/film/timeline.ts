@@ -63,7 +63,7 @@ export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
  *  `musicFrom`: il secondo della traccia da cui riparte. Dopo un silenzio la musica non riprende da dove sarebbe arrivata:
  *  attacca il giro principale (Franz, 19/09 19:41). Misurato su `music.v9.wav`: l'attacco è a 8,699 s, +7,2 dB sulla
  *  battuta prima. */
-export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number; titleLead?: number };   // `titleLead`: battiti prima della notifica in cui si scrive la frase della scena dopo (TITLE_LEAD se manca)   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
+export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number; titleLead?: number; breath?: boolean };   // `breath`: false = ambient a luce ferma, senza il respiro sui puntini (corto, 23/09)   // `titleLead`: battiti prima della notifica in cui si scrive la frase della scena dopo (TITLE_LEAD se manca)   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
 /** Le due bande degli account: il campo si apre in due (lavoro a sinistra, personale a destra) e alla fine quella di
  *  sinistra si riprende il quadro, diventando il fondo della sezione dopo. `open` e `win` in battiti. */
 export type BandsCue = { left: string; right: string; open: number; win: number };
@@ -149,6 +149,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // può anche essere negativo: la musica rientra PRIMA della notifica, ancora col display addormentato (prova 21/09 16:42)
     if (s.sleep?.musicBackBeats !== undefined && !Number.isInteger(s.sleep.musicBackBeats * 2)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dal taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
+    if (s.sleep?.breath !== undefined && typeof s.sleep.breath !== "boolean") say(`il respiro del sonno è «${s.sleep.breath}»: serve true o false`);
     if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
     if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
     if (s.out === "blink" && s.text && !s.text.accent) say("il battito di ciglia vuole una parola in colore da far crescere");   // senza testo sono le sole palpebre: il passaggio fra due schermate dello stesso momento (Franz, 21/09)

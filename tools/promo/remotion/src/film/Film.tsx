@@ -69,11 +69,13 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const next = TIMELINE.scenes[idx + 1];
   const nap = scene.sleep ?? prev?.sleep;
   const napOwn = Boolean(scene.sleep);
-  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total), nap.len) : null;
+  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total), nap.len, nap.breath !== false) : null;
   const light = sleep ? sleep.light : 1;
   const halo = sleep ? sleep.halo : 1;
   const mv = sleep && napOwn ? sleep.move : 0;
-  const titleOn = sleep && napOwn ? sleep.title : 1;
+  // con `titleLead` la frase della scena dopo aspetta la notifica: la frase di chi dorme resta fino al taglio ed esce con la
+  // sua uscita normale (corto, 23/09: il titolo apre il film in ambient). Senza, com'era nel film lungo
+  const titleOn = sleep && napOwn && nap?.titleLead === undefined ? sleep.title : 1;
   const drift = sleep ? 1 - sleep.still : 1;
   // nella chiusura delle due finestre la frase cammina verso la colonna dei titoli, dove la scena dopo metterà la sua
   const lift = scene.text?.carry ? interpolate(frame - spanFrames(GRID, scene.at, scene.text.at ?? 0), [0, 14], [0, -THEME.title * 1.04], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) }) : 0;

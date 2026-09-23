@@ -64,7 +64,7 @@ const breathOnDots = (b: number): number => {
   return v;
 };
 
-export const sleepAt = (p: number, len?: number): Sleep => {
+export const sleepAt = (p: number, len?: number, breathe = true): Sleep => {
   // lo spostamento comincia quando il display è già ad ambient e finisce prima del taglio: mezzo secondo di carrello visibile
   const move = camera(ramp(p, 0.125, 0.3));
   // il titolo della scena che dorme se ne va appena prima che si scriva quello nuovo: due frasi insieme non si leggono
@@ -73,7 +73,9 @@ export const sleepAt = (p: number, len?: number): Sleep => {
   // cambia posizione»): al buio la deriva è l'unico movimento in quadro, e in cinque battiti sposta l'orologio di dieci
   // pixel. Si spegne con il carrello, resta spenta per tutto il sonno, e torna piano dopo la notifica.
   const still = smooth(ramp(p, 0.125, 0.3)) * (1 - smooth(ramp(p, SLEEP_CUT + 0.06, SLEEP_CUT + 0.2)));
-  const breath = len ? breathOnDots((p - SLEEP_CUT) * len) : breathAt(p);
+  // `breathe` false: l'ambient resta a luce ferma. Il respiro serviva allo stop and go della musica del film lungo; nel
+  // corto non c'è (Franz, 23/09 14:34)
+  const breath = !breathe ? 0 : len ? breathOnDots((p - SLEEP_CUT) * len) : breathAt(p);
   if (p < SLEEP_CUT) {
     const off = dimmer(ramp(p, 0.0625, HUSH));   // mezzo battito, e finisce esatta sul battito: lo stacco è secco (Franz, 19/09 19:41)
     return {
