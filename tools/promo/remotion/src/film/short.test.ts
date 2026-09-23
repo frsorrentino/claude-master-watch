@@ -18,10 +18,10 @@ test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma"
   assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
 });
 test("il colpo della musica cade su «Deployed», e lo stop sul «yes» (Franz, 23/09 11:28 e 22:17)", () => {
-  // taglio 0-1 0-4 3-3.625 2.625-2.75 3.75-11 41-45 (23/09 23:16): una battuta d'attacco, l'introduzione 0-3, ancora la
-  // battuta 3 (quella che nel brano precede il colpo) ma SENZA il suo stop, che diventa il mezzo battito della 2, e il colpo
-  // (la battuta 4) al 24. Uno stop solo, a 2,5-3 della prima battuta 3, mentre il «yes» riempie il quadro: con la 3 ripetuta
-  // intera gli stop erano due di fila (Franz, 23:16)
+  // taglio 0-1 0-4 26-27 4-11 41-45 (23/09 23:40): una battuta d'attacco, l'introduzione 0-3, poi la battuta 26 (la
+  // preparazione del secondo colpo del brano, piana e senza stop) e il colpo (la battuta 4) al 24, su «Deployed». Uno stop
+  // solo, a 2,5-3 della battuta 3, mentre il «yes» riempie il quadro: con la 3 ripetuta, anche senza il suo stop, si
+  // sentivano due preparazioni di fila (Franz, 23:16 e 23:34)
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; width?: number; cards: { text?: string; lines?: string[]; kind?: string; hold?: number }[] };
   const drop = (short.musicDelayBeats ?? 0) + 4 + 5 * 4, stop = 4 + 3 * 4 + 2.5;
@@ -190,7 +190,7 @@ test("la scheda Context si legge con i valori finali prima del quarto blink (Fra
   assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
 test("l'accordo finale cade quando nasce il logo, dopo lo slogan, e si spegne quando arriva il nome (Franz, 23/09 19:43 e 21:13)", () => {
-  // taglio 0-1 0-4 3-11 41-45: 4 battiti d'attacco, le battute 0-3, ancora la 3 e le 4-10, le 41-42 che portano al finale, il finale piano
+  // taglio 0-1 0-4 26-27 4-11 41-45: 4 battiti d'attacco, le battute 0-3, la 26, le 4-10, le 41-42 che portano al finale, il finale piano
   // (43) sotto lo slogan e l'accordo (44), che si spegne in una battuta. Il taglio sta nel comando di cut_track.py: qui si
   // tiene il conto delle battute, la traccia vera si misura sulla resa (accordo al 64, silenzio dal 68)
   const slogan = byId("slogan"), end = byId("end");

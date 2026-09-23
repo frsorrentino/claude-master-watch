@@ -64,10 +64,11 @@ test("la finestra nel display è la stessa finestra del quadro: interpolare e po
     for (const k of ["x", "y", "w", "h", "r"] as const) assert.ok(Math.abs(r[k] - lerp(a[k], b[k])) < 1e-9, `p ${p} ${k}`);
   }
 });
-test("la card passa SOPRA la cornice: la copia davanti all'orologio c'è solo mentre la finestra attraversa la cassa (Franz, 23/09 22:22)", () => {
-  assert.equal(takeInFrontAt(0), 0);                 // sul taglio si vede l'orologio: la finestra gli sta dietro
-  assert.equal(takeInFrontAt(0.3), 0);
-  assert.equal(takeInFrontAt(0.55), 1);              // mentre attraversa la cassa la card sta davanti alla cornice
+test("la finestra passa SOPRA la cornice da tutti i lati: davanti all'orologio prima che un suo bordo tocchi la cassa (Franz, 23/09 22:22 e 23:34)", () => {
+  // i bordi alto e basso toccano la cornice verso 0,13 del volo, il destro verso 0,28, il sinistro verso 0,5: la copia
+  // davanti deve essere piena entro 0,12. Franz ha scelto così sapendo che per un attimo la finestra copre l'orologio
+  assert.equal(takeInFrontAt(0), 0);                 // sul taglio l'orologio è davanti al terminale, come nell'ultimo fotogramma
+  assert.equal(takeInFrontAt(0.12), 1);
   assert.equal(takeInFrontAt(0.8), 1);
   assert.equal(takeInFrontAt(0.95), 0);              // si posa sotto il vetro, dove c'è la card vera
   assert.equal(takeInFrontAt(1), 0);

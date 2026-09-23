@@ -60,7 +60,8 @@ export const screenFadeAt = (frame: number, total: number, frames: number): numb
 export const toDisplay = (r: Rect, dx: number, dy: number, u: number): Rect => ({ x: (r.x - dx) / u + 240, y: (r.y - dy) / u + 240, w: r.w / u, h: r.h / u, r: r.r / u });
 
 /** Quanto si vede la copia del volo DAVANTI all'orologio (Franz, 23/09 22:22: la card entrando passava sotto la cornice,
- *  deve passarle sopra). Sul taglio niente: l'orologio resta davanti al terminale. Mentre la finestra attraversa la cassa
- *  (0,3-0,55) sale davanti, cornice compresa; quando è ormai dentro lo schermo (0,8-0,95) lascia il posto alla copia sotto
- *  il vetro, che all'arrivo è la card vera. */
-export const takeInFrontAt = (p: number): number => inOut(ramp(p, 0.3, 0.55)) * (1 - inOut(ramp(p, 0.8, 0.95)));
+ *  deve passarle sopra; 23:34: anche a destra). I bordi alto e basso della finestra toccano la cornice verso 0,13 del volo,
+ *  il destro verso 0,28: la copia davanti è piena entro 0,12, e per un attimo la finestra copre l'orologio (scelta di
+ *  Franz). Sul taglio niente, come nell'ultimo fotogramma del terminale. Quando è ormai dentro lo schermo (0,8-0,95) lascia
+ *  il posto alla copia sotto il vetro, che all'arrivo è la card vera. */
+export const takeInFrontAt = (p: number): number => inOut(ramp(p, 0, 0.12)) * (1 - inOut(ramp(p, 0.8, 0.95)));
