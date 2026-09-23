@@ -110,6 +110,10 @@ test("l'apertura: il quadrante con la complication, poi la notifica, «Claude ha
 });
 test("la camera passa da una scena all'altra senza scatti: quadrante, notifica, tocco su ▶", () => {
   const [a, b, c] = ["face", "asks", "speaks"].map(byId);
+  // lo stesso orologio: il quadrante sta già dove arriverà la notifica, non al centro (Franz, 23/09 22:08)
+  for (const s of [a, b, c]) assert.equal(watchColumn(s), watchColumn(b), `${s.id} sposta l'orologio`);
+  for (const s of [a, b]) assert.equal(s.watch!.exit, undefined, `${s.id} fa uscire l'orologio`);
+  for (const s of [b, c]) assert.equal(s.watch!.enter, undefined, `${s.id} fa entrare l'orologio`);
   assert.equal(dollyAt(a.watch!.dolly, 1), dollyAt(b.watch!.dolly, 0));
   assert.equal(dollyAt(b.watch!.dolly, 1), dollyAt(c.watch!.dolly, 0));
 });

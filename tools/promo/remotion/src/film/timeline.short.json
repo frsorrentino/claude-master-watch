@@ -13,7 +13,7 @@
     "close": ["#000000", "#000000", "#000000", "rgb(0,0,0)"]
   },
   "scenes": [
-    {"id": "face", "at": 0, "len": 1.5, "act": "know", "watch": {"view": "front", "clip": "scenes/n_face.mp4", "clipStart": 0.3, "dolly": {"from": 1, "to": 1.08}}},
+    {"id": "face", "at": 0, "len": 1.5, "act": "know", "watch": {"view": "front", "column": "right", "clip": "scenes/n_face.mp4", "clipStart": 0.3, "dolly": {"from": 1, "to": 1.08}}},
     {"id": "asks", "at": 1.5, "len": 4, "act": "know", "watch": {"view": "front", "clip": "scenes/n_speaks.mp4", "clipStart": 11.2, "dolly": {"from": 1.08, "to": 1.12, "ease": "out"}}, "text": {"lines": ["Claude has", "a question."], "accent": "question."}, "fx": [{"kind": "shake", "at": 0.5}]},
     {"id": "speaks", "at": 5.5, "len": 6.5, "act": "know", "watch": {"view": "front", "clip": "scenes/n_speaks.mp4", "clipStart": 18.458, "dolly": {"from": 1.12, "to": 1, "ease": "out"}}, "text": {"lines": ["Hear it out."], "accent": "out.", "at": 0.5}, "fx": [{"kind": "tap", "at": 0.5, "x": 347, "y": 90}, {"kind": "spoken", "at": 1.0, "len": 8.5, "voice": "question.wav", "words": "question.words.json"}]},
     {"id": "answer", "at": 12, "len": 7, "act": "act", "watch": {"view": "front", "column": "right", "clip": "scenes/n_answer.mp4", "clipStart": 15.554, "steady": true}, "fx": [{"kind": "longPress", "at": 4.0, "len": 1.5}, {"kind": "optionsBuild", "at": 0.5, "len": 6.5, "yes": [26, 167, 428, 111], "no": [26, 287, 428, 109], "yesLabel": "1 · yes", "noLabel": "2 · no", "pressAt": 3.5}], "takeover": {"len": 2.5, "x": 960, "y": 413, "w": 920, "h": 239, "r": 119, "tilt": 0, "color": "#D3E3FD", "toColor": "#242A42", "body": "plain", "tint": "grow"}},
