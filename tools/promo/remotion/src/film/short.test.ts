@@ -5,7 +5,7 @@ import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
-import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
+import { asideAt, contextFill, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
 import { spanFrames } from "./beats.ts";
 import { laneArrivals } from "./ui/heroes.ts";
 import { BLEED_LIFT, closingAt } from "./moves.ts";
@@ -92,7 +92,9 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   assert.equal(corto.watch!.fadeOut, undefined);
   assert.equal(corto.watch!.screenFade, 1);
   assert.equal(lungo.watch!.fadeOut, 1.5);
-  const senza = (s: typeof corto) => ({ ...s, watch: { ...s.watch!, clip: "", fadeOut: undefined, screenFade: undefined }, fx: (s.fx ?? []).map((f) => (f.kind === "terminalPlane" ? { ...f, lines: [], times: [] } : f)) });
+  // e il modello: il corto dice Opus 5.5 (Franz, 23/09 22:46); il film lungo, già pubblicato, resta com'è
+  assert.equal((tc as unknown as { model: string }).model, "Opus 5.5 · Claude Max");
+  const senza = (s: typeof corto) => ({ ...s, watch: { ...s.watch!, clip: "", fadeOut: undefined, screenFade: undefined }, fx: (s.fx ?? []).map((f) => (f.kind === "terminalPlane" ? { ...f, lines: [], times: [], model: "" } : f)) });
   assert.deepEqual(senza(corto), senza(lungo));
   // la scena finisce con il terminale (5 + 5,5 battiti): il film lungo lo tiene fermo 1,5 battiti in più, che nel corto
   // servono a «Every session, at a glance.» (5 parole, 4,5 battiti)
@@ -167,29 +169,25 @@ test("il terzo blink porta «Open questions» con la sua scheda a sinistra, come
   assert.deepEqual([a.panel, a.n, a.note, a.quote], [lq.panel, lq.n, lq.note, lq.quote]);
   assert.deepEqual([a.at, a.len, a.fadeIn, a.draw], [0, q.len, 0.2, 0.5]);
 });
-test("la scheda Context si legge con i valori finali per almeno 0,9 battiti prima che sfumi (revisione del 23/09, scelta B di Franz)", () => {
-  // si contano i fotogrammi in cui i tre valori sono già quelli finali e scheda e testo sono pieni, con le stesse funzioni
-  // che usa il componente (ui/aside.ts): il test di prima misurava dall'ingresso alla tapparella e passava anche quando
-  // i valori finali non si vedevano mai
+test("la scheda Context si legge con i valori finali prima del quarto blink (Franz, 23/09 22:17: blink al passo, poi le sole barre)", () => {
+  // si contano i fotogrammi con i tre valori finali e la scheda piena, con le funzioni del componente (ui/aside.ts)
   const g = { bpm: short.bpm, fps: short.fps, offsetSeconds: short.offsetSeconds };
-  const ctx = byId("context"), after = byId("slogan");   // dopo il Context lo slogan su nero (23/09 21:13), prima era il cartello
+  const ctx = byId("context");
   const aside = (ctx.fx ?? []).find((f) => f.kind === "aside") as { at: number; len: number; panel: string; out?: string; rows: { pct: number }[]; fadeIn?: number; draw?: number };
   assert.equal(aside.panel, "context");
-  assert.equal(aside.out, "bars");
+  assert.equal(aside.out, undefined);                                // le barre diventano la tapparella nella scena dopo
   assert.equal(aside.rows.length, 3);
-  assert.equal(ctx.at + ctx.len, after.at);
-  const total = spanFrames(g, ctx.at, ctx.len), blindStart = total - Math.round(spanFrames(g, ctx.at, ctx.blinds!.len) * BLIND_CUT);
   const from = spanFrames(g, ctx.at, aside.at), len = spanFrames(g, ctx.at + aside.at, aside.len);
   const fi = aside.fadeIn === undefined ? undefined : spanFrames(g, ctx.at + aside.at, aside.fadeIn);
   const dr = aside.draw === undefined ? undefined : spanFrames(g, ctx.at + aside.at, aside.draw);
   let readable = 0;
-  for (let f = 0; f < total; f++) {
+  for (let f = 0; f < spanFrames(g, ctx.at, ctx.len); f++) {
     const s = asideAt(f, from, len, fi, dr);
     const final = aside.rows.every((r, k) => Math.round(r.pct * contextFill(s.d, k)) === r.pct);
-    if (final && s.enter >= 0.999 && f < blindStart && contextTextAt(f, blindStart) >= 0.999) readable++;
+    if (final && s.enter >= 0.999 && fadeOutAt(f, from + len) >= 0.999) readable++;
   }
   const beats = readable / (g.fps * 60 / g.bpm);
-  assert.ok(beats >= 0.9, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
+  assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
 test("l'accordo finale cade quando nasce il logo, dopo lo slogan, e si spegne quando arriva il nome (Franz, 23/09 19:43 e 21:13)", () => {
   // taglio 0-1 0-4 3-11 40-45: 4 battiti d'attacco, le battute 0-3, ancora la 3 e le 4-10, le 40-42 che portano al finale, il finale piano
@@ -228,10 +226,22 @@ test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si l
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `la scheda Work si legge per ${beats.toFixed(2)} battiti`);
 });
-test("il finale su nero: la tapparella va nel nero, lo slogan, poi il cartello su nero come nel film lungo (Franz, 23/09 21:13)", () => {
-  const ctx = byId("context"), slogan = byId("slogan"), end = byId("end");
-  assert.equal(ctx.blinds?.to, "black");
-  assert.equal(slogan.at, ctx.at + ctx.len);
+test("il finale su nero: dopo il quarto blink le sole barre crescono di seguito, la tapparella si volta a strisce nere, lo slogan, il cartello (Franz, 23/09 21:13 e 22:17)", () => {
+  const ctx = byId("context"), bars = byId("bars"), slogan = byId("slogan"), end = byId("end");
+  assert.equal(ctx.out, "blink");
+  assert.equal(bars.at, ctx.at + ctx.len);
+  assert.equal(bars.at - ctx.at, ctx.at - byId("questions").at, "il quarto blink allo stesso passo");
+  assert.equal(bars.watch, undefined);
+  assert.equal(bars.text, undefined);
+  assert.equal(bars.blinds?.to, "black");
+  assert.equal(bars.blinds?.grow, "linear");
+  const rows = ((ctx.fx ?? []).find((f) => f.kind === "aside") as { rows: { pct: number }[] }).rows;
+  assert.deepEqual(bars.blinds?.fill, rows.map((r) => r.pct / 100));   // le barre partono dai valori appena letti
+  // le barre crescono subito dopo che le palpebre si sono riaperte, non restano ferme
+  const blindStart = bars.at + bars.len - bars.blinds!.len * BLIND_CUT;
+  assert.ok(blindStart - bars.at <= 0.25, `le barre partono ${(blindStart - bars.at).toFixed(2)} battiti dopo il blink`);
+  assert.equal(slogan.at, bars.at + bars.len);
+  assert.ok(slogan.at + (slogan.text?.at ?? 0) >= slogan.at + (1 - BLIND_CUT) * bars.blinds!.len, "lo slogan si scrive quando la tapparella è tutta nera");
   assert.equal(slogan.act, "close");
   assert.equal(slogan.watch, undefined);
   assert.deepEqual(slogan.text?.lines, ["Claude Code,", "on your wrist."]);
