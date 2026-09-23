@@ -1,6 +1,8 @@
 import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
 import type { Dolly } from "./dolly.ts";
+import { notesAt } from "./endCard.ts";
+import type { EndPace } from "./endCard.ts";
 import { TITLE_LEAD } from "./ui/dots.ts";
 import { THEME } from "./theme.ts";
 import type { Palette } from "./theme.ts";
@@ -38,7 +40,7 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; tilt?: number; press?: number; color: string; toColor: string; tint?: "grow"; body?: "card" | "words" | "screen" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce   // `tilt`: inclinazione di partenza in gradi, 10 come le schede della corsia (di suo), 0 per un tasto dritto
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; endPace?: EndPace; out?: "blink"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
 
 /** Dove sta l'orologio in orizzontale, in frazione del quadro. Con la camera «around» è CENTRATO (è la scheda ferma al centro
  *  che detta il posto, il titolo resta in alto a sinistra: Franz, 19/09 05:12); con il testo a sinistra sta nella colonna di
@@ -61,7 +63,7 @@ export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
  *  `musicFrom`: il secondo della traccia da cui riparte. Dopo un silenzio la musica non riprende da dove sarebbe arrivata:
  *  attacca il giro principale (Franz, 19/09 19:41). Misurato su `music.v9.wav`: l'attacco è a 8,699 s, +7,2 dB sulla
  *  battuta prima. */
-export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number };   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
+export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number; titleLead?: number };   // `titleLead`: battiti prima della notifica in cui si scrive la frase della scena dopo (TITLE_LEAD se manca)   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
 /** Le due bande degli account: il campo si apre in due (lavoro a sinistra, personale a destra) e alla fine quella di
  *  sinistra si riprende il quadro, diventando il fondo della sezione dopo. `open` e `win` in battiti. */
 export type BandsCue = { left: string; right: string; open: number; win: number };
@@ -138,6 +140,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // il sonno del display: sotto i 2,5 battiti non c'è tempo per calare, restare al buio e riaccendersi sul battito
     if (s.sleep && !(half(s.sleep.len) && s.sleep.len >= 2.5)) say(`il sonno del display dura ${s.sleep.len} battiti: il minimo è 2,5, in battiti o mezzi battiti`);
     if (s.sleep && !s.watch) say("il sonno del display vuole l'orologio in scena");
+    // gli avvisi del cartello (Anthropic, marchi Google, voce sintetica) devono restare in quadro almeno due battiti
+    if (s.endCard && s.len - notesAt(s.endPace) < 2) say(`gli avvisi del cartello arrivano al battito ${notesAt(s.endPace)} della scena, che ne dura ${s.len}: servono almeno 2 battiti per leggerli`);
     if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
     if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
     if (s.bands && !(half(s.bands.open) && half(s.bands.win) && s.bands.open + s.bands.win <= s.len)) say(`le bande (apre ${s.bands.open}, vince ${s.bands.win}) non stanno nei ${s.len} battiti della scena`);
@@ -160,7 +164,10 @@ export const validateTimeline = (raw: unknown): Timeline => {
       const perWord = 0.5;   // mezzo battito a parola ovunque
       // se la scena prima addormenta il display, il titolo di questa si scrive PRIMA del taglio (Film.tsx lo disegna a
       // cavallo): quei battiti contano come spazio, se no una scena corta dopo il risveglio risulta troppo stretta
-      const early = prev?.sleep ? TITLE_LEAD : 0;
+      const early = prev?.sleep ? (prev.sleep.titleLead ?? TITLE_LEAD) : 0;
+      // la frase dopo un sonno si scrive `early` battiti prima della notifica: se così comincerebbe prima del film, al primo
+      // fotogramma sarebbe già scritta (revisione del 23/09, il corto)
+      if (prev?.sleep && s.at - early < 0) say(`la frase comincerebbe al battito ${s.at - early}, prima dell'inizio del film: abbassa «titleLead» del sonno`);
       const room = s.len + early - (s.text.at ?? 0) - (s.watch?.exit ? (s.watch.exitBeats ?? 2) : 0);   // quanto dura davvero l'uscita, non due battiti fissi (Franz, 21/09 11:18)
       // due battiti perché la frase intera resti ferma: è la pausa che la rende leggibile, non la velocità
       if (words.length * perWord + 2 > room) say(`${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);

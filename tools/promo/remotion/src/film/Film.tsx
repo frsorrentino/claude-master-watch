@@ -18,6 +18,7 @@ import { WordMask } from "./WordMask.tsx";
 import { THEME, actColors } from "./theme.ts";
 import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
+import { END_PACE } from "./endCard.ts";
 import { LogoMark } from "./LogoMark.tsx";
 import { AROUND_ZOOM, Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
 import { AskDots } from "./ui/Dots.tsx";
@@ -173,7 +174,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
           stessa scheda, nello stesso punto, e due copie sovrapposte si vedrebbero */}
       <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (1 - underFlip) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
-      {scene.endCard ? <Sequence from={beat * 4} layout="none"><EndCard beat={beat} /></Sequence> : null}
+      {scene.endCard ? <Sequence from={beat * END_PACE[scene.endPace ?? "normal"].start} layout="none"><EndCard beat={beat} pace={scene.endPace} /></Sequence> : null}
       {scene.text && !prev?.sleep ? (
         <Sequence from={textAt} layout="none">
           {/* con i due terminali la frase sta in ALTO e al centro: sotto ci sono le schede dei due account (Franz, 19:06) */}
@@ -288,7 +289,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
         const next = TIMELINE.scenes[i + 1];
         if (!s.sleep || !next?.text) return null;
         const frames = spanFrames(GRID, s.at, s.sleep.len);
-        const pre = beatToFrame(GRID, next.at) - beatToFrame(GRID, next.at - TITLE_LEAD);   // la frase si scrive TITLE_LEAD battiti prima della notifica
+        const pre = beatToFrame(GRID, next.at) - beatToFrame(GRID, next.at - (s.sleep.titleLead ?? TITLE_LEAD));   // la frase si scrive `titleLead` battiti prima della notifica (TITLE_LEAD nel film lungo)
         const cut = beatToFrame(GRID, next.at);
         const nextFrames = spanFrames(GRID, next.at, next.len);
         const beat = spanFrames(GRID, next.at, 1);

@@ -30,6 +30,22 @@ test("un dolly fuori da 0,8-1,3 è un errore", () => {
   const t = base(); t.scenes[1].watch.dolly = { from: 1, to: 2 };
   assert.match(problems(t).join("\n"), /list: dolly da 1 a 2 fuori da 0,8-1,3/);
 });
+test("un cartello che finisce prima degli avvisi è un errore (revisione del 23/09: nel corto non comparivano mai)", () => {
+  const t = base(); t.scenes[1].endCard = true;
+  assert.match(problems(t).join("\n"), /list: gli avvisi del cartello arrivano al battito 13 della scena, che ne dura 8/);
+  t.scenes[1].endPace = "compact";
+  assert.deepEqual(problems(t), []);
+});
+test("la frase dopo il sonno non può cominciare prima dell'inizio del film", () => {
+  const t = base();
+  t.scenes = [
+    { id: "wake", at: 0, len: 2, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, sleep: { len: 6 } },
+    { id: "asks", at: 2, len: 6, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, text: { lines: ["It asks."], accent: "asks." } },
+  ];
+  assert.match(problems(t).join("\n"), /asks: la frase comincerebbe al battito -2, prima dell'inizio del film/);
+  t.scenes[0].sleep.titleLead = 0;
+  assert.deepEqual(problems(t), []);
+});
 test("un buco o una sovrapposizione tra scene è un errore", () => {
   const t = base(); t.scenes[1].at = 9;
   assert.match(problems(t).join("\n"), /list: inizia al battito 9, la scena prima finisce a 8/);
