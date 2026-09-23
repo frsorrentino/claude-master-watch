@@ -4,7 +4,7 @@ import raw from "./timeline.json";
 import shortRaw from "./timeline.short.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
+import { BLEED_LIFT, MOVE_BEATS, closingAt, poseAt, screenAt } from "./moves.ts";
 import { validateTimeline, watchColumn } from "./timeline.ts";
 import type { Scene, Timeline } from "./timeline.ts";
 import { framesOf, gridOf } from "./cut.ts";
@@ -80,7 +80,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // nella chiusura delle due finestre la frase cammina verso la colonna dei titoli, dove la scena dopo metterà la sua
   const lift = scene.text?.carry ? interpolate(frame - spanFrames(GRID, scene.at, scene.text.at ?? 0), [0, 14], [0, -THEME.title * 1.04], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) }) : 0;
   const chiude = scene.split ? Math.min(1, Math.max(0, (0.5 - splitAt(frame / Math.max(1, total), scene.split.open, scene.split.hold, scene.split.close, total / beat).edge) / 0.5)) : 1;   // senza le due finestre la frase è già alla sua colonna   // la deriva si ferma nel sonno e torna piano dopo il risveglio
-  const closing = scene.endCard ? closingAt(frame / beat) : null;
+  const closing = scene.endCard ? closingAt(frame / beat, scene.strapBleed ? BLEED_LIFT : undefined) : null;
   // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
   // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
   // `enterAt`: l'orologio entra a scena iniziata — qui rientra mentre la frase cammina verso sinistra (Franz, 20/09 20:28)
@@ -166,7 +166,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
+          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} /> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

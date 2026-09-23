@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MAX_TILT, closingAt, poseAt } from "./moves.ts";
+import { readFileSync } from "node:fs";
+import { BLEED_LIFT, MAX_TILT, closingAt, poseAt, screenAt } from "./moves.ts";
+import { THEME } from "./theme.ts";
 import type { Move } from "./moves.ts";
 
 const MOVES: Move[] = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
@@ -67,4 +69,17 @@ test("i movimenti finali atterrano morbidi: nell'ultimo quinto del tempo resta m
   assert.ok(left > 0 && left < 0.03, `allontanamento: resta ${left}`);
   const tiltLeft = 1 - closingAt(3.32).tilt;                                       // inclinazione: battiti 2,2-3,6
   assert.ok(tiltLeft > 0 && tiltLeft < 0.03, `inclinazione: resta ${tiltLeft}`);
+});
+
+test("con il cinturino che sborda l'orologio del cartello sale di più: il bordo alto della foto resta sempre fuori quadro", () => {
+  const Q = JSON.parse(readFileSync(new URL("./mockup.geometry.json", import.meta.url), "utf8")).q34;
+  const k = THEME.q34GlassPx / (2 * Q.b);
+  const top = (p: { y: number; scale: number }) => 540 + p.y * 1080 - Q.cy * k * p.scale;   // bordo alto della foto, in pixel del quadro
+  for (let b = 0; b <= 8; b += 0.25) assert.ok(top(closingAt(b, BLEED_LIFT).pose) < -40, `al battito ${b} il bordo è a ${top(closingAt(b, BLEED_LIFT).pose).toFixed(0)} px`);
+  assert.equal(closingAt(8).pose.y, -0.2);   // senza, com'è nel film lungo
+});
+test("col logo ritagliato il display nero compare con la cassa, non prima: il logo parte da solo sul blu", () => {
+  assert.equal(screenAt(closingAt(0), true), 0);
+  assert.equal(screenAt(closingAt(8), true), 1);
+  assert.equal(screenAt(closingAt(0), false), 1);
 });

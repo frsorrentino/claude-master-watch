@@ -126,3 +126,10 @@ test("la card ✓ in una riga della lista sta dentro il display", () => {
   t.scenes[1].fx[1].slot = 146;
   assert.deepEqual(problems(t), []);
 });
+
+test("logo ritagliato e cinturino che sborda valgono solo sul cartello", () => {
+  const t = base(); t.scenes[1].logoCutout = true; t.scenes[1].strapBleed = true;
+  assert.match(problems(t).join("\n"), /list: logo ritagliato e cinturino che sborda valgono solo sul cartello/);
+  t.scenes[1].endCard = true; t.scenes[1].endPace = "blinds";
+  assert.deepEqual(problems(t), []);
+});

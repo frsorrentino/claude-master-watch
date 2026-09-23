@@ -40,7 +40,7 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; tilt?: number; press?: number; color: string; toColor: string; tint?: "grow"; body?: "card" | "words" | "screen" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce   // `tilt`: inclinazione di partenza in gradi, 10 come le schede della corsia (di suo), 0 per un tasto dritto
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; endPace?: EndPace; out?: "blink" | "lids"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; endPace?: EndPace; logoCutout?: boolean; strapBleed?: boolean; out?: "blink" | "lids"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
 
 /** Dove sta l'orologio in orizzontale, in frazione del quadro. Con la camera «around» è CENTRATO (è la scheda ferma al centro
  *  che detta il posto, il titolo resta in alto a sinistra: Franz, 19/09 05:12); con il testo a sinistra sta nella colonna di
@@ -142,6 +142,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.sleep && !s.watch) say("il sonno del display vuole l'orologio in scena");
     // gli avvisi del cartello (Anthropic, marchi Google, voce sintetica) devono restare in quadro almeno due battiti
     if (s.endCard && s.len - notesAt(s.endPace) < 2) say(`gli avvisi del cartello arrivano al battito ${notesAt(s.endPace)} della scena, che ne dura ${s.len}: servono almeno 2 battiti per leggerli`);
+    if ((s.logoCutout || s.strapBleed) && !s.endCard) say("logo ritagliato e cinturino che sborda valgono solo sul cartello");
     if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
     if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
     if (s.bands && !(half(s.bands.open) && half(s.bands.win) && s.bands.open + s.bands.win <= s.len)) say(`le bande (apre ${s.bands.open}, vince ${s.bands.win}) non stanno nei ${s.len} battiti della scena`);

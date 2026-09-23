@@ -8,18 +8,22 @@ import { Watch } from "../Watch";
 
 /** `light`: luminosità del display, 1 = normale (ui/sleep.ts: il display che dorme e si risveglia).
  *  `rim` 0-1: la luce dello schermo che batte sulla ghiera nei primi fotogrammi del risveglio. */
-type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; rim?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode };
+type Props = { view: "front" | "threeQuarter" | "drawn"; light?: number; rim?: number; clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; reveal?: number; bodyOpacity?: number; contentOpacity?: number; focus?: number; glassPx: number; tilt: number; overlay?: React.ReactNode; around?: React.ReactNode; screenOpacity?: number; bleed?: boolean };
 
-const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; overlay?: React.ReactNode }> = ({ clip, clipStart = 0, rate = 1, freeze, hold, still, overlay }) => {
+const Ui: React.FC<{ clip: string; clipStart?: number; rate?: number; freeze?: boolean; hold?: number; still?: string; overlay?: React.ReactNode; screenOpacity?: number }> = ({ clip, clipStart = 0, rate = 1, freeze, hold, still, overlay, screenOpacity }) => {
   const now = useCurrentFrame();
   const video = <OffthreadVideo src={staticFile(clip)} muted trimBefore={Math.round(clipStart * 30)} playbackRate={rate} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
+  const screen = still ? <Img src={staticFile(still)} style={{ width: "100%", height: "100%" }} /> : freeze ? <Freeze frame={0}>{video}</Freeze>
+    : hold ? <Freeze frame={hold} active={now < hold}><Sequence from={hold} layout="none">{video}</Sequence></Freeze> : video;
   return (
-  <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", background: "#000" }}>
-    {still ? <Img src={staticFile(still)} style={{ width: "100%", height: "100%" }} /> : freeze ? <Freeze frame={0}>{video}</Freeze>
-      : hold ? <Freeze frame={hold} active={now < hold}><Sequence from={hold} layout="none">{video}</Sequence></Freeze> : video}
+  <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", background: screenOpacity === undefined ? "#000" : `rgba(0,0,0,${screenOpacity})` }}>
+    {/* `screenOpacity`: lo schermo (fondo, clip, ombra) si può spegnere lasciando acceso quello che ci sta sopra, come il logo
+        ritagliato del cartello del corto (23/09). Senza, la struttura resta quella di prima, elemento per elemento: un
+        contenitore in più sotto la prospettiva di tre quarti cambiava 862 pixel del cartello del film lungo */}
+    {screenOpacity === undefined ? screen : <div style={{ position: "absolute", inset: 0, opacity: screenOpacity }}>{screen}</div>}
     {overlay ? <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", scale: "var(--k)" }}>{overlay}</div> : null}
     {/* ombra interna: lo schermo sta sotto la cupola, ai bordi scurisce */}
-    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(0,0,0,0) 80%, rgba(0,0,0,.55) 100%)" }} />
+    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(0,0,0,0) 80%, rgba(0,0,0,.55) 100%)", ...(screenOpacity === undefined ? {} : { opacity: screenOpacity }) }} />
   </div>
   );
 };
@@ -57,7 +61,7 @@ const Front: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, still, gl
   );
 };
 
-const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, still, glassPx, overlay, reveal = 1, bodyOpacity = 1, contentOpacity = 1, focus = 0 }) => {
+const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, still, glassPx, overlay, reveal = 1, bodyOpacity = 1, contentOpacity = 1, focus = 0, screenOpacity, bleed }) => {
   const Q = geo.q34;
   const k = glassPx / (2 * Q.b);
   const H = homography(480, Q.quad as Quad);
@@ -71,12 +75,13 @@ const ThreeQuarter: React.FC<Props> = ({ clip, clipStart, rate, freeze, hold, st
   const ox = Q.cx + (qx - Q.cx) * focus, oy = Q.cy + (qy - Q.cy) * focus;      // focus 1: al centro c'è il display, non il vetro
   return (
     <div style={{ width: Q.size * k, height: Q.size * k, translate: `${-ox * k}px ${-oy * k}px`,
-      /* il cinturino finisce con la foto: sfuma nel buio prima che il bordo entri in quadro */
-      maskImage: "linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 11%, #000 89%, rgba(0,0,0,0) 100%)" }}>
+      /* il cinturino finisce con la foto: sfuma nel buio prima che il bordo entri in quadro; con `bleed` esce intero dal bordo
+         in alto (corto, 23/09) e sfuma solo in basso */
+      maskImage: bleed ? "linear-gradient(180deg, #000 0%, #000 89%, rgba(0,0,0,0) 100%)" : "linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 11%, #000 89%, rgba(0,0,0,0) 100%)" }}>
       <div style={{ width: Q.size, height: Q.size, position: "relative", transformOrigin: "0 0", scale: String(k) }}>
         <Img src={staticFile("mockup/q34_body.png")} style={{ position: "absolute", inset: 0, opacity: bodyOpacity, filter: "drop-shadow(30px 36px 36px rgba(4,5,12,.62))" }} />
         <div style={{ position: "absolute", left: 0, top: 0, width: 480, height: 480, transformOrigin: "0 0", transform: toMatrix3d(M), opacity: contentOpacity, filter: "blur(0.4px) brightness(.95)", ["--k" as string]: "1" }}>
-          <Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} hold={hold} still={still} overlay={overlay} />
+          <Ui clip={clip} clipStart={clipStart} rate={rate} freeze={freeze} hold={hold} still={still} overlay={overlay} screenOpacity={screenOpacity} />
         </div>
         {/* qui il telefono non c'è: i riflessi VERI della foto sopra l'interfaccia */}
         <Img src={staticFile("mockup/q34_reflections.png")} style={{ position: "absolute", inset: 0, mixBlendMode: "screen", opacity: bodyOpacity }} />

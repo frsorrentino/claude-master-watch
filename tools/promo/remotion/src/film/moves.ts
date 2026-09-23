@@ -81,7 +81,10 @@ export const poseAt = (frame: number, total: number, moveFrames: number, enter?:
  *  di un orologio, e l'orologio è lontano), quindi si dicono insieme. L'arco resta solo fino al battito 3: è la firma. */
 export type Closing = { pose: Pose; logo: number; draw: number; tilt: number; body: number; focus: number };
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
-export const closingAt = (beats: number): Closing => {
+/** Di quanto sale l'orologio del cartello quando il cinturino deve uscire intero dal bordo in alto (corto, 23/09): con
+ *  0,2 il bordo della foto finiva a 63 px dall'alto e la sfumatura lo nascondeva; con 0,3 resta 45 px fuori quadro. */
+export const BLEED_LIFT = 0.3;
+export const closingAt = (beats: number, lift = 0.2): Closing => {
   const out = soft(ramp(beats, 2.5, 4.8));
   const near = 1 - out3(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
   return {
@@ -90,6 +93,9 @@ export const closingAt = (beats: number): Closing => {
     tilt: soft(ramp(beats, 2.2, 3.6)),
     body: ramp(beats, 2.35, 3.9) >= 1 ? 1 : inOut(ramp(beats, 2.35, 3.9)) * (beats <= 2.2 ? 0 : 1),
     focus: 1 - out,
-    pose: { x: 0, y: -0.2 * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
+    pose: { x: 0, y: -lift * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
   };
 };
+
+/** Il display nero del cartello: col logo ritagliato compare con la cassa (`body`), così il logo nasce da solo sul blu. */
+export const screenAt = (c: Closing, cutout: boolean): number => (cutout ? c.body : 1);

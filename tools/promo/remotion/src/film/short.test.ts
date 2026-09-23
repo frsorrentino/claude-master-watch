@@ -6,6 +6,7 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
+import { notesAt } from "./endCard.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
@@ -46,7 +47,11 @@ test("la corsia comincia dopo l'espansione, ma card, voce, dettatura e invio res
   assert.equal(loop.at + loop.len, 40);
 });
 test("gli avvisi del cartello si leggono e «It asks.» non è già scritta al fotogramma 0", () => {
-  assert.equal(byId("end").endPace, "compact");
+  const end = byId("end");
+  assert.equal(end.endPace, "blinds");
+  assert.equal(end.logoCutout, true);
+  assert.equal(end.strapBleed, true);
+  assert.ok(end.len - notesAt(end.endPace) >= 4, `gli avvisi restano ${end.len - notesAt(end.endPace)} battiti`);
   assert.equal(byId("wake").sleep?.titleLead, 0);
 });
 

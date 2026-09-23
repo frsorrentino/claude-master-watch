@@ -13,9 +13,9 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | 7 | Lista con l'esito «Released 2.8.0…», «Every session, at a glance.» (50,5–55) | ● | da vedere nella bozza 8; il volo dal terminale (piano 4) |
 | 8 | «Work» della Panoramica, con i blink (55–57) | ● | da vedere nella bozza 8 |
 | 9 | «Context» e la tapparella a 3 barre (57–63) | ● | da vedere nella bozza 8 |
-| 10 | Cartello: logo ritagliato, cinturino che sborda, avvisi (63–71) | ○ | piano 3, compito 3 |
+| 10 | Cartello: logo ritagliato, cinturino che sborda, avvisi (63–71) | ● | da vedere nella bozza 8 |
 | — | Musica: 5 battute d'introduzione, colpo al 27, finale dal 63 | ● | tagliata e misurata; da sentire nella bozza 8 |
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
-**Piano 3 (struttura):** compiti 1 e 2 fatti · 3, 4 (bozza 8) da fare.
+**Piano 3 (struttura):** compiti 1, 2 e 3 fatti · 4 (bozza 8) da fare.
 **Piano 4 (movimento):** da scrivere dopo la bozza 8.
