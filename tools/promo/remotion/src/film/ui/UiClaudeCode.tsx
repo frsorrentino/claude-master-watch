@@ -10,7 +10,7 @@ import { THEME } from "../theme.ts";
  * conversazione si appoggia sopra: ogni frase nasce lì, intera, e cresce in altezza spingendo su il resto — l'intestazione
  * sale e col tempo esce in alto (Franz, 21/09 20:24).
  */
-export type CcRow = { text: string; on: number; cursor?: boolean };
+export type CcRow = { text: string; on: number; cursor?: boolean; ghost?: boolean };   // `ghost`: tiene il suo posto ma non si vede (il volo del terminale la porta via, 23/09)
 
 // la mascotte di Claude Code a pixel: corpo, occhi, le braccia ai lati, quattro zampe
 const CLAWD = [".XXXXXXXXX.", ".XXKXXXKXX.", "XXXXXXXXXXX", "XXXXXXXXXXX", ".XXXXXXXXX.", ".X.X...X.X.", ".X.X...X.X."];
@@ -68,7 +68,7 @@ export const UiClaudeCode: React.FC<{
           if (r.on <= 0) return null;
           const k = ccKind(r.text);
           const h = rise(r.on) * (ccLines(r.text, width, font) * row + (i === first && prompt ? row / 2 : 0));
-          const inner: React.CSSProperties = { position: "absolute", left: 0, right: 0, bottom: 0, opacity: Math.min(1, r.on * 1.4) };
+          const inner: React.CSSProperties = { position: "absolute", left: 0, right: 0, bottom: 0, opacity: r.ghost ? 0 : Math.min(1, r.on * 1.4) };
           const line = k === "result"
             ? <div style={{ color: UI.text2, paddingLeft: "5ch", textIndent: "-3ch" }}>{"⎿  "}{r.text.replace(/^⎿\s*/, "")}</div>
             : k === "says"

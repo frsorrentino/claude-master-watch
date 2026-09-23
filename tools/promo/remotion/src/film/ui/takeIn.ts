@@ -3,7 +3,7 @@
  * intero, che è il terminale del PC, si rimpicciolisce ed entra nel display come la card ✓ di payments-api in cima alla lista.
  * Funzioni pure dell'avanzamento `p` 0-1 lungo il volo.
  */
-import { soft } from "../moves.ts";
+import { inOut, soft } from "../moves.ts";
 import { LIST_BODY } from "./UiTokens.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
@@ -24,14 +24,22 @@ export const slotRect = (slot: number, dx: number, dy: number, u: number, lines:
 });
 
 /** `shrink`: quanto la finestra è arrivata; parte decisa, così il bordo sinistro libera subito la colonna della frase, e si
- *  posa lunga. `terminal`: il testo del terminale, che se ne va nel primo 40 %. `line`: la riga dell'esito in volo.
- *  `card`: intestazione e testo della card, fra 0,55 e 0,9. */
-export const takeInAt = (p: number): { shrink: number; terminal: number; line: number; card: number } => ({
-  shrink: soft(clamp(p)),
-  terminal: 1 - soft(ramp(p, 0, 0.4)),
-  line: soft(ramp(p, 0.05, 0.85)),
-  card: soft(ramp(p, 0.55, 0.9)),
-});
+ *  posa lunga. `terminal`: il testo del terminale, che sfuma fra 0,1 e 0,5 mentre arriva `card`, la card senza il suo
+ *  testo (fra 0,2 e 0,6), tutte e due lente agli estremi e con i centri vicini: nella prima prova il terminale spariva quasi subito e per cinque
+ *  fotogrammi restava una finestra vuota. `line`:
+ *  la riga dell'esito in volo, che si scioglie (`lineAlpha`) nel testo della card (`body`) fra 0,6 e 0,85: mai due testi
+ *  pieni insieme. */
+export const takeInAt = (p: number): { shrink: number; terminal: number; line: number; lineAlpha: number; card: number; body: number } => {
+  const melt = soft(ramp(p, 0.6, 0.85));
+  return {
+    shrink: soft(clamp(p)),
+    terminal: 1 - inOut(ramp(p, 0.1, 0.5)),
+    line: soft(ramp(p, 0.05, 0.85)),
+    lineAlpha: 1 - melt,
+    card: inOut(ramp(p, 0.2, 0.6)),
+    body: melt,
+  };
+};
 
 /** La finestra a `p`: dal quadro intero (`frame`, angoli vivi) al rettangolo della card. I quattro bordi si muovono
  *  ciascuno verso il suo, quindi la card d'arrivo sta sempre dentro la finestra. */

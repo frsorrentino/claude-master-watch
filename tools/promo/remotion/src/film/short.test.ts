@@ -120,7 +120,9 @@ test("la carrellata: lista con l'esito, «Work», «Context», con i blink fra l
   for (const s of [list, work, ctx]) assert.equal(watchColumn(s), watchColumn(list), `${s.id} sposta l'orologio`);
   const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number };
   assert.equal(card.slot, 146);                                      // la riga di payments-api in n_list.mp4 a 11,6 s
-  assert.equal(card.at, 0);
+  // l'esito c'è dal primo fotogramma della lista: prima col volo del terminale, poi con la card ✓ (piano 4, 23/09)
+  const volo = (list.fx ?? []).find((f) => f.kind === "takeIn") as { at: number; len: number } | undefined;
+  assert.equal(volo ? volo.at : card.at, 0);
   assert.match(card.text, /^Released 2\.8\.0/);
   assert.equal(list.watch!.clip, "scenes/n_list.mp4");
   assert.equal(list.watch!.clipStart, 11.6);
@@ -210,4 +212,18 @@ test("anche il blink di sole palpebre, dalla lista a «Work», ha lo scatto sul 
   const list = byId("list");
   assert.equal(list.out, "lids");
   assert.ok(sfxCues(short).some((c) => c.name === "shutter" && c.beat === list.at + list.len), "scatto al battito " + (list.at + list.len));
+});
+test("fra il terminale e la lista il terminale entra nell'orologio e diventa la card ✓ (piano 4, volo; Franz, 23/09 20:15)", () => {
+  type TakeIn = { kind: "takeIn"; at: number; len: number; slot: number; name: string; age: string; text: string; badge?: string };
+  type Done = { kind: "doneCard"; at: number; slot?: number; name: string; age: string; text: string; badge?: string };
+  const list = byId("list"), watch = byId("watch");
+  const t = (list.fx ?? []).find((f) => f.kind === "takeIn") as TakeIn | undefined;
+  assert.ok(t, "la lista si apre col volo");
+  assert.equal(t.at, 0);
+  assert.equal(t.len, 2);
+  const d = (list.fx ?? []).find((f) => f.kind === "doneCard") as Done;
+  assert.equal(d.at, t.at + t.len, "la card ✓ prende il posto del volo quando arriva");
+  assert.deepEqual([d.slot, d.name, d.age, d.text, d.badge], [t.slot, t.name, t.age, t.text, t.badge]);
+  const lines = ((watch.fx ?? []).find((f) => f.kind === "terminalPlane") as { lines: string[] }).lines;
+  assert.equal("⏺ " + t.text, lines[lines.length - 1], "vola l'ultima riga del terminale");
 });

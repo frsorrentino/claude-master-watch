@@ -24,12 +24,19 @@ test("in volo la card resta sempre dentro la finestra: la riga vera sotto non si
     assert.ok(r.x <= to.x + 1e-9 && r.y <= to.y + 1e-9 && r.x + r.w >= to.x + to.w - 1e-9 && r.y + r.h >= to.y + to.h - 1e-9, `p ${i / 40}`);
   }
 });
-test("il terminale sparisce nella prima metà, la card compare nella seconda, la riga dell'esito vola in mezzo", () => {
+test("il terminale se ne va mentre la card arriva, senza un attimo di finestra vuota (fotogramma 843 della prima prova)", () => {
   assert.equal(takeInAt(0).terminal, 1);
-  assert.equal(takeInAt(0.4).terminal, 0);
-  assert.equal(takeInAt(0.5).card, 0);
-  assert.equal(takeInAt(0.9).card, 1);
+  assert.equal(takeInAt(0.5).terminal, 0);
+  assert.equal(takeInAt(0.2).card, 0);
+  assert.equal(takeInAt(0.6).card, 1);
+  for (let i = 0; i <= 20; i++) { const k = takeInAt(i / 20); assert.ok(k.terminal + k.card > 0.2 || i / 20 < 0.05, `p ${i / 20}: finestra vuota`); }
   assert.equal(takeInAt(0).line, 0);
   assert.equal(takeInAt(1).line, 1);
   assert.equal(takeInAt(1).shrink, 1);
+});
+test("la riga dell'esito si scioglie nel testo della card fra 0,6 e 0,85: mai due testi pieni insieme", () => {
+  for (const p of [0, 0.5, 0.6, 0.7, 0.8, 0.85, 1]) assert.ok(Math.abs(takeInAt(p).body + takeInAt(p).lineAlpha - 1) < 1e-12, `p ${p}`);
+  assert.equal(takeInAt(0.5).lineAlpha, 1);
+  assert.ok(takeInAt(0.7).lineAlpha > 0 && takeInAt(0.7).lineAlpha < 1);
+  assert.equal(takeInAt(0.85).lineAlpha, 0);
 });

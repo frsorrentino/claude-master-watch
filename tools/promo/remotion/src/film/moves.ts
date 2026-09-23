@@ -7,7 +7,7 @@ export const MOVE_BEATS = 2;
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const out3 = (t: number) => 1 - Math.pow(1 - t, 3);
 const in3 = (t: number) => t * t * t;
-const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+export const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** Curva di Bézier cubica come in CSS: dato il tempo 0-1 restituisce l'avanzamento. */
 export const bezier = (x1: number, y1: number, x2: number, y2: number) => (t: number): number => {

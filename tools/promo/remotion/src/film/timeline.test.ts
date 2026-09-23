@@ -168,3 +168,11 @@ test("la riga della card ✓ è un numero (revisione del 23/09)", () => {
   const t = base(); t.scenes[1].fx.push({ kind: "doneCard", at: 0, name: "payments-api", age: "0 m", text: "Released 2.8.0", slot: "146" });
   assert.match(problems(t).join("\n"), /list: la riga della card ✓ è «146»: serve un numero fra 0 e 310/);
 });
+test("il volo parte dal terminale della scena prima e dura almeno 1,5 battiti (piano 4, 23/09)", () => {
+  const t = base(); t.scenes[1].fx.push({ kind: "takeIn", at: 0, len: 1, slot: 146, name: "payments-api", age: "0 m", text: "Released" });
+  const p = problems(t).join("\n");
+  assert.match(p, /list: il volo parte dal terminale della scena prima/);
+  assert.match(p, /list: il volo dura 1 battiti: almeno 1,5/);
+  t.scenes[1].fx[1].slot = "146";
+  assert.match(problems(t).join("\n"), /list: la riga del volo è «146»: serve un numero fra 0 e 310/);
+});

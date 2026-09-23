@@ -24,6 +24,7 @@ export type Fx =
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
   | { kind: "shake"; at: number }
   | { kind: "doneCard"; at: number; name: string; age: string; text: string; badge?: string; rest?: boolean; slot?: number }   // la card ✓ che sale sul display con il ✓ che si disegna (corto, 23/09); `rest`: già a posto; `slot`: ferma in una riga della lista, a quell'altezza del display, senza velo
+  | { kind: "takeIn"; at: number; len: number; slot: number; name: string; age: string; text: string; badge?: string }   // il volo del terminale (piano 4, 23/09): il terminale della scena prima entra nel display e diventa la card ✓ della riga `slot`
   | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number; dictation?: { tap: number; confirm?: number } } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "quota" | "note" | "pace" | "work" | "questions" | "context"; n?: number; note?: string; quote?: string; lines?: string[]; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // `dictation`: la card nasce come i tre tasti per scrivere, il dito sul microfono al battito `tap`, le parole della voce della scena (`spoken`), il dito su ✓ al battito `confirm`   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number; start?: number; keep?: boolean; prompt?: string; promptAt?: number; path?: string; model?: string; status?: string; times?: number[] };   // `prompt`: il terminale è Claude Code (intestazione con `path` e `model`, il prompt che compare a `promptAt`, la riga di stato `status`), le righe «⎿» sono risultati; `times`: il battito a cui il PC scrive ogni riga, uno per riga   // `keep`: non si spegne in coda — la scena dopo lo riprende com'è   // `start`: righe già presenti quando il terminale compare (quelle che il display sta già mostrando)   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
@@ -91,7 +92,7 @@ export class TimelineError extends Error {
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn", "side"];
 const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
-const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero", "aside", "doneCard"];
+const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero", "aside", "doneCard", "takeIn"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
 export const totalBeats = (t: Timeline): number => (t.scenes.length ? t.scenes[t.scenes.length - 1].at + t.scenes[t.scenes.length - 1].len : 0);
@@ -192,6 +193,12 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (f.kind === "terminalPlane" && f.times && f.times.length !== f.lines.length) say(`il terminale ha ${f.lines.length} righe ma ${f.times.length} tempi`);
       if (f.kind === "doneCard" && f.slot !== undefined && typeof f.slot !== "number") say(`la riga della card ✓ è «${f.slot}»: serve un numero fra 0 e 310`);
       else if (f.kind === "doneCard" && f.slot !== undefined && !(f.slot >= 0 && f.slot <= 310)) say(`la riga della card ✓ è a ${f.slot}: fra 0 e 310`);
+      if (f.kind === "takeIn") {
+        if (!(prev?.fx ?? []).some((x) => x.kind === "terminalPlane")) say("il volo parte dal terminale della scena prima");
+        if (!(f.len >= 1.5)) say(`il volo dura ${f.len} battiti: almeno 1,5`);
+        if (typeof f.slot !== "number") say(`la riga del volo è «${f.slot}»: serve un numero fra 0 e 310`);
+        else if (!(f.slot >= 0 && f.slot <= 310)) say(`la riga del volo è a ${f.slot}: fra 0 e 310`);
+      }
       if (f.kind === "float") for (const c of f.cards) if (c.kind !== "text" && c.kind !== "brief" && c.dictation) {
         const v = (s.fx ?? []).find((x) => x.kind === "spoken");
         if (!v || v.at <= c.dictation.tap) say(`la dettatura di ${c.name} tocca il microfono al battito ${c.dictation.tap} ma la voce della scena non viene dopo`);
