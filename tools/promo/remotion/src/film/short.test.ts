@@ -71,7 +71,11 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
   const a = long.scenes.find((s) => s.id === "watch")!, b = byId("watch");
   const { at: _a, len: _la, ...lungo } = a, { at: _b, len: _lb, ...corto } = b;
-  assert.deepEqual(corto, lungo);
+  // la clip sì: nel corto il tasto Write resta fermo in fondo invece di sobbalzare a ogni riga nuova (Franz, 23/09 18:58);
+  // n_watch_pinned.mp4 è n_watch_fit.mp4 passata da tools/promo/pin_button.py, stessi fotogrammi e stessa durata
+  assert.equal(corto.watch!.clip, "scenes/n_watch_pinned.mp4");
+  assert.equal(lungo.watch!.clip, "scenes/n_watch_fit.mp4");
+  assert.deepEqual({ ...corto, watch: { ...corto.watch!, clip: lungo.watch!.clip } }, lungo);
   // la scena finisce con il terminale (5 + 5,5 battiti): il film lungo lo tiene fermo 1,5 battiti in più, che nel corto
   // servono a «Every session, at a glance.» (5 parole, 4,5 battiti)
   const term = (b.fx ?? []).find((f) => f.kind === "terminalPlane") as { at: number; len: number };

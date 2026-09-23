@@ -9,7 +9,7 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | 3 | «It speaks.»: ▶ e voce (9–19) | ● | nessuna nota sulla bozza 8; onda della voce (piano 4) |
 | 4 | Risposta: «yes», espansione, stacco (19–26) | ✓ | tasti in profondità, sfocatura di movimento (piano 4) |
 | 5 | Corsia con l'orologio di profilo: «Deployed» sul colpo, dettatura (26–40) | ✓ | parallasse (piano 4) |
-| 6 | Terminale «Watch it work.» (40–50,5) | ◐ | ○ il tasto Write resta fermo in basso (toppa nera sul tasto che si muove, tasto disegnato fermo); prospettiva e camera (piano 4) |
+| 6 | Terminale «Watch it work.» (40–50,5) | ◐ | il tasto Write resta fermo in basso, il testo che risale gli passa dietro (clip `n_watch_pinned.mp4`); prospettiva e camera (piano 4) |
 | 7 | Lista con l'esito «Released 2.8.0…», «Every session, at a glance.» (50,5–55) | ● | resta ferma sulla riga: nella registrazione le righe si deformano sul bordo alto, lo scorrimento vero chiede la lista disegnata (piano 4) |
 | 8 | «Work» della Panoramica, con i blink (55–57) | ● | ora scorre come nella registrazione, blink agli stessi tempi |
 | 9 | «Context» e la tapparella a 3 barre (57–63) | ● | la scheda si disegna più in fretta: valori finali leggibili 1,3 battiti (0,7 s; nella bozza 8 mai); tapparella di 5 battiti, dal 60,1 invece che dal 59,5 |
@@ -18,5 +18,5 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
 **Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 e giudicata da Franz la sera stessa (le note sono in questa lista).
-**Bozza 9:** manca il tasto Write fermo (scena 6), poi la resa.
+**Bozza 9:** in resa. Da decidere: il cartello 1,5 battiti più lungo, perché gli avvisi tornino a 2,2 s (ora 1,4 s).
 **Piano 4 (movimento):** da scrivere dopo la bozza 9.
