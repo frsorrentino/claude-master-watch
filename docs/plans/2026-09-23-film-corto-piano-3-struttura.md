@@ -10,6 +10,8 @@
 
 **Spec:** `docs/plans/2026-09-23-film-corto-design.md` (sezioni 3, 4 e 5, «Piano 3»)
 
+**Scene che non cambiano** (si spostano solo di un battito prima, nel Task 1): la risposta col «yes» («answer», 19–26), la corsia con l'orologio di profilo e la dettatura («loop», 26–40), il terminale «Watch it work.» («watch», 40–50,5). I loro movimenti nuovi sono del piano 4.
+
 ## Global Constraints
 
 - Il film lungo resta identico: i 4 fotogrammi di regressione (`out/regressione/prima/f{150,850,1300,2300}.png`) pixel per pixel, dopo ogni task che tocca il motore.
