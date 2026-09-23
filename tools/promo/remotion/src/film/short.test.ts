@@ -18,12 +18,13 @@ test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma"
   assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
 });
 test("il colpo della musica cade su «Deployed», e lo stop sul «yes» (Franz, 23/09 11:28 e 22:17)", () => {
-  // taglio 0-1 0-4 3-11 40-45 (23/09 22:17): una battuta d'attacco, l'introduzione 0-3, la battuta 3 ancora (quella che nel
-  // brano precede il colpo), il colpo (la battuta 4) al 24. Due stop, a 2,25-2,75 di ogni battuta 3: il primo mentre il «yes»
-  // riempie il quadro, il secondo 1,75 battiti prima del colpo, mentre nella corsia c'è la card dei controlli
+  // taglio 0-1 0-4 3-3.625 2.625-2.75 3.75-11 41-45 (23/09 23:16): una battuta d'attacco, l'introduzione 0-3, ancora la
+  // battuta 3 (quella che nel brano precede il colpo) ma SENZA il suo stop, che diventa il mezzo battito della 2, e il colpo
+  // (la battuta 4) al 24. Uno stop solo, a 2,5-3 della prima battuta 3, mentre il «yes» riempie il quadro: con la 3 ripetuta
+  // intera gli stop erano due di fila (Franz, 23:16)
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; width?: number; cards: { text?: string; lines?: string[]; kind?: string; hold?: number }[] };
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 5 * 4, stop = 4 + 3 * 4 + 2.25;
+  const drop = (short.musicDelayBeats ?? 0) + 4 + 5 * 4, stop = 4 + 3 * 4 + 2.5;
   const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
   assert.equal(drop, 24);
   assert.ok(burst <= stop && stop <= filled, `il «yes» cresce da ${burst} a ${filled}, lo stacco è al ${stop}`);
@@ -239,6 +240,9 @@ test("il finale su nero: il quarto blink chiude le palpebre sul nero, poi lo slo
   assert.deepEqual(slogan.text?.lines, ["Claude Code,", "on your wrist."]);
   assert.equal(slogan.text?.accent, "wrist.");
   assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il blink, non dopo un vuoto");
+  // «Claude Code,» subito, poi una pausa: «on your wrist.» parte sul finale piano della musica, al 60 (Franz, 23/09 23:20)
+  assert.equal(slogan.text?.pause, 1);
+  assert.equal(slogan.at + (slogan.text?.at ?? 0) + 2 * 0.5 + slogan.text!.pause!, 60);
   assert.equal(end.at, slogan.at + slogan.len);
   assert.deepEqual(short.palette?.close, ["#000000", "#000000", "#000000", "rgb(0,0,0)"]);
   assert.equal(end.endTone, undefined);

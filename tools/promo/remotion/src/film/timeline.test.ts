@@ -196,3 +196,10 @@ test("il volo entra solo in un orologio di fronte (revisione finale dei piani 4-
   t.scenes[1].fx.push({ kind: "takeIn", at: 0, len: 2, slot: 146, name: "payments-api", age: "0 m", text: "ok" });
   assert.match(problems(t).join("\n"), /list: il volo entra solo in un orologio di fronte/);
 });
+test("la pausa fra le righe conta nel tempo della frase (23/09 23:20)", () => {
+  const t = base(); t.scenes[0].text.pause = 6;
+  assert.match(problems(t).join("\n"), /open: 3 parole a mezzo battito l'una più la pausa di 6 e due per leggerle fanno 9.5 battiti, la scena ne ha 8/);
+  t.scenes[0].text.pause = 1;
+  assert.deepEqual(problems(t), []);
+});
+

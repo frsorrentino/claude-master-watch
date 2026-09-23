@@ -33,7 +33,7 @@ export type WatchCue = { view: "front" | "threeQuarter" | "drawn" | "side"; colu
 /** Camera della scena (piano 4): `close` = ci si avvicina mentre il momento forte è fuori (default); `release` = si parte
  *  vicini (dopo un battito di ciglia) e la camera torna indietro mentre il componente è fuori, che atterra sull'orologio piccolo. */
 export type Camera = "close" | "release" | "around";   // around: l'orologio compare attorno alla card già ferma al centro, grande
-export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top"; keep?: boolean; carry?: number };   // `keep`: la frase non esce a fine scena, la riprende quella dopo   // `carry`: quante parole arrivano già scritte dalla scena prima (restano ferme, si anima solo il resto)   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
+export type TextCue = { lines: string[]; accent?: string; size?: "title" | "service"; at?: number; sub?: string; place?: "top"; keep?: boolean; carry?: number; pause?: number };   // `pause`: battiti in più prima della seconda riga (corto, 23/09 23:20)   // `keep`: la frase non esce a fine scena, la riprende quella dopo   // `carry`: quante parole arrivano già scritte dalla scena prima (restano ferme, si anima solo il resto)   // place top: in alto a sinistra, piccolo, senza uscita (il titolo che resta sopra al protagonista)
 /** Passaggio alla scena dopo (piano 4 §2 bis): `blink` = la parola in colore cresce fino a riempire il quadro e il suo nero è un battito di ciglia. */
 /** Una chiave del passaggio (piano 4 §2 bis): dove sta e che forma ha l'oggetto che attraversa il taglio, nel display (0-480)
  *  o nel quadro (`space: "frame"`). Il taglio interpola da `carryOut` della scena a `carryIn` della scena dopo. */
@@ -183,7 +183,9 @@ export const validateTimeline = (raw: unknown): Timeline => {
       if (prev?.sleep && s.at - early < 0) say(`la frase comincerebbe al battito ${s.at - early}, prima dell'inizio del film: abbassa «titleLead» del sonno`);
       const room = s.len + early - (s.text.at ?? 0) - (s.watch?.exit ? (s.watch.exitBeats ?? 2) : 0);   // quanto dura davvero l'uscita, non due battiti fissi (Franz, 21/09 11:18)
       // due battiti perché la frase intera resti ferma: è la pausa che la rende leggibile, non la velocità
-      if (words.length * perWord + 2 > room) say(`${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);
+      const pause = s.text.pause ?? 0;
+      if (s.text.pause !== undefined && !(typeof s.text.pause === "number" && s.text.pause >= 0 && half(s.text.pause))) say(`la pausa della frase è «${s.text.pause}»: serve un numero di mezzi battiti`);
+      if (words.length * perWord + pause + 2 > room) say(pause ? `${words.length} parole a mezzo battito l'una più la pausa di ${pause} e due per leggerle fanno ${words.length * perWord + pause + 2} battiti, la scena ne ha ${room}` : `${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
       if (s.text.at !== undefined && (!half(s.text.at) || s.text.at >= s.len)) say(`il testo al battito ${s.text.at} esce dalla scena`);
     }
