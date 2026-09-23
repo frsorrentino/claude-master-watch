@@ -34,7 +34,6 @@ Tre sessioni toccavano l'app e il progetto non procedeva in modo lineare. Regola
   solo con lei per l'app.
 - **claude-master è il fornitore del relay.** Cambia `cm-relay.py` e il contratto solo su richiesta
   di questa sessione; non propone funzioni all'app e non scrive in questo repo.
-- **master è fuori dal progetto.** Non manda messaggi alle due sessioni e non segue lo stato dell'app.
 - L'unico canale tra app e relay è il contratto. Questa sessione manda una richiesta per volta,
   claude-master la implementa e alza la versione, questa sessione aggiorna test e fixture. Durante
   una release del plugin non si mandano richieste.
