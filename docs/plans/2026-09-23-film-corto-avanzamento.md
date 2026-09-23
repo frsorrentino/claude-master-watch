@@ -4,7 +4,7 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 
 | # | Scena (battiti) | Stato | Cosa manca |
 |---|---|---|---|
-| 1 | Quadrante con la complication, pulito (0–1,5) | ● | bozza 13: al posto dell'ambient col titolo (Franz, 21:13-21:24) |
+| 1 | Quadrante con la complication, pulito (0–1,5) | ● | bozza 13: al posto dell'ambient col titolo (Franz, 21:13-21:24); bozza 15: nello stesso orologio della notifica, a destra |
 | 2 | Notifica, «Claude has a question.» (1,5–5,5) | ● | bozza 13: frase nuova al posto di «It asks.» |
 | 3 | Tocco su ▶, «Hear it out.», la voce (5,5–12) | ● | bozza 13: il tocco 4,5 battiti dopo la notifica (erano 8); onda della voce (piano 4) |
 | 4 | Risposta: «yes», espansione, stacco (12–19) | ✓ | tasti in profondità, sfocatura di movimento (piano 4) |
@@ -20,5 +20,5 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
 **Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 e giudicata da Franz la sera stessa (le note sono in questa lista).
-**Bozza 9:** consegnata il 23/09 alle 19:30. **Bozza 10:** consegnata alle 20:07 (`tools/promo/out/review/corto-bozza-10.mp4`): accordo finale al 63 sul logo, scheda Work. **Bozza 11:** consegnata alle 20:35. **Bozza 12:** consegnata alle 20:58, volo approvato. **Bozza 13:** consegnata alle 22:00 (`tools/promo/out/review/corto-bozza-13.mp4`, 40,1 s): nuova apertura, frasi, tre blink, finale su nero (piano 5). **Bozza 14:** in resa: lo stesso orologio fra terminale e lista (piano 6).
+**Bozza 9:** consegnata il 23/09 alle 19:30. **Bozza 10:** consegnata alle 20:07 (`tools/promo/out/review/corto-bozza-10.mp4`): accordo finale al 63 sul logo, scheda Work. **Bozza 11:** consegnata alle 20:35. **Bozza 12:** consegnata alle 20:58, volo approvato. **Bozza 13:** consegnata alle 22:00 (`tools/promo/out/review/corto-bozza-13.mp4`, 40,1 s): nuova apertura, frasi, tre blink, finale su nero (piano 5). **Bozza 14:** resa ma non consegnata (22:07), superata dalla 15. **Bozza 15:** in resa: lo stesso orologio fra terminale e lista (piano 6) e il quadrante nello stesso orologio della notifica (Franz, 22:08).
 **Piano 4 (movimento):** da scrivere dopo la bozza 9.
