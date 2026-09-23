@@ -79,7 +79,9 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   const { at: _a, len: _la, ...lungo } = a, { at: _b, len: _lb, ...corto } = b;
   // la clip sì: nel corto il tasto Write resta fermo in fondo invece di sobbalzare a ogni riga nuova (Franz, 23/09 18:58);
   // n_watch_pinned.mp4 è n_watch_fit.mp4 passata da tools/promo/pin_button.py, stessi fotogrammi e stessa durata
-  assert.equal(corto.watch!.clip, "scenes/n_watch_pinned.mp4");
+  // e acceso dal primo fotogramma, senza righe finché il PC non le scrive (Franz, 23/09 22:17): n_watch_on.mp4 è
+  // n_watch_pinned.mp4 passata da tools/promo/screen_on.py
+  assert.equal(corto.watch!.clip, "scenes/n_watch_on.mp4");
   assert.equal(lungo.watch!.clip, "scenes/n_watch_fit.mp4");
   // e l'esito: il corto chiude il lavoro con la riga che poi vola nell'orologio (piano 4, volo del terminale, 23/09)
   type Term = { kind: string; lines: string[]; times: number[] };
