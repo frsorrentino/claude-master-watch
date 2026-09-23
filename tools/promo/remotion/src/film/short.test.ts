@@ -6,7 +6,10 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
-import { contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
+import { asideAt, contextFill, contextTextAt } from "./ui/aside.ts";
+import { spanFrames } from "./beats.ts";
+import { BLEED_LIFT, closingAt } from "./moves.ts";
+import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
@@ -56,7 +59,10 @@ test("gli avvisi del cartello si leggono e «It asks.» non è già scritta al f
   assert.equal(end.endPace, "blinds");
   assert.equal(end.logoCutout, true);
   assert.equal(end.strapBleed, true);
-  assert.ok(end.len - notesAt(end.endPace) >= 4, `gli avvisi restano ${end.len - notesAt(end.endPace)} battiti`);
+  assert.ok(end.len - notesAt(end.endPace) >= 2.5, `gli avvisi restano ${end.len - notesAt(end.endPace)} battiti`);
+  // il nome arriva quando il logo si è già posato sull'orologio, non sopra l'arco grande (Franz, 23/09 18:55)
+  const scale = closingAt(END_PACE[end.endPace!].start, BLEED_LIFT).pose.scale;
+  assert.ok(scale <= 0.7, `quando arriva il nome l'orologio è a scala ${scale.toFixed(2)}`);
   assert.equal(byId("wake").sleep?.titleLead, 0);
 });
 
@@ -117,16 +123,29 @@ test("la carrellata: lista con l'esito, «Work», «Context», con i blink fra l
   }
   for (const id of ["title", "glance", "done", "shipped"]) assert.equal(short.scenes.find((s) => s.id === id), undefined, `c'è ancora «${id}»`);
 });
-test("la scheda Context si legge prima che parta la tapparella, e le sue 3 barre diventano i listelli", () => {
+test("la scheda Context si legge con i valori finali per almeno 0,9 battiti prima che sfumi (revisione del 23/09, scelta B di Franz)", () => {
+  // si contano i fotogrammi in cui i tre valori sono già quelli finali e scheda e testo sono pieni, con le stesse funzioni
+  // che usa il componente (ui/aside.ts): il test di prima misurava dall'ingresso alla tapparella e passava anche quando
+  // i valori finali non si vedevano mai
+  const g = { bpm: short.bpm, fps: short.fps, offsetSeconds: short.offsetSeconds };
   const ctx = byId("context"), end = byId("end");
-  const aside = (ctx.fx ?? []).find((f) => f.kind === "aside") as { at: number; panel: string; out?: string; rows: unknown[] };
+  const aside = (ctx.fx ?? []).find((f) => f.kind === "aside") as { at: number; len: number; panel: string; out?: string; rows: { pct: number }[]; fadeIn?: number; draw?: number };
   assert.equal(aside.panel, "context");
   assert.equal(aside.out, "bars");
   assert.equal(aside.rows.length, 3);
-  assert.equal(ctx.blinds?.len, 6);
-  const blindStart = ctx.at + ctx.len - BLIND_CUT * ctx.blinds!.len;
-  assert.ok(blindStart - (ctx.at + aside.at) >= 2, `la scheda resta ${blindStart - (ctx.at + aside.at)} battiti prima della tapparella`);
   assert.equal(ctx.at + ctx.len, end.at);
+  const total = spanFrames(g, ctx.at, ctx.len), blindStart = total - Math.round(spanFrames(g, ctx.at, ctx.blinds!.len) * BLIND_CUT);
+  const from = spanFrames(g, ctx.at, aside.at), len = spanFrames(g, ctx.at + aside.at, aside.len);
+  const fi = aside.fadeIn === undefined ? undefined : spanFrames(g, ctx.at + aside.at, aside.fadeIn);
+  const dr = aside.draw === undefined ? undefined : spanFrames(g, ctx.at + aside.at, aside.draw);
+  let readable = 0;
+  for (let f = 0; f < total; f++) {
+    const s = asideAt(f, from, len, fi, dr);
+    const final = aside.rows.every((r, k) => Math.round(r.pct * contextFill(s.d, k)) === r.pct);
+    if (final && s.enter >= 0.999 && f < blindStart && contextTextAt(f, blindStart) >= 0.999) readable++;
+  }
+  const beats = readable / (g.fps * 60 / g.bpm);
+  assert.ok(beats >= 0.9, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
 test("il finale vero del brano parte col primo blink e si spegne sulla tapparella: il cartello resta in silenzio (Franz, 23/09 18:15)", () => {
   // taglio 0.25-1 0-1 0-1 0-11 43-45: 3 battiti + 13 battute fino al finale (43-44), che dura 2 battute

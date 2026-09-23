@@ -144,3 +144,13 @@ test("«hush» del sonno vuole true o false", () => {
   t.scenes[0].sleep.hush = false;
   assert.deepEqual(problems(t), []);
 });
+
+test("la tapparella dura almeno 5 battiti (nel corto 5: parte più tardi e la scheda Context si legge, scelta B del 23/09)", () => {
+  const t = base(); t.scenes = [
+    { id: "a", at: 0, len: 6, act: "control", watch: { view: "front", clip: "scenes/s1_list.mp4" }, blinds: { len: 4.5 } },
+    { id: "b", at: 6, len: 8, act: "close" },
+  ];
+  assert.match(problems(t).join("\n"), /a: la tapparella dura 4.5 battiti: il minimo è 5/);
+  t.scenes[0].blinds.len = 5;
+  assert.deepEqual(problems(t), []);
+});

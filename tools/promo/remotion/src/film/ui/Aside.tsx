@@ -8,6 +8,7 @@ import { UI } from "./UiTokens.ts";
 import { UiGauge } from "./UiGauge.tsx";
 import { soft } from "../moves.ts";
 import { BLIND_CUT } from "./blinds.ts";
+import { asideAt, contextFill, contextTextAt } from "./aside.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -29,15 +30,16 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
     <>
       {list.map((e, i) => {
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
-        const t = (frame - from) / len;
+        const s = asideAt(frame, from, len, e.fadeIn === undefined ? undefined : spanFrames(g, scene.at + e.at, e.fadeIn), e.draw === undefined ? undefined : spanFrames(g, scene.at + e.at, e.draw));
+        const t = s.t;
         if (t < 0 || t >= 1) return null;
         // il pannello resta fermo fino a POCO PRIMA che entri il successivo e se ne va in 8 fotogrammi: mai due insieme
         // (Franz, 18/09 21:54: la quota sbordava di un battito e mezzo sopra il ritmo)
         const next = list[i + 1];
         const gone = next ? spanFrames(g, scene.at, next.at) - 2 : from + len;
         const fade = e.out === "bars" ? 1 : 1 - soft(clamp((frame - (gone - 8)) / 8));
-        const a = Math.min(soft(clamp(t / 0.12)), fade) * (e.out === "bars" && frame >= blindStart ? 0 : 1);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
-        const d = soft(clamp((t - 0.12) / 0.45));                                        // il dato si disegna sul posto
+        const a = Math.min(s.enter, fade) * (e.out === "bars" && frame >= blindStart ? 0 : 1);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
+        const d = s.d;                                        // il dato si disegna sul posto
         return (
           <div key={i} style={{ position: "absolute", left: THEME.leftMargin, top: height / 2, width: 760, translate: "0 -50%", opacity: a, fontFamily: "Inter", color: THEME.white }}>
             {e.panel === "quota" ? (
@@ -112,12 +114,12 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Context</div>
                 {(e.rows ?? []).map((r, k) => {
                   // mentre le barre si riempiono per la tapparella, anche i numeri finiscono di salire: nessun dato resta a metà
-                  const p = Math.max(clamp(d * 1.6 - k * 0.35), e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0);
+                  const p = Math.max(contextFill(d, k), e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0);
                   // l'ultima scheda non svanisce: le due barre si riempiono fino in fondo e da lì nasce la tapparella (Blinds)
                   const g2 = e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0;
                   return (
                     <div key={k} style={{ marginTop: k ? 34 : 18 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: 1 - (e.out === "bars" ? clamp((frame - (blindStart - 14)) / 12) : 0) }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: e.out === "bars" ? contextTextAt(frame, blindStart) : 1 }}>
                         <span>{r.name}</span>
                         <span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * p)} %</span>
                       </div>
