@@ -98,3 +98,8 @@ export const sleepAt = (p: number, len?: number, breathe = true): Sleep => {
  *  il taglio), altrimenti la scena che si risveglia (riparte da `SLEEP_CUT`). `frames` = la finestra intera in fotogrammi. */
 export const sleepP = (frame: number, frames: number, own: boolean, total: number): number =>
   own ? SLEEP_CUT - (total - frame) / frames : SLEEP_CUT + frame / frames;
+
+/** Quanto è accesa la frase della scena che dorme. Con `titleLead` 0 la frase dopo aspetta la notifica, quindi questa resta
+ *  fino al taglio; con qualunque anticipo si spegne col sonno, come nel film lungo, perché le due frasi non stiano insieme
+ *  (revisione del 23/09: prima bastava che `titleLead` ci fosse). */
+export const titleOnAt = (sleepTitle: number, own: boolean, titleLead?: number): number => (own && titleLead !== 0 ? sleepTitle : 1);

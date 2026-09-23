@@ -17,8 +17,8 @@ export const sfxCues = (t: Timeline): SfxCue[] => {
   // sentiva come un rumore sopra il silenzio (Franz, 22/09 09:37)
   for (const s of t.scenes) {
     // niente soffio all'ingresso delle frasi: sotto la musica non aggiungeva nulla e si sentiva come un difetto (Franz, 19/09 16:00)
-    // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09)
-    if (s.out === "blink") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
+    // il battito di ciglia è uno scatto fotografico soft, sul taglio (Franz, 18/09); anche quello di sole palpebre (23/09)
+    if (s.out === "blink" || s.out === "lids") all.push({ beat: s.at + s.len, name: "shutter", gainDb: -22 });
     // l'invio della dettatura: il dito sul ✓ grande e il cerchio che si apre sul terminale (Franz, 21/09 19:46)
     if (s.takeover?.press !== undefined) {
       all.push({ beat: s.at + s.takeover.press, name: "tick", gainDb: -20 });

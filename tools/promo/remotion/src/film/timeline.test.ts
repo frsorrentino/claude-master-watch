@@ -130,7 +130,7 @@ test("la card ✓ in una riga della lista sta dentro il display", () => {
 test("logo ritagliato e cinturino che sborda valgono solo sul cartello", () => {
   const t = base(); t.scenes[1].logoCutout = true; t.scenes[1].strapBleed = true;
   assert.match(problems(t).join("\n"), /list: logo ritagliato e cinturino che sborda valgono solo sul cartello/);
-  t.scenes[1].endCard = true; t.scenes[1].endPace = "blinds";
+  t.scenes[1].endCard = true; t.scenes[1].endPace = "blinds"; t.scenes[1].watch.view = "threeQuarter";
   assert.deepEqual(problems(t), []);
 });
 
@@ -153,4 +153,18 @@ test("la tapparella dura almeno 5 battiti (nel corto 5: parte più tardi e la sc
   assert.match(problems(t).join("\n"), /a: la tapparella dura 4.5 battiti: il minimo è 5/);
   t.scenes[0].blinds.len = 5;
   assert.deepEqual(problems(t), []);
+});
+test("logo ritagliato e cinturino che sborda vogliono true o false; il cinturino sborda solo di tre quarti (revisione del 23/09)", () => {
+  const t = base(); t.scenes[1].endCard = true; t.scenes[1].endPace = "blinds"; t.scenes[1].logoCutout = "yes"; t.scenes[1].strapBleed = 1;
+  const p = problems(t).join("\n");
+  assert.match(p, /list: «logoCutout» è «yes»: serve true o false/);
+  assert.match(p, /list: «strapBleed» è «1»: serve true o false/);
+  t.scenes[1].logoCutout = true; t.scenes[1].strapBleed = true;
+  assert.match(problems(t).join("\n"), /list: il cinturino sborda solo con l'orologio di tre quarti/);
+  t.scenes[1].watch.view = "threeQuarter";
+  assert.deepEqual(problems(t), []);
+});
+test("la riga della card ✓ è un numero (revisione del 23/09)", () => {
+  const t = base(); t.scenes[1].fx.push({ kind: "doneCard", at: 0, name: "payments-api", age: "0 m", text: "Released 2.8.0", slot: "146" });
+  assert.match(problems(t).join("\n"), /list: la riga della card ✓ è «146»: serve un numero fra 0 e 310/);
 });

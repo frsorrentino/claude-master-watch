@@ -1,6 +1,6 @@
 import React from "react";
 import { evolvePath } from "@remotion/paths";
-import { UI } from "./UiTokens.ts";
+import { CARD_BODY, UI, type CardBody } from "./UiTokens.ts";
 
 const CHECK = "M5.5 12.5l4 4L18.5 7.5";
 
@@ -11,7 +11,7 @@ const CHECK = "M5.5 12.5l4 4L18.5 7.5";
  * colori della card vera, così a grandezza 1 combacia col fotogramma. `light` 0-1: quanto è fuori dallo schermo (ombra a terra
  * e luce dall'alto a sinistra, come sul vetro dell'orologio; sul display non ce n'è).
  */
-export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; light?: number; checkDraw?: number }> = ({ w, name, age, text, badge = UI.badge, icon = "check", light = 0, checkDraw }) => (
+export const UiCard: React.FC<{ w: number; name: string; age: string; text: string; badge?: string; icon?: "check" | "play"; light?: number; checkDraw?: number; body?: CardBody }> = ({ w, name, age, text, badge = UI.badge, icon = "check", light = 0, checkDraw, body = CARD_BODY }) => (
   <div style={{ width: w, boxSizing: "border-box", padding: "24px 24px 24.5px", borderRadius: 42, background: UI.surface, color: UI.text, fontFamily: "Roboto",
     boxShadow: `inset 1px 1px 0 rgba(235,244,255,${0.16 * light}), ${16 * light}px ${24 * light}px ${44 * light}px ${-6 * light}px rgba(4,5,12,${0.62 * light})` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 16, height: 36 }}>
@@ -27,6 +27,6 @@ export const UiCard: React.FC<{ w: number; name: string; age: string; text: stri
     {/* il corpo sale di 9,5 unità sotto l'intestazione: misurato il 19/09 con la correlazione 2D fra la card costruita e
         quella dentro il display (18 px di quadro a zoom 1,42 = 9,6 unità). Badge e nome combaciavano già; scendeva il testo.
         Il riempimento in basso cresce di altrettanto, così la card resta alta 213 unità come quella vera. */}
-    <div style={{ marginTop: -9.5, fontSize: 36, lineHeight: "46px", letterSpacing: -0.6 }}>{text}</div>
+    <div style={{ marginTop: body.shift, fontSize: body.size, lineHeight: `${body.line}px`, letterSpacing: -0.6 }}>{text}</div>
   </div>
 );

@@ -143,6 +143,9 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // gli avvisi del cartello (Anthropic, marchi Google, voce sintetica) devono restare in quadro almeno due battiti
     if (s.endCard && s.len - notesAt(s.endPace) < 2) say(`gli avvisi del cartello arrivano al battito ${notesAt(s.endPace)} della scena, che ne dura ${s.len}: servono almeno 2 battiti per leggerli`);
     if ((s.logoCutout || s.strapBleed) && !s.endCard) say("logo ritagliato e cinturino che sborda valgono solo sul cartello");
+    if (s.logoCutout !== undefined && typeof s.logoCutout !== "boolean") say(`«logoCutout» è «${s.logoCutout}»: serve true o false`);
+    if (s.strapBleed !== undefined && typeof s.strapBleed !== "boolean") say(`«strapBleed» è «${s.strapBleed}»: serve true o false`);
+    if (s.strapBleed === true && s.watch?.view !== "threeQuarter") say("il cinturino sborda solo con l'orologio di tre quarti");   // la maschera del cinturino c'è solo lì (PhotoWatch)
     if (s.endTone !== undefined && (!s.endCard || s.endTone !== "blue")) say(`tono del cartello «${s.endTone}»: vale solo «blue», e solo sul cartello`);
     if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
     if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
@@ -187,7 +190,8 @@ export const validateTimeline = (raw: unknown): Timeline => {
       else if (f.kind !== "spoken" && (f.at + len > s.len || f.at >= s.len)) say(`l'effetto ${f.kind} al battito ${f.at} esce dalla scena`);
       else if (f.kind === "spoken" && f.at >= s.len) say(`il parlato comincia al battito ${f.at}, fuori dalla scena`);
       if (f.kind === "terminalPlane" && f.times && f.times.length !== f.lines.length) say(`il terminale ha ${f.lines.length} righe ma ${f.times.length} tempi`);
-      if (f.kind === "doneCard" && f.slot !== undefined && !(f.slot >= 0 && f.slot <= 310)) say(`la riga della card ✓ è a ${f.slot}: fra 0 e 310`);
+      if (f.kind === "doneCard" && f.slot !== undefined && typeof f.slot !== "number") say(`la riga della card ✓ è «${f.slot}»: serve un numero fra 0 e 310`);
+      else if (f.kind === "doneCard" && f.slot !== undefined && !(f.slot >= 0 && f.slot <= 310)) say(`la riga della card ✓ è a ${f.slot}: fra 0 e 310`);
       if (f.kind === "float") for (const c of f.cards) if (c.kind !== "text" && c.kind !== "brief" && c.dictation) {
         const v = (s.fx ?? []).find((x) => x.kind === "spoken");
         if (!v || v.at <= c.dictation.tap) say(`la dettatura di ${c.name} tocca il microfono al battito ${c.dictation.tap} ma la voce della scena non viene dopo`);

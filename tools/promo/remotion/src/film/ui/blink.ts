@@ -3,6 +3,9 @@ import { bump, soft } from "../moves.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const move = bump(0.055);   // la parola arriva in alto e si assesta con un filo di rimbalzo
+/** Le palpebre si chiudono negli ultimi 5 fotogrammi prima del taglio. */
+export const LIDS_CLOSE = 5;
+const WORDS_OUT = 8;        // le parole di una frase escono in 8 fotogrammi (WordMask)
 
 /**
  * La parola in colore lascia il titolo e va a posarsi come titolo in alto (Franz, 18/09 18:22: «fermarsi come titolo centrato
@@ -12,7 +15,7 @@ const move = bump(0.055);   // la parola arriva in alto e si assesta con un filo
  * `travel` 0-1: quanto la parola ha percorso verso il suo posto in alto; `lid` 0-1: palpebre chiuse.
  */
 export const blinkAt = (f: number, cut: number): { travel: number; lid: number; word: number; fade: number } => {
-  const close = 5;                                   // le palpebre si chiudono negli ultimi 5 fotogrammi prima del taglio
+  const close = LIDS_CLOSE;
   // la parola sale INSIEME alla card che esce dal display e arriva al suo posto un filo prima di lei (Franz, 21/09 14:25):
   // il blink comincia sul battito in cui parte la card, e il viaggio della card al centro dura il 42 % dei suoi 3 battiti
   // (≈ 20 fotogrammi): la parola ne impiega 16. La frase intera è già rimasta in quadro fino a qui.
@@ -23,3 +26,7 @@ export const blinkAt = (f: number, cut: number): { travel: number; lid: number; 
   const fade = 1;
   return { travel, lid, word: f < cut ? 1 : 0, fade };
 };
+
+/** Con le sole palpebre (`out: "lids"`) la frase deve essere già uscita quando cominciano a chiudersi: prima usciva negli
+ *  ultimi 8 fotogrammi, insieme a loro (revisione del 23/09). `leave` = il fotogramma in cui la frase comincia a uscire. */
+export const beforeLids = (leave: number, total: number): number => Math.min(leave, total - LIDS_CLOSE - WORDS_OUT);

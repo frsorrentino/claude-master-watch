@@ -29,7 +29,8 @@ import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { takeoverAt } from "./ui/takeover.ts";
 import { Flip } from "./ui/Flip.tsx";
 import { FLIP_CUT } from "./ui/flip.ts";
-import { sleepAt, sleepP } from "./ui/sleep.ts";
+import { sleepAt, sleepP, titleOnAt } from "./ui/sleep.ts";
+import { beforeLids } from "./ui/blink.ts";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
 import { Bands } from "./ui/Bands.tsx";
@@ -75,7 +76,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const mv = sleep && napOwn ? sleep.move : 0;
   // con `titleLead` la frase della scena dopo aspetta la notifica: la frase di chi dorme resta fino al taglio ed esce con la
   // sua uscita normale (corto, 23/09: il titolo apre il film in ambient). Senza, com'era nel film lungo
-  const titleOn = sleep && napOwn && nap?.titleLead === undefined ? sleep.title : 1;
+  const titleOn = sleep ? titleOnAt(sleep.title, napOwn, nap?.titleLead) : 1;
   const drift = sleep ? 1 - sleep.still : 1;
   // nella chiusura delle due finestre la frase cammina verso la colonna dei titoli, dove la scena dopo metterà la sua
   const lift = scene.text?.carry ? interpolate(frame - spanFrames(GRID, scene.at, scene.text.at ?? 0), [0, 14], [0, -THEME.title * 1.04], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) }) : 0;
@@ -99,7 +100,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // i dati della Panoramica stanno dove sta il titolo: il titolo se ne va prima che entri il primo (Franz, 18/09 21:42)
   const firstAside = (scene.fx ?? []).find((f) => f.kind === "aside");
   // con il battito di ciglia il titolo non se ne va: la sua parola in colore cresce e copre tutto (Blink, a livello del film)
-  const leave = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - exitLead(beat * (w.exitBeats ?? MOVE_BEATS), beat) : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
+  const leave0 = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - exitLead(beat * (w.exitBeats ?? MOVE_BEATS), beat) : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
+  // con le sole palpebre la frase è già uscita quando cominciano a chiudersi (revisione del 23/09)
+  const leave = scene.out === "lids" && scene.text?.place !== "top" ? beforeLids(leave0, total) : leave0;
   // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
   // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
   const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);

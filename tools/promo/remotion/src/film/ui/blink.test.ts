@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { blinkAt } from "./blink.ts";
+import { LIDS_CLOSE, beforeLids, blinkAt } from "./blink.ts";
 
 test("la parola arriva al suo posto prima che le palpebre si chiudano, e si riaprono dopo il taglio", () => {
   const a = blinkAt(0, 30);
@@ -18,4 +18,11 @@ test("la parola resta piena per tutta la corsa: si ferma in alto al centro, non 
   const cut = 78;
   for (const f of [0, 40, cut - 8]) assert.equal(blinkAt(f, cut).fade, 1, `a ${f} la parola si sta spegnendo`);
   assert.equal(blinkAt(cut - 10, cut).travel, 1, "e ha finito di muoversi prima che le palpebre si chiudano");
+});
+test("con le sole palpebre la frase è già uscita quando cominciano a chiudersi (revisione del 23/09)", () => {
+  assert.equal(LIDS_CLOSE, 5);
+  assert.equal(blinkAt(94, 100).lid, 0);                      // le palpebre partono 5 fotogrammi prima del taglio
+  assert.ok(blinkAt(96, 100).lid > 0);
+  assert.equal(beforeLids(92, 100), 100 - 5 - 8);             // le parole escono in 8 fotogrammi (WordMask) e finiscono lì
+  assert.equal(beforeLids(60, 100), 60);                      // se se ne andavano già prima, resta com'era
 });

@@ -37,3 +37,9 @@ export const dotsAt = (p: number, len: number): Dots => {
   // come un quarto puntino (Franz, 21/09 16:18). La notifica la dicono gli anelli attorno all'orologio (Fx.tsx).
   return { alpha, on: [lit(0), lit(1), lit(2)], collapse: 0 };
 };
+
+/** I puntini sotto la frase della scena dopo il sonno, `frame` dall'inizio della frase, `pre` fotogrammi di anticipo sulla
+ *  notifica, `frames` la finestra del sonno. Senza anticipo (`titleLead` 0, il corto) non c'è attesa da scandire: prima
+ *  lampeggiavano per due fotogrammi proprio sulla notifica (revisione del 23/09). */
+export const askDotsAt = (frame: number, pre: number, frames: number, len: number): Dots =>
+  pre > 0 ? dotsAt(SLEEP_CUT + (frame - pre) / frames, len) : { alpha: 0, on: [0, 0, 0], collapse: 0 };

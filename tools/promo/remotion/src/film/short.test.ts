@@ -10,11 +10,12 @@ import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } fr
 import { spanFrames } from "./beats.ts";
 import { BLEED_LIFT, closingAt } from "./moves.ts";
 import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
+import { sfxCues } from "./sound.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
-test("il corto dura 71 battiti (38,7 s); la musica parte col primo fotogramma", () => {
-  assert.equal(totalBeats(short), 71);
+test("il corto dura 72,5 battiti (39,5 s); la musica parte col primo fotogramma", () => {
+  assert.equal(totalBeats(short), 72.5);   // 71 fino alla bozza 10: il cartello si allunga di 1,5 battiti (Franz, 23/09 19:58)
   assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
   assert.equal(byId("wake").sleep?.hush, false);                         // e il sonno del display non la zittisce
 });
@@ -59,7 +60,8 @@ test("gli avvisi del cartello si leggono e «It asks.» non è già scritta al f
   assert.equal(end.endPace, "blinds");
   assert.equal(end.logoCutout, true);
   assert.equal(end.strapBleed, true);
-  assert.ok(end.len - notesAt(end.endPace) >= 2.5, `gli avvisi restano ${end.len - notesAt(end.endPace)} battiti`);
+  // gli avvisi restano 4 battiti, 2,2 s: col nome dopo il logo erano scesi a 1,4 s (Franz, 23/09 19:58)
+  assert.ok(end.len - notesAt(end.endPace) >= 4, `gli avvisi restano ${end.len - notesAt(end.endPace)} battiti`);
   // il nome arriva quando il logo si è già posato sull'orologio, non sopra l'arco grande (Franz, 23/09 18:55)
   const scale = closingAt(END_PACE[end.endPace!].start, BLEED_LIFT).pose.scale;
   assert.ok(scale <= 0.7, `quando arriva il nome l'orologio è a scala ${scale.toFixed(2)}`);
@@ -197,4 +199,9 @@ test("il cartello sta su un blu profondo: logo corallo e testi chiari su scuro (
   for (const [name, col, min] of [["titolo", c.title, 7], ["avvisi", c.dim, 7], ["Open source.", c.accent, 4.5]] as const)
     assert.ok(contrast(col, "#2A4472") >= min, `${name} ${col}: contrasto ${contrast(col, "#2A4472").toFixed(1)}:1`);
   assert.notEqual(logoTrack(end.endTone), logoTrack());          // la parte vuota dell'arco schiarisce, sul blu non sparisce
+});
+test("anche il blink di sole palpebre, dalla lista a «Work», ha lo scatto sul taglio (revisione del 23/09)", () => {
+  const list = byId("list");
+  assert.equal(list.out, "lids");
+  assert.ok(sfxCues(short).some((c) => c.name === "shutter" && c.beat === list.at + list.len), "scatto al battito " + (list.at + list.len));
 });

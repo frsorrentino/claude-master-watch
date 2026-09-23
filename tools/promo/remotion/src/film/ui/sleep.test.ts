@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AMBIENT, BREATH, DOTS_GAP, FIELD, HALO, HALO_R, HUSH, SLEEP_CUT, TITLE_AT, sleepAt, sleepP } from "./sleep.ts";
+import { AMBIENT, BREATH, DOTS_GAP, FIELD, HALO, HALO_R, HUSH, SLEEP_CUT, TITLE_AT, sleepAt, sleepP, titleOnAt } from "./sleep.ts";
 
 const inBreath = (v: number) => v >= AMBIENT - 1e-9 && v <= AMBIENT + BREATH + 1e-9;
 
@@ -97,4 +97,10 @@ test("senza respiro l'ambient resta a luce ferma fino al taglio (corto, Franz 23
 test("con il respiro, com'è nel film lungo, la luce dell'ambient sale sui puntini", () => {
   const top = Math.max(...Array.from({ length: 60 }, (_, k) => sleepAt(HUSH + (SLEEP_CUT - HUSH) * (k / 60), 8).light));
   assert.ok(top > AMBIENT + 0.01, `il respiro arriva a ${top}`);
+});
+test("la frase di chi dorme resta accesa fino al taglio solo quando quella dopo non la anticipa, titleLead 0 (revisione del 23/09)", () => {
+  assert.equal(titleOnAt(0.3, true, undefined), 0.3);          // film lungo: si spegne col sonno
+  assert.equal(titleOnAt(0.3, true, 0), 1);                    // corto: resta fino al taglio
+  assert.equal(titleOnAt(0.3, true, 2), 0.3);                  // con un anticipo le due frasi non stanno insieme
+  assert.equal(titleOnAt(0.3, false, 0), 1);                   // la scena dopo il sonno
 });

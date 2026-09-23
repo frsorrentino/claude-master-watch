@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DOTS_FROM, DOT_STEP, TITLE_LEAD, dotsAt } from "./dots.ts";
+import { DOTS_FROM, DOT_STEP, TITLE_LEAD, askDotsAt, dotsAt } from "./dots.ts";
 import { DOTS_GAP, SLEEP_CUT } from "./sleep.ts";
 
 const L = 6.5;                                                 // il sonno del film: 6,5 battiti
@@ -33,4 +33,9 @@ test("crescendo: dopo il suo battito ogni puntino resta acceso, e prima del quar
   assert.ok(mid[0] >= DOT_HOLD && mid[1] >= DOT_HOLD && mid[2] < DOT_HOLD, "●●○");
   const last = dotsAt(at(-0.4), L).on;                  // subito prima della notifica
   assert.ok(last.every((v) => v >= DOT_HOLD), "●●●");
+});
+test("se la frase non anticipa la notifica (titleLead 0) i puntini non si accendono, nemmeno sul fotogramma della notifica (revisione del 23/09)", () => {
+  for (const f of [0, 1, 2, 10]) assert.equal(askDotsAt(f, 0, 131, 8).alpha, 0);
+  // con l'anticipo del film lungo sono quelli di sempre
+  for (const f of [0, 20, 49, 60, 90]) assert.deepEqual(askDotsAt(f, 49, 106, 6.5), dotsAt(SLEEP_CUT + (f - 49) / 106, 6.5));
 });

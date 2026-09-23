@@ -1,14 +1,13 @@
 import React from "react";
 import { useCurrentFrame } from "remotion";
 import { THEME } from "../theme.ts";
-import { SLEEP_CUT } from "./sleep.ts";
-import { dotsAt, DOT_BASE } from "./dots.ts";
+import { askDotsAt, DOT_BASE } from "./dots.ts";
 
 /** I tre puntini dell'attesa, sotto il titolo che si è appena scritto (ui/dots.ts per i tempi). `pre` è quanti fotogrammi
  *  prima del taglio comincia questa sequenza, `frames` la finestra intera del sonno. */
 export const AskDots: React.FC<{ pre: number; frames: number; len: number }> = ({ pre, frames, len }) => {
   const frame = useCurrentFrame();
-  const d = dotsAt(SLEEP_CUT + (frame - pre) / frames, len);
+  const d = askDotsAt(frame, pre, frames, len);
   // lo spazio dei puntini resta SEMPRE occupato, anche quando non si vedono: il titolo sopra è centrato insieme a loro, e
   // se il blocco sparisce la frase scatta in giù (Franz, 21/09 16:20: «It asks» senza puntini faceva uno scatto)
   const show = d.alpha > 0 || d.collapse > 0;
