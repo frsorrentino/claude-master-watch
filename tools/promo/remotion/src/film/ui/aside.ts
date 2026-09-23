@@ -16,3 +16,9 @@ export const asideAt = (frame: number, from: number, len: number, fadeIn?: numbe
 export const contextFill = (d: number, k: number): number => clamp(d * 1.6 - k * 0.35);
 /** Il testo del Context (nomi e percentuali) sfuma in 12 fotogrammi a partire da 14 prima della tapparella. */
 export const contextTextAt = (frame: number, blindStart: number): number => 1 - clamp((frame - (blindStart - 14)) / 12);
+/** Quanto resta di una scheda che se ne va: sfuma negli 8 fotogrammi prima di `gone`. */
+export const fadeOutAt = (frame: number, gone: number): number => 1 - soft(clamp((frame - (gone - 8)) / 8));
+/** Il numero della scheda Work: sale da 0 e arriva a `n` a metà disegno. */
+export const workCount = (n: number, d: number): number => Math.round(n * clamp(d * 2));
+/** Quanto è lunga la barra `k` della scheda Work a disegno `d`: partono una dopo l'altra. */
+export const workBar = (d: number, k: number): number => clamp(d * 1.7 - k * 0.3);

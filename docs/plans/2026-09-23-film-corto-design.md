@@ -61,6 +61,8 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
 
 ## 4. Musica e suoni
 
+**Taglio in uso (23/09 sera, note di Franz delle 18:15 e delle 19:43):** `0.25-1 0-1 0-1 0-11 42-45 --fadein=3`. La musica parte col video e sale dal silenzio in 3 battiti; il colpo della parte forte resta al 27. La battuta 42, che nel brano precede il finale, porta la parte forte fino al 59. Il finale piano (43) sta sotto la tapparella e il colpo finale (44) cade al 63, quando la tapparella si apre e nasce il logo; al 67, quando arriva il nome, è già silenzio. Il taglio e la tabella qui sotto sono quelli del primo design.
+
 **Taglio** dalla traccia originale (scheda: 110 bpm, primo battito a 0,025 s): battute `0-1`, `0-11`, `9-10`, `11-12`, `43-45`. Sono 16 battute, 64 battiti: la musica entra al battito 7 del film, due battiti dopo la notifica, e finisce con l'ultimo.
 
 | Battiti del film | Traccia |

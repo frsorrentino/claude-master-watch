@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { asideAt, contextFill, contextTextAt } from "./aside.ts";
+import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } from "./aside.ts";
 import { soft } from "../moves.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
@@ -26,4 +26,20 @@ test("le righe del Context si riempiono una dopo l'altra, il testo sfuma 14 foto
   assert.equal(contextTextAt(50, 100), 1);
   assert.equal(contextTextAt(92, 100), 0.5);
   assert.equal(contextTextAt(98, 100), 0);
+});
+test("la scheda se ne va in 8 fotogrammi prima di «gone», con le espressioni di prima (il film lungo resta identico)", () => {
+  for (const [frame, gone] of [[10, 100], [92, 100], [95, 100], [100, 100], [130, 100]]) {
+    assert.equal(fadeOutAt(frame, gone), 1 - soft(clamp((frame - (gone - 8)) / 8)));
+  }
+  assert.equal(fadeOutAt(92, 100), 1);
+  assert.equal(fadeOutAt(100, 100), 0);
+});
+test("la scheda Work: il numero sale a metà disegno, le tre barre partono una dopo l'altra", () => {
+  for (const d of [0, 0.2, 0.49, 0.5, 0.8, 1]) {
+    assert.equal(workCount(1, d), Math.round(1 * clamp(d * 2)));
+    for (const k of [0, 1, 2]) assert.equal(workBar(d, k), clamp(d * 1.7 - k * 0.3));
+  }
+  assert.equal(workCount(3, 0.25), 2);
+  assert.equal(workBar(1, 2), 1);
+  assert.ok(workBar(0.5, 2) < workBar(0.5, 0));
 });

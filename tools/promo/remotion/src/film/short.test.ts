@@ -6,7 +6,7 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
-import { asideAt, contextFill, contextTextAt } from "./ui/aside.ts";
+import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
 import { spanFrames } from "./beats.ts";
 import { BLEED_LIFT, closingAt } from "./moves.ts";
 import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
@@ -151,12 +151,42 @@ test("la scheda Context si legge con i valori finali per almeno 0,9 battiti prim
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.9, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
-test("il finale vero del brano parte col primo blink e si spegne sulla tapparella: il cartello resta in silenzio (Franz, 23/09 18:15)", () => {
-  // taglio 0.25-1 0-1 0-1 0-11 43-45: 3 battiti + 13 battute fino al finale (43-44), che dura 2 battute
-  const work = byId("work"), end = byId("end");
-  assert.equal((short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11) * 4, work.at);
-  assert.equal((short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11 + 2) * 4, end.at);
-  assert.ok(totalBeats(short) > end.at, "dopo la musica il cartello");
+test("l'ultimo colpo del brano cade quando la tapparella si apre e nasce il logo, e si spegne quando arriva il nome (Franz, 23/09 19:43)", () => {
+  // taglio 0.25-1 0-1 0-1 0-11 42-45: 3 battiti d'attacco, 14 battute piene fino alla 42 (quella che nel brano precede il
+  // finale), il finale piano (43) sotto la tapparella e il colpo (44), che si spegne in una battuta. Nella bozza 9 il colpo
+  // cadeva al 59 e quando nasceva il logo c'era già silenzio. Il taglio sta nel comando di cut_track.py, non nel codice:
+  // qui si tiene il conto delle battute, la traccia vera si misura sulla resa (colpo al 63, silenzio dal 67)
+  const ctx = byId("context"), end = byId("end");
+  const phrase = (short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11 + 1) * 4;
+  assert.equal(phrase + 4, end.at);
+  assert.ok(phrase <= ctx.at + ctx.len - ctx.blinds!.len * BLIND_CUT, "il finale piano parte prima della tapparella");
+  assert.equal(phrase + 8, end.at + END_PACE[end.endPace!].start, "il colpo si spegne quando arriva il nome");
+  assert.ok(totalBeats(short) > phrase + 8, "dopo la musica il cartello resta in silenzio");
+});
+test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si legge prima che se ne vada (Franz, 23/09 19:45)", () => {
+  const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
+  type Work = { kind: string; at: number; len: number; panel: string; n?: number; note?: string; bars?: number[]; fadeIn?: number; draw?: number };
+  const lw = long.scenes.flatMap((s) => (s.fx ?? []) as Work[]).find((f) => f.kind === "aside" && f.panel === "work")!;
+  const work = byId("work");
+  const a = ((work.fx ?? []) as Work[]).find((f) => f.kind === "aside");
+  assert.ok(a, "la scena Work ha la sua scheda");
+  assert.equal(a.panel, "work");
+  assert.deepEqual([a.n, a.note, a.bars], [lw.n, lw.note, lw.bars]);
+  assert.equal(a.at, 0);
+  assert.equal(a.at + a.len, work.len, "se ne va col blink");
+  // si contano i fotogrammi con numero e barre al valore finale e la scheda piena, con le funzioni del componente
+  const g = { bpm: short.bpm, fps: short.fps, offsetSeconds: short.offsetSeconds };
+  const from = spanFrames(g, work.at, a.at), len = spanFrames(g, work.at + a.at, a.len);
+  const fi = a.fadeIn === undefined ? undefined : spanFrames(g, work.at + a.at, a.fadeIn);
+  const dr = a.draw === undefined ? undefined : spanFrames(g, work.at + a.at, a.draw);
+  let readable = 0;
+  for (let f = 0; f < spanFrames(g, work.at, work.len); f++) {
+    const s = asideAt(f, from, len, fi, dr);
+    const full = workCount(a.n ?? 1, s.d) === (a.n ?? 1) && (a.bars ?? [1, 1, 1]).every((_, k) => workBar(s.d, k) >= 1);
+    if (full && s.enter >= 0.999 && fadeOutAt(f, from + len) >= 0.999) readable++;
+  }
+  const beats = readable / (g.fps * 60 / g.bpm);
+  assert.ok(beats >= 0.8, `la scheda Work si legge per ${beats.toFixed(2)} battiti`);
 });
 test("il cartello sta su un blu profondo: logo corallo e testi chiari su scuro (Franz, 23/09 18:46)", () => {
   // sull'azzurro della tapparella corallo e scritte stonavano (chiaro su chiaro); sul blu più profondo della prova 2 no

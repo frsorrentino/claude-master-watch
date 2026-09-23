@@ -8,7 +8,7 @@ import { UI } from "./UiTokens.ts";
 import { UiGauge } from "./UiGauge.tsx";
 import { soft } from "../moves.ts";
 import { BLIND_CUT } from "./blinds.ts";
-import { asideAt, contextFill, contextTextAt } from "./aside.ts";
+import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } from "./aside.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -37,7 +37,7 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
         // (Franz, 18/09 21:54: la quota sbordava di un battito e mezzo sopra il ritmo)
         const next = list[i + 1];
         const gone = next ? spanFrames(g, scene.at, next.at) - 2 : from + len;
-        const fade = e.out === "bars" ? 1 : 1 - soft(clamp((frame - (gone - 8)) / 8));
+        const fade = e.out === "bars" ? 1 : fadeOutAt(frame, gone);
         const a = Math.min(s.enter, fade) * (e.out === "bars" && frame >= blindStart ? 0 : 1);   // entra in dissolvenza; esce in dissolvenza, salvo l'ultima che diventa la transizione
         const d = s.d;                                        // il dato si disegna sul posto
         return (
@@ -91,12 +91,12 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                 <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Now</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 6 }}>
                   {/* anche qui il numero sale da 0, come gli altri pannelli (Franz, 18/09 22:01) */}
-                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 1) * clamp(d * 2))}</span>
+                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{workCount(e.n ?? 1, d)}</span>
                   <span style={{ fontSize: 56, color: THEME.dim }}>working</span>
                 </div>
                 <div style={{ display: "flex", gap: 14, marginTop: 26 }}>
                   {(e.bars ?? [1, 1, 1]).map((f, k) => (
-                    <span key={k} style={{ flex: f, height: 22, borderRadius: 11, background: [UI.waiting, UI.busy, UI.idle][k % 3], transform: `scaleX(${clamp(d * 1.7 - k * 0.3)})`, transformOrigin: "0 50%" }} />
+                    <span key={k} style={{ flex: f, height: 22, borderRadius: 11, background: [UI.waiting, UI.busy, UI.idle][k % 3], transform: `scaleX(${workBar(d, k)})`, transformOrigin: "0 50%" }} />
                   ))}
                 </div>
                 <div style={{ marginTop: 22, fontSize: 38, color: THEME.dim }}>{e.note}</div>
