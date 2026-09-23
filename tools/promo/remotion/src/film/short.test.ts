@@ -17,9 +17,11 @@ const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
 test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma", () => {
   assert.equal(totalBeats(short), 73.5);   // +4 per la corsia intera (22:17), −4 per la tapparella che se ne va (22:49)
   assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
+  // e parte al suo livello, senza salire dal silenzio: la battuta 0 è l'inizio vero del brano, non c'è un taglio da
+  // nascondere (Franz, 24/09 00:55). Nel comando di cut_track.py niente --fadein
 });
 test("dopo lo stop sul «yes» la musica riparte col giro pieno all'entrata della corsia, e «Deployed» arriva sulla battuta dopo (Franz, 23/09 23:48)", () => {
-  // taglio 0-1 0-11 40-45: una battuta d'attacco, l'introduzione 0-3, poi subito la parte forte (la battuta 4) al 20. Lo stop,
+  // taglio 0-1 0-11 39-43 44-45: una battuta d'attacco, l'introduzione 0-3, poi subito la parte forte (la battuta 4) al 20. Lo stop,
   // a 2,5-3 della battuta 3, cade mentre il «yes» riempie il quadro. Né la 3 ripetuta né una battuta di passaggio (la 26):
   // dopo lo stop la musica riparte con lo stesso giro (Franz, 23:16, 23:34, 23:48)
   const answer = byId("answer"), loop = byId("loop");
