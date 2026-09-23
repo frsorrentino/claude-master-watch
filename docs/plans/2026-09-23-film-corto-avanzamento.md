@@ -18,5 +18,5 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
 **Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 e giudicata da Franz la sera stessa (le note sono in questa lista).
-**Bozza 9:** in resa. Da decidere: il cartello 1,5 battiti più lungo, perché gli avvisi tornino a 2,2 s (ora 1,4 s).
+**Bozza 9:** consegnata il 23/09 alle 19:30 (`tools/promo/out/review/corto-bozza-9.mp4`), da giudicare. Da decidere: il cartello 1,5 battiti più lungo, perché gli avvisi tornino a 2,2 s (ora 1,4 s); quali osservazioni minori del revisore correggere nella bozza 10.
 **Piano 4 (movimento):** da scrivere dopo la bozza 9.
