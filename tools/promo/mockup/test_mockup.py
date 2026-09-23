@@ -49,9 +49,28 @@ class Esportazione(unittest.TestCase):
         q = np.array(g["q34"]["quad"]); base = np.array(pose.display_quad(pose.fit()[0], k=0.86, depth=0.0))
         self.assertLess(q[:, 0].mean(), base[:, 0].mean() - 10)          # spostato verso il lato lontano (sinistra), non verso la corona
         self.assertGreater(q[:, 0].mean(), base[:, 0].mean() - 40)
-        r = np.asarray(Image.open(pub / "q34_reflections.png").convert("L"))
-        self.assertEqual(int(r[5, 5]), 0)                         # fuori dal display: nero, neutro nella fusione «schermo»
-        self.assertGreater(int(r.max()), 60)                      # dentro: i riflessi veri ci sono
+        refl = Image.open(pub / "q34_reflections.png")
+        self.assertEqual(refl.mode, "RGBA")
+        r = np.asarray(refl)
+        self.assertEqual(int(r[5, 5, 3]), 0)                      # fuori dal display: trasparente (vedi RiflessiConAlfa)
+        self.assertGreater(int(r[..., :3].max()), 60)             # dentro: i riflessi veri ci sono
+
+
+class RiflessiConAlfa(unittest.TestCase):
+    def test_il_nero_diventa_trasparente_e_la_fusione_non_cambia(self):
+        # Corto, bozza 2 (Franz, 23/09 07:10): attorno all'orologio del cartello un quadrato nero. In «screen» il nero è
+        # neutro solo sopra qualcosa: dove sotto c'è il trasparente del gruppo, un RGB resta nero, e sul blu del corto si
+        # vede. Con alfa = canale più forte il nero sparisce; premoltiplicato, come lo tiene il browser, il colore torna
+        # quello di prima, quindi sopra la foto e sul nero del film lungo la fusione dà gli stessi pixel.
+        from export import screen_rgba
+        rng = np.random.default_rng(23)
+        rgb = np.concatenate([rng.integers(0, 256, (20000, 3)), [[0, 0, 0], [255, 255, 255], [1, 0, 0], [3, 1, 2], [200, 10, 0]]]).astype(np.uint8).reshape(-1, 1, 3)
+        rgba = screen_rgba(rgb)
+        self.assertEqual(rgba.dtype, np.uint8)
+        a = rgba[..., 3].astype(int)
+        self.assertTrue(np.array_equal(a, rgb.max(axis=-1)))
+        prem = (rgba[..., :3].astype(int) * a[..., None] * 2 + 255) // 510      # c·a/255 arrotondato, come Skia
+        self.assertTrue(np.array_equal(prem, rgb.astype(int)))
 
 if __name__ == "__main__":
     unittest.main()

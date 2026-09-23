@@ -15,6 +15,14 @@ def grade(im, contrast, red):                      # la stessa correzione dei fo
     r, g, b = ImageEnhance.Contrast(im).enhance(contrast).split()
     return Image.merge("RGB", (r.point(lambda v: int(v * red)), g, b.point(lambda v: min(255, int(v * 1.05)))))
 
+def screen_rgba(refl):
+    """I riflessi da fondere in «screen»: alfa = canale più forte, colore diviso per l'alfa. Premoltiplicato, come lo tiene il
+    browser, il colore torna identico: sopra la foto la fusione dà gli stessi pixel, e dove sotto non c'è niente il nero non
+    copre più il fondo (il quadrato nero nel cartello del corto, 23/09)."""
+    a = refl.max(axis=-1, keepdims=True).astype(np.float32)
+    c = np.rint(refl.astype(np.float32) * 255 / np.maximum(a, 1))
+    return np.concatenate([np.clip(c, 0, 255), a], axis=-1).astype(np.uint8)
+
 def front():
     im = grade(Image.open(MAT / "f5_body.png").convert("RGB"), 1.12, 0.96); im.putalpha(Image.open(MAT / "f5_mask.png").convert("L"))
     im.save(PUB / "front_body.png")
@@ -38,7 +46,7 @@ def q34():
     co = np.linalg.solve(np.array(M, float), np.array(rhs, float))
     a = np.asarray(disc.filter(ImageFilter.GaussianBlur(2)).transform((n, n), Image.PERSPECTIVE, tuple(co), Image.BICUBIC)).astype(np.float32) / 255
     refl = np.clip((np.asarray(body).astype(np.float32) - 40) * 1.20, 0, 255) * a[..., None]
-    Image.fromarray(refl.astype(np.uint8)).save(PUB / "q34_reflections.png")
+    Image.fromarray(screen_rgba(refl.astype(np.uint8)), "RGBA").save(PUB / "q34_reflections.png")
     return {"size": n, "cx": 872, "cy": 880, "b": 640, "quad": [[round(float(v), 1) for v in q] for q in quad]}
 
 if __name__ == "__main__":
