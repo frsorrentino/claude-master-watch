@@ -1,6 +1,6 @@
 # Film corto: avanzamento scena per scena
 
-Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontrollare perché cambia qualcosa · ● fatta, da vedere nella prossima bozza · ○ nuova, da fare · — da fare.
+Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontrollare perché cambia qualcosa · ● fatta, da vedere nella bozza 8 · ○ nuova, da fare · — da fare.
 
 | # | Scena (battiti) | Stato | Cosa manca |
 |---|---|---|---|
@@ -14,8 +14,8 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | 8 | «Work» della Panoramica, con i blink (55–57) | ● | da vedere nella bozza 8 |
 | 9 | «Context» e la tapparella a 3 barre (57–63) | ● | da vedere nella bozza 8 |
 | 10 | Cartello: logo ritagliato, cinturino che sborda, avvisi (63–71) | ● | da vedere nella bozza 8 |
-| — | Musica: 5 battute d'introduzione, colpo al 27, finale dal 63 | ● | tagliata e misurata; da sentire nella bozza 8 |
+| — | Musica: 5 battute d'introduzione, colpo al 27, finale dal 63 | ● | da sentire nella bozza 8 (colpo +6,8 dB al 27) |
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
-**Piano 3 (struttura):** compiti 1, 2 e 3 fatti · 4 (bozza 8) da fare.
+**Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 (`tools/promo/out/review/corto-bozza-8.mp4`), da giudicare.
 **Piano 4 (movimento):** da scrivere dopo la bozza 8.
