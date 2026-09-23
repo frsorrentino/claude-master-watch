@@ -10,7 +10,7 @@
     "know": ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"],
     "act": ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"],
     "control": ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"],
-    "close": ["#4D6C9D", "#4A6494", "#445C8A", "rgb(80,110,160)"]
+    "close": ["#34568C", "#2A4472", "#223861", "rgb(52,86,140)"]
   },
   "scenes": [
     {"id": "wake", "at": 0, "len": 5, "act": "know", "watch": {"view": "front", "clip": "scenes/s0_face.mp4", "clipStart": 1.0, "freeze": true, "dolly": {"from": 1, "to": 1.08}}, "text": {"lines": ["Claude Code,", "on your wrist."], "accent": "wrist.", "at": 0.5}, "sleep": {"len": 8, "musicBackBeats": 2, "titleLead": 0, "breath": false, "hush": false}},

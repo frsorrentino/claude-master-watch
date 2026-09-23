@@ -25,8 +25,10 @@ export const contrast = (a: string, b: string): number => {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 };
-/** I colori dei testi del cartello. «blue»: il cartello del corto resta sull'azzurro della tapparella chiusa (Franz, 23/09
- *  18:15); titolo e accento reggono (5,3 e 3,2:1), il grigio degli avvisi no (2,8:1) e schiarisce. */
+/** I colori dei testi del cartello. «blue»: il cartello del corto sta su un blu profondo (Franz, 23/09 18:46: sull'azzurro
+ *  della tapparella logo e scritte stonavano); il grigio degli avvisi schiarisce. */
 export type EndTone = "blue";
 export const endColors = (tone?: EndTone): { title: string; accent: string; dim: string } =>
   tone === "blue" ? { title: THEME.white, accent: THEME.accent, dim: "#E4E9F4" } : { title: THEME.white, accent: THEME.accent, dim: THEME.dim };
+/** La parte vuota dell'arco del logo: il grigio del film lungo sul blu del corto sparisce (Franz, 23/09 18:46), e schiarisce. */
+export const logoTrack = (tone?: EndTone): string => (tone === "blue" ? "rgba(244,242,236,0.25)" : "#3A404C");

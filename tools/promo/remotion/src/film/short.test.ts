@@ -6,7 +6,7 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
-import { contrast, endColors, notesAt } from "./endCard.ts";
+import { contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
@@ -135,12 +135,13 @@ test("il finale vero del brano parte col primo blink e si spegne sulla tapparell
   assert.equal((short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11 + 2) * 4, end.at);
   assert.ok(totalBeats(short) > end.at, "dopo la musica il cartello");
 });
-test("il cartello resta sull'azzurro della tapparella chiusa, con i testi leggibili (Franz, 23/09 18:15)", () => {
-  // la tapparella chiusa, misurata sulla bozza 8: circa rgb(74, 100, 148)
+test("il cartello sta su un blu profondo: logo corallo e testi chiari su scuro (Franz, 23/09 18:46)", () => {
+  // sull'azzurro della tapparella corallo e scritte stonavano (chiaro su chiaro); sul blu più profondo della prova 2 no
   const end = byId("end");
-  assert.deepEqual(short.palette?.close, ["#4D6C9D", "#4A6494", "#445C8A", "rgb(80,110,160)"]);
+  assert.deepEqual(short.palette?.close, ["#34568C", "#2A4472", "#223861", "rgb(52,86,140)"]);
   assert.equal(end.endTone, "blue");
   const c = endColors(end.endTone);
-  for (const [name, col, min] of [["titolo", c.title, 4.5], ["avvisi", c.dim, 4.5], ["Open source.", c.accent, 3]] as const)
-    assert.ok(contrast(col, "#4A6494") >= min, `${name} ${col}: contrasto ${contrast(col, "#4A6494").toFixed(1)}:1`);
+  for (const [name, col, min] of [["titolo", c.title, 7], ["avvisi", c.dim, 7], ["Open source.", c.accent, 4.5]] as const)
+    assert.ok(contrast(col, "#2A4472") >= min, `${name} ${col}: contrasto ${contrast(col, "#2A4472").toFixed(1)}:1`);
+  assert.notEqual(logoTrack(end.endTone), logoTrack());          // la parte vuota dell'arco schiarisce, sul blu non sparisce
 });
