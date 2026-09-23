@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import raw from "./timeline.json";
+import shortRaw from "./timeline.short.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
 import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
@@ -48,6 +49,8 @@ export const FILM_TIMELINE = validateTimeline(raw);
 export const FilmTimeline = React.createContext<Timeline>(FILM_TIMELINE);
 /** I fotogrammi sono assoluti: la musica parte dal fotogramma 0 e il battito 0 cade a offsetSeconds. */
 export const filmFrames = (): number => framesOf(FILM_TIMELINE);
+/** Il corto (design del 23/09): un'altra scaletta sullo stesso motore. */
+export const SHORT_TIMELINE = validateTimeline(shortRaw);
 
 export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; around?: React.ReactNode }> = ({ scene, overlay, around }) => {
   const TIMELINE = React.useContext(FilmTimeline);
@@ -304,3 +307,6 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
     </FilmTimeline.Provider>
   );
 };
+
+/** Il corto: la stessa macchina del film lungo, con la sua scaletta, la sua musica e la sua tavolozza. */
+export const ShortFilm: React.FC<{ stems?: Stems }> = ({ stems }) => <Film stems={stems} timeline={SHORT_TIMELINE} />;
