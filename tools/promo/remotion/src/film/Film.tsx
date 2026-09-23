@@ -31,6 +31,7 @@ import { Flip } from "./ui/Flip.tsx";
 import { FLIP_CUT } from "./ui/flip.ts";
 import { sleepAt, sleepP, titleOnAt } from "./ui/sleep.ts";
 import { beforeLids } from "./ui/blink.ts";
+import { screenFadeAt } from "./ui/takeIn.ts";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
 import { Bands } from "./ui/Bands.tsx";
@@ -108,6 +109,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
   // `fadeOut`: l'orologio se ne va in dissolvenza PRIMA del taglio, sfalsato rispetto a quello che resta in quadro
   // (il terminale): sparendo insieme sembrava uno stacco, non un passaggio (Franz, 20/09 20:09)
+  // `screenFade`: sfuma lo schermo, non l'orologio (piano 6): nel corto il terminale entra nello STESSO orologio
+  const screenCover = w?.screenFade ? screenFadeAt(frame, total, spanFrames(GRID, scene.at, w.screenFade)) : 0;
   const fadeOut = w?.fadeOut ? 1 - Math.min(1, Math.max(0, (frame - (total - spanFrames(GRID, scene.at, w.fadeOut))) / spanFrames(GRID, scene.at, w.fadeOut))) : 1;
   // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
   // il dolly della scena (23/09): la camera si avvicina o arretra; senza dolly vale 1 e la scena resta com'era
@@ -169,7 +172,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} track={logoTrack(scene.endTone)} /> : overlay} around={around}
+          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} track={logoTrack(scene.endTone)} /> : screenCover > 0 ? <><div style={{ position: "absolute", inset: 0, background: scene.bgFrom ?? actColors(scene.act, TIMELINE.palette)[1], opacity: screenCover }} />{overlay}</> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

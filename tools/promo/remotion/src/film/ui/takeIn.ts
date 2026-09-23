@@ -47,3 +47,9 @@ export const takeInRect = (to: Rect, p: number, frame: { w: number; h: number })
   const s = takeInAt(p).shrink;
   return { x: lerp(0, to.x, s), y: lerp(0, to.y, s), w: lerp(frame.w, to.w, s), h: lerp(frame.h, to.h, s), r: lerp(0, to.r, s) };
 };
+
+/** Lo schermo della scena che finisce sfuma nel colore del suo fondo, negli ultimi `frames` fotogrammi, pieno sull'ultimo
+ *  (piano 6): nel corto lo schermo del terminale diventa il grigio del terminale, e al taglio la finestra che vola lo copre
+ *  già. Al posto della dissolvenza di tutto l'orologio, che lo faceva sembrare un altro (Franz, 23/09 21:13). */
+export const screenFadeAt = (frame: number, total: number, frames: number): number =>
+  inOut(clamp((frame - (total - frames)) / Math.max(1, frames - 1)));

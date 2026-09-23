@@ -81,7 +81,11 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   const tc = (corto.fx ?? []).find((f) => f.kind === "terminalPlane") as Term, tl = (lungo.fx ?? []).find((f) => f.kind === "terminalPlane") as Term;
   assert.deepEqual(tc.lines, [...tl.lines, "⏺ Released 2.8.0 and tagged v2.8.0"]);
   assert.deepEqual(tc.times, [...tl.times, 9.5]);
-  const senza = (s: typeof corto) => ({ ...s, watch: { ...s.watch!, clip: "" }, fx: (s.fx ?? []).map((f) => (f.kind === "terminalPlane" ? { ...f, lines: [], times: [] } : f)) });
+  // e l'orologio: nel corto non sfuma, sfuma il suo schermo nel grigio del terminale (piano 6, Franz 23/09 21:13)
+  assert.equal(corto.watch!.fadeOut, undefined);
+  assert.equal(corto.watch!.screenFade, 1);
+  assert.equal(lungo.watch!.fadeOut, 1.5);
+  const senza = (s: typeof corto) => ({ ...s, watch: { ...s.watch!, clip: "", fadeOut: undefined, screenFade: undefined }, fx: (s.fx ?? []).map((f) => (f.kind === "terminalPlane" ? { ...f, lines: [], times: [] } : f)) });
   assert.deepEqual(senza(corto), senza(lungo));
   // la scena finisce con il terminale (5 + 5,5 battiti): il film lungo lo tiene fermo 1,5 battiti in più, che nel corto
   // servono a «Every session, at a glance.» (5 parole, 4,5 battiti)

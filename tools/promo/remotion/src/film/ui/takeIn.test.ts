@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { slotRect, takeInAt, takeInRect } from "./takeIn.ts";
+import { screenFadeAt, slotRect, takeInAt, takeInRect } from "./takeIn.ts";
 import { LIST_BODY } from "./UiTokens.ts";
 
 const F = { w: 1920, h: 1080 };
@@ -39,4 +39,12 @@ test("la riga dell'esito si scioglie nel testo della card fra 0,6 e 0,85: mai du
   assert.equal(takeInAt(0.5).lineAlpha, 1);
   assert.ok(takeInAt(0.7).lineAlpha > 0 && takeInAt(0.7).lineAlpha < 1);
   assert.equal(takeInAt(0.85).lineAlpha, 0);
+});
+test("nell'ultimo battito del terminale lo schermo sfuma nel grigio del terminale: pieno sull'ultimo fotogramma (piano 6)", () => {
+  const total = 200, frames = 16;
+  assert.equal(screenFadeAt(total - frames - 1, total, frames), 0);
+  assert.equal(screenFadeAt(total - frames, total, frames), 0);
+  assert.equal(screenFadeAt(total - 1, total, frames), 1);
+  let last = 0;
+  for (let f = total - frames; f < total; f++) { const v = screenFadeAt(f, total, frames); assert.ok(v >= last, `fotogramma ${f}`); last = v; }
 });

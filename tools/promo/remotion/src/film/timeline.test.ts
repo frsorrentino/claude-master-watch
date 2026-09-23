@@ -182,3 +182,11 @@ test("la tapparella va solo nel nero (corto, 23/09 21:13)", () => {
   t.scenes[0].blinds.to = "black";
   assert.deepEqual(problems(t), []);
 });
+test("lo schermo sfuma per un numero di battiti positivo, dentro la scena (piano 6)", () => {
+  const t = base(); t.scenes[1].watch.screenFade = 0;
+  assert.match(problems(t).join("\n"), /list: lo schermo sfuma per 0 battiti: serve un numero fra 0 e la durata della scena/);
+  t.scenes[1].watch.screenFade = 9;
+  assert.match(problems(t).join("\n"), /list: lo schermo sfuma per 9 battiti: serve un numero fra 0 e la durata della scena/);
+  t.scenes[1].watch.screenFade = 1;
+  assert.deepEqual(problems(t), []);
+});
