@@ -1,7 +1,7 @@
 """Il taglio sulle battute: attacco a metà battuta e salita dal silenzio (corto, 23/09 18:24: la musica parte con il video)."""
 import unittest
 import numpy as np
-from cut_track import cut, fade_in
+from cut_track import cut, fade_in, fade_out
 
 SR, BPM, FIRST = 8000, 120.0, 0.1          # 120 bpm: battito 0,5 s, battuta 2 s
 
@@ -18,6 +18,13 @@ class Taglio(unittest.TestCase):
         self.assertLess(float(y[int(0.75 * SR)]), 0.6)                 # a metà salita è ancora sotto
         self.assertAlmostEqual(float(y[int(1.5 * SR)]), 1.0, places=5)  # dopo tre battiti è piena
         self.assertAlmostEqual(float(y[-1]), 1.0, places=5)
+    def test_il_colpo_finale_si_chiude_in_fretta_e_arriva_al_silenzio(self):
+        # il colpo pieno sul logo: pieno fino all'ultimo quarto di battito, poi si chiude nel silenzio (Franz, 24/09)
+        y = fade_out(np.ones(SR * 2, np.float32), SR, BPM, 0.25)
+        n = int(0.25 * 0.5 * SR)                                        # un quarto di battito a 120 bpm
+        self.assertTrue(np.all(y[:-n] == 1.0))                          # prima della chiusura non cambia niente
+        self.assertEqual(float(y[-1]), 0.0)
+        self.assertTrue(np.all(np.diff(y[-n:]) <= 0))                   # scende e basta
 
 if __name__ == "__main__":
     unittest.main()
