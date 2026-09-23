@@ -21,7 +21,7 @@ test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma"
   // nascondere (Franz, 24/09 00:55). Nel comando di cut_track.py niente --fadein
 });
 test("dopo lo stop sul «yes» la musica riparte col giro pieno all'entrata della corsia, e «Deployed» arriva sulla battuta dopo (Franz, 23/09 23:48)", () => {
-  // taglio 0-1 0-11 39-43 44-45: una battuta d'attacco, l'introduzione 0-3, poi subito la parte forte (la battuta 4) al 20. Lo stop,
+  // taglio 0-1 0-11 39-43 39-41.375: una battuta d'attacco, l'introduzione 0-3, poi subito la parte forte (la battuta 4) al 20. Lo stop,
   // a 2,5-3 della battuta 3, cade mentre il «yes» riempie il quadro. Né la 3 ripetuta né una battuta di passaggio (la 26):
   // dopo lo stop la musica riparte con lo stesso giro (Franz, 23:16, 23:34, 23:48)
   const answer = byId("answer"), loop = byId("loop");
@@ -192,20 +192,18 @@ test("la scheda Context si legge con i valori finali prima del quarto blink (Fra
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
-test("il finale resta pieno fino al logo, senza la battuta piana sotto lo slogan; l'accordo sul logo (Franz, 23/09 19:43 e 24/09 00:09)", () => {
-  // taglio 0-1 0-11 39-43 44-45: 4 battiti d'attacco, le battute 0-3, le 4-10, le 39-42 piene fino al logo e l'accordo
-  // finale (44), che si spegne da sé in una battuta. Via la battuta piana (43): sotto lo slogan faceva sfumare la musica
-  // (Franz, 24/09 00:09: «lascerei il finale pieno senza sfumare»). La 39 segue la 10 come nel brano segue la 38 (code
-  // uguali, coseno 0,986). Il taglio sta nel comando di cut_track.py: qui si tiene il conto delle battute, la traccia vera
-  // si misura sulla resa (piena fino al 64, accordo al 64, silenzio dal 68). Il colpo secco sul logo (bozza 22) suonava come un taglio,
-  // non come un finale del brano, che un finale netto non ce l'ha: si resta sul suo accordo (Franz, 24/09 00:51)
+test("la musica resta piena fino alla fine, anche sotto il cartello, e sfuma solo negli ultimi due battiti (Franz, 24/09 01:04)", () => {
+  // taglio 0-1 0-11 39-43 39-41.375 --fadeout=2: una battuta d'attacco, le battute 0-3, le 4-10, le 39-42 fino al logo e di
+  // nuovo le 39-41 sotto il cartello, fino all'ultimo fotogramma. La 42 è la stessa registrazione della 38 (spettro 1,000,
+  // forma d'onda 0,962): dopo la 42 la 39 riparte come nel brano dopo la 38. Né l'accordo del brano né un colpo sul logo:
+  // il brano non ha un finale netto, e il colpo secco suonava come un taglio (Franz, 24/09 00:51). Il taglio sta nel
+  // comando di cut_track.py: qui si tiene il conto dei battiti, la traccia vera si misura sulla resa
   const slogan = byId("slogan"), end = byId("end");
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, chord = drop + (7 + 4) * 4;
-  assert.equal(chord, 64);
-  assert.ok(slogan.at >= drop && slogan.at + slogan.len <= chord, "lo slogan sta tutto sotto la musica piena");
-  assert.equal(chord, end.at, "l'accordo sul logo");
-  assert.equal(chord + 4, end.at + END_PACE[end.endPace!].start, "si spegne quando arriva il nome");
-  assert.ok(totalBeats(short) > chord + 4, "dopo la musica il cartello resta in silenzio");
+  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, logo = drop + (7 + 4) * 4, last = logo + 2.375 * 4, fade = 2;
+  assert.equal(logo, end.at, "il logo cade sul primo battito di una battuta piena");
+  assert.ok(slogan.at >= drop && slogan.at + slogan.len <= logo, "lo slogan sta tutto sotto la musica piena");
+  assert.equal(last, totalBeats(short), "la musica finisce con l'ultimo fotogramma");
+  assert.ok(end.at + END_PACE[end.endPace!].start <= last - fade, "il nome arriva con la musica ancora piena");
 });
 test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si legge prima che se ne vada (Franz, 23/09 19:45)", () => {
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
