@@ -2,14 +2,23 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
+import { TAKEOVER_CUT } from "./ui/takeover.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
 test("il corto dura 72 battiti, con la musica fino all'ultimo fotogramma", () => assert.equal(totalBeats(short), 72));
-test("la pressione del «yes» cade sull'attacco della parte forte, al battito 24", () => {
-  const answer = short.scenes.find((s) => s.id === "answer")!;
+test("il «yes» esplode sul culmine della musica, al battito 24: lì l'anello si chiude e parte l'espansione (Franz, 23/09 10:42)", () => {
+  // prima il dito cadeva sull'attacco e l'espansione arrivava due battiti dopo, a musica già partita
+  const answer = short.scenes.find((s) => s.id === "answer")!, next = short.scenes.find((s) => s.id === "loop")!;
+  const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; len: number; pressAt: number };
   const press = (answer.fx ?? []).find((f) => f.kind === "longPress")!;
-  assert.equal(answer.at + press.at, 24);
+  const ringStart = answer.at + ob.at + ob.pressAt, ringEnd = ringStart + 0.12 * ob.len;   // optionsBuildAt: l'anello corre 0,12 dell'arco
+  const burst = next.at - TAKEOVER_CUT * answer.takeover!.len;                                // Film.tsx: dove parte l'espansione
+  assert.ok(ringEnd >= 24 && ringEnd <= 24.1, `l'anello si chiude al battito ${ringEnd}`);
+  // l'espansione parte fino a 0,2 battiti prima: la crescita comincia piano (growEase), sul 24 il tasto è ancora al 3 % e si
+  // gonfia davvero subito dopo, sul colpo; e il takeover non può durare meno di 2,5 battiti
+  assert.ok(burst >= 23.8 && burst <= 24.1, `l'espansione parte al battito ${burst}`);
+  assert.equal(answer.at + press.at, ringStart);                                              // il suono della pressione parte con l'anello
   assert.equal((short.musicDelayBeats ?? 0) + 5 * 4, 24);   // 5 battute d'introduzione
 });
 test("la seconda vibrazione cade sulla battuta quieta (56) e «Shipped.» sulla ripresa (60)", () => {
@@ -22,13 +31,26 @@ test("la seconda vibrazione cade sulla battuta quieta (56) e «Shipped.» sulla 
 });
 
 const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
-test("l'anello della pressione parte sull'attacco (battito 24) e la voce finisce prima, così la musica entra piena", () => {
+test("il dito preme quando la voce ha finito, e la musica entra piena al 24", () => {
   const answer = byId("answer");
-  const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; pressAt: number };
-  assert.equal(answer.at + ob.at + ob.pressAt, 24);
+  const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; len: number; pressAt: number };
+  const squash = answer.at + ob.at + ob.pressAt - 0.04 * ob.len;                              // optionsBuildAt: il tasto si schiaccia 0,04 prima
   const speaks = byId("speaks");
   const v = (speaks.fx ?? []).find((f) => f.kind === "spoken") as { at: number; len: number };
-  assert.ok(speaks.at + v.at + v.len <= 23.5, `la voce finisce al battito ${speaks.at + v.at + v.len}`);
+  const voiceEnd = speaks.at + v.at + v.len;
+  assert.ok(voiceEnd <= 23.5, `la voce finisce al battito ${voiceEnd}`);
+  assert.ok(squash >= voiceEnd, `il dito preme al battito ${squash}, la voce finisce al ${voiceEnd}`);
+});
+test("la corsia comincia dopo l'espansione, ma card, voce, dettatura e invio restano ai loro battiti", () => {
+  const loop = byId("loop");
+  const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; cards: { dictation?: { tap: number } }[] };
+  const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
+  assert.equal(loop.at + fl.at, 28);
+  assert.equal(loop.at + fl.at + fl.len, 40);
+  assert.equal(loop.at + say.at, 32);
+  assert.equal(loop.at + fl.cards.find((c) => c.dictation)!.dictation!.tap, 31.5);
+  assert.equal(loop.at + loop.takeover!.press!, 40.5);
+  assert.equal(loop.at + loop.len, 41);
 });
 test("attorno alla card ✓ l'orologio resta nella stessa colonna: niente salti ai tagli", () => {
   assert.equal(watchColumn(byId("done")), watchColumn(byId("glance")));
