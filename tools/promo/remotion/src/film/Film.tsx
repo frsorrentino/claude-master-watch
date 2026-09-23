@@ -281,8 +281,10 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
       })}
       {/* il battito di ciglia dura quanto la crescita della card, non 30 fotogrammi: parola e scheda crescono INSIEME
           (Franz, 19/09 05:12). La parola resta dov'è e si ingrandisce; le palpebre si chiudono negli ultimi 7. */}
-      {TIMELINE.scenes.filter((s) => s.out === "blink").map((s) => (
-        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.text?.accent ?? ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
+      {/* «lids»: le sole palpebre anche con una frase in scena, che esce con la sua uscita normale prima che si chiudano
+          (corto, 23/09: la carrellata passa da una schermata del polso all'altra) */}
+      {TIMELINE.scenes.filter((s) => s.out === "blink" || s.out === "lids").map((s) => (
+        <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.out === "blink" ? s.text?.accent ?? "" : ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si

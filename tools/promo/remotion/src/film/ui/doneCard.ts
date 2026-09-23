@@ -11,3 +11,8 @@ export const doneCardAt = (frame: number, beat: number, rest = false): { rise: n
   const d = clamp((frame - 0.1 * beat) / (0.4 * beat));
   return { rise: 1 - (1 - r) ** 3, draw: d * d * (3 - 2 * d) };
 };
+
+/** Dove sta la card e quanto si scurisce il display. Senza `slot` sale da sotto il bordo (a riposo al centro, card alta
+ *  213) e il display si scurisce con lei; con `slot` sta ferma nella sua riga della lista e il display resta com'è. */
+export const doneCardPlace = (rise: number, slot?: number): { y: number; scrim: number } =>
+  slot === undefined ? { y: 134 + (1 - rise) * 346, scrim: rise } : { y: slot, scrim: 0 };

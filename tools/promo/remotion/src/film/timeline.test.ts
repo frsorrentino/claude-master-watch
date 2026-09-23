@@ -113,3 +113,16 @@ test("il respiro del sonno si spegne con false; altri valori sono un errore", ()
   t.scenes[0].sleep.breath = false;
   assert.deepEqual(problems(t), []);
 });
+
+test("le sole palpebre («lids») sono un passaggio valido anche con una frase, che se ne va prima", () => {
+  const t = base(); t.scenes[0].out = "lids";
+  assert.deepEqual(problems(t), []);
+  t.scenes[0].out = "wink";
+  assert.match(problems(t).join("\n"), /open: passaggio «wink» sconosciuto/);
+});
+test("la card ✓ in una riga della lista sta dentro il display", () => {
+  const t = base(); t.scenes[1].fx.push({ kind: "doneCard", at: 0, name: "payments-api", age: "0 m", text: "Released 2.8.0", slot: 400 });
+  assert.match(problems(t).join("\n"), /list: la riga della card ✓ è a 400: fra 0 e 310/);
+  t.scenes[1].fx[1].slot = 146;
+  assert.deepEqual(problems(t), []);
+});

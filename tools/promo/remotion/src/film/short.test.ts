@@ -5,10 +5,11 @@ import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
+import { BLIND_CUT } from "./ui/blinds.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
-test("il corto dura 75 battiti dopo l'apertura nuova; il piano 3 lo porta a 71 con la carrellata (Task 2)", () => assert.equal(totalBeats(short), 75));
+test("il corto dura 71 battiti (38,7 s), con la musica fino all'ultimo fotogramma", () => assert.equal(totalBeats(short), 71));
 test("il colpo della musica cade sull'entrata della corsia, non sulla pressione: la card «Deployed» compare sul colpo (Franz, 23/09 11:28)", () => {
   // taglio 0-1 0-11 9-10 11-12 43-45 dal battito 7: cinque battute d'introduzione, il colpo (la battuta 4 della traccia) al 27.
   // Lo stacco (la musica si ferma a 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro
@@ -44,10 +45,6 @@ test("la corsia comincia dopo l'espansione, ma card, voce, dettatura e invio res
   assert.equal(loop.at + loop.takeover!.press!, 39.5);
   assert.equal(loop.at + loop.len, 40);
 });
-test("attorno alla card ✓ l'orologio resta nella stessa colonna: niente salti ai tagli", () => {
-  assert.equal(watchColumn(byId("done")), watchColumn(byId("glance")));
-  assert.equal(watchColumn(byId("done")), watchColumn(byId("shipped")));
-});
 test("gli avvisi del cartello si leggono e «It asks.» non è già scritta al fotogramma 0", () => {
   assert.equal(byId("end").endPace, "compact");
   assert.equal(byId("wake").sleep?.titleLead, 0);
@@ -64,33 +61,7 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   const term = (b.fx ?? []).find((f) => f.kind === "terminalPlane") as { at: number; len: number };
   assert.ok(b.len >= term.at + term.len, `il terminale finisce al battito ${term.at + term.len}, la scena ne dura ${b.len}`);
 });
-test("sul polso le schermate vanno in fila: la card del rilascio sale sulla lista delle sessioni, senza tornare a «Deployed» (Franz, 23/09 13:01)", () => {
-  // nella bozza 5 il display passava dalla lista alla card «Deployed» (notizia di prima del terminale) e poi a «Released»
-  const glance = byId("glance"), done = byId("done"), shipped = byId("shipped");
-  const listEnd = glance.watch!.clipStart! + (glance.len * 60) / short.bpm;     // dove la lista è arrivata quando il titolo esce
-  for (const s of [done, shipped]) {
-    assert.equal(s.watch!.clip, glance.watch!.clip, `${s.id} mostra ${s.watch!.clip}`);
-    assert.equal(s.watch!.freeze, true);
-    assert.ok(Math.abs(s.watch!.clipStart! - listEnd) <= 1 / 30, `${s.id} riparte dalla lista a ${s.watch!.clipStart} s, la lista era a ${listEnd.toFixed(3)} s`);
-  }
-});
 
-test("la Panoramica torna nel corto: dopo il titolo, a sinistra, la scheda Context mentre il display mostra la stessa scheda (Franz, 23/09 13:25)", () => {
-  // come nel film lungo (Franz, 18/09 20:33): la scheda non esce dal polso, compare ferma a sinistra quando sul display passa
-  // la sua scheda, e lì le barre si riempiono. Il titolo ha prima i suoi 4,5 battiti (5 parole a mezzo battito, più 2).
-  const glance = byId("glance");
-  const aside = (glance.fx ?? []).find((f) => f.kind === "aside") as { at: number; len: number; panel: string; out?: string };
-  assert.equal(aside.panel, "context");
-  assert.equal(aside.out, undefined);                                        // nel corto non c'è la tapparella che la chiude
-  assert.ok(aside.at >= 4.5 && aside.len >= 3.5 && aside.at + aside.len <= glance.len, `scheda a ${aside.at} per ${aside.len}, scena di ${glance.len}`);
-  assert.equal(glance.watch!.clip, "scenes/n_overview_fit.mp4");
-  const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
-  const limits = long.scenes.find((s) => s.id === "limits")!;
-  const lf = (limits.fx ?? []).find((f) => f.kind === "aside" && (f as { panel: string }).panel === "context") as { at: number };
-  const clipAt = (w: { clipStart?: number; hold?: number; rate?: number }, beat: number) => (w.clipStart ?? 0) + Math.max(0, beat - (w.hold ?? 0)) * (60 / short.bpm) * (w.rate ?? 1);
-  const inLong = clipAt(limits.watch!, lf.at), inShort = clipAt(glance.watch!, aside.at);
-  assert.ok(Math.abs(inShort - inLong) <= 0.5, `sul display la scheda Context è a ${inLong.toFixed(2)} s della clip, nel corto la scheda compare a ${inShort.toFixed(2)} s`);
-});
 
 test("l'apertura: il titolo sull'orologio in ambient a luce ferma, poi la notifica e «It asks.» (Franz, 23/09 14:23)", () => {
   const wake = byId("wake"), asks = byId("asks"), speaks = byId("speaks");
@@ -108,4 +79,42 @@ test("la camera passa da una scena all'altra senza scatti: apertura, «It asks.�
   const [a, b, c] = ["wake", "asks", "speaks"].map(byId);
   assert.equal(dollyAt(a.watch!.dolly, 1), dollyAt(b.watch!.dolly, 0));
   assert.equal(dollyAt(b.watch!.dolly, 1), dollyAt(c.watch!.dolly, 0));
+});
+test("la carrellata: lista con l'esito, «Work», «Context», con i blink fra l'una e l'altra (Franz, 23/09 14:23)", () => {
+  const list = byId("list"), work = byId("work"), ctx = byId("context");
+  assert.equal(list.at, 50.5);
+  assert.equal(list.at + list.len, work.at);
+  assert.equal(work.at + work.len, ctx.at);
+  assert.equal(list.out, "lids");                                    // la frase se ne va prima delle palpebre
+  assert.equal(work.out, "blink");
+  assert.equal(work.text, undefined);                                // senza frase il blink sono le sole palpebre
+  for (const b of [work.at, ctx.at]) assert.ok(Number.isInteger(b), `il blink al battito ${b} non cade su un battito`);
+  for (const s of [list, work, ctx]) assert.equal(watchColumn(s), watchColumn(list), `${s.id} sposta l'orologio`);
+  const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number };
+  assert.equal(card.slot, 146);                                      // la riga di payments-api in n_list.mp4 a 11,6 s
+  assert.equal(card.at, 0);
+  assert.match(card.text, /^Released 2\.8\.0/);
+  assert.equal(list.watch!.clip, "scenes/n_list.mp4");
+  assert.equal(list.watch!.clipStart, 11.6);
+  assert.equal(list.watch!.freeze, true);
+  for (const s of [work, ctx]) assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
+  assert.ok(Math.abs(ctx.watch!.clipStart! - 10.64) <= 0.2, "sul display la scheda Context, dove cade nel film lungo (10,64 s)");
+  for (const id of ["title", "glance", "done", "shipped"]) assert.equal(short.scenes.find((s) => s.id === id), undefined, `c'è ancora «${id}»`);
+});
+test("la scheda Context si legge prima che parta la tapparella, e le sue 3 barre diventano i listelli", () => {
+  const ctx = byId("context"), end = byId("end");
+  const aside = (ctx.fx ?? []).find((f) => f.kind === "aside") as { at: number; panel: string; out?: string; rows: unknown[] };
+  assert.equal(aside.panel, "context");
+  assert.equal(aside.out, "bars");
+  assert.equal(aside.rows.length, 3);
+  assert.equal(ctx.blinds?.len, 6);
+  const blindStart = ctx.at + ctx.len - BLIND_CUT * ctx.blinds!.len;
+  assert.ok(blindStart - (ctx.at + aside.at) >= 2, `la scheda resta ${blindStart - (ctx.at + aside.at)} battiti prima della tapparella`);
+  assert.equal(ctx.at + ctx.len, end.at);
+});
+test("il taglio sul cartello cade sull'inizio del finale della musica, e il film finisce con la musica", () => {
+  // taglio 0-1 0-11 9-10 11-12 43-45 dal battito 7: 14 battute prima del finale (43-44), che dura 2 battute
+  const end = byId("end");
+  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1 + 1) * 4, end.at);
+  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1 + 1 + 2) * 4, totalBeats(short));
 });
