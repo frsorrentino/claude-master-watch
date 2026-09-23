@@ -77,7 +77,13 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   // n_watch_pinned.mp4 è n_watch_fit.mp4 passata da tools/promo/pin_button.py, stessi fotogrammi e stessa durata
   assert.equal(corto.watch!.clip, "scenes/n_watch_pinned.mp4");
   assert.equal(lungo.watch!.clip, "scenes/n_watch_fit.mp4");
-  assert.deepEqual({ ...corto, watch: { ...corto.watch!, clip: lungo.watch!.clip } }, lungo);
+  // e l'esito: il corto chiude il lavoro con la riga che poi vola nell'orologio (piano 4, volo del terminale, 23/09)
+  type Term = { kind: string; lines: string[]; times: number[] };
+  const tc = (corto.fx ?? []).find((f) => f.kind === "terminalPlane") as Term, tl = (lungo.fx ?? []).find((f) => f.kind === "terminalPlane") as Term;
+  assert.deepEqual(tc.lines, [...tl.lines, "⏺ Released 2.8.0 and tagged v2.8.0"]);
+  assert.deepEqual(tc.times, [...tl.times, 9.5]);
+  const senza = (s: typeof corto) => ({ ...s, watch: { ...s.watch!, clip: "" }, fx: (s.fx ?? []).map((f) => (f.kind === "terminalPlane" ? { ...f, lines: [], times: [] } : f)) });
+  assert.deepEqual(senza(corto), senza(lungo));
   // la scena finisce con il terminale (5 + 5,5 battiti): il film lungo lo tiene fermo 1,5 battiti in più, che nel corto
   // servono a «Every session, at a glance.» (5 parole, 4,5 battiti)
   const term = (b.fx ?? []).find((f) => f.kind === "terminalPlane") as { at: number; len: number };
