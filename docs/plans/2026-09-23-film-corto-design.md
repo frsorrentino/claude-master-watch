@@ -91,7 +91,7 @@ La differenza principale rispetto agli esempi è l'orologio che ruota nello spaz
 
 **Strada scelta: B.** Il modello si anima dentro Remotion (`@remotion/three`), con la camera nella stessa timeline del racconto e la nostra UI sul display come texture. Non si usano sequenze rese in Blender, perché ogni cambio di tempi chiederebbe una nuova resa.
 
-**Prova prima di decidere**, con la scansione gratuita del Pixel Watch 4: `stampa-3d/riferimenti/cgtrader-scan-pw4/GooglePixelWatchScan.stl`, 965 108 triangoli, senza cinturino. Le inquadrature scelte sono quelle dove il cinturino non si vede: fronte e tre quarti ravvicinati.
+**Prova prima di decidere**, con la scansione del Pixel Watch 4 già in casa: `stampa-3d/riferimenti/cgtrader-scan-pw4/GooglePixelWatchScan.stl`, 965 108 triangoli, senza cinturino. Le inquadrature scelte sono quelle dove il cinturino non si vede: fronte e tre quarti ravvicinati.
 - **T0:** scansione ridotta a circa 50k e circa 150k triangoli, vetro come superficie separata con UV, export GLB. Con Blender senza schermo; i file in `tools/promo/materiali/3d-prova/`, fuori da git.
 - **T1:** una composizione di prova fuori dal film. Orbita da tre quarti a fronte in 90 fotogrammi. Si misurano i secondi a fotogramma a 1080p in `swangle` e con `--gl=angle`.
 - **T2:** il fronte 3D alla stessa misura della foto frontale, affiancati e ad alternanza, più un taglio foto → 3D → foto.
@@ -102,7 +102,7 @@ La differenza principale rispetto agli esempi è l'orologio che ruota nello spaz
 - Franz non distingue il 3D dalla foto, oppure accetta lo scarto;
 - licenza valida.
 
-La licenza della scansione **va trovata**: la pagina CGTrader non è annotata da nessuna parte. Serve prima di usarla fuori dalla prova. Se la prova regge, per la versione finale c'è il Pixel Watch 5 45 mm Matte Black di 3DModels.org: 50 €, licenza Standard, da tenere fuori da git.
+**Provenienza della scansione** (Franz, 23/09): comprata sullo store di Bambu Lab per un altro progetto, nonostante il nome della cartella dica CGTrader. Prima di usarla fuori dalla prova vanno lette le condizioni di quell'acquisto. Se la prova regge, per la versione finale c'è il Pixel Watch 5 45 mm Matte Black di 3DModels.org: 50 €, licenza Standard, da tenere fuori da git.
 
 **Dove servirebbe:** l'orologio che si gira verso di noi mentre si sveglia (battiti 0–5) e che si allontana nel cartello (battiti 60–68).
 
