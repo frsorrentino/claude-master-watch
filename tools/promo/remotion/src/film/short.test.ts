@@ -190,17 +190,19 @@ test("la scheda Context si legge con i valori finali prima del quarto blink (Fra
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
-test("l'accordo finale cade quando nasce il logo, dopo lo slogan, e si spegne quando arriva il nome (Franz, 23/09 19:43 e 21:13)", () => {
-  // taglio 0-1 0-11 40-45: 4 battiti d'attacco, le battute 0-3, le 4-10, le 40-42 che portano al finale, il finale piano
-  // (43) sotto lo slogan e l'accordo (44), che si spegne in una battuta. Il taglio sta nel comando di cut_track.py: qui si
-  // tiene il conto delle battute, la traccia vera si misura sulla resa (accordo al 64, silenzio dal 68)
+test("il finale resta pieno fino al logo, senza la battuta piana sotto lo slogan; l'accordo sul logo (Franz, 23/09 19:43 e 24/09 00:09)", () => {
+  // taglio 0-1 0-11 39-43 44-45: 4 battiti d'attacco, le battute 0-3, le 4-10, le 39-42 piene fino al logo e l'accordo
+  // finale (44), che si spegne da sé in una battuta. Via la battuta piana (43): sotto lo slogan faceva sfumare la musica
+  // (Franz, 24/09 00:09: «lascerei il finale pieno senza sfumare»). La 39 segue la 10 come nel brano segue la 38 (code
+  // uguali, coseno 0,986). Il taglio sta nel comando di cut_track.py: qui si tiene il conto delle battute, la traccia vera
+  // si misura sulla resa (piena fino al 64, accordo al 64, silenzio dal 68)
   const slogan = byId("slogan"), end = byId("end");
-  const phrase = (short.musicDelayBeats ?? 0) + 4 + (11 + 3) * 4;
-  assert.equal(phrase, 60);
-  assert.ok(phrase >= slogan.at && phrase + 4 <= slogan.at + slogan.len, "il finale piano sta sotto lo slogan");
-  assert.equal(phrase + 4, end.at, "l'accordo sul logo");
-  assert.equal(phrase + 8, end.at + END_PACE[end.endPace!].start, "si spegne quando arriva il nome");
-  assert.ok(totalBeats(short) > phrase + 8, "dopo la musica il cartello resta in silenzio");
+  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, chord = drop + (7 + 4) * 4;
+  assert.equal(chord, 64);
+  assert.ok(slogan.at >= drop && slogan.at + slogan.len <= chord, "lo slogan sta tutto sotto la musica piena");
+  assert.equal(chord, end.at, "l'accordo sul logo");
+  assert.equal(chord + 4, end.at + END_PACE[end.endPace!].start, "si spegne quando arriva il nome");
+  assert.ok(totalBeats(short) > chord + 4, "dopo la musica il cartello resta in silenzio");
 });
 test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si legge prima che se ne vada (Franz, 23/09 19:45)", () => {
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
@@ -241,7 +243,7 @@ test("il finale su nero: il quarto blink chiude le palpebre sul nero, poi lo slo
   assert.deepEqual(slogan.text?.lines, ["Claude Code,", "on your wrist."]);
   assert.equal(slogan.text?.accent, "wrist.");
   assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il blink, non dopo un vuoto");
-  // «Claude Code,» subito, poi una pausa: «on your wrist.» parte sul finale piano della musica, al 60 (Franz, 23/09 23:20)
+  // «Claude Code,» subito, poi una pausa: «on your wrist.» parte al 60, sul primo battito dell'ultima battuta piena (Franz, 23/09 23:20)
   assert.equal(slogan.text?.pause, 1);
   assert.equal(slogan.at + (slogan.text?.at ?? 0) + 2 * 0.5 + slogan.text!.pause!, 60);
   assert.equal(end.at, slogan.at + slogan.len);
