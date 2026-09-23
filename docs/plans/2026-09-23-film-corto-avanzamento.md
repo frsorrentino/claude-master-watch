@@ -4,9 +4,9 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 
 | # | Scena (battiti) | Stato | Cosa manca |
 |---|---|---|---|
-| 1 | Apertura: ambient a luce ferma, «Claude Code, on your wrist.» (0–5) | ● | nessuna nota sulla bozza 8; ora la musica parte col video |
-| 2 | «It asks.»: notifica, la camera si ferma sul tremito (5–9) | ● | nessuna nota sulla bozza 8; sfocata → nitida (piano 4) |
-| 3 | «It speaks.»: ▶ e voce (9–19) | ● | nessuna nota sulla bozza 8; onda della voce (piano 4) |
+| 1 | Apertura: ambient a luce ferma, «Claude Code, on your wrist.» (0–5) | ✓ | approvata il 23/09 alle 19:58 |
+| 2 | «It asks.»: notifica, la camera si ferma sul tremito (5–9) | ✓ | approvata alle 19:58; nella bozza 11 via il lampo dei puntini sulla notifica; sfocata → nitida (piano 4) |
+| 3 | «It speaks.»: ▶ e voce (9–19) | ✓ | approvata alle 19:58; onda della voce (piano 4) |
 | 4 | Risposta: «yes», espansione, stacco (19–26) | ✓ | tasti in profondità, sfocatura di movimento (piano 4) |
 | 5 | Corsia con l'orologio di profilo: «Deployed» sul colpo, dettatura (26–40) | ✓ | parallasse (piano 4) |
 | 6 | Terminale «Watch it work.» (40–50,5) | ◐ | il tasto Write resta fermo in basso, il testo che risale gli passa dietro (clip `n_watch_pinned.mp4`); prospettiva e camera (piano 4) |
@@ -18,5 +18,5 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
 **Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 e giudicata da Franz la sera stessa (le note sono in questa lista).
-**Bozza 9:** consegnata il 23/09 alle 19:30 (`tools/promo/out/review/corto-bozza-9.mp4`), da giudicare. Da decidere: il cartello 1,5 battiti più lungo, perché gli avvisi tornino a 2,2 s (ora 1,4 s); quali osservazioni minori del revisore correggere nella bozza 10.
+**Bozza 9:** consegnata il 23/09 alle 19:30. **Bozza 10:** consegnata alle 20:07 (`tools/promo/out/review/corto-bozza-10.mp4`): accordo finale al 63 sul logo, scheda Work. **Bozza 11:** in lavorazione: cartello 1,5 battiti più lungo (avvisi 2,2 s) e le sei osservazioni minori del revisore (Franz, 19:58: tutte).
 **Piano 4 (movimento):** da scrivere dopo la bozza 9.
