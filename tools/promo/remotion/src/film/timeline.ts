@@ -73,7 +73,7 @@ export type BandsCue = { left: string; right: string; open: number; win: number 
 export type SplitCue = { open: number; hold: number; close: number; left: SplitPanel; right: SplitPanel };
 export type SplitPanel = { color: string; to?: string; dot: string; account: string; session: string; status: string; tabs: string[]; lines: string[] };
 /** La tapparella che chiude una sezione: dura `len` battiti a cavallo del taglio con la scena dopo. */
-export type BlindsCue = { len: number };
+export type BlindsCue = { len: number; to?: "black" };   // `to`: nella seconda metà i listelli vanno nel nero (corto, 23/09 21:13)
 /** `musicDelayBeats`: di quanti battiti la musica entra dopo l'inizio del film, per far cadere il culmine del crescendo
  *  dove serve (Franz, 19/09 15:05: «la musica è una battuta avanti rispetto a quando serve»). */
 /** `musicDelayFrames`: la fase della traccia, in fotogrammi. Misurata il 19/09 sui transienti di `music.v9.wav`: i battiti
@@ -157,6 +157,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
     if (s.sleep?.breath !== undefined && typeof s.sleep.breath !== "boolean") say(`il respiro del sonno è «${s.sleep.breath}»: serve true o false`);
     if (s.sleep?.hush !== undefined && typeof s.sleep.hush !== "boolean") say(`«hush» del sonno è «${s.sleep.hush}»: serve true o false`);   // false = la musica non si zittisce con il display (corto, 23/09)
+    if (s.blinds?.to !== undefined && s.blinds.to !== "black") say(`la tapparella va «${s.blinds.to}»: c'è solo "black"`);
     if (s.blinds && !(s.blinds.len >= 5)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 5`);   // 6 fino al 23/09: il corto la vuole di 5 perché la scheda Context si legga (scelta B di Franz)
     if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
     if (s.out === "blink" && s.text && !s.text.accent) say("il battito di ciglia vuole una parola in colore da far crescere");   // senza testo sono le sole palpebre: il passaggio fra due schermate dello stesso momento (Franz, 21/09)

@@ -176,3 +176,9 @@ test("il volo parte dal terminale della scena prima e dura almeno 1,5 battiti (p
   t.scenes[1].fx[1].slot = "146";
   assert.match(problems(t).join("\n"), /list: la riga del volo è «146»: serve un numero fra 0 e 310/);
 });
+test("la tapparella va solo nel nero (corto, 23/09 21:13)", () => {
+  const t = base(); t.scenes[0].blinds = { len: 6, to: "white" };
+  assert.match(problems(t).join("\n"), /open: la tapparella va «white»: c'è solo "black"/);
+  t.scenes[0].blinds.to = "black";
+  assert.deepEqual(problems(t), []);
+});

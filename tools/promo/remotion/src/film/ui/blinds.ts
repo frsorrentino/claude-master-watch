@@ -52,3 +52,8 @@ export const blindBars = (rows: number): number[] => Array.from({ length: Math.m
 
 /** Il taglio con la scena dopo cade qui: la tapparella è chiusa e non ha ancora cominciato a voltarsi. */
 export const BLIND_CUT = 0.58;   // era 0,66: con i listelli che nascono prima la tapparella è chiusa a 0,55, e restava ferma 22 fotogrammi (Franz, 21/09 12:46)
+
+/** Quanto i listelli sono andati nel nero (corto, Franz 23/09 21:13: «integrazione col nero durante la scomposizione finale,
+ *  al posto del bianco»): con `to: "black"` dal taglio si scuriscono, e sono neri prima di essere di taglio, così la voltata
+ *  scopre il nero invece di prendere luce. Senza `to`, 0: la tapparella del film lungo. */
+export const blindDark = (p: number, to?: "black"): number => (to === "black" ? ease(clamp((p - BLIND_CUT) / 0.22)) : 0);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BLIND_CUT, blindAt, blindDelay, blindSoloAt } from "./blinds.ts";
+import { BLIND_CUT, blindAt, blindDark, blindDelay, blindSoloAt } from "./blinds.ts";
 
 const N = 12, BARS = [6, 7] as const;
 
@@ -56,4 +56,11 @@ test("i listelli che nascono dalle barre sono tanti quante le righe del Context,
   // con tre barre la terza nasce insieme alle altre due, e i listelli vicini partono dopo di lei, non prima
   assert.equal(blindAt(0.5, 5, 12, [5, 6, 7]).born, 1);
   assert.ok(blindDelay(4, 12, [5, 6, 7]) < blindDelay(4, 12, [6, 7]));
+});
+test("con to: black i listelli vanno nel nero mentre si voltano, invece di prendere luce; senza, com'erano (Franz, 23/09 21:13)", () => {
+  for (const p of [0, 0.3, BLIND_CUT, 0.7, 0.9, 1]) assert.equal(blindDark(p), 0);
+  assert.equal(blindDark(BLIND_CUT, "black"), 0);                      // fino al taglio la tapparella è quella di sempre
+  assert.equal(blindDark(0.8, "black"), 1);                            // nero prima che i listelli siano di taglio
+  let last = 0;
+  for (let i = 0; i <= 20; i++) { const d = blindDark(BLIND_CUT + (i / 20) * (1 - BLIND_CUT), "black"); assert.ok(d >= last); last = d; }
 });

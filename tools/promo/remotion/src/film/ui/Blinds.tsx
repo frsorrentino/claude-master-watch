@@ -1,7 +1,7 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
-import { blindAt } from "./blinds.ts";
+import { blindAt, blindDark } from "./blinds.ts";
 import { UI } from "./UiTokens.ts";
 
 /** Quanti listelli e quanto sono spessi: dodici su 1080 px fanno 90 px l'uno, spessore 22 px — abbastanza per prendere luce di taglio. */
@@ -12,11 +12,13 @@ export const BLIND_N = 12, BLIND_H = 90, BLIND_T = 22;
 const BAR = { w: 760, h: 16, left: -810, step: 122, mid: -69 };   // `left` = bordo sinistro in coordinate di quadro (x 150 px)
 const barY = (k: number, n: number) => BAR.mid + BAR.step * ((n - 1) / 2 - k);
 
-const mix = (a: string, b: string, t: number): string => {
+const mixRgb = (a: string, b: string, t: number): number[] => {
   const c = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const [x, y] = [c(a), c(b)], k = Math.min(1, Math.max(0, t));
-  return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * k)).join(",")})`;
+  return x.map((v, i) => Math.round(v + (y[i] - v) * k));
 };
+/** Il colore del listello, scurito verso il nero di `dark` 0-1 (con 0 è quello di sempre, arrotondato allo stesso modo). */
+const shade = (rgb: number[], dark: number): string => `rgb(${(dark > 0 ? rgb.map((v) => Math.round(v * (1 - dark))) : rgb).join(",")})`;
 
 /**
  * La tapparella (revisione 3D, momento 1): le due barre del Context diventano i primi due listelli, la tapparella si chiude
@@ -24,11 +26,12 @@ const mix = (a: string, b: string, t: number): string => {
  * spessore e prendono la luce mentre girano, e la camera resta ferma davanti a un oggetto che ruota (in CSS si schiaccerebbe).
  * Ogni movimento è guidato da `useCurrentFrame()` (regola della skill: niente `useFrame`, o il rendering sfarfalla).
  */
-export const Blinds: React.FC<{ frames: number; bars?: number[] }> = ({ frames, bars = [6, 7] }) => {
+export const Blinds: React.FC<{ frames: number; bars?: number[]; to?: "black" }> = ({ frames, bars = [6, 7], to }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const p = Math.min(1, Math.max(0, frame / Math.max(1, frames)));
   const dist = (height / 2) / Math.tan((16 * Math.PI) / 180);        // fov 32°: a z = 0 il quadro è alto esattamente `height`
+  const dark = blindDark(p, to);
   return (
     <ThreeCanvas width={width} height={height} camera={{ fov: 32, position: [0, 0, dist], near: 1, far: dist * 3 }}>
       <ambientLight intensity={0.42} />
@@ -51,7 +54,7 @@ export const Blinds: React.FC<{ frames: number; bars?: number[] }> = ({ frames, 
         return (
           <mesh key={i} position={[x, y, 0]} rotation={[b.rot, 0, 0]} scale={[w, h, BLIND_T]}>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={mix(UI.briefRing, UI.briefWeek, far * 1.2)} roughness={0.42} metalness={0.18} transparent opacity={b.alpha} />
+            <meshStandardMaterial color={shade(mixRgb(UI.briefRing, UI.briefWeek, far * 1.2), dark)} roughness={0.42} metalness={0.18} transparent opacity={b.alpha} />
           </mesh>
         );
       })}
