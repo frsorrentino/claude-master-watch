@@ -53,3 +53,8 @@ export const takeInRect = (to: Rect, p: number, frame: { w: number; h: number })
  *  già. Al posto della dissolvenza di tutto l'orologio, che lo faceva sembrare un altro (Franz, 23/09 21:13). */
 export const screenFadeAt = (frame: number, total: number, frames: number): number =>
   inOut(clamp((frame - (total - frames)) / Math.max(1, frames - 1)));
+
+/** Un rettangolo del quadro nelle unità del display (0-480), col display centrato in (`dx`, `dy`) e `u` pixel per unità
+ *  (piano 6): la copia del volo che sta dentro lo schermo. Il passaggio è affine, quindi la finestra convertita a ogni `p`
+ *  è la finestra interpolata fra il quadro convertito e la card. */
+export const toDisplay = (r: Rect, dx: number, dy: number, u: number): Rect => ({ x: (r.x - dx) / u + 240, y: (r.y - dy) / u + 240, w: r.w / u, h: r.h / u, r: r.r / u });

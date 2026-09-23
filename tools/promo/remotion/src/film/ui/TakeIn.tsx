@@ -11,24 +11,22 @@ import { slotRect, takeInAt, takeInRect } from "./takeIn.ts";
 
 type TakeInFx = Extract<Fx, { kind: "takeIn" }>;
 type TermFx = Extract<Fx, { kind: "terminalPlane" }>;
-/** All'arrivo la finestra resta ancora otto fotogrammi sopra la card vera e sfuma. Posizione e misura coincidono (misurato
- *  al pixel), ma la card vera sta sotto il vetro dell'orologio e ne prende il riflesso: così il riflesso arriva piano. */
-const HANDOFF = 8;
+type Props = { e: TakeInFx; prev?: Scene; g: Grid; f: number; frames: number; dx: number; dy: number; u: number; width: number; height: number };
 
 /**
- * Il volo del terminale (piano 4, primo pezzo; Franz, 23/09 20:15): il quadro intero, cioè il terminale della scena prima
- * fermo al suo ultimo fotogramma, si rimpicciolisce ed entra nel display come la card ✓ della riga `slot` (tempi in
- * ui/takeIn.ts). La riga dell'esito vola a parte, si stringe fino alla larghezza del testo della card e ci si scioglie
- * dentro; all'arrivo la card ✓ vera, dentro il display, prende il suo posto. `f` fotogrammi dall'inizio del volo, `frames`
- * la sua durata; `dx`, `dy`, `u` il display nel quadro, come per i tasti del «yes».
+ * Il volo del terminale (piano 4; piano 6 per lo stesso orologio): il quadro intero, cioè il terminale della scena prima
+ * fermo al suo ultimo fotogramma, si rimpicciolisce ed entra nello schermo come la card ✓ della riga `slot` (tempi in
+ * ui/takeIn.ts). La riga dell'esito vola a parte, si stringe fino alla larghezza del testo della card e ci si scioglie.
+ * Questa è la finestra in coordinate del quadro; `TakeInFrame` la mette DIETRO l'orologio, `TakeInScreen` la stessa dentro
+ * lo schermo, sotto il vetro. `f` fotogrammi dall'inizio del volo, `frames` la sua durata; `dx`, `dy`, `u` il display nel
+ * quadro, come per i tasti del «yes». Da `p` 1 non c'è più: la card ✓ vera è nello stesso punto, sotto lo stesso vetro.
  */
-export const TakeIn: React.FC<{ e: TakeInFx; prev?: Scene; g: Grid; f: number; frames: number; dx: number; dy: number; u: number; width: number; height: number }> = ({ e, prev, g, f, frames, dx, dy, u, width, height }) => {
+const TakeInLayer: React.FC<Props> = ({ e, prev, g, f, frames, dx, dy, u, width, height }) => {
   const term = (prev?.fx ?? []).find((x): x is TermFx => x.kind === "terminalPlane");
-  if (!prev || !term || f < 0 || f >= frames + HANDOFF) return null;
-  const p = Math.min(1, f / frames);
+  if (!prev || !term || f < 0 || f >= frames) return null;
+  const p = f / frames;
   const k = takeInAt(p);
   const r = takeInRect(slotRect(e.slot, dx, dy, u, 2), p, { w: width, h: height });
-  const out = f < frames ? 1 : 1 - (f - frames) / HANDOFF;
   const colW = width * CC.column;
   const last = term.lines.length - 1;
   const rows: CcRow[] = term.lines.map((text, i) => ({ text, on: 1, ghost: i === last }));
@@ -47,7 +45,7 @@ export const TakeIn: React.FC<{ e: TakeInFx; prev?: Scene; g: Grid; f: number; f
   const mono: React.CSSProperties = { position: "absolute", fontFamily: "Cousine", fontSize: CC.font, lineHeight: `${CC.row}px`, color: THEME.white, whiteSpace: "pre" };
   return (
     <>
-      <div style={{ position: "absolute", left: r.x, top: r.y, width: r.w, height: r.h, borderRadius: r.r, overflow: "hidden", background: UI.surface, opacity: out }}>
+      <div style={{ position: "absolute", left: r.x, top: r.y, width: r.w, height: r.h, borderRadius: r.r, overflow: "hidden", background: UI.surface }}>
         {k.terminal > 0 ? (
           <div style={{ position: "absolute", left: 0, top: 0, width, height, transform: `scale(${r.w / width})`, transformOrigin: "0 0", opacity: k.terminal }}>
             <div style={{ position: "absolute", left: THEME.leftMargin, top: 0, bottom: 0, width: colW }}>
@@ -70,3 +68,15 @@ export const TakeIn: React.FC<{ e: TakeInFx; prev?: Scene; g: Grid; f: number; f
     </>
   );
 };
+
+/** La finestra nel quadro, disegnata PRIMA dell'orologio: si vede attorno e sparisce dietro cassa, lunetta e cinturino. */
+export const TakeInFrame: React.FC<Props> = (props) => <TakeInLayer {...props} />;
+
+/** La stessa finestra dentro lo schermo (spazio 480 dell'overlay, ritagliato dal cerchio, sotto il vetro): il quadro
+ *  passa nelle unità del display con la trasformazione inversa di quella dell'orologio (`toDisplay` in ui/takeIn.ts). */
+export const TakeInScreen: React.FC<Props> = (props) => (
+  <div style={{ position: "absolute", left: 0, top: 0, width: props.width, height: props.height, transformOrigin: "0 0",
+    transform: `translate(${240 - props.dx / props.u}px, ${240 - props.dy / props.u}px) scale(${1 / props.u})` }}>
+    <TakeInLayer {...props} />
+  </div>
+);

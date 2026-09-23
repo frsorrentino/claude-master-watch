@@ -15,7 +15,6 @@ import { UiOption } from "./UiOption.tsx";
 import { UiBriefContext, UiBriefWork } from "./UiBrief.tsx";
 import { UiClaudeCode } from "./UiClaudeCode.tsx";
 import { CC } from "./claudeCode.ts";
-import { TakeIn } from "./TakeIn.tsx";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_TERMINAL_PX = 1700;   // HERO_OPTION_PX sta in heroes.ts, con il posto dei tasti
@@ -173,7 +172,7 @@ export const TerminalBackdrop: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g
  * `height/2 + pose.y·height`, con 480 unità = 2·displayR·glassPx/(2·glassR)·pose.scale pixel: così un componente in coordinate
  * del display (rettangolo della scaletta) parte esattamente da dove sta sul fotogramma vero.
  */
-export const Heroes: React.FC<{ scene: Scene; prev?: Scene; g: Grid; watchCx: number; pose: Pose | null; glassPx: number }> = ({ scene, prev, g, watchCx, pose, glassPx }) => {
+export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Pose | null; glassPx: number }> = ({ scene, g, watchCx, pose, glassPx }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   if (!pose) return null;
@@ -184,8 +183,6 @@ export const Heroes: React.FC<{ scene: Scene; prev?: Scene; g: Grid; watchCx: nu
   return (
     <>
       {(scene.fx ?? []).map((e, i) => {
-        // il volo del terminale (piano 4): non è un momento forte come gli altri, la camera non si muove
-        if (e.kind === "takeIn") return <TakeIn key={i} e={e} prev={prev} g={g} f={frame - spanFrames(g, scene.at, e.at)} frames={spanFrames(g, scene.at + e.at, e.len)} dx={dx} dy={dy} u={u} width={width} height={height} />;
         if (!isHero(e)) return null;
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;

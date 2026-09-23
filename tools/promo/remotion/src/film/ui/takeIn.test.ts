@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { screenFadeAt, slotRect, takeInAt, takeInRect } from "./takeIn.ts";
+import { screenFadeAt, slotRect, takeInAt, takeInRect, toDisplay } from "./takeIn.ts";
 import { LIST_BODY } from "./UiTokens.ts";
 
 const F = { w: 1920, h: 1080 };
@@ -47,4 +47,20 @@ test("nell'ultimo battito del terminale lo schermo sfuma nel grigio del terminal
   assert.equal(screenFadeAt(total - 1, total, frames), 1);
   let last = 0;
   for (let f = total - frames; f < total; f++) { const v = screenFadeAt(f, total, frames); assert.ok(v >= last, `fotogramma ${f}`); last = v; }
+});
+test("un rettangolo del quadro nelle unità del display: la card della riga torna x 26, y della riga, 428 di larghezza (piano 6)", () => {
+  const dx = 1325.4, dy = 531.7, u = 1.3441;
+  const r = toDisplay(slotRect(146, dx, dy, u, 2), dx, dy, u);
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  assert.ok(near(r.x, 26) && near(r.y, 146) && near(r.w, 428) && near(r.r, 42), JSON.stringify(r));
+  assert.ok(near(r.h, 24 + 36 + LIST_BODY.shift + 2 * LIST_BODY.line + 24.5));
+});
+test("la finestra nel display è la stessa finestra del quadro: interpolare e poi convertire è convertire e poi interpolare (piano 6)", () => {
+  const dx = 1325.4, dy = 531.7, u = 1.3441, to = slotRect(146, dx, dy, u, 2);
+  const a = toDisplay({ x: 0, y: 0, w: 1920, h: 1080, r: 0 }, dx, dy, u), b = toDisplay(to, dx, dy, u);
+  for (let i = 0; i <= 10; i++) {
+    const p = i / 10, s = takeInAt(p).shrink, r = toDisplay(takeInRect(to, p, F), dx, dy, u);
+    const lerp = (x: number, y: number) => x * (1 - s) + y * s;
+    for (const k of ["x", "y", "w", "h", "r"] as const) assert.ok(Math.abs(r[k] - lerp(a[k], b[k])) < 1e-9, `p ${p} ${k}`);
+  }
 });
