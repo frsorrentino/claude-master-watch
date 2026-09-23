@@ -200,6 +200,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       else if (f.kind === "doneCard" && f.slot !== undefined && !(f.slot >= 0 && f.slot <= 310)) say(`la riga della card ✓ è a ${f.slot}: fra 0 e 310`);
       if (f.kind === "takeIn") {
         if (!(prev?.fx ?? []).some((x) => x.kind === "terminalPlane")) say("il volo parte dal terminale della scena prima");
+        if (s.watch?.view !== "front") say("il volo entra solo in un orologio di fronte");   // lo schermo di tre quarti passa per l'omografia
         if (!(f.len >= 1.5)) say(`il volo dura ${f.len} battiti: almeno 1,5`);
         if (typeof f.slot !== "number") say(`la riga del volo è «${f.slot}»: serve un numero fra 0 e 310`);
         else if (!(f.slot >= 0 && f.slot <= 310)) say(`la riga del volo è a ${f.slot}: fra 0 e 310`);

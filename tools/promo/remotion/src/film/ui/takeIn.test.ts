@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { screenFadeAt, slotRect, takeInAt, takeInRect, toDisplay } from "./takeIn.ts";
+import { screenFadeAt, slotRect, takeInAt, takeInFrontAt, takeInRect, toDisplay } from "./takeIn.ts";
 import { LIST_BODY } from "./UiTokens.ts";
 
 const F = { w: 1920, h: 1080 };
@@ -63,4 +63,12 @@ test("la finestra nel display è la stessa finestra del quadro: interpolare e po
     const lerp = (x: number, y: number) => x * (1 - s) + y * s;
     for (const k of ["x", "y", "w", "h", "r"] as const) assert.ok(Math.abs(r[k] - lerp(a[k], b[k])) < 1e-9, `p ${p} ${k}`);
   }
+});
+test("la card passa SOPRA la cornice: la copia davanti all'orologio c'è solo mentre la finestra attraversa la cassa (Franz, 23/09 22:22)", () => {
+  assert.equal(takeInFrontAt(0), 0);                 // sul taglio si vede l'orologio: la finestra gli sta dietro
+  assert.equal(takeInFrontAt(0.3), 0);
+  assert.equal(takeInFrontAt(0.55), 1);              // mentre attraversa la cassa la card sta davanti alla cornice
+  assert.equal(takeInFrontAt(0.8), 1);
+  assert.equal(takeInFrontAt(0.95), 0);              // si posa sotto il vetro, dove c'è la card vera
+  assert.equal(takeInFrontAt(1), 0);
 });

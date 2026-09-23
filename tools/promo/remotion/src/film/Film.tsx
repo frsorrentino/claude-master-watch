@@ -4,7 +4,7 @@ import raw from "./timeline.json";
 import shortRaw from "./timeline.short.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { BLEED_LIFT, MOVE_BEATS, closingAt, poseAt, screenAt } from "./moves.ts";
+import { BLEED_LIFT, MOVE_BEATS, closingAt, displayUnit, poseAt, screenAt, watchPlace } from "./moves.ts";
 import { validateTimeline, watchColumn } from "./timeline.ts";
 import type { Fx, Scene, Timeline } from "./timeline.ts";
 import { framesOf, gridOf } from "./cut.ts";
@@ -32,7 +32,7 @@ import { FLIP_CUT } from "./ui/flip.ts";
 import { sleepAt, sleepP, titleOnAt } from "./ui/sleep.ts";
 import { beforeLids } from "./ui/blink.ts";
 import { screenFadeAt } from "./ui/takeIn.ts";
-import { TakeInFrame, TakeInScreen } from "./ui/TakeIn.tsx";
+import { TakeInFrame, TakeInFront, TakeInScreen } from "./ui/TakeIn.tsx";
 import { Glow } from "./ui/Glow.tsx";
 import { GLOW_CUT } from "./ui/glow.ts";
 import { Bands } from "./ui/Bands.tsx";
@@ -111,10 +111,6 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // `fadeOut`: l'orologio se ne va in dissolvenza PRIMA del taglio, sfalsato rispetto a quello che resta in quadro
   // (il terminale): sparendo insieme sembrava uno stacco, non un passaggio (Franz, 20/09 20:09)
   // `screenFade`: sfuma lo schermo, non l'orologio (piano 6): nel corto il terminale entra nello STESSO orologio
-  // il volo del terminale (piano 6): la sua geometria viene dalla posa dell'orologio, come per i Heroes
-  const tiFx = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "takeIn" }> => f.kind === "takeIn");
-  const takeIn = tiFx && pose ? { e: tiFx, prev, g: GRID, f: frame - spanFrames(GRID, scene.at, tiFx.at), frames: spanFrames(GRID, scene.at + tiFx.at, tiFx.len),
-    dx: cx + pose.x * width, dy: height / 2 + pose.y * height, u: ((THEME.frontGlassPx / (2 * geo.front.glassR)) * 2 * geo.front.displayR * pose.scale) / 480, width, height } : null;
   const screenCover = w?.screenFade ? screenFadeAt(frame, total, spanFrames(GRID, scene.at, w.screenFade)) : 0;
   const fadeOut = w?.fadeOut ? 1 - Math.min(1, Math.max(0, (frame - (total - spanFrames(GRID, scene.at, w.fadeOut))) / spanFrames(GRID, scene.at, w.fadeOut))) : 1;
   // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
@@ -160,6 +156,12 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
   const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
   const shake = sh >= 0 && sh < 10 ? 4 * (1 - sh / 10) * Math.sin(sh * 2.6) : 0;
+  // dove sta l'orologio: lo stesso conto per il suo transform e per il volo del terminale (piano 7)
+  const place = pose ? watchPlace(cx, pose, width, height, shake, aroundDy, zoom) : null;
+  // il volo del terminale (piani 4, 6, 7): dietro l'orologio, dentro lo schermo e davanti alla cornice, tutti dallo stesso piazzamento
+  const tiFx = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "takeIn" }> => f.kind === "takeIn");
+  const takeIn = tiFx && place && w?.view === "front" ? { e: tiFx, prev, g: GRID, f: frame - spanFrames(GRID, scene.at, tiFx.at), frames: spanFrames(GRID, scene.at + tiFx.at, tiFx.len),
+    dx: place.x, dy: place.y, u: displayUnit(THEME.frontGlassPx, geo.front.glassR, geo.front.displayR, place.scale), width, height } : null;
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -178,7 +180,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
-        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${cx + pose.x * width + shake}px, ${height / 2 + pose.y * height + aroundDy}px, 0) scale(${pose.scale * zoom})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
+        <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${place!.x}px, ${place!.y}px, 0) scale(${place!.scale})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
           <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} track={logoTrack(scene.endTone)} /> : screenCover > 0 ? <><div style={{ position: "absolute", inset: 0, background: scene.bgFrom ?? actColors(scene.act, TIMELINE.palette)[1], opacity: screenCover }} />{overlay}</> : takeIn ? <>{overlay}<TakeInScreen {...takeIn} /></> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
@@ -187,6 +189,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
       <Aside scene={scene} g={GRID} />
       {/* quando l'orologio si materializza attorno, la scheda ricostruita gli lascia il posto: dentro il display c'è la
           stessa scheda, nello stesso punto, e due copie sovrapposte si vedrebbero */}
+      {takeIn ? <TakeInFront {...takeIn} /> : null}
       <div style={{ position: "absolute", inset: 0, opacity: (1 - underTakeover) * (1 - underFlip) * (scene.watch?.camera === "around" ? 1 - Math.max(0, (watchIn - 0.75) / 0.25) : 1) }}><Heroes scene={scene} g={GRID} watchCx={cx} pose={w?.view === "front" && pose ? { ...pose, scale: pose.scale * zoom } : null} glassPx={THEME.frontGlassPx} /></div>
       {w?.exit === "diveIn" ? <AbsoluteFill style={{ background: "#000", opacity: interpolate(frame, [total - beat * MOVE_BEATS * 0.55, total - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} /> : null}
       {scene.endCard ? <Sequence from={beat * END_PACE[scene.endPace ?? "normal"].start} layout="none"><EndCard beat={beat} pace={scene.endPace} tone={scene.endTone} /></Sequence> : null}

@@ -7,7 +7,7 @@ import { CC, ccBoxHeight } from "./claudeCode.ts";
 import { UiClaudeCode, type CcRow } from "./UiClaudeCode.tsx";
 import { UiCard } from "./UiCard.tsx";
 import { LIST_BODY, UI } from "./UiTokens.ts";
-import { slotRect, takeInAt, takeInRect } from "./takeIn.ts";
+import { slotRect, takeInAt, takeInFrontAt, takeInRect, toDisplay } from "./takeIn.ts";
 
 type TakeInFx = Extract<Fx, { kind: "takeIn" }>;
 type TermFx = Extract<Fx, { kind: "terminalPlane" }>;
@@ -73,10 +73,19 @@ const TakeInLayer: React.FC<Props> = ({ e, prev, g, f, frames, dx, dy, u, width,
 export const TakeInFrame: React.FC<Props> = (props) => <TakeInLayer {...props} />;
 
 /** La stessa finestra dentro lo schermo (spazio 480 dell'overlay, ritagliato dal cerchio, sotto il vetro): il quadro
- *  passa nelle unità del display con la trasformazione inversa di quella dell'orologio (`toDisplay` in ui/takeIn.ts). */
-export const TakeInScreen: React.FC<Props> = (props) => (
-  <div style={{ position: "absolute", left: 0, top: 0, width: props.width, height: props.height, transformOrigin: "0 0",
-    transform: `translate(${240 - props.dx / props.u}px, ${240 - props.dy / props.u}px) scale(${1 / props.u})` }}>
-    <TakeInLayer {...props} />
-  </div>
-);
+ *  intero passa nelle unità del display con `toDisplay`, la stessa conversione che usano i test. */
+export const TakeInScreen: React.FC<Props> = (props) => {
+  const q = toDisplay({ x: 0, y: 0, w: props.width, h: props.height, r: 0 }, props.dx, props.dy, props.u);
+  return (
+    <div style={{ position: "absolute", left: 0, top: 0, width: props.width, height: props.height, transformOrigin: "0 0",
+      transform: `translate(${q.x}px, ${q.y}px) scale(${q.w / props.width})` }}>
+      <TakeInLayer {...props} />
+    </div>
+  );
+};
+
+/** La stessa finestra DAVANTI all'orologio, cornice compresa, mentre attraversa la cassa (`takeInFrontAt`). */
+export const TakeInFront: React.FC<Props> = (props) => {
+  const a = props.f < 0 || props.f >= props.frames ? 0 : takeInFrontAt(props.f / props.frames);
+  return a > 0 ? <div style={{ position: "absolute", inset: 0, opacity: a }}><TakeInLayer {...props} /></div> : null;
+};

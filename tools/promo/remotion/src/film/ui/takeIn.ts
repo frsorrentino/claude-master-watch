@@ -58,3 +58,9 @@ export const screenFadeAt = (frame: number, total: number, frames: number): numb
  *  (piano 6): la copia del volo che sta dentro lo schermo. Il passaggio è affine, quindi la finestra convertita a ogni `p`
  *  è la finestra interpolata fra il quadro convertito e la card. */
 export const toDisplay = (r: Rect, dx: number, dy: number, u: number): Rect => ({ x: (r.x - dx) / u + 240, y: (r.y - dy) / u + 240, w: r.w / u, h: r.h / u, r: r.r / u });
+
+/** Quanto si vede la copia del volo DAVANTI all'orologio (Franz, 23/09 22:22: la card entrando passava sotto la cornice,
+ *  deve passarle sopra). Sul taglio niente: l'orologio resta davanti al terminale. Mentre la finestra attraversa la cassa
+ *  (0,3-0,55) sale davanti, cornice compresa; quando è ormai dentro lo schermo (0,8-0,95) lascia il posto alla copia sotto
+ *  il vetro, che all'arrivo è la card vera. */
+export const takeInFrontAt = (p: number): number => inOut(ramp(p, 0.3, 0.55)) * (1 - inOut(ramp(p, 0.8, 0.95)));

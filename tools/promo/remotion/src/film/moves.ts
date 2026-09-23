@@ -99,3 +99,11 @@ export const closingAt = (beats: number, lift = 0.2): Closing => {
 
 /** Il display nero del cartello: col logo ritagliato compare con la cassa (`body`), così il logo nasce da solo sul blu. */
 export const screenAt = (c: Closing, cutout: boolean): number => (cutout ? c.body : 1);
+
+/** Dove sta l'orologio nel quadro (centro del display in pixel, scala): posa, tremito della notifica, spostamento verticale
+ *  e zoom della camera, in un solo conto. Lo usano il transform dell'orologio e il volo del terminale (piano 7: la revisione
+ *  dei piani 4-6 trovò il volo senza zoom né tremito; con la camera ferma non si vedeva, con una dolly le copie divergevano). */
+export const watchPlace = (cx: number, pose: Pose, width: number, height: number, shake: number, aroundDy: number, zoom: number): { x: number; y: number; scale: number } =>
+  ({ x: cx + pose.x * width + shake, y: height / 2 + pose.y * height + aroundDy, scale: pose.scale * zoom });
+/** Un'unità del display (0-480) in pixel del quadro, per un vetro largo `glassPx` e la geometria della foto (`glassR`, `displayR`). */
+export const displayUnit = (glassPx: number, glassR: number, displayR: number, scale: number): number => ((glassPx / (2 * glassR)) * 2 * displayR * scale) / 480;

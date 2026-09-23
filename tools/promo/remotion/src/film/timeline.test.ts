@@ -190,3 +190,9 @@ test("lo schermo sfuma per un numero di battiti positivo, dentro la scena (piano
   t.scenes[1].watch.screenFade = 1;
   assert.deepEqual(problems(t), []);
 });
+test("il volo entra solo in un orologio di fronte (revisione finale dei piani 4-6)", () => {
+  const t = base(); t.scenes[0].fx = [{ kind: "terminalPlane", at: 0, len: 4, rect: [26, 163, 427, 150], header: "T", title: "t", lines: ["⏺ ok"], every: 2 }];
+  t.scenes[1].watch.view = "side";
+  t.scenes[1].fx.push({ kind: "takeIn", at: 0, len: 2, slot: 146, name: "payments-api", age: "0 m", text: "ok" });
+  assert.match(problems(t).join("\n"), /list: il volo entra solo in un orologio di fronte/);
+});

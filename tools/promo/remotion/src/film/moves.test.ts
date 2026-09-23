@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { BLEED_LIFT, MAX_TILT, closingAt, poseAt, screenAt } from "./moves.ts";
+import { BLEED_LIFT, MAX_TILT, closingAt, displayUnit, poseAt, screenAt, watchPlace } from "./moves.ts";
 import { THEME } from "./theme.ts";
 import type { Move } from "./moves.ts";
 
@@ -82,4 +82,13 @@ test("col logo ritagliato il display nero compare con la cassa, non prima: il lo
   assert.equal(screenAt(closingAt(0), true), 0);
   assert.equal(screenAt(closingAt(8), true), 1);
   assert.equal(screenAt(closingAt(0), false), 1);
+});
+test("dove sta l'orologio: posa, tremito, spostamento verticale e zoom in un solo conto, per l'orologio e per il volo (piano 7)", () => {
+  const pose = { x: 0.01, y: -0.02, scale: 1.1, tilt: 0 };
+  const p = watchPlace(1324.8, pose, 1920, 1080, 3, -12, 1.05);
+  assert.equal(p.x, 1324.8 + 0.01 * 1920 + 3);
+  assert.equal(p.y, 1080 / 2 + -0.02 * 1080 + -12);
+  assert.equal(p.scale, 1.1 * 1.05);
+  // un'unità del display in pixel del quadro a quella scala: 480 unità = il diametro del display
+  assert.equal(displayUnit(740, 300, 258, p.scale), ((740 / (2 * 300)) * 2 * 258 * p.scale) / 480);
 });
