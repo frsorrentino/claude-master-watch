@@ -21,6 +21,7 @@ export type Fx =
   | { kind: "optionsBuild"; at: number; len: number; pressAt?: number; yes: [number, number, number, number]; no: [number, number, number, number]; yesLabel: string; noLabel: string }   // `pressAt`: battiti dall'inizio dell'effetto in cui parte la pressione lunga   // i tasti della domanda nascono da contorno fuori dal display, l'anello corre su «yes»
   | { kind: "spoken"; at: number; len: number; voice: string; words: string }   // file in public/audio/
   | { kind: "shake"; at: number }
+  | { kind: "doneCard"; at: number; name: string; age: string; text: string; badge?: string; rest?: boolean }   // la card ✓ che sale sul display con il ✓ che si disegna (corto, 23/09); `rest`: già a posto
   | { kind: "float"; at: number; len: number; cx?: number; bottom?: number; width?: number; cards: ({ kind?: "card"; name: string; age: string; text: string; badge: string; icon: "check" | "play" | "bell"; hold?: number; dictation?: { tap: number; confirm?: number } } | { kind: "text"; lines: string[]; accent?: string; hold?: number } | { kind: "brief"; panel: "quota" | "note" | "pace" | "work" | "questions" | "context"; n?: number; note?: string; quote?: string; lines?: string[]; bars?: number[]; rows?: { name: string; pct: number }[]; hold?: number })[] }   // card e scritte che salgono dal vetro, alternate (vista laterale)   // `dictation`: la card nasce come i tre tasti per scrivere, il dito sul microfono al battito `tap`, le parole della voce della scena (`spoken`), il dito su ✓ al battito `confirm`   // vibrazione: l'orologio trema per 10 fotogrammi (la notifica arriva)
   | { kind: "musicStop"; at: number; len: number }   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
   | { kind: "terminalPlane"; at: number; len: number; rect: [number, number, number, number]; header: string; title: string; lines: string[]; every: number; start?: number; keep?: boolean; prompt?: string; promptAt?: number; path?: string; model?: string; status?: string; times?: number[] };   // `prompt`: il terminale è Claude Code (intestazione con `path` e `model`, il prompt che compare a `promptAt`, la riga di stato `status`), le righe «⎿» sono risultati; `times`: il battito a cui il PC scrive ogni riga, uno per riga   // `keep`: non si spegne in coda — la scena dopo lo riprende com'è   // `start`: righe già presenti quando il terminale compare (quelle che il display sta già mostrando)   // il terminale dell'orologio esce e diventa la finestra del PC; le righe arrivano ogni `every` battiti   // stop and go della musica: tace sul battito, riparte dopo `len` battiti (piano 4 §3)
@@ -88,7 +89,7 @@ export class TimelineError extends Error {
 const ACTS = ["open", "know", "act", "control", "close"];
 const VIEWS = ["front", "threeQuarter", "drawn", "side"];
 const MOVES = ["riseIn", "slideIn", "slideOut", "pushIn", "pullOut", "settleSmall", "zoomLeft", "diveIn"];
-const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero", "aside"];
+const FX = ["tap", "longPress", "haptic", "counter", "typed", "terminal", "spoken", "cardOut", "gaugeHero", "optionsBuild", "musicStop", "terminalPlane", "shake", "float", "panelHero", "aside", "doneCard"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
 
 export const totalBeats = (t: Timeline): number => (t.scenes.length ? t.scenes[t.scenes.length - 1].at + t.scenes[t.scenes.length - 1].len : 0);
@@ -181,7 +182,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
         else if (c.dictation.confirm !== undefined && c.dictation.confirm <= v.at) say(`la dettatura di ${c.name} conferma al battito ${c.dictation.confirm}, prima che parli la voce`);
       }
       if (f.kind === "tap" && !(f.x >= 0 && f.x <= 480 && f.y >= 0 && f.y <= 480)) say(`tocco (${f.x}, ${f.y}) fuori dallo schermo 480×480`);
-      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "shake" || f.kind === "cardOut" || f.kind === "gaugeHero") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
+      if ((f.kind === "tap" || f.kind === "longPress" || f.kind === "haptic" || f.kind === "shake" || f.kind === "doneCard" || f.kind === "cardOut" || f.kind === "gaugeHero") && !s.watch) say(`l'effetto ${f.kind} vuole l'orologio in scena`);
       if (f.kind === "gaugeHero") {
         if (!(f.size > 0 && f.cx - f.size / 2 >= 0 && f.cy - f.size / 2 >= 0 && f.cx + f.size / 2 <= 480 && f.cy + f.size / 2 <= 480)) say(`il gauge (${f.cx}, ${f.cy}, ${f.size}) esce dallo schermo 480×480`);
         if (!(f.value >= 0 && f.value <= 100 && f.week >= 0 && f.week <= 100)) say("il gauge vuole valori in percentuale 0-100");
