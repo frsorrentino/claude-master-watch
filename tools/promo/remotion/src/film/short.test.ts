@@ -6,17 +6,22 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import { dollyAt } from "./dolly.ts";
 import { BLIND_CUT } from "./ui/blinds.ts";
-import { notesAt } from "./endCard.ts";
+import { contrast, endColors, notesAt } from "./endCard.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
-test("il corto dura 71 battiti (38,7 s), con la musica fino all'ultimo fotogramma", () => assert.equal(totalBeats(short), 71));
+test("il corto dura 71 battiti (38,7 s); la musica parte col primo fotogramma", () => {
+  assert.equal(totalBeats(short), 71);
+  assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
+  assert.equal(byId("wake").sleep?.hush, false);                         // e il sonno del display non la zittisce
+});
 test("il colpo della musica cade sull'entrata della corsia, non sulla pressione: la card «Deployed» compare sul colpo (Franz, 23/09 11:28)", () => {
-  // taglio 0-1 0-11 9-10 11-12 43-45 dal battito 7: cinque battute d'introduzione, il colpo (la battuta 4 della traccia) al 27.
-  // Lo stacco (la musica si ferma a 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro
+  // taglio 0.25-1 0-1 0-1 0-11 43-45 dal battito 0: tre battiti d'attacco che salgono dal silenzio, sei battute
+  // d'introduzione (la 0 tre volte, poi 1-3), il colpo (la battuta 4 della traccia) al 27. Lo stacco (la musica si ferma a
+  // 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number };
-  const drop = (short.musicDelayBeats ?? 0) + 5 * 4, stop = drop - 4 + 2.25;
+  const drop = (short.musicDelayBeats ?? 0) + 3 + 6 * 4, stop = drop - 4 + 2.25;
   const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
   assert.equal(drop, 27);
   assert.equal(loop.at + fl.at, drop);
@@ -103,7 +108,13 @@ test("la carrellata: lista con l'esito, «Work», «Context», con i blink fra l
   assert.equal(list.watch!.clipStart, 11.6);
   assert.equal(list.watch!.freeze, true);
   for (const s of [work, ctx]) assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
-  assert.ok(Math.abs(ctx.watch!.clipStart! - 10.64) <= 0.2, "sul display la scheda Context, dove cade nel film lungo (10,64 s)");
+  // la Panoramica scorre com'è nella registrazione (Franz, 23/09 18:32): «Work» scatta in vista a 6,0 s, «Context» a
+  // 10,5 s; ciascuna arriva nel primo mezzo battito della sua scena, mentre le palpebre si riaprono
+  const half = 0.5 * 60 / short.bpm;
+  for (const [s, snap] of [[work, 6.0], [ctx, 10.5]] as const) {
+    assert.notEqual(s.watch!.freeze, true, `${s.id} è ferma`);
+    assert.ok(snap - s.watch!.clipStart! > 0 && snap - s.watch!.clipStart! <= half, `${s.id}: la scheda arriva ${(snap - s.watch!.clipStart!).toFixed(2)} s dopo il taglio`);
+  }
   for (const id of ["title", "glance", "done", "shipped"]) assert.equal(short.scenes.find((s) => s.id === id), undefined, `c'è ancora «${id}»`);
 });
 test("la scheda Context si legge prima che parta la tapparella, e le sue 3 barre diventano i listelli", () => {
@@ -117,9 +128,19 @@ test("la scheda Context si legge prima che parta la tapparella, e le sue 3 barre
   assert.ok(blindStart - (ctx.at + aside.at) >= 2, `la scheda resta ${blindStart - (ctx.at + aside.at)} battiti prima della tapparella`);
   assert.equal(ctx.at + ctx.len, end.at);
 });
-test("il taglio sul cartello cade sull'inizio del finale della musica, e il film finisce con la musica", () => {
-  // taglio 0-1 0-11 9-10 11-12 43-45 dal battito 7: 14 battute prima del finale (43-44), che dura 2 battute
+test("il finale vero del brano parte col primo blink e si spegne sulla tapparella: il cartello resta in silenzio (Franz, 23/09 18:15)", () => {
+  // taglio 0.25-1 0-1 0-1 0-11 43-45: 3 battiti + 13 battute fino al finale (43-44), che dura 2 battute
+  const work = byId("work"), end = byId("end");
+  assert.equal((short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11) * 4, work.at);
+  assert.equal((short.musicDelayBeats ?? 0) + 3 + (1 + 1 + 11 + 2) * 4, end.at);
+  assert.ok(totalBeats(short) > end.at, "dopo la musica il cartello");
+});
+test("il cartello resta sull'azzurro della tapparella chiusa, con i testi leggibili (Franz, 23/09 18:15)", () => {
+  // la tapparella chiusa, misurata sulla bozza 8: circa rgb(74, 100, 148)
   const end = byId("end");
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1 + 1) * 4, end.at);
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1 + 1 + 2) * 4, totalBeats(short));
+  assert.deepEqual(short.palette?.close, ["#4D6C9D", "#4A6494", "#445C8A", "rgb(80,110,160)"]);
+  assert.equal(end.endTone, "blue");
+  const c = endColors(end.endTone);
+  for (const [name, col, min] of [["titolo", c.title, 4.5], ["avvisi", c.dim, 4.5], ["Open source.", c.accent, 3]] as const)
+    assert.ok(contrast(col, "#4A6494") >= min, `${name} ${col}: contrasto ${contrast(col, "#4A6494").toFixed(1)}:1`);
 });

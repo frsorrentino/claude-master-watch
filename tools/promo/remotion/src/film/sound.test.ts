@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { stopGain, dbToGain, duckGain, sfxCues, sleepGain, MUSIC_FALL, MUSIC_EARLY } from "./sound.ts";
+import { stopGain, dbToGain, duckGain, sfxCues, sleepGain, napsOf, MUSIC_FALL, MUSIC_EARLY } from "./sound.ts";
 import { validateTimeline } from "./timeline.ts";
 
 const t = validateTimeline({
@@ -62,4 +62,15 @@ test("la musica si azzera sul battito e rientra dopo la notifica", () => {
   assert.equal(at(back - 1), 0, "tace fino al battito del rientro");
   assert.ok(at(back) > 0 && at(back + 1) === 1, "e rientra lì, in due fotogrammi");
   assert.equal(at(600), 1, "fuori dalla finestra non tocca niente");
+});
+
+test("il sonno del display zittisce la musica, salvo con «hush» false: nel corto la musica parte col video (Franz, 23/09 18:24)", () => {
+  const g = { bpm: 110, fps: 30, offsetSeconds: 0.01 };
+  const t = (hush?: boolean): any => ({ bpm: 110, fps: 30, offsetSeconds: 0.01, scenes: [
+    { id: "wake", at: 0, len: 5, act: "know", watch: { view: "front", clip: "x.mp4" }, sleep: { len: 8, musicBackBeats: 2, ...(hush === undefined ? {} : { hush }) } },
+    { id: "asks", at: 5, len: 4, act: "know", watch: { view: "front", clip: "x.mp4" } },
+  ] });
+  assert.equal(napsOf(t(), g).length, 1);
+  assert.equal(napsOf(t(true), g).length, 1);
+  assert.deepEqual(napsOf(t(false), g), []);
 });

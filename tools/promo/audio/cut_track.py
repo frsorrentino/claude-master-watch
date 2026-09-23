@@ -1,6 +1,7 @@
 """Taglia la traccia sulle battute (introduzione, corpo, salto al finale vero) con dissolvenze a pari potenza di 15 ms
 centrate sul battito: la griglia resta uniforme attraverso le giunte e la musica finisce con il film, non sfuma.
-Uso: python3 cut_track.py <traccia> <scheda.card.json> 0-4 10-24 40-47 [--out=FILE]"""
+Uso: python3 cut_track.py <traccia> <scheda.card.json> 0-4 10-24 40-47 [--out=FILE] [--fadein=BATTITI]
+Le battute possono essere frazionarie: 0.25-1 sono gli ultimi tre battiti della battuta 0 (un attacco a metà battuta)."""
 import json, sys, tempfile, wave
 from pathlib import Path
 import numpy as np
@@ -15,12 +16,20 @@ def cut(x, sr, bpm, first_beat_s, segments, fade_ms=15):
         out[-2 * h:] = out[-2 * h:] * np.cos(t) + seg[:2 * h] * np.sin(t); out = np.r_[out, seg[2 * h:]]
     return out[:len(out) - h]
 
+def fade_in(y, sr, bpm, beats):
+    """La musica sale dal silenzio nei primi `beats` battiti (curva a S): l'attacco a metà battuta non si sente come un taglio."""
+    n = min(len(y), int(sr * beats * 60 / bpm)); y = y.copy()
+    y[:n] *= (0.5 - 0.5 * np.cos(np.pi * np.linspace(0, 1, n))).astype(y.dtype)
+    return y
+
 if __name__ == "__main__":
     src, card = Path(sys.argv[1]), json.loads(Path(sys.argv[2]).read_text())
-    segs = [tuple(int(v) for v in s.split("-")) for s in sys.argv[3:] if not s.startswith("--")]
+    segs = [tuple(float(v) for v in s.split("-")) for s in sys.argv[3:] if not s.startswith("--")]
     out = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--out=")), None)   # il corto ha la sua traccia (23/09)
     with tempfile.TemporaryDirectory() as d: sr, x = M.read_wav(M.to_wav(src, Path(d) / "t.wav"))
     y = cut(x, sr, card["bpm"], card["first_beat_s"], segs)
+    fin = next((float(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--fadein=")), 0)   # il corto parte col video (23/09)
+    if fin: y = fade_in(y, sr, card["bpm"], fin)
     dst = Path(out).resolve() if out else Path(__file__).resolve().parent.parent / "remotion/public/audio/music.wav"; dst.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(dst), "wb") as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())
     offset = card['first_beat_s'] if segs[0][0] == 0 else 0.015 / 2          # se si parte da una battuta interna, il primo battito cade dopo mezza dissolvenza

@@ -1,5 +1,7 @@
 import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
 import type { Timeline } from "./timeline.ts";
+import { beatToFrame } from "./beats.ts";
+import type { Grid } from "./beats.ts";
 
 export type SfxName = "wearNotify" | "notify" | "thump" | "tick" | "tick2" | "tick4" | "pressRise" | "whoosh" | "shutter";
 export type SfxCue = { beat: number; name: SfxName; gainDb: number };
@@ -97,3 +99,21 @@ export const stopGain = (frame: number, windows: [number, number][]): number => 
   }
   return 1;
 };
+
+/** I sonni del display che zittiscono la musica, per la colonna sonora: `hush` = il fotogramma in cui la musica è già a
+ *  zero, `from` = da dove riparte la traccia, `fadeIn` = in quanti fotogrammi rientra. Con `sleep.hush` false il sonno non
+ *  tocca la musica: nel corto la musica parte col video e corre sotto l'ambient (Franz, 23/09 18:24). */
+export type NapCue = Nap & { hush: number; from?: number; fadeIn: number };
+export const napsOf = (t: Timeline, g: Grid): NapCue[] => t.scenes.flatMap((s, i) => {
+  const next = t.scenes[i + 1];
+  if (!s.sleep || !next || s.sleep.hush === false) return [];
+  const frames = beatToFrame(g, s.at + s.sleep.len) - beatToFrame(g, s.at);
+  const cut = beatToFrame(g, next.at);
+  return [{
+    cut, frames,
+    back: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
+    hush: cut - Math.round(frames * (SLEEP_CUT - HUSH)),   // il fotogramma in cui la musica è già a zero
+    from: s.sleep.musicFrom,
+    fadeIn: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4) + (s.sleep.musicFadeIn ?? 0)) - beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
+  }];
+});

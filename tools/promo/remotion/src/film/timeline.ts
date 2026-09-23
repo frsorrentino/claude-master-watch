@@ -2,7 +2,7 @@ import type { Grid } from "./beats.ts";
 import type { Move } from "./moves.ts";
 import type { Dolly } from "./dolly.ts";
 import { notesAt } from "./endCard.ts";
-import type { EndPace } from "./endCard.ts";
+import type { EndPace, EndTone } from "./endCard.ts";
 import { TITLE_LEAD } from "./ui/dots.ts";
 import { THEME } from "./theme.ts";
 import type { Palette } from "./theme.ts";
@@ -40,7 +40,7 @@ export type CarryKey = { shape: "circle" | "pill" | "square" | "line" | "arc"; x
  *  colore `color`), cresce fino a coprire tutto e il suo colore diventa lo sfondo della scena dopo. `len` in battiti, a cavallo
  *  del taglio. `body`: cosa si vede dentro mentre cresce. */
 export type TakeoverCue = { len: number; x: number; y: number; w: number; h: number; r: number; tilt?: number; press?: number; color: string; toColor: string; tint?: "grow"; body?: "card" | "words" | "screen" | "plain"; text?: string; words?: string[]; card?: { name: string; age: string; text: string; badge: string; icon: "check" | "play" } };   // `card`: il takeover parte come una scheda della corsia e poi cresce   // `tilt`: inclinazione di partenza in gradi, 10 come le schede della corsia (di suo), 0 per un tasto dritto
-export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; endPace?: EndPace; logoCutout?: boolean; strapBleed?: boolean; out?: "blink" | "lids"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
+export type Scene = { id: string; at: number; len: number; act: Act; watch?: WatchCue; text?: TextCue; fx?: Fx[]; endCard?: boolean; endPace?: EndPace; endTone?: EndTone; logoCutout?: boolean; strapBleed?: boolean; out?: "blink" | "lids"; carryOut?: CarryKey; carryIn?: CarryKey; takeover?: TakeoverCue; flip?: FlipCue; glow?: GlowCue; sleep?: SleepCue; bands?: BandsCue; split?: SplitCue; blinds?: BlindsCue; bgFrom?: string; bgFadeBeats?: number; bgKeep?: boolean; blackOutFrames?: number };
 
 /** Dove sta l'orologio in orizzontale, in frazione del quadro. Con la camera «around» è CENTRATO (è la scheda ferma al centro
  *  che detta il posto, il titolo resta in alto a sinistra: Franz, 19/09 05:12); con il testo a sinistra sta nella colonna di
@@ -63,7 +63,7 @@ export type GlowCue = { len: number; cx?: number; cy?: number; color?: string };
  *  `musicFrom`: il secondo della traccia da cui riparte. Dopo un silenzio la musica non riprende da dove sarebbe arrivata:
  *  attacca il giro principale (Franz, 19/09 19:41). Misurato su `music.v9.wav`: l'attacco è a 8,699 s, +7,2 dB sulla
  *  battuta prima. */
-export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number; titleLead?: number; breath?: boolean };   // `breath`: false = ambient a luce ferma, senza il respiro sui puntini (corto, 23/09)   // `titleLead`: battiti prima della notifica in cui si scrive la frase della scena dopo (TITLE_LEAD se manca)   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
+export type SleepCue = { len: number; musicBackBeats?: number; musicFrom?: number; musicFadeIn?: number; titleLead?: number; breath?: boolean; hush?: boolean };   // `breath`: false = ambient a luce ferma, senza il respiro sui puntini (corto, 23/09)   // `titleLead`: battiti prima della notifica in cui si scrive la frase della scena dopo (TITLE_LEAD se manca)   // `musicFadeIn`: battiti in cui la musica risale dopo il rientro (0 = entra piena)
 /** Le due bande degli account: il campo si apre in due (lavoro a sinistra, personale a destra) e alla fine quella di
  *  sinistra si riprende il quadro, diventando il fondo della sezione dopo. `open` e `win` in battiti. */
 export type BandsCue = { left: string; right: string; open: number; win: number };
@@ -143,6 +143,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     // gli avvisi del cartello (Anthropic, marchi Google, voce sintetica) devono restare in quadro almeno due battiti
     if (s.endCard && s.len - notesAt(s.endPace) < 2) say(`gli avvisi del cartello arrivano al battito ${notesAt(s.endPace)} della scena, che ne dura ${s.len}: servono almeno 2 battiti per leggerli`);
     if ((s.logoCutout || s.strapBleed) && !s.endCard) say("logo ritagliato e cinturino che sborda valgono solo sul cartello");
+    if (s.endTone !== undefined && (!s.endCard || s.endTone !== "blue")) say(`tono del cartello «${s.endTone}»: vale solo «blue», e solo sul cartello`);
     if (s.bgKeep && !s.bgFrom) say("«bgKeep» senza «bgFrom»: non c'è nessun campo di colore da tenere");
     if (s.split && !(half(s.split.open) && half(s.split.hold) && half(s.split.close) && s.split.open + s.split.hold + s.split.close <= s.len)) say(`lo sdoppiamento (${s.split.open}+${s.split.hold}+${s.split.close}) non sta nei ${s.len} battiti della scena`);
     if (s.bands && !(half(s.bands.open) && half(s.bands.win) && s.bands.open + s.bands.win <= s.len)) say(`le bande (apre ${s.bands.open}, vince ${s.bands.win}) non stanno nei ${s.len} battiti della scena`);
@@ -151,6 +152,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     if (s.sleep?.musicBackBeats !== undefined && !Number.isInteger(s.sleep.musicBackBeats * 2)) say(`la musica rientra al battito ${s.sleep.musicBackBeats} dal taglio: servono battiti o mezzi battiti`);
     if (s.sleep && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» addormenta il display ma non c'è una scena dopo da risvegliare`);
     if (s.sleep?.breath !== undefined && typeof s.sleep.breath !== "boolean") say(`il respiro del sonno è «${s.sleep.breath}»: serve true o false`);
+    if (s.sleep?.hush !== undefined && typeof s.sleep.hush !== "boolean") say(`«hush» del sonno è «${s.sleep.hush}»: serve true o false`);   // false = la musica non si zittisce con il display (corto, 23/09)
     if (s.blinds && !(s.blinds.len >= 6)) say(`la tapparella dura ${s.blinds.len} battiti: il minimo è 6`);
     if (s.blinds && s === t.scenes[t.scenes.length - 1]) say(`la scena «${s.id}» ha la tapparella ma non c'è una scena dopo da scoprire`);
     if (s.out === "blink" && s.text && !s.text.accent) say("il battito di ciglia vuole una parola in colore da far crescere");   // senza testo sono le sole palpebre: il passaggio fra due schermate dello stesso momento (Franz, 21/09)

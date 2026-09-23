@@ -2,8 +2,7 @@ import React from "react";
 import { Audio, Sequence, staticFile } from "remotion";
 import { beatToFrame } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { dbToGain, duckGain, sfxCues, sleepGain, stopGain } from "./sound.ts";
-import { HUSH, SLEEP_CUT } from "./ui/sleep.ts";
+import { dbToGain, duckGain, napsOf, sfxCues, sleepGain, stopGain } from "./sound.ts";
 import type { Timeline } from "./timeline.ts";
 
 /** "nosfx": musica e voce, finché i suoni d'interfaccia non sono nel progetto. */
@@ -18,19 +17,7 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
   const windows = spoken.map((v) => [v.from, v.to] as [number, number]);
   // il sonno del display: la musica si azzera con l'ambient e, dopo il silenzio, RIATTACCA il giro principale della
   // traccia invece di riprendere da dove sarebbe arrivata (sound.ts, `sleepGain`; ui/sleep.ts per i tempi)
-  const naps = t.scenes.flatMap((s, i) => {
-    const next = t.scenes[i + 1];
-    if (!s.sleep || !next) return [];
-    const frames = beatToFrame(g, s.at + s.sleep.len) - beatToFrame(g, s.at);
-    const cut = beatToFrame(g, next.at);
-    return [{
-      cut, frames,
-      back: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
-      hush: cut - Math.round(frames * (SLEEP_CUT - HUSH)),   // il fotogramma in cui la musica è già a zero
-      from: s.sleep.musicFrom,
-      fadeIn: beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4) + (s.sleep.musicFadeIn ?? 0)) - beatToFrame(g, next.at + (s.sleep.musicBackBeats ?? 4)),
-    }];
-  });
+  const naps = napsOf(t, g);
   const stops = t.scenes.flatMap((s) => (s.fx ?? []).flatMap((f) => (f.kind === "musicStop" ? [[beatToFrame(g, s.at + f.at), beatToFrame(g, s.at + f.at + f.len)] as [number, number]] : [])));
   return (
     <>

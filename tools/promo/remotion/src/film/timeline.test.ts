@@ -133,3 +133,14 @@ test("logo ritagliato e cinturino che sborda valgono solo sul cartello", () => {
   t.scenes[1].endCard = true; t.scenes[1].endPace = "blinds";
   assert.deepEqual(problems(t), []);
 });
+
+test("«hush» del sonno vuole true o false", () => {
+  const t = base();
+  t.scenes = [
+    { id: "wake", at: 0, len: 5, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, sleep: { len: 8, titleLead: 0, hush: "no" } },
+    { id: "asks", at: 5, len: 4, act: "know", watch: { view: "front", clip: "scenes/s1_list.mp4" }, text: { lines: ["It asks."], accent: "asks." } },
+  ];
+  assert.match(problems(t).join("\n"), /wake: «hush» del sonno è «no»: serve true o false/);
+  t.scenes[0].sleep.hush = false;
+  assert.deepEqual(problems(t), []);
+});
