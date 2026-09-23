@@ -48,15 +48,16 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
 | 19–26 | 10,4–14,2 | answer | «1 · yes» / «2 · no» si staccano dal vetro con l'ombra sul display (6); pressione lunga al 23, il «yes» affonda, cresce e vira nel blu mentre la musica si ferma (25,25–25,75); sfocatura di movimento sull'espansione (10, prova) | — |
 | 26–40 | 14,2–21,8 | corsia | l'orologio laterale sale sulla risalita; la card «Deployed 2.8.0, smoke tests green» sul colpo della musica (27); le card salgono a velocità diverse e la camera con loro (5); «Say what's next.»; dettatura con la voce | «Say what's next.» |
 | 40–50,5 | 21,8–27,5 | lavoro | il terminale del PC, inclinato di circa 20°, con la camera che scorre accanto al cursore mentre Claude scrive (2); il polso ripete le righe; righe e tempi del film lungo | «Watch it work.» |
-| 50,5–52,5 | 27,5–28,6 | al polso | la finestra del terminale si rimpicciolisce ed entra nel display come card di payments-api in cima alla lista, «Released 2.8.0. Changelog updated, tagged v2.8.0», con il ✓ che si disegna mentre si posa (3); sfocatura di movimento sul volo (10, prova) | — |
-| 52,5–57 | 28,6–31,1 | lista | sotto la card ✓ scorrono storefront e blog | «Every session, at a glance.» |
-| 57–59 | 31,1–32,2 | Work | blink sul battito: il display si riapre su «Work» della Panoramica | — |
-| 59–63 | 32,2–34,4 | Context | blink: «Context» sul display; a sinistra la scheda Context del film lungo, con le barre che si riempiono (62 %, 18 %, 4 %); da 59,5 il resto del quadro sfuma e le 3 barre, piene, crescono fino a diventare i listelli della tapparella, che si chiude sul taglio | — |
-| 63–71 | 34,4–38,7 | cartello | i listelli si voltano fino a 65,5 e scoprono il cartello; il logo ritagliato sul blu, senza disco nero, da 64,5; l'orologio di tre quarti col cinturino intero fuori dal bordo in alto; «Free. Open source.», repo; avvisi da 67, leggibili per 4 battiti | — |
+| 50,5–55 | 27,5–30,0 | lista | la finestra del terminale si rimpicciolisce ed entra nel display come card di payments-api in cima alla lista, «Released 2.8.0 and tagged v2.8.0», con il ✓ che si disegna mentre si posa (3); sfocatura di movimento sul volo (10, prova); sotto la card storefront e blog | «Every session, at a glance.» |
+| 55–57 | 30,0–31,1 | Work | blink sul battito (il primo cade sulla battuta): il display si riapre su «Work» della Panoramica | — |
+| 57–63 | 31,1–34,4 | Context | blink: «Context» sul display; a sinistra la scheda Context del film lungo, con le barre che si riempiono (62 %, 18 %, 4 %), leggibile per due battiti e mezzo; da 59,5 il resto del quadro sfuma e le 3 barre, piene, crescono fino a diventare i listelli della tapparella, che si chiude sul taglio | — |
+| 63–71 | 34,4–38,7 | cartello | i listelli si voltano fino a 65,5 e scoprono il cartello; il logo ritagliato sul blu, senza disco nero, compare mentre si voltano; l'orologio di tre quarti col cinturino intero fuori dal bordo in alto; «Claude Master» da 65, «Free. Open source.», repo; avvisi da 67, leggibili per 4 battiti | — |
 
 **Su tutto il corto:** la camera respira in ogni inquadratura ferma, con una deriva dell'1–2 % (7); l'ambient dell'apertura resta fermo.
 
 **Blink:** quelli del film lungo, le palpebre che si chiudono sul battito e si riaprono sulla schermata dopo. La frase di «lista» se ne va prima del blink; nessuna parola vola in alto.
+
+**Tempi della carrellata (scrivendo il piano 3, 23/09 15:30):** la tapparella del film lungo non può durare meno di 6 battiti (regola nata dalle note di Franz del 18 e 21/09) e comincia 3,5 battiti prima del taglio; perché la scheda Context si legga prima, «Context» parte a 57 e dura 6 battiti. Il volo del terminale sta dentro la scena «lista», che comincia a 50,5 con il titolo.
 
 ## 4. Musica e suoni
 
@@ -67,8 +68,8 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
 | 0–7 | silenzio: il titolo in ambient, poi la notifica |
 | 7–27 | introduzione, 5 battute: la battuta 0 ripetuta, poi 1–3; nell'ultima la musica si ferma a 25,25–25,75 mentre il «yes» riempie il quadro, e risale mentre l'orologio laterale sale |
 | 27 | colpo della parte forte, sulla card «Deployed» |
-| 27–59 | parte forte: battute 4–10, poi la 9 ripetuta (55–59), un giro A/B intero, sotto la lista e «Work»; 12 dB sotto le voci |
-| 59–63 | battuta quieta (11) con la sua risalita, sotto la scheda Context e la tapparella |
+| 27–59 | parte forte: battute 4–10, poi la 9 ripetuta (55–59), un giro A/B intero: il primo blink cade sulla sua battuta; 12 dB sotto le voci |
+| 59–63 | battuta quieta (11) con la sua risalita, sotto la tapparella che si chiude |
 | 63–71 | il finale vero (43–44) sotto il cartello, fino all'ultimo fotogramma |
 
 **Suoni:** gli stessi del film lungo: tocchi, pressione lunga, soffio all'apertura del terminale, tick delle righe. La notifica è quella del Pixel, una volta. Voci: `question.wav` e `say.wav`, già registrate.
@@ -82,8 +83,8 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
   2. scene spostate secondo la sezione 3; via «done» e «shipped»;
   3. la card ✓ di payments-api ferma in cima alla lista (senza ancora il volo dal terminale): l'esito c'è fin dalla prima bozza;
   4. carrellata in tre scene con i blink del film lungo, solo palpebre;
-  5. scheda Context con le barre che diventano la tapparella, e la tapparella che apre il cartello: la tapparella del film lungo dura 7 battiti, qui 6 a cavallo del taglio (da 59,5 a 65,5), perché la scena Context ne ha 4;
-  6. cartello: logo ritagliato e cinturino che esce dal bordo, come opzioni che il film lungo non usa, e un passo del cartello che parte mentre i listelli si voltano (logo a 1,5 battiti dal taglio, avvisi a 4);
+  5. scheda Context con le barre che diventano la tapparella, e la tapparella che apre il cartello: la tapparella del film lungo dura 7 battiti, qui 6 (il minimo) a cavallo del taglio, da 59,5 a 65,5;
+  6. cartello: logo ritagliato e cinturino che esce dal bordo, come opzioni che il film lungo non usa, e un passo del cartello che parte mentre i listelli si voltano («Claude Master» a 2 battiti dal taglio, avvisi a 4);
   7. musica tagliata secondo la sezione 4.
 - **Piano 4, il movimento** (una bozza dopo ogni punto, per giudicarli uno alla volta), in ordine d'impatto:
   1. (3) takeover al contrario: la finestra del terminale entra nel display e diventa la card ✓;
@@ -92,7 +93,8 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
   4. (5) parallasse della corsia;
   5. (7) camera che respira;
   6. (8) onda della voce dal ▶;
-  7. (10) sfocatura di movimento, prima sull'espansione del «yes», poi sul volo del terminale: si misura il costo di resa e si confronta il colore prima e dopo; resta solo se Franz la approva.
+  7. (1) «It asks.» che arriva da sfocata a nitida sul tremito;
+  8. (10) sfocatura di movimento, prima sull'espansione del «yes», poi sul volo del terminale: si misura il costo di resa e si confronta il colore prima e dopo; resta solo se Franz la approva.
 - **Consegna:** `deliver.sh` riceve il nome della composizione. Due versioni: piena e sotto i 10 MB.
 
 ## 6. Il 3D dell'orologio
