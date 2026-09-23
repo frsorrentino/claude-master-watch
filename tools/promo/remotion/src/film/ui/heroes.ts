@@ -153,6 +153,29 @@ export const railScrollVar = (p: number, holds: number[], center = 0.8, weights:
   return i + railEase(clamp(t / (RAIL_MOVE * w(i)))) - (1 - center);
 };
 
+/** Una card della corsia, per quanto serve ai tempi: le frasi hanno righe, le schede testo, la sosta la dà la scaletta. */
+type LaneCard = { kind?: string; lines?: string[]; text?: string; hold?: number };
+/** Altezze, soste e pesi dei passi della corsia larga `W` (Floating.tsx): la corsia e i test usano gli stessi conti. */
+export const laneSteps = (cards: LaneCard[], W: number): { heights: number[]; holds: number[]; weights: number[] } => {
+  const U = W / 427, GAP = 9 * U;
+  const heights = cards.map((c) => (c.kind === "text" ? (c.lines ?? []).length * 88.6 + 120 : c.kind === "brief" ? 240 * U : cardUnits(c.text ?? "") * U));
+  const holds = cards.map((c, i) => c.hold ?? (i === cards.length - 1 ? 1.6 : c.kind === "text" ? 0.2 : 0.5));
+  const stepPx = heights.map((hh, i) => (hh + (heights[i + 1] ?? hh)) / 2 + GAP);
+  const media = stepPx.reduce((a, b) => a + b, 0) / stepPx.length;
+  return { heights, holds, weights: stepPx.map((v) => v / media) };
+};
+/** Quando ogni card ARRIVA in evidenza, in frazione della corsia (0-1): la prima c'è da subito, le altre alla fine del
+ *  movimento che le porta al centro (railScrollVar con centro 1). Serve a mettere una card su un colpo della musica. */
+export const laneArrivals = (cards: LaneCard[], W: number): number[] => {
+  const { holds, weights } = laneSteps(cards, W);
+  const dur = holds.map((h, i) => RAIL_MOVE * weights[i] + Math.max(0, h));
+  const total = dur.reduce((a, b) => a + b, 0);
+  const out = [0];
+  let acc = 0;
+  for (let k = 1; k < cards.length; k++) { out.push((acc + RAIL_MOVE * weights[k - 1]) / total); acc += dur[k - 1]; }
+  return out;
+};
+
 /**
  * La deformazione delle liste di Wear OS (`SurfaceTransformation`, Franz 18/09 18:40): una scheda entra piccola in basso, è
  * più larga al centro e torna piccola salendo; la scala dipende dalla QUOTA, non dal tempo. `t` 0-1 dal bordo basso della

@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { spanFrames } from "../beats.ts";
 import type { Grid } from "../beats.ts";
 import type { Fx, Scene } from "../timeline.ts";
-import { cardUnits, laneY, railScrollVar } from "./heroes.ts";
+import { laneSteps, laneY, railScrollVar } from "./heroes.ts";
 import { UiCard } from "./UiCard.tsx";
 import { UiDictation } from "./UiDictation.tsx";
 import { UiBriefContext, UiBriefQuestions, UiBriefWork } from "./UiBrief.tsx";
@@ -42,18 +42,16 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({
   // ogni scheda è alta quanto il suo testo, come sul display: con un'altezza sola per tutte, quelle corte lasciavano un buco
   // le frasi occupano quanto una scheda immaginaria: 60 px d'aria sopra e sotto il blocco di testo (Franz, 20/09 16:00).
   // Con soli 10 px stavano appiccicate alle schede vicine e lo scorrimento sembrava irregolare.
-  const heights = e.cards.map((c) => (c.kind === "text" ? c.lines.length * 88.6 + 120 : c.kind === "brief" ? 240 * U : cardUnits(c.text) * U));
+  // altezze, soste e pesi dei passi: laneSteps (ui/heroes.ts), gli stessi conti che usano i test per i tempi delle card
+  const { heights, holds, weights } = laneSteps(e.cards, W);
   const yBottom = base - (glassY ? CLEAR : 0);
   // la sosta la decide la scaletta, scheda per scheda: le card lunghe si leggono, le scritte passano più svelte
   // l'ultima scheda si ferma al centro e resta lì: da quella posizione parte l'ingrandimento della transizione
-  const holds = e.cards.map((c, i) => c.hold ?? (i === e.cards.length - 1 ? 1.6 : c.kind === "text" ? 0.2 : 0.5));
   // ogni passo pesa quanto è lungo: mezza voce di qui, mezza di là, più lo stacco — così la corsia scorre a velocità costante
-  const stepPx = heights.map((hh, i) => (hh + (heights[i + 1] ?? hh)) / 2 + GAP);
-  const media = stepPx.reduce((a, b) => a + b, 0) / stepPx.length;
   // sosta su un passo INTERO: la scheda in evidenza si ferma sempre con il bordo basso sullo stesso punto. Con la sosta a
   // 0,8 di passo il resto dipendeva dall'altezza della scheda dopo, e il punto si spostava ogni volta (Franz, 20/09 15:48).
   // ...e non oltre l'ultima: la corsia finisce con l'ultima scheda IN EVIDENZA, che è quella da cui parte l'ingrandimento
-  const offset = Math.min(e.cards.length - 1, railScrollVar(p, holds, 1, stepPx.map((v) => v / media)));
+  const offset = Math.min(e.cards.length - 1, railScrollVar(p, holds, 1, weights));
   const flat = e.cards.map((c) => c.kind === "text");
   const lane = laneY(offset, heights, GAP, yBottom, flat);   // quote, scale e trasparenze di questo fotogramma
   // quando l'ultima scheda comincia a crescere (il takeover parte da lei), le scritte della corsia se ne vanno: la scheda

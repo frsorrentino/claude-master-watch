@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { HERO_OPTION_PX, RAIL_MOVE, cardOutAt, cardUnits, gaugeHeroAt, laneY, optionsBuildAt, optionsRest, panelHeroAt, railAt, railScroll, railScrollVar, railStackPx, stackAt, terminalPlaneAt } from "./heroes.ts";
+import { HERO_OPTION_PX, RAIL_MOVE, cardOutAt, cardUnits, gaugeHeroAt, laneArrivals, laneSteps, laneY, optionsBuildAt, optionsRest, panelHeroAt, railAt, railScroll, railScrollVar, railStackPx, stackAt, terminalPlaneAt } from "./heroes.ts";
 
 test("la card parte dal display (a 0 combacia), esce morbida, resta fuori e si consegna alla scena dopo senza tornare", () => {
   const a = cardOutAt(0);
@@ -152,4 +152,20 @@ test("il takeover della risposta parte dal tasto «yes» posato: stesso centro, 
     assert.ok(Math.abs(s.takeover[key] - v) < 1, `${key}: takeover ${s.takeover[key]}, tasto posato ${v.toFixed(1)}`);
   }
   assert.equal(s.takeover.tilt, 0, "il tasto non è inclinato come le schede della corsia");
+});
+test("la corsia: ogni card arriva in evidenza quando railScrollVar vale il suo indice (piano 7)", () => {
+  const cards = [
+    { kind: "text", lines: ["It keeps you", "in the loop."], hold: 0.66 },
+    { name: "a", text: "Running the staging checks for 2.8.0", hold: 0.74 },
+    { name: "b", text: "Deployed 2.8.0, smoke tests green" },
+    { kind: "text", lines: ["Say what's next."] },
+    { name: "c", text: "Great. Now update the changelog and tag the release", hold: 5.4 },
+  ];
+  const { holds, weights } = laneSteps(cards, 560);
+  const at = laneArrivals(cards, 560);
+  assert.equal(at[0], 0);
+  for (let k = 1; k < cards.length; k++) {
+    assert.ok(Math.abs(railScrollVar(at[k], holds, 1, weights) - k) < 1e-6, `card ${k}: in evidenza a ${at[k]}`);
+    assert.ok(railScrollVar(at[k] - 0.01, holds, 1, weights) < k, `card ${k}: prima non c'è ancora`);
+  }
 });
