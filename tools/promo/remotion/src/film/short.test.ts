@@ -190,20 +190,20 @@ test("la scheda Context si legge con i valori finali prima del quarto blink (Fra
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
-test("il finale resta pieno fino al logo e chiude sul logo con un colpo pieno e secco; il nome arriva nel silenzio (Franz, 23/09 19:43 e 24/09 00:32)", () => {
-  // taglio 0-1 0-11 39-43 4-4.3125 --fadeout=0.25: 4 battiti d'attacco, le battute 0-3, le 4-10, le 39-42 piene fino al
-  // logo e, sul logo, il primo battito della battuta 4 (quella del colpo al 20, col piatto: sopra i 6 kHz 14 dB contro i
-  // 3-4 delle altre battute) che si chiude in un quarto di battito. Via la battuta piana (43) e l'accordo del brano (44),
-  // che facevano sfumare il finale (Franz, 24/09 00:09 e 00:32: «colpo pieno sul logo»). La 39 segue la 10 come nel brano
-  // segue la 38 (code uguali, coseno 0,986). Il taglio sta nel comando di cut_track.py: qui si tiene il conto delle
-  // battute, la traccia vera si misura sulla resa (piena fino al 64, colpo al 64, silenzio dal 65,25)
+test("il finale resta pieno fino al logo, senza la battuta piana sotto lo slogan; l'accordo sul logo (Franz, 23/09 19:43 e 24/09 00:09)", () => {
+  // taglio 0-1 0-11 39-43 44-45: 4 battiti d'attacco, le battute 0-3, le 4-10, le 39-42 piene fino al logo e l'accordo
+  // finale (44), che si spegne da sé in una battuta. Via la battuta piana (43): sotto lo slogan faceva sfumare la musica
+  // (Franz, 24/09 00:09: «lascerei il finale pieno senza sfumare»). La 39 segue la 10 come nel brano segue la 38 (code
+  // uguali, coseno 0,986). Il taglio sta nel comando di cut_track.py: qui si tiene il conto delle battute, la traccia vera
+  // si misura sulla resa (piena fino al 64, accordo al 64, silenzio dal 68). Il colpo secco sul logo (bozza 22) suonava come un taglio,
+  // non come un finale del brano, che un finale netto non ce l'ha: si resta sul suo accordo (Franz, 24/09 00:51)
   const slogan = byId("slogan"), end = byId("end");
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, hit = drop + (7 + 4) * 4, silence = hit + 1.25;
-  assert.equal(hit, 64);
-  assert.ok(slogan.at >= drop && slogan.at + slogan.len <= hit, "lo slogan sta tutto sotto la musica piena");
-  assert.equal(hit, end.at, "il colpo sul logo");
-  assert.ok(silence < end.at + END_PACE[end.endPace!].start, "il nome arriva nel silenzio");
-  assert.ok(totalBeats(short) > silence, "dopo il colpo il cartello resta in silenzio");
+  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, chord = drop + (7 + 4) * 4;
+  assert.equal(chord, 64);
+  assert.ok(slogan.at >= drop && slogan.at + slogan.len <= chord, "lo slogan sta tutto sotto la musica piena");
+  assert.equal(chord, end.at, "l'accordo sul logo");
+  assert.equal(chord + 4, end.at + END_PACE[end.endPace!].start, "si spegne quando arriva il nome");
+  assert.ok(totalBeats(short) > chord + 4, "dopo la musica il cartello resta in silenzio");
 });
 test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si legge prima che se ne vada (Franz, 23/09 19:45)", () => {
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
