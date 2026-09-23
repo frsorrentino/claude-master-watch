@@ -12,27 +12,28 @@ import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts"
 import { sfxCues } from "./sound.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
+const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
 
 test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma", () => {
   assert.equal(totalBeats(short), 73.5);   // +4 per la corsia intera (22:17), −4 per la tapparella che se ne va (22:49)
   assert.equal(short.musicDelayBeats ?? 0, 0);                         // Franz, 23/09 18:15: la musica parte da subito
 });
-test("il colpo della musica cade su «Deployed», e lo stop sul «yes» (Franz, 23/09 11:28 e 22:17)", () => {
-  // taglio 0-1 0-4 26-27 4-11 41-45 (23/09 23:40): una battuta d'attacco, l'introduzione 0-3, poi la battuta 26 (la
-  // preparazione del secondo colpo del brano, piana e senza stop) e il colpo (la battuta 4) al 24, su «Deployed». Uno stop
-  // solo, a 2,5-3 della battuta 3, mentre il «yes» riempie il quadro: con la 3 ripetuta, anche senza il suo stop, si
-  // sentivano due preparazioni di fila (Franz, 23:16 e 23:34)
+test("dopo lo stop sul «yes» la musica riparte col giro pieno all'entrata della corsia, e «Deployed» arriva sulla battuta dopo (Franz, 23/09 23:48)", () => {
+  // taglio 0-1 0-11 40-45: una battuta d'attacco, l'introduzione 0-3, poi subito la parte forte (la battuta 4) al 20. Lo stop,
+  // a 2,5-3 della battuta 3, cade mentre il «yes» riempie il quadro. Né la 3 ripetuta né una battuta di passaggio (la 26):
+  // dopo lo stop la musica riparte con lo stesso giro (Franz, 23:16, 23:34, 23:48)
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; width?: number; cards: { text?: string; lines?: string[]; kind?: string; hold?: number }[] };
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 5 * 4, stop = 4 + 3 * 4 + 2.5;
+  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, stop = 4 + 3 * 4 + 2.5;
   const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
-  assert.equal(drop, 24);
+  assert.equal(drop, 20);
   assert.ok(burst <= stop && stop <= filled, `il «yes» cresce da ${burst} a ${filled}, lo stacco è al ${stop}`);
+  const at = laneArrivals(fl.cards, fl.width ?? 560);
+  assert.equal(loop.at + fl.at + at[0] * fl.len, drop, "la corsia entra sulla ripartenza");
   const k = fl.cards.findIndex((c) => c.text?.startsWith("Deployed"));
-  const arrive = loop.at + fl.at + laneArrivals(fl.cards, fl.width ?? 560)[k] * fl.len;
-  assert.ok(Math.abs(arrive - drop) <= 0.05, `«Deployed» arriva in evidenza al battito ${arrive.toFixed(2)}, il colpo è al ${drop}`);
+  const arrive = loop.at + fl.at + at[k] * fl.len;
+  assert.ok(Math.abs(arrive - (drop + 4)) <= 0.05, `«Deployed» arriva al battito ${arrive.toFixed(2)}, la battuta dopo comincia al ${drop + 4}`);
 });
-const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
 test("il dito preme quando la voce ha finito", () => {
   const answer = byId("answer");
   const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; len: number; pressAt: number };
@@ -47,7 +48,7 @@ test("la corsia riprende le card del film lungo, e dettatura, voce e invio resta
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
   type F = { kind: string; at: number; len: number; cards: { kind?: string; text?: string; lines?: string[]; hold?: number; dictation?: { tap: number } }[] };
   const lf = (long.scenes.find((s) => s.id === "loop")!.fx ?? []).find((f) => f.kind === "float") as F;
-  const loop = byId("loop"), drop = 24;
+  const loop = byId("loop"), drop = 24;   // l'arrivo di «Deployed», sulla seconda battuta della parte forte
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as F;
   const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
   const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined });
@@ -190,11 +191,11 @@ test("la scheda Context si legge con i valori finali prima del quarto blink (Fra
   assert.ok(beats >= 0.8, `i valori finali si leggono per ${beats.toFixed(2)} battiti`);
 });
 test("l'accordo finale cade quando nasce il logo, dopo lo slogan, e si spegne quando arriva il nome (Franz, 23/09 19:43 e 21:13)", () => {
-  // taglio 0-1 0-4 26-27 4-11 41-45: 4 battiti d'attacco, le battute 0-3, la 26, le 4-10, le 41-42 che portano al finale, il finale piano
+  // taglio 0-1 0-11 40-45: 4 battiti d'attacco, le battute 0-3, le 4-10, le 40-42 che portano al finale, il finale piano
   // (43) sotto lo slogan e l'accordo (44), che si spegne in una battuta. Il taglio sta nel comando di cut_track.py: qui si
   // tiene il conto delle battute, la traccia vera si misura sulla resa (accordo al 64, silenzio dal 68)
   const slogan = byId("slogan"), end = byId("end");
-  const phrase = (short.musicDelayBeats ?? 0) + 4 + (4 + 8 + 2) * 4;
+  const phrase = (short.musicDelayBeats ?? 0) + 4 + (11 + 3) * 4;
   assert.equal(phrase, 60);
   assert.ok(phrase >= slogan.at && phrase + 4 <= slogan.at + slogan.len, "il finale piano sta sotto lo slogan");
   assert.equal(phrase + 4, end.at, "l'accordo sul logo");
