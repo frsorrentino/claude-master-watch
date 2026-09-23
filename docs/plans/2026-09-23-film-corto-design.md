@@ -45,8 +45,8 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
 | 27–41 | 14,7–22,4 | corsia | orologio laterale che sale sulla risalita; card «Deployed 2.8.0, smoke tests green» **sul colpo della musica, al battito 28** (Franz, 23/09 11:28: il colpo va sull'animazione dopo la pressione, non sulla pressione); «Say what's next.»; dettatura con la voce; ✓ | «Say what's next.» | parallasse e carrellata verso l'alto (5); il ✓ apre il terminale |
 | 41–51,5 | 22,4–28,1 | lavoro | terminale del PC e orologio frontale, con le righe e i tempi del film lungo | «Watch it work.» | terminale in prospettiva, la camera scorre accanto al cursore (2) |
 | 51,5–56 | 28,1–30,5 | glance | la lista delle sessioni sul polso | «Every session, at a glance.» | il terminale rimpicciolisce e diventa la card di payments-api; la lista si compone (3) |
-| 56–60 | 30,5–32,7 | fatto | card ✓ «Released 2.8.0…» con la seconda vibrazione | — | il segno ✓ si disegna (4) |
-| 60–64 | 32,7–34,9 | shipped | orologio con la card ✓ | «Shipped. From your wrist.» | la camera arretra (1) |
+| 56–60 | 30,5–32,7 | fatto | la lista delle sessioni resta ferma dove l'ha lasciata «glance»; la card ✓ «Released 2.8.0…» sale sopra la lista con la seconda vibrazione, senza tornare alla card «Deployed» (Franz, 23/09 13:01: le schermate del polso vanno in fila) | — | il segno ✓ si disegna (4) |
+| 60–64 | 32,7–34,9 | shipped | orologio con la card ✓ sulla stessa lista | «Shipped. From your wrist.» | la camera arretra (1) |
 | 64–72 | 34,9–39,3 | cartello | l'orologio rimpicciolisce e sale; logo, «Free. Open source.», repo, avvisi | — | il ✓ diventa il logo (4) |
 
 **Su tutto il film:** la camera respira in ogni inquadratura ferma, con una deriva dell'1–2 % (7). Sfocatura di movimento solo sui 2–3 scatti veloci, dopo una prova su un tratto (10).

@@ -71,3 +71,13 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   const term = (b.fx ?? []).find((f) => f.kind === "terminalPlane") as { at: number; len: number };
   assert.ok(b.len >= term.at + term.len, `il terminale finisce al battito ${term.at + term.len}, la scena ne dura ${b.len}`);
 });
+test("sul polso le schermate vanno in fila: la card del rilascio sale sulla lista delle sessioni, senza tornare a «Deployed» (Franz, 23/09 13:01)", () => {
+  // nella bozza 5 il display passava dalla lista alla card «Deployed» (notizia di prima del terminale) e poi a «Released»
+  const glance = byId("glance"), done = byId("done"), shipped = byId("shipped");
+  const listEnd = glance.watch!.clipStart! + (glance.len * 60) / short.bpm;     // dove la lista è arrivata quando il titolo esce
+  for (const s of [done, shipped]) {
+    assert.equal(s.watch!.clip, glance.watch!.clip, `${s.id} mostra ${s.watch!.clip}`);
+    assert.equal(s.watch!.freeze, true);
+    assert.ok(Math.abs(s.watch!.clipStart! - listEnd) <= 1 / 30, `${s.id} riparte dalla lista a ${s.watch!.clipStart} s, la lista era a ${listEnd.toFixed(3)} s`);
+  }
+});
