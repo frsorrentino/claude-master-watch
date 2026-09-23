@@ -122,3 +122,15 @@ git commit -m "feat(promo): the camera moves in and out within a scene; the shor
 ### Task 2: la card ✓ con il tratto che si disegna
 
 Si scrive dopo aver letto il componente delle card (`ui/UiCard.tsx`) e il modo in cui il display riceve un'immagine sopra la clip (`PhotoWatch` `overlay`): il task riusa quel canale. Interfaccia prevista: effetto `doneCard` con `at` e testo; il segno ✓ si disegna con `evolvePath` in mezzo battito dalla vibrazione.
+
+## Dopo la revisione finale dei piani 1-2 (23/09)
+
+Correzioni nel commit `6a01fbe`: avvisi del cartello, «It asks.» al fotogramma 0, pressione e attacco al battito 24, orologio fermo attorno alla card ✓.
+
+**Aperto, con la causa verificata:** il quadrato nero attorno all'orologio nel cartello del corto. Viene dai riflessi della vista di tre quarti: `mockup/q34_reflections.png` è RGB, senza trasparenza, e `PhotoWatch.tsx` lo fonde in `screen` dentro un gruppo isolato su fondo trasparente. Sul nero del film lungo non si vede, sul blu del corto sì. Si corregge con il pezzo 6 del design (il ✓ che diventa il logo), con una versione RGBA dei riflessi; il film lungo deve restare identico.
+
+**Minori rimandati:**
+- il primo battito della musica perde circa 7 ms, e circa 60 ms sono a −6 dB: `musicBackBeats` 1,5 invece di 2 lo risolve;
+- `@remotion/paths` è usato in `UiCard` ma non è dichiarato in `package.json`: oggi arriva con `@remotion/transitions`;
+- validazioni incomplete: `dolly.ease` sconosciuto, zoom risultante fuori misura, `doneCard` su una vista non frontale, chiavi della tavolozza;
+- una scaletta del corto non valida blocca anche la composizione `Film`, perché le due scalette si validano al caricamento di `Film.tsx`.
