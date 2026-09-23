@@ -29,7 +29,9 @@ Nei film di esempio la continuità conta più dell'effetto: Ask ha 2 tagli in 87
 | Loudness | Guadagno costante più limitatore (`audio/normalize.py`); AAC con il coder «fast» | 22/09 21:34; 23/09 01:40 |
 | 3D | Prova con la scansione gratuita del Pixel Watch 4 prima di decidere. Se regge, Franz compra il modello del Pixel Watch 5 per la versione finale (sezione 6) | 23/09 01:21 |
 
-## 3. Scaletta (68 battiti = 37,1 s a 110 bpm)
+## 3. Scaletta (72 battiti = 39,3 s a 110 bpm)
+
+**Modifica di Franz, 23/09 07:10, dopo la bozza 2:** il terminale torna intero, come nel film lungo, e le scene dopo si accorciano per fargli posto. Le righe sotto sono già quelle nuove.
 
 Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e la frase resta ferma 2 battiti.
 
@@ -40,30 +42,29 @@ Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e l
 | 5–10 | 2,7–5,5 | titolo | domanda ferma sul quadrante | «Claude Code, on your wrist.» | la camera arretra e scopre l'orologio (1) |
 | 10–20 | 5,5–10,9 | speaks | tocco su ▶ al battito 4, la voce della domanda da 4,5 | «It speaks.» | l'onda della voce nasce dal ▶ (8) |
 | 20–27 | 10,9–14,7 | answer | «1 · yes» / «2 · no»; pressione lunga al battito 4 (**battito 24 = attacco della parte forte**) | — | i tasti si staccano dal vetro (6); il «yes» cresce e vira nel blu |
-| 27–39 | 14,7–21,3 | corsia | orologio laterale in basso; card «Deployed 2.8.0, smoke tests green»; «Say what's next.»; dettatura con la voce; ✓ | «Say what's next.» | parallasse e carrellata verso l'alto (5); il ✓ apre il terminale |
-| 39–47 | 21,3–25,6 | lavoro | terminale del PC e orologio frontale | «Watch it work.» | terminale in prospettiva, la camera scorre accanto al cursore (2) |
-| 47–52 | 25,6–28,4 | glance | la lista delle sessioni sul polso | «Every session, at a glance.» | il terminale rimpicciolisce e diventa la card di payments-api; la lista si compone (3) |
-| 52–56 | 28,4–30,5 | fatto | card ✓ «Released 2.8.0…» con la seconda vibrazione | — | il segno ✓ si disegna (4) |
-| 56–60 | 30,5–32,7 | shipped | orologio con la card ✓ | «Shipped. From your wrist.» | la camera arretra (1) |
-| 60–68 | 32,7–37,1 | cartello | l'orologio rimpicciolisce e sale; logo, «Free. Open source.», repo, avvisi | — | il ✓ diventa il logo (4) |
+| 27–41 | 14,7–22,4 | corsia | orologio laterale in basso; card «Deployed 2.8.0, smoke tests green»; «Say what's next.»; dettatura con la voce; ✓ | «Say what's next.» | parallasse e carrellata verso l'alto (5); il ✓ apre il terminale |
+| 41–51,5 | 22,4–28,1 | lavoro | terminale del PC e orologio frontale, con le righe e i tempi del film lungo | «Watch it work.» | terminale in prospettiva, la camera scorre accanto al cursore (2) |
+| 51,5–56 | 28,1–30,5 | glance | la lista delle sessioni sul polso | «Every session, at a glance.» | il terminale rimpicciolisce e diventa la card di payments-api; la lista si compone (3) |
+| 56–60 | 30,5–32,7 | fatto | card ✓ «Released 2.8.0…» con la seconda vibrazione | — | il segno ✓ si disegna (4) |
+| 60–64 | 32,7–34,9 | shipped | orologio con la card ✓ | «Shipped. From your wrist.» | la camera arretra (1) |
+| 64–72 | 34,9–39,3 | cartello | l'orologio rimpicciolisce e sale; logo, «Free. Open source.», repo, avvisi | — | il ✓ diventa il logo (4) |
 
 **Su tutto il film:** la camera respira in ogni inquadratura ferma, con una deriva dell'1–2 % (7). Sfocatura di movimento solo sui 2–3 scatti veloci, dopo una prova su un tratto (10).
 
-**Margine:** se «glance» non basta per il terminale che rimpicciolisce più la lista, si aggiunge una battuta: 72 battiti, 39,3 s.
 
 ## 4. Musica e suoni
 
-**Taglio** dalla traccia originale (scheda: 110 bpm, primo battito a 0,025 s): battute `0-1`, `0-13`, `43-45`. Sono 16 battute, 64 battiti, e la musica parte al battito 4 del film.
+**Taglio** dalla traccia originale (scheda: 110 bpm, primo battito a 0,025 s): battute `0-1`, `0-11`, `9-10`, `11-13`, `43-45`. Sono 17 battute, 68 battiti: la musica parte al battito 4 del film e finisce con l'ultimo. La battuta 9 ripetuta allunga la parte forte di un giro intero (la traccia alterna due battute, A e B), così la battuta quieta cade ancora sulla card ✓.
 
 | Battiti del film | Traccia |
 |---|---|
 | 0–4 | silenzio: solo la notifica |
 | 4–24 | introduzione, 5 battute: la battuta 0 ripetuta, poi 1–3 |
 | 24 | attacco della parte forte, sulla pressione del «yes» |
-| 24–52 | parte forte, battute 4–10, 12 dB sotto le voci |
-| 52–56 | battuta quieta (11), sulla card ✓ |
-| 56–60 | ripresa forte (12), su «Shipped.» |
-| 60–68 | il finale vero (43–44), chiude su battuta intera |
+| 24–56 | parte forte, battute 4–10 più la 9 ripetuta, 12 dB sotto le voci |
+| 56–60 | battuta quieta (11), sulla card ✓ |
+| 60–64 | ripresa forte (12), su «Shipped.» |
+| 64–72 | il finale vero (43–44) sotto il cartello, fino all'ultimo fotogramma |
 
 **Suoni:** gli stessi del film lungo: tocchi, pressione lunga, soffio all'apertura del terminale, tick delle righe. La notifica è quella del Pixel, due volte. Voci: `question.wav` e `say.wav`, già registrate.
 
