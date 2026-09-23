@@ -4,19 +4,21 @@ Si aggiorna a ogni bozza. ✓ approvata da Franz · ◐ approvata, da ricontroll
 
 | # | Scena (battiti) | Stato | Cosa manca |
 |---|---|---|---|
-| 1 | Apertura: ambient a luce ferma, «Claude Code, on your wrist.» (0–5) | ✓ | approvata il 23/09 alle 19:58 |
-| 2 | «It asks.»: notifica, la camera si ferma sul tremito (5–9) | ✓ | approvata alle 19:58; nella bozza 11 via il lampo dei puntini sulla notifica; sfocata → nitida (piano 4) |
-| 3 | «It speaks.»: ▶ e voce (9–19) | ✓ | approvata alle 19:58; onda della voce (piano 4) |
-| 4 | Risposta: «yes», espansione, stacco (19–26) | ✓ | tasti in profondità, sfocatura di movimento (piano 4) |
-| 5 | Corsia con l'orologio di profilo: «Deployed» sul colpo, dettatura (26–40) | ✓ | parallasse (piano 4) |
-| 6 | Terminale «Watch it work.» (40–50,5) | ◐ | tasto Write fermo; bozza 12: finisce con la riga dell'esito, che vola nell'orologio; prospettiva e camera (piano 4) |
-| 7 | Lista con l'esito «Released 2.8.0…», «Every session, at a glance.» (50,5–55) | ● | bozza 12: il terminale entra nel display e diventa la card ✓ (2 battiti); bozza 11: testo della card come le righe vere, frase che esce prima delle palpebre, scatto sul blink |
-| 8 | «Work» della Panoramica, con i blink (55–57) | ● | scorre come nella registrazione; a sinistra la scheda Work del film lungo, piena per 0,5 s (bozza 10) |
-| 9 | «Context» e la tapparella a 3 barre (57–63) | ● | la scheda si disegna più in fretta: valori finali leggibili 1,3 battiti (0,7 s; nella bozza 8 mai); tapparella di 5 battiti, dal 60,1 invece che dal 59,5 |
-| 10 | Cartello: logo ritagliato, cinturino che sborda, avvisi (63–72,5) | ● | blu profondo, logo corallo, testi chiari (bianco 8,7:1); il nome arriva al 67, a logo posato; avvisi 2,2 s (bozza 11) |
-| — | Musica: parte col video, colpo al 27, finale sotto la tapparella, colpo finale al 63 sul logo | ● | bozza 10: il colpo finale cade quando nasce il logo, silenzio dal 67 |
+| 1 | Quadrante con la complication, pulito (0–1,5) | ● | bozza 13: al posto dell'ambient col titolo (Franz, 21:13-21:24) |
+| 2 | Notifica, «Claude has a question.» (1,5–5,5) | ● | bozza 13: frase nuova al posto di «It asks.» |
+| 3 | Tocco su ▶, «Hear it out.», la voce (5,5–12) | ● | bozza 13: il tocco 4,5 battiti dopo la notifica (erano 8); onda della voce (piano 4) |
+| 4 | Risposta: «yes», espansione, stacco (12–19) | ✓ | tasti in profondità, sfocatura di movimento (piano 4) |
+| 5 | Corsia con l'orologio di profilo: «Deployed» sul colpo, dettatura (19–33) | ✓ | parallasse (piano 4) |
+| 6 | Terminale «Watch it work.» (33–43,5) | ◐ | tasto Write fermo, riga dell'esito; bozza 14: lo schermo sfuma nel grigio e l'orologio resta lo stesso |
+| 7 | Volo del terminale, lista, «Every session, at a glance.» (43,5–48) | ◐ | volo approvato (20:58); bozza 14: la finestra passa dietro l'orologio ed entra nello schermo |
+| 8 | Work (48–50) | ● | scheda a sinistra |
+| 9 | Open questions (50–52) | ● | bozza 13: terzo blink allo stesso passo, con la sua scheda |
+| 10 | Context e tapparella (52–58) | ● | bozza 13: la seconda metà della tapparella va nel nero |
+| 11 | Slogan «Claude Code, on your wrist.» su nero (58–64) | ● | bozza 13: nuovo, sotto il finale piano della musica |
+| 12 | Cartello su nero: logo sull'accordo finale, nome, avvisi (64–73,5) | ● | bozza 13: su nero come nel film lungo |
+| — | Musica: `0-1 0-11 40-45`, colpo al 20, finale piano sotto lo slogan, accordo al 64 | ● | da sentire nella bozza 13 |
 | — | Camera che respira su tutto il corto | — | piano 4 |
 
 **Piano 3 (struttura):** fatto; bozza 8 consegnata il 23/09 alle 18:05 e giudicata da Franz la sera stessa (le note sono in questa lista).
-**Bozza 9:** consegnata il 23/09 alle 19:30. **Bozza 10:** consegnata alle 20:07 (`tools/promo/out/review/corto-bozza-10.mp4`): accordo finale al 63 sul logo, scheda Work. **Bozza 11:** consegnata alle 20:35 (`tools/promo/out/review/corto-bozza-11.mp4`): cartello 1,5 battiti più lungo (avvisi 2,2 s), le sei osservazioni minori del revisore. **Bozza 12:** consegnata alle 20:58 (`tools/promo/out/review/corto-bozza-12.mp4`): il terminale entra nell'orologio e diventa la card ✓ (piano `docs/plans/2026-09-23-film-corto-piano-4-volo.md`, Franz 20:15: «versione completa»); revisione finale del piano in corso.
+**Bozza 9:** consegnata il 23/09 alle 19:30. **Bozza 10:** consegnata alle 20:07 (`tools/promo/out/review/corto-bozza-10.mp4`): accordo finale al 63 sul logo, scheda Work. **Bozza 11:** consegnata alle 20:35. **Bozza 12:** consegnata alle 20:58, volo approvato. **Bozza 13:** consegnata alle 22:00 (`tools/promo/out/review/corto-bozza-13.mp4`, 40,1 s): nuova apertura, frasi, tre blink, finale su nero (piano 5). **Bozza 14:** in resa: lo stesso orologio fra terminale e lista (piano 6).
 **Piano 4 (movimento):** da scrivere dopo la bozza 9.
