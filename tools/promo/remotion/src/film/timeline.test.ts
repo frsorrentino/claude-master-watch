@@ -26,6 +26,10 @@ test("una tavolozza giusta passa", () => {
   const t = base(); t.palette = { act: ["#3A4468", "#242A42", "#14172A", "rgb(30,35,60)"] };
   assert.deepEqual(problems(t), []);
 });
+test("un dolly fuori da 0,8-1,3 è un errore", () => {
+  const t = base(); t.scenes[1].watch.dolly = { from: 1, to: 2 };
+  assert.match(problems(t).join("\n"), /list: dolly da 1 a 2 fuori da 0,8-1,3/);
+});
 test("un buco o una sovrapposizione tra scene è un errore", () => {
   const t = base(); t.scenes[1].at = 9;
   assert.match(problems(t).join("\n"), /list: inizia al battito 9, la scena prima finisce a 8/);

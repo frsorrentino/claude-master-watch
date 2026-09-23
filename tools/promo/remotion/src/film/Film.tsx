@@ -8,6 +8,7 @@ import { MOVE_BEATS, closingAt, poseAt } from "./moves.ts";
 import { validateTimeline, watchColumn } from "./timeline.ts";
 import type { Scene, Timeline } from "./timeline.ts";
 import { framesOf, gridOf } from "./cut.ts";
+import { dollyAt } from "./dolly.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
 import { SideWatch } from "./SideWatch.tsx";
@@ -103,7 +104,8 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // (il terminale): sparendo insieme sembrava uno stacco, non un passaggio (Franz, 20/09 20:09)
   const fadeOut = w?.fadeOut ? 1 - Math.min(1, Math.max(0, (frame - (total - spanFrames(GRID, scene.at, w.fadeOut))) / spanFrames(GRID, scene.at, w.fadeOut))) : 1;
   // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
-  const zoom = zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv;
+  // il dolly della scena (23/09): la camera si avvicina o arretra; senza dolly vale 1 e la scena resta com'era
+  const zoom = (zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv) * dollyAt(w?.dolly, frame / Math.max(1, total));
   // quando l'orologio si materializza ATTORNO alla scheda ferma al centro, non è l'orologio a essere centrato: è la sua
   // scheda. Si sposta l'orologio di quanto la scheda dista dal centro del display, alla scala di quel momento.
   // dopo un battito di ciglia la scena che si riapre non ha la sua scheda (è un'altra schermata): tiene lo scarto di quella
