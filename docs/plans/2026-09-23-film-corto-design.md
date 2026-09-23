@@ -36,6 +36,32 @@ Nei film di esempio la continuità conta più dell'effetto: Ask ha 2 tagli in 87
 | Loudness | Guadagno costante più limitatore (`audio/normalize.py`); AAC con il coder «fast» | 22/09 21:34; 23/09 01:40 |
 | 3D | In attesa della scelta di Franz sul modello (sezione 6) | 23/09 |
 
+## 2 bis. Revisione del 23/09 sera, dopo la bozza 12 (Franz, 21:13-21:24)
+
+Il volo del terminale è approvato. Cambiano apertura, frasi, carrellata e finale; le scelte di Franz sono quelle consigliate.
+
+- **Apertura:** via la scena ambient. Il film parte sul quadrante acceso con la complication di Claude Master, senza la scritta «payments-api» (`n_face.mp4`, dai primi 2,8 s di `out/clips3/n_face_to_tile.mp4`, ore 12:45, complication «11 · 5h»): 1,5 battiti, poi la notifica con la vibrazione.
+- **Frasi:** «Claude has a question.» sulla notifica; «Hear it out.» sul tocco di ▶, che arriva 4,5 battiti dopo la notifica invece di 8.
+- **Carrellata:** tre blink allo stesso passo di 2 battiti: lista, Work, Open questions (la schermata delle sessioni che aspettano una risposta), Context.
+- **Finale:** la seconda metà della tapparella va nel nero invece che nel chiaro; poi lo slogan «Claude Code, on your wrist.» su nero; il logo arriva sull'accordo finale; il cartello torna su nero, come nel film lungo.
+- **Stesso orologio fra terminale e lista:** l'orologio non sfuma; il terminale si ritira dietro l'orologio e si vede attraverso lo schermo, poi la lista si compone attorno alla card (piano 6).
+- **Musica:** taglio `0-1 0-11 40-45 --fadein=3`: una battuta d'attacco, l'introduzione, il colpo sulla card «Deployed» al 20, la parte forte fino al 60 (le battute 40-42 portano al finale come nel brano), il finale piano sotto lo slogan, l'accordo finale al 64 sul logo, silenzio dal 68.
+
+| Battiti | Scena |
+|---|---|
+| 0–1,5 | quadrante con la complication |
+| 1,5–5,5 | notifica, «Claude has a question.» |
+| 5,5–12 | tocco su ▶ a 6, «Hear it out.», la voce legge la domanda |
+| 12–19 | risposta, «yes», espansione |
+| 19–33 | corsia di profilo, «Deployed» sul colpo al 20, dettatura |
+| 33–43,5 | terminale «Watch it work.» con la riga dell'esito |
+| 43,5–48 | volo del terminale, lista, «Every session, at a glance.» |
+| 48–50 · 50–52 · 52–58 | Work · Open questions · Context, blink a 48, 50 e 52; tapparella di 5 battiti |
+| 58–64 | lo slogan su nero |
+| 64–73,5 | cartello su nero: logo, nome al 68, avvisi dal 69,5 |
+
+Durata: 73,5 battiti, 40,1 s.
+
 ## 3. Scaletta (71 battiti = 38,7 s a 110 bpm)
 
 Le frasi seguono la regola del film: le parole entrano a mezzo battito l'una e la frase resta ferma 2 battiti. I numeri fra parentesi sono i punti dell'analisi del movimento.
