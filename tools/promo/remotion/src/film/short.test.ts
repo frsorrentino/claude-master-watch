@@ -7,31 +7,30 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 
 test("il corto dura 72 battiti, con la musica fino all'ultimo fotogramma", () => assert.equal(totalBeats(short), 72));
-test("il «yes» esplode sul culmine della musica, al battito 24: lì l'anello si chiude e parte l'espansione (Franz, 23/09 10:42)", () => {
-  // prima il dito cadeva sull'attacco e l'espansione arrivava due battiti dopo, a musica già partita
-  const answer = short.scenes.find((s) => s.id === "answer")!, next = short.scenes.find((s) => s.id === "loop")!;
-  const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; len: number; pressAt: number };
-  const press = (answer.fx ?? []).find((f) => f.kind === "longPress")!;
-  const ringStart = answer.at + ob.at + ob.pressAt, ringEnd = ringStart + 0.12 * ob.len;   // optionsBuildAt: l'anello corre 0,12 dell'arco
-  const burst = next.at - TAKEOVER_CUT * answer.takeover!.len;                                // Film.tsx: dove parte l'espansione
-  assert.ok(ringEnd >= 24 && ringEnd <= 24.1, `l'anello si chiude al battito ${ringEnd}`);
-  // l'espansione parte fino a 0,2 battiti prima: la crescita comincia piano (growEase), sul 24 il tasto è ancora al 3 % e si
-  // gonfia davvero subito dopo, sul colpo; e il takeover non può durare meno di 2,5 battiti
-  assert.ok(burst >= 23.8 && burst <= 24.1, `l'espansione parte al battito ${burst}`);
-  assert.equal(answer.at + press.at, ringStart);                                              // il suono della pressione parte con l'anello
-  assert.equal((short.musicDelayBeats ?? 0) + 5 * 4, 24);   // 5 battute d'introduzione
+test("il colpo della musica cade sull'entrata della corsia, non sulla pressione: la card «Deployed» compare sul colpo (Franz, 23/09 11:28)", () => {
+  // taglio 0-1 0-1 0-11 11-13 43-45: sei battute d'introduzione, il colpo (la battuta 4 della traccia) al battito 28. Lo
+  // stacco (la musica si ferma a 2,25-2,75 dell'ultima battuta d'introduzione) cade mentre il «yes» riempie il quadro, la
+  // risalita mentre l'orologio laterale sale, il colpo sulla card
+  const answer = byId("answer"), loop = byId("loop");
+  const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number };
+  const drop = (short.musicDelayBeats ?? 0) + 6 * 4, stop = drop - 4 + 2.25;
+  const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
+  assert.equal(drop, 28);
+  assert.equal(loop.at + fl.at, drop);
+  assert.ok(loop.at < drop && drop - loop.at <= 1, `la corsia entra al battito ${loop.at}, il colpo è al ${drop}`);
+  assert.ok(burst <= stop && stop <= filled, `il «yes» cresce da ${burst} a ${filled}, lo stacco è al ${stop}`);
 });
 test("la seconda vibrazione cade sulla battuta quieta (56) e «Shipped.» sulla ripresa (60)", () => {
-  // taglio della musica 0-1 0-11 9-10 11-13 43-45: 13 battute prima di quella quieta (la 11 della traccia), poi la ripresa
+  // taglio della musica 0-1 0-1 0-11 11-13 43-45: 13 battute prima di quella quieta (la 11 della traccia), poi la ripresa
   // (la 12) e il finale (43-44) sotto il cartello, fino all'ultimo battito
   assert.equal(short.scenes.find((s) => s.id === "done")!.at, 56);
   assert.equal(short.scenes.find((s) => s.id === "shipped")!.at, 60);
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1) * 4, 56);
-  assert.equal((short.musicDelayBeats ?? 0) + (1 + 11 + 1 + 2 + 2) * 4, totalBeats(short));
+  assert.equal((short.musicDelayBeats ?? 0) + (1 + 1 + 11) * 4, 56);
+  assert.equal((short.musicDelayBeats ?? 0) + (1 + 1 + 11 + 2 + 2) * 4, totalBeats(short));
 });
 
 const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
-test("il dito preme quando la voce ha finito, e la musica entra piena al 24", () => {
+test("il dito preme quando la voce ha finito", () => {
   const answer = byId("answer");
   const ob = (answer.fx ?? []).find((f) => f.kind === "optionsBuild") as { at: number; len: number; pressAt: number };
   const squash = answer.at + ob.at + ob.pressAt - 0.04 * ob.len;                              // optionsBuildAt: il tasto si schiaccia 0,04 prima
