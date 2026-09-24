@@ -203,7 +203,7 @@
     <string name="settings_haptic_outcome_short">Outcomes</string>
     <string name="settings_haptic_gone_short">Sessions gone</string>
     <string name="settings_section_pc">PC</string>
-    <string name="settings_repair_hint">pair the PC again</string>
+    <string name="settings_repair_hint">the PC from the phone</string>
     <string name="card_context_unit_long" formatted="false">% context</string>
     <string name="card_meters">Session</string>
     <!-- Sessions list without the Menu (16/09) -->

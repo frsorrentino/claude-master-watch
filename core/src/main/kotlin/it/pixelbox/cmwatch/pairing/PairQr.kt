@@ -18,7 +18,7 @@ data class PairQr(val v: Int, val i: String, val c: String, val h: String, val e
             val q = runCatching { json.decodeFromString(serializer(), text.trim()) }.getOrNull() ?: return null
             val pubOk = runCatching { Pairing.rawFromB64(q.c).size == 32 }.getOrDefault(false)
             val fbOk = listOf(q.f.k, q.f.p, q.f.a, q.f.t).none(String::isBlank) && q.f.d.startsWith("https://")
-            return q.takeIf { it.v == 1 && ID.matches(it.i) && pubOk && fbOk }
+            return q.takeIf { it.v == 1 && ID.matches(it.i) && it.h.isNotBlank() && pubOk && fbOk }
         }
     }
 }

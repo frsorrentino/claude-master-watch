@@ -10,12 +10,26 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import kotlinx.coroutines.tasks.await
 
-/** Lo scanner dei servizi Google Play: niente permesso fotocamera. Null se l'utente annulla. */
+/** Lo scanner dei servizi Google Play: niente permesso fotocamera. */
 object Scanner {
-    suspend fun scan(ctx: Context): String? = runCatching {
+    sealed class Result {
+        data class Read(val text: String) : Result()
+        data object Cancelled : Result()
+        /** Modulo dello scanner assente o rotto: si offre «Incolla il codice» invece di non fare nulla. */
+        data object Unavailable : Result()
+    }
+
+    suspend fun scan(ctx: Context): Result {
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
-        GmsBarcodeScanning.getClient(ctx, options).startScan().await().rawValue
-    }.getOrNull()
+        return try {
+            GmsBarcodeScanning.getClient(ctx, options).startScan().await().rawValue?.let { Result.Read(it) } ?: Result.Cancelled
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (e is com.google.mlkit.common.MlKitException && e.errorCode == com.google.mlkit.common.MlKitException.CODE_SCANNER_CANCELLED) Result.Cancelled
+            else { android.util.Log.w("cmwatch", "scanner: ${e.message}"); Result.Unavailable }
+        }
+    }
 }
 
 /**

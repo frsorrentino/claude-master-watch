@@ -34,7 +34,10 @@ class PairReceiver(private val app: CmApp, private val handoff: WatchHandoff = W
         }
         if (FirebaseBoot.active == null && FirebaseBoot.start(app, incoming) == null) return HelloResponse(error = HandoffMessages.ERR_AUTH)
         app.prefs.update { it.copy(firebaseJson = incoming.toJson()) }
+        val oldTopic = FirebaseBoot.active?.topic
         FirebaseBoot.retopic(incoming.topic)
+        // Topic nuovo sullo stesso progetto: si lascia quello vecchio, altrimenti due sveglie per ogni push (revisione finale, minore 11).
+        if (oldTopic != null && oldTopic != incoming.topic) runCatching { com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic(oldTopic) }
         FirebaseAuthToken.token() ?: return HelloResponse(error = HandoffMessages.ERR_AUTH)
         val uid = FirebaseAuthToken.uid() ?: return HelloResponse(error = HandoffMessages.ERR_AUTH)
         return HelloResponse(uid = uid, name = app.prefs.current().deviceName, eph = handoff.open(uid))

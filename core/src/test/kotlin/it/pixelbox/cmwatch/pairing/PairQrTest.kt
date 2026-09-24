@@ -30,6 +30,7 @@ class PairQrTest {
         assertNull(PairQr.parse(text.replace("https://", "http://")))
         assertNull(PairQr.parse(text.replace("j0DFrbaPJWJK5bIU6nZ6bslNgp09e14a0bpvPiE4KF8=", "abc=")))
         assertNull(PairQr.parse(text.dropLast(20)))
+        assertNull(PairQr.parse(text.replace("\"penguin\"", "\"\"")))
     }
 
     @Test fun expiry() {

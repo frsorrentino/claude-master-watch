@@ -1,4 +1,4 @@
-name: Build Wear OS APK
+name: Build Android APKs
 # Repo pubblico dal 15/09/2026 (storia ripulita); i secret di firma KEYSTORE_PASS, KEY_ALIAS, KEY_PASS e
 # RELEASE_KEYSTORE_BASE64 vengono da watchface/release-keystore-credentials.txt e release.jks.
 
@@ -72,7 +72,7 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
-        run: ./gradlew :wear:assembleRelease --console=plain -x lint -x test
+        run: ./gradlew :wear:assembleRelease :mobile:assembleRelease --console=plain -x lint -x test
       - uses: actions/upload-artifact@v4
         with:
           name: cmwatch-apk
@@ -80,5 +80,6 @@ jobs:
             wear/build/outputs/apk/debug/*.apk
             wear/build/outputs/apk/release/*.apk
             mobile/build/outputs/apk/debug/*.apk
+            mobile/build/outputs/apk/release/*.apk
           # 47 MB a build: con 30 giorni la quota Actions (0,5 GB-mese) finiva in pochi giorni di push. L'APK si scarica subito.
           retention-days: 1

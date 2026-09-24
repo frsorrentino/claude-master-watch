@@ -26,7 +26,8 @@ private object ThrowingKeys : KeyWrap {
 }
 
 private class FakeFirebase(var result: Ensure = Ensure.Ready("phoneUid")) : PhoneFirebase {
-    override suspend fun ensure(cfg: FirebaseConfig) = result
+    var ensureCalls = 0
+    override suspend fun ensure(cfg: FirebaseConfig): Ensure { ensureCalls++; return result }
     override fun rtdb(): Rtdb = error("non usato: il PC è finto")
 }
 
@@ -34,13 +35,14 @@ private class FakeFirebase(var result: Ensure = Ensure.Ready("phoneUid")) : Phon
 private class FakeWatch : WatchLink {
     var uid = "watchUid"; var restartsLeft = 0; var reachable = true; var connectedWithoutApp = false; var dropKey = false
     var badEph = false
+    var requests = 0
     var received: ByteArray? = null
     private val handoff = WatchHandoff()
     private val node = WatchNode("n1", "Pixel Watch 5")
     override suspend fun find() = node.takeIf { reachable }
     override suspend fun anyConnected() = node.takeIf { reachable || connectedWithoutApp }
     override suspend fun openPlayOnWatch(node: WatchNode) = true
-    override suspend fun request(node: WatchNode, path: String, body: ByteArray): ByteArray = when (path) {
+    override suspend fun request(node: WatchNode, path: String, body: ByteArray): ByteArray = when (path.also { requests++ }) {
         HandoffMessages.HELLO -> HandoffMessages.encode(HelloResponse.serializer(),
             if (restartsLeft > 0) { restartsLeft--; HelloResponse(restart = true) }
             else HelloResponse(uid = uid, name = "Pixel Watch 5", eph = if (badEph) "not-a-key" else handoff.open(uid)))
@@ -90,12 +92,15 @@ class PairingControllerTest {
         c.run("https://example.com")
         assertEquals(PairFail.INVALID, c.ui.value.fail)
         assertNull(store.s.firebaseJson)
+        assertEquals(0, fb.ensureCalls); assertEquals(0, watch.requests)
     }
 
     @Test fun expiredQr() = runTest {
         val c = controller(now = qr.e + 1)
         c.run(qrText)
         assertEquals(PairFail.EXPIRED, c.ui.value.fail)
+        assertEquals(0, fb.ensureCalls); assertEquals(0, watch.requests)
+        assertEquals(Settings(), store.s)
     }
 
     @Test fun noWatchAsksThenPairsThePhoneAlone() = runTest {
@@ -155,6 +160,13 @@ class PairingControllerTest {
         assertFalse(c.completePending())
         assertNull(watch.received)
         assertEquals(PairFail.WATCH_UID_CHANGED, c.ui.value.fail)
+        // Revisione finale, minore 9: l'avviso una volta sola; l'orologio esce dal record e resta l'accoppiamento del telefono.
+        val r = PairingRecord.fromJson(store.s.pairingJson)!!
+        assertFalse(r.watchPending); assertNull(r.watchUid); assertNull(r.watchName)
+        assertTrue(store.s.paired)
+        c.reset()
+        assertFalse(c.completePending())
+        assertEquals(Phase.IDLE, c.ui.value.phase)
     }
 
     /** Revisione finale, 1: un cambio di progetto butta l'accoppiamento vecchio invece di lasciarlo vivo su un database sbagliato. */

@@ -141,7 +141,9 @@ class PairingController(
         val node = link.find() ?: return false
         val hello = hello(node, cfg) ?: return false
         if (hello.uid != record.watchUid) {
-            // Dati cancellati sull'orologio: l'uid nuovo non è in /allowed, K non gli serve e non gli si dà.
+            // Dati cancellati sull'orologio: l'uid nuovo non è in /allowed, K non gli serve e non gli si dà. L'orologio esce
+            // dal record, così l'avviso compare una volta e non a ogni ritorno in primo piano; il telefono resta accoppiato.
+            store.update { it.copy(pairingJson = record.copy(watchUid = null, watchName = null, watchPending = false).toJson()) }
             fail(PairFail.WATCH_UID_CHANGED, Step.WATCH)
             return false
         }

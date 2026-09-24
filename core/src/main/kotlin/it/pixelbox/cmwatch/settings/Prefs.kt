@@ -12,6 +12,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class Settings(
     val paired: Boolean = false,
@@ -79,7 +81,10 @@ class Prefs(private val ctx: Context) : SettingsStore {
 
     override suspend fun current(): Settings = flow.first()
 
-    override suspend fun update(block: (Settings) -> Settings) {
+    /** Lettura-modifica-scrittura: con `hello` e `key` in coroutine diverse, senza lock una scrittura potrebbe perdersi. */
+    private val writes = Mutex()
+
+    override suspend fun update(block: (Settings) -> Settings) = writes.withLock {
         val s = block(current())
         ctx.dataStore.edit { p ->
             p[K.paired] = s.paired
@@ -98,5 +103,6 @@ class Prefs(private val ctx: Context) : SettingsStore {
             s.pairingJson?.let { p[K.pairingJson] = it } ?: p.remove(K.pairingJson)
             s.resumeQr?.let { p[K.resumeQr] = it } ?: p.remove(K.resumeQr)
         }
+        Unit
     }
 }

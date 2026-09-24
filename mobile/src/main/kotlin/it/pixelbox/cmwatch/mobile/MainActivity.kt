@@ -33,7 +33,15 @@ class MainActivity : ComponentActivity() {
                         else -> Unit
                     }
                 }
-                fun scan() { scope.launch { Scanner.scan(this@MainActivity)?.let { app.pairing.run(it) } } }
+                fun scan() {
+                    scope.launch {
+                        when (val r = Scanner.scan(this@MainActivity)) {
+                            is Scanner.Result.Read -> app.pairing.run(r.text)
+                            Scanner.Result.Unavailable -> paste = true
+                            Scanner.Result.Cancelled -> Unit
+                        }
+                    }
+                }
                 // Indietro da un errore: si torna alla schermata di prima, niente resta a metà.
                 BackHandler(enabled = ui.phase == Phase.FAILED) { app.pairing.reset() }
                 val s = settings ?: return@CmPhoneTheme

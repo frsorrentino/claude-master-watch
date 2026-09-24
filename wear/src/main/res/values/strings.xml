@@ -25,22 +25,22 @@
     <string name="question_sent">Inviato</string>
     <string name="question_not_delivered">Non consegnato</string>
     <string name="question_retry">Riprova</string>
-    <string name="pairing_title">Associa il PC</string>
+    <string name="pairing_title">Accoppia il PC</string>
     <string name="pairing_enter_code">Usa il codice</string>
     <string name="pairing_hint_phone">Sul telefono apri claude-master e tocca Accoppia.</string>
     <string name="pairing_hint_both">Sul telefono apri claude-master e tocca Accoppia, oppure usa il codice di relay pair.</string>
     <string name="pairing_open_phone">Apri sul telefono</string>
     <string name="pairing_continue_phone">Continua sul telefono</string>
     <string name="pairing_code_label">Codice a 6 cifre</string>
-    <string name="pairing_working">Associazione in corso</string>
-    <string name="pairing_done">Associato con %1$s</string>
+    <string name="pairing_working">Accoppiamento in corso</string>
+    <string name="pairing_done">Accoppiato con %1$s</string>
     <string name="pairing_failed">Codice non accettato</string>
     <string name="settings_tts_threshold">Soglia lettura vocale: %1$d caratteri</string>
     <string name="settings_haptic_question">Vibra per le domande</string>
     <string name="settings_haptic_outcome">Vibra per gli esiti</string>
     <string name="settings_haptic_gone">Vibra se una sessione sparisce</string>
     <string name="settings_complication_account">Account della complication</string>
-    <string name="settings_repair">Nuovo pairing</string>
+    <string name="settings_repair">Accoppia di nuovo</string>
     <string name="settings_demo">Demo (fixture)</string>
     <string name="notif_open">Apri</string>
     <string name="notif_reply">Rispondi</string>
@@ -206,7 +206,7 @@
     <string name="settings_haptic_outcome_short">Esiti</string>
     <string name="settings_haptic_gone_short">Sessioni sparite</string>
     <string name="settings_section_pc">PC</string>
-    <string name="settings_repair_hint">associa di nuovo il PC</string>
+    <string name="settings_repair_hint">il PC dal telefono</string>
     <string name="card_context_unit_long" formatted="false">% contesto</string>
     <!-- Lista sessioni senza Menu (Franz, 16/09 14:33) -->
     <string name="sessions_gone_show">Chiuse di recente · %1$d</string>
