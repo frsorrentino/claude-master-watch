@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.rules.TileTexts
@@ -21,14 +22,21 @@ fun FitName(name: String, style: TextStyle, color: Color, modifier: Modifier = M
     val measurer = rememberTextMeasurer()
     BoxWithConstraints(modifier) {
         val width = constraints.maxWidth
-        val size = remember(name, width, style) {
-            STEPS.filter { it.value <= style.fontSize.value }.firstOrNull { sp ->
-                measurer.measure(name, style.copy(fontSize = sp), maxLines = 1, softWrap = false).size.width <= width
-            }
+        val steps = STEPS.filter { it.value <= style.fontSize.value }
+        fun fits(text: String, sp: TextUnit) = measurer.measure(text, style.copy(fontSize = sp), maxLines = 1, softWrap = false).size.width <= width
+        val size = remember(name, width, style) { steps.firstOrNull { sp -> fits(name, sp) } }
+        // Quando va a capo, la misura è la più grande in cui ogni pezzo fra i trattini sta su una riga: a 14 sp su
+        // 384 px «ledger-api» si spezzava a metà parola («ledge / r-api», notte del 24/09), non dopo il trattino.
+        val wrapSize = remember(name, width, style) {
+            val pieces = name.split(PIECE).filter { it.isNotEmpty() }
+            steps.firstOrNull { sp -> pieces.all { fits(it, sp) } } ?: style.fontSize
         }
         if (size != null) Text(name, style = style.copy(fontSize = size), color = color, maxLines = 1, softWrap = false)
-        else Text(TileTexts.breakable(name), style = style, color = color, maxLines = maxLines)
+        else Text(TileTexts.breakable(name), style = style.copy(fontSize = wrapSize), color = color, maxLines = maxLines)
     }
 }
 
 private val STEPS = listOf(14.sp, 13.sp, 12.sp, 11.sp)
+
+/** Gli stessi punti di a-capo di `TileTexts.breakable`: dopo trattino, trattino basso e barra. */
+private val PIECE = Regex("(?<=[-_/])")

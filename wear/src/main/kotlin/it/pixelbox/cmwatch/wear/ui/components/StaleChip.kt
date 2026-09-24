@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
@@ -23,6 +24,7 @@ fun StaleChip(minutes: Int, modifier: Modifier = Modifier) {
         modifier.fillMaxWidth().border(BorderStroke(1.dp, CmColors.line), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.pc_stale, minutes), color = CmColors.stale, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        // Due righe quando serve: su 384 px e con il carattere grande «PC offline for 12 min» perdeva «min» (notte del 24/09).
+        Text(stringResource(R.string.pc_stale, minutes), color = CmColors.stale, style = MaterialTheme.typography.bodySmall, maxLines = 2, textAlign = TextAlign.Center)
     }
 }
