@@ -18,8 +18,8 @@ class Taglio(unittest.TestCase):
         self.assertLess(float(y[int(0.75 * SR)]), 0.6)                 # a metà salita è ancora sotto
         self.assertAlmostEqual(float(y[int(1.5 * SR)]), 1.0, places=5)  # dopo tre battiti è piena
         self.assertAlmostEqual(float(y[-1]), 1.0, places=5)
-    def test_il_colpo_finale_si_chiude_in_fretta_e_arriva_al_silenzio(self):
-        # il colpo pieno sul logo: pieno fino all'ultimo quarto di battito, poi si chiude nel silenzio (Franz, 24/09)
+    def test_la_sfumatura_finale_arriva_al_silenzio_e_non_tocca_il_resto(self):
+        # la sfumatura degli ultimi battiti: piena fino a lì, poi scende e basta fino al silenzio (Franz, 24/09 01:04)
         y = fade_out(np.ones(SR * 2, np.float32), SR, BPM, 0.25)
         n = int(0.25 * 0.5 * SR)                                        # un quarto di battito a 120 bpm
         self.assertTrue(np.all(y[:-n] == 1.0))                          # prima della chiusura non cambia niente

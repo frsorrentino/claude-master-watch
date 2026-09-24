@@ -1,5 +1,6 @@
 """Taglia la traccia sulle battute (introduzione, corpo, salto al finale vero) con dissolvenze a pari potenza di 15 ms
-centrate sul battito: la griglia resta uniforme attraverso le giunte e la musica finisce con il film, non sfuma.
+centrate sul battito: la griglia resta uniforme attraverso le giunte e la musica finisce con il film. Con --fadeout
+sfuma solo negli ultimi battiti (il corto: 2 battiti sotto il cartello, Franz 24/09 01:04).
 Uso: python3 cut_track.py <traccia> <scheda.card.json> 0-4 10-24 40-47 [--out=FILE] [--fadein=BATTITI] [--fadeout=BATTITI]
 Le battute possono essere frazionarie: 0.25-1 sono gli ultimi tre battiti della battuta 0 (un attacco a metà battuta)."""
 import json, sys, tempfile, wave
@@ -23,8 +24,8 @@ def fade_in(y, sr, bpm, beats):
     return y
 
 def fade_out(y, sr, bpm, beats):
-    """Il colpo finale si chiude negli ultimi `beats` battiti (curva a S) e arriva al silenzio: un colpo secco, non una
-    sfumatura (Franz, 24/09: «colpo pieno sul logo»)."""
+    """La musica sfuma negli ultimi `beats` battiti (curva a S) e arriva al silenzio con la fine della traccia: il corto
+    resta pieno sotto il cartello e sfuma solo gli ultimi 2 battiti (Franz, 24/09 01:04: «sfumiamo solo gli ultimi istanti»)."""
     n = min(len(y), int(sr * beats * 60 / bpm)); y = y.copy()
     y[len(y) - n:] *= (0.5 + 0.5 * np.cos(np.pi * np.linspace(0, 1, n))).astype(y.dtype)
     return y
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     y = cut(x, sr, card["bpm"], card["first_beat_s"], segs)
     fin = next((float(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--fadein=")), 0)   # il corto parte col video (23/09)
     if fin: y = fade_in(y, sr, card["bpm"], fin)
-    fout = next((float(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--fadeout=")), 0)   # il corto chiude su un colpo (24/09)
+    fout = next((float(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--fadeout=")), 0)   # il corto sfuma negli ultimi 2 battiti (24/09)
     if fout: y = fade_out(y, sr, card["bpm"], fout)
     dst = Path(out).resolve() if out else Path(__file__).resolve().parent.parent / "remotion/public/audio/music.wav"; dst.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(dst), "wb") as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())

@@ -153,9 +153,13 @@ export const railScrollVar = (p: number, holds: number[], center = 0.8, weights:
   return i + railEase(clamp(t / (RAIL_MOVE * w(i)))) - (1 - center);
 };
 
-/** Una card della corsia, per quanto serve ai tempi: le frasi hanno righe, le schede testo, la sosta la dà la scaletta. */
+/** Una card della corsia, per quanto serve ai tempi: le frasi hanno righe, le schede testo, la sosta la dà la scaletta.
+ *  La `hold` scritta sulla card i la spende la card DOPO: Floating.tsx chiama railScrollVar con centro 1, quindi il passo i
+ *  porta al centro la card i+1 e poi resta fermo `hold`; la prima card è in evidenza solo all'inizio. Per tenere più a lungo
+ *  una card si allunga la `hold` di quella prima (revisione del piano 7, 24/09). */
 type LaneCard = { kind?: string; lines?: string[]; text?: string; hold?: number };
-/** Altezze, soste e pesi dei passi della corsia larga `W` (Floating.tsx): la corsia e i test usano gli stessi conti. */
+/** Altezze, soste e pesi dei passi della corsia larga `W` (Floating.tsx): la corsia e i test usano gli stessi conti.
+ *  `holds[i]` è la sosta del passo i, cioè sulla card i+1 (vedi LaneCard). */
 export const laneSteps = (cards: LaneCard[], W: number): { heights: number[]; holds: number[]; weights: number[] } => {
   const U = W / 427, GAP = 9 * U;
   const heights = cards.map((c) => (c.kind === "text" ? (c.lines ?? []).length * 88.6 + 120 : c.kind === "brief" ? 240 * U : cardUnits(c.text ?? "") * U));
