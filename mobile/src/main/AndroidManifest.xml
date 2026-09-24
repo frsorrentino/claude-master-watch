@@ -24,6 +24,13 @@
             </intent-filter>
         </activity>
 
+        <service android:name=".pair.PhoneListenerService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
+                <data android:scheme="wear" android:host="*" android:path="/cmwatch_wear" />
+            </intent-filter>
+        </service>
+
         <!-- Firebase lo avvia l'app, con la configurazione del QR (design 24/09). -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"

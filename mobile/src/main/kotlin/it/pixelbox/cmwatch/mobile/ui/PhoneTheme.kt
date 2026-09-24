@@ -1,7 +1,7 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import android.provider.Settings
-import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -29,7 +29,7 @@ fun CmPhoneTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = 
 /** Tempi e curva del movimento: 250 ms e l'easing del sito; con le animazioni spente, subito lo stato finale. */
 object CmMotion {
     val easing = CubicBezierEasing(0.3f, 0f, 0.2f, 1f)
-    fun <T> spec(off: Boolean): AnimationSpec<T> = if (off) snap() else tween(250, easing = easing)
+    fun <T> spec(off: Boolean): FiniteAnimationSpec<T> = if (off) snap() else tween(250, easing = easing)
 }
 
 /** «Riduci animazioni» o animazioni di sistema a zero. Negli snapshot vale sempre «accese». */
