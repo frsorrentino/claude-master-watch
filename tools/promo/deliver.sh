@@ -3,10 +3,12 @@
 # Perché: l'MP4 che esce da Remotion ha l'audio AAC senza compensazione del ritardo d'innesco del codificatore (2048 campioni
 # a 48 kHz = 42,7 ms, misurato il 17/09 con la correlazione sul file tagliato): la musica arriverebbe 43 ms dopo i tagli.
 # L'audio reso in WAV è a 0,0 ms, e l'unione con ffmpeg scrive la lista di montaggio giusta (rimisurato: 0,0 ms).
-# uso: deliver.sh <nome> [--scale=0.5]
+# uso: deliver.sh <nome> [--scale=0.5]; COMP=Short deliver.sh corto per il corto (stessa consegna, la sua scaletta)
 set -euo pipefail
 cd "$(dirname "$0")/remotion"
 name="$1"; shift || true
+COMP=${COMP:-Film}
+case "$COMP" in Short) TL=src/film/timeline.short.json ;; *) TL=src/film/timeline.json ;; esac
 mkdir -p out/consegna
 # GPU virtuale della VM (virgl): con --gl=egl il render va 2,5-3× più veloce di SwiftShader, qualità identica (master, 18/09 16:26:
 # 84 pixel di antialiasing su 2 milioni). GL=swangle per tornare al software in un colpo.
@@ -16,16 +18,16 @@ GL=${GL:-egl}
 # `gl3d.py` legge gli intervalli dalla scaletta, così non c'è un elenco da tenere aggiornato a mano.
 GL3D=${GL3D:-swangle}
 VCODEC=(--codec h264 --crf 18)
-mapfile -t tratti < <(python3 ../gl3d.py)
+mapfile -t tratti < <(python3 ../gl3d.py "$TL")
 if [ "${#tratti[@]}" -eq 0 ] || [ "$GL" = "$GL3D" ]; then
-  npx remotion render Film "out/consegna/$name.video.mp4" --muted --gl="$GL" "${VCODEC[@]}" "$@"
+  npx remotion render "$COMP" "out/consegna/$name.video.mp4" --muted --gl="$GL" "${VCODEC[@]}" "$@"
 else
-  total=$(python3 ../gl3d.py --total); ultimo=$((total - 1)); cur=0; n=0; rm -rf out/segmenti; mkdir -p out/segmenti
+  total=$(python3 ../gl3d.py "$TL" --total); ultimo=$((total - 1)); cur=0; n=0; rm -rf out/segmenti; mkdir -p out/segmenti
   : > out/segmenti/lista.txt
   extra=("$@")
   seg() { # seg <primo> <ultimo> <renderer>
     local f="out/segmenti/$(printf '%03d' "$n").mp4"
-    npx remotion render Film "$f" --muted --gl="$3" --frames="$1-$2" "${VCODEC[@]}" ${extra[@]+"${extra[@]}"}
+    npx remotion render "$COMP" "$f" --muted --gl="$3" --frames="$1-$2" "${VCODEC[@]}" ${extra[@]+"${extra[@]}"}
     echo "file '$(basename "$f")'" >> out/segmenti/lista.txt; n=$((n + 1))
   }
   for r in "${tratti[@]}"; do
@@ -40,7 +42,7 @@ else
   [ "$reso" = "$atteso" ] || { echo "montaggio sbagliato: $reso fotogrammi invece di $atteso"; exit 1; }
 fi
 # anche il render dell'"'"'audio monta i componenti, quindi inciampa sul ThreeCanvas: se c'"'"'è 3D in scaletta va in swangle
-npx remotion render Film "out/consegna/$name.wav" --gl="$([ "${#tratti[@]}" -gt 0 ] && echo "$GL3D" || echo "$GL")" "$@"
+npx remotion render "$COMP" "out/consegna/$name.wav" --gl="$([ "${#tratti[@]}" -gt 0 ] && echo "$GL3D" || echo "$GL")" "$@"
 # Loudness finale: guadagno costante fino a -14 LUFS e limitatore solo sui picchi (True Peak -1 dB). Fino al 22/09 era
 # loudnorm "linear", che con questo mix ripiegava da solo sul modo dinamico (vedi audio/normalize.py).
 python3 ../audio/normalize.py "out/consegna/$name.wav" "out/consegna/$name.norm.wav"
