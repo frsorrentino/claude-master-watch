@@ -27,8 +27,11 @@
     <string name="question_not_delivered">Not delivered</string>
     <string name="question_retry">Retry</string>
     <string name="pairing_title">Pair the PC</string>
-    <string name="pairing_hint">On the PC: claude-master relay pair. Then enter the 6-digit code here.</string>
-    <string name="pairing_enter_code">Enter code</string>
+    <string name="pairing_enter_code">Use the code</string>
+    <string name="pairing_hint_phone">On your phone, open claude-master and tap Pair.</string>
+    <string name="pairing_hint_both">On your phone, open claude-master and tap Pair, or use the code from relay pair.</string>
+    <string name="pairing_open_phone">Open on phone</string>
+    <string name="pairing_continue_phone">Continue on phone</string>
     <string name="pairing_code_label">6-digit code</string>
     <string name="pairing_working">Pairing</string>
     <string name="pairing_done">Paired with %1$s</string>

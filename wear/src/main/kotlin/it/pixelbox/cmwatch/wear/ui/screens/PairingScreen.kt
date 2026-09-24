@@ -19,9 +19,9 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
-/** Pairing: il PC mostra un codice a 6 cifre (`claude-master relay pair`), l'orologio lo scrive con la tastiera di sistema. */
+/** Accoppiamento (design 24/09): dal telefono, che legge il QR di `relay pair`; il codice a 6 cifre solo se la build ha la configurazione dentro. */
 @Composable
-fun PairingScreen(status: PairingStatus, onEnterCode: () -> Unit, onRetry: () -> Unit) {
+fun PairingScreen(status: PairingStatus, withCode: Boolean, onOpenPhone: () -> Unit, onEnterCode: () -> Unit, onRetry: () -> Unit) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState) { padding ->
@@ -29,7 +29,7 @@ fun PairingScreen(status: PairingStatus, onEnterCode: () -> Unit, onRetry: () ->
             item { ListHeader(transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec)) { Text(stringResource(R.string.pairing_title)) } }
             item {
                 val text = when (status) {
-                    PairingStatus.Idle -> stringResource(R.string.pairing_hint)
+                    PairingStatus.Idle -> stringResource(if (withCode) R.string.pairing_hint_both else R.string.pairing_hint_phone)
                     PairingStatus.Working -> stringResource(R.string.pairing_working)
                     is PairingStatus.Done -> stringResource(R.string.pairing_done, status.host)
                     is PairingStatus.Failed -> stringResource(R.string.pairing_failed)
@@ -41,8 +41,11 @@ fun PairingScreen(status: PairingStatus, onEnterCode: () -> Unit, onRetry: () ->
                 if (status is PairingStatus.Failed) {
                     WideButton(stringResource(R.string.question_retry), onClick = onRetry, primary = true, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
                 } else {
-                    WideButton(stringResource(R.string.pairing_enter_code), onClick = onEnterCode, primary = true, enabled = status !is PairingStatus.Working, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
+                    WideButton(stringResource(R.string.pairing_open_phone), onClick = onOpenPhone, primary = true, enabled = status !is PairingStatus.Working, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
                 }
+            }
+            if (withCode && status !is PairingStatus.Failed) item {
+                WideButton(stringResource(R.string.pairing_enter_code), onClick = onEnterCode, primary = false, enabled = status !is PairingStatus.Working, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
             }
         }
     }

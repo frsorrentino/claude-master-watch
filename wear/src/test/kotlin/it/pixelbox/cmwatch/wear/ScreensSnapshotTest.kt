@@ -49,7 +49,9 @@ class ScreensSnapshotTest {
     @Test fun cardMissing() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "old-session", now, {}, {}, {}, {}, {}) } }
     @Test fun question() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun stale() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
-    @Test fun pairing() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, {}, {}) } }
+    // Design 24/09: prima il telefono; con la configurazione dentro la build resta anche il codice a 6 cifre.
+    @Test fun pairing() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = true, {}, {}, {}) } }
+    @Test fun pairingPhoneOnly() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = false, {}, {}, {}) } }
     // Per le card del README (Franz, 14/09 22:47): i due account della fixture, uno fresco e uno con il dato vecchio.
     // Senza animazione: Paparazzi fotografa il primo fotogramma e l'arco sarebbe ancora a zero (16/09 03:44).
     @Test fun quota() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now, animateOverride = false) } }

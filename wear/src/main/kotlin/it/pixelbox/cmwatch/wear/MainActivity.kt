@@ -34,6 +34,9 @@ import it.pixelbox.cmwatch.rules.Screen
 import it.pixelbox.cmwatch.rules.ViewState
 import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.wear.haptics.Haptics
+import it.pixelbox.cmwatch.pairing.FirebaseBoot
+import it.pixelbox.cmwatch.wear.pair.PhoneLauncher
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import it.pixelbox.cmwatch.wear.ui.Keyboard
 import it.pixelbox.cmwatch.wear.ui.Routes
 import it.pixelbox.cmwatch.wear.ui.ambient.LocalAmbient
@@ -402,8 +405,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
             composable(Routes.PAIRING) {
+                val withCode = remember { FirebaseBoot.bundled(this@MainActivity) != null }
                 PairingScreen(
                     pairing,
+                    withCode = withCode,
+                    onOpenPhone = {
+                        scope.launch {
+                            if (PhoneLauncher.open(this@MainActivity)) conferma(Icons.Rounded.PhoneAndroid, CmColors.primary, getString(R.string.pairing_continue_phone))
+                            else Haptics.play(this@MainActivity, Haptics.Kind.ERROR)
+                        }
+                    },
                     onEnterCode = {
                         runCatching { codeInput.launch(Keyboard.intent(getString(R.string.pairing_code_label))) }
                             .onFailure { pairing = PairingStatus.Failed("no keyboard") }
