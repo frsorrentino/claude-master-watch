@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { C, LOOP, MONO, SANS, Window, ramp, typed, useLoopFonts } from "./loopKit";
+import { C, Cursor, MONO, SANS, Window, ramp, typed, useLoopFonts } from "./loopKit";
 
 // claude-master: «tre sessioni, una sola regia». Storyboard del sito, 23/09: a sinistra la griglia 2×2 delle schede
 // tmux, a destra la sessione director. Testi presi dal terminale delle scene (config/plugins/claude-master.php).
@@ -135,7 +135,3 @@ export const LoopClaudeMaster: React.FC = () => {
     </AbsoluteFill>
   );
 };
-
-const Cursor: React.FC = () => <span style={{ display: "inline-block", width: "0.6em", height: "1.1em", verticalAlign: "-0.2em", background: C.text }} />;
-
-export const loopClaudeMasterFrames = LOOP.frames;

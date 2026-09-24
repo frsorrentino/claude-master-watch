@@ -56,3 +56,5 @@ export const Window: React.FC<{ title: string; style?: React.CSSProperties; body
     <div style={{ flex: 1, position: "relative", ...bodyStyle }}>{children}</div>
   </div>
 );
+
+export const Cursor: React.FC = () => <span style={{ display: "inline-block", width: "0.6em", height: "1.1em", verticalAlign: "-0.2em", background: C.text }} />;
