@@ -25,6 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.MaterialTheme
@@ -88,10 +91,21 @@ fun SessionRow(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             SessionBadge(s, size = 16.dp, ambient = ambient)
             Spacer(Modifier.width(8.dp))
-            Text(
-                s.name, style = SessionNameStyle, color = CmColors.text2, maxLines = 1, overflow = overflow,
-                softWrap = false, modifier = Modifier.weight(1f).cmMarquee(marquee),
-            )
+            // PROPOSTA (notte del 24/09): su 384 px «ledger-api» diventava «ledger-a…»; prima si rimpicciolisce fino a
+            // 11 sp, come il nome nella testata (FitName), e solo poi scorre o si tronca come oggi.
+            BoxWithConstraints(Modifier.weight(1f)) {
+                val measurer = rememberTextMeasurer()
+                val width = constraints.maxWidth
+                val size = remember(s.name, width) {
+                    listOf(13.sp, 12.sp, 11.sp).firstOrNull { sp ->
+                        measurer.measure(s.name, SessionNameStyle.copy(fontSize = sp), maxLines = 1, softWrap = false).size.width <= width
+                    } ?: 11.sp
+                }
+                Text(
+                    s.name, style = SessionNameStyle.copy(fontSize = size), color = CmColors.text2, maxLines = 1, overflow = overflow,
+                    softWrap = false, modifier = Modifier.cmMarquee(marquee),
+                )
+            }
             if (s.followed) {
                 Spacer(Modifier.width(4.dp))
                 Icon(
