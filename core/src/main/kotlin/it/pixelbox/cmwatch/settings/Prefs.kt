@@ -30,11 +30,23 @@ data class Settings(
     /** Demo per i video (16/09 16:05): dati finti anche da accoppiati. Si accende e spegne solo via adb, extra `demo`. */
     val demoMode: Boolean = false,
     val seenQuestions: Set<String> = emptySet(),
+    /** Configurazione Firebase arrivata dal telefono (JSON di FirebaseConfig); null = quella dentro la build, se c'è. */
+    val firebaseJson: String? = null,
+    /** Solo telefono: l'accoppiamento (JSON di PairingRecord). */
+    val pairingJson: String? = null,
+    /** Solo telefono: il QR da riprendere dopo il riavvio per un altro progetto Firebase. */
+    val resumeQr: String? = null,
 )
+
+/** Le preferenze viste dal codice che si prova sulla JVM (il controller del telefono). */
+interface SettingsStore {
+    suspend fun current(): Settings
+    suspend fun update(block: (Settings) -> Settings)
+}
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("cmwatch")
 
-class Prefs(private val ctx: Context) {
+class Prefs(private val ctx: Context) : SettingsStore {
     private object K {
         val paired = booleanPreferencesKey("paired"); val uid = stringPreferencesKey("uid"); val host = stringPreferencesKey("host")
         val deviceName = stringPreferencesKey("deviceName"); val wrappedKey = stringPreferencesKey("wrappedKey")
@@ -45,6 +57,7 @@ class Prefs(private val ctx: Context) {
         val demoFixture = stringPreferencesKey("demoFixture")
         val demoMode = booleanPreferencesKey("demoMode")
         val seenQuestions = stringSetPreferencesKey("seenQuestions")
+        val firebaseJson = stringPreferencesKey("firebaseJson"); val pairingJson = stringPreferencesKey("pairingJson"); val resumeQr = stringPreferencesKey("resumeQr")
     }
 
     val flow: Flow<Settings> = ctx.dataStore.data.map { p ->
@@ -60,12 +73,13 @@ class Prefs(private val ctx: Context) {
             demoFixture = p[K.demoFixture] ?: d.demoFixture,
             demoMode = p[K.demoMode] ?: d.demoMode,
             seenQuestions = p[K.seenQuestions] ?: d.seenQuestions,
+            firebaseJson = p[K.firebaseJson], pairingJson = p[K.pairingJson], resumeQr = p[K.resumeQr],
         )
     }
 
-    suspend fun current(): Settings = flow.first()
+    override suspend fun current(): Settings = flow.first()
 
-    suspend fun update(block: (Settings) -> Settings) {
+    override suspend fun update(block: (Settings) -> Settings) {
         val s = block(current())
         ctx.dataStore.edit { p ->
             p[K.paired] = s.paired
@@ -80,6 +94,9 @@ class Prefs(private val ctx: Context) {
             p[K.demoFixture] = s.demoFixture
             p[K.demoMode] = s.demoMode
             p[K.seenQuestions] = s.seenQuestions.toList().takeLast(50).toSet()
+            s.firebaseJson?.let { p[K.firebaseJson] = it } ?: p.remove(K.firebaseJson)
+            s.pairingJson?.let { p[K.pairingJson] = it } ?: p.remove(K.pairingJson)
+            s.resumeQr?.let { p[K.resumeQr] = it } ?: p.remove(K.resumeQr)
         }
     }
 }
