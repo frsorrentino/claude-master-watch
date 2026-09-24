@@ -38,6 +38,8 @@ Nei film di esempio la continuità conta più dell'effetto: Ask ha 2 tagli in 87
 
 ## 2 bis. Revisione del 23/09 sera, dopo la bozza 12 (Franz, 21:13-21:24)
 
+> **Stato al 24/09:** il corto consegnato (73,5 battiti, 40,1 s) si è allontanato da questa sezione dopo la bozza 15: corsia intera, quarto blink che chiude sul nero al posto della tapparella, musica `0-1 0-11 39-43 39-41.375 --fadeout=2`. Scena per scena, lo stato vero è in `2026-09-23-film-corto-avanzamento.md`; i battiti in `timeline.short.json`.
+
 Il volo del terminale è approvato. Cambiano apertura, frasi, carrellata e finale; le scelte di Franz sono quelle consigliate.
 
 - **Apertura:** via la scena ambient. Il film parte sul quadrante acceso con la complication di Claude Master, senza la scritta «payments-api» (`n_face.mp4`, dai primi 2,8 s di `out/clips3/n_face_to_tile.mp4`, ore 12:45, complication «11 · 5h»): 1,5 battiti, poi la notifica con la vibrazione.

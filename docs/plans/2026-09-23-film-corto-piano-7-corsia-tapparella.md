@@ -13,6 +13,8 @@
 
 **Architecture:** scaletta e musica per la corsia e il blink; una clip col display acceso per il terminale (`n_watch_on.mp4`); nel motore, tutto con campi opzionali che il film lungo non usa: `blinds.grow: "linear"` e `blinds.fill` (i listelli partono dalla lunghezza dei dati e crescono di seguito), il voltarsi a 180° con il retro nero quando `blinds.to` è `"black"`, e una terza copia del volo sopra l'orologio. La posizione del volo si prende dagli stessi numeri del transform dell'orologio (zoom, tremito, spostamento verticale), non da un conto a parte.
 
+> **Superato in parte (24/09):** i Task 3-4 (tapparella lineare e a strisce) sono usciti dal corto il 23/09 alle 22:49 (quarto blink sul nero) e il loro codice è stato tolto dopo la revisione finale; battiti e musica qui sotto sono quelli del piano, non del corto consegnato (73,5 battiti, musica `0-1 0-11 39-43 39-41.375 --fadeout=2`). Stato vero: `2026-09-23-film-corto-avanzamento.md`.
+
 ## Global Constraints
 
 - Il film lungo resta identico al pixel (13 fotogrammi più i due della tapparella, 1940 e 1990 con swangle).
