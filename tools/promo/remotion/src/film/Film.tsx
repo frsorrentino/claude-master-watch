@@ -293,7 +293,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
         const next = TIMELINE.scenes[i + 1];
         if (!s.blinds || !next) return null;
         const frames = spanFrames(GRID, s.at, s.blinds.len);
-        return <Sequence key={`blinds-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * BLIND_CUT)} durationInFrames={frames + 1} layout="none"><Blinds frames={frames} to={s.blinds.to} grow={s.blinds.grow} fill={s.blinds.fill} bars={s.blinds.fill ? blindBars(s.blinds.fill.length) : blindBars(((s.fx ?? []).find((e) => e.kind === "aside" && e.out === "bars") as { rows?: unknown[] } | undefined)?.rows?.length ?? 2)} /></Sequence>;
+        return <Sequence key={`blinds-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * BLIND_CUT)} durationInFrames={frames + 1} layout="none"><Blinds frames={frames} bars={blindBars(((s.fx ?? []).find((e) => e.kind === "aside" && e.out === "bars") as { rows?: unknown[] } | undefined)?.rows?.length ?? 2)} /></Sequence>;
       })}
       {/* il battito di ciglia dura quanto la crescita della card, non 30 fotogrammi: parola e scheda crescono INSIEME
           (Franz, 19/09 05:12). La parola resta dov'è e si ingrandisce; le palpebre si chiudono negli ultimi 7. */}
