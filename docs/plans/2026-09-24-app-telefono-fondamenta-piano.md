@@ -3417,3 +3417,38 @@ git commit -m "docs: live checklist for pairing from the phone"
 ```
 
 Le fondamenta sono fatte quando A1-A4 sono ✅ (il «Fatto» della specifica) e gli altri non hanno ✗ aperti.
+
+## Risultati dello spike
+
+**A e B, 24/09/2026 20:14, emulatore `emulator-5554` (immagine Wear, Android 13), build `:wear:assembleDebug` senza
+`google-services.json` e con `FirebaseInitProvider` rimosso dal manifest.** Configurazione del progetto di Franz iniettata
+via `adb` e salvata nelle preferenze; Firebase avviato in `CmApp.onCreate` con `FirebaseOptions.Builder`.
+
+- **A: sì.** Accesso anonimo, iscrizione al topic e messaggio FCM del relay ricevuti:
+
+  ```
+  20:14:11.811 I cmwatch : spike: firebase https://claude-master-relay-3761-default-rtdb.europe-west1.firebasedatabase.app
+  20:14:14.314 I cmwatch : spike: token true uid rQNQH9ZGVhMRQVoZhLsmk25IEJh2
+  20:14:16.870 I cmwatch : spike: topic true
+  20:14:49.023 I cmwatch : fcm message: {kind=spike, session=spike}
+  ```
+
+  Il push è partito da `fcm_send` del relay (`True`) alle 20:14:28 e ha svegliato il processo in 21 s.
+- **B: sì.** Configurazione con l'URL del database che finisce in `/`, salvata, processo fermato, riavviato: il processo
+  nuovo parte con la configurazione nuova e l'uid anonimo resta lo stesso (stesso progetto):
+
+  ```
+  20:15:23.061 I cmwatch : spike: firebase https://claude-master-relay-3761-default-rtdb.europe-west1.firebasedatabase.app/
+  20:15:23.380 I cmwatch : spike: token true uid rQNQH9ZGVhMRQVoZhLsmk25IEJh2
+  20:15:24.112 I cmwatch : spike: topic true
+  ```
+
+- **Decisione:** la configurazione a runtime della specifica regge. Basta riavviare il processo, non serve reinizializzare
+  Firebase a caldo.
+- **Due cose imparate, da tenere nei Task 7 e 10:**
+  - `Process.killProcess` dentro l'activity `singleTask` fa rilanciare l'activity con lo stesso intent (11 riavvii in 15 s):
+    nel prodotto il riavvio dopo `hello` con progetto diverso deve chiudere l'activity (`finishAndRemoveTask`) prima di
+    uccidere il processo, e comunque non dipendere da un intent con extra.
+  - L'emulatore Wear di questa macchina non ha `com.google.wear.services.ambient.AmbientComponentState`: `MainActivity`
+    ci va in crash (preesistente, non c'entra con Firebase). Per lo spike l'activity si è chiusa prima di `setContent`;
+    le prove di schermata dell'orologio si fanno sul polso o con Paparazzi.
