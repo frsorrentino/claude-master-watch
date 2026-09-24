@@ -125,7 +125,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
       for (const m of [s.watch.enter, s.watch.exit]) if (m !== undefined && !MOVES.includes(m)) say(`movimento «${m}» sconosciuto`);
       if (!/^scenes\/[\w.-]+\.mp4$/.test(s.watch.clip)) say(`clip «${s.watch.clip}»: attesa scenes/<nome>.mp4`);
       // Un'interfaccia da polso accelerata si vede (piano 4): le clip vanno a tempo reale, al massimo 1,25×.
-      if (s.watch.screenFade !== undefined && !(s.watch.screenFade > 0 && s.watch.screenFade <= s.len)) say(`lo schermo sfuma per ${s.watch.screenFade} battiti: serve un numero fra 0 e la durata della scena`);
+      if (s.watch.screenFade !== undefined && !(typeof s.watch.screenFade === "number" && s.watch.screenFade > 0 && s.watch.screenFade <= s.len && half(s.watch.screenFade))) say(`lo schermo sfuma per ${s.watch.screenFade} battiti: serve un numero fra 0 e la durata della scena, in mezzi battiti`);
       if (s.watch.rate !== undefined && !(s.watch.rate > 0 && s.watch.rate <= 1.25)) say(`velocità della clip ${s.watch.rate}: al massimo 1,25×`);
       if (s.watch.still !== undefined && !/^[\w-]+(\/[\w.-]+)*\.png$/.test(s.watch.still)) say(`immagine «${s.watch.still}»: attesa un PNG dentro public`);
       if (s.watch.camera !== undefined && !["close", "release", "around"].includes(s.watch.camera)) say(`camera «${s.watch.camera}» sconosciuta`);
@@ -185,6 +185,11 @@ export const validateTimeline = (raw: unknown): Timeline => {
       // due battiti perché la frase intera resti ferma: è la pausa che la rende leggibile, non la velocità
       const pause = s.text.pause ?? 0;
       if (s.text.pause !== undefined && !(typeof s.text.pause === "number" && s.text.pause >= 0 && half(s.text.pause))) say(`la pausa della frase è «${s.text.pause}»: serve un numero di mezzi battiti`);
+      // la pausa è fra la prima riga e le altre (WordMask): senza seconda riga, con parole portate o nel titolo scritto a
+      // cavallo di un sonno del display non avrebbe l'effetto che la scaletta le conta (revisione finale del piano 7)
+      if (pause && s.text.lines.length < 2) say("la pausa sta fra le righe: una frase di una riga non ne ha");
+      if (pause && s.text.carry) say("la pausa non va con le parole portate dalla scena prima");
+      if (pause && prev?.sleep) say("dopo un sonno del display la frase si scrive senza pausa");
       if (words.length * perWord + pause + 2 > room) say(pause ? `${words.length} parole a mezzo battito l'una più la pausa di ${pause} e due per leggerle fanno ${words.length * perWord + pause + 2} battiti, la scena ne ha ${room}` : `${words.length} parole a mezzo battito l'una più due per leggerle fanno ${words.length * perWord + 2} battiti, la scena ne ha ${room}`);
       if (s.text.accent !== undefined && !words.includes(s.text.accent)) say(`«${s.text.accent}» non è tra le parole del testo`);
       if (s.text.at !== undefined && (!half(s.text.at) || s.text.at >= s.len)) say(`il testo al battito ${s.text.at} esce dalla scena`);
@@ -206,6 +211,13 @@ export const validateTimeline = (raw: unknown): Timeline => {
         if (!(f.len >= 1.5)) say(`il volo dura ${f.len} battiti: almeno 1,5`);
         if (typeof f.slot !== "number") say(`la riga del volo è «${f.slot}»: serve un numero fra 0 e 310`);
         else if (!(f.slot >= 0 && f.slot <= 310)) say(`la riga del volo è a ${f.slot}: fra 0 e 310`);
+        // la riga che vola è l'esito del terminale, e all'arrivo diventa la card ✓ vera: stessa riga, stesso contenuto
+        const term = (prev?.fx ?? []).find((x) => x.kind === "terminalPlane");
+        const last = term && term.kind === "terminalPlane" ? (term.lines[term.lines.length - 1] ?? "").replace(/^⏺\s*/, "") : undefined;
+        if (last !== undefined && f.text !== last) say(`il volo scrive «${f.text}» ma l'ultima riga del terminale è «${last}»`);
+        const card = (s.fx ?? []).find((x) => x.kind === "doneCard" && x.at === f.at + f.len && x.slot === f.slot);
+        if (!card) say(`il volo finisce al battito ${f.at + f.len} ma lì non c'è la sua card ✓ nella riga ${f.slot}`);
+        else if (card.kind === "doneCard" && (card.name !== f.name || card.age !== f.age || card.text !== f.text)) say("la card ✓ dopo il volo non è quella in volo (nome, età o testo diversi)");
       }
       if (f.kind === "float") for (const c of f.cards) if (c.kind !== "text" && c.kind !== "brief" && c.dictation) {
         const v = (s.fx ?? []).find((x) => x.kind === "spoken");

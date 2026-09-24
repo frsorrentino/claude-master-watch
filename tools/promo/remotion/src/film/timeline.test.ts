@@ -197,9 +197,43 @@ test("il volo entra solo in un orologio di fronte (revisione finale dei piani 4-
   assert.match(problems(t).join("\n"), /list: il volo entra solo in un orologio di fronte/);
 });
 test("la pausa fra le righe conta nel tempo della frase (23/09 23:20)", () => {
-  const t = base(); t.scenes[0].text.pause = 6;
-  assert.match(problems(t).join("\n"), /open: 3 parole a mezzo battito l'una più la pausa di 6 e due per leggerle fanno 9.5 battiti, la scena ne ha 8/);
-  t.scenes[0].text.pause = 1;
+  const t = base(); t.scenes[1].text.pause = 6;   // due righe: la pausa sta fra la prima e la seconda
+  assert.match(problems(t).join("\n"), /list: 4 parole a mezzo battito l'una più la pausa di 6 e due per leggerle fanno 10 battiti, la scena ne ha 8/);
+  t.scenes[1].text.pause = 1;
   assert.deepEqual(problems(t), []);
 });
 
+// revisione finale del piano 7 (24/09): le minori rimaste
+const withFlight = (): any => {
+  const t = base();
+  t.scenes[0].fx = [{ kind: "terminalPlane", at: 0, len: 4, rect: [26, 163, 427, 150], header: "T", title: "t", lines: ["⏺ Released 2.8.0 and tagged v2.8.0"], every: 2 }];
+  t.scenes[1].fx.push({ kind: "takeIn", at: 0, len: 2, slot: 146, name: "payments-api", age: "0 m", text: "Released 2.8.0 and tagged v2.8.0" });
+  t.scenes[1].fx.push({ kind: "doneCard", at: 2, slot: 146, name: "payments-api", age: "0 m", text: "Released 2.8.0 and tagged v2.8.0" });
+  return t;
+};
+test("lo schermo sfuma per mezzi battiti, non per un numero qualsiasi", () => {
+  const t = base(); t.scenes[1].watch.screenFade = 0.01;
+  assert.match(problems(t).join("\n"), /list: lo schermo sfuma per 0.01 battiti: serve un numero fra 0 e la durata della scena, in mezzi battiti/);
+  t.scenes[1].watch.screenFade = "1";
+  assert.match(problems(t).join("\n"), /list: lo schermo sfuma per 1 battiti/);
+});
+test("il volo scrive l'ultima riga del terminale e atterra sulla card ✓ della stessa riga, quando finisce", () => {
+  assert.deepEqual(problems(withFlight()), []);
+  const a = withFlight(); a.scenes[1].fx[1].text = "Released 2.8.0";
+  assert.match(problems(a).join("\n"), /list: il volo scrive «Released 2.8.0» ma l'ultima riga del terminale è «Released 2.8.0 and tagged v2.8.0»/);
+  const b = withFlight(); b.scenes[1].fx[2].at = 3;
+  assert.match(problems(b).join("\n"), /list: il volo finisce al battito 2 ma lì non c'è la sua card ✓ nella riga 146/);
+  const c = withFlight(); c.scenes[1].fx[2].slot = 200;
+  assert.match(problems(c).join("\n"), /list: il volo finisce al battito 2 ma lì non c'è la sua card ✓ nella riga 146/);
+  const d = withFlight(); d.scenes[1].fx[2].name = "storefront";
+  assert.match(problems(d).join("\n"), /list: la card ✓ dopo il volo non è quella in volo \(nome, età o testo diversi\)/);
+});
+test("la pausa sta fra due righe, senza parole portate e non dopo un sonno del display", () => {
+  const one = base(); one.scenes[0].text = { lines: ["Claude is working."], accent: "working.", pause: 1 };
+  assert.match(problems(one).join("\n"), /open: la pausa sta fra le righe: una frase di una riga non ne ha/);
+  const carry = base(); carry.scenes[0].text.keep = true;
+  carry.scenes[1].text = { lines: ["Claude is working.", "Now."], accent: "Now.", carry: 3, pause: 1 };
+  assert.match(problems(carry).join("\n"), /list: la pausa non va con le parole portate dalla scena prima/);
+  const nap = base(); nap.scenes[0].sleep = { len: 4 }; nap.scenes[1].text.pause = 1;
+  assert.match(problems(nap).join("\n"), /list: dopo un sonno del display la frase si scrive senza pausa/);
+});
