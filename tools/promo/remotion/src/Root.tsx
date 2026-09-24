@@ -6,6 +6,7 @@ import { Film, SHORT_TIMELINE, ShortFilm, filmFrames } from "./film/Film.tsx";
 import { framesOf } from "./film/cut.ts";
 import { LogoProva } from "./film/LogoProva.tsx";
 import { WallProva } from "./film/WallProva.tsx";
+import { Loops } from "./loops/index.tsx";
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -15,5 +16,6 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="LogoProva" component={LogoProva} fps={30} width={1920} height={1080} durationInFrames={110} />
     <Composition id="WallProva" component={WallProva} fps={30} width={1920} height={1080} durationInFrames={130} />
     <Composition id="Compare" component={Compare} fps={30} width={1920} height={1080} durationInFrames={90} />
+    <Loops />
   </>
 );
