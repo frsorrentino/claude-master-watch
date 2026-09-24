@@ -1,4 +1,4 @@
-# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.11)
+# Contratto PC ↔ orologio (v1, aggiunte dalla 1.1 alla 1.15)
 
 Questi file sono la verità condivisa fra `cm-relay.py` (plugin claude-master) e l'app.
 Il Python li deve produrre identici (test in claude-master `tests/relay-verify.py`);
@@ -14,6 +14,8 @@ cifrato è il JSON di questi file. Schema per campo in
 - `state-3-stale.json` — nessuna sessione, `ts` vecchio: l'app mostra «PC fermo».
 - `events-sample.json` — un evento per tipo.
 - `cmd-result-sample.json` — un comando per `op` e il suo risultato, compresi due errori.
+- `pair-qr.json` — il contenuto del QR di `relay pair` (1.15).
+- `pair-response.json` — la risposta del telefono per sé e per l'orologio, e la conferma del PC (1.15).
 
 Regole che i test verificano: `state` ≤ 8 KB; `outcome.short` ≤ 200; `outcome.full` ≤ 600;
 `question.text` intero (mai troncato); `options[].n` da 1 senza buchi; `tier` ∈ low|medium|high;
@@ -124,3 +126,6 @@ null; il movimento di una sessione ferma lo dà `outcome.at`, che il relay aggio
 Contratto 1.13 (16/09/2026, solo aggiunte, richiesta dell'utente): il comando `launch` accetta un campo opzionale `text`, il primo messaggio della sessione; il relay lancia, trova la sessione nata e le consegna il testo come primo prompt con il prefisso del polso. Il `/result` di un launch porta `session`, il nome della sessione nata come in `sessions[].name` (può differire dal progetto: `field-notes-2`), anche quando il messaggio non è stato consegnato (ok=false). Ogni progetto porta `last_used`, epoch s della trascrizione più recente della cartella nel suo account, o null; l'ordine di `projects` resta per nome. `v` resta 1.
 
 Contratto 1.14 (22/09/2026, solo aggiunte, richiesta di Franz tramite la master): ogni sessione porta `fallback`, {from, to, category, at} quando Claude Code l'ha spostata da solo su un modello più vecchio perché le salvaguardie hanno segnalato un messaggio (Opus 5.5, 2.1.280), altrimenti null. Letto dalla riga `model_refusal_fallback` della trascrizione; si spegne al primo turno sul modello di prima o dopo un'op `model` riuscita. Si torna con l'op `model` (id del modello di prima). `v` resta 1. Il polso lo accetta senza cambiare nulla (`ContractJson` ignora i campi sconosciuti); mostrarlo al polso è una funzione nuova, da decidere dopo la v1.
+
+
+Contratto 1.15 (24/09/2026, solo aggiunte, richiesta dell'app approvata da Franz; design `docs/plans/2026-09-24-app-telefono-fondamenta-design.md`): accoppiamento dal telefono. `relay pair` mostra un QR con il JSON di `pair-qr.json` (id di 22 caratteri base64url, `pc_pub`, host, scadenza, configurazione Firebase con chiavi brevi) e, sotto, il codice a 6 cifre: stesso documento in `/pair/<id>` e in `/pair/<code>`, vince la prima risposta valida. Nel QR `d` è `relay.firebase_url` e `t` è `relay.fcm_topic`, il bus che il relay scrive davvero; `k`, `p` e `a` vengono da `relay.firebase_app` o dal `google-services.json` in `relay.google_services` (client scelto con `relay.app_package`). La risposta in `/pair/<…>/watch` può portare `uids` (fino a 4) e `names` (`pair-response.json`, con i vettori: PC = scalare 0..31, telefono = 32..63); `/allowed` riceve tutti gli uid. I controlli HMAC usano la stringa del nodo (`id` e `id + ":pc"`). Il telefono legge `/pair/<id>` prima di scrivere `/watch`: se il nodo non c'è (QR usato, scaduto o di un altro relay) mostra «codice non valido»; per questo `/pair/<id>` e `/pair/<id>/watch` devono avere le stesse regole RTDB di `/pair/<code>`. `v` resta 1. Relay: claude-master 0.4.21 (`2f02da1`).
