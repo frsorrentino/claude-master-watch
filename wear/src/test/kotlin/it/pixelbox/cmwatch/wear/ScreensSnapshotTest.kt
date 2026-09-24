@@ -26,6 +26,8 @@ import it.pixelbox.cmwatch.wear.ui.screens.QuestionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.QuotaScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionScreen
 import it.pixelbox.cmwatch.wear.ui.screens.SessionsScreen
+import it.pixelbox.cmwatch.settings.Settings
+import it.pixelbox.cmwatch.wear.ui.screens.SettingsScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +86,8 @@ class ScreensSnapshotTest {
         }
     }
 
+    @Test fun settings() = paparazzi.snapshot { CmTheme { SettingsScreen(Settings(), onChange = {}, onRepair = {}) } }
+
     @Test fun confirmFollow() = paparazzi.snapshot {
         CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.Notifications, CmColors.followed, "Alerts on")) {} }
     }
@@ -92,11 +96,12 @@ class ScreensSnapshotTest {
         CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.NotificationsOff, CmColors.text2, "Alerts off")) {} }
     }
 
-    private val terminalSample = listOf(
-        "❯ Run the tests, then update", "the changelog", "⏺ Running the suite.",
-        "⏺ Bash(pytest -q)", "⎿ 42 passed in 3.1s", "⏺ All green, moving to the", "changelog.",
-    ).joinToString("\n")
 }
+
+private val terminalSample = listOf(
+    "❯ Run the tests, then update", "the changelog", "⏺ Running the suite.",
+    "⏺ Bash(pytest -q)", "⎿ 42 passed in 3.1s", "⏺ All green, moving to the", "changelog.",
+).joinToString("\n")
 
 /** S07: le stesse schermate con i caratteri di sistema al massimo di Wear OS (1,24): il testo cresce, non si taglia. */
 class LargeFontSnapshotTest {
@@ -114,6 +119,13 @@ class LargeFontSnapshotTest {
     @Test fun questionLargeFont() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun cardIdleLargeFont() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
     @Test fun pairingLargeFont() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = true, {}, {}, {}) } }
+    @Test fun cardMissingLargeFont() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "old-session", now, {}, {}, {}, {}, {}) } }
+    @Test fun staleLargeFont() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
+    @Test fun quotaLargeFont() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now, animateOverride = false) } }
+    @Test fun terminalLargeFont() = paparazzi.snapshot {
+        CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }
+    }
+    @Test fun settingsLargeFont() = paparazzi.snapshot { CmTheme { SettingsScreen(Settings(), onChange = {}, onRepair = {}) } }
 }
 
 /** Pixel Watch 41 mm (384×384): le stesse schermate sullo schermo piccolo, testi interi e bottoni dentro il tondo (notte del 24/09). */
@@ -131,4 +143,16 @@ class SmallScreenSnapshotTest {
     @Test fun questionSmall() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun pairingSmall() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = true, {}, {}, {}) } }
     @Test fun pairingPhoneOnlySmall() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = false, {}, {}, {}) } }
+    @Test fun cardSmall() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "atlas-shop", now, {}, {}, {}, {}, {}) } }
+    @Test fun cardIdleSmall() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
+    @Test fun cardMissingSmall() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "old-session", now, {}, {}, {}, {}, {}) } }
+    @Test fun staleSmall() = paparazzi.snapshot { CmTheme { SessionsScreen(snap.copy(freshness = Freshness.Stale(12)), now, onOpen = {}, onSettings = {}) } }
+    @Test fun quotaSmall() = paparazzi.snapshot { CmTheme { QuotaScreen(state, Freshness.Fresh, now, animateOverride = false) } }
+    @Test fun terminalSmall() = paparazzi.snapshot {
+        CmTheme { TerminalScreen("atlas-shop", terminalSample, loading = false, error = null, answer = emptyList(), capturedAt = now * 1000) }
+    }
+    @Test fun settingsSmall() = paparazzi.snapshot { CmTheme { SettingsScreen(Settings(), onChange = {}, onRepair = {}) } }
+    @Test fun confirmFollowSmall() = paparazzi.snapshot {
+        CmTheme { CmConfirm(CmConfirmState(Icons.Rounded.Notifications, CmColors.followed, "Alerts on")) {} }
+    }
 }
