@@ -20,7 +20,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1"
-        buildConfigField("boolean", "FIREBASE", file("google-services.json").exists().toString())
     }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions {

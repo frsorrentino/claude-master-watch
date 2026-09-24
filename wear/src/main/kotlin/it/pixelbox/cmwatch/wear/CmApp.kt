@@ -5,13 +5,14 @@ import android.app.Application
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.google.firebase.messaging.FirebaseMessaging
-import it.pixelbox.cmwatch.BuildConfig
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.crypto.KeyVault
 import it.pixelbox.cmwatch.crypto.Pairing
 import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.data.Repo
 import it.pixelbox.cmwatch.data.RoomStore
+import it.pixelbox.cmwatch.pairing.FirebaseBoot
+import it.pixelbox.cmwatch.pairing.FirebaseConfig
 import it.pixelbox.cmwatch.rules.TransportChoice
 import it.pixelbox.cmwatch.rules.Wake
 import it.pixelbox.cmwatch.settings.Prefs
@@ -56,6 +57,7 @@ class CmApp : Application() {
         prefs = Prefs(this)
         notifier = Notifier(this).also { it.ensureChannels() }
         val settings = runBlocking { prefs.current() }
+        FirebaseBoot.start(this, FirebaseConfig.fromJson(settings.firebaseJson))
         transport = SwitchableTransport(choose(settings))
         val store = RoomStore.open(this)
         repo = Repo(store, transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, settings.deviceName)
@@ -89,14 +91,15 @@ class CmApp : Application() {
         subscribeTopic()
     }
 
-    /** Firebase solo se accoppiato, con la chiave nel vault e google-services.json presente; altrimenti il finto sulle fixture. */
+    /** Firebase solo se accoppiato, con la chiave nel vault e Firebase avviato; altrimenti il finto sulle fixture. */
     fun choose(settings: Settings): Transport {
         val key = settings.wrappedKey?.let { runCatching { KeyVault.unwrap(it, KeyVault.keystoreKek()) }.getOrNull() }
-        val kind = TransportChoice.pick(settings.paired, key != null, BuildConfig.FIREBASE && FirebaseAuthToken.databaseUrl() != null, demo = settings.demoMode)
+        val fb = FirebaseBoot.active
+        val kind = TransportChoice.pick(settings.paired, key != null, fb != null, demo = settings.demoMode)
         return when (kind) {
             TransportChoice.Kind.FAKE -> fake
             TransportChoice.Kind.FIREBASE -> FirebaseTransport(
-                rtdb = Rtdb(FirebaseAuthToken.databaseUrl()!!.removeSuffix("/"), token = { FirebaseAuthToken.token() }),
+                rtdb = Rtdb(fb!!.databaseUrl.removeSuffix("/"), token = { FirebaseAuthToken.token() }),
                 key = { key }, uid = { FirebaseAuthToken.uid() }, deviceKeyPair = { Pairing.newKeyPair() },
                 now = { System.currentTimeMillis() / 1000 },
             )
@@ -105,7 +108,7 @@ class CmApp : Application() {
 
     /** Il pairing va SEMPRE sul bus reale quando Firebase c'è (il finto accetta qualsiasi codice). */
     fun pairingTransport(): Transport {
-        val url = if (BuildConfig.FIREBASE) FirebaseAuthToken.databaseUrl() else null
+        val url = FirebaseBoot.active?.databaseUrl
         return if (url == null) fake else FirebaseTransport(
             rtdb = Rtdb(url.removeSuffix("/"), token = { FirebaseAuthToken.token() }),
             key = { null }, uid = { FirebaseAuthToken.uid() }, deviceKeyPair = { Pairing.newKeyPair() },
@@ -179,11 +182,11 @@ class CmApp : Application() {
     }
 
     fun subscribeTopic() {
-        if (!BuildConfig.FIREBASE) return
+        val fb = FirebaseBoot.active ?: return
         runCatching {
             val fm = FirebaseMessaging.getInstance()
             fm.token.addOnCompleteListener { t -> android.util.Log.i("cmwatch", "fcm token: " + (if (t.isSuccessful) "ok (${t.result?.take(12)}…)" else "failed ${t.exception?.message}")) }
-            fm.subscribeToTopic(FCM_TOPIC).addOnCompleteListener { t -> android.util.Log.i("cmwatch", "fcm topic $FCM_TOPIC: " + (if (t.isSuccessful) "subscribed" else "failed ${t.exception?.message}")) }
+            fm.subscribeToTopic(fb.topic).addOnCompleteListener { t -> android.util.Log.i("cmwatch", "fcm topic ${fb.topic}: " + (if (t.isSuccessful) "subscribed" else "failed ${t.exception?.message}")) }
         }.onFailure { android.util.Log.w("cmwatch", "fcm: ${it.message}") }
     }
 
@@ -192,6 +195,4 @@ class CmApp : Application() {
         val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
-
-    companion object { const val FCM_TOPIC = "watch" }
 }

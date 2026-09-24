@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-feature android:name="android.hardware.type.watch" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -16,6 +17,11 @@
         android:allowBackup="false"
         android:theme="@style/Theme.CmWatch">
         <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
+        <!-- Firebase lo avvia l'app, con la configurazione arrivata dal telefono o con quella della build (design 24/09). -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
 
         <activity
             android:name=".wear.MainActivity"

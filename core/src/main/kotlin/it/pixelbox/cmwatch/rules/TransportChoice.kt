@@ -1,6 +1,6 @@
 package it.pixelbox.cmwatch.rules
 
-/** Quale Transport usare: Firebase solo se accoppiato, con la chiave nel vault e google-services.json presente; altrimenti il finto. */
+/** Quale Transport usare: Firebase solo se accoppiato, con la chiave nel vault e Firebase avviato (dal telefono o dalla build); altrimenti il finto. */
 object TransportChoice {
     enum class Kind { FAKE, FIREBASE }
     /** `demo`: la demo per i video, accesa solo via adb (Franz, 16/09 16:05); vince anche da accoppiati, l'accoppiamento resta. */
