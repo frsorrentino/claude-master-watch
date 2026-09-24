@@ -84,6 +84,8 @@ Build `44381b5`, installata il 16/09 alle 03:27:00.
 
 Build `596db7a`, da installare quando l'orologio torna raggiungibile (alle 04:13 non rispondeva).
 
+Superata dalla card delle misure (P1-P6, Franz 16/09 08:29): le tre righe di K2 non esistono più. Restano valide K4 e K5, che si provano con P6 e con P1.
+
 | # | Cosa | Come | Esito |
 |---|------|------|-------|
 | K1 | Sotto la card c'è la quota dell'account della sessione, con i due anelli | Scheda di una sessione viva | |
@@ -103,8 +105,8 @@ Build `596db7a`, da installare quando l'orologio torna raggiungibile (alle 04:13
 
 | # | Cosa | Causa | Stato |
 |---|------|-------|-------|
-| N1 | «PC fermo da N min» mentre le sessioni lavorano | NON è il PC: il relay ha pubblicato ogni minuto senza errori (relay.log 08:14→08:29, stato con 2 s di vita alla lettura delle 08:29). È l'orologio che non riceveva per 17 minuti | Da indagare. claude-master ha contato 161 push fra 07:45 e 08:15, nessun minuto vuoto, e alle 08:05-08:06 ha eseguito comandi arrivati dall'orologio: il canale dei comandi funzionava. Quindi non è ricezione morta ma uno stato che l'app non rilegge (stream di `/state` fermo o cache non ricaricata) |
-| N2 | Tile e lista dicono due tempi diversi per lo stesso fatto (9 min contro 17) | La tile scrive l'età come testo fisso al momento del disegno e si ridisegna ogni 15 min (`TileTexts.freshnessMs`); la lista ricalcola ogni 30 s (`FRESHNESS_TICK_MS`) | Da correggere: far contare alla tile l'ora di piattaforma invece di un numero scritto |
+| N1 | «PC fermo da N min» mentre le sessioni lavorano | NON è il PC: il relay ha pubblicato ogni minuto senza errori (relay.log 08:14→08:29, stato con 2 s di vita alla lettura delle 08:29). È l'orologio che non riceveva per 17 minuti | Corretto in `1cf3c2c` (watchdog dello stream: senza eventi per troppo tempo lo riapre), da riprovare al polso. Indagine: claude-master ha contato 161 push fra 07:45 e 08:15, nessun minuto vuoto, e alle 08:05-08:06 ha eseguito comandi arrivati dall'orologio: il canale dei comandi funzionava. Quindi non è ricezione morta ma uno stato che l'app non rilegge (stream di `/state` fermo o cache non ricaricata) |
+| N2 | Tile e lista dicono due tempi diversi per lo stesso fatto (9 min contro 17) | La tile scrive l'età come testo fisso al momento del disegno e si ridisegna ogni 15 min (`TileTexts.freshnessMs`); la lista ricalcola ogni 30 s (`FRESHNESS_TICK_MS`) | Corretto in `1cf3c2c`: con il PC fermo la tile si ridisegna ogni minuto (`TileTexts.freshnessMs`), da riprovare al polso |
 | M2 | Riquadro con solo la quota | Risolto dal relay con il contratto 1.11.1 (la voce di sistema col modello sta in testa alla trascrizione, non in coda): `label`, `context` ed `effort` arrivano pieni | Chiuso; nell'app resta il ripiego `ModelText` per i relay vecchi e per i secondi dopo una compattazione |
 
 ## Card delle misure della sessione (Franz, 16/09 08:29)
