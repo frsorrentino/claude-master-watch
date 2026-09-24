@@ -76,6 +76,8 @@ La sola rete di casa, senza cloud: fuori casa l'orologio perderebbe tutto.
 
 1. **Subito C.** Costa poco e toglie gli errori a sorpresa. Chiesta a claude-master il 24/09 alle 17:07, dopo l'ok di
    Franz: messaggio `ea9ad5` nella casella, poi rimandato direttamente alla sessione.
+   Fatta il 24/09 alle 17:51: commit `29534a8` su claude-master, plugin 0.4.20, non ancora pubblicato. Righe `crypto_ok` e
+   `crontab_ok` verificate con il doctor vero del PC.
 2. **La decisione vera è B1 o B2, e viene prima di A.** Consigliata B1 con Play: è l'unica strada in cui l'utente non
    tocca né Firebase né Gradle. B2 resta come modalità avanzata per chi non vuole passare dal server di Franz. Il prezzo
    di B1 è gestire un servizio, come costo e come responsabilità.
