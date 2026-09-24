@@ -1,0 +1,6 @@
+<resources>
+    <!-- Solo scuro, come l'orologio (design 24/09); Compose disegna il resto. -->
+    <style name="Theme.CmPhone" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

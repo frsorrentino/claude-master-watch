@@ -1,4 +1,7 @@
 <resources>
-    <string name="app_name">Claude Master</string>
-    <string name="placeholder">claude-master (telefono): in arrivo</string>
+    <string name="app_name">claude-master</string>
+    <string name="not_paired_title">Collega il PC</string>
+    <string name="not_paired_body">Sul PC lancia claude-master relay pair e inquadra il QR. Il telefono accoppia anche l\'orologio.</string>
+    <string name="pair_button">Accoppia</string>
+    <string name="paste_code">Incolla il codice</string>
 </resources>

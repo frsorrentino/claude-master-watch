@@ -1,0 +1,6 @@
+<resources>
+    <string name="not_paired_title">Connect your PC</string>
+    <string name="not_paired_body">On the PC run claude-master relay pair and scan the QR. The phone pairs the watch too.</string>
+    <string name="pair_button">Pair</string>
+    <string name="paste_code">Paste the code</string>
+</resources>

@@ -5,7 +5,7 @@ name: Build Wear OS APK
 on:
   push:
     branches: [main, master, feature/**]
-    paths: ['core/**', 'wear/**', 'mobile/**', 'gradle/**', 'contract/**', '*.gradle.kts', 'gradle.properties', '.github/workflows/build-android.yml']
+    paths: ['core/**', 'wear/**', 'mobile/**', 'ui-tokens/**', 'gradle/**', 'contract/**', '*.gradle.kts', 'gradle.properties', '.github/workflows/build-android.yml']
   workflow_dispatch:
     inputs:
       record:
@@ -38,22 +38,27 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'gradle/libs.versions.toml', 'core/build.gradle.kts', 'wear/build.gradle.kts') }}
+          key: gradle-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'gradle/libs.versions.toml', 'core/build.gradle.kts', 'wear/build.gradle.kts', 'mobile/build.gradle.kts', 'ui-tokens/build.gradle.kts') }}
           restore-keys: gradle-
       - name: Unit tests
-        run: ./gradlew :core:testDebugUnitTest --console=plain
+        run: ./gradlew :core:testDebugUnitTest :mobile:testDebugUnitTest --console=plain
       - name: Screenshot tests (Paparazzi, verify)
         if: hashFiles('wear/src/test/snapshots/**') != '' && github.event.inputs.record != 'true'
         run: ./gradlew :wear:verifyPaparazziDebug --console=plain
+      - name: Screenshot tests del telefono (Paparazzi, verify)
+        if: hashFiles('mobile/src/test/snapshots/**') != '' && github.event.inputs.record != 'true'
+        run: ./gradlew :mobile:verifyPaparazziDebug --console=plain
       - name: Screenshot tests (Paparazzi, record)
         if: github.event.inputs.record == 'true'
-        run: ./gradlew :wear:recordPaparazziDebug --console=plain
+        run: ./gradlew :wear:recordPaparazziDebug :mobile:recordPaparazziDebug --console=plain
       - name: Upload snapshots
         if: github.event.inputs.record == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: paparazzi-snapshots
-          path: wear/src/test/snapshots
+          path: |
+            wear/src/test/snapshots
+            mobile/src/test/snapshots
           retention-days: 30
       - name: Debug APKs
         run: ./gradlew :wear:assembleDebug :mobile:assembleDebug --console=plain

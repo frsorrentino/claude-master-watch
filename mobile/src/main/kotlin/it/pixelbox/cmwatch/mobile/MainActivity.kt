@@ -1,12 +1,16 @@
 package it.pixelbox.cmwatch.mobile
 
 import android.os.Bundle
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import it.pixelbox.cmwatch.mobile.ui.CmPhoneTheme
+import it.pixelbox.cmwatch.mobile.ui.NotPairedScreen
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(TextView(this).apply { text = getString(R.string.placeholder) })
+        enableEdgeToEdge()
+        setContent { CmPhoneTheme { NotPairedScreen(onPair = {}, onPaste = {}) } }
     }
 }
