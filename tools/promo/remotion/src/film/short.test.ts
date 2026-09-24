@@ -5,7 +5,7 @@ import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { dollyAt } from "./dolly.ts";
 import { asideAt, contextFill, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
-import { spanFrames } from "./beats.ts";
+import { beatToFrame, spanFrames } from "./beats.ts";
 import { laneArrivals } from "./ui/heroes.ts";
 import { BLEED_LIFT, closingAt } from "./moves.ts";
 import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
@@ -35,6 +35,17 @@ test("dopo lo stop sul «yes» la musica riparte col giro pieno all'entrata dell
   const k = fl.cards.findIndex((c) => c.text?.startsWith("Deployed"));
   const arrive = loop.at + fl.at + at[k] * fl.len;
   assert.ok(Math.abs(arrive - (drop + 4)) <= 0.05, `«Deployed» arriva al battito ${arrive.toFixed(2)}, la battuta dopo comincia al ${drop + 4}`);
+});
+test("«Deployed» si disegna la prima volta proprio sul fotogramma del battito 24, non uno dopo (revisione del piano 7)", () => {
+  // Floating.tsx: la card k si disegna quando floor(offset) arriva a k, cioè a p = laneArrivals[k], con p = (f - from) / len
+  // e from, len arrotondati ai fotogrammi (spanFrames): il conto a battiti continui non basta, conta il fotogramma
+  const g = { bpm: 110, fps: 30, offsetSeconds: short.offsetSeconds ?? 0.01 };
+  const loop = byId("loop");
+  const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; width?: number; cards: { text?: string; lines?: string[]; kind?: string; hold?: number }[] };
+  const k = fl.cards.findIndex((c) => c.text?.startsWith("Deployed"));
+  const from = spanFrames(g, loop.at, fl.at), len = spanFrames(g, loop.at + fl.at, fl.len);
+  const first = beatToFrame(g, loop.at) + Math.ceil(from + laneArrivals(fl.cards, fl.width ?? 560)[k] * len - 1e-9);
+  assert.equal(first, beatToFrame(g, 24), `«Deployed» compare al fotogramma ${first}`);
 });
 test("il dito preme quando la voce ha finito", () => {
   const answer = byId("answer");
