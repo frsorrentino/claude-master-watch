@@ -86,6 +86,18 @@ the watch sends: answers, prompts, launches, reopenings. Every document is encry
 end with AES-256-GCM; the key is agreed at pairing over X25519 and lives in the watch's
 Keystore. Firebase sees blobs, never your prompts or your project names.
 
+## Requirements
+
+- **PC**: Linux or macOS, always on and awake (the relay covers «sessions closed», not
+  «machine off»); `bash`, `tmux`, `python3` ≥ 3.8 with the `cryptography` module, `crontab`;
+  Claude Code ≥ 2.1.263 with the [claude-master](https://github.com/frsorrentino/claude-master)
+  plugin. ChromeOS is not required: it is only where the plugin runs daily.
+- **Firebase**: a project of your own with Realtime Database, Cloud Messaging and anonymous
+  sign-in, a service account for the PC and an Android app for the watch.
+- **Watch**: Wear OS 4 or newer (minSdk 33) with Google Play services, paired with an Android
+  phone as Wear OS requires; tried only on a Pixel Watch 5 (Wear OS 7).
+- **Build** (no store build yet): JDK 17, Android SDK 36, `adb` over wireless debugging.
+
 ## Set up
 
 1. **The plugin** on your PC: see above.
