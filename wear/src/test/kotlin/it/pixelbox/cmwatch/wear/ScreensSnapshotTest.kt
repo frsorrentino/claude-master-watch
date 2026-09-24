@@ -113,4 +113,22 @@ class LargeFontSnapshotTest {
     @Test fun cardLargeFont() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "atlas-shop", now, {}, {}, {}, {}, {}) } }
     @Test fun questionLargeFont() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
     @Test fun cardIdleLargeFont() = paparazzi.snapshot { CmTheme { SessionScreen(snap, "field-notes", now, {}, {}, {}, {}, {}) } }
+    @Test fun pairingLargeFont() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = true, {}, {}, {}) } }
+}
+
+/** Pixel Watch 41 mm (384×384): le stesse schermate sullo schermo piccolo, testi interi e bottoni dentro il tondo (notte del 24/09). */
+class SmallScreenSnapshotTest {
+    @get:Rule
+    val paparazzi = Paparazzi(
+        deviceConfig = DeviceConfig.WEAR_OS_SMALL_ROUND.copy(screenWidth = 384, screenHeight = 384, density = Density.XHIGH, screenRound = ScreenRound.ROUND, locale = "en"),
+        theme = "android:Theme.DeviceDefault.NoActionBar",
+    )
+    private val now = 1789210800L
+    private val state = ContractJson.decodeState(File("../contract/state-1-question.json").readText())
+    private val snap = Snapshot(state, Freshness.Fresh)
+
+    @Test fun sessionsSmall() = paparazzi.snapshot { CmTheme { SessionsScreen(snap, now, onOpen = {}, onSettings = {}) } }
+    @Test fun questionSmall() = paparazzi.snapshot { CmTheme { QuestionScreen(snap, "ledger-api", now, null, {}, {}, {}, {}, {}, {}) } }
+    @Test fun pairingSmall() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = true, {}, {}, {}) } }
+    @Test fun pairingPhoneOnlySmall() = paparazzi.snapshot { CmTheme { PairingScreen(PairingStatus.Idle, withCode = false, {}, {}, {}) } }
 }

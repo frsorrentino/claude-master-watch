@@ -34,3 +34,17 @@ class PhoneScreensTest {
     @Test fun paired() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = false, onRepair = {}) } }
     @Test fun pairedWatchPending() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
 }
+
+/** Le schermate del telefono con i caratteri di sistema grandi (1,3): i testi degli errori e dei passi restano interi (notte del 24/09). */
+class PhoneLargeFontTest {
+    @get:Rule
+    val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it", fontScale = 1.3f), theme = "android:Theme.Material.NoActionBar")
+
+    private fun steps(p: StepState, w: StepState, c: StepState) = mapOf(Step.PHONE to p, Step.WATCH to w, Step.PC to c)
+
+    @Test fun notPairedLargeFont() = paparazzi.snapshot { CmPhoneTheme { NotPairedScreen(onPair = {}, onPaste = {}) } }
+    @Test fun pairingNoWatchLargeFont() = paparazzi.snapshot {
+        CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
+    }
+    @Test fun pairedWatchPendingLargeFont() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
+}
