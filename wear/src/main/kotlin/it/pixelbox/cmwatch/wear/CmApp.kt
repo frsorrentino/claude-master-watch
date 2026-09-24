@@ -50,6 +50,13 @@ class CmApp : Application() {
     lateinit var follow: FollowOngoing
     val speaker: Speaker by lazy { Speaker(this) }
     val reader: Reader by lazy { Reader(this) }
+    val pairReceiver by lazy { it.pixelbox.cmwatch.wear.pair.PairReceiver(this) }
+
+    /** Dopo aver risposto `restart` al telefono: il processo si chiude, e il messaggio seguente lo riavvia con la configurazione nuova. */
+    fun restartSoon() {
+        scope.launch { kotlinx.coroutines.delay(800); android.os.Process.killProcess(android.os.Process.myPid()) }
+    }
+
     val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
     override fun onCreate() {

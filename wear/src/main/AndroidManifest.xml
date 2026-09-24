@@ -47,6 +47,13 @@
             </intent-filter>
         </service>
 
+        <service android:name=".wear.pair.PairListenerService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.REQUEST_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/cmwatch/pair" />
+            </intent-filter>
+        </service>
+
         <receiver android:name=".wear.push.ReplyReceiver" android:exported="false" />
         <service android:name=".wear.push.SpeakService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
 

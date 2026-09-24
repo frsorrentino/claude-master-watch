@@ -274,6 +274,15 @@ class MainActivity : ComponentActivity() {
         // La nostra conferma al posto di quella di sistema (Franz, 16/09 03:08): cerchio, segno, frase sotto, niente
         // testo curvo né forma ruotata. Si chiude da sola dopo poco più di un secondo, o al tocco.
         CmConfirm(conferma) { conferma = null }
+        // Accoppiato dal telefono (design 24/09): le preferenze passano a paired, qui si dice con chi.
+        var wasPaired by remember { mutableStateOf<Boolean?>(null) }
+        LaunchedEffect(settings?.paired, settings?.host) {
+            val now = settings?.paired ?: return@LaunchedEffect
+            if (wasPaired == false && now && pairing !is PairingStatus.Done) {
+                conferma(Icons.Rounded.Check, CmColors.briefGood, getString(R.string.pairing_done, settings?.host.orEmpty()))
+            }
+            wasPaired = now
+        }
         val entry by nav.currentBackStackEntryFlow.collectAsStateWithLifecycle<NavBackStackEntry?>(null)
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 

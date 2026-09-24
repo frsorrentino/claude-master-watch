@@ -60,6 +60,9 @@ android {
 
 dependencies {
     implementation(project(":ui-tokens"))
+    implementation(libs.play.services.wearable)
+    implementation(libs.coroutines.play.services)
+    implementation(libs.wear.remote.interactions)
     implementation(project(":core"))
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
