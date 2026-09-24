@@ -65,3 +65,8 @@ export const toDisplay = (r: Rect, dx: number, dy: number, u: number): Rect => (
  *  Franz). Sul taglio niente, come nell'ultimo fotogramma del terminale. Quando è ormai dentro lo schermo (0,8-0,95) lascia
  *  il posto alla copia sotto il vetro, che all'arrivo è la card vera. */
 export const takeInFrontAt = (p: number): number => inOut(ramp(p, 0, 0.12)) * (1 - inOut(ramp(p, 0.8, 0.95)));
+
+/** Se la riga in volo si disegna anche nelle copie sotto (dietro l'orologio e sotto il vetro): solo finché la copia davanti
+ *  non è piena. Con la copia davanti piena la riga sotto è coperta dove c'è la finestra e, dove la riga ne sporge, si
+ *  sommerebbe all'altra: bordi dei glifi più pesanti, e un peso che cambia passando sulla cornice (revisione del piano 7). */
+export const takeInLineBelow = (p: number): boolean => takeInFrontAt(p) < 1;

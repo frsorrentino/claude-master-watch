@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { screenFadeAt, slotRect, takeInAt, takeInFrontAt, takeInRect, toDisplay } from "./takeIn.ts";
+import { screenFadeAt, slotRect, takeInAt, takeInFrontAt, takeInRect, toDisplay, takeInLineBelow } from "./takeIn.ts";
 import { LIST_BODY } from "./UiTokens.ts";
 
 const F = { w: 1920, h: 1080 };
@@ -72,4 +72,11 @@ test("la finestra passa SOPRA la cornice da tutti i lati: davanti all'orologio p
   assert.equal(takeInFrontAt(0.8), 1);
   assert.equal(takeInFrontAt(0.95), 0);              // si posa sotto il vetro, dove c'è la card vera
   assert.equal(takeInFrontAt(1), 0);
+});
+test("la riga in volo si disegna una volta sola: sotto l'orologio solo finché la copia davanti non è piena (revisione del piano 7)", () => {
+  // con la copia davanti piena la riga delle copie sotto non serve: dentro la finestra è coperta, fuori si sommerebbe e
+  // farebbe i bordi dei glifi più pesanti, con un peso che cambia passando sulla cornice
+  for (const p of [0.2, 0.5, 0.7]) assert.equal(takeInLineBelow(p), false, `a p ${p} la copia davanti è piena`);
+  for (const p of [0, 0.05, 0.9, 0.99]) assert.equal(takeInLineBelow(p), true, `a p ${p} la copia davanti non è piena`);
+  for (let p = 0; p < 1; p += 0.01) assert.equal(takeInLineBelow(p), takeInFrontAt(p) < 1);
 });
