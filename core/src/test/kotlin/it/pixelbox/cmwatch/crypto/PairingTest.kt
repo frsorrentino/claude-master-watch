@@ -47,4 +47,15 @@ class PairingTest {
         assertTrue(c.matches(Regex("[0-9a-f]{16}")))
         assertNotEquals(c, Pairing.checkCode(k2, "123456"))
     }
+
+    @Test fun infoSeparatesTheUses() {
+        val a = Pairing.privateFromRaw((0 until 32).map { it.toByte() }.toByteArray())
+        val bPub = "NYBy1jZYgNGu6jKa35EhODhR7SGijjt16WXQ0s0WYlQ="
+        assertFalse(Pairing.sharedKey(a, bPub).contentEquals(Pairing.sharedKey(a, bPub, "cmwatch-handoff-v1")))
+    }
+
+    @Test fun publicFromRawRoundTrips() {
+        val b64 = "NYBy1jZYgNGu6jKa35EhODhR7SGijjt16WXQ0s0WYlQ="
+        assertEquals(b64, Pairing.publicB64(java.security.KeyPair(Pairing.publicFromRaw(Pairing.rawFromB64(b64)), null)))
+    }
 }

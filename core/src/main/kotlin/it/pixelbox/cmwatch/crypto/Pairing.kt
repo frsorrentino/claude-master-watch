@@ -5,6 +5,7 @@ import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.interfaces.XECPublicKey
 import java.security.spec.NamedParameterSpec
 import java.security.spec.XECPrivateKeySpec
@@ -45,14 +46,18 @@ object Pairing {
     fun publicB64FromRaw(raw: ByteArray): String = Base64.getEncoder().encodeToString(raw)
     fun rawFromB64(b64: String): ByteArray = Base64.getDecoder().decode(b64)
 
-    fun sharedKey(priv: PrivateKey, peerPubB64: String): ByteArray {
-        val raw = rawFromB64(peerPubB64)
+    /** `info` separa gli usi: il relay (default) e il passaggio telefono → orologio (`Handoff.INFO`). */
+    fun sharedKey(priv: PrivateKey, peerPubB64: String, info: String = INFO): ByteArray {
+        val ka = KeyAgreement.getInstance("XDH").apply { init(priv); doPhase(publicFromRaw(rawFromB64(peerPubB64)), true) }
+        return hkdf(ka.generateSecret(), info.toByteArray(), 32)
+    }
+
+    /** Chiave pubblica X25519 da 32 byte grezzi; su Android Conscrypt non sempre accetta lo SPKI, c'è il ripiego. */
+    fun publicFromRaw(raw: ByteArray): PublicKey {
         require(raw.size == 32) { "peer public key must be 32 bytes" }
         val kf = KeyFactory.getInstance("XDH")
-        val pub = runCatching { kf.generatePublic(X509EncodedKeySpec(SPKI_PREFIX + raw)) }
+        return runCatching { kf.generatePublic(X509EncodedKeySpec(SPKI_PREFIX + raw)) }
             .getOrElse { kf.generatePublic(XECPublicKeySpec(NamedParameterSpec.X25519, BigInteger(1, raw.reversedArray()))) }
-        val ka = KeyAgreement.getInstance("XDH").apply { init(priv); doPhase(pub, true) }
-        return hkdf(ka.generateSecret(), INFO.toByteArray(), 32)
     }
 
     fun checkCode(key: ByteArray, code: String): String =
