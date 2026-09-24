@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** Pallino dell'account, identico a Telegram: 🔴 agenzia, 🟢 personale. */
 @Composable

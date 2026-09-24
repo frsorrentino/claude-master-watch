@@ -36,7 +36,7 @@ import it.pixelbox.cmwatch.wear.ui.components.PaceCard
 import it.pixelbox.cmwatch.wear.ui.components.QuestionsWorkCard
 import it.pixelbox.cmwatch.wear.ui.components.TodayCard
 import it.pixelbox.cmwatch.wear.ui.components.UpdatedFooter
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 import java.time.Instant
 import java.time.ZoneId

@@ -6,7 +6,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.Text
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * L'azione principale della schermata, curva in fondo come nelle app di Wear OS 6 e come già nella nostra tile

@@ -44,7 +44,7 @@ import it.pixelbox.cmwatch.rules.DayBars
 import it.pixelbox.cmwatch.rules.QuotaHistory
 import it.pixelbox.cmwatch.rules.WorkPanel
 import it.pixelbox.cmwatch.wear.ui.theme.BriefNumber
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import kotlinx.coroutines.delay
 
 /*

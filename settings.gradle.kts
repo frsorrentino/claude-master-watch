@@ -5,4 +5,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "claude-master-watch"
-include(":core", ":wear", ":mobile")
+include(":core", ":wear", ":mobile", ":ui-tokens")

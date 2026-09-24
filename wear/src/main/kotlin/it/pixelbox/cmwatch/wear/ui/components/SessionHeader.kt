@@ -21,7 +21,7 @@ import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.TileTexts
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 
 /** Testata di Scheda e Domanda: icona di stato, pallino dell'account, «nome · durata» su una riga; il tool su una riga propria. */

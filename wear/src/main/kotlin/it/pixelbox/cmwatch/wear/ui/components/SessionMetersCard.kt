@@ -40,7 +40,7 @@ import it.pixelbox.cmwatch.rules.BriefCards
 import it.pixelbox.cmwatch.rules.ModelText
 import it.pixelbox.cmwatch.rules.SessionMeters
 import it.pixelbox.cmwatch.wear.ui.theme.BriefNumber
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import kotlinx.coroutines.delay
 
 /**

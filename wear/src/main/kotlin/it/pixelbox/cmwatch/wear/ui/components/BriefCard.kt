@@ -28,7 +28,7 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.rules.BriefCards
 import it.pixelbox.cmwatch.wear.ui.theme.BriefNumber
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * Card nello stile del «brief mattutino» di Wear OS, copiata dai fotogrammi della sua schermata (13/09 16:25):

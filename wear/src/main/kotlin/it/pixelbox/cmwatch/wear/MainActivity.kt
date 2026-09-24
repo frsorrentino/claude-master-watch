@@ -60,7 +60,7 @@ import it.pixelbox.cmwatch.rules.TerminalLive
 import it.pixelbox.cmwatch.wear.ui.components.CmTimeText
 import it.pixelbox.cmwatch.wear.ui.components.CmConfirm
 import it.pixelbox.cmwatch.wear.ui.components.CmConfirmState
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
@@ -471,7 +471,7 @@ class MainActivity : ComponentActivity() {
                     // Il filo delle tue righe nel colore del badge della sessione (proposta 38, fase 1).
                     railColor = session?.let { ses ->
                         androidx.compose.ui.graphics.Color(it.pixelbox.cmwatch.rules.Badge.of(ses.account, ses.color, ses.state, ses.icon, ses.accountKind).fill)
-                    } ?: it.pixelbox.cmwatch.wear.ui.theme.CmColors.accent,
+                    } ?: it.pixelbox.cmwatch.ui.tokens.CmColors.accent,
                     answer = blocks,
                     current = if (speaking) block else null,
                     speaking = speaking || preparing,

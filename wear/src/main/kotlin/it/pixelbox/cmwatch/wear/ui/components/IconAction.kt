@@ -14,7 +14,7 @@ import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * Azione secondaria con l'icona a sinistra, come nelle schede delle app di sistema (review UX, 13/09): quattro

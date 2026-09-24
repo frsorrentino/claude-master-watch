@@ -15,7 +15,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * Pillola a tutta larghezza (52 dp). `primary` = l'unico bottone pieno della schermata; `fill` colora

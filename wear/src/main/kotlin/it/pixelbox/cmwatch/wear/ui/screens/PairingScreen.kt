@@ -16,7 +16,7 @@ import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Pairing: il PC mostra un codice a 6 cifre (`claude-master relay pair`), l'orologio lo scrive con la tastiera di sistema. */

@@ -59,7 +59,7 @@ import it.pixelbox.cmwatch.rules.TerminalText
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
 import it.pixelbox.cmwatch.wear.ui.components.SpeakButton
 import it.pixelbox.cmwatch.wear.ui.components.TextAroundTrailing
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.Mono
 import it.pixelbox.cmwatch.wear.ui.theme.MonoStyle
 import it.pixelbox.cmwatch.wear.ui.theme.TerminalStyle

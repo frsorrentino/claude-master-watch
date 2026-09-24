@@ -24,7 +24,7 @@ import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.Project
 import it.pixelbox.cmwatch.rules.LaunchRules
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /**

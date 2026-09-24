@@ -34,7 +34,7 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.settings.Settings
 import it.pixelbox.cmwatch.BuildConfig
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /*
  * Impostazioni nello stile di quelle di Google su Wear OS (Franz, 16/09 14:27, con lo screenshot di «Gesti»): voci

@@ -30,7 +30,7 @@ import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import it.pixelbox.cmwatch.rules.BriefCards
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * Gauge come quelli del brief mattutino: arco aperto in basso con l'icona del dato al centro (Franz, 13/09 17:01).

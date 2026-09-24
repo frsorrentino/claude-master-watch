@@ -12,7 +12,7 @@ import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconToggleButton
 import androidx.wear.compose.material3.IconToggleButtonDefaults
 import it.pixelbox.cmwatch.R
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
  * ▶ / ■ da 48 dp accanto a un testo da leggere a voce. Toggle con le forme animate di M3 Expressive (proposta A1, 15/09):

@@ -26,7 +26,7 @@ import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.wear.ui.ambient.animationsOff
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** Cosa mostrare: il segno, il suo colore e una frase breve. La costruisce chi fa l'azione. */
 data class CmConfirmState(val icon: ImageVector, val tint: Color, val text: String)

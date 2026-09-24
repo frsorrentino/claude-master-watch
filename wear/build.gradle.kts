@@ -60,6 +60,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ui-tokens"))
     implementation(project(":core"))
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)

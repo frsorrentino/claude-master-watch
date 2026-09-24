@@ -35,6 +35,7 @@ concurrent-futures = { module = "androidx.concurrent:concurrent-futures", versio
 fragment = { module = "androidx.fragment:fragment", version = "1.8.9" }
 work-runtime = { module = "androidx.work:work-runtime-ktx", version = "2.11.2" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }

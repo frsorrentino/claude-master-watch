@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import it.pixelbox.cmwatch.R
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** «PC fermo da N min»: solo quando serve (design, sezione 5). */
 @Composable

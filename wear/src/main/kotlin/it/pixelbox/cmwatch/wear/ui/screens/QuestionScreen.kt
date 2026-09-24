@@ -36,7 +36,7 @@ import it.pixelbox.cmwatch.wear.ui.components.SessionHeader
 import it.pixelbox.cmwatch.wear.ui.components.StaleChip
 import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.wear.ui.components.CmEdgeButton
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 import kotlinx.coroutines.delay
 

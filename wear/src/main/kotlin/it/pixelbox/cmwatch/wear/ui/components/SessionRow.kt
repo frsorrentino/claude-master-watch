@@ -38,7 +38,7 @@ import it.pixelbox.cmwatch.rules.NameText
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.SessionNameStyle
 import it.pixelbox.cmwatch.wear.ui.theme.cmMarquee
 

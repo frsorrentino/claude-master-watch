@@ -54,7 +54,7 @@ import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.ui.components.IconAction
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
 /** Scheda: testata con ▶; card con quello che fa o l'esito intero, che apre il Terminale; Segui; Rispondi / Scrivi / Riavvia. */

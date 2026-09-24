@@ -16,7 +16,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import it.pixelbox.cmwatch.wear.ui.components.CmConfirm
 import it.pixelbox.cmwatch.wear.ui.components.CmConfirmState
-import it.pixelbox.cmwatch.wear.ui.theme.CmColors
+import it.pixelbox.cmwatch.ui.tokens.CmColors
 import androidx.wear.compose.material3.ConfirmationDialogDefaults
 import androidx.wear.compose.material3.FailureConfirmationDialogContent
 import androidx.wear.compose.material3.SuccessConfirmationDialogContent
