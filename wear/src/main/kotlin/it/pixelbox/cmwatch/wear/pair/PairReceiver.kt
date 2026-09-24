@@ -27,7 +27,8 @@ class PairReceiver(private val app: CmApp, private val handoff: WatchHandoff = W
         val incoming = req.f.config()
         if (handoff.needsRestart(FirebaseBoot.active, incoming)) {
             // Un altro progetto: si salva e si riparte; il prossimo `hello` del telefono trova Firebase già su quello nuovo.
-            app.prefs.update { it.copy(firebaseJson = incoming.toJson()) }
+            // L'accoppiamento vecchio non può vivere sul database nuovo: si butta, e l'orologio mostra «Accoppia» finché non arriva K.
+            app.prefs.update { it.copy(firebaseJson = incoming.toJson(), paired = false) }
             app.restartSoon()
             return HelloResponse(restart = true)
         }

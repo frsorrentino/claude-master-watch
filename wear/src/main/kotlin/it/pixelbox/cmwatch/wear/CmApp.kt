@@ -52,16 +52,35 @@ class CmApp : Application() {
     val reader: Reader by lazy { Reader(this) }
     val pairReceiver by lazy { it.pixelbox.cmwatch.wear.pair.PairReceiver(this) }
 
-    /** Dopo aver risposto `restart` al telefono: il processo si chiude, e il messaggio seguente lo riavvia con la configurazione nuova. */
+    /**
+     * Dopo aver risposto `restart` al telefono: il processo si chiude, e il messaggio seguente lo riavvia con la configurazione nuova.
+     * Spike (24/09): `killProcess` con la `MainActivity` (singleTask) viva la fa rilanciare subito con lo stesso intent; prima si chiude.
+     */
     fun restartSoon() {
-        scope.launch { kotlinx.coroutines.delay(800); android.os.Process.killProcess(android.os.Process.myPid()) }
+        scope.launch {
+            kotlinx.coroutines.delay(800)
+            currentActivity?.let { a -> kotlinx.coroutines.withContext(Dispatchers.Main) { runCatching { a.finishAndRemoveTask() } } }
+            kotlinx.coroutines.delay(200)
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }
     }
+
+    @Volatile private var currentActivity: android.app.Activity? = null
 
     val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityResumed(a: android.app.Activity) { currentActivity = a }
+            override fun onActivityPaused(a: android.app.Activity) { if (currentActivity === a) currentActivity = null }
+            override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
+            override fun onActivityStarted(a: android.app.Activity) {}
+            override fun onActivityStopped(a: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+            override fun onActivityDestroyed(a: android.app.Activity) {}
+        })
         notifier = Notifier(this).also { it.ensureChannels() }
         val settings = runBlocking { prefs.current() }
         FirebaseBoot.start(this, FirebaseConfig.fromJson(settings.firebaseJson))

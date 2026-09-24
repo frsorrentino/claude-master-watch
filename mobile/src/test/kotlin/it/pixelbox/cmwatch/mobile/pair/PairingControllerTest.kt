@@ -20,6 +20,11 @@ private object PlainKeys : KeyWrap {
     override fun unwrap(wrapped: String): ByteArray = Base64.getDecoder().decode(wrapped)
 }
 
+private object ThrowingKeys : KeyWrap {
+    override fun wrap(key: ByteArray): String = throw IllegalStateException("keystore down")
+    override fun unwrap(wrapped: String): ByteArray = throw IllegalStateException("keystore down")
+}
+
 private class FakeFirebase(var result: Ensure = Ensure.Ready("phoneUid")) : PhoneFirebase {
     override suspend fun ensure(cfg: FirebaseConfig) = result
     override fun rtdb(): Rtdb = error("non usato: il PC è finto")
@@ -28,6 +33,7 @@ private class FakeFirebase(var result: Ensure = Ensure.Ready("phoneUid")) : Phon
 /** Un orologio finto che risponde come PairReceiver, con il WatchHandoff vero. */
 private class FakeWatch : WatchLink {
     var uid = "watchUid"; var restartsLeft = 0; var reachable = true; var connectedWithoutApp = false; var dropKey = false
+    var badEph = false
     var received: ByteArray? = null
     private val handoff = WatchHandoff()
     private val node = WatchNode("n1", "Pixel Watch 5")
@@ -37,7 +43,7 @@ private class FakeWatch : WatchLink {
     override suspend fun request(node: WatchNode, path: String, body: ByteArray): ByteArray = when (path) {
         HandoffMessages.HELLO -> HandoffMessages.encode(HelloResponse.serializer(),
             if (restartsLeft > 0) { restartsLeft--; HelloResponse(restart = true) }
-            else HelloResponse(uid = uid, name = "Pixel Watch 5", eph = handoff.open(uid)))
+            else HelloResponse(uid = uid, name = "Pixel Watch 5", eph = if (badEph) "not-a-key" else handoff.open(uid)))
         HandoffMessages.KEY -> {
             if (dropKey) throw java.io.IOException("watch gone")
             received = handoff.take(HandoffMessages.decode(KeyRequest.serializer(), body)!!)
@@ -57,8 +63,8 @@ class PairingControllerTest {
     private var pcWatch: WatchPeer? = null
     private var pcError: PairError? = null
 
-    private fun controller(now: Long = qr.e - 60) = PairingController(
-        store, fb, watch, PlainKeys,
+    private fun controller(now: Long = qr.e - 60, keys: KeyWrap = PlainKeys) = PairingController(
+        store, fb, watch, keys,
         pairer = { PcPairer { _, uid, _, w -> pcError?.let { throw it }; pcWatch = w; PhonePairResult(key, "penguin", listOfNotNull(uid, w?.uid)) } },
         phoneName = "Pixel 9", now = { now }, restartWaitMs = 0,
     )
@@ -149,6 +155,46 @@ class PairingControllerTest {
         assertFalse(c.completePending())
         assertNull(watch.received)
         assertEquals(PairFail.WATCH_UID_CHANGED, c.ui.value.fail)
+    }
+
+    /** Revisione finale, 1: un cambio di progetto butta l'accoppiamento vecchio invece di lasciarlo vivo su un database sbagliato. */
+    @Test fun switchingProjectDropsTheOldPairing() = runTest {
+        store.s = Settings(paired = true, uid = "oldUid", host = "oldpc", wrappedKey = "oldKey", pairingJson = PairingRecord(listOf("oldUid"), mapOf("oldUid" to "Pixel 9")).toJson(), firebaseJson = "old")
+        fb.result = Ensure.Restart
+        controller().run(qrText)
+        assertFalse(store.s.paired); assertNull(store.s.wrappedKey); assertNull(store.s.pairingJson)
+        assertEquals(qr.f.config(), FirebaseConfig.fromJson(store.s.firebaseJson))
+    }
+
+    /** Revisione finale, 3: il QR salvato per il riavvio si consuma alla lettura, anche se poi fallisce. */
+    @Test fun resumeQrIsConsumedOnce() = runTest {
+        store.s = Settings(resumeQr = qrText)
+        fb.result = Ensure.Failed
+        val c = controller()
+        assertTrue(c.resume())
+        assertNull(store.s.resumeQr)
+        assertEquals(PairFail.NETWORK, c.ui.value.fail)
+        assertFalse(c.resume())
+    }
+
+    /** Revisione finale, 2: una risposta rotta dell'orologio è un errore mostrato, non un crash. */
+    @Test fun aBrokenWatchReplyIsAFailureNotACrash() = runTest {
+        watch.badEph = true
+        val c = controller()
+        c.run(qrText)
+        assertEquals(Phase.FAILED, c.ui.value.phase)
+        assertEquals(PairFail.WATCH_FAILED, c.ui.value.fail)
+        assertFalse(store.s.paired)
+    }
+
+    /** Revisione finale, 2: un Keystore che non risponde è un errore mostrato al passo PC, non un crash. */
+    @Test fun aThrowingKeystoreIsAFailureNotACrash() = runTest {
+        val c = controller(keys = ThrowingKeys)
+        c.run(qrText)
+        assertEquals(Phase.FAILED, c.ui.value.phase)
+        assertEquals(PairFail.FAILED, c.ui.value.fail)
+        assertEquals(StepState.FAILED, c.ui.value.steps[Step.PC])
+        assertFalse(store.s.paired)
     }
 
     @Test fun anotherFirebaseProjectRestartsThePhone() = runTest {

@@ -83,6 +83,7 @@ private fun failText(f: PairFail): Int = when (f) {
     PairFail.PC_NO_CONFIRM -> R.string.pair_err_pc
     PairFail.WATCH_FAILED -> R.string.pair_err_watch
     PairFail.WATCH_UID_CHANGED -> R.string.pair_err_watch_uid
+    PairFail.FAILED -> R.string.pair_err_unexpected
 }
 
 @Composable

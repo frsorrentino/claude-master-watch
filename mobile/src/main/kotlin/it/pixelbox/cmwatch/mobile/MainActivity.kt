@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 var paste by remember { mutableStateOf(false) }
                 // Dopo un riavvio per un altro progetto Firebase si riprende il QR salvato.
-                LaunchedEffect(Unit) { app.prefs.current().resumeQr?.let { app.pairing.run(it) } }
+                LaunchedEffect(Unit) { app.pairing.resume() }
                 LaunchedEffect(ui.phase) {
                     when (ui.phase) {
                         Phase.RESTART -> Restarter.restart(this@MainActivity)

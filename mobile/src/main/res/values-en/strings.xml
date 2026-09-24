@@ -23,6 +23,7 @@
     <string name="pair_err_network">No network: try again.</string>
     <string name="pair_err_pc">The PC did not confirm: check relay pair and try again.</string>
     <string name="pair_err_watch">The watch did not answer: try again.</string>
+    <string name="pair_err_unexpected">Something went wrong: try again.</string>
     <string name="pair_err_watch_uid">The watch has changed: pair again.</string>
     <string name="paired_title">Connected to %1\$s</string>
     <string name="paired_this_phone">This phone</string>

@@ -15,3 +15,4 @@ Relay di prova: `CLAUDE_MASTER_CONFIG=<configurazione di prova>`, mai quella pri
 | A7 | La build con la configurazione dentro si accoppia ancora con il codice a 6 cifre | release di sviluppo, «Usa il codice» | |
 | A8 | Con «riduci animazioni» niente movimento, tutto al suo stato finale | impostazioni di accessibilità del telefono | |
 | A9 | QR scaduto, QR di un'altra app, testo incollato sbagliato: messaggio giusto, niente attese | i tre casi | |
+| A10 | Cambio di progetto Firebase: dopo un accoppiamento con il progetto di prova 1, un QR del progetto di prova 2 riavvia telefono e orologio e li accoppia al 2; se il PC non conferma, tutti e due mostrano «non accoppiato», non un accoppiamento morto | due configurazioni di prova, `relay pair` sulla seconda; poi la seconda con il relay spento | |

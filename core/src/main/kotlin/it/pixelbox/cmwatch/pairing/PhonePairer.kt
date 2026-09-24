@@ -46,7 +46,10 @@ class PhonePairer(
             rtdb.put("pair/${qr.i}/watch", response(Pairing.publicB64(kp), phoneUid, phoneName, Pairing.checkCode(key, qr.i), watch).toString())
             val ok = withTimeoutOrNull(timeoutMs) {
                 while (true) {
-                    rtdb.get("pair/${qr.i}/ok")?.let { return@withTimeoutOrNull Json.parseToJsonElement(it).jsonObject }
+                    rtdb.get("pair/${qr.i}/ok")?.let { doc ->
+                        // Un `/ok` che non è un oggetto è una conferma sbagliata, non un'eccezione (revisione finale, 2).
+                        return@withTimeoutOrNull runCatching { Json.parseToJsonElement(doc).jsonObject }.getOrElse { throw PairError.BadConfirm() }
+                    }
                     delay(pollMs)
                 }
                 @Suppress("UNREACHABLE_CODE") null

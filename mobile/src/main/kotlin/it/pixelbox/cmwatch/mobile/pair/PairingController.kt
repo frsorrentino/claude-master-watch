@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.mobile.pair
 import it.pixelbox.cmwatch.crypto.Pairing
 import it.pixelbox.cmwatch.pairing.*
 import it.pixelbox.cmwatch.settings.SettingsStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +13,7 @@ import java.security.KeyPair
 
 enum class Step { PHONE, WATCH, PC }
 enum class StepState { WAIT, WORKING, DONE, PENDING, SKIPPED, FAILED }
-enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED }
+enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED, FAILED }
 enum class Phase { IDLE, RUNNING, DONE, FAILED, RESTART }
 
 data class PairUi(
@@ -42,7 +43,20 @@ class PairingController(
     private val mutex = Mutex()
     private var lastQr: String? = null
 
-    suspend fun run(text: String, withoutWatch: Boolean = false) = mutex.withLock { runLocked(text, withoutWatch) }
+    suspend fun run(text: String, withoutWatch: Boolean = false) = mutex.withLock {
+        // Revisione finale (24/09): un'eccezione fuori da PairError (Keystore, base64, JSON) è un errore mostrato, non un crash.
+        try { runLocked(text, withoutWatch) }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) { fail(PairFail.FAILED, currentStep()) }
+    }
+
+    /** Il QR salvato prima del riavvio per un altro progetto: si consuma alla lettura, così un fallimento non lo ripete a ogni avvio. */
+    suspend fun resume(): Boolean {
+        val qr = store.current().resumeQr ?: return false
+        store.update { it.copy(resumeQr = null) }
+        run(qr)
+        return true
+    }
 
     suspend fun retry(withoutWatch: Boolean = false) { lastQr?.let { run(it, withoutWatch) } }
 
@@ -61,7 +75,8 @@ class PairingController(
         val phoneUid = when (val e = firebase.ensure(cfg)) {
             is Ensure.Ready -> e.uid
             Ensure.Restart -> {
-                store.update { it.copy(firebaseJson = cfg.toJson(), resumeQr = text) }
+                // Un altro progetto: l'accoppiamento vecchio non può vivere sul database nuovo, si butta (revisione finale, 1).
+                store.update { it.copy(firebaseJson = cfg.toJson(), resumeQr = text, paired = false, wrappedKey = null, pairingJson = null) }
                 _ui.value = _ui.value.copy(phase = Phase.RESTART)
                 return
             }
@@ -113,20 +128,26 @@ class PairingController(
 
     /** L'orologio si è ricollegato dopo l'accoppiamento: riceve K (design 24/09, «Casi particolari»). */
     suspend fun completePending(): Boolean = mutex.withLock {
+        try { completeLocked() }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) { false }
+    }
+
+    private suspend fun completeLocked(): Boolean {
         val s = store.current()
-        val record = PairingRecord.fromJson(s.pairingJson)?.takeIf { it.watchPending } ?: return@withLock false
-        val cfg = FirebaseConfig.fromJson(s.firebaseJson) ?: return@withLock false
-        val key = s.wrappedKey?.let { runCatching { keys.unwrap(it) }.getOrNull() } ?: return@withLock false
-        val node = link.find() ?: return@withLock false
-        val hello = hello(node, cfg) ?: return@withLock false
+        val record = PairingRecord.fromJson(s.pairingJson)?.takeIf { it.watchPending } ?: return false
+        val cfg = FirebaseConfig.fromJson(s.firebaseJson) ?: return false
+        val key = s.wrappedKey?.let { runCatching { keys.unwrap(it) }.getOrNull() } ?: return false
+        val node = link.find() ?: return false
+        val hello = hello(node, cfg) ?: return false
         if (hello.uid != record.watchUid) {
             // Dati cancellati sull'orologio: l'uid nuovo non è in /allowed, K non gli serve e non gli si dà.
             fail(PairFail.WATCH_UID_CHANGED, Step.WATCH)
-            return@withLock false
+            return false
         }
         val ok = deliver(node, hello, key, s.host.orEmpty())
         if (ok) store.update { it.copy(pairingJson = record.copy(watchPending = false).toJson()) }
-        ok
+        return ok
     }
 
     /** `hello`, con fino a tre attese se l'orologio si riavvia per un progetto nuovo. */
@@ -136,9 +157,10 @@ class PairingController(
                 link.request(node, HandoffMessages.HELLO, HandoffMessages.encode(HelloRequest.serializer(), HelloRequest(f = cfg.compact())))
             }.getOrNull() ?: return null
             val r = HandoffMessages.decode(HelloResponse.serializer(), body) ?: return null
+            val eph = r.eph
             when {
                 r.restart -> { _ui.value = _ui.value.copy(restarting = true); delay(restartWaitMs) }
-                r.error != null || r.uid == null || r.eph == null -> return null
+                r.error != null || r.uid == null || eph == null || !validKey(eph) -> return null
                 else -> { _ui.value = _ui.value.copy(restarting = false); return r }
             }
         }
@@ -160,6 +182,11 @@ class PairingController(
         }
         return false
     }
+
+    /** La chiave temporanea dell'orologio deve essere 32 byte in base64: altrimenti `Handoff.seal` esploderebbe dopo l'accoppiamento. */
+    private fun validKey(b64: String): Boolean = runCatching { Pairing.rawFromB64(b64).size == 32 }.getOrDefault(false)
+
+    private fun currentStep(): Step = Step.entries.lastOrNull { _ui.value.steps[it] == StepState.WORKING } ?: Step.PHONE
 
     private fun step(s: Step, st: StepState) { _ui.value = _ui.value.copy(steps = _ui.value.steps + (s to st)) }
 

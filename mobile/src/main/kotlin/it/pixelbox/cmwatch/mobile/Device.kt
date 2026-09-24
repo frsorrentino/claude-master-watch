@@ -18,14 +18,35 @@ object Scanner {
     }.getOrNull()
 }
 
-/** Da capo, con il QR salvato: Firebase si avvia una volta per processo, e il QR è di un altro progetto. */
+/**
+ * Da capo, con il QR salvato: Firebase si avvia una volta per processo, e il QR è di un altro progetto. Il rilancio passa da
+ * `RestartActivity`, in un processo suo: uscire dal processo subito dopo `startActivity` può perdere l'avvio (revisione finale, 4).
+ */
 object Restarter {
     fun restart(activity: Activity) {
-        val intent = activity.packageManager.getLaunchIntentForPackage(activity.packageName)!!
+        activity.startActivity(
+            Intent(activity, RestartActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                .putExtra(RestartActivity.EXTRA_PID, android.os.Process.myPid()),
+        )
+        activity.finishAffinity()
+    }
+}
+
+/** Trampolino in un processo separato (`:restart`): chiude il processo principale, rilancia l'app, sparisce. */
+class RestartActivity : Activity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        val pid = intent.getIntExtra(EXTRA_PID, -1)
+        if (pid > 0) android.os.Process.killProcess(pid)
+        val launch = packageManager.getLaunchIntentForPackage(packageName)!!
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        activity.startActivity(intent)
+        startActivity(launch)
+        finish()
         Runtime.getRuntime().exit(0)
     }
+
+    companion object { const val EXTRA_PID = "pid" }
 }
 
 /** «Fatto» con la stessa vibrazione dell'orologio (`Haptics.Kind.CONFIRMED`). */

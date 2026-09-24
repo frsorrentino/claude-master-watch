@@ -24,6 +24,7 @@
     <string name="pair_err_network">Nessuna rete: riprova.</string>
     <string name="pair_err_pc">Il PC non ha confermato: controlla relay pair e riprova.</string>
     <string name="pair_err_watch">L\'orologio non ha risposto: riprova.</string>
+    <string name="pair_err_unexpected">Qualcosa è andato storto: riprova.</string>
     <string name="pair_err_watch_uid">L\'orologio è cambiato: rifai l\'accoppiamento.</string>
     <string name="paired_title">Collegato a %1\$s</string>
     <string name="paired_this_phone">Questo telefono</string>

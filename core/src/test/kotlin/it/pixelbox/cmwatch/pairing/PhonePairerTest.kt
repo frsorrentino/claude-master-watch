@@ -88,6 +88,13 @@ class PhonePairerTest {
         assertThrows(PairError.NoConfirm::class.java) { runBlocking { pairer(timeout = 100).pair(qr, "p", "Pixel 9", watch) } }
     }
 
+    /** Revisione finale, 2: un `/ok` che non è un oggetto è una conferma sbagliata, non un'eccezione. */
+    @Test fun okThatIsNotAnObjectIsBadConfirm() {
+        pcAnswers = false
+        store["pair/${qr.i}/ok"] = "\"yes\""
+        assertThrows(PairError.BadConfirm::class.java) { runBlocking { pairer().pair(qr, "p", "Pixel 9", watch) } }
+    }
+
     @Test fun forgedConfirmIsRejected() {
         pcAnswers = false
         store["pair/${qr.i}/ok"] = """{"host":"penguin","check":"0000000000000000"}"""
