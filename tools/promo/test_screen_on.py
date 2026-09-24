@@ -1,7 +1,7 @@
 """Lo schermo del terminale acceso dal primo fotogramma (corto, Franz 23/09 22:17)."""
 import unittest
 import numpy as np
-from screen_on import BAND, first_on, screen_on
+from screen_on import BAND, SCROLL, first_on, screen_on
 
 def lit(k):
     """Un fotogramma acceso come quelli della clip: titolo in alto, righe nella fascia, tasto sotto."""
@@ -9,6 +9,7 @@ def lit(k):
     f[150:160, 100:380] = 180                      # il titolo
     f[200:215, 60:400] = 240 - k                   # una riga del terminale, dentro la fascia
     f[290:420, 102:377] = (209, 225, 252)          # il tasto Write
+    f[180:298, 452:462] = 120                      # la barra di scorrimento, che scende un filo sotto la fascia
     return f
 
 class SchermoAcceso(unittest.TestCase):
@@ -23,7 +24,10 @@ class SchermoAcceso(unittest.TestCase):
         for i in range(4):
             self.assertEqual(int(out[i][BAND[0]:BAND[1] + 1].max()), 0, f"fotogramma {i}: nella fascia delle righe c'è ancora testo")
             self.assertTrue(np.array_equal(out[i][:BAND[0]], frames[4][:BAND[0]]), f"fotogramma {i}: sopra la fascia non è il primo acceso")
-            self.assertTrue(np.array_equal(out[i][BAND[1] + 1:], frames[4][BAND[1] + 1:]), f"fotogramma {i}: sotto la fascia non è il primo acceso")
+            self.assertEqual(int(out[i][SCROLL[0]:SCROLL[1] + 1, SCROLL[2]:SCROLL[3]].max()), 0, f"fotogramma {i}: la barra di scorrimento c'è ancora")
+            below = out[i][BAND[1] + 1:].copy(); want = frames[4][BAND[1] + 1:].copy()
+            below[:SCROLL[1] - BAND[1], SCROLL[2]:SCROLL[3]] = 0; want[:SCROLL[1] - BAND[1], SCROLL[2]:SCROLL[3]] = 0
+            self.assertTrue(np.array_equal(below, want), f"fotogramma {i}: sotto la fascia, fuori dalla barra, non è il primo acceso")
         for i in range(4, 7):
             self.assertTrue(np.array_equal(out[i], frames[i]), f"il fotogramma {i} era acceso e non deve cambiare")
 

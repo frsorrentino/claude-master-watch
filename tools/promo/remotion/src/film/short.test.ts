@@ -13,6 +13,14 @@ import { sfxCues } from "./sound.ts";
 
 const short = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.short.json", import.meta.url), "utf8")));
 const byId = (id: string) => short.scenes.find((s) => s.id === id)!;
+// la musica del corto, com'è tagliata fuori dal repo: `cut_track.py … 0-1 0-11 39-43 39-41.375 --fadeout=2` (Franz, 24/09 01:15).
+// I test tengono il conto dei battiti da qui, una volta sola; la traccia vera si misura sulla resa
+const CUT = { segments: [[0, 1], [0, 11], [39, 43], [39, 41.375]] as const, fade: 2, stopInBar3: 2.5 };
+const bars = (k: number) => CUT.segments.slice(0, k).reduce((a, [x, y]) => a + (y - x), 0) * 4;   // battiti dei primi k pezzi
+const MUSIC = (() => {
+  const d = short.musicDelayBeats ?? 0;
+  return { drop: d + 4 + 4 * 4, stop: d + 4 + 3 * 4 + CUT.stopInBar3, logo: d + bars(3), last: d + bars(4) };   // la battuta 4 è la prima piena
+})();
 
 test("il corto dura 73,5 battiti (40,1 s); la musica parte col primo fotogramma", () => {
   assert.equal(totalBeats(short), 73.5);   // +4 per la corsia intera (22:17), −4 per la tapparella che se ne va (22:49)
@@ -26,7 +34,7 @@ test("dopo lo stop sul «yes» la musica riparte col giro pieno all'entrata dell
   // dopo lo stop la musica riparte con lo stesso giro (Franz, 23:16, 23:34, 23:48)
   const answer = byId("answer"), loop = byId("loop");
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as { at: number; len: number; width?: number; cards: { text?: string; lines?: string[]; kind?: string; hold?: number }[] };
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, stop = 4 + 3 * 4 + 2.5;
+  const { drop, stop } = MUSIC;
   const burst = loop.at - TAKEOVER_CUT * answer.takeover!.len, filled = burst + 0.42 * answer.takeover!.len;   // takeoverAt: cresce in 0-0,42
   assert.equal(drop, 20);
   assert.ok(burst <= stop && stop <= filled, `il «yes» cresce da ${burst} a ${filled}, lo stacco è al ${stop}`);
@@ -61,7 +69,7 @@ test("la corsia riprende le card del film lungo, e dettatura, voce e invio resta
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
   type F = { kind: string; at: number; len: number; cards: { kind?: string; text?: string; lines?: string[]; hold?: number; dictation?: { tap: number } }[] };
   const lf = (long.scenes.find((s) => s.id === "loop")!.fx ?? []).find((f) => f.kind === "float") as F;
-  const loop = byId("loop"), drop = 24;   // l'arrivo di «Deployed», sulla seconda battuta della parte forte
+  const loop = byId("loop"), drop = MUSIC.drop + 4;   // l'arrivo di «Deployed», sulla seconda battuta della parte forte
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as F;
   const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
   const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined });
@@ -210,7 +218,8 @@ test("la musica resta piena fino alla fine, anche sotto il cartello, e sfuma sol
   // il brano non ha un finale netto, e il colpo secco suonava come un taglio (Franz, 24/09 00:51). Il taglio sta nel
   // comando di cut_track.py: qui si tiene il conto dei battiti, la traccia vera si misura sulla resa
   const slogan = byId("slogan"), end = byId("end");
-  const drop = (short.musicDelayBeats ?? 0) + 4 + 4 * 4, logo = drop + (7 + 4) * 4, last = logo + 2.375 * 4, fade = 2;
+  const { drop, logo, last } = MUSIC, fade = CUT.fade;
+  assert.equal(logo, 64);
   assert.equal(logo, end.at, "il logo cade sul primo battito di una battuta piena");
   assert.ok(slogan.at >= drop && slogan.at + slogan.len <= logo, "lo slogan sta tutto sotto la musica piena");
   assert.equal(last, totalBeats(short), "la musica finisce con l'ultimo fotogramma");
