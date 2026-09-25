@@ -3452,3 +3452,18 @@ via `adb` e salvata nelle preferenze; Firebase avviato in `CmApp.onCreate` con `
   - L'emulatore Wear di questa macchina non ha `com.google.wear.services.ambient.AmbientComponentState`: `MainActivity`
     ci va in crash (preesistente, non c'entra con Firebase). Per lo spike l'activity si è chiusa prima di `setContent`;
     le prove di schermata dell'orologio si fanno sul polso o con Paparazzi.
+
+**C, 25/09/2026 07:18, telefono Pixel 11 Pro XL (Android 17) e Pixel Watch 5 di Franz (Android 17), app di prova
+`it.pixelbox.cmwatch.spike` su tutti e due (debug, stessa firma), release dell'orologio non toccata.** Sì: il telefono trova
+l'orologio per capacità `cmwatch_wear` e la richiesta `sendRequest` arriva al `WearableListenerService` dell'orologio con
+l'app chiusa (il servizio parte da sé):
+
+```
+telefono  07:18:36.473 I cmwatch : spike: nodes [Pixel Watch 5]
+orologio  07:18:46.204 I cmwatch : spike: request /spike/ping from 74c779f1
+telefono  07:18:47.082 I cmwatch : spike: reply pong:hi in 10504 ms
+```
+
+La prima risposta arriva in 10,5 s (avvio del servizio più canale Bluetooth): sotto il timeout di 20 s del design, ma da
+tenere presente nella schermata dell'accoppiamento (il passo «Orologio» respira per qualche secondo). App di prova
+disinstallate da tutti e due alle 07:20.
