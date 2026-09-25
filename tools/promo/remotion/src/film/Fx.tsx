@@ -112,7 +112,7 @@ export const fxLayers = (scene: Scene, g: Grid, _prev?: Scene): { overlay: React
       e.kind === "tap" ? <Sequence key={i} from={at(e.at)} durationInFrames={14} layout="none"><TapDot x={e.x} y={e.y} /></Sequence>
       : e.kind === "cardOut" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><CardHole rect={e.rect} frames={at(e.at + e.len) - at(e.at)} fromOut={e.fromOut} around={scene.watch?.camera === "around"} /></Sequence>
       : e.kind === "gaugeHero" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><GaugeHole cx={e.cx} cy={e.cy} size={e.size} frames={at(e.at + e.len) - at(e.at)} /></Sequence>
-      : e.kind === "doneCard" ? <Sequence key={i} from={at(e.at)} layout="none"><DoneCard name={e.name} age={e.age} text={e.text} badge={e.badge} beat={spanFrames(g, scene.at + e.at, 1)} rest={e.rest} slot={e.slot} /></Sequence>
+      : e.kind === "doneCard" && !e.inShape ? <Sequence key={i} from={at(e.at)} layout="none"><DoneCard name={e.name} age={e.age} text={e.text} badge={e.badge} beat={spanFrames(g, scene.at + e.at, 1)} rest={e.rest} slot={e.slot} /></Sequence>
       : e.kind === "optionsBuild" ? <Sequence key={i} from={at(e.at)} durationInFrames={at(e.at + e.len) - at(e.at)} layout="none"><OptionsHole yes={e.yes} no={e.no} /></Sequence>
       : null),
     around: fx.map((e, i) =>

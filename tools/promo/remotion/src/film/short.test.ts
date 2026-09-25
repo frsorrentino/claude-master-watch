@@ -152,22 +152,20 @@ test("la camera passa da una scena all'altra senza scatti: quadrante, notifica, 
   assert.equal(dollyAt(a.watch!.dolly, 1), dollyAt(b.watch!.dolly, 0));
   assert.equal(dollyAt(b.watch!.dolly, 1), dollyAt(c.watch!.dolly, 0));
 });
-test("la carrellata: lista con l'esito, «Work», «Open questions», «Context», con tre blink allo stesso passo (Franz, 23/09 14:23 e 21:13)", () => {
+test("la carrellata: lista con l'esito, «Work», «Open questions», «Context», senza palpebre: le cambia la forma (specifica del 25/09, §2)", () => {
   const list = byId("list"), work = byId("work"), q = byId("questions"), ctx = byId("context");
   assert.equal(list.at, 47.5);
   assert.equal(list.at + list.len, work.at);
   assert.equal(work.at + work.len, q.at);
   assert.equal(q.at + q.len, ctx.at);
-  assert.equal(q.at - work.at, ctx.at - q.at, "i blink allo stesso passo");
-  assert.equal(list.out, "lids");                                    // la frase se ne va prima delle palpebre
-  for (const s of [work, q]) {
-    assert.equal(s.out, "blink");
-    assert.equal(s.text, undefined);                                 // senza frase il blink sono le sole palpebre
-  }
-  for (const b of [work.at, q.at, ctx.at]) assert.ok(Number.isInteger(b), `il blink al battito ${b} non cade su un battito`);
+  assert.equal(q.at - work.at, ctx.at - q.at, "i cambi allo stesso passo");
+  for (const s of [list, work, q, ctx]) assert.equal(s.out, undefined, `${s.id}: le palpebre non ci sono più`);
+  for (const s of [work, q]) assert.equal(s.text, undefined);
+  for (const b of [work.at, q.at, ctx.at]) assert.ok(Number.isInteger(b), `il cambio al battito ${b} non cade su un battito`);
   for (const s of [list, work, q, ctx]) assert.equal(watchColumn(s), watchColumn(list), `${s.id} sposta l'orologio`);
-  const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number };
+  const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number; inShape?: boolean };
   assert.equal(card.slot, 146);                                      // la riga di payments-api in n_list.mp4 a 11,6 s
+  assert.equal(card.inShape, true, "la card ✓ a riposo la disegna la forma");
   // l'esito c'è dal primo fotogramma della lista: prima col volo del terminale, poi con la card ✓ (piano 4, 23/09)
   const volo = (list.fx ?? []).find((f) => f.kind === "takeIn") as { at: number; len: number } | undefined;
   assert.equal(volo ? volo.at : card.at, 0);
@@ -175,14 +173,25 @@ test("la carrellata: lista con l'esito, «Work», «Open questions», «Context�
   assert.equal(list.watch!.clip, "scenes/n_list.mp4");
   assert.equal(list.watch!.clipStart, 11.6);
   assert.equal(list.watch!.freeze, true);
-  for (const s of [work, q, ctx]) assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
-  // la Panoramica scorre com'è nella registrazione (Franz, 23/09 18:32): «Work» scatta in vista a 6,0 s, «Open questions» a
-  // 8,5 s, «Context» a 10,5 s; ciascuna arriva nel primo mezzo battito della sua scena, mentre le palpebre si riaprono
-  const half = 0.5 * 60 / short.bpm;
-  for (const [s, snap] of [[work, 6.0], [q, 8.5], [ctx, 10.5]] as const) {
+  for (const s of [work, q, ctx]) {
+    assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
     assert.notEqual(s.watch!.freeze, true, `${s.id} è ferma`);
-    assert.ok(snap - s.watch!.clipStart! > 0 && snap - s.watch!.clipStart! <= half, `${s.id}: la scheda arriva ${(snap - s.watch!.clipStart!).toFixed(2)} s dopo il taglio`);
+    assert.ok((s.fx ?? []).some((f) => f.kind === "aside" && f.inShape), `${s.id}: il pannello lo disegna la forma`);
   }
+  // senza palpebre i tagli delle clip si vedrebbero (misurato su n_overview_fit.mp4 il 25/09): «Work» è ferma da 6,25 a
+  // 8,25 s, lo scorrimento verso «Open questions» va da 8,25 a 8,5, la pagina resta ferma fino a 10,0, lo scorrimento verso
+  // «Context» va da 10,0 a 10,5. Work finisce esattamente dove comincia Questions (continuità); il salto verso Context cade
+  // dentro la pagina ferma; ogni scorrimento vero parte sul taglio, cioè sulla chiave della forma (il gesto, §2)
+  const secs = (b: number) => (b * 60) / short.bpm;
+  assert.ok(work.watch!.clipStart! >= 6.25, "Work è già ferma al taglio dalla lista");
+  assert.ok(Math.abs(work.watch!.clipStart! + secs(work.len) - q.watch!.clipStart!) < 0.01, "Work → Questions senza salto");
+  assert.equal(q.watch!.clipStart, 8.25);
+  assert.ok(q.watch!.clipStart! + secs(q.len) >= 8.5 && ctx.watch!.clipStart! <= 10.0, "il salto verso Context cade nella pagina ferma");
+  assert.equal(ctx.watch!.clipStart, 10.0);
+  for (const at of [q.at, ctx.at]) assert.ok(SHAPE.some((k) => k.at === at && k.gesture === "swipe"), `al ${at} lo scorrimento vero è il gesto della forma`);
+  // e il taglio lista → Panoramica (due registrazioni diverse) lo copre la card che si gonfia sul display
+  const cover = SHAPE.find((k) => k.anchor === "display" && k.rect?.join() === "0,0,480,480" && k.at + (k.len ?? KEY_LEN) === work.at);
+  assert.ok(cover, "al 52 la forma copre il display sul taglio");
   for (const id of ["title", "glance", "done", "shipped"]) assert.equal(short.scenes.find((s) => s.id === id), undefined, `c'è ancora «${id}»`);
 });
 test("il terzo blink porta «Open questions» con la sua scheda a sinistra, come nel film lungo (Franz, 23/09 21:13)", () => {
@@ -254,20 +263,22 @@ test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si l
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `la scheda Work si legge per ${beats.toFixed(2)} battiti`);
 });
-test("il finale su nero: il quarto blink chiude le palpebre sul nero, poi lo slogan e il cartello (Franz, 23/09 21:13 e 22:49)", () => {
-  // al posto della tapparella: le palpebre si chiudono su Context e si riaprono sul nero della scena dopo, che è lo
-  // slogan. Stesso linguaggio dei tre blink prima, niente barre né listelli (Franz, 22:49: «palpebre sul nero»)
+test("il finale su nero: Context si allarga in nero sul taglio, poi lo slogan e il cartello (specifica del 25/09; prima: palpebre, Franz 23/09 22:49)", () => {
+  // al posto delle palpebre: il pannello Context (la forma) si allarga a tutto quadro in nero e copre il taglio verso lo
+  // slogan, poi al 58 si ritira nella linea sotto le parole
   const q = byId("questions"), ctx = byId("context"), slogan = byId("slogan"), end = byId("end");
-  assert.equal(ctx.out, "blink");
+  assert.equal(ctx.out, undefined);
+  const black = SHAPE.find((k) => k.at + (k.len ?? KEY_LEN) === slogan.at && k.color === "#000000" && k.rect && k.rect[0] <= 0 && k.rect[1] <= 0 && k.rect[0] + k.rect[2] >= 1920 && k.rect[1] + k.rect[3] >= 1080);
+  assert.ok(black, "al 58 la forma copre il quadro in nero");
   assert.equal(ctx.blinds, undefined);
   assert.equal(short.scenes.find((s) => s.id === "bars"), undefined);
   assert.equal(slogan.at, ctx.at + ctx.len);
-  assert.equal(slogan.at - ctx.at, ctx.at - q.at, "il quarto blink allo stesso passo");
+  assert.equal(slogan.at - ctx.at, ctx.at - q.at, "il quarto cambio allo stesso passo");
   assert.equal(slogan.act, "close");
   assert.equal(slogan.watch, undefined);
   assert.deepEqual(slogan.text?.lines, ["Claude Code,", "on your wrist."]);
   assert.equal(slogan.text?.accent, "wrist.");
-  assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il blink, non dopo un vuoto");
+  assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il nero, non dopo un vuoto");
   // «Claude Code,» subito, poi una pausa: «on your wrist.» parte al 60, sul primo battito dell'ultima battuta piena (Franz, 23/09 23:20)
   assert.equal(slogan.text?.pause, 1);
   assert.equal(slogan.at + (slogan.text?.at ?? 0) + 2 * 0.5 + slogan.text!.pause!, 60);
@@ -279,10 +290,11 @@ test("il finale su nero: il quarto blink chiude le palpebre sul nero, poi lo slo
     assert.ok(contrast(col, "#000000") >= min, `${name} ${col}: contrasto ${contrast(col, "#000000").toFixed(1)}:1`);
   assert.equal(logoTrack(end.endTone), logoTrack());
 });
-test("anche il blink di sole palpebre, dalla lista a «Work», ha lo scatto sul taglio (revisione del 23/09)", () => {
-  const list = byId("list");
-  assert.equal(list.out, "lids");
-  assert.ok(sfxCues(short).some((c) => c.name === "shutter" && c.beat === list.at + list.len), "scatto al battito " + (list.at + list.len));
+test("l'accento delle palpebre passa ai cambi di forma: lo scatto su ogni scorrimento, il soffio sul nero dello slogan (§4)", () => {
+  const cues = sfxCues(short, 49.5);
+  for (const b of [52, 54, 56]) assert.ok(cues.some((c) => c.name === "shutter" && c.beat === b), "scatto al battito " + b);
+  assert.ok(cues.some((c) => c.name === "whoosh" && c.beat === 58), "soffio sul taglio verso lo slogan");
+  assert.ok(!sfxCues(short).some((c) => c.name === "shutter" && c.beat >= 47.5), "senza forma, nessuno scatto nuovo");
 });
 test("fra il terminale e la lista il terminale entra nell'orologio e diventa la card ✓ (piano 4, volo; Franz, 23/09 20:15)", () => {
   type TakeIn = { kind: "takeIn"; at: number; len: number; slot: number; name: string; age: string; text: string; badge?: string };

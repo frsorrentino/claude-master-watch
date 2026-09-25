@@ -11,7 +11,7 @@ export type Stems = "all" | "nosfx" | "music" | "voice" | "sfx";
 /** Le tre battute di introduzione della traccia, che il film non usa (misurate: 6,528 s a 110 bpm). */
 export const MUSIC_INTRO_SECONDS = 0;   // il film tiene il crescendo d'introduzione: il suo culmine è il momento dello zoom (Franz, 19/09 14:53)
 
-export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t, g, stems }) => {
+export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems; shapeFrom?: number }> = ({ t, g, stems, shapeFrom }) => {
   const on = (s: Stems) => stems === "all" || stems === s || (stems === "nosfx" && s !== "sfx");
   const spoken = t.scenes.flatMap((s) => (s.fx ?? []).flatMap((f) => (f.kind === "spoken" ? [{ from: beatToFrame(g, s.at + f.at), to: beatToFrame(g, s.at + f.at + f.len), voice: f.voice }] : [])));
   const windows = spoken.map((v) => [v.from, v.to] as [number, number]);
@@ -44,7 +44,7 @@ export const Soundtrack: React.FC<{ t: Timeline; g: Grid; stems: Stems }> = ({ t
         </>);
       })() : null}
       {on("voice") ? spoken.map((v, i) => <Sequence key={i} from={v.from} layout="none"><Audio src={staticFile(`audio/${v.voice}`)} volume={dbToGain(-3)} /></Sequence>) : null}
-      {on("sfx") ? sfxCues(t).flatMap((c, i) => (c.name === "notify" || c.name === "wearNotify" ? [c, { ...c, name: "thump" as const, gainDb: c.gainDb - 4 }] : [c]).map((k, j) => (
+      {on("sfx") ? sfxCues(t, shapeFrom).flatMap((c, i) => (c.name === "notify" || c.name === "wearNotify" ? [c, { ...c, name: "thump" as const, gainDb: c.gainDb - 4 }] : [c]).map((k, j) => (
         <Sequence key={`${i}-${j}`} from={beatToFrame(g, k.beat)} layout="none"><Audio src={staticFile(`audio/sfx/${k.name}.wav`)} volume={dbToGain(k.gainDb)} /></Sequence>
       ))) : null}
     </>

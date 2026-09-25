@@ -52,6 +52,7 @@ import type { Stems } from "./Soundtrack.tsx";
 import { CameraFrame, Shape } from "./Shape.tsx";
 import type { ShapeSpan } from "./Shape.tsx";
 import { realDisplay } from "./shapeDisplay.ts";
+import { shapeContent } from "./ShapeContent.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
 export const FILM_TIMELINE = validateTimeline(raw);
@@ -216,7 +217,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
     <FilmTimeline.Provider value={timeline}>
     <FilmBlur.Provider value={blur}>
     <AbsoluteFill style={{ background: "#000" }}>
-      <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
+      <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} shapeFrom={shape?.from} />
       {/* scene e passaggi nella camera della forma; titoli dei sonni e frustate restano fuori, sopra la forma */}
       <CameraFrame keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined}>
       {TIMELINE.scenes.map((s, i) => (
@@ -284,7 +285,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.out === "blink" ? s.text?.accent ?? "" : ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
       </CameraFrame>
-      {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined} /> : null}
+      {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined} content={shapeContent(TIMELINE)} /> : null}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si
           risveglia non disegna il suo testo: lo disegna qui. */}
