@@ -64,6 +64,14 @@ sul polso di Franz finché non lo decide lui.
 - Carattere di sistema per il testo, monospazio per comandi e terminale. Icone di stato ❓ ▶ ✓ ✗ come sull'orologio.
 - Una riga logica sta su una riga fisica; mai «…» nel corpo dei testi. Testi in `strings.xml`, italiano e inglese.
 
+**Illustrazioni (pezzo 3; deciso da Franz il 25/09 alle 06:58).** Metà schermo delle schermate del telefono resta vuoto:
+ci va una scena contestuale, disegnata in Compose (vettori, niente Lottie, niente asset, stessi `CmColors`), una per
+schermata. Non accoppiato: il telefono che inquadra il QR sul PC. Accoppiamento: PC, telefono e orologio che si collegano
+man mano che i passi si accendono, dallo stesso stato del controller, e la scena si ferma al passo fallito. Accoppiato: i
+due dispositivi collegati al PC, fermi. Movimento breve (200-350 ms) all'ingresso e a ogni cambio di passo, curva del
+sito, nessun ciclo oltre il respiro del passo in corso; con «riduci animazioni» lo stato finale subito. Paparazzi le
+registra nello stato finale. Si implementano con il pezzo 3, non nelle fondamenta.
+
 **Movimento: le regole del sito, con le animazioni che l'orologio ha già.**
 
 - Il movimento dice solo che qualcosa è cambiato: una volta all'ingresso, a un cambio di stato, o legato allo
