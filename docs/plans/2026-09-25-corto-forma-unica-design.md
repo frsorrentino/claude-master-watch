@@ -102,3 +102,28 @@ Franz. Stima: tre o quattro sessioni. Rese: 30-60 minuti per tratto con la macch
 Aggancio sulla foto (un salto fra spazio del display e del quadro va nascosto sotto un gesto); zoom oltre 1,3×;
 monotonia della pillola; accento sui battiti perso senza le palpebre; tempi di resa; le due proposte (sessione e
 Opus) coincidono su guadagno e ordine, il che riduce il rischio di direzione ma non quello di esecuzione.
+
+## 8. Decisioni prese da Opus 5.5 (25/09, 22:07, su mandato di Franz: «voglio dargli fiducia»)
+
+1. Le tre correzioni della sessione: (a) confermata, la notifica resta la registrazione vera e la forma si stacca come
+   copia; (b) confermata, niente corona; (c) confermata con scadenza: takeover, takeIn e blink si tolgono tratto per
+   tratto appena la tavola di quel tratto passa, non a fine lavoro.
+2. Molle di `b0db788`: si tengono (la traccia `shape` usa le stesse). Il takeover 8 fotogrammi prima: si tiene, senza
+   allungare la finestra; al passo 4 diventa una chiave della forma.
+3. Motion blur: solo sulla scatola della forma (riempimento e bordo), mai sul testo, mai sulle scene. 4 campioni a
+   180°; 8 campioni solo dove il `rect` si sposta più di 24 px per fotogramma, soglia calcolata dal test del motore.
+4. `bump()` sui tasti della risposta: molla con ζ 0,7 (un solo scavalco del 4,6 %, nessuna oscillazione): resta il
+   «po' di bump» del 19/09 senza violare il divieto, che riguarda l'easing che oscilla. Da dire a Franz alla tavola del
+   passo 4.
+5. Tempo morto ai battiti 18-19: si lascia; al passo 4 quel tratto diventa «yes» sfondo che si ritira nella prima card.
+   Controllo in tavola: nessun battito senza un cambio di stato o di bersaglio.
+6. Regole sui testi (§3) confermate, con tre precisazioni: uscita ed entrata di 0,25 battiti ciascuna (0,27 s in
+   totale); il testo dentro la forma non scala con la forma durante la trasformazione (controscala), così l'a capo
+   resta fermo; la linea dello slogan si allunga alla fine di ogni parola, non prima.
+7. QR v2 (R4): no. Da 65 a 57 moduli non vale un cambio di contratto in due repository; si riprende solo se una
+   scansione vera dal terminale fallisce.
+8. Bottone «Sessioni» su «Accoppiato»: sì, unico bottone pieno, senza «indietro»; si aggiunge insieme alla regia, non
+   prima.
+9. `tools/promo` in un repository proprio: sì, dopo la resa finale del corto (dopo il passo 5), con `git subtree split`.
+10. Ordine dei passi confermato: motore, tavola della sola forma, tratto finale, testa, centro. La testa dopo, perché
+    l'omografia del display è il rischio principale e conviene arrivarci con il motore già provato.
