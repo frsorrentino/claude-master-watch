@@ -61,6 +61,12 @@ export const FILM_TIMELINE = validateTimeline(raw);
 export const FilmTimeline = React.createContext<Timeline>(FILM_TIMELINE);
 /** La sfocatura di movimento è accesa (`blur` della composizione): a false le scene con `blur` rendono come prima, per il confronto e per misurare il costo. */
 export const FilmBlur = React.createContext<boolean>(true);
+/** Da che battito disegna la forma unica, se c'è: le scene lo leggono per lasciarle ciò che disegna lei. */
+export const ShapeOnSpan = React.createContext<ShapeSpan | null>(null);
+/** Le scritte della corsia salgono sopra la forma quando la forma ne disegna le schede (Floating, `part`). */
+const liftsLane = (scene: Scene, span: ShapeSpan | null): boolean =>
+  span !== null && scene.at >= span.from && (span.to === undefined || scene.at < span.to)
+  && (scene.fx ?? []).some((f) => f.kind === "float" && f.cards.some((c) => c.kind !== "text" && c.kind !== "brief" && c.inShape));
 /** La luce della forma unica sul fondo delle scene (effetto «luce d'ambiente»): dal fotogramma assoluto, o null se spenta. */
 export const ShapeLight = React.createContext<((absFrame: number) => { color: string; x: number; y: number; alpha: number } | null) | null>(null);
 /** Quattro sotto-fotogrammi con otturatore a 180° (direttive di motion, 25/09: «4 subframes per frame … motion blur»): ogni strato
@@ -79,6 +85,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const TIMELINE = React.useContext(FilmTimeline);
   const GRID: Grid = gridOf(TIMELINE);
   const lightAt = React.useContext(ShapeLight);
+  const shapeSpan = React.useContext(ShapeOnSpan);
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const total = spanFrames(GRID, scene.at, scene.len);
@@ -156,7 +163,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${width / 2 + pose.x * width}px, ${height * 0.70 + pose.y * height}px, 0) scale(${pose.scale})` }}>
           <SideWatch widthPx={THEME.sideCasePx} />
         </div>
-        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} /></div>
+        <div style={{ opacity: 1 - underTakeover }}><Floating scene={scene} g={GRID} glassY={height * 0.70} part={liftsLane(scene, shapeSpan) ? "cards" : "all"} /></div>
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${place!.x}px, ${place!.y}px, 0) scale(${place!.scale})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
@@ -220,6 +227,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
   return (
     <FilmTimeline.Provider value={timeline}>
     <FilmBlur.Provider value={blur}>
+    <ShapeOnSpan.Provider value={shapeKeys.length ? shape : null}>
     <ShapeLight.Provider value={effects.light && shapeKeys.length ? (f: number) => {
       const b = frameToBeat(GRID, f);
       if (b < (shape?.from ?? 0) || (shape?.to !== undefined && b >= shape.to) || !shapeVisible(shapeKeys, b)) return null;
@@ -295,6 +303,12 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
       ))}
       </CameraFrame>
       {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined} content={shapeContent(TIMELINE)} effects={effects} /> : null}
+      {/* le scritte della corsia sopra la forma (Floating, `part`): stessa camera delle scene */}
+      {shapeKeys.length ? TIMELINE.scenes.filter((sc) => liftsLane(sc, shape)).map((sc) => (
+        <Sequence key={`lane-${sc.id}`} from={beatToFrame(GRID, sc.at)} durationInFrames={spanFrames(GRID, sc.at, sc.len)} layout="none">
+          <CameraFrame keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined}><Floating scene={sc} g={GRID} glassY={1080 * 0.7} part="texts" /></CameraFrame>
+        </Sequence>
+      )) : null}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si
           risveglia non disegna il suo testo: lo disegna qui. */}
@@ -321,6 +335,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
       ))}
     </AbsoluteFill>
     </ShapeLight.Provider>
+    </ShapeOnSpan.Provider>
     </FilmBlur.Provider>
     </FilmTimeline.Provider>
   );

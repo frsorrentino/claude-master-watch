@@ -17,7 +17,9 @@ import { INK, THEME, mix } from "../theme.ts";
  * su ogni scheda (`railScroll`), e ogni scheda si deforma con la quota come nelle liste di Wear OS (`railAt`): stretta in
  * basso, larga al centro, stretta in cima. Le scritte scorrono nella stessa corsia, alternate alle schede, ma non si deformano.
  */
-export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({ scene, g, glassY }) => {
+/** `part`: «texts» le sole scritte, «cards» le sole schede. Con la forma unica le scritte della corsia stanno SOPRA la forma
+ *  (le disegna il film, sopra lo strato della forma): una scheda che le copriva al passaggio sembrava un errore (25/09). */
+export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number; part?: "all" | "texts" | "cards" }> = ({ scene, g, glassY, part = "all" }) => {
   const frame = useCurrentFrame();
   // Quando la scena nasce sotto il campo chiaro del takeover, le scritte partono in inchiostro e diventano bianche mentre
   // il fondo scurisce: bianco su celeste non si legge (misurato il 20/09: contrasto nullo per un secondo e mezzo).
@@ -74,6 +76,7 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({
         // la scheda la disegna la forma unica (card1, card2, dict): la corsia tiene i suoi tempi e le sue scritte
         if (c.kind !== "text" && c.kind !== "brief" && c.inShape) return null;
         const isText = c.kind === "text";
+        if ((part === "texts" && !isText) || (part === "cards" && isText)) return null;
         const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio
         const a = rail.alpha * (isText ? 1 - wordsOut : 1) * (1 - laneOut);
         if (c.kind === "text") return (

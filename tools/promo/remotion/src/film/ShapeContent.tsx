@@ -78,7 +78,7 @@ const Content: React.FC<{ t: Timeline; id: string; w: number; h: number }> = ({ 
         </div>
         <Sequence from={from} layout="none">
           {/* `zoom` sul blocco interno: sullo stesso elemento scalerebbe anche left e top */}
-          <div style={{ position: "absolute", left: 144, top: 32, width: 544 }}><div style={{ zoom: 0.6 }}><SpokenWords file={v.words} fps={g.fps} ink={ink} /></div></div>
+          <div style={{ position: "absolute", left: 144, top: 32, width: 544 }}><div style={{ zoom: 0.85 }}><SpokenWords file={v.words} fps={g.fps} ink={ink} /></div></div>
           <div style={{ position: "absolute", left: 144, top: 214 }}><UiWave file={v.voice.replace(/\.wav$/, ".env.json")} width={544} height={80} frames={frames} /></div>
         </Sequence>
         {question ? (
