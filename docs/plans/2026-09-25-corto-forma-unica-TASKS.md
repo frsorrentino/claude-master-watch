@@ -2,8 +2,8 @@
 
 Franz, 25/09 22:33: «prosegui in autonomia fino a realizzazione video completa, in concerto con fable advisor e master
 per le decisioni e revisioni di qualità». Specifica: `2026-09-25-corto-forma-unica-design.md`; piano 1:
-`2026-09-25-corto-forma-unica-piano-1-motore.md`. Regole fisse: rese complete una alla volta, solo dopo il via di master
-(«render pronto» con fotogrammi e stima); niente Gradle durante una resa; niente push senza ok di Franz via master;
+`2026-09-25-corto-forma-unica-piano-1-motore.md`. Regole fisse: rese complete una alla volta (notte del 25/09: le lancio da sola,
+master 22:47); niente Gradle durante una resa; niente push senza ok di Franz via master;
 prima/dopo in `tools/promo/remotion/out/review/`, consegna a Franz con SendUserFile. Test con Node 24
 (`PATH=~/.local/share/fnm/node-versions/v24.13.1/installation/bin:$PATH`). Cwd della sessione alla radice del repo.
 
@@ -18,9 +18,8 @@ prima/dopo in `tools/promo/remotion/out/review/`, consegna a Franz con SendUserF
 - [x] Resa `ShapeBoard` 0,25× + `battiti.py` (`out/review/forma.battiti.png`); master: passo 2 verificato.
 
 ## Passo 3 — tratto finale list → end (47,5-73,5)
-- [ ] Contenuti veri (card ✓, pannelli Work/Questions/Context con barre dal bordo), linea dello slogan, anello del logo
-      (`ring`), aggancio al display di tre quarti (geometria vera), forma sotto il primo piano dove serve.
-- [ ] Via palpebre e neri del tratto; tavola per battito; «render pronto» a master; resa del tratto; prima/dopo.
+- [x] Motore (piano 2, Task 1-5: `28d55ee`..`3d5c1aa`), contenuti e traccia (`ShapeContent.tsx`, `98b1585`), via palpebre.
+- [x] Tavola `out/review/finale-tavola.battiti.png`; resa `dopo-finale.mp4`; prima/dopo `confronto-finale.mp4`.
 
 ## Passo 4 — testa face → answer (0-19)
 - [ ] Notifica come copia del display (omografia), voce, tasti, `bump()` → molla ζ 0,7, takeover → chiave; 18-19 vivo.
