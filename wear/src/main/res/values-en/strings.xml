@@ -6,7 +6,7 @@
     <string name="sessions_empty">No sessions</string>
     <string name="sessions_label">sessions</string>
     <string name="settings_title">Settings</string>
-    <string name="pc_stale">PC offline for %1$d min</string>
+    <string name="pc_stale">PC offline for %1$d min</string>
     <string name="state_waiting">Waiting for an answer</string>
     <string name="state_busy">Working</string>
     <string name="state_idle">Idle</string>
@@ -36,7 +36,7 @@
     <string name="pairing_working">Pairing</string>
     <string name="pairing_done">Paired with %1$s</string>
     <string name="pairing_failed">Code not accepted</string>
-    <string name="settings_tts_threshold">Read-aloud threshold: %1$d characters</string>
+    <string name="settings_tts_threshold">Read-aloud threshold: %1$d characters</string>
     <string name="settings_haptic_question">Vibrate for questions</string>
     <string name="settings_haptic_outcome">Vibrate for outcomes</string>
     <string name="settings_haptic_gone">Vibrate when a session disappears</string>
@@ -46,7 +46,7 @@
     <string name="notif_open">Open</string>
     <string name="notif_reply">Reply</string>
     <string name="notif_reset_week">weekly reset</string>
-    <string name="notif_window_5h">5 h window</string>
+    <string name="notif_window_5h">5 h window</string>
     <string name="channel_questions">Questions</string>
     <string name="channel_outcomes">Outcomes</string>
     <string name="channel_gone">Gone sessions</string>
@@ -131,7 +131,7 @@
     <string name="card_outcome">Outcome</string>
     <string name="terminal_answer">Answer</string>
     <string name="session_closed">closed</string>
-    <string name="tile_stale_label">offline for %1$d min</string>
+    <string name="tile_stale_label">offline for %1$d min</string>
     <string name="tool_run">runs %1$s</string>
     <string name="tool_read">reads %1$s</string>
     <string name="tool_edit">edits %1$s</string>
@@ -167,7 +167,7 @@
     <string name="card_context">Context</string>
     <string name="card_model">Model</string>
     <string name="card_effort">Effort</string>
-    <string name="card_context_pct">%1$d %%</string>
+    <string name="card_context_pct">%1$d %%</string>
     <string name="confirm_done">Done</string>
     <string name="confirm_follow">Alerts on</string>
     <string name="confirm_unfollow">Alerts off</string>
@@ -184,8 +184,8 @@
     <plurals name="work_today_events"><item quantity="one">event</item><item quantity="other">events</item></plurals>
     <string name="work_question_oldest">%1$s · for %2$s</string>
     <string name="work_updated_now">updated now · %1$s</string>
-    <string name="work_updated_ago">updated %1$d min ago · %2$s</string>
-    <string name="work_stale">PC stopped for %1$d min · %2$s</string>
+    <string name="work_updated_ago">updated %1$d min ago · %2$s</string>
+    <string name="work_stale">PC stopped for %1$d min · %2$s</string>
     <string name="work_pace">5-hour pace</string>
     <string name="work_pace_at">%% at %1$s</string>
     <string name="work_pace_now" formatted="false">% now</string>
@@ -194,7 +194,7 @@
     <!-- Settings in Google's style (16/09) -->
     <string name="settings_section_voice">Read aloud</string>
     <string name="settings_threshold_label">Threshold</string>
-    <string name="settings_threshold_value">%1$d characters</string>
+    <string name="settings_threshold_value">%1$d characters</string>
     <string name="settings_voice_label">Voice</string>
     <string name="settings_voice_default_value">default</string>
     <string name="settings_voice_value">%1$d of %2$d</string>

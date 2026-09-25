@@ -50,7 +50,7 @@ class WorkPanelTest {
     /** Le domande: quante, la più vecchia con il suo nome e da quanto aspetta, per aprirla con un tocco. */
     @Test fun domandeConLaPiuVecchia() {
         val d = WorkPanel.questions(state, now)!!
-        assertEquals(1, d.count); assertEquals("ledger-api", d.oldest); assertEquals("5 m", d.age)
+        assertEquals(1, d.count); assertEquals("ledger-api", d.oldest); assertEquals("5 m", d.age)
     }
 
     @Test fun senzaDomandeNienteCard() {

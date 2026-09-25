@@ -36,7 +36,7 @@ class TileCardsTest {
     }
 
     @Test fun questionAgeLine() {
-        assertEquals("ferma da 5 m", TileTexts.waitingFor(q.sessions[0], 1789210800, "ferma da %s"))
+        assertEquals("ferma da 5 m", TileTexts.waitingFor(q.sessions[0], 1789210800, "ferma da %s"))
     }
 }
 
@@ -170,8 +170,8 @@ class TileQuotasTest {
         assertEquals(p.w7, r.w7); assertEquals(p.resetW7, r.resetW7)
     }
 
-    // Franz, 15/09 08:21: sotto il 15 % la barra non dice niente e ruba spazio alla sessione. Ma la tile guardava solo
-    // le cinque ore: con la settimana al 66 % e le cinque ore al 2 % l'avrebbe nascosta proprio quando conta.
+    // Franz, 15/09 08:21: sotto il 15 % la barra non dice niente e ruba spazio alla sessione. Ma la tile guardava solo
+    // le cinque ore: con la settimana al 66 % e le cinque ore al 2 % l'avrebbe nascosta proprio quando conta.
     @Test fun sottoSogliaLaQuotaNonSiMostra() {
         val r = TileTexts.quotaLine(q, "personale")!!.copy(pct = 14, w7 = 79)
         assertNull(TileTexts.tileQuota(r))
@@ -193,24 +193,24 @@ class TileQuotasTest {
         assertEquals(TileTexts.Window.H5, TileTexts.tileQuota(r.copy(pct = 90, w7 = 85))!!.window)
     }
 
-    private val formati = TileTexts.QuotaLabels(pct = "%1\$d %%", pctReset = "%1\$d %% · %2\$s", week = "settimana %1\$d %%", weekReset = "settimana %1\$d %% · %2\$s")
+    private val formati = TileTexts.QuotaLabels(pct = "%1\$d %%", pctReset = "%1\$d %% · %2\$s", week = "settimana %1\$d %%", weekReset = "settimana %1\$d %% · %2\$s")
     private val rome = ZoneId.of("Europe/Rome")
 
     @Test fun inCodaPercentualeERipartenzaDelleCinqueOre() {
         val r = TileTexts.quotaLine(q, "personale")!!
-        assertEquals("11 % · 18:00", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5), formati, rome))
+        assertEquals("11 % · 18:00", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5), formati, rome))
     }
 
     @Test fun senzaRipartenzaSoloLaPercentuale() =
-        assertEquals("11 %", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, null), formati, rome))
+        assertEquals("11 %", TileTexts.quotaSuffix(TileTexts.TileQuota(TileTexts.Window.H5, 11, null), formati, rome))
 
-    // S07: «0 % · 17:30» non diceva che 17:30 è il reset delle cinque ore. Letto dalle stringhe vere dell'app.
+    // S07: «0 % · 17:30» non diceva che 17:30 è il reset delle cinque ore. Letto dalle stringhe vere dell'app.
     // Franz, 15/09 08:27: con la settimana sulla tile anche le cinque ore dicono di essere le cinque ore.
     @Test fun laTileDiceCheLOraEIlResetDelleCinqueOre() {
         val r = TileTexts.quotaLine(q, "personale")!!
         val t = TileTexts.TileQuota(TileTexts.Window.H5, 11, r.resetH5)
         // Franz, 15/09 12:58: «5h» e «7d», le sigle di Claude, uguali nelle due lingue e più corte.
-        assertEquals("5h 11 % · reset 18:00", TileTexts.quotaSuffix(t, labels("values"), rome))
+        assertEquals("5h 11 % · reset 18:00", TileTexts.quotaSuffix(t, labels("values"), rome))
         assertEquals("5h 11% · reset 18:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
     }
 
@@ -218,19 +218,19 @@ class TileQuotasTest {
     @Test fun laSettimanaLoDiceEHaIlGiorno() {
         val r = TileTexts.quotaLine(q, "personale")!!
         val t = TileTexts.TileQuota(TileTexts.Window.WEEK, 82, r.resetW7)
-        assertEquals("7d 82 % · reset gio 04:00", TileTexts.quotaSuffix(t, labels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("7d 82 % · reset gio 04:00", TileTexts.quotaSuffix(t, labels("values"), rome, java.util.Locale.ITALIAN))
         assertEquals("7d 82% · reset Thu 04:00", TileTexts.quotaSuffix(t, labels("values-en"), rome, java.util.Locale.ENGLISH))
     }
 
-    // Con due barre «settimana 68 % · reset gio 04:00» non stava accanto alla barra, che spariva (Franz, 15/09 12:29):
+    // Con due barre «settimana 68 % · reset gio 04:00» non stava accanto alla barra, che spariva (Franz, 15/09 12:29):
     // etichette corte e solo l'ora del reset.
     @Test fun conDueBarreLeRigheSonoCorte() {
         val r = TileTexts.quotaLine(q, "personale")!!
         val h5 = TileTexts.TileQuota(TileTexts.Window.H5, 0, r.resetH5)
         val week = TileTexts.TileQuota(TileTexts.Window.WEEK, 68, r.resetW7)
         // Franz, 15/09 15:03: la sigla a sinistra, subito dopo l'orologio; a destra della barra solo valore e ora.
-        assertEquals("0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
-        assertEquals("68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("0 % · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values"), rome, java.util.Locale.ITALIAN))
+        assertEquals("68 % · gio 04:00", TileTexts.quotaSuffix(week, shortLabels("values"), rome, java.util.Locale.ITALIAN))
         assertEquals("0% · 18:00", TileTexts.quotaSuffix(h5, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
         assertEquals("68% · Thu 04:00", TileTexts.quotaSuffix(week, shortLabels("values-en"), rome, java.util.Locale.ENGLISH))
         for (dir in listOf("values", "values-en")) {

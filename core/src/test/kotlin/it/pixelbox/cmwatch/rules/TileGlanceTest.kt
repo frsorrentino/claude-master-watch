@@ -31,7 +31,7 @@ class TileGlanceTest {
         val busy = q.copy(sessions = q.sessions.map { it.copy(question = null, state = if (it.name == "ledger-api") SessionState.BUSY else it.state, tool = if (it.name == "ledger-api") "Bash pytest -q" else it.tool) })
         val b = TileTexts.glance(busy, Freshness.Fresh, 1789210800, l)
         assertEquals("ledger-api", b.name)                                    // seguita
-        assertEquals("▶ Bash pytest -q · 7 m", b.body); assertEquals(TileTexts.Accent.BUSY, b.accent)
+        assertEquals("▶ Bash pytest -q · 7 m", b.body); assertEquals(TileTexts.Accent.BUSY, b.accent)
     }
 
     @Test fun staleAndEmpty() {

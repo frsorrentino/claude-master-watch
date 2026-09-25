@@ -30,9 +30,9 @@ class OrderTest {
     }
 
     @Test fun durations() {
-        assertEquals("0 m", Durations.since(100, 130))
-        assertEquals("2 m", Durations.since(100, 100 + 150))
-        assertEquals("1 h 05", Durations.since(0, 65 * 60))
-        assertEquals("3 g", Durations.since(0, 3 * 86400 + 100))
+        assertEquals("0 m", Durations.since(100, 130))
+        assertEquals("2 m", Durations.since(100, 100 + 150))
+        assertEquals("1 h 05", Durations.since(0, 65 * 60))
+        assertEquals("3 g", Durations.since(0, 3 * 86400 + 100))
     }
 }

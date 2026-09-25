@@ -21,9 +21,9 @@ class TileTextsTest {
         assertEquals("❓ ledger-api · Deploy ready, waiting for the client's ok. Deploy now?", TileTexts.line(q, now))
 
     @Test fun lineWithoutQuestionsIsTheFollowedOrMostRecent() {
-        assertEquals("✓ atlas-shop · 6 m", TileTexts.line(idle, 1789214000L + 6 * 60))
+        assertEquals("✓ atlas-shop · 6 m", TileTexts.line(idle, 1789214000L + 6 * 60))
         val followed = q.copy(sessions = q.sessions.map { it.copy(question = null, state = if (it.name == "ledger-api") SessionState.BUSY else it.state) })
-        assertEquals("▶ ledger-api · 7 m", TileTexts.line(followed, now))   // seguita, turn_started 7 m fa
+        assertEquals("▶ ledger-api · 7 m", TileTexts.line(followed, now))   // seguita, turn_started 7 m fa
     }
 
     @Test fun buttons() {

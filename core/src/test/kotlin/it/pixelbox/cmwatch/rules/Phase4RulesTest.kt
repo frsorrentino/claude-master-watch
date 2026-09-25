@@ -65,7 +65,7 @@ class FollowRulesTest {
         assertNull(FollowRules.ongoing(s))                                    // ledger-api seguita ma waiting
         val busy = s.copy(sessions = s.sessions.map { if (it.name == "ledger-api") it.copy(state = SessionState.BUSY, question = null) else it })
         assertEquals("ledger-api", FollowRules.ongoing(busy)?.name)
-        assertEquals("▶ ledger-api · 7 m", FollowRules.status(busy.sessions[0].copy(state = SessionState.BUSY, question = null), 1789210800))
+        assertEquals("▶ ledger-api · 7 m", FollowRules.status(busy.sessions[0].copy(state = SessionState.BUSY, question = null), 1789210800))
     }
 }
 
@@ -73,8 +73,8 @@ class QuotaTextTest {
     private val labels = QuotaText.Labels(week = "settimana", reset = "reset", stale = "dato vecchio", none = "—")
     @Test fun lines() {
         val q = QuotaAccount(h5 = 11, w7 = 36, resetW7 = 1789610400, stale = false)
-        assertEquals("personale · 11 %", QuotaText.h5Line("personale", q, labels))
-        assertEquals("settimana 36 % · reset gio 04:00", QuotaText.w7Line(q, labels, ZoneId.of("Europe/Rome")))
+        assertEquals("personale · 11 %", QuotaText.h5Line("personale", q, labels))
+        assertEquals("settimana 36 % · reset gio 04:00", QuotaText.w7Line(q, labels, ZoneId.of("Europe/Rome")))
         val none = QuotaAccount(h5 = null, w7 = 75, resetW7 = 1789444800, stale = true)
         assertEquals("agenzia · — · dato vecchio", QuotaText.h5Line("agenzia", none, labels))
         assertEquals(0f, QuotaText.fraction(none.h5)); assertEquals(0.75f, QuotaText.fraction(75))

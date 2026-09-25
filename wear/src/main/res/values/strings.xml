@@ -5,7 +5,7 @@
     <string name="sessions_empty">Nessuna sessione</string>
     <string name="sessions_label">sessioni</string>
     <string name="settings_title">Impostazioni</string>
-    <string name="pc_stale">PC fermo da %1$d min</string>
+    <string name="pc_stale">PC fermo da %1$d min</string>
     <string name="state_waiting">In attesa di risposta</string>
     <string name="state_busy">Lavora</string>
     <string name="state_idle">Ferma</string>
@@ -35,7 +35,7 @@
     <string name="pairing_working">Accoppiamento in corso</string>
     <string name="pairing_done">Accoppiato con %1$s</string>
     <string name="pairing_failed">Codice non accettato</string>
-    <string name="settings_tts_threshold">Soglia lettura vocale: %1$d caratteri</string>
+    <string name="settings_tts_threshold">Soglia lettura vocale: %1$d caratteri</string>
     <string name="settings_haptic_question">Vibra per le domande</string>
     <string name="settings_haptic_outcome">Vibra per gli esiti</string>
     <string name="settings_haptic_gone">Vibra se una sessione sparisce</string>
@@ -45,7 +45,7 @@
     <string name="notif_open">Apri</string>
     <string name="notif_reply">Rispondi</string>
     <string name="notif_reset_week">reset settimana</string>
-    <string name="notif_window_5h">finestra 5 h</string>
+    <string name="notif_window_5h">finestra 5 h</string>
     <string name="channel_questions">Domande</string>
     <string name="channel_outcomes">Esiti</string>
     <string name="channel_gone">Sessioni sparite</string>
@@ -130,7 +130,7 @@
     <string name="card_outcome">Esito</string>
     <string name="terminal_answer">Risposta</string>
     <string name="session_closed">chiusa</string>
-    <string name="tile_stale_label">fermo da %1$d min</string>
+    <string name="tile_stale_label">fermo da %1$d min</string>
     <string name="tool_run">esegue %1$s</string>
     <string name="tool_read">legge %1$s</string>
     <string name="tool_edit">modifica %1$s</string>
@@ -146,14 +146,14 @@
     <string name="badge_work">account di lavoro</string>
     <string name="tile_title">Claude Master</string>
     <string name="tile_all_idle">Tutto a riposo</string>
-    <string name="tile_quota_pct">5h %1$d %%</string>
-    <string name="tile_quota_pct_reset">5h %1$d %% · reset %2$s</string>
-    <string name="tile_quota_week">7d %1$d %%</string>
-    <string name="tile_quota_week_reset">7d %1$d %% · reset %2$s</string>
-    <string name="tile_quota_h5_short">%1$d %%</string>
-    <string name="tile_quota_h5_short_reset">%1$d %% · %2$s</string>
-    <string name="tile_quota_week_short">%1$d %%</string>
-    <string name="tile_quota_week_short_reset">%1$d %% · %2$s</string>
+    <string name="tile_quota_pct">5h %1$d %%</string>
+    <string name="tile_quota_pct_reset">5h %1$d %% · reset %2$s</string>
+    <string name="tile_quota_week">7d %1$d %%</string>
+    <string name="tile_quota_week_reset">7d %1$d %% · reset %2$s</string>
+    <string name="tile_quota_h5_short">%1$d %%</string>
+    <string name="tile_quota_h5_short_reset">%1$d %% · %2$s</string>
+    <string name="tile_quota_week_short">%1$d %%</string>
+    <string name="tile_quota_week_short_reset">%1$d %% · %2$s</string>
     <string name="tile_quota_tag_h5">5h</string>
     <string name="tile_quota_tag_week">7d</string>
     <string name="quota_reset_at">reset %1$s</string>
@@ -166,7 +166,7 @@
     <string name="card_context">Contesto</string>
     <string name="card_model">Modello</string>
     <string name="card_effort">Effort</string>
-    <string name="card_context_pct">%1$d %%</string>
+    <string name="card_context_pct">%1$d %%</string>
     <string name="card_context_unit" formatted="false">%</string>
     <!-- Targhetta della finestra grande: l'id del modello finisce con [1m] (contratto 1.11) -->
     <string name="card_window_1m">1M</string>
@@ -187,8 +187,8 @@
     <plurals name="work_today_events"><item quantity="one">evento</item><item quantity="other">eventi</item></plurals>
     <string name="work_question_oldest">%1$s · da %2$s</string>
     <string name="work_updated_now">aggiornato ora · %1$s</string>
-    <string name="work_updated_ago">aggiornato %1$d min fa · %2$s</string>
-    <string name="work_stale">PC fermo da %1$d min · %2$s</string>
+    <string name="work_updated_ago">aggiornato %1$d min fa · %2$s</string>
+    <string name="work_stale">PC fermo da %1$d min · %2$s</string>
     <string name="work_pace">Ritmo 5 ore</string>
     <string name="work_pace_at">%% alle %1$s</string>
     <string name="work_pace_now" formatted="false">% adesso</string>
@@ -197,7 +197,7 @@
     <!-- Impostazioni nello stile di Google (Franz, 16/09 14:27) -->
     <string name="settings_section_voice">Lettura vocale</string>
     <string name="settings_threshold_label">Soglia</string>
-    <string name="settings_threshold_value">%1$d caratteri</string>
+    <string name="settings_threshold_value">%1$d caratteri</string>
     <string name="settings_voice_label">Voce</string>
     <string name="settings_voice_default_value">predefinita</string>
     <string name="settings_voice_value">%1$d di %2$d</string>

@@ -95,7 +95,7 @@ object BriefCards {
                     // La ripartenza settimanale dentro la pillola: ora la pillola sta a tutta larghezza sotto l'anello
                     // e non va più a capo, e la riga sua in fondo rendeva questa card diversa da quella della Scheda
                     // (Franz, 16/09 13:09). Se il numero grande è la settimana, il reset sta già sotto di lui.
-                    else -> l.week.format(q.w7?.let { "$it %" } ?: l.none) + (weekDay?.let { " · $it" } ?: "")
+                    else -> l.week.format(q.w7?.let { "$it %" } ?: l.none) + (weekDay?.let { " · $it" } ?: "")
                 },
                 note = null,
                 // Scala di allarme sulla finestra di 5 ore: dal 90 % ambra, esaurita rosso e il gauge pulsa,

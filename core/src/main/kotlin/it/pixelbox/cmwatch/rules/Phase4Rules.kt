@@ -74,13 +74,13 @@ object QuotaText {
     fun fraction(pct: Int?): Float = ((pct ?: 0).coerceIn(0, 100)) / 100f
 
     fun h5Line(account: String, q: QuotaAccount, l: Labels): String {
-        val parts = mutableListOf(account, q.h5?.let { "$it %" } ?: l.none)
+        val parts = mutableListOf(account, q.h5?.let { "$it %" } ?: l.none)
         if (q.stale) parts += l.stale
         return parts.joinToString(" · ")
     }
 
     fun w7Line(q: QuotaAccount, l: Labels, zone: ZoneId, locale: Locale = Locale.ITALIAN): String {
-        val parts = mutableListOf("${l.week} ${q.w7?.let { "$it %" } ?: l.none}")
+        val parts = mutableListOf("${l.week} ${q.w7?.let { "$it %" } ?: l.none}")
         q.resetW7?.let { parts += "${l.reset} " + DateTimeFormatter.ofPattern("EEE HH:mm", locale).format(Instant.ofEpochSecond(it).atZone(zone)) }
         return parts.joinToString(" · ")
     }

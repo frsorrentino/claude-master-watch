@@ -40,7 +40,7 @@ class BriefCardsTest {
         assertEquals("reset 18:00", c.secondary)
         // La ripartenza settimanale dentro la pillola, che ora sta a tutta larghezza sotto l'anello: la riga sua in fondo
         // rendeva la card della Quota diversa da quella della Scheda (Franz, 16/09 13:09).
-        assertEquals("settimana ${q.w7} % · gio 04:00", c.pill)
+        assertEquals("settimana ${q.w7} % · gio 04:00", c.pill)
         assertNull(c.note)
         assertEquals(BriefCards.Tone.NEUTRAL, c.tone)
     }
@@ -159,8 +159,8 @@ class BriefQuotaAlertTest {
 }
 
 /**
- * Il tono dell'anello interno, la settimana (Franz, 16/09 11:52: settimana all'82 % e l'anello interno dello stesso
- * azzurro delle 5 ore, senza avviso). Ambra dall'80 %, la soglia di stop; rosso esaurita; spento col dato vecchio.
+ * Il tono dell'anello interno, la settimana (Franz, 16/09 11:52: settimana all'82 % e l'anello interno dello stesso
+ * azzurro delle 5 ore, senza avviso). Ambra dall'80 %, la soglia di stop; rosso esaurita; spento col dato vecchio.
  */
 class BriefQuotaWeekToneTest {
     private val state = ContractJson.decodeState(Fixtures.stateQuestion)
@@ -183,7 +183,7 @@ class BriefQuotaWeekToneTest {
         assertEquals(BriefCards.Tone.STALE, card(82, stale = true).tone2)
     }
 
-    /** Le 5 ore al 9 % restano tranquille anche con la settimana all'82 %: i due anelli non si copiano il tono. */
+    /** Le 5 ore al 9 % restano tranquille anche con la settimana all'82 %: i due anelli non si copiano il tono. */
     @Test fun iDueToniSonoIndipendenti() {
         assertEquals(BriefCards.Tone.NEUTRAL, card(82).tone)
     }
