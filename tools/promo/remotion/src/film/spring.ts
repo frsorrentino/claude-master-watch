@@ -41,8 +41,11 @@ export const springEase = (t: number, zeta = ZETA): number => {
  */
 export const springSettle = (t: number): number => springEase(t, 1);
 
-/** Un cambio di bersaglio: da `at` (nell'unità di `t`) il valore va verso `to` con una molla lunga `len`. */
-export type Change = { at: number; to: number; len: number };
+/**
+ * Un cambio di bersaglio: da `at` (nell'unità di `t`) il valore va verso `to` con una molla lunga `len`. `zeta` è lo
+ * smorzamento di questo solo cambio (una chiave della forma che si posa senza scavalco), se no quello di `springs()`.
+ */
+export type Change = { at: number; to: number; len: number; zeta?: number };
 /**
  * Un valore che cambia bersaglio più volte, come somma di una molla per cambio: `from` all'inizio, poi ogni cambio
  * aggiunge la sua molla sullo scarto dal bersaglio precedente. Funzione pura del tempo `t`: due cambi che si
@@ -51,7 +54,7 @@ export type Change = { at: number; to: number; len: number };
 export const springs = (t: number, from: number, changes: readonly Change[], zeta = ZETA): number => {
   let v = from, prev = from;
   for (const c of changes) {
-    v += (c.to - prev) * springEase((t - c.at) / Math.max(1e-9, c.len), zeta);
+    v += (c.to - prev) * springEase((t - c.at) / Math.max(1e-9, c.len), c.zeta ?? zeta);
     prev = c.to;
   }
   return v;

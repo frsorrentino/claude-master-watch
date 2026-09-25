@@ -64,3 +64,8 @@ test("i cambi si sommano anche se il secondo parte mentre il primo è ancora in 
   for (let i = 1; i < xs.length; i++) assert.ok(Math.abs(xs[i] - xs[i - 1]) < 0.03, `salto a ${i / 100}`);
   assert.ok(Math.abs(xs[300] - 0) < 1e-9);
 });
+
+test("springs: ogni cambio può avere il suo smorzamento", () => {
+  const v = (t: number) => springs(t, 0, [{ at: 0, to: 1, len: 1, zeta: 1 }]);
+  for (let t = 0; t <= 1; t += 0.01) assert.ok(v(t) <= 1 + 1e-9);   // critico: mai sopra
+});
