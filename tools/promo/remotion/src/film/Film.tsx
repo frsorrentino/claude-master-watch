@@ -132,7 +132,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const solo = frame >= blindStart - 16 ? blindSoloAt((frame - (blindStart - 16)) / blindFrames) : 0;
   // il volo del terminale (piani 4, 6, 7): dietro l'orologio, dentro lo schermo e davanti alla cornice, tutti dallo stesso piazzamento
   const tiFx = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "takeIn" }> => f.kind === "takeIn");
-  const takeIn = tiFx && place && w?.view === "front" ? { e: tiFx, prev, g: GRID, f: frame - spanFrames(GRID, scene.at, tiFx.at), frames: spanFrames(GRID, scene.at + tiFx.at, tiFx.len),
+  const takeIn = tiFx && !tiFx.inShape && place && w?.view === "front" ? { e: tiFx, prev, g: GRID, f: frame - spanFrames(GRID, scene.at, tiFx.at), frames: spanFrames(GRID, scene.at + tiFx.at, tiFx.len),
     dx: place.x, dy: place.y, u: displayUnit(THEME.frontGlassPx, geo.front.glassR, geo.front.displayR, place.scale), width, height } : null;
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
@@ -227,7 +227,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
       ))}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];
-        if (!s.takeover || !next) return null;
+        if (!s.takeover || s.takeover.inShape || !next) return null;   // `inShape`: lo fa la forma unica; suoni e scena sotto restano
         const k = s.takeover, frames = spanFrames(GRID, s.at, k.len);
         const startF = beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT);
         // l'invio della dettatura si posa sul prompt del terminale della scena dopo

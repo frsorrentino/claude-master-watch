@@ -60,7 +60,8 @@ export const watchTextFor = (scene: Scene, g: Grid, offsetFrames = 0): React.Rea
     const node = e.kind === "counter" ? <Counter to={e.to} suffix={e.suffix} frames={at(e.at + e.len) - at(e.at)} />
       : e.kind === "typed" ? <TypedLine text={e.text} frames={at(e.at + e.len) - at(e.at)} />
       : e.kind === "terminal" ? <UiTerminal lines={e.lines} everyFrames={at(e.every)} startFrame={at(e.at) - offsetFrames} />
-      : e.kind === "spoken" ? <><SpokenWords file={e.words} fps={g.fps} /><div style={{ marginTop: 28 }}><UiWave file={e.voice.replace(/\.wav$/, ".env.json")} frames={at(e.at + e.len) - at(e.at)} /></div></> : null;
+      // `inShape`: parole e onda le disegna la forma unica; la voce è nella colonna sonora e resta
+      : e.kind === "spoken" && !e.inShape ? <><SpokenWords file={e.words} fps={g.fps} /><div style={{ marginTop: 28 }}><UiWave file={e.voice.replace(/\.wav$/, ".env.json")} frames={at(e.at + e.len) - at(e.at)} /></div></> : null;
     return node ? <Sequence key={i} from={e.kind === "terminal" ? 0 : at(e.at) - offsetFrames} layout="none">{node}</Sequence> : null;
   });
 };

@@ -71,6 +71,8 @@ export const Floating: React.FC<{ scene: Scene; g: Grid; glassY?: number }> = ({
         // la scheda non sparisce ai capi: resta piccola e appena trasparente finché non esce davvero dal quadro
         if (d <= -0.06 || lane.y[i] === null || y < -240) return null;
         const rail = { scale: lane.scale[i], alpha: lane.alpha[i] };
+        // la scheda la disegna la forma unica (card1, card2, dict): la corsia tiene i suoi tempi e le sue scritte
+        if (c.kind !== "text" && c.kind !== "brief" && c.inShape) return null;
         const isText = c.kind === "text";
         const s = isText ? 1 : rail.scale;                       // il testo non si deforma: sale liscio
         const a = rail.alpha * (isText ? 1 - wordsOut : 1) * (1 - laneOut);

@@ -141,6 +141,7 @@ export const Heroes: React.FC<{ scene: Scene; g: Grid; watchCx: number; pose: Po
         const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
         const p = (frame - from) / len;
         if (e.kind === "optionsBuild") {
+          if (e.inShape) return null;   // li disegna la forma unica (ShapeContent): qui restano tempi, camera e fuoco
           const o = optionsBuildAt(p, e.pressAt !== undefined ? e.pressAt / e.len : undefined);
           if (o.alpha <= 0) return null;
           // i tasti ESCONO dal display: partono dal loro rettangolo vero (stessa misura, stesso posto) e si posano al
