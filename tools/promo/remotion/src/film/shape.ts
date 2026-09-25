@@ -14,6 +14,8 @@ import { INK } from "./theme.ts";
 export type Rect = [number, number, number, number];
 /** I soli gesti che nell'app esistono: ogni trasformazione ne parte da uno (nessuna corona). */
 export type Gesture = "tap" | "longPress" | "swipe" | "send";
+/** Con `anchor` il `rect` e il raggio sono in unità del display (0-480, anche fuori dal display); senza `rect` la chiave
+ *  agganciata è il display intero. Senza `anchor` sono px del quadro. */
 export type ShapeKey = {
   at: number;
   rect?: Rect;
@@ -38,7 +40,20 @@ export const ZOOM_MAX = 1.3;
 /** Oltre questo spostamento di un vertice in un fotogramma 4 campioni di blur lasciano vedere le copie: se ne usano 8. */
 export const BLUR_FAST = 24;
 
-export const keyRect = (k: ShapeKey, display: Display): Rect => k.rect ?? display(k.at);
+/** Il display intero in unità del display, col suo raggio: la chiave agganciata senza `rect` (il quadrante tondo). */
+const FULL: Rect = [0, 0, 480, 480];
+const unitRect = (k: ShapeKey): Rect => k.rect ?? FULL;
+const unitR = (k: ShapeKey): number => (k.rect ? k.r : 240);
+/** L'origine del display nel quadro e quanti px vale un'unità (0-480). */
+export const displayUnits = (d: Rect): { x0: number; y0: number; u: number } => ({ x0: d[0], y0: d[1], u: d[2] / 480 });
+/** Un rect in unità del display portato nel quadro, sul display `d`. */
+export const toFrameRect = (r: Rect, d: Rect): Rect => {
+  const { x0, y0, u } = displayUnits(d);
+  return [x0 + r[0] * u, y0 + r[1] * u, r[2] * u, r[3] * u];
+};
+
+/** Il rect della chiave nel quadro; per le agganciate, fotografato sul display al battito della chiave. */
+export const keyRect = (k: ShapeKey, display: Display): Rect => (k.anchor ? toFrameRect(unitRect(k), display(k.at)) : k.rect!);
 
 const lenOf = (k: ShapeKey) => k.len ?? KEY_LEN;
 /** Una grandezza della forma: il valore della prima chiave, poi un cambio per chiave successiva. */
@@ -55,13 +70,22 @@ const toHex = (c: number) => Math.min(255, Math.max(0, Math.round(c))).toString(
 /** Miscela scritta così perché con peso 1 esatto il risultato è ESATTAMENTE `b`: la forma agganciata non deriva dal display. */
 const mix = (a: number, b: number, w: number) => a * (1 - w) + b * w;
 
+/**
+ * Tre tracce di molle. Libera, nel quadro: le chiavi agganciate vi entrano fotografate sul display al loro battito.
+ * Agganciata, in unità del display e sulle sole chiavi agganciate: portata nel quadro sul display di ADESSO, così fra due
+ * chiavi agganciate la forma segue il display anche durante la corsa (deriva, dolly, tremito). Il peso le miscela.
+ */
 export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Display): ShapeState => {
   const free = [0, 1, 2, 3].map((i) => track(keys, beat, (k) => keyRect(k, display)[i], easeZeta));
-  const r = track(keys, beat, (k) => k.r, easeZeta);
+  const r = track(keys, beat, (k) => (k.anchor ? unitR(k) * displayUnits(display(k.at)).u : k.r), easeZeta);
   // due cambi sovrapposti con durate diverse sommano molle a passi diversi e il peso esce da 0-1: fuori, la miscela
   // amplifica invece di interpolare (larghezze di 4000 px, raggi negativi), e sopra 1 la forma non sarebbe più il display
   const anchor = Math.min(1, Math.max(0, track(keys, beat, (k) => (k.anchor ? 1 : 0), critical)));
-  const d = display(beat);
+  // prima della prima chiave agganciata vale la prima; senza chiavi agganciate il peso è 0 e il display intero non conta
+  const pinned = keys.filter((k) => k.anchor);
+  const now = display(beat);
+  const d = pinned.length ? toFrameRect([0, 1, 2, 3].map((i) => track(pinned, beat, (k) => unitRect(k)[i], easeZeta)) as Rect, now) : now;
+  const dr = pinned.length ? track(pinned, beat, unitR, easeZeta) * displayUnits(now).u : now[2] / 2;
   const color = "#" + [0, 1, 2].map((i) => toHex(track(keys, beat, (k) => channels(k.color)[i], critical))).join("");
   // lo scavalco di ζ 0,8 verso una linea sottile porta la misura sotto zero: la forma resta almeno un pixel, e il raggio
   // non supera mezza misura (oltre, il CSS lo riduce da solo e la forma cambierebbe senza che la traccia lo dica)
@@ -71,7 +95,7 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
     y: mix(free[1], d[1], anchor),
     w,
     h,
-    r: Math.min(Math.min(w, h) / 2, Math.max(0, mix(r, d[2] / 2, anchor))),
+    r: Math.min(Math.min(w, h) / 2, Math.max(0, mix(r, dr, anchor))),
     color,
     anchor,
   };
@@ -153,7 +177,7 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (!half(k.at)) say("servono battiti o mezzi battiti");
     if (prev && !(k.at > prev.at)) say(`i battiti devono essere strettamente crescenti (la chiave prima è al ${prev.at})`);
     if (!(k.at < total)) say(`oltre la fine del film (${total} battiti)`);
-    if ((k.rect === undefined) === (k.anchor === undefined)) say("serve esattamente uno fra «rect» e «anchor»");
+    if (k.rect === undefined && k.anchor === undefined) say("serve «rect», «anchor» o tutti e due (un rect in unità del display)");
     if (k.anchor !== undefined && k.anchor !== "display") say(`anchor «${k.anchor}»: vale solo «display»`);
     if (k.rect !== undefined && !(Array.isArray(k.rect) && k.rect.length === 4 && k.rect.every(Number.isFinite) && k.rect[2] > 0 && k.rect[3] > 0)) say(`rect (${String(k.rect)}): servono quattro numeri, larghezza e altezza positive`);
     if (!(num(k.r) && k.r >= 0)) say(`raggio ${k.r}: serve un numero non negativo`);

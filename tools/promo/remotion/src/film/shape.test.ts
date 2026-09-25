@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, shutterCentre, validateShape, inkOn } from "./shape.ts";
+import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
 import type { Display, Rect, ShapeKey } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
+import { springSettle, springs } from "./spring.ts";
 
 const still: Display = () => [1000, 222, 636, 636];
 const drifting: Display = (b) => [1000 + 3 * Math.sin(b), 222 + 2 * Math.cos(b * 1.7), 636, 636];
@@ -72,7 +73,7 @@ test("validazione: una traccia buona passa, gli errori si elencano in italiano",
   assert.deepEqual(validateShape(keys, 20), []);
   assert.deepEqual(validateShape(undefined, 20), []);
   const bad = validateShape([
-    { at: 0.5, rect: [0, 0, 10, 10], anchor: "display", r: -1, color: "red" },
+    { at: 0.5, rect: [0, 0, 10, 10], anchor: "watch", r: -1, color: "red" },
     { at: 0.5, rect: [0, 0, 0, 10], r: 0, color: "#000000", zoom: 2, gesture: "crown" },
     { at: 0.75, rect: [0, 0, 10, 10], r: 0, color: "#000000" },
   ], 20);
@@ -169,4 +170,41 @@ test("validazione: una molla che finisce prima di quella della chiave prima fa u
     { at: 2, rect: [0, 0, 10, 10], r: 0, color: "#000000", len: 1 },
     { at: 2.5, rect: field, r: 0, color: "#000000", len: 0.5 },
   ], 20), []);   // finiscono insieme: va bene
+});
+
+// Piano 2, Task 2: una chiave agganciata può avere il suo rect in unità del display (0-480), e fra due chiavi agganciate
+// la molla corre in quelle unità: la forma segue il display anche durante la corsa, non una sua fotografia.
+const breathing: Display = (b) => [1000 + 3 * Math.sin(b), 222 + 2 * Math.cos(b * 1.7), 636 + 4 * Math.sin(b / 2), 636 + 4 * Math.sin(b / 2)];
+const card: ShapeKey[] = [
+  { at: 0, anchor: "display", rect: [26, 146, 428, 120], r: 42, color: "#2a2f3a" },
+  { at: 2, anchor: "display", rect: [40, 60, 400, 360], r: 20, color: "#2a2f3a", len: 2 },
+  { at: 6, rect: [110, 330, 840, 420], r: 28, color: "#2a2f3a" },
+];
+
+test("agganciata con un rect in unità del display: la molla corre nel display, che intanto deriva e cambia misura", () => {
+  for (let b = 0; b <= 4.5; b += 0.02) {
+    const s = shapeAt(card, b, breathing), d = breathing(b);
+    const unit = [0, 1, 2, 3].map((i) => springs(b, card[0].rect![i], [{ at: 2, to: card[1].rect![i], len: 2 }])) as Rect;
+    const want = toFrameRect(unit, d);
+    near(s.x, want[0]); near(s.y, want[1]); near(s.w, want[2]); near(s.h, want[3]);
+    near(s.r, springs(b, 42, [{ at: 2, to: 20, len: 2 }]) * (d[2] / 480));
+    assert.equal(s.anchor, 1);
+  }
+  assert.deepEqual(keyRect(card[1], breathing), toFrameRect([40, 60, 400, 360], breathing(2)));
+});
+
+test("una chiave libera dopo le agganciate riporta il peso a 0 con la molla critica", () => {
+  let prev = 1;
+  for (let b = 6; b <= 7.5; b += 0.02) {
+    const a = shapeAt(card, b, breathing).anchor;
+    near(a, 1 - springSettle(b - 6), 1e-9);
+    assert.ok(a <= prev + 1e-12, `battito ${b}: il peso risale`);
+    prev = a;
+  }
+  assert.equal(shapeAt(card, 7, breathing).anchor, 0);
+});
+
+test("validazione: rect e aggancio insieme vanno bene, senza nessuno dei due no", () => {
+  assert.deepEqual(validateShape(card, 20), []);
+  assert.ok(validateShape([{ at: 0, r: 0, color: "#000000" }], 20).some((m) => m.includes("rect") && m.includes("anchor")));
 });

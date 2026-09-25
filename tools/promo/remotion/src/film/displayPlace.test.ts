@@ -53,3 +53,14 @@ test("senza display frontale o di tre quarti non c'è rect: la vista laterale de
   assert.equal(displayRectAt(short, beatToFrame(G, 25)), null);
   assert.equal(displayRectAt(short, beatToFrame(G, 60)), null);
 });
+
+test("il display della forma è quello vero, fra un fotogramma e l'altro; senza orologio, quello a riposo della scena", async () => {
+  const { frontDisplayRect, realDisplay } = await import("./shapeDisplay.ts");
+  const d = realDisplay(short);
+  for (const b of [0.5, 3.3, 50.25, 64.5]) {
+    const f = (short.offsetSeconds + (b * 60) / short.bpm) * short.fps;   // continuo, non arrotondato: la deriva è continua
+    assert.deepEqual(d(b), displayRectAt(short, f));
+  }
+  assert.ok(d(50.25)[0] !== displayRectAt(short, beatToFrame(G, 50.25))![0], "fra due fotogrammi il display è dove sta in quel momento");
+  assert.deepEqual(d(25), frontDisplayRect(0.5 * 1920));   // il loop, di lato: nessun display frontale, quello a riposo al centro
+});
