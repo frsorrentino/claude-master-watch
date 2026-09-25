@@ -292,3 +292,19 @@ test("show: molla critica fra 0 e 1, di norma 1; a 0 la scatola non copre", () =
   assert.equal(shapeAt(keys, 4, still).show, 1);
   assert.ok(validateShape([{ ...k[0], show: 1.5 }], 20).some((m) => m.includes("show")));
 });
+
+import { RIPPLE_BEATS, ambientOf, rippleAt, shadowOf } from "./shape.ts";
+test("effetti: ombra zero da agganciata o invisibile, piena da libera; onda solo sui gesti e per RIPPLE_BEATS", () => {
+  const base = shapeAt(keys, 0.5, still);
+  assert.equal(shadowOf(base).alpha, 0);                            // agganciata al display
+  const free = shapeAt(keys, 3.9, still);
+  assert.ok(shadowOf(free).alpha > 0.4 && shadowOf(free).y > 20);
+  assert.equal(shadowOf({ ...free, show: 0 }).alpha, 0);
+  assert.equal(rippleAt(keys, 1), null);
+  const r = rippleAt(keys, 2 + RIPPLE_BEATS / 2)!;
+  assert.equal(r.key.at, 2); assert.ok(Math.abs(r.p - 0.5) < 1e-9);
+  assert.equal(rippleAt(keys, 2 + RIPPLE_BEATS + 0.01), null);
+  assert.equal(rippleAt(keys, 5), null);                             // la chiave 4 non ha gesto
+  const a = ambientOf(free);
+  assert.ok(a.alpha > 0 && a.x > 0 && a.x < 1 && a.color === free.color);
+});

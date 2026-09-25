@@ -3,7 +3,8 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { frameToBeat } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { SHAPE_SHUTTER, arcOf, blurSamples, boxStyle, contentAt, keyRect, shapeAt, shapeVisible, shutterCentre } from "./shape.ts";
+import { SHAPE_SHUTTER, arcOf, blurSamples, boxStyle, contentAt, inkOn, keyRect, rippleAt, shadowOf, shapeAt, shapeVisible, shutterCentre } from "./shape.ts";
+import { springSettle } from "./spring.ts";
 import type { Display, ShapeKey } from "./shape.ts";
 import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 
@@ -12,6 +13,8 @@ export type ShapeContent = (id: string, w: number, h: number) => React.ReactNode
 type Track = { keys: readonly ShapeKey[]; g: Grid; display: Display };
 /** Da che battito a che battito la forma è accesa (`to` escluso; senza, fino alla fine). Fuori non c'è né forma né camera. */
 export type ShapeSpan = { from: number; to?: number };
+/** Gli interruttori degli effetti (shape.ts): accesi dalla composizione, Franz li spegne uno per uno. */
+export type ShapeEffects = { shadow?: boolean; ripple?: boolean; light?: boolean };
 const inSpan = (span: ShapeSpan | undefined, beat: number) => !span || (beat >= span.from && (span.to === undefined || beat < span.to));
 
 /** Lo strato che la camera sposta e scala: niente `will-change`, se no lo scalato resta una bitmap sgranata. `shift`:
@@ -24,7 +27,7 @@ const CameraLayer: React.FC<Track & { shift?: number; span?: ShapeSpan; children
 /** La scatola: riempimento e bordo, la sola cosa col blur. Stato e camera si leggono QUI, dentro il blur, perché il blur
  *  la ridisegna ai sotto-fotogrammi spostando il frame: calcolati fuori, i campioni sarebbero tutti uguali. Arretrati di
  *  `shutterCentre(n)`, perché i campioni cadano attorno al fotogramma e non davanti (shape.ts). */
-const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples }) => {
+const Box: React.FC<Track & { samples: number; shadow?: boolean }> = ({ keys, g, display, samples, shadow }) => {
   const shift = shutterCentre(samples);
   const s = shapeAt(keys, frameToBeat(g, useCurrentFrame() - shift), display);
   const a = arcOf(s);
@@ -42,14 +45,14 @@ const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples 
           {s.split > 1e-3 ? ring((a.R * a.sweep * Math.PI * s.split) / 180, s.color) : null}
         </svg>
       ) : (
-        <div style={boxStyle(s)} />
+        <div style={{ ...boxStyle(s), ...(shadow ? (({ y, blur, alpha }) => (alpha > 0.005 ? { boxShadow: `0 ${y}px ${blur}px rgba(4,5,12,${alpha})` } : {}))(shadowOf(s)) : {}) }} />
       )}
     </CameraLayer>
   );
 };
 
 /** La forma unica sopra le scene: la scatola col blur, e sopra il contenuto senza blur, che non scala con la forma. */
-export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan }> = ({ keys, g, display, content, span }) => {
+export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan; effects?: ShapeEffects }> = ({ keys, g, display, content, span, effects = {} }) => {
   const frame = useCurrentFrame();
   const beat = frameToBeat(g, frame);
   if (!keys.length || !inSpan(span, beat) || !shapeVisible(keys, beat)) return null;
@@ -57,18 +60,26 @@ export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan 
   const c = content ? contentAt(keys, beat) : null;
   const [, , kw, kh] = c ? keyRect(c.key, display) : [0, 0, 0, 0];
   const samples = blurSamples(screenSpeed(keys, beat, display, g.bpm / 60 / g.fps));
+  const ripple = effects.ripple && !arcOf(s) ? rippleAt(keys, beat) : null;
   return (
     <AbsoluteFill>
       <CameraMotionBlur samples={samples} shutterAngle={SHAPE_SHUTTER}>
-        <Box keys={keys} g={g} display={display} samples={samples} />
+        <Box keys={keys} g={g} display={display} samples={samples} shadow={effects.shadow} />
       </CameraMotionBlur>
-      {c && content ? (
+      {(c && content) || ripple ? (
         <CameraLayer keys={keys} g={g} display={display}>
           <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: "hidden" }}>
+            {/* l'onda del tocco: dal centro della forma, nell'inchiostro del suo colore, sotto il contenuto */}
+            {ripple ? (() => {
+              const R = (Math.hypot(s.w, s.h) / 2) * springSettle(ripple.p);
+              return <div style={{ position: "absolute", left: s.w / 2 - R, top: s.h / 2 - R, width: 2 * R, height: 2 * R, borderRadius: "50%", background: inkOn(s.color), opacity: 0.16 * (1 - ripple.p) * s.show }} />;
+            })() : null}
             {/* la controscala: il blocco resta grande come la sua chiave e centrato, così l'a capo non si muove mentre la forma cambia */}
-            <div style={{ position: "absolute", left: (s.w - kw) / 2, top: (s.h - kh) / 2, width: kw, height: kh, opacity: c.opacity * s.show, filter: c.blur > 0 ? `blur(${c.blur}px)` : undefined, transform: `translateY(${c.dy}px)` }}>
-              {content(c.id, kw, kh)}
-            </div>
+            {c && content ? (
+              <div style={{ position: "absolute", left: (s.w - kw) / 2, top: (s.h - kh) / 2, width: kw, height: kh, opacity: c.opacity * s.show, filter: c.blur > 0 ? `blur(${c.blur}px)` : undefined, transform: `translateY(${c.dy}px)` }}>
+                {content(c.id, kw, kh)}
+              </div>
+            ) : null}
           </div>
         </CameraLayer>
       ) : null}

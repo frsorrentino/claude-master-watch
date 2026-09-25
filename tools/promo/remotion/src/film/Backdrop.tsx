@@ -23,7 +23,7 @@ const isLight = (hex: string): boolean => {
   const n = parseInt(hex.slice(1, 7), 16);
   return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.5;
 };
-export const Backdrop: React.FC<{ act: Act; glowX?: number; from?: string; fade?: number; keep?: boolean; light?: number; haloR?: number; field?: number; shadeIn?: number; colors?: [string, string, string, string] }> = ({ act, glowX = THEME.watchX, from, fade = 60, keep = false, light = 1, haloR = 1, field = 1, shadeIn = 0, colors }) => {
+export const Backdrop: React.FC<{ act: Act; glowX?: number; from?: string; fade?: number; keep?: boolean; light?: number; haloR?: number; field?: number; shadeIn?: number; colors?: [string, string, string, string]; tint?: { color: string; x: number; y: number; alpha: number } | null }> = ({ act, glowX = THEME.watchX, from, fade = 60, keep = false, light = 1, haloR = 1, field = 1, shadeIn = 0, colors, tint }) => {
   const frame = useCurrentFrame();
   const [c0, c1, c2, glow] = colors ?? ACT_BG[act];   // `colors`: la tavolozza della scaletta, se ne ha una
   // `keep`: il campo di colore resta, il colore dell'atto non entra mai (Franz, 20/09 10:10)
@@ -38,6 +38,9 @@ export const Backdrop: React.FC<{ act: Act; glowX?: number; from?: string; fade?
       <AbsoluteFill style={{ background: `radial-gradient(120% 120% at 70% 30%, ${c0} 0%, ${c1} 45%, ${c2} 100%)`, opacity: e }}>
         <AbsoluteFill style={{ mixBlendMode: "screen", background: `radial-gradient(${38 * haloR}% ${70 * haloR}% at ${glowX * 100}% 50%, ${glow} 0%, rgba(0,0,0,.0) 100%), #000`, opacity: Math.min(1, light) }} />
       </AbsoluteFill>
+      {/* la luce della forma unica (effetto «luce d'ambiente», 25/09): il fondo prende il suo colore attorno a lei, sotto
+          orologio e testi; in «screen», così una forma scura non spegne nulla */}
+      {tint && tint.alpha > 0.005 ? <AbsoluteFill style={{ mixBlendMode: "screen", opacity: tint.alpha, background: `radial-gradient(34% 46% at ${tint.x * 100}% ${tint.y * 100}%, ${tint.color} 0%, rgba(0,0,0,0) 100%)` }} /> : null}
       {field < 1 ? <AbsoluteFill style={{ background: "#000", opacity: 1 - field }} /> : null}
     </AbsoluteFill>
   );

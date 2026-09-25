@@ -118,6 +118,35 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
 export const boxStyle = (s: ShapeState): { position: "absolute"; left: number; top: number; width: number; height: number; borderRadius: number; background: string; opacity: number } =>
   ({ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color, opacity: s.show });
 
+/**
+ * Gli effetti della forma (Franz, 25/09 22:58: «spettacolari ma coerenti»; scelti con l'advisor), ognuno con il suo
+ * interruttore nella composizione. Nessuno tocca il testo (§3), nessuno rimbalza, niente particelle.
+ *
+ * Ombra di distacco: zero quando la forma è agganciata al display (è il display), piena quando è libera; così i due
+ * distacchi (la notifica al 2, la card ✓ al 52) si sentono. Scala con `show`: una forma invisibile non fa ombra.
+ */
+export const shadowOf = (s: ShapeState): { y: number; blur: number; alpha: number } => {
+  const k = Math.min(1, Math.max(0, (1 - s.anchor) * s.show));
+  return { y: 22 * k, blur: 48 * k, alpha: 0.45 * k };
+};
+/** L'onda del tocco (il feedback vero di Wear OS): parte dal centro della forma su ogni chiave con un gesto e si spegne
+ *  in `RIPPLE_BEATS`. `p` 0-1 lungo l'onda; null fuori. Vince il gesto più recente. */
+export const RIPPLE_BEATS = 0.6;
+export const rippleAt = (keys: readonly ShapeKey[], beat: number): { p: number; key: ShapeKey } | null => {
+  for (let i = keys.length - 1; i >= 0; i--) {
+    const k = keys[i];
+    if (!k.gesture || beat < k.at) continue;
+    const p = (beat - k.at) / RIPPLE_BEATS;
+    return p < 1 ? { p, key: k } : null;
+  }
+  return null;
+};
+/** La luce d'ambiente: il fondo della scena prende il colore della forma attorno a lei, piano (contro «tutto è una
+ *  pillola», §4). Centro in frazioni di quadro, intensità che scala con `show`. */
+export const AMBIENT = 0.22;
+export const ambientOf = (s: ShapeState): { color: string; x: number; y: number; alpha: number } =>
+  ({ color: s.color, x: (s.x + s.w / 2) / 1920, y: (s.y + s.h / 2) / 1080, alpha: AMBIENT * s.show });
+
 /** La forma si disegna, salvo dopo il passaggio al logo: da lì l'arco è quello di `LogoMark`, e due archi uno sull'altro
  *  si vedrebbero (bordi e colori non combaciano al sottopixel). */
 export const shapeVisible = (keys: readonly ShapeKey[], beat: number): boolean => {

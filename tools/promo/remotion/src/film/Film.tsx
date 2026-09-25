@@ -50,8 +50,9 @@ import { Soundtrack } from "./Soundtrack.tsx";
 import { Whip } from "./ui/Whip.tsx";
 import type { Stems } from "./Soundtrack.tsx";
 import { CameraFrame, Shape } from "./Shape.tsx";
-import type { ShapeSpan } from "./Shape.tsx";
+import type { ShapeEffects, ShapeSpan } from "./Shape.tsx";
 import { realDisplay } from "./shapeDisplay.ts";
+import { ambientOf, shapeAt, shapeVisible } from "./shape.ts";
 import { shapeContent } from "./ShapeContent.tsx";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
@@ -60,6 +61,8 @@ export const FILM_TIMELINE = validateTimeline(raw);
 export const FilmTimeline = React.createContext<Timeline>(FILM_TIMELINE);
 /** La sfocatura di movimento è accesa (`blur` della composizione): a false le scene con `blur` rendono come prima, per il confronto e per misurare il costo. */
 export const FilmBlur = React.createContext<boolean>(true);
+/** La luce della forma unica sul fondo delle scene (effetto «luce d'ambiente»): dal fotogramma assoluto, o null se spenta. */
+export const ShapeLight = React.createContext<((absFrame: number) => { color: string; x: number; y: number; alpha: number } | null) | null>(null);
 /** Quattro sotto-fotogrammi con otturatore a 180° (direttive di motion, 25/09: «4 subframes per frame … motion blur»): ogni strato
  *  si rende quattro volte a tempi diversi e si somma. Solo le scene che lo dichiarano (`blur` in scaletta), perché costa quattro volte. */
 export const BLUR_SAMPLES = 4, BLUR_SHUTTER = 180;
@@ -75,6 +78,7 @@ export const SHORT_TIMELINE = validateTimeline(shortRaw);
 export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; around?: React.ReactNode }> = ({ scene, overlay, around }) => {
   const TIMELINE = React.useContext(FilmTimeline);
   const GRID: Grid = gridOf(TIMELINE);
+  const lightAt = React.useContext(ShapeLight);
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const total = spanFrames(GRID, scene.at, scene.len);
@@ -142,7 +146,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
-      <Backdrop act={scene.act} colors={actColors(scene.act, TIMELINE.palette)} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} keep={scene.bgKeep} shadeIn={w?.enter ? beat * MOVE_BEATS : 0} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
+      <Backdrop tint={lightAt ? lightAt(frame + beatToFrame(GRID, scene.at)) : null} act={scene.act} colors={actColors(scene.act, TIMELINE.palette)} light={halo} haloR={sleep ? sleep.haloR : 1} field={sleep ? sleep.field : 1} glowX={scene.text ? THEME.watchX : 0.5} from={scene.bgFrom} keep={scene.bgKeep} shadeIn={w?.enter ? beat * MOVE_BEATS : 0} fade={scene.bgFadeBeats ? spanFrames(GRID, scene.at, scene.bgFadeBeats) : undefined} />
       {scene.split ? <Split left={scene.split.left} right={scene.split.right} open={scene.split.open} hold={scene.split.hold} close={scene.split.close} total={total} beat={beat} /> : null}
       {scene.bands ? <Bands left={scene.bands.left} right={scene.bands.right} openFrames={scene.bands.open} winFrames={scene.bands.win} total={total} /> : null}
       <TerminalBackdrop scene={scene} g={GRID} />
@@ -207,7 +211,7 @@ const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un l
 
 /** `shape`: la forma unica e la sua camera (specifica del 25/09), accese da `from` (a `to`, se c'è) sul display vero.
  *  Senza, il film è quello di prima: senza chiavi `CameraFrame` lascia le scene come sono e la forma non si disegna. */
-export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean; shape?: ShapeSpan | null }> = ({ stems, timeline = FILM_TIMELINE, blur = true, shape = null }) => {
+export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean; shape?: ShapeSpan | null; effects?: ShapeEffects }> = ({ stems, timeline = FILM_TIMELINE, blur = true, shape = null, effects = {} }) => {
   useFilmFonts();
   const TIMELINE = timeline;
   const GRID: Grid = gridOf(timeline);
@@ -216,6 +220,11 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
   return (
     <FilmTimeline.Provider value={timeline}>
     <FilmBlur.Provider value={blur}>
+    <ShapeLight.Provider value={effects.light && shapeKeys.length ? (f: number) => {
+      const b = frameToBeat(GRID, f);
+      if (b < (shape?.from ?? 0) || (shape?.to !== undefined && b >= shape.to) || !shapeVisible(shapeKeys, b)) return null;
+      return ambientOf(shapeAt(shapeKeys, b, display));
+    } : null}>
     <AbsoluteFill style={{ background: "#000" }}>
       <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} shapeFrom={shape?.from} />
       {/* scene e passaggi nella camera della forma; titoli dei sonni e frustate restano fuori, sopra la forma */}
@@ -285,7 +294,7 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.out === "blink" ? s.text?.accent ?? "" : ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
       </CameraFrame>
-      {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined} content={shapeContent(TIMELINE)} /> : null}
+      {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} span={shape ?? undefined} content={shapeContent(TIMELINE)} effects={effects} /> : null}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si
           risveglia non disegna il suo testo: lo disegna qui. */}
@@ -311,10 +320,11 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
       ))}
     </AbsoluteFill>
+    </ShapeLight.Provider>
     </FilmBlur.Provider>
     </FilmTimeline.Provider>
   );
 };
 
 /** Il corto: la stessa macchina del film lungo, con la sua scaletta, la sua musica e la sua tavolozza. */
-export const ShortFilm: React.FC<{ stems?: Stems; blur?: boolean; shape?: ShapeSpan | null }> = ({ stems, blur, shape }) => <Film stems={stems} timeline={SHORT_TIMELINE} blur={blur} shape={shape} />;   // `shape` dalla composizione: la accende la regia
+export const ShortFilm: React.FC<{ stems?: Stems; blur?: boolean; shape?: ShapeSpan | null; effects?: ShapeEffects }> = ({ stems, blur, shape, effects }) => <Film stems={stems} timeline={SHORT_TIMELINE} blur={blur} shape={shape} effects={effects} />;   // `shape` dalla composizione: la accende la regia
