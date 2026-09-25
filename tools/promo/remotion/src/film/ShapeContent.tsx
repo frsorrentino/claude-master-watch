@@ -5,10 +5,12 @@ import { gridOf } from "./cut.ts";
 import type { Fx, Timeline } from "./timeline.ts";
 import type { ShapeContent } from "./Shape.tsx";
 import { SWAP_IN, SWAP_OUT, inkOn } from "./shape.ts";
-import { optionsEnterAt } from "./shapeContent.ts";
+import { laneCard, optionsEnterAt } from "./shapeContent.ts";
 import { SpokenWords } from "./WatchText.tsx";
 import { UiOption } from "./ui/UiOption.tsx";
 import { UiWave } from "./ui/UiWave.tsx";
+import { UiDictation } from "./ui/UiDictation.tsx";
+import { SCREEN_ICONS } from "./ui/Takeover.tsx";
 import { optionsBuildAt } from "./ui/heroes.ts";
 import { sceneAt } from "./shapeDisplay.ts";
 import { THEME } from "./theme.ts";
@@ -85,6 +87,59 @@ const Content: React.FC<{ t: Timeline; id: string; w: number; h: number }> = ({ 
             <div style={{ zoom: 0.55 }}><UiOption w={428} h={88} label={question.noLabel} /></div>
           </div>
         ) : null}
+      </div>
+    );
+  }
+  if (/^card\d+$/.test(id) || id === "dict") {
+    // le schede della corsia (loop): la forma è la scheda che sale, la corsia tiene solo tempi e scritte (`inShape`)
+    const lane = fx.find((f): f is Extract<Fx, { kind: "float" }> => f.kind === "float");
+    const c = lane ? laneCard(lane.cards, id) : undefined;
+    if (!c) return null;
+    const voice = fx.find((f): f is Extract<Fx, { kind: "spoken" }> => f.kind === "spoken");
+    // la dettatura sui tempi di Floating: secondi dall'inizio della scena, tocco sul microfono, voce, conferma
+    const at = (b: number) => spanFrames(g, scene.at, b) / g.fps;
+    return (
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "relative", width: w }}>
+          <div style={{ zoom: w / 428 }}>
+            {c.dictation && voice ? (
+              <UiDictation w={428} name={c.name} words={voice.words} envelope={voice.voice.replace(/\.wav$/, ".env.json")} t={(frame - sceneStart) / g.fps}
+                tap={at(c.dictation.tap)} voice={at(voice.at)} confirm={c.dictation.confirm !== undefined ? at(c.dictation.confirm) : 1e9} beat={60 / g.bpm} />
+            ) : (
+              <UiCard w={428} name={c.name} age={c.age} text={c.text} badge={c.badge} icon={c.icon === "bell" ? "check" : c.icon} />
+            )}
+          </div>
+          {/* la campanella: la sessione seguita, il puntino giallo in alto a destra, fuori dallo zoom come nella corsia */}
+          {c.icon === "bell" && !c.dictation ? <div style={{ position: "absolute", right: 42, top: 34, width: 34, height: 34, borderRadius: "50%", background: UI.followed }} /> : null}
+        </div>
+      </div>
+    );
+  }
+  if (id === "screen") {
+    // la schermata dell'invio a tutto quadro, com'è a fine crescita del Takeover (corpo `screen`, u = 120/29): le righe
+    // dettate, annulla e tastiera ai lati, il ✓ grande sotto. Posti di UiDictation, centro della schermata al centro
+    const tk = scene.takeover;
+    if (!tk?.words) return null;
+    const u = 120 / 29;
+    const place = (x0: number, y0: number, dd: number): React.CSSProperties => ({ position: "absolute", left: w / 2 + (x0 - 213.5) * u - (dd * u) / 2, top: h / 2 + (y0 - 106.5) * u - (dd * u) / 2, width: dd * u, height: dd * u });
+    return (
+      <>
+        <div style={{ position: "absolute", left: w / 2, top: h / 2 + (71 - 106.5) * u, translate: "-50% -50%", whiteSpace: "nowrap", textAlign: "center", fontFamily: "Roboto", fontSize: 29 * u, lineHeight: `${36 * u}px`, letterSpacing: -0.2 * u, color: "#FFFFFF" }}>
+          {tk.words.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+        <svg viewBox="0 0 24 24" style={place(85, 160, 34)}><path d={SCREEN_ICONS.undo} fill="#FFFFFF" /></svg>
+        <svg viewBox="0 0 24 24" style={place(341, 160, 36)}><path d={SCREEN_ICONS.keyboard} fill="#FFFFFF" /></svg>
+        <div style={{ ...place(213, 173, 64), borderRadius: "50%", background: "#FAF5E9", display: "grid", placeItems: "center" }}>
+          <svg viewBox="0 0 24 24" width={32 * u} height={32 * u}><path d={SCREEN_ICONS.check} fill="#31302D" /></svg>
+        </div>
+      </>
+    );
+  }
+  if (id === "check") {
+    // il ✓ dell'invio: la forma è il suo cerchio, il segno nell'inchiostro che si legge sul colore della chiave
+    return (
+      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+        <svg viewBox="0 0 24 24" width={w / 2} height={h / 2}><path d={SCREEN_ICONS.check} fill={inkOn(key.color)} /></svg>
       </div>
     );
   }

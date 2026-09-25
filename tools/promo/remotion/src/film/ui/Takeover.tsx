@@ -17,6 +17,13 @@ export type TakeoverBody = { kind: "card"; text: string } | { kind: "words"; wor
  * righe monospazio nel become: sono loro a diventare le righe del terminale.
  * Disegnato a livello del film, sopra le due scene, centrato sul taglio (il taglio cade a `TAKEOVER_CUT` dell'arco).
  */
+/** Le icone della schermata di dettatura (Material): annulla, tastiera, ✓. Le usa anche la forma unica (ShapeContent). */
+export const SCREEN_ICONS = {
+  undo: "M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z",
+  keyboard: "M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z",
+  check: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+};
+
 export const Takeover: React.FC<{
   x: number; y: number; w: number; h: number; r: number; tilt?: number; color: string; toColor: string; tint?: "grow"; frames: number; body?: TakeoverBody;
   press?: number; beat?: number; land?: string;   // l'invio della schermata: il tocco su ✓ e il battito in fotogrammi, il prompt dove si posa il testo
@@ -140,13 +147,13 @@ export const Takeover: React.FC<{
             ) : null}
             {keys > 0 ? (
               <div style={{ position: "absolute", left: cx, top: cy, opacity: keys, transform: tilt, transformOrigin: "50% 100%" }}>
-                <svg viewBox="0 0 24 24" style={at(85, 160, 34)}><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="#FFFFFF" /></svg>
-                <svg viewBox="0 0 24 24" style={at(341, 160, 36)}><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z" fill="#FFFFFF" /></svg>
+                <svg viewBox="0 0 24 24" style={at(85, 160, 34)}><path d={SCREEN_ICONS.undo} fill="#FFFFFF" /></svg>
+                <svg viewBox="0 0 24 24" style={at(341, 160, 36)}><path d={SCREEN_ICONS.keyboard} fill="#FFFFFF" /></svg>
                 {okShown ? (
                   <div style={{ ...at(213, 173, 64), borderRadius: "50%", overflow: "hidden", background: send ? `color-mix(in srgb, #D9D1BF ${Math.round(60 * send.squash)}%, #FAF5E9)` : "#FAF5E9", display: "grid", placeItems: "center", scale: String(okScale) }}>
                     {/* l'onda della pressione: un cerchio più scuro che si allarga dal centro e si spegne */}
                     {send && send.ripple > 0 && send.ripple < 1 ? <div style={{ position: "absolute", left: "50%", top: "50%", width: `${140 * send.ripple}%`, height: `${140 * send.ripple}%`, translate: "-50% -50%", borderRadius: "50%", background: `rgba(49,48,45,${0.16 * (1 - send.ripple)})` }} /> : null}
-                    <svg viewBox="0 0 24 24" width={32 * u} height={32 * u} style={{ position: "relative" }}><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="#31302D" /></svg>
+                    <svg viewBox="0 0 24 24" width={32 * u} height={32 * u} style={{ position: "relative" }}><path d={SCREEN_ICONS.check} fill="#31302D" /></svg>
                   </div>
                 ) : null}
                 {/* il dito, come il «yes» della risposta: il cerchio grigio del «mostra tocchi» sul ✓ */}
