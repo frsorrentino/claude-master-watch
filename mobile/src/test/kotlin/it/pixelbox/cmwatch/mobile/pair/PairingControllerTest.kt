@@ -123,6 +123,18 @@ class PairingControllerTest {
         assertEquals(PairFail.WATCH_APP_MISSING, c.ui.value.fail)
     }
 
+    /** Franz, 25/09 06:58: anche con un orologio senza la nostra app si può accoppiare il solo telefono. */
+    @Test fun watchWithoutTheAppCanBeSkipped() = runTest {
+        watch.reachable = false; watch.connectedWithoutApp = true
+        val c = controller()
+        c.run(qrText)
+        assertEquals(PairFail.WATCH_APP_MISSING, c.ui.value.fail)
+        c.retry(withoutWatch = true)
+        assertEquals(Phase.DONE, c.ui.value.phase)
+        assertEquals(StepState.SKIPPED, c.ui.value.steps[Step.WATCH])
+        assertEquals(listOf("phoneUid"), PairingRecord.fromJson(store.s.pairingJson)!!.uids)
+    }
+
     @Test fun watchRestartsForAnotherProjectThenAnswers() = runTest {
         watch.restartsLeft = 1
         val c = controller()

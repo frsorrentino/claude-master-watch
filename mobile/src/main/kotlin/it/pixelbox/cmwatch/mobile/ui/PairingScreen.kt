@@ -52,6 +52,7 @@ fun PairingScreen(ui: PairUi, onRetry: () -> Unit, onRescan: () -> Unit, onWitho
             ui.fail == PairFail.WATCH_APP_MISSING -> {
                 Button(onInstallOnWatch, big) { Text(stringResource(R.string.pair_install_watch)) }
                 OutlinedButton(onRetry, Modifier.fillMaxWidth()) { Text(stringResource(R.string.pair_retry)) }
+                OutlinedButton(onWithoutWatch, Modifier.fillMaxWidth()) { Text(stringResource(R.string.pair_without_watch)) }
             }
             ui.fail == PairFail.NO_WATCH -> {
                 Button(onRetry, big) { Text(stringResource(R.string.pair_retry)) }

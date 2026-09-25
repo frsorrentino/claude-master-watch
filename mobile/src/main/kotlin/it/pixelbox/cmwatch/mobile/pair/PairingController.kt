@@ -89,9 +89,9 @@ class PairingController(
         val node = link.find()
         var hello: HelloResponse? = null
         if (node == null) {
-            if (link.anyConnected() != null) return fail(PairFail.WATCH_APP_MISSING, Step.WATCH)
-            if (!withoutWatch) return fail(PairFail.NO_WATCH, Step.WATCH)
-            step(Step.WATCH, StepState.SKIPPED)
+            // Senza orologio, o con un orologio senza la nostra app, si può accoppiare il solo telefono (Franz, 25/09 06:58).
+            if (withoutWatch) step(Step.WATCH, StepState.SKIPPED)
+            else return fail(if (link.anyConnected() != null) PairFail.WATCH_APP_MISSING else PairFail.NO_WATCH, Step.WATCH)
         } else {
             hello = hello(node, cfg) ?: return fail(PairFail.WATCH_FAILED, Step.WATCH)
             _ui.value = _ui.value.copy(watchName = hello.name ?: node.name)

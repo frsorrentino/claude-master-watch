@@ -25,6 +25,9 @@ class PhoneScreensTest {
     @Test fun pairingNoWatch() = paparazzi.snapshot {
         CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
     }
+    @Test fun pairingWatchAppMissing() = paparazzi.snapshot {
+        CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.WATCH_APP_MISSING), {}, {}, {}, {}, {}) }
+    }
     @Test fun pairingDone() = paparazzi.snapshot {
         CmPhoneTheme { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.DONE, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
     }
