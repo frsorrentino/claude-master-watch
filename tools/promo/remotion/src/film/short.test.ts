@@ -75,7 +75,7 @@ test("la corsia riprende le card del film lungo, e dettatura, voce e invio resta
   const loop = byId("loop"), drop = MUSIC.drop + 4;   // l'arrivo di «Deployed», sulla seconda battuta della parte forte
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as F;
   const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
-  const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined });
+  const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined, inShape: undefined });   // `inShape`: la scheda la disegna la forma (25/09), i dati sono quelli
   assert.deepEqual(fl.cards.slice(0, 2).map(strip), lf.cards.slice(0, 2).map(strip));   // «It keeps you in the loop.» e i controlli
   assert.equal(loop.at + fl.at + fl.len, drop + 12);
   assert.equal(loop.at + say.at, drop + 4);
@@ -362,7 +362,9 @@ test("forma: nessun battito morto (§8.5), salvo le pause di lettura e le eccezi
     const swap = SHAPE.some((k, i) => i > 0 && k.content !== SHAPE[i - 1].content && k.at < b + 1 && k.at + SWAP_OUT + SWAP_IN > b);
     const c = contentAt(SHAPE, b + 0.5);
     const sc = sceneOf(b);
-    if (spring || swap || (c && SELF_ANIMATED.has(c.id)) || sc.endCard) { reading = 0; continue; }
+    // con `show` 0 la forma è il fondo della scena (il terminale grigio): è viva se la scena scrive le sue righe
+    const ground = shapeAt(SHAPE, b + 0.5, restAt).show < 0.05 && (sc.fx ?? []).some((f) => f.kind === "terminalPlane");
+    if (spring || swap || ground || (c && SELF_ANIMATED.has(c.id)) || sc.endCard) { reading = 0; continue; }
     if (sc.text && ++reading <= 2) continue;
     if (!(b in STILL_OK)) dead.push(`${b} (${sc.id})`);
   }
