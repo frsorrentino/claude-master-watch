@@ -39,8 +39,9 @@ export const TerminalLines: React.FC<{ lines: string[]; everyFrames: number }> =
 
 type Word = { start: number; end: number; word: string };
 
-/** Le parole compaiono mentre l'orologio le dice (tempi da whisper); quella in corso è in colore. */
-export const SpokenWords: React.FC<{ file: string; fps: number }> = ({ file, fps }) => {
+/** Le parole compaiono mentre l'orologio le dice (tempi da whisper); quella in corso è in colore. `ink`: il colore delle
+ *  altre, bianco sui fondi del film, scuro sulla forma chiara (ShapeContent). */
+export const SpokenWords: React.FC<{ file: string; fps: number; ink?: string }> = ({ file, fps, ink = THEME.white }) => {
   const f = useCurrentFrame();
   const [words, setWords] = useState<Word[]>([]);
   const [handle] = useState(() => delayRender(`parole ${file}`));
@@ -48,7 +49,7 @@ export const SpokenWords: React.FC<{ file: string; fps: number }> = ({ file, fps
   const t = f / fps;
   return (
     <div style={{ ...big, fontSize: 54, lineHeight: 1.25, maxWidth: 780 }}>
-      {words.filter((w) => w.start <= t).map((w, i) => <span key={i} style={{ color: t < w.end ? THEME.accent : THEME.white }}>{w.word} </span>)}
+      {words.filter((w) => w.start <= t).map((w, i) => <span key={i} style={{ color: t < w.end ? THEME.accent : ink }}>{w.word} </span>)}
     </div>
   );
 };
