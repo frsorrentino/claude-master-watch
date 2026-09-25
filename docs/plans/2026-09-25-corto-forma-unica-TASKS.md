@@ -9,13 +9,13 @@ prima/dopo in `tools/promo/remotion/out/review/`, consegna a Franz con SendUserF
 
 ## Passo 1 — motore
 - [x] Task 1-3 (esecutore Opus): `020ea71`, `75f59a4`, `be93b25`; 214 test verdi, tsc 0, guardia Short identica.
-- [ ] Revisione avversaria del motore (workflow `wf_fb84b805-0db`), correzioni dei difetti confermati.
+- [x] Revisione avversaria del motore (workflow `wf_fb84b805-0db`): 9 difetti, corretti in `ef0d536`, regola `ecbed4e`.
 
 ## Passo 2 — tavola della sola forma
-- [ ] Traccia `shape` in `timeline.short.json` (card1 a 19, end misurato dalla resa vera).
-- [ ] Test sulla traccia: forma sempre presente; spostamenti > 4 px solo in finestra di chiave; contenuti mai sovrapposti;
+- [x] Traccia `shape` in `timeline.short.json` (card1 a 19, end misurato dalla resa vera): `a9e226c`, pannelli a sinistra.
+- [x] Test sulla traccia: forma sempre presente; spostamenti > 4 px solo in finestra di chiave; contenuti mai sovrapposti;
       §8.5 nessun battito morto (molla attiva, scambio, o contenuto che si anima da sé); 52 e 56 su battito 1 di battuta.
-- [ ] Resa `ShapeBoard` 0,25× + `battiti.py`; revisione advisor + master; copia a Franz con la lista di ciò che non mostra.
+- [x] Resa `ShapeBoard` 0,25× + `battiti.py` (`out/review/forma.battiti.png`); master: passo 2 verificato.
 
 ## Passo 3 — tratto finale list → end (47,5-73,5)
 - [ ] Contenuti veri (card ✓, pannelli Work/Questions/Context con barre dal bordo), linea dello slogan, anello del logo
@@ -29,6 +29,24 @@ prima/dopo in `tools/promo/remotion/out/review/`, consegna a Franz con SendUserF
 ## Passo 5 — centro loop e watch (19-47,5)
 - [ ] Corsia come cambi di bersaglio, dettatura, ✓ che si apre, finestra del terminale; via takeIn/takeover.
 - [ ] Tavola, via di master, resa, prima/dopo.
+
+## Effetti (Franz, 25/09 22:58: «spettacolari ma coerenti»; scelta con l'advisor)
+Criterio: ogni effetto rafforza «una forma sola» e rispetta §3/§8 (niente per lettera, niente glow sul testo, niente
+rimbalzo, blur solo sulla forma). Ognuno con un interruttore nella composizione, spento finché la sua tavola per battito
+non lo approva: il confronto resta pulito e una versione di riserva si rende sempre.
+- [ ] Contenitore (container transform di Material) nei due momenti a tutto quadro: «yes» 17,5-19 e dettatura 34,5-37.
+      La forma è una finestra sulla scena dopo, congelata sul suo primo fotogramma finché non tocca a lei. Passi 4-5.
+- [ ] Onda del tocco dentro la forma, dal punto del dito, su ogni chiave con `gesture` (il feedback vero di Wear OS).
+      Test: ogni chiave con gesto ha la sua onda sul battito. Dopo il passo 3.
+- [ ] Luce d'ambiente: l'alone del `Backdrop` prende colore e posizione della forma, a bassa intensità (contro «tutto
+      è una pillola», §4). Dopo il passo 3.
+- [ ] Ombra di distacco legata al peso dell'aggancio: zero agganciata, piena libera (i distacchi al 2 e al 52). Sulla
+      scatola, dentro il blur. Dopo il passo 3.
+- [ ] Suono dalla traccia: gesti e picchi di `screenSpeed` → effetti `sfx.py` sul battito (deterministico, con test).
+- Scartati: squash & stretch (si legge come rimbalzo), liquido che si divide sui tasti (template), lente o
+  `backdrop-filter` (costosa e fragile in headless), qualunque effetto sul testo (§3).
+- Ora limite per la resa completa finale: 04:00, con gli effetti approvati fino a quel momento (1203 fotogrammi, circa
+  90 minuti). Franz deve trovare un corto intero.
 
 ## Chiusura
 - [ ] Resa completa del corto (via di master), prima/dopo intero, consegna a Franz.
