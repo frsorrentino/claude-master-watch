@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CAMERA_MARGIN, CAMERA_MAX, cameraAt, cameraTarget } from "./camera.ts";
-import type { Rect, ShapeKey } from "./shape.ts";
+import { CAMERA_MARGIN, CAMERA_MAX, cameraAt, cameraTarget, screenSpeed } from "./camera.ts";
+import { blurSamples, shapeSpeed } from "./shape.ts";
+import type { Display, Rect, ShapeKey } from "./shape.ts";
+import { beatToFrame, frameToBeat } from "./beats.ts";
 
 const W = 1920, H = 1080;
 const onScreen = (r: Rect, c: { cx: number; cy: number; s: number }) =>
@@ -48,4 +50,42 @@ test("cameraAt va a molla critica: scala mai oltre il bersaglio, continua", () =
     assert.ok(Math.abs(c.s - prev.s) < 0.1 && Math.abs(c.cx - prev.cx) < 80);
     prev = c;
   }
+});
+
+test("chiavi sovrapposte con durate diverse: la camera resta fra 1 e 1,3 e dentro la scena", () => {
+  const keys: ShapeKey[] = [
+    { at: 0, rect: [1004, 222, 636, 636], r: 0, color: "#000000", zoom: 1 },
+    { at: 2, rect: [1500, 700, 300, 120], r: 0, color: "#000000", len: 2 },
+    { at: 2.5, rect: [1004, 222, 636, 636], r: 0, color: "#000000", zoom: 1, len: 0.5 },
+  ];
+  for (let b = 0; b <= 5; b += 0.01) {
+    const c = cameraAt(keys, b, () => [0, 0, 1, 1]);
+    assert.ok(c.s >= 1 - 1e-9 && c.s <= CAMERA_MAX + 1e-9, `battito ${b}: scala ${c.s}`);
+    assert.ok(c.cx - W / (2 * c.s) >= -1e-6 && c.cx + W / (2 * c.s) <= W + 1e-6, `battito ${b}: cx ${c.cx}`);
+    assert.ok(c.cy - H / (2 * c.s) >= -1e-6 && c.cy + H / (2 * c.s) <= H + 1e-6, `battito ${b}: cy ${c.cy}`);
+  }
+});
+
+const g = { bpm: 110, fps: 30, offsetSeconds: 0.01 }, bpf = 110 / 60 / 30;
+const still: Display = () => [1000, 222, 636, 636];
+
+test("velocità sullo schermo: la forma ferma sotto una camera che si avvicina vuole 8 campioni", () => {
+  const keys: ShapeKey[] = [
+    { at: 0, rect: [360, 240, 1200, 600], r: 0, color: "#000000", zoom: 1 },
+    { at: 2, rect: [360, 240, 1200, 600], r: 0, color: "#000000", zoom: 1.3, len: 0.5 },
+  ];
+  const beats = Array.from({ length: 12 }, (_, i) => frameToBeat(g, beatToFrame(g, 2) + i));
+  for (const b of beats) assert.equal(shapeSpeed(keys, b, still, bpf), 0);   // nel quadro non si muove
+  assert.ok(beats.some((b) => blurSamples(screenSpeed(keys, b, still, bpf)) === 8));
+  assert.equal(screenSpeed(keys, 5, still, bpf), 0);
+});
+
+test("velocità dove l'otturatore è aperto: all'avvio della molla conta il fotogramma che si scatta, non quello prima", () => {
+  const keys: ShapeKey[] = [
+    { at: 0, rect: [100, 400, 200, 200], r: 0, color: "#000000", zoom: 1 },
+    { at: 2, rect: [425, 400, 200, 200], r: 0, color: "#000000", zoom: 1 },
+  ];
+  const b = frameToBeat(g, beatToFrame(g, 2) + 1);   // il primo fotogramma dopo la chiave
+  assert.ok(shapeSpeed(keys, b, still, bpf) <= 24, "misurata all'indietro sembrerebbe lenta");
+  assert.equal(blurSamples(screenSpeed(keys, b, still, bpf)), 8);
 });

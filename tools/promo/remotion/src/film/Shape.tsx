@@ -3,26 +3,29 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { frameToBeat } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { SHAPE_SHUTTER, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed } from "./shape.ts";
+import { SHAPE_SHUTTER, blurSamples, contentAt, keyRect, shapeAt, shutterCentre } from "./shape.ts";
 import type { Display, ShapeKey } from "./shape.ts";
-import { cameraAt, cameraCss } from "./camera.ts";
+import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 
 /** Disegna il contenuto `id` alla misura della chiave che lo porta, non a quella corrente della forma. */
 export type ShapeContent = (id: string, w: number, h: number) => React.ReactNode;
 type Track = { keys: readonly ShapeKey[]; g: Grid; display: Display };
 
-/** Lo strato che la camera sposta e scala: niente `will-change`, se no lo scalato resta una bitmap sgranata. */
-const CameraLayer: React.FC<Track & { children: React.ReactNode }> = ({ keys, g, display, children }) => {
-  const beat = frameToBeat(g, useCurrentFrame());
+/** Lo strato che la camera sposta e scala: niente `will-change`, se no lo scalato resta una bitmap sgranata. `shift`:
+ *  fotogrammi da togliere a quello corrente (la scatola dentro il blur). */
+const CameraLayer: React.FC<Track & { shift?: number; children: React.ReactNode }> = ({ keys, g, display, shift = 0, children }) => {
+  const beat = frameToBeat(g, useCurrentFrame() - shift);
   return <AbsoluteFill style={{ transform: cameraCss(cameraAt(keys, beat, display)), transformOrigin: "0 0" }}>{children}</AbsoluteFill>;
 };
 
 /** La scatola: riempimento e bordo, la sola cosa col blur. Stato e camera si leggono QUI, dentro il blur, perché il blur
- *  la ridisegna ai sotto-fotogrammi spostando il frame: calcolati fuori, i campioni sarebbero tutti uguali. */
-const Box: React.FC<Track> = ({ keys, g, display }) => {
-  const s = shapeAt(keys, frameToBeat(g, useCurrentFrame()), display);
+ *  la ridisegna ai sotto-fotogrammi spostando il frame: calcolati fuori, i campioni sarebbero tutti uguali. Arretrati di
+ *  `shutterCentre(n)`, perché i campioni cadano attorno al fotogramma e non davanti (shape.ts). */
+const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples }) => {
+  const shift = shutterCentre(samples);
+  const s = shapeAt(keys, frameToBeat(g, useCurrentFrame() - shift), display);
   return (
-    <CameraLayer keys={keys} g={g} display={display}>
+    <CameraLayer keys={keys} g={g} display={display} shift={shift}>
       <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color }} />
     </CameraLayer>
   );
@@ -36,10 +39,11 @@ export const Shape: React.FC<Track & { content?: ShapeContent }> = ({ keys, g, d
   const s = shapeAt(keys, beat, display);
   const c = content ? contentAt(keys, beat) : null;
   const [, , kw, kh] = c ? keyRect(c.key, display) : [0, 0, 0, 0];
+  const samples = blurSamples(screenSpeed(keys, beat, display, g.bpm / 60 / g.fps));
   return (
     <AbsoluteFill>
-      <CameraMotionBlur samples={blurSamples(shapeSpeed(keys, beat, display, g.bpm / 60 / g.fps))} shutterAngle={SHAPE_SHUTTER}>
-        <Box keys={keys} g={g} display={display} />
+      <CameraMotionBlur samples={samples} shutterAngle={SHAPE_SHUTTER}>
+        <Box keys={keys} g={g} display={display} samples={samples} />
       </CameraMotionBlur>
       {c && content ? (
         <CameraLayer keys={keys} g={g} display={display}>

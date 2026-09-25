@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, validateShape, inkOn } from "./shape.ts";
+import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, shutterCentre, validateShape, inkOn } from "./shape.ts";
 import type { Display, Rect, ShapeKey } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 
@@ -98,4 +98,60 @@ test("inchiostro: scuro sulle forme chiare, bianco sulle scure", () => {
   assert.equal(inkOn("#F4F2EC"), "#14203A");
   assert.equal(inkOn("#000000"), "#ffffff");
   assert.equal(inkOn("#ffffff"), "#14203A");
+});
+
+// Revisione del 25/09: molle che si sovrappongono con durate diverse escono dall'inviluppo dei bersagli.
+const field: Rect = [-100, -100, 2120, 1280];
+test("aggancio sovrapposto: il peso resta fra 0 e 1, e dopo la chiave ancorata la forma È il display", () => {
+  const a: ShapeKey[] = [
+    { at: 0, anchor: "display", r: 318, color: "#000000" },
+    { at: 8, rect: field, r: 0, color: "#000000", len: 2 },
+    { at: 8.5, anchor: "display", r: 318, color: "#000000", len: 0.5 },
+  ];
+  for (let b = 0; b < 14; b += 0.01) {
+    const s = shapeAt(a, b, drifting);
+    assert.ok(s.anchor >= 0 && s.anchor <= 1, `battito ${b}: peso ${s.anchor}`);
+    if (b >= 9) { const d = drifting(b); near(s.x, d[0]); near(s.y, d[1]); near(s.w, d[2]); near(s.h, d[3]); near(s.r, d[2] / 2); }
+  }
+  const b: ShapeKey[] = [
+    { at: 0, rect: field, r: 0, color: "#000000" },
+    { at: 2, anchor: "display", r: 318, color: "#000000", len: 4 },
+    { at: 2.5, rect: field, r: 0, color: "#000000", len: 0.5 },
+  ];
+  for (let t = 0; t < 8; t += 0.01) {
+    const s = shapeAt(b, t, still);
+    assert.ok(s.anchor >= 0 && s.anchor <= 1 && s.r >= 0, `battito ${t}: peso ${s.anchor}, raggio ${s.r}`);
+  }
+});
+
+test("mai negativa: da un campo grande a una linea sottile la molla non porta misure e raggio sotto zero", () => {
+  const k: ShapeKey[] = [
+    { at: 0, rect: field, r: 40, color: "#000000" },
+    { at: 2, rect: [360, 700, 1200, 6], r: 0, color: "#000000" },
+  ];
+  const g = { bpm: 110, fps: 30, offsetSeconds: 0.01 };
+  for (let f = 0; f <= beatToFrame(g, 6); f++) {
+    const s = shapeAt(k, frameToBeat(g, f), still);
+    assert.ok(s.w >= 1 && s.h >= 1 && s.r >= 0 && s.r <= Math.min(s.w, s.h) / 2 + 1e-9, `fotogramma ${f}: ${s.w}×${s.h} r ${s.r}`);
+  }
+});
+
+test("blur centrato: i campioni della scatola cadono in media sul fotogramma, non davanti", () => {
+  // CameraMotionBlur (4.0.490) disegna il campione i (1..n) congelato al fotogramma f − frazione·i/n + 1: la scatola
+  // si valuta a quel fotogramma meno shutterCentre(n), e la media deve tornare f (se no la scatola anticipa il contenuto)
+  const sf = SHAPE_SHUTTER / 360, f = 100;
+  for (const n of [4, 8]) {
+    const at = Array.from({ length: n }, (_, i) => f - sf * ((i + 1) / n) + 1 - shutterCentre(n));
+    near(at.reduce((a, b) => a + b, 0) / n, f, 1e-9);
+    assert.ok(Math.min(...at) >= f - sf / 2 - 1e-9 && Math.max(...at) <= f + sf / 2 + 1e-9, `${n}: ${at}`);
+  }
+});
+
+test("validazione: una chiave nulla o con numeri scritti come testo è un errore, non un'eccezione", () => {
+  const ok = { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000" };
+  assert.ok(validateShape([null], 20).some((m) => m.includes("chiave")));
+  assert.ok(validateShape([ok, null, { ...ok, at: 1 }], 20).length > 0);
+  assert.ok(validateShape([{ ...ok, zoom: "1.2" }], 20).some((m) => m.includes("zoom")));
+  assert.ok(validateShape([{ ...ok, r: Infinity }], 20).some((m) => m.includes("raggio")));
+  assert.ok(validateShape([{ ...ok, len: Infinity }], 20).some((m) => m.includes("durata")));
 });

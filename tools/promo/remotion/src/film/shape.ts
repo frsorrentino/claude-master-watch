@@ -58,15 +58,20 @@ const mix = (a: number, b: number, w: number) => a * (1 - w) + b * w;
 export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Display): ShapeState => {
   const free = [0, 1, 2, 3].map((i) => track(keys, beat, (k) => keyRect(k, display)[i], easeZeta));
   const r = track(keys, beat, (k) => k.r, easeZeta);
-  const anchor = track(keys, beat, (k) => (k.anchor ? 1 : 0), critical);
+  // due cambi sovrapposti con durate diverse sommano molle a passi diversi e il peso esce da 0-1: fuori, la miscela
+  // amplifica invece di interpolare (larghezze di 4000 px, raggi negativi), e sopra 1 la forma non sarebbe più il display
+  const anchor = Math.min(1, Math.max(0, track(keys, beat, (k) => (k.anchor ? 1 : 0), critical)));
   const d = display(beat);
   const color = "#" + [0, 1, 2].map((i) => toHex(track(keys, beat, (k) => channels(k.color)[i], critical))).join("");
+  // lo scavalco di ζ 0,8 verso una linea sottile porta la misura sotto zero: la forma resta almeno un pixel, e il raggio
+  // non supera mezza misura (oltre, il CSS lo riduce da solo e la forma cambierebbe senza che la traccia lo dica)
+  const w = Math.max(1, mix(free[2], d[2], anchor)), h = Math.max(1, mix(free[3], d[3], anchor));
   return {
     x: mix(free[0], d[0], anchor),
     y: mix(free[1], d[1], anchor),
-    w: mix(free[2], d[2], anchor),
-    h: mix(free[3], d[3], anchor),
-    r: mix(r, d[2] / 2, anchor),
+    w,
+    h,
+    r: Math.min(Math.min(w, h) / 2, Math.max(0, mix(r, d[2] / 2, anchor))),
     color,
     anchor,
   };
@@ -109,6 +114,12 @@ export const shapeSpeed = (keys: readonly ShapeKey[], beat: number, display: Dis
 export const blurSamples = (speed: number): 4 | 8 => (speed > BLUR_FAST ? 8 : 4);
 /** L'otturatore del blur della forma: mezzo fotogramma, come le scene (§8.3). */
 export const SHAPE_SHUTTER = 180;
+/**
+ * Di quanto arretrare il fotogramma della scatola dentro `CameraMotionBlur` perché i suoi `n` campioni cadano in media
+ * sul fotogramma. La 4.0.490 congela il campione i (1..n) a f − frazione·i/n + 1, cioè tutti DOPO f: senza correzione la
+ * scatola anticipa di due terzi di fotogramma il contenuto e le scene, che non hanno blur (70 px nei tratti veloci).
+ */
+export const shutterCentre = (n: number): number => 1 - ((SHAPE_SHUTTER / 360) * (n + 1)) / (2 * n);
 
 /** L'inchiostro del testo sulla forma: fra quello dei titoli e il bianco, il più contrastato (rapporto WCAG) sul colore. */
 const luminance = (hex: string) => {
@@ -132,9 +143,12 @@ export const validateShape = (raw: unknown, total: number): string[] => {
   if (!Array.isArray(raw) || raw.length === 0) return ["la traccia deve essere un elenco di chiavi non vuoto"];
   const bad: string[] = [];
   const keys = raw as ShapeKey[];
+  const isKey = (k: unknown): k is ShapeKey => typeof k === "object" && k !== null;
+  const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
   keys.forEach((k, i) => {
+    if (!isKey(k)) { bad.push(`chiave ${i}: non è una chiave (${String(k)})`); return; }
     const say = (m: string) => bad.push(`chiave ${i} (battito ${k.at}): ${m}`);
-    const prev = keys[i - 1];
+    const prev = isKey(keys[i - 1]) ? keys[i - 1] : undefined;
     if (i === 0 && k.at !== 0) say("la prima chiave deve stare al battito 0");
     if (!half(k.at)) say("servono battiti o mezzi battiti");
     if (prev && !(k.at > prev.at)) say(`i battiti devono essere strettamente crescenti (la chiave prima è al ${prev.at})`);
@@ -142,12 +156,12 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if ((k.rect === undefined) === (k.anchor === undefined)) say("serve esattamente uno fra «rect» e «anchor»");
     if (k.anchor !== undefined && k.anchor !== "display") say(`anchor «${k.anchor}»: vale solo «display»`);
     if (k.rect !== undefined && !(Array.isArray(k.rect) && k.rect.length === 4 && k.rect.every(Number.isFinite) && k.rect[2] > 0 && k.rect[3] > 0)) say(`rect (${String(k.rect)}): servono quattro numeri, larghezza e altezza positive`);
-    if (!(typeof k.r === "number" && k.r >= 0)) say(`raggio ${k.r}: serve un numero non negativo`);
+    if (!(num(k.r) && k.r >= 0)) say(`raggio ${k.r}: serve un numero non negativo`);
     if (!(typeof k.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.color))) say(`colore «${k.color}»: atteso #rrggbb`);
     if (k.content !== undefined && typeof k.content !== "string") say("il contenuto è un id di testo");
-    if (k.len !== undefined && !(typeof k.len === "number" && k.len > 0)) say(`durata ${k.len}: serve un numero positivo`);
+    if (k.len !== undefined && !(num(k.len) && k.len > 0)) say(`durata ${k.len}: serve un numero positivo`);
     if (k.ease !== undefined && k.ease !== "spring" && k.ease !== "settle") say(`molla «${k.ease}» sconosciuta: spring o settle`);
-    if (k.zoom !== undefined && !(k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
+    if (k.zoom !== undefined && !(num(k.zoom) && k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
     if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
     // l'uscita del vecchio e l'entrata del nuovo devono finire prima della chiave: se no i testi si sovrappongono
     if (prev && k.content !== prev.content && k.at - prev.at < SWAP_OUT + SWAP_IN) say(`scambio di contenuto a ${k.at - prev.at} battiti dalla chiave prima: testi sovrapposti (servono ${SWAP_OUT + SWAP_IN})`);
