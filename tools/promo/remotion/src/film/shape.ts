@@ -163,6 +163,10 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (k.ease !== undefined && k.ease !== "spring" && k.ease !== "settle") say(`molla «${k.ease}» sconosciuta: spring o settle`);
     if (k.zoom !== undefined && !(num(k.zoom) && k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
     if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
+    // una molla non finisce prima di quella della chiave prima: finché ogni cambio è più avanti del successivo, la somma
+    // delle molle resta una miscela dei bersagli; al contrario la forma esce dai bersagli (2951 px su un campo di 2120,
+    // revisione del 25/09) e le pinze di peso e camera nasconderebbero solo il sintomo
+    if (prev && num(prev.at) && num(k.at) && k.at + (k.len ?? KEY_LEN) < prev.at + (prev.len ?? KEY_LEN)) say(`la molla finisce al ${k.at + (k.len ?? KEY_LEN)}, prima di quella della chiave prima (${prev.at + (prev.len ?? KEY_LEN)}): la forma uscirebbe dai bersagli`);
     // l'uscita del vecchio e l'entrata del nuovo devono finire prima della chiave: se no i testi si sovrappongono
     if (prev && k.content !== prev.content && k.at - prev.at < SWAP_OUT + SWAP_IN) say(`scambio di contenuto a ${k.at - prev.at} battiti dalla chiave prima: testi sovrapposti (servono ${SWAP_OUT + SWAP_IN})`);
   });

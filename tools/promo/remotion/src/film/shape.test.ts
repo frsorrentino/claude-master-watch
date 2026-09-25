@@ -155,3 +155,18 @@ test("validazione: una chiave nulla o con numeri scritti come testo è un errore
   assert.ok(validateShape([{ ...ok, r: Infinity }], 20).some((m) => m.includes("raggio")));
   assert.ok(validateShape([{ ...ok, len: Infinity }], 20).some((m) => m.includes("durata")));
 });
+
+test("validazione: una molla che finisce prima di quella della chiave prima fa uscire la forma dai bersagli", () => {
+  const field: Rect = [-100, -100, 2120, 1280];
+  const p = validateShape([
+    { at: 0, rect: field, r: 0, color: "#000000" },
+    { at: 2, anchor: "display", r: 0, color: "#000000", len: 4 },
+    { at: 2.5, rect: field, r: 0, color: "#000000", len: 0.5 },
+  ], 20);
+  assert.ok(p.some((m) => m.includes("prima di quella della chiave prima")), p.join(" | "));
+  assert.deepEqual(validateShape([
+    { at: 0, rect: field, r: 0, color: "#000000" },
+    { at: 2, rect: [0, 0, 10, 10], r: 0, color: "#000000", len: 1 },
+    { at: 2.5, rect: field, r: 0, color: "#000000", len: 0.5 },
+  ], 20), []);   // finiscono insieme: va bene
+});
