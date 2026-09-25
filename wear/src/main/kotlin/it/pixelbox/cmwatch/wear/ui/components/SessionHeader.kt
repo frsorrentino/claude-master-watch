@@ -36,7 +36,9 @@ fun SessionHeader(
             SessionBadge(s, size = 16.dp)
             Spacer(Modifier.width(8.dp))
             val row = SessionsText.row(s, now)
-            val tail = row.removePrefix(s.name).removePrefix(" · ")
+            // Contratto 1.16: la bassa priorità accanto all'età
+            val prio = SessionsText.priority(s, stringResource(R.string.state_low_priority), stringResource(R.string.state_low_priority_offered))
+            val tail = listOfNotNull(row.removePrefix(s.name).removePrefix(" · ").takeIf { it.isNotEmpty() }, prio).joinToString(" · ")
             Column(Modifier.weight(1f)) {
                 // Il nome va a capo invece di scorrere (S07): lo scorrimento fermo a metà lasciava una «h» isolata.
                 // …e va a capo dopo un trattino, non a metà parola («claude-master-w / atch», Franz 15/09 10:56).

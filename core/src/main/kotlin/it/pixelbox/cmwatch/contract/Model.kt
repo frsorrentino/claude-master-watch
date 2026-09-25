@@ -68,7 +68,14 @@ enum class CmdOp {
     val model: Model? = null,
     val effort: String? = null,
     val context: Int? = null,
+    /** Contratto 1.16: «off», «offered» (limite raggiunto, Claude Code propone di continuare lento) o «active» (viva ma lenta oltre il limite); null se non si legge. */
+    @SerialName("low_priority") val lowPriority: String? = null,
+    /** Contratto 1.16: la condizione di completamento data con /goal, null senza obiettivo. */
+    val goal: Goal? = null,
 )
+
+/** Contratto 1.16: testo dell'obiettivo (/goal), da quando, e se è soddisfatto quando il PC lo sa dire. */
+@Serializable data class Goal(val text: String, val since: Long, val met: Boolean? = null)
 
 /**
  * Il modello come lo scrive Claude Code: `id` completo (il suffisso `[1m]` dice la finestra da 1M) e nome breve.

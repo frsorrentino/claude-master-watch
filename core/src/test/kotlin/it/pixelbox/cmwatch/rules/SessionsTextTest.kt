@@ -19,6 +19,21 @@ class SessionsTextTest {
     @Test fun idleShowsSinceAge() = assertEquals("field-notes · 1 g", SessionsText.row(s.sessions[2], now))
     @Test fun goneShowsNoAge() = assertEquals("orbit-docs", SessionsText.row(s.sessions[3], now))
     @Test fun headerCounts() = assertEquals("4 sessioni · 1 ❓ · 1 ✗", SessionsText.header(s.sessions, "sessioni"))
+
+    // Contratto 1.16: la bassa priorità si dice a parole accanto all'età, con due etichette (attiva / proposta).
+    @Test fun lowPriorityIsSaidNextToTheAge() {
+        assertEquals("bassa priorità", SessionsText.priority(s.sessions[1], "bassa priorità", "bassa priorità proposta"))
+        assertEquals("bassa priorità proposta", SessionsText.priority(s.sessions[0], "bassa priorità", "bassa priorità proposta"))
+        assertNull(SessionsText.priority(s.sessions[2], "bassa priorità", "bassa priorità proposta"))   // off
+        assertNull(SessionsText.priority(s.sessions[3], "bassa priorità", "bassa priorità proposta"))   // null
+        assertNull(SessionsText.priority(s.sessions[1].copy(lowPriority = "boh"), "bassa priorità", "bassa priorità proposta"))
+    }
+
+    @Test fun goalLineSaysTheGoalWhole() {
+        assertEquals("Obiettivo: All checkout tests green and the release tagged", SessionsText.goalLine(s.sessions[1], "Obiettivo"))
+        assertNull(SessionsText.goalLine(s.sessions[0], "Obiettivo"))
+        assertNull(SessionsText.goalLine(s.sessions[1].copy(goal = s.sessions[1].goal!!.copy(text = "  ")), "Obiettivo"))
+    }
 }
 
 class SessionsSubTest {

@@ -102,7 +102,10 @@ object TileTexts {
      * «modifica X», e sotto va la cosa più fresca fra il prossimo passo recente e l'ultimo esito. Senza strumento
      * l'attività è già una di quelle due, e non si ripete.
      */
-    fun extra(s: Session, busy: Boolean, now: Long = 0L): String? {
+    fun extra(s: Session, busy: Boolean, now: Long = 0L, goal: String? = null): String? {
+        // Contratto 1.16: con un obiettivo (/goal) la riga sotto è lui, anche senza strumento in vista: dice verso
+        // cosa sta lavorando, che è più fresco di un esito o di un prossimo passo.
+        if (busy && goal != null) SessionsText.goalLine(s, goal)?.let { return it }
         if (!busy || s.tool.isNullOrBlank()) return null
         return prossimo(s, now) ?: s.outcome?.short?.let { plain(it) }?.takeIf { it.isNotEmpty() }
     }

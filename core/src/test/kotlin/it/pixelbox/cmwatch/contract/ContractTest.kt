@@ -141,6 +141,26 @@ class ContractTest {
         assertNull(gone.model); assertNull(gone.effort); assertNull(gone.context)
     }
 
+    // Contratto 1.16 (25/09): ogni sessione porta `low_priority` («off», «offered», «active», null se non si legge) e
+    // `goal` (la condizione di completamento data con /goal: testo e da quando, null senza obiettivo).
+    @Test fun sessionsCarryLowPriorityAndGoal() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val atlas = s.sessions.single { it.name == "atlas-shop" }
+        assertEquals("active", atlas.lowPriority)
+        assertEquals("All checkout tests green and the release tagged", atlas.goal!!.text)
+        assertEquals(1789210700L, atlas.goal!!.since)
+        assertEquals(false, atlas.goal!!.met)
+        assertEquals("offered", s.sessions.single { it.name == "ledger-api" }.lowPriority)
+        val notes = s.sessions.single { it.name == "field-notes" }
+        assertEquals("off", notes.lowPriority); assertNull(notes.goal)
+        val gone = s.sessions.single { it.state == SessionState.GONE }
+        assertNull(gone.lowPriority); assertNull(gone.goal)
+        // senza i campi (relay precedente) restano null
+        val old = ContractJson.decodeState(Fixtures.stateQuestion.replace("\"low_priority\": \"active\",", "").replace(Regex(",\\s*\"goal\": \\{[^}]*\\}"), ""))   // `goal` è l'ultima chiave: via anche la virgola prima
+        assertNull(old.sessions.single { it.name == "atlas-shop" }.lowPriority)
+        assertNull(old.sessions.single { it.name == "atlas-shop" }.goal)
+    }
+
     @Test fun unknownKeysAreIgnored() {
         val s = ContractJson.decodeState(Fixtures.stateIdle.replaceFirst("\"host\"", "\"extra\": 1, \"host\""))
         assertEquals("crostini-demo", s.host)

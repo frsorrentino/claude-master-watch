@@ -203,6 +203,10 @@ fun SessionScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
+                        // Contratto 1.16: l'obiettivo dato con /goal, intero, sotto la cella
+                        SessionsText.goalLine(s, stringResource(R.string.card_goal))?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             }

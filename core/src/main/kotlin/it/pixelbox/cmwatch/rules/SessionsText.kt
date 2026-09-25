@@ -64,6 +64,19 @@ object SessionsText {
     private fun norm(t: String) = TileTexts.plain(t).lowercase().replace(Regex("\\s+"), " ").trim().trimEnd('.', '…', ':', ';', ',', ' ')
 
     /**
+     * Contratto 1.16: la bassa priorità detta a parole, accanto all'età (lista, testata della Scheda, card della tile):
+     * `active` = viva ma lenta oltre il limite, `offered` = Claude Code la propone e aspetta. Altri valori: niente.
+     */
+    fun priority(s: Session, active: String, offered: String): String? = when (s.lowPriority?.trim()?.lowercase()) {
+        "active" -> active
+        "offered" -> offered
+        else -> null
+    }
+
+    /** Contratto 1.16: «Obiettivo: <testo intero>» dato con /goal; null senza obiettivo o con testo vuoto. */
+    fun goalLine(s: Session, label: String): String? = s.goal?.text?.trim()?.takeIf { it.isNotEmpty() }?.let { "$label: $it" }
+
+    /**
      * La card della Scheda, che ora contiene anche l'Esito (Franz, 15/09 17:02: tre schermate fuse in due). Chi è fermo
      * mostra l'esito intero, titolo e resto sotto; chi lavora, domanda o è senza esito resta come la cella della lista.
      * Il prossimo passo sotto solo se non ripete l'esito.

@@ -40,6 +40,7 @@ import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NameText
 import it.pixelbox.cmwatch.rules.QuotaBar
+import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.TileTexts
 import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.wear.CmApp
@@ -181,7 +182,7 @@ open class CmTileService : TileService() {
         )
         // Righe, aggiunta e quota le decide lo spazio (`TileTexts.tileBody`, Franz 15/09 10:56). Il testo sta nelle sue
         // righe da sé, un pensiero intero: mai «…» (Franz, 14/09 16:58).
-        val body = TileTexts.tileBody(what, TileTexts.extra(s, busy, now), line, other)
+        val body = TileTexts.tileBody(what, TileTexts.extra(s, busy, now, goal = getString(R.string.card_goal)), line, other)
         return appCard(
             onClick = clickable(launch("cmwatch://session/${s.name}"), id = "s"),
             label = {
@@ -353,7 +354,8 @@ open class CmTileService : TileService() {
         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
         .addContent(LayoutElementBuilders.Image.Builder().setResourceId(badgeId(spec(s))).setWidth(dp(14f)).setHeight(dp(14f)).build())
         .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(5f)).build())
-        .addContent(text(NameText.shorten(s.name, listOf(s.name), 16).layoutString, typography = Typography.LABEL_SMALL, color = LABEL.argb, maxLines = 1))
+        // Contratto 1.16: la bassa priorità accanto al nome, a parole
+        .addContent(text(listOfNotNull(NameText.shorten(s.name, listOf(s.name), 16), SessionsText.priority(s, getString(R.string.state_low_priority), getString(R.string.state_low_priority_offered))).joinToString(" · ").layoutString, typography = Typography.LABEL_SMALL, color = LABEL.argb, maxLines = 1))
         .build()
 
     /** Il testo operativo entra in dissolvenza, salendo appena, quando cambia: una volta sola, niente loop (15/09 15:55). */

@@ -129,3 +129,14 @@ Contratto 1.14 (22/09/2026, solo aggiunte, richiesta di Franz tramite la master)
 
 
 Contratto 1.15 (24/09/2026, solo aggiunte, richiesta dell'app approvata da Franz; design `docs/plans/2026-09-24-app-telefono-fondamenta-design.md`): accoppiamento dal telefono. `relay pair` mostra un QR con il JSON di `pair-qr.json` (id di 22 caratteri base64url, `pc_pub`, host, scadenza, configurazione Firebase con chiavi brevi) e, sotto, il codice a 6 cifre: stesso documento in `/pair/<id>` e in `/pair/<code>`, vince la prima risposta valida. Nel QR `d` è `relay.firebase_url` e `t` è `relay.fcm_topic`, il bus che il relay scrive davvero; `k`, `p` e `a` vengono da `relay.firebase_app` o dal `google-services.json` in `relay.google_services` (client scelto con `relay.app_package`). La risposta in `/pair/<…>/watch` può portare `uids` (fino a 4) e `names` (`pair-response.json`, con i vettori: PC = scalare 0..31, telefono = 32..63); `/allowed` riceve tutti gli uid. I controlli HMAC usano la stringa del nodo (`id` e `id + ":pc"`). Il telefono legge `/pair/<id>` prima di scrivere `/watch`: se il nodo non c'è (QR usato, scaduto o di un altro relay) mostra «codice non valido»; per questo `/pair/<id>` e `/pair/<id>/watch` devono avere le stesse regole RTDB di `/pair/<code>`. `v` resta 1. Relay: claude-master 0.4.21 (`2f02da1`).
+
+Contratto 1.16 (25/09/2026, solo aggiunte, richiesta dell'app approvata da Franz alle 16:54): ogni sessione porta
+`low_priority` — «off», «offered» (limite raggiunto: Claude Code propone «Continue now at lower priority» e aspetta),
+«active» (viva ma lenta oltre il limite: «Working at lower priority · waiting for capacity»), null senza riquadro tmux o
+per una gone; il relay lo legge dallo schermo tmux — e `goal`, la condizione di completamento data con `/goal`:
+`{"text", "since", "met"}` dal transcript (ultimo attachment `goal_status`; `since` epoch s della sentinella che l'ha
+impostato, può essere null; `met` true quando l'ultimo controllo la trova soddisfatta), null senza obiettivo, dopo
+`/goal clear` o con un goal fallito. Il polso: bassa priorità a parole accanto all'età (lista, testata, card della
+tile), «Obiettivo: …» intero nella Scheda e come riga della card della tile mentre lavora. `v` resta 1. Relay:
+claude-master 0.4.24 (`5e681be`).
+

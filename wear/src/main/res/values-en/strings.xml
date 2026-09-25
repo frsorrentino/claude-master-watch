@@ -11,6 +11,9 @@
     <string name="state_busy">Working</string>
     <string name="state_idle">Idle</string>
     <string name="state_gone">Gone</string>
+    <string name="state_low_priority">low priority</string>
+    <string name="state_low_priority_offered">low priority offered</string>
+    <string name="card_goal">Goal</string>
     <string name="card_reply">Reply</string>
     <string name="card_write">Write</string>
     <string name="card_terminal">Terminal</string>

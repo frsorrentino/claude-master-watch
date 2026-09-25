@@ -66,7 +66,11 @@ fun SessionRow(
     onLongClick: (() -> Unit)? = null,
     reopen: it.pixelbox.cmwatch.rules.ReopenText.Status? = null,
 ) {
-    val age = SessionsText.sub(s, now, stringResource(R.string.session_closed))
+    // Contratto 1.16: la bassa priorità accanto all'età, a parole
+    val age = listOfNotNull(
+        SessionsText.sub(s, now, stringResource(R.string.session_closed)),
+        SessionsText.priority(s, stringResource(R.string.state_low_priority), stringResource(R.string.state_low_priority_offered)),
+    ).joinToString(" · ").ifEmpty { null }
     val overflow = if (NameText.sharesPrefix(s.name, siblings)) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
     val cell = if (ambient) SessionsText.Cell(null, null) else SessionsText.cell(
         s, now, stringResource(R.string.tile_turn_running), stringResource(R.string.state_idle), tools,

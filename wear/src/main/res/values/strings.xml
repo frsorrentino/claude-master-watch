@@ -10,6 +10,10 @@
     <string name="state_busy">Lavora</string>
     <string name="state_idle">Ferma</string>
     <string name="state_gone">Sparita</string>
+    <!-- Contratto 1.16: bassa priorità (/low-priority) e obiettivo (/goal) della sessione -->
+    <string name="state_low_priority">bassa priorità</string>
+    <string name="state_low_priority_offered">bassa priorità proposta</string>
+    <string name="card_goal">Obiettivo</string>
     <string name="card_reply">Rispondi</string>
     <string name="card_write">Scrivi</string>
     <string name="card_terminal">Terminale</string>
