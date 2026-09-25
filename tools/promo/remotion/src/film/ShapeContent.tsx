@@ -15,7 +15,7 @@ import { BriefContext, BriefQuestions, BriefWork } from "./ui/Brief.tsx";
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 /** Il pannello si disegna dopo che il suo testo è entrato: barre e numeri nascono in tre quarti di battito, come `Aside`. */
 const DRAW_BEATS = 0.75;
-const PANEL_PAD = 40;
+const PANEL_PAD = 30;   // pannello largo 820: dentro restano i 760 di Aside, e il bordo destro sta a 900, lontano dalla cassa
 
 /**
  * Cosa c'è dentro la forma, per id (la traccia `shape` del corto). I dati vengono dalle scene che una volta li
