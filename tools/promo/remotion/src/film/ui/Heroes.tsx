@@ -6,7 +6,7 @@ import type { Grid } from "../beats.ts";
 import type { Pose } from "../moves.ts";
 import type { Fx, Scene } from "../timeline.ts";
 import { THEME } from "../theme.ts";
-import { HERO_OPTION_PX, cardOutAt, gaugeHeroAt, optionsBuildAt, optionsRest, panelHeroAt, terminalPlaneAt } from "./heroes.ts";
+import { HERO_OPTION_PX, cardOutAt, gaugeHeroAt, isHero, optionsBuildAt, optionsRest, panelHeroAt, terminalPlaneAt } from "./heroes.ts";
 import type { Flight } from "./heroes.ts";
 import { Plane3D } from "./Plane3D.tsx";
 import { UiCard } from "./UiCard.tsx";
@@ -18,54 +18,8 @@ import { CC } from "./claudeCode.ts";
 
 /** Larghezza della card da protagonista, diametro del gauge, larghezza del tasto e della finestra del PC, nel quadro. */
 export const HERO_CARD_PX = 900, HERO_GAUGE_PX = 640, HERO_TERMINAL_PX = 1700;   // HERO_OPTION_PX sta in heroes.ts, con il posto dei tasti
-/** La scheda che si ferma grande al centro (`toCenter`) e l'orologio che poi le compare attorno devono COMBACIARE: a
- *  zoom `AROUND_ZOOM` la card di 427 unità dentro il display misura 427 · 1,3258 · 1,42 = 804 px. Franz, 19/09 05:12:
- *  «la scheda esattamente nella stessa posizione grande centrata di prima». */
-export const HERO_CARD_CENTER_PX = 804, AROUND_ZOOM = 1.42;
-type Hero = Extract<Fx, { kind: "cardOut" | "gaugeHero" | "optionsBuild" | "panelHero" }>;
-const isHero = (e: Fx): e is Hero => e.kind === "cardOut" || e.kind === "gaugeHero" || e.kind === "optionsBuild" || e.kind === "panelHero";
-
-/** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito), quanto è
- *  «fuori» (`travel`) e quanto si sta consegnando alla scena dopo (`exit`). Senza momento forte: p = −1. */
-export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; travel: number; exit: number } => {
-  for (const e of scene.fx ?? []) {
-    if (!isHero(e)) continue;
-    const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
-    const p = (frame - from) / len;
-    if (p < 0 || p >= 1) return { p, travel: 0, exit: p >= 1 ? 1 : 0 };
-    if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut, e.toCenter); return { p, travel: c.travel, exit: c.exit }; }
-    if (e.kind === "gaugeHero") { const c = gaugeHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
-    if (e.kind === "optionsBuild") { const c = optionsBuildAt(p, e.pressAt !== undefined ? e.pressAt / e.len : undefined); return { p, travel: c.travel, exit: c.fill }; }
-    if (e.kind === "panelHero") { const c = panelHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
-  }
-  return { p: -1, travel: 0, exit: 0 };
-};
-
-/** La camera della scena (piano 4): `zoom` sull'orologio, `focus` (0 a fuoco, 1 sfocato e scuro dietro al protagonista),
- *  `watch` (opacità dell'orologio: con la camera `release` si materializza attorno alla card già fuori). */
-export const cameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; focus: number; watch: number } => {
-  const { p, travel, exit } = heroState(scene, g, frame);
-  if (scene.watch?.camera === "around") {
-    // la card è ferma al centro dal battito di ciglia: l'orologio compare attorno, grande e centrato, e resta
-    const t = Math.min(1, Math.max(0, frame / 30));
-    return { zoom: AROUND_ZOOM, focus: 0, watch: t * t * (3 - 2 * t) };
-  }
-  if (scene.watch?.camera === "release") {
-    // dopo il battito di ciglia: card già al centro, l'orologio compare attorno e la camera torna indietro piano
-    const t = Math.min(1, Math.max(0, frame / 40));
-    const ease = t * t * (3 - 2 * t);
-    return { zoom: 1.35 - 0.35 * ease, focus: 0.35 * (1 - exit), watch: Math.min(1, frame / 24) };
-  }
-  if (p < 0 || p >= 1) return { zoom: 1, focus: 0, watch: 1 };
-  // con `steady` la camera non si avvicina: l'orologio resta esattamente dov'è e della misura che ha, perché il
-  // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»).
-  // La messa a fuoco però si muove: quando i tasti si sollevano, l'orologio dietro va fuori fuoco (Franz, 20/09 08:40,
-  // poi 09:28: «sfocherei maggiormente»; 21/09 19:04: «sfoca un po' di più»). Sette decimi della sfocatura piena: 5,6 px e
-  // quasi due quinti di luce in meno, i tasti staccano.
-  if (scene.watch?.steady) return { zoom: 1, focus: 0.7 * travel * (1 - exit), watch: 1 };
-  const near = travel * (1 - exit);
-  return { zoom: 1 + 0.55 * near, focus: near, watch: 1 };
-};
+/** La scheda che si ferma grande al centro misura 804 px: la card di 427 unità a zoom `AROUND_ZOOM` (heroes.ts). */
+export const HERO_CARD_CENTER_PX = 804;
 
 /**
  * Un componente che vola dal display (rettangolo in unità del display, 480) al posto da protagonista (centro e scala nel quadro)

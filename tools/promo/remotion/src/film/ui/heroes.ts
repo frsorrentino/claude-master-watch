@@ -1,6 +1,9 @@
 /** Coreografie dei momenti forti (piano 3): funzioni pure dell'avanzamento 0-1, come `moves.ts`. */
 import { bezier, bump, soft } from "../moves.ts";
 import { springSettle } from "../spring.ts";
+import { spanFrames } from "../beats.ts";
+import type { Grid } from "../beats.ts";
+import type { Fx, Scene } from "../timeline.ts";
 
 /** Strappo: un oggetto che si stacca prende velocità per un attimo e poi frena a lungo (la curva `soft` parte troppo secca: un
  *  quarto della strada nei primi tre fotogrammi, e senza sfocatura di movimento sembra un taglio). */
@@ -269,4 +272,54 @@ export const railStackPx = (v: number, cardH: number, gap: number, span: number,
   let acc = 0;
   for (let k = 0; k < steps; k++) acc += (cardH * railAt(((k + 0.5) * h) / span).scale + gap) * h;
   return acc;
+};
+
+/** La scheda che si ferma grande al centro (`toCenter`) e l'orologio che poi le compare attorno devono COMBACIARE: a
+ *  zoom `AROUND_ZOOM` la card di 427 unità dentro il display misura 427 · 1,3258 · 1,42 = 804 px. Franz, 19/09 05:12:
+ *  «la scheda esattamente nella stessa posizione grande centrata di prima». Qui e non in `Heroes.tsx` perché il posto
+ *  dell'orologio (`displayPlace.ts`) è una funzione pura che ne ha bisogno. */
+export const AROUND_ZOOM = 1.42;
+type Hero = Extract<Fx, { kind: "cardOut" | "gaugeHero" | "optionsBuild" | "panelHero" }>;
+export const isHero = (e: Fx): e is Hero => e.kind === "cardOut" || e.kind === "gaugeHero" || e.kind === "optionsBuild" || e.kind === "panelHero";
+
+/** Il momento forte di una scena in questo fotogramma: avanzamento `p` (prima di 0 non è iniziato, da 1 è finito), quanto è
+ *  «fuori» (`travel`) e quanto si sta consegnando alla scena dopo (`exit`). Senza momento forte: p = −1. */
+export const heroState = (scene: Scene, g: Grid, frame: number): { p: number; travel: number; exit: number } => {
+  for (const e of scene.fx ?? []) {
+    if (!isHero(e)) continue;
+    const from = spanFrames(g, scene.at, e.at), len = spanFrames(g, scene.at + e.at, e.len);
+    const p = (frame - from) / len;
+    if (p < 0 || p >= 1) return { p, travel: 0, exit: p >= 1 ? 1 : 0 };
+    if (e.kind === "cardOut") { const c = cardOutAt(p, e.fromOut, e.toCenter); return { p, travel: c.travel, exit: c.exit }; }
+    if (e.kind === "gaugeHero") { const c = gaugeHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
+    if (e.kind === "optionsBuild") { const c = optionsBuildAt(p, e.pressAt !== undefined ? e.pressAt / e.len : undefined); return { p, travel: c.travel, exit: c.fill }; }
+    if (e.kind === "panelHero") { const c = panelHeroAt(p); return { p, travel: c.travel, exit: c.exit }; }
+  }
+  return { p: -1, travel: 0, exit: 0 };
+};
+
+/** La camera della scena (piano 4): `zoom` sull'orologio, `focus` (0 a fuoco, 1 sfocato e scuro dietro al protagonista),
+ *  `watch` (opacità dell'orologio: con la camera `release` si materializza attorno alla card già fuori). */
+export const sceneCameraAt = (scene: Scene, g: Grid, frame: number): { zoom: number; focus: number; watch: number } => {
+  const { p, travel, exit } = heroState(scene, g, frame);
+  if (scene.watch?.camera === "around") {
+    // la card è ferma al centro dal battito di ciglia: l'orologio compare attorno, grande e centrato, e resta
+    const t = Math.min(1, Math.max(0, frame / 30));
+    return { zoom: AROUND_ZOOM, focus: 0, watch: t * t * (3 - 2 * t) };
+  }
+  if (scene.watch?.camera === "release") {
+    // dopo il battito di ciglia: card già al centro, l'orologio compare attorno e la camera torna indietro piano
+    const t = Math.min(1, Math.max(0, frame / 40));
+    const ease = t * t * (3 - 2 * t);
+    return { zoom: 1.35 - 0.35 * ease, focus: 0.35 * (1 - exit), watch: Math.min(1, frame / 24) };
+  }
+  if (p < 0 || p >= 1) return { zoom: 1, focus: 0, watch: 1 };
+  // con `steady` la camera non si avvicina: l'orologio resta esattamente dov'è e della misura che ha, perché il
+  // componente deve uscirne combaciando fotogramma per fotogramma (Franz, 19/09 11:25: «l'orologio è in movimento»).
+  // La messa a fuoco però si muove: quando i tasti si sollevano, l'orologio dietro va fuori fuoco (Franz, 20/09 08:40,
+  // poi 09:28: «sfocherei maggiormente»; 21/09 19:04: «sfoca un po' di più»). Sette decimi della sfocatura piena: 5,6 px e
+  // quasi due quinti di luce in meno, i tasti staccano.
+  if (scene.watch?.steady) return { zoom: 1, focus: 0.7 * travel * (1 - exit), watch: 1 };
+  const near = travel * (1 - exit);
+  return { zoom: 1 + 0.55 * near, focus: near, watch: 1 };
 };

@@ -4,11 +4,10 @@ import raw from "./timeline.json";
 import shortRaw from "./timeline.short.json";
 import { beatToFrame, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { BLEED_LIFT, MOVE_BEATS, closingAt, displayUnit, poseAt, screenAt, watchPlace } from "./moves.ts";
-import { validateTimeline, watchColumn } from "./timeline.ts";
+import { MOVE_BEATS, displayUnit, screenAt } from "./moves.ts";
+import { validateTimeline } from "./timeline.ts";
 import type { Fx, Scene, Timeline } from "./timeline.ts";
 import { framesOf, gridOf } from "./cut.ts";
-import { dollyAt } from "./dolly.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { PhotoWatch } from "./PhotoWatch.tsx";
 import { SideWatch } from "./SideWatch.tsx";
@@ -20,7 +19,9 @@ import { useFilmFonts } from "./fonts.ts";
 import { EndCard } from "./EndCard.tsx";
 import { END_PACE, logoTrack } from "./endCard.ts";
 import { LogoMark } from "./LogoMark.tsx";
-import { AROUND_ZOOM, Heroes, TerminalBackdrop, cameraAt, heroState } from "./ui/Heroes.tsx";
+import { Heroes, TerminalBackdrop } from "./ui/Heroes.tsx";
+import { heroState } from "./ui/heroes.ts";
+import { watchStateAt } from "./displayPlace.ts";
 import { AskDots } from "./ui/Dots.tsx";
 import { TITLE_LEAD } from "./ui/dots.ts";
 import { Blink } from "./ui/Blink.tsx";
@@ -29,7 +30,7 @@ import { TAKEOVER_CUT, Takeover } from "./ui/Takeover.tsx";
 import { takeoverAt } from "./ui/takeover.ts";
 import { Flip } from "./ui/Flip.tsx";
 import { FLIP_CUT } from "./ui/flip.ts";
-import { sleepAt, sleepP, titleOnAt } from "./ui/sleep.ts";
+import { titleOnAt } from "./ui/sleep.ts";
 import { beforeLids } from "./ui/blink.ts";
 import { screenFadeAt } from "./ui/takeIn.ts";
 import { TakeInFrame, TakeInFront, TakeInScreen } from "./ui/TakeIn.tsx";
@@ -77,31 +78,18 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const total = spanFrames(GRID, scene.at, scene.len);
   const beat = spanFrames(GRID, scene.at, 1);
   const w = scene.watch;
-  // il display che dorme (ui/sleep.ts): la finestra finisce sul taglio, e la scena dopo eredita il risveglio. La scena che
-  // dorme è anche quella che si sposta: al buio la camera passa all'inquadratura della scena dopo.
-  const idx = TIMELINE.scenes.indexOf(scene);
-  const prev = TIMELINE.scenes[idx - 1];
-  const next = TIMELINE.scenes[idx + 1];
+  const prev = TIMELINE.scenes[TIMELINE.scenes.indexOf(scene) - 1];
+  // dove sta l'orologio (sonno, pose, camera, dolly, tremito): displayPlace.ts, lo stesso conto a cui si aggancia la forma
+  const { place, pose, closing, zoom, focus, watchIn, sleep, cx, eAt } = watchStateAt(TIMELINE, scene, frame, width, height);
   const nap = scene.sleep ?? prev?.sleep;
-  const napOwn = Boolean(scene.sleep);
-  const sleep = nap ? sleepAt(sleepP(frame, spanFrames(GRID, (napOwn ? scene : prev).at, nap.len), napOwn, total), nap.len, nap.breath !== false) : null;
   const light = sleep ? sleep.light : 1;
   const halo = sleep ? sleep.halo : 1;
-  const mv = sleep && napOwn ? sleep.move : 0;
   // con `titleLead` la frase della scena dopo aspetta la notifica: la frase di chi dorme resta fino al taglio ed esce con la
   // sua uscita normale (corto, 23/09: il titolo apre il film in ambient). Senza, com'era nel film lungo
-  const titleOn = sleep ? titleOnAt(sleep.title, napOwn, nap?.titleLead) : 1;
-  const drift = sleep ? 1 - sleep.still : 1;
+  const titleOn = sleep ? titleOnAt(sleep.title, Boolean(scene.sleep), nap?.titleLead) : 1;
   // nella chiusura delle due finestre la frase cammina verso la colonna dei titoli, dove la scena dopo metterà la sua
   const lift = scene.text?.carry ? interpolate(frame - spanFrames(GRID, scene.at, scene.text.at ?? 0), [0, 14], [0, -THEME.title * 1.04], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.16, 1, 0.3, 1) }) : 0;
-  const chiude = scene.split ? Math.min(1, Math.max(0, (0.5 - splitAt(frame / Math.max(1, total), scene.split.open, scene.split.hold, scene.split.close, total / beat).edge) / 0.5)) : 1;   // senza le due finestre la frase è già alla sua colonna   // la deriva si ferma nel sonno e torna piano dopo il risveglio
-  const closing = scene.endCard ? closingAt(frame / beat, scene.strapBleed ? BLEED_LIFT : undefined) : null;
-  // `exitBeats`: quanto dura il movimento d'uscita, quando deve accompagnare un tratto di musica invece di essere un
-  // gesto breve — lo zoom della complication dura quanto il crescendo (Franz, 19/09 15:25: «zoom = crescendo»)
-  // `enterAt`: l'orologio entra a scena iniziata — qui rientra mentre la frase cammina verso sinistra (Franz, 20/09 20:28)
-  const eAt = w?.enterAt ? spanFrames(GRID, scene.at, w.enterAt) : 0;
-  const pose = closing ? closing.pose : w ? poseAt(frame - eAt, total - eAt, beat * (w.exitBeats ?? MOVE_BEATS), w.enter, w.exit, frame + beatToFrame(GRID, scene.at), w.steady, drift, beat * (w.exitHold ?? 0)) : null;
-  const cx = (watchColumn(scene) + (watchColumn(next) - watchColumn(scene)) * mv) * width;
+  const chiude = scene.split ? Math.min(1, Math.max(0, (0.5 - splitAt(frame / Math.max(1, total), scene.split.open, scene.split.hold, scene.split.close, total / beat).edge) / 0.5)) : 1;   // senza le due finestre la frase è già alla sua colonna
   const textAt = spanFrames(GRID, scene.at, scene.text?.at ?? 0);
   // il titolo lascia il posto anche alle righe del terminale, che arrivano nella sua stessa colonna (Franz, 20/09 16:36)
   // se l'orologio esce (di lato o ingrandendosi) attraversa la colonna del testo: il testo se ne va prima;
@@ -117,35 +105,11 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   const leave0 = scene.out === "blink" ? total - BLINK_FRAMES : scene.text?.place === "top" ? total + 1000 : Math.min((w?.exit ? total - exitLead(beat * (w.exitBeats ?? MOVE_BEATS), beat) : total) - 8, hero ? spanFrames(GRID, scene.at, hero.at) - 6 : total + 1000, firstAside ? spanFrames(GRID, scene.at, firstAside.at) - 10 : total + 1000);
   // con le sole palpebre la frase è già uscita quando cominciano a chiudersi (revisione del 23/09)
   const leave = scene.out === "lids" && scene.text?.place !== "top" ? beforeLids(leave0, total) : leave0;
-  // mentre la card è protagonista ci si avvicina all'orologio (come nel Canvas di Google a 31,5 s: il componente davanti, l'interfaccia
-  // enorme, scura e sfocata dietro): il display cresce, si sfoca e si scurisce, e torna a fuoco al rientro
-  const { zoom: zoom0, focus, watch: watchIn } = cameraAt(scene, GRID, frame);
   // `fadeOut`: l'orologio se ne va in dissolvenza PRIMA del taglio, sfalsato rispetto a quello che resta in quadro
   // (il terminale): sparendo insieme sembrava uno stacco, non un passaggio (Franz, 20/09 20:09)
   // `screenFade`: sfuma lo schermo, non l'orologio (piano 6): nel corto il terminale entra nello STESSO orologio
   const screenCover = w?.screenFade ? screenFadeAt(frame, total, spanFrames(GRID, scene.at, w.screenFade)) : 0;
   const fadeOut = w?.fadeOut ? 1 - Math.min(1, Math.max(0, (frame - (total - spanFrames(GRID, scene.at, w.fadeOut))) / spanFrames(GRID, scene.at, w.fadeOut))) : 1;
-  // mentre il display dorme la camera torna anche alla misura della scena dopo: spostamento e scala si esauriscono al buio
-  // il dolly della scena (23/09): la camera si avvicina o arretra; senza dolly vale 1 e la scena resta com'era
-  const zoom = (zoom0 + ((next?.watch?.camera === "around" ? AROUND_ZOOM : 1) - zoom0) * mv) * dollyAt(w?.dolly, frame / Math.max(1, total));
-  // quando l'orologio si materializza ATTORNO alla scheda ferma al centro, non è l'orologio a essere centrato: è la sua
-  // scheda. Si sposta l'orologio di quanto la scheda dista dal centro del display, alla scala di quel momento.
-  // dopo un battito di ciglia la scena che si riapre non ha la sua scheda (è un'altra schermata): tiene lo scarto di quella
-  // di prima, se no l'orologio salta in verticale attraverso le palpebre (Franz, 21/09 04:23: «posizione identica»).
-  const aroundCard = (() => {
-    if (scene.watch?.camera !== "around") return undefined;
-    for (let k = idx; k >= 0; k--) {
-      const card = (TIMELINE.scenes[k].fx ?? []).find((f) => f.kind === "cardOut");
-      if (card) return card;
-      if (TIMELINE.scenes[k - 1]?.out !== "blink") return undefined;   // si risale solo attraverso le palpebre
-    }
-    return undefined;
-  })();
-  const aroundDy = aroundCard && aroundCard.kind === "cardOut"
-    // `(1 - mv)`: quando la camera lascia la scheda e va nella colonna di destra, questo scarto si annulla con il
-    // movimento. Senza, l'orologio restava 94 px più in basso per tutto il sonno e al risveglio saltava su (Franz, 22:20).
-    ? (240 - (aroundCard.rect[1] + aroundCard.rect[3] / 2)) * (((THEME.frontGlassPx / (2 * geo.front.glassR)) * 2 * geo.front.displayR) / 480) * zoom * (1 - mv)
-    : 0;
   // quando un momento forte prende il quadro (il tasto che diventa sfondo) il titolo se ne va: sul chiaro non si leggerebbe
   const over = heroState(scene, GRID, frame).exit;
   // mentre il takeover cresce, il componente sotto sparisce: il takeover È quel componente, non una copia sopra
@@ -164,12 +128,6 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
   // il fade parte insieme al riempimento delle barre, 16 fotogrammi prima dell'innesco: così la crescita non si ferma
   // ad aspettare che il quadro si svuoti, le due cose corrono insieme (Franz, 22:41)
   const solo = frame >= blindStart - 16 ? blindSoloAt((frame - (blindStart - 16)) / blindFrames) : 0;
-  // vibrazione: la notifica arriva e l'orologio trema per 10 fotogrammi (Franz, 13:13)
-  const shakeAt = (scene.fx ?? []).find((f) => f.kind === "shake");
-  const sh = shakeAt ? frame - spanFrames(GRID, scene.at, shakeAt.at) : -1;
-  const shake = sh >= 0 && sh < 10 ? 4 * (1 - sh / 10) * Math.sin(sh * 2.6) : 0;
-  // dove sta l'orologio: lo stesso conto per il suo transform e per il volo del terminale (piano 7)
-  const place = pose ? watchPlace(cx, pose, width, height, shake, aroundDy, zoom) : null;
   // il volo del terminale (piani 4, 6, 7): dietro l'orologio, dentro lo schermo e davanti alla cornice, tutti dallo stesso piazzamento
   const tiFx = (scene.fx ?? []).find((f): f is Extract<Fx, { kind: "takeIn" }> => f.kind === "takeIn");
   const takeIn = tiFx && place && w?.view === "front" ? { e: tiFx, prev, g: GRID, f: frame - spanFrames(GRID, scene.at, tiFx.at), frames: spanFrames(GRID, scene.at + tiFx.at, tiFx.len),
