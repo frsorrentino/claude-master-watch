@@ -231,6 +231,9 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
     <ShapeLight.Provider value={effects.light && shapeKeys.length ? (f: number) => {
       const b = frameToBeat(GRID, f);
       if (b < (shape?.from ?? 0) || (shape?.to !== undefined && b >= shape.to) || !shapeVisible(shapeKeys, b)) return null;
+      // nell'atto di chiusura (slogan, cartello) il fondo è nero: la luce della linea corallo diventava un alone dietro lo
+      // slogan, cioè il glow sul testo che la §3 vieta (revisione con l'advisor, 26/09)
+      if (TIMELINE.scenes.find((sc) => b < sc.at + sc.len)?.act === "close") return null;
       return ambientOf(shapeAt(shapeKeys, b, display));
     } : null}>
     <AbsoluteFill style={{ background: "#000" }}>

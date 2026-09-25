@@ -291,10 +291,12 @@ test("il finale su nero: Context si allarga in nero sul taglio, poi lo slogan e 
   assert.equal(logoTrack(end.endTone), logoTrack());
 });
 test("l'accento delle palpebre passa ai cambi di forma: lo scatto su ogni scorrimento, il soffio sul nero dello slogan (§4)", () => {
-  const cues = sfxCues(short, 49.5);
-  for (const b of [52, 54, 56]) assert.ok(cues.some((c) => c.name === "shutter" && c.beat === b), "scatto al battito " + b);
-  assert.ok(cues.some((c) => c.name === "whoosh" && c.beat === 58), "soffio sul taglio verso lo slogan");
-  assert.ok(!sfxCues(short).some((c) => c.name === "shutter" && c.beat >= 47.5), "senza forma, nessuno scatto nuovo");
+  // con la forma accesa da 0 i suoni sono quelli di prima più i soli quattro accenti: nessun suono nuovo nei tratti
+  // tarati con Franz (lo stop sul «yes», la corsia)
+  const key = (c: { beat: number; name: string }) => `${c.beat}:${c.name}`;
+  const before = new Set(sfxCues(short).map(key));
+  const added = sfxCues(short, 0).map(key).filter((k) => !before.has(k)).sort();
+  assert.deepEqual(added, ["52:shutter", "54:shutter", "56:shutter", "58:whoosh"]);
 });
 test("fra il terminale e la lista il terminale entra nell'orologio e diventa la card ✓ (piano 4, volo; Franz, 23/09 20:15)", () => {
   type TakeIn = { kind: "takeIn"; at: number; len: number; slot: number; name: string; age: string; text: string; badge?: string };

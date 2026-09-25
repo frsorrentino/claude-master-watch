@@ -12,14 +12,15 @@ export const dbToGain = (db: number): number => Math.pow(10, db / 20);
 const RANK: SfxName[] = ["wearNotify", "notify", "shutter", "pressRise", "tick", "tick2", "tick4", "whoosh", "thump"];
 
 /** `shapeFrom`: il battito da cui disegna la forma unica (corto, 25/09). Da lì le palpebre non ci sono più e l'accento che
- *  davano sui battiti forti lo danno i cambi di forma (specifica §4): lo stesso scatto su ogni scorrimento della forma, il
- *  soffio quando la forma copre il quadro per un taglio. Senza, i suoni sono quelli di prima. */
+ *  davano sui battiti forti lo danno i cambi di forma (specifica §4), dove la chiave dichiara `accent`. Senza, i suoni
+ *  sono quelli di prima. */
 export const sfxCues = (t: Timeline, shapeFrom?: number): SfxCue[] => {
   const all: SfxCue[] = [];
+  // solo sulle chiavi che lo dichiarano (`accent`): una regola generica metteva suoni nuovi anche nei tratti già tarati
+  // con Franz, come il soffio dentro lo stop della musica sul «yes» (revisione del 26/09)
   if (shapeFrom !== undefined) for (const k of t.shape ?? []) {
-    if (k.at < shapeFrom) continue;
-    if (k.gesture === "swipe") all.push({ beat: k.at, name: "shutter", gainDb: -22 });
-    else if (k.rect && !k.anchor && k.rect[0] <= 0 && k.rect[1] <= 0 && k.rect[0] + k.rect[2] >= 1920 && k.rect[1] + k.rect[3] >= 1080) all.push({ beat: k.at + (k.len ?? 1), name: "whoosh", gainDb: -16 });
+    if (k.at < shapeFrom || !k.accent) continue;
+    all.push(k.accent === "shutter" ? { beat: k.at, name: "shutter", gainDb: -22 } : { beat: k.at + (k.len ?? 1), name: "whoosh", gainDb: -16 });
   }
   // i tre puntini dell'attesa, sul display in ambient, restano muti: il ticchettio che teneva il tempo (21/09 16:01) si
   // sentiva come un rumore sopra il silenzio (Franz, 22/09 09:37)

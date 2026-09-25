@@ -32,6 +32,8 @@ export type ShapeKey = {
   track?: string;   // il colore del resto del tratto (#3a404c, come l'anello del logo)
   show?: number;    // 0-1: quanto la forma copre (1); a 0 c'è (misura, posto, camera) ma lo è il display vero o il fondo della scena
   handoff?: true;   // solo sull'ultima: arrivata (at + len), la forma passa la mano all'arco del logo della scena
+  /** L'accento sonoro che prende il posto di una palpebra (§4): lo scatto sul battito della chiave, il soffio alla fine della sua molla. */
+  accent?: "shutter" | "whoosh";
 };
 export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number; bend: number; split: number; track: string; show: number };
 /** Il rettangolo del display a quel battito: con l'aggancio la forma È il display, anche mentre la foto si muove. */
@@ -257,6 +259,7 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (k.track !== undefined && !(typeof k.track === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.track))) say(`colore del tratto «${k.track}»: atteso #rrggbb`);
     if (k.handoff !== undefined && k.handoff !== true) say(`handoff «${String(k.handoff)}»: vale solo true`);
     if (k.handoff !== undefined && i !== keys.length - 1) say("handoff solo sull'ultima chiave: dopo il passaggio al logo la forma non c'è più");
+    if (k.accent !== undefined && k.accent !== "shutter" && k.accent !== "whoosh") say(`accento «${k.accent}» sconosciuto: shutter o whoosh`);
     if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
     // una molla non finisce prima di quella della chiave prima: finché ogni cambio è più avanti del successivo, la somma
     // delle molle resta una miscela dei bersagli; al contrario la forma esce dai bersagli (2951 px su un campo di 2120,
