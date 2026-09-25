@@ -5,7 +5,10 @@ import { totalBeats, validateTimeline, watchColumn } from "./timeline.ts";
 import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { dollyAt } from "./dolly.ts";
 import { asideAt, contextFill, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
-import { beatToFrame, spanFrames } from "./beats.ts";
+import { beatToFrame, frameToBeat, spanFrames } from "./beats.ts";
+import { KEY_LEN, SWAP_IN, SWAP_OUT, contentAt, shapeAt } from "./shape.ts";
+import type { Rect } from "./shape.ts";
+import { THEME } from "./theme.ts";
 import { laneArrivals } from "./ui/heroes.ts";
 import { BLEED_LIFT, closingAt } from "./moves.ts";
 import { END_PACE, contrast, endColors, logoTrack, notesAt } from "./endCard.ts";
@@ -294,4 +297,77 @@ test("fra il terminale e la lista il terminale entra nell'orologio e diventa la 
   assert.deepEqual([d.slot, d.name, d.age, d.text, d.badge], [t.slot, t.name, t.age, t.text, t.badge]);
   const lines = ((watch.fx ?? []).find((f) => f.kind === "terminalPlane") as { lines: string[] }).lines;
   assert.equal("⏺ " + t.text, lines[lines.length - 1], "vola l'ultima riga del terminale");
+});
+
+// La forma unica (specifica del 25/09, §2 e §8.5): la traccia `shape` del corto, controllata fotogramma per fotogramma
+// sul display a riposo. La geometria vera del display (pose, dolly, tre quarti) arriva ai passi 3-4: fino ad allora
+// l'identità col display in face è vera per costruzione e questi test guardano il percorso, non l'aggancio.
+const GEO = JSON.parse(readFileSync(new URL("./mockup.geometry.json", import.meta.url), "utf8")).front;
+const restAt = (b: number): Rect => {
+  const sc = short.scenes.find((s) => b < s.at + s.len) ?? short.scenes[short.scenes.length - 1];
+  const d = (2 * GEO.displayR * THEME.frontGlassPx) / (2 * GEO.glassR);
+  return [watchColumn(sc) * 1920 - d / 2, 540 - d / 2, d, d];
+};
+const SHAPE = short.shape ?? [];
+const G = { bpm: short.bpm, fps: short.fps, offsetSeconds: short.offsetSeconds };
+const LAST = beatToFrame(G, totalBeats(short));
+const sceneOf = (b: number) => short.scenes.find((s) => b < s.at + s.len) ?? short.scenes[short.scenes.length - 1];
+
+test("forma: c'è in ogni fotogramma del corto, con misura positiva", () => {
+  assert.ok(SHAPE.length > 0, "il corto ha la sua traccia");
+  for (let f = 0; f <= LAST; f++) {
+    const s = shapeAt(SHAPE, frameToBeat(G, f), restAt);
+    assert.ok(s.w >= 1 && s.h >= 1, `fotogramma ${f}: ${s.w}×${s.h}`);
+  }
+});
+
+test("forma: si muove solo dentro la finestra di una chiave (fuori, fra due fotogrammi, meno di 4 px)", () => {
+  const moving = (b: number) => SHAPE.some((k) => b >= k.at && b <= k.at + (k.len ?? KEY_LEN) + 1 / 16);
+  let prev = shapeAt(SHAPE, frameToBeat(G, 0), restAt);
+  for (let f = 1; f <= LAST; f++) {
+    const b = frameToBeat(G, f), s = shapeAt(SHAPE, b, restAt);
+    const d = Math.max(Math.abs(s.x - prev.x), Math.abs(s.y - prev.y), Math.abs(s.x + s.w - prev.x - prev.w), Math.abs(s.y + s.h - prev.y - prev.h));
+    if (!moving(b)) assert.ok(d <= 4, `fotogramma ${f} (battito ${b.toFixed(2)}, ${sceneOf(b).id}): salto di ${d.toFixed(1)} px senza chiave`);
+    prev = s;
+  }
+});
+
+// §8.5: nessun battito senza un cambio. Un battito è vivo se una molla della forma corre, se il contenuto si scambia o si
+// anima da sé (l'onda della voce, la dettatura che scrive, le righe del terminale, le barre dei pannelli, l'arco che si
+// disegna), o se è una pausa di lettura: una scena con la frase ferma, al massimo due battiti di fila, e il cartello.
+const SELF_ANIMATED = new Set(["voice", "dict", "screen", "terminal", "work", "questions", "context", "logo"]);
+// Le eccezioni, una per una, con il passo della specifica che le toglie
+const STILL_OK: Record<number, string> = {
+  1: "face: la forma è il display, lo muove il dolly 1→1,08; con la posa vera (passo 4) l'aggancio si muove",
+  14: "answer: la voce legge le opzioni fino al 15; al passo 4 i tasti ricevono il bump (molla ζ 0,7, §8.4)",
+  15: "answer: come il 14",
+};
+test("forma: nessun battito morto (§8.5), salvo le pause di lettura e le eccezioni dichiarate", () => {
+  const dead: string[] = [];
+  let reading = 0;
+  for (let b = 0; b < Math.ceil(totalBeats(short)); b++) {
+    const spring = SHAPE.some((k) => k.at < b + 1 && k.at + (k.len ?? KEY_LEN) > b);
+    const swap = SHAPE.some((k, i) => i > 0 && k.content !== SHAPE[i - 1].content && k.at < b + 1 && k.at + SWAP_OUT + SWAP_IN > b);
+    const c = contentAt(SHAPE, b + 0.5);
+    const sc = sceneOf(b);
+    if (spring || swap || (c && SELF_ANIMATED.has(c.id)) || sc.endCard) { reading = 0; continue; }
+    if (sc.text && ++reading <= 2) continue;
+    if (!(b in STILL_OK)) dead.push(`${b} (${sc.id})`);
+  }
+  assert.deepEqual(dead, [], `battiti fermi: ${dead.join(", ")}`);
+});
+
+test("forma: le palpebre della panoramica diventano cambi di forma sul battito 1 delle battute (§4)", () => {
+  for (const at of [52, 56]) {
+    const k = SHAPE.find((x) => x.at === at);
+    assert.ok(k && at % 4 === 0 && k.content, `al ${at} un cambio di pannello sul battito 1`);
+  }
+  assert.ok(SHAPE.some((k) => k.at <= MUSIC.drop && k.at + (k.len ?? KEY_LEN) >= MUSIC.drop), "la musica riparte (20) mentre il campo si ritira nella prima card");
+});
+
+test("forma: comincia agganciata al display e finisce sull'orologio, gesti solo fra quelli dell'app", () => {
+  assert.equal(SHAPE[0].anchor, "display");
+  const s = shapeAt(SHAPE, 0.5, restAt), d = restAt(0.5);
+  assert.deepEqual([s.x, s.y, s.w, s.h].map(Math.round), d.map(Math.round));
+  assert.ok(SHAPE.every((k) => k.gesture === undefined || ["tap", "longPress", "swipe", "send"].includes(k.gesture)), "niente corona (§8.1b)");
 });
