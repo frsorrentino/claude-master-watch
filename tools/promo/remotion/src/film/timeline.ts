@@ -6,6 +6,8 @@ import type { EndPace, EndTone } from "./endCard.ts";
 import { TITLE_LEAD } from "./ui/dots.ts";
 import { THEME } from "./theme.ts";
 import type { Palette } from "./theme.ts";
+import { validateShape } from "./shape.ts";
+import type { ShapeKey } from "./shape.ts";
 
 /** La scaletta: scene in fila, in battiti. Dentro una scena i tempi (text.at, fx[].at) partono dall'inizio della scena; mezzi battiti ammessi. */
 export type Act = "open" | "know" | "act" | "control" | "close";
@@ -80,7 +82,7 @@ export type BlindsCue = { len: number };
 /** `musicDelayFrames`: la fase della traccia, in fotogrammi. Misurata il 19/09 sui transienti di `music.v9.wav`: i battiti
  *  del brano cadono 35 ms PRIMA di quelli della griglia (110,00 bpm esatti, quindi è fase, non deriva). Un fotogramma di
  *  ritardo sulla traccia li rimette insieme a 2 ms, senza spostare di un fotogramma tutti i tagli già approvati. */
-export type Timeline = Grid & { music?: string; musicDelayBeats?: number; musicDelayFrames?: number; palette?: Palette; scenes: Scene[] };
+export type Timeline = Grid & { music?: string; musicDelayBeats?: number; musicDelayFrames?: number; palette?: Palette; scenes: Scene[]; shape?: ShapeKey[] };   // `shape`: la traccia della forma unica (shape.ts)
 
 export class TimelineError extends Error {
   problems: string[];
@@ -241,6 +243,7 @@ export const validateTimeline = (raw: unknown): Timeline => {
     }
     prev = s;
   }
+  for (const m of validateShape(t.shape, totalBeats(t))) bad.push(`forma: ${m}`);
   if (bad.length) throw new TimelineError(bad);
   return t;
 };

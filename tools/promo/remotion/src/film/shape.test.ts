@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed } from "./shape.ts";
+import { SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, validateShape } from "./shape.ts";
 import type { Display, Rect, ShapeKey } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 
@@ -66,4 +66,29 @@ test("motion blur: 8 campioni solo sopra 24 px per fotogramma", () => {
 test("frameToBeat è l'inverso di beatToFrame", () => {
   const g = { bpm: 110, fps: 30, offsetSeconds: 0.01 };
   for (const b of [0, 0.5, 12, 73.5]) assert.ok(Math.abs(frameToBeat(g, beatToFrame(g, b)) - b) < 1 / 30 * 110 / 60);
+});
+
+test("validazione: una traccia buona passa, gli errori si elencano in italiano", () => {
+  assert.deepEqual(validateShape(keys, 20), []);
+  assert.deepEqual(validateShape(undefined, 20), []);
+  const bad = validateShape([
+    { at: 0.5, rect: [0, 0, 10, 10], anchor: "display", r: -1, color: "red" },
+    { at: 0.5, rect: [0, 0, 0, 10], r: 0, color: "#000000", zoom: 2, gesture: "crown" },
+    { at: 0.75, rect: [0, 0, 10, 10], r: 0, color: "#000000" },
+  ], 20);
+  for (const piece of ["prima chiave", "rect", "anchor", "colore", "raggio", "crescent", "zoom", "gesto", "mezzi battiti"])
+    assert.ok(bad.some((m) => m.includes(piece)), `manca un errore su «${piece}»: ${bad.join(" | ")}`);
+});
+test("validazione: due scambi di contenuto a meno di mezzo battito sono testi sovrapposti", () => {
+  const p = validateShape([
+    { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "a" },
+    { at: 0.5, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "b" },
+    { at: 1, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "c" },
+  ], 20);
+  assert.deepEqual(p, []);   // 0,5 battiti bastano: con chiavi su mezzi battiti crescenti la sovrapposizione è impossibile,
+  // ma la regola resta esplicita perché SWAP_OUT/SWAP_IN possono cambiare
+  assert.ok(validateShape([
+    { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "a" },
+    { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "b" },
+  ], 20).some((m) => m.includes("sovrappo")));
 });

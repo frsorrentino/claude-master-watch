@@ -32,6 +32,8 @@ export type ContentState = { id: string; key: ShapeKey; opacity: number; blur: n
 
 /** Scambio del contenuto (§3, §8.6): esce il vecchio, poi entra il nuovo, mai sovrapposti. Battiti, px, px. */
 export const SWAP_OUT = 0.25, SWAP_IN = 0.25, SWAP_BLUR = 6, SWAP_SLIDE = 8, KEY_LEN = 1;
+/** Il limite di scala della camera: oltre, le foto sgranano (§4). Qui perché `zoom` è un campo della chiave. */
+export const ZOOM_MAX = 1.3;
 /** Oltre questo spostamento di un vertice in un fotogramma 4 campioni di blur lasciano vedere le copie: se ne usano 8. */
 export const BLUR_FAST = 24;
 
@@ -104,3 +106,38 @@ export const shapeSpeed = (keys: readonly ShapeKey[], beat: number, display: Dis
 };
 
 export const blurSamples = (speed: number): 4 | 8 => (speed > BLUR_FAST ? 8 : 4);
+
+const GESTURES = ["tap", "longPress", "swipe", "send"];
+const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);
+
+/**
+ * I problemi della traccia, in italiano come quelli della scaletta; [] se va bene, e anche se la traccia non c'è (un film
+ * senza forma). Non importa `timeline.ts`: la scaletta chiama questa, non il contrario.
+ */
+export const validateShape = (raw: unknown, total: number): string[] => {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length === 0) return ["la traccia deve essere un elenco di chiavi non vuoto"];
+  const bad: string[] = [];
+  const keys = raw as ShapeKey[];
+  keys.forEach((k, i) => {
+    const say = (m: string) => bad.push(`chiave ${i} (battito ${k.at}): ${m}`);
+    const prev = keys[i - 1];
+    if (i === 0 && k.at !== 0) say("la prima chiave deve stare al battito 0");
+    if (!half(k.at)) say("servono battiti o mezzi battiti");
+    if (prev && !(k.at > prev.at)) say(`i battiti devono essere strettamente crescenti (la chiave prima è al ${prev.at})`);
+    if (!(k.at < total)) say(`oltre la fine del film (${total} battiti)`);
+    if ((k.rect === undefined) === (k.anchor === undefined)) say("serve esattamente uno fra «rect» e «anchor»");
+    if (k.anchor !== undefined && k.anchor !== "display") say(`anchor «${k.anchor}»: vale solo «display»`);
+    if (k.rect !== undefined && !(Array.isArray(k.rect) && k.rect.length === 4 && k.rect.every(Number.isFinite) && k.rect[2] > 0 && k.rect[3] > 0)) say(`rect (${String(k.rect)}): servono quattro numeri, larghezza e altezza positive`);
+    if (!(typeof k.r === "number" && k.r >= 0)) say(`raggio ${k.r}: serve un numero non negativo`);
+    if (!(typeof k.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.color))) say(`colore «${k.color}»: atteso #rrggbb`);
+    if (k.content !== undefined && typeof k.content !== "string") say("il contenuto è un id di testo");
+    if (k.len !== undefined && !(typeof k.len === "number" && k.len > 0)) say(`durata ${k.len}: serve un numero positivo`);
+    if (k.ease !== undefined && k.ease !== "spring" && k.ease !== "settle") say(`molla «${k.ease}» sconosciuta: spring o settle`);
+    if (k.zoom !== undefined && !(k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
+    if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
+    // l'uscita del vecchio e l'entrata del nuovo devono finire prima della chiave: se no i testi si sovrappongono
+    if (prev && k.content !== prev.content && k.at - prev.at < SWAP_OUT + SWAP_IN) say(`scambio di contenuto a ${k.at - prev.at} battiti dalla chiave prima: testi sovrapposti (servono ${SWAP_OUT + SWAP_IN})`);
+  });
+  return bad;
+};
