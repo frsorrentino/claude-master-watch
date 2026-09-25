@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shapeVisible, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
+import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, arcOf, blurSamples, boxStyle, contentAt, keyRect, shapeAt, shapeSpeed, shapeVisible, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
 import type { Display, Rect, ShapeKey, ShapeState } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 import { springSettle, springs } from "./spring.ts";
@@ -212,7 +212,7 @@ test("validazione: rect e aggancio insieme vanno bene, senza nessuno dei due no"
 // Piano 2, Task 3: il tratto. Con `bend` > 0 il rect è una linea che si piega in un arco (fino ai 280° del logo), e la
 // parte `split` dal capo sinistro è nel colore, il resto in `track`.
 test("tratto: appena piegato combacia con la scatola dritta (niente scatto a bend 0)", () => {
-  const box: ShapeState = { x: 575, y: 655, w: 770, h: 8, r: 4, color: "#d97757", anchor: 0, bend: 1.0001e-3, split: 1, track: "#3a404c" };
+  const box: ShapeState = { x: 575, y: 655, w: 770, h: 8, r: 4, color: "#d97757", anchor: 0, bend: 1.0001e-3, split: 1, track: "#3a404c", show: 1 };
   const a = arcOf(box)!;
   const end = (deg: number) => [a.cx + a.R * Math.cos((deg * Math.PI) / 180), a.cy + a.R * Math.sin((deg * Math.PI) / 180)];
   const [l, r] = [end(a.start), end(a.start + a.sweep)];
@@ -269,4 +269,26 @@ test("passaggio al logo: dall'arrivo della chiave `handoff` la forma non si dise
   assert.deepEqual(validateShape(k, 20), []);
   assert.ok(validateShape([{ ...k[0], handoff: true }, k[1]], 20).some((m) => m.includes("handoff") && m.includes("ultima")));
   assert.ok(validateShape([k[0], { ...k[1], handoff: "yes" }], 20).some((m) => m.includes("handoff")));
+});
+
+// Piano 3, Task 1: `show`. La forma c'è (misura, posto, camera) anche quando non copre: a 0 il display vero, o il fondo
+// della scena, È la forma.
+test("show: molla critica fra 0 e 1, di norma 1; a 0 la scatola non copre", () => {
+  const k: ShapeKey[] = [
+    { at: 0, anchor: "display", r: 0, color: "#000000", show: 0 },
+    { at: 2, rect: [150, 690, 720, 170], r: 40, color: "#f4f2ec", len: 1.5 },
+    { at: 6, rect: [150, 690, 720, 170], r: 40, color: "#f4f2ec", show: 0, len: 0.5 },
+  ];
+  let prev = 0;
+  for (let b = 0; b <= 6; b += 0.01) {
+    const s = shapeAt(k, b, still);
+    assert.ok(s.show >= 0 && s.show <= 1 && s.show >= prev - 1e-12, `battito ${b}: show ${s.show}`);
+    prev = s.show;
+  }
+  assert.equal(shapeAt(k, 3.5, still).show, 1);
+  assert.equal(shapeAt(k, 7, still).show, 0);
+  assert.equal(boxStyle(shapeAt(k, 1, still)).opacity, 0);
+  assert.equal(boxStyle(shapeAt(k, 4, still)).opacity, 1);
+  assert.equal(shapeAt(keys, 4, still).show, 1);
+  assert.ok(validateShape([{ ...k[0], show: 1.5 }], 20).some((m) => m.includes("show")));
 });

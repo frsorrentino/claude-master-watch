@@ -3,7 +3,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { frameToBeat } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { SHAPE_SHUTTER, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeVisible, shutterCentre } from "./shape.ts";
+import { SHAPE_SHUTTER, arcOf, blurSamples, boxStyle, contentAt, keyRect, shapeAt, shapeVisible, shutterCentre } from "./shape.ts";
 import type { Display, ShapeKey } from "./shape.ts";
 import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 
@@ -37,12 +37,12 @@ const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples 
   return (
     <CameraLayer keys={keys} g={g} display={display} shift={shift}>
       {a ? (
-        <svg width={1920} height={1080} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+        <svg width={1920} height={1080} style={{ position: "absolute", left: 0, top: 0, overflow: "visible", opacity: s.show }}>
           {ring((a.R * a.sweep * Math.PI) / 180, s.track)}
           {s.split > 1e-3 ? ring((a.R * a.sweep * Math.PI * s.split) / 180, s.color) : null}
         </svg>
       ) : (
-        <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color }} />
+        <div style={boxStyle(s)} />
       )}
     </CameraLayer>
   );
@@ -66,7 +66,7 @@ export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan 
         <CameraLayer keys={keys} g={g} display={display}>
           <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: "hidden" }}>
             {/* la controscala: il blocco resta grande come la sua chiave e centrato, così l'a capo non si muove mentre la forma cambia */}
-            <div style={{ position: "absolute", left: (s.w - kw) / 2, top: (s.h - kh) / 2, width: kw, height: kh, opacity: c.opacity, filter: c.blur > 0 ? `blur(${c.blur}px)` : undefined, transform: `translateY(${c.dy}px)` }}>
+            <div style={{ position: "absolute", left: (s.w - kw) / 2, top: (s.h - kh) / 2, width: kw, height: kh, opacity: c.opacity * s.show, filter: c.blur > 0 ? `blur(${c.blur}px)` : undefined, transform: `translateY(${c.dy}px)` }}>
               {content(c.id, kw, kh)}
             </div>
           </div>

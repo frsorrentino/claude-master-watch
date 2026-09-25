@@ -30,9 +30,10 @@ export type ShapeKey = {
   bend?: number;    // 0-1: il rect è un tratto che si piega in arco, fino ai 280° del logo (0, la scatola dritta)
   split?: number;   // 0-1: quanta parte del tratto, dal capo sinistro, è nel colore (1)
   track?: string;   // il colore del resto del tratto (#3a404c, come l'anello del logo)
+  show?: number;    // 0-1: quanto la forma copre (1); a 0 c'è (misura, posto, camera) ma lo è il display vero o il fondo della scena
   handoff?: true;   // solo sull'ultima: arrivata (at + len), la forma passa la mano all'arco del logo della scena
 };
-export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number; bend: number; split: number; track: string };
+export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number; bend: number; split: number; track: string; show: number };
 /** Il rettangolo del display a quel battito: con l'aggancio la forma È il display, anche mentre la foto si muove. */
 export type Display = (beat: number) => Rect;
 export type ContentState = { id: string; key: ShapeKey; opacity: number; blur: number; dy: number };
@@ -109,8 +110,13 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
     bend: unit((k) => k.bend ?? 0),
     split: unit((k) => k.split ?? 1),
     track: hex((k) => k.track ?? TRACK),
+    show: unit((k) => k.show ?? 1),
   };
 };
+
+/** La scatola dritta nel quadro (prima della camera): con `show` 0 c'è ma non copre. */
+export const boxStyle = (s: ShapeState): { position: "absolute"; left: number; top: number; width: number; height: number; borderRadius: number; background: string; opacity: number } =>
+  ({ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color, opacity: s.show });
 
 /** La forma si disegna, salvo dopo il passaggio al logo: da lì l'arco è quello di `LogoMark`, e due archi uno sull'altro
  *  si vedrebbero (bordi e colori non combaciano al sottopixel). */
@@ -218,7 +224,7 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (k.len !== undefined && !(num(k.len) && k.len > 0)) say(`durata ${k.len}: serve un numero positivo`);
     if (k.ease !== undefined && k.ease !== "spring" && k.ease !== "settle") say(`molla «${k.ease}» sconosciuta: spring o settle`);
     if (k.zoom !== undefined && !(num(k.zoom) && k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
-    for (const [name, v] of [["bend", k.bend], ["split", k.split]] as const) if (v !== undefined && !(num(v) && v >= 0 && v <= 1)) say(`${name} ${v}: serve un numero fra 0 e 1`);
+    for (const [name, v] of [["bend", k.bend], ["split", k.split], ["show", k.show]] as const) if (v !== undefined && !(num(v) && v >= 0 && v <= 1)) say(`${name} ${v}: serve un numero fra 0 e 1`);
     if (k.track !== undefined && !(typeof k.track === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.track))) say(`colore del tratto «${k.track}»: atteso #rrggbb`);
     if (k.handoff !== undefined && k.handoff !== true) say(`handoff «${String(k.handoff)}»: vale solo true`);
     if (k.handoff !== undefined && i !== keys.length - 1) say("handoff solo sull'ultima chiave: dopo il passaggio al logo la forma non c'è più");
