@@ -8,7 +8,8 @@ import { UI } from "./UiTokens.ts";
 import { UiGauge } from "./UiGauge.tsx";
 import { soft } from "../moves.ts";
 import { BLIND_CUT } from "./blinds.ts";
-import { asideAt, contextFill, contextTextAt, fadeOutAt, workBar, workCount } from "./aside.ts";
+import { asideAt, contextFill, contextTextAt, fadeOutAt } from "./aside.ts";
+import { BriefContext, BriefQuestions, BriefWork } from "./Brief.tsx";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -20,7 +21,8 @@ const clamp = (t: number) => Math.min(1, Math.max(0, t));
 export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
   const frame = useCurrentFrame();
   const { height } = useVideoConfig();
-  const list = (scene.fx ?? []).filter((f): f is Extract<Fx, { kind: "aside" }> => f.kind === "aside");
+  // `inShape`: il pannello lo disegna la forma unica (corto, 25/09): qui resta solo il dato, se no i pannelli sarebbero due
+  const list = (scene.fx ?? []).filter((f): f is Extract<Fx, { kind: "aside" }> => f.kind === "aside" && !f.inShape);
   if (!list.length) return null;
   // quando parte la tapparella le barre HTML lasciano il posto ai listelli in Three, che nascono identici: prima si riempiono
   // fino in fondo e il resto del pannello se ne va, poi al fotogramma esatto dell'innesco spariscono
@@ -87,50 +89,14 @@ export const Aside: React.FC<{ scene: Scene; g: Grid }> = ({ scene, g }) => {
                 </svg>
               </>
             ) : e.panel === "work" ? (
-              <>
-                <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Now</div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 6 }}>
-                  {/* anche qui il numero sale da 0, come gli altri pannelli (Franz, 18/09 22:01) */}
-                  <span style={{ fontSize: 132, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{workCount(e.n ?? 1, d)}</span>
-                  <span style={{ fontSize: 56, color: THEME.dim }}>working</span>
-                </div>
-                <div style={{ display: "flex", gap: 14, marginTop: 26 }}>
-                  {(e.bars ?? [1, 1, 1]).map((f, k) => (
-                    <span key={k} style={{ flex: f, height: 22, borderRadius: 11, background: [UI.waiting, UI.busy, UI.idle][k % 3], transform: `scaleX(${workBar(d, k)})`, transformOrigin: "0 50%" }} />
-                  ))}
-                </div>
-                <div style={{ marginTop: 22, fontSize: 38, color: THEME.dim }}>{e.note}</div>
-              </>
+              <BriefWork n={e.n} note={e.note} bars={e.bars} d={d} />
             ) : e.panel === "questions" ? (
-              <>
-                <div style={{ fontSize: 40, fontWeight: 500, color: UI.waiting }}>Open questions</div>
-                {/* semplice passaggio da 0 a 1, senza anelli */}
-                <div style={{ fontSize: 190, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.04em", color: UI.waiting, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{Math.round((e.n ?? 1) * clamp(d * 2))}</div>
-                <div style={{ marginTop: 18, fontSize: 40, color: THEME.dim }}>{e.note}</div>
-                <div style={{ marginTop: 10, fontSize: 44, color: THEME.white, opacity: clamp(d * 1.6 - 0.5), maxWidth: 700 }}>{e.quote}</div>
-              </>
+              <BriefQuestions n={e.n} note={e.note} quote={e.quote} d={d} />
             ) : (
-              <>
-                <div style={{ fontSize: 40, fontWeight: 500, color: UI.briefGood }}>Context</div>
-                {(e.rows ?? []).map((r, k) => {
-                  // mentre le barre si riempiono per la tapparella, anche i numeri finiscono di salire: nessun dato resta a metà
-                  const p = Math.max(contextFill(d, k), e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0);
-                  // l'ultima scheda non svanisce: le due barre si riempiono fino in fondo e da lì nasce la tapparella (Blinds)
-                  const g2 = e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0;
-                  return (
-                    <div key={k} style={{ marginTop: k ? 34 : 18 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 50, opacity: e.out === "bars" ? contextTextAt(frame, blindStart) : 1 }}>
-                        <span>{r.name}</span>
-                        <span style={{ color: UI.briefRing, fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct * p)} %</span>
-                      </div>
-                      {/* il finale: le barre si riempiono fino in fondo e restano ferme; da lì nasce la tapparella in Three */}
-                      <div style={{ marginTop: 12, height: 16, borderRadius: 8, background: "rgba(139,180,247,.18)", width: 760 }}>
-                        <div style={{ width: `${r.pct * p + (100 - r.pct * p) * g2}%`, height: "100%", borderRadius: 8, background: UI.briefRing }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
+              // mentre le barre si riempiono per la tapparella, anche i numeri finiscono di salire: nessun dato resta a metà;
+              // l'ultima scheda non svanisce: le due barre si riempiono fino in fondo e da lì nasce la tapparella (Blinds)
+              <BriefContext rows={e.rows} d={d} fill={(k) => Math.max(contextFill(d, k), e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0)}
+                grow={e.out === "bars" ? soft(clamp((frame - (blindStart - 16)) / 16)) : 0} textOpacity={e.out === "bars" ? contextTextAt(frame, blindStart) : 1} />
             )}
           </div>
         );
