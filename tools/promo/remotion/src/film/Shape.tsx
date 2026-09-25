@@ -3,7 +3,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { frameToBeat } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { SHAPE_SHUTTER, blurSamples, contentAt, keyRect, shapeAt, shutterCentre } from "./shape.ts";
+import { SHAPE_SHUTTER, arcOf, blurSamples, contentAt, keyRect, shapeAt, shutterCentre } from "./shape.ts";
 import type { Display, ShapeKey } from "./shape.ts";
 import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 
@@ -24,9 +24,23 @@ const CameraLayer: React.FC<Track & { shift?: number; children: React.ReactNode 
 const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples }) => {
   const shift = shutterCentre(samples);
   const s = shapeAt(keys, frameToBeat(g, useCurrentFrame() - shift), display);
+  const a = arcOf(s);
+  // il tratto piegato si disegna come l'anello di LogoMark: un cerchio col solo tratto dell'arco (dasharray), girato
+  // sul capo sinistro; sotto tutto l'arco nel colore del resto, sopra la parte `split` nel colore
+  const ring = (len: number, color: string) => a ? (
+    <circle cx={a.cx} cy={a.cy} r={a.R} fill="none" stroke={color} strokeWidth={a.stroke} strokeLinecap="round"
+      strokeDasharray={`${len} ${2 * Math.PI * a.R}`} transform={`rotate(${a.start} ${a.cx} ${a.cy})`} />
+  ) : null;
   return (
     <CameraLayer keys={keys} g={g} display={display} shift={shift}>
-      <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color }} />
+      {a ? (
+        <svg width={1920} height={1080} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+          {ring((a.R * a.sweep * Math.PI) / 180, s.track)}
+          {s.split > 1e-3 ? ring((a.R * a.sweep * Math.PI * s.split) / 180, s.color) : null}
+        </svg>
+      ) : (
+        <div style={{ position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, background: s.color }} />
+      )}
     </CameraLayer>
   );
 };

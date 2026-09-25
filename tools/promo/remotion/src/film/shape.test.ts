@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
-import type { Display, Rect, ShapeKey } from "./shape.ts";
+import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
+import type { Display, Rect, ShapeKey, ShapeState } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 import { springSettle, springs } from "./spring.ts";
 
@@ -207,4 +207,53 @@ test("una chiave libera dopo le agganciate riporta il peso a 0 con la molla crit
 test("validazione: rect e aggancio insieme vanno bene, senza nessuno dei due no", () => {
   assert.deepEqual(validateShape(card, 20), []);
   assert.ok(validateShape([{ at: 0, r: 0, color: "#000000" }], 20).some((m) => m.includes("rect") && m.includes("anchor")));
+});
+
+// Piano 2, Task 3: il tratto. Con `bend` > 0 il rect è una linea che si piega in un arco (fino ai 280° del logo), e la
+// parte `split` dal capo sinistro è nel colore, il resto in `track`.
+test("tratto: appena piegato combacia con la scatola dritta (niente scatto a bend 0)", () => {
+  const box: ShapeState = { x: 575, y: 655, w: 770, h: 8, r: 4, color: "#d97757", anchor: 0, bend: 1.0001e-3, split: 1, track: "#3a404c" };
+  const a = arcOf(box)!;
+  const end = (deg: number) => [a.cx + a.R * Math.cos((deg * Math.PI) / 180), a.cy + a.R * Math.sin((deg * Math.PI) / 180)];
+  const [l, r] = [end(a.start), end(a.start + a.sweep)];
+  // i capi della linea mediana, che gli estremi arrotondati allungano di mezzo spessore: come la scatola col raggio h/2
+  for (const [p, want] of [[l, [box.x + box.h / 2, box.y + box.h / 2]], [r, [box.x + box.w - box.h / 2, box.y + box.h / 2]]])
+    assert.ok(Math.hypot(p[0] - want[0], p[1] - want[1]) < 0.5, `capo ${p} contro ${want}`);
+  assert.equal(a.stroke, box.h);
+  assert.equal(arcOf({ ...box, bend: 0 }), null);
+});
+
+test("tratto: a bend 1 è l'arco del logo (LogoMark) portato nel quadro dal display", () => {
+  const r = (40.2 * 300) / 92, aw = (5.6 * 300) / 92, L = (r * 280 * Math.PI) / 180;
+  const logo: ShapeKey[] = [{ at: 0, anchor: "display", rect: [240 - L / 2, 240 - r - aw / 2, L, aw], r: 0, color: "#d97757", bend: 1, split: 0.7 }];
+  for (const b of [0, 1.3, 7]) {
+    const d = breathing(b), u = d[2] / 480;
+    const s = shapeAt(logo, b, breathing), a = arcOf(s)!;
+    const eq = (x: number, y: number) => assert.ok(Math.abs(x - y) < 1e-6, `${x} ≠ ${y}`);
+    eq(a.cx, d[0] + 240 * u); eq(a.cy, d[1] + 240 * u); eq(a.R, r * u); eq(a.start, 130); eq(a.sweep, 280); eq(a.stroke, aw * u);
+    assert.deepEqual([s.split, s.track], [0.7, "#3a404c"]);
+  }
+});
+
+test("tratto: la piega va a molla critica e non supera mai 1 (oltre 280° si chiuderebbe il varco del logo)", () => {
+  const k: ShapeKey[] = [
+    { at: 0, rect: [575, 655, 770, 8], r: 4, color: "#d97757" },
+    { at: 1, rect: [800, 300, 500, 20], r: 10, color: "#d97757", bend: 1, len: 0.5 },
+    { at: 2, rect: [800, 300, 500, 20], r: 10, color: "#d97757", bend: 1, split: 0.7, track: "#1B2B4F" },
+  ];
+  let prev = 0;
+  for (let b = 0; b <= 4; b += 0.01) {
+    const s = shapeAt(k, b, still);
+    assert.ok(s.bend >= prev - 1e-12 && s.bend <= 1 && s.split >= 0 && s.split <= 1, `battito ${b}: bend ${s.bend}, split ${s.split}`);
+    assert.match(s.track, /^#[0-9a-f]{6}$/);
+    prev = s.bend;
+  }
+  assert.deepEqual([shapeAt(k, 4, still).split, shapeAt(k, 4, still).track], [0.7, "#1b2b4f"]);
+});
+
+test("validazione: piega e divisione fra 0 e 1, colore del tratto esadecimale", () => {
+  const ok = { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000" };
+  assert.deepEqual(validateShape([{ ...ok, bend: 1, split: 0.7, track: "#1B2B4F" }], 20), []);
+  const bad = validateShape([{ ...ok, bend: 1.2, split: -0.1, track: "grey" }], 20);
+  for (const piece of ["bend", "split", "tratto"]) assert.ok(bad.some((m) => m.includes(piece)), `manca «${piece}»: ${bad.join(" | ")}`);
 });

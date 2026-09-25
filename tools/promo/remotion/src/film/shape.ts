@@ -27,8 +27,11 @@ export type ShapeKey = {
   ease?: "spring" | "settle";
   zoom?: number;
   gesture?: Gesture;
+  bend?: number;    // 0-1: il rect è un tratto che si piega in arco, fino ai 280° del logo (0, la scatola dritta)
+  split?: number;   // 0-1: quanta parte del tratto, dal capo sinistro, è nel colore (1)
+  track?: string;   // il colore del resto del tratto (#3a404c, come l'anello del logo)
 };
-export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number };
+export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number; bend: number; split: number; track: string };
 /** Il rettangolo del display a quel battito: con l'aggancio la forma È il display, anche mentre la foto si muove. */
 export type Display = (beat: number) => Rect;
 export type ContentState = { id: string; key: ShapeKey; opacity: number; blur: number; dy: number };
@@ -67,6 +70,8 @@ const critical = () => 1;
 
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const toHex = (c: number) => Math.min(255, Math.max(0, Math.round(c))).toString(16).padStart(2, "0");
+/** L'anello del logo (`LogoMark`): il resto del tratto oltre `split`. */
+const TRACK = "#3a404c";
 /** Miscela scritta così perché con peso 1 esatto il risultato è ESATTAMENTE `b`: la forma agganciata non deriva dal display. */
 const mix = (a: number, b: number, w: number) => a * (1 - w) + b * w;
 
@@ -86,7 +91,8 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
   const now = display(beat);
   const d = pinned.length ? toFrameRect([0, 1, 2, 3].map((i) => track(pinned, beat, (k) => unitRect(k)[i], easeZeta)) as Rect, now) : now;
   const dr = pinned.length ? track(pinned, beat, unitR, easeZeta) * displayUnits(now).u : now[2] / 2;
-  const color = "#" + [0, 1, 2].map((i) => toHex(track(keys, beat, (k) => channels(k.color)[i], critical))).join("");
+  const hex = (of: (k: ShapeKey) => string) => "#" + [0, 1, 2].map((i) => toHex(track(keys, beat, (k) => channels(of(k))[i], critical))).join("");
+  const unit = (of: (k: ShapeKey) => number) => Math.min(1, Math.max(0, track(keys, beat, of, critical)));
   // lo scavalco di ζ 0,8 verso una linea sottile porta la misura sotto zero: la forma resta almeno un pixel, e il raggio
   // non supera mezza misura (oltre, il CSS lo riduce da solo e la forma cambierebbe senza che la traccia lo dica)
   const w = Math.max(1, mix(free[2], d[2], anchor)), h = Math.max(1, mix(free[3], d[3], anchor));
@@ -96,9 +102,27 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
     w,
     h,
     r: Math.min(Math.min(w, h) / 2, Math.max(0, mix(r, dr, anchor))),
-    color,
+    color: hex((k) => k.color),
     anchor,
+    // la piega è critica e pinzata: oltre 1 l'arco supererebbe i 280° e chiuderebbe il varco in basso del logo
+    bend: unit((k) => k.bend ?? 0),
+    split: unit((k) => k.split ?? 1),
+    track: hex((k) => k.track ?? TRACK),
   };
+};
+
+/**
+ * L'arco del tratto (angoli SVG in gradi, y in giù; `null` quando è ancora la scatola dritta). Il centro del rect è il
+ * punto più alto dell'arco, `h` lo spessore, l'ampiezza `bend`·280° simmetrica attorno all'alto: a 280° va da 130° a 410°,
+ * il varco del logo in basso. La linea mediana è lunga `w` a piega piena, come l'arco del logo, e `w − h` da dritta:
+ * con gli estremi arrotondati (mezzo spessore per parte) è allora esattamente la scatola `w × h` di raggio `h/2`, e il
+ * passaggio fra scatola e tratto non scatta. In mezzo la lunghezza va col `bend`.
+ */
+export const arcOf = (s: ShapeState): { cx: number; cy: number; R: number; start: number; sweep: number; stroke: number } | null => {
+  if (s.bend < 1e-3) return null;
+  const sweep = s.bend * 280, theta = (sweep * Math.PI) / 180;
+  const R = Math.max(0, s.w - s.h * (1 - s.bend)) / theta;
+  return { cx: s.x + s.w / 2, cy: s.y + s.h / 2 + R, R, start: 270 - sweep / 2, sweep, stroke: s.h };
 };
 
 /**
@@ -186,6 +210,8 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (k.len !== undefined && !(num(k.len) && k.len > 0)) say(`durata ${k.len}: serve un numero positivo`);
     if (k.ease !== undefined && k.ease !== "spring" && k.ease !== "settle") say(`molla «${k.ease}» sconosciuta: spring o settle`);
     if (k.zoom !== undefined && !(num(k.zoom) && k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
+    for (const [name, v] of [["bend", k.bend], ["split", k.split]] as const) if (v !== undefined && !(num(v) && v >= 0 && v <= 1)) say(`${name} ${v}: serve un numero fra 0 e 1`);
+    if (k.track !== undefined && !(typeof k.track === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.track))) say(`colore del tratto «${k.track}»: atteso #rrggbb`);
     if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
     // una molla non finisce prima di quella della chiave prima: finché ogni cambio è più avanti del successivo, la somma
     // delle molle resta una miscela dei bersagli; al contrario la forma esce dai bersagli (2951 px su un campo di 2120,
