@@ -21,7 +21,8 @@ App nativa Wear OS per claude-master: le sessioni Claude Code del PC sul Pixel W
 - VM da 6 GB: `org.gradle.jvmargs=-Xmx2048m` in `gradle.properties`, un solo daemon Gradle,
   `kotlin.daemon.jvmargs=-Xmx1024m`. Se la build locale non passa per memoria, la costruisce
   GitHub Actions come per il watchface.
-- Emulatore Wear OS presente (`adb devices` lo mostra `emulator-5554`, spesso offline: avviarlo).
+- Nessun emulatore Wear: `emulator-5554` in `adb devices` è l'Android del Chromebook (ARC, API 33, `strongbad`): utile solo
+  per Firebase, FCM, servizi e l'app del telefono; le schermate dell'orologio si vedono con Paparazzi in CI o al polso.
 - Il relay lato PC (`cm-relay.py`) vive nel plugin `~/Desktop/workspaces/personali/claude-master/`
   e lo sviluppa la sessione `claude-master`. Parlale con `SendMessage` (nome `claude-master`)
   o `claude-master talk claude-master "…"`: contratto, pairing, fixture. Mai modificare quel repo da qui.
