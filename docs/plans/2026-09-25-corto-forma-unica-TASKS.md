@@ -22,26 +22,27 @@ prima/dopo in `tools/promo/remotion/out/review/`, consegna a Franz con SendUserF
 - [x] Tavola `out/review/finale-tavola.battiti.png`; resa `dopo-finale.mp4`; prima/dopo `confronto-finale.mp4`.
 
 ## Passo 4 — testa face → answer (0-19)
-- [ ] Notifica come copia del display (omografia), voce, tasti, `bump()` → molla ζ 0,7, takeover → chiave; 18-19 vivo.
-- [ ] Tavola, via di master, resa, prima/dopo.
+- [x] Piano 3 (`2026-09-25-corto-forma-unica-piano-3-testa-centro.md`): `show`, `inShape`, contenuti (`471f63a`..`6d1917b`); notifica come copia del display, voce, tasti (molla ζ 0,7), «yes» con anello, campo.
+- [x] Tavola intera `out/review/corto-tavola.battiti.png`; resa nel corto finale.
 
 ## Passo 5 — centro loop e watch (19-47,5)
-- [ ] Corsia come cambi di bersaglio, dettatura, ✓ che si apre, finestra del terminale; via takeIn/takeover.
-- [ ] Tavola, via di master, resa, prima/dopo.
+- [x] Corsia come cambi di bersaglio (schede, dettatura, schermo dell'invio, ✓ che si apre sul terminale); scritte della corsia sopra la forma; takeover via, volo del terminale tenuto (è già continuo, §2).
+- [x] Tavola, resa nel corto finale.
 
 ## Effetti (Franz, 25/09 22:58: «spettacolari ma coerenti»; scelta con l'advisor)
 Criterio: ogni effetto rafforza «una forma sola» e rispetta §3/§8 (niente per lettera, niente glow sul testo, niente
 rimbalzo, blur solo sulla forma). Ognuno con un interruttore nella composizione, spento finché la sua tavola per battito
 non lo approva: il confronto resta pulito e una versione di riserva si rende sempre.
-- [ ] Contenitore (container transform di Material) nei due momenti a tutto quadro: «yes» 17,5-19 e dettatura 34,5-37.
+- [ ] (non costruito stanotte) Contenitore (container transform di Material) nei due momenti a tutto quadro: «yes» 17,5-19 e dettatura 34,5-37.
       La forma è una finestra sulla scena dopo, congelata sul suo primo fotogramma finché non tocca a lei. Passi 4-5.
-- [ ] Onda del tocco dentro la forma, dal punto del dito, su ogni chiave con `gesture` (il feedback vero di Wear OS).
+- [x] (accesa) Onda del tocco dentro la forma, dal punto del dito, su ogni chiave con `gesture` (il feedback vero di Wear OS).
       Test: ogni chiave con gesto ha la sua onda sul battito. Dopo il passo 3.
-- [ ] Luce d'ambiente: l'alone del `Backdrop` prende colore e posizione della forma, a bassa intensità (contro «tutto
+- [x] (accesa, spenta nell'atto close: sul nero era un alone dietro lo slogan) Luce d'ambiente: l'alone del `Backdrop` prende colore e posizione della forma, a bassa intensità (contro «tutto
       è una pillola», §4). Dopo il passo 3.
-- [ ] Ombra di distacco legata al peso dell'aggancio: zero agganciata, piena libera (i distacchi al 2 e al 52). Sulla
+- [x] (accesa) Ombra di distacco legata al peso dell'aggancio: zero agganciata, piena libera (i distacchi al 2 e al 52). Sulla
       scatola, dentro il blur. Dopo il passo 3.
-- [ ] Suono dalla traccia: gesti e picchi di `screenSpeed` → effetti `sfx.py` sul battito (deterministico, con test).
+- [x] Suono: solo gli accenti al posto delle palpebre (`accent` per chiave: scatto a 52/54/56, soffio al 58), con test che nessun altro suono cambia. Gesti e picchi di velocità: non fatti.
+- Interruttori: `effects: { shadow, ripple, light }` nei defaultProps di `Short` (`src/Root.tsx`).
 - Scartati: squash & stretch (si legge come rimbalzo), liquido che si divide sui tasti (template), lente o
   `backdrop-filter` (costosa e fragile in headless), qualunque effetto sul testo (§3).
 - Ora limite per la resa completa finale: 04:00, con gli effetti approvati fino a quel momento (1203 fotogrammi, circa
