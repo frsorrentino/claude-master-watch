@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { BLEED_LIFT, MAX_TILT, closingAt, displayUnit, poseAt, screenAt, watchPlace } from "./moves.ts";
+import { BLEED_LIFT, MAX_TILT, closingAt, displayUnit, logoRingAt, poseAt, screenAt, watchPlace } from "./moves.ts";
 import { THEME } from "./theme.ts";
 import type { Move } from "./moves.ts";
 
@@ -91,4 +91,11 @@ test("dove sta l'orologio: posa, tremito, spostamento verticale e zoom in un sol
   assert.equal(p.scale, 1.1 * 1.05);
   // un'unità del display in pixel del quadro a quella scala: 480 unità = il diametro del display
   assert.equal(displayUnit(740, 300, 258, p.scale), ((740 / (2 * 300)) * 2 * 258 * p.scale) / 480);
+});
+
+test("l'anello del logo: senza `ringFrom` cresce come sempre; con, non c'è prima e da lì è pieno al 70 % (lo ha disegnato la forma)", () => {
+  const draw = closingAt(1).draw;
+  assert.deepEqual(logoRingAt(1, undefined, draw), { ring: true, draw });
+  assert.deepEqual(logoRingAt(0.9, 1, draw), { ring: false, draw: 1 });
+  assert.deepEqual(logoRingAt(1, 1, draw), { ring: true, draw: 1 });
 });

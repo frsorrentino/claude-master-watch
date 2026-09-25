@@ -231,3 +231,13 @@ test("la pausa sta fra due righe, senza parole portate e non dopo un sonno del d
   const nap = base(); nap.scenes[0].sleep = { len: 4 }; nap.scenes[1].text.pause = 1;
   assert.match(problems(nap).join("\n"), /list: dopo un sonno del display la frase si scrive senza pausa/);
 });
+test("l'anello del logo che arriva dalla forma (`ringFrom`) vale solo sul cartello, dentro la scena", () => {
+  const t = base(); t.scenes[1].ringFrom = 1;
+  assert.match(problems(t).join("\n"), /list: «ringFrom» vale solo sul cartello/);
+  t.scenes[1].endCard = true; t.scenes[1].endPace = "compact"; t.scenes[1].ringFrom = 9;
+  assert.match(problems(t).join("\n"), /list: l'anello del logo arriva al battito 9 della scena/);
+  t.scenes[1].ringFrom = 1.25;
+  assert.match(problems(t).join("\n"), /list: l'anello del logo arriva al battito 1.25 della scena/);
+  t.scenes[1].ringFrom = 1.5;
+  assert.deepEqual(problems(t), []);
+});

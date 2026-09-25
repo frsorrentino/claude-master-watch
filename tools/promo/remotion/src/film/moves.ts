@@ -101,6 +101,11 @@ export const closingAt = (beats: number, lift = 0.2): Closing => {
   };
 };
 
+/** L'anello del logo del cartello. Senza `ringFrom` cresce con `draw` come sempre; con, fino a lì non c'è (è la forma a
+ *  disegnarlo, e un arco solo alla volta) e da lì è pieno al 70 %: la crescita l'ha già fatta la forma con `split`. */
+export const logoRingAt = (beats: number, ringFrom: number | undefined, draw: number): { ring: boolean; draw: number } =>
+  ringFrom === undefined ? { ring: true, draw } : { ring: beats >= ringFrom, draw: 1 };
+
 /** Il display nero del cartello: col logo ritagliato compare con la cassa (`body`), così il logo nasce da solo sul blu. */
 export const screenAt = (c: Closing, cutout: boolean): number => (cutout ? c.body : 1);
 

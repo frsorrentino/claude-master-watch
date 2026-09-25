@@ -30,6 +30,7 @@ export type ShapeKey = {
   bend?: number;    // 0-1: il rect è un tratto che si piega in arco, fino ai 280° del logo (0, la scatola dritta)
   split?: number;   // 0-1: quanta parte del tratto, dal capo sinistro, è nel colore (1)
   track?: string;   // il colore del resto del tratto (#3a404c, come l'anello del logo)
+  handoff?: true;   // solo sull'ultima: arrivata (at + len), la forma passa la mano all'arco del logo della scena
 };
 export type ShapeState = { x: number; y: number; w: number; h: number; r: number; color: string; anchor: number; bend: number; split: number; track: string };
 /** Il rettangolo del display a quel battito: con l'aggancio la forma È il display, anche mentre la foto si muove. */
@@ -109,6 +110,13 @@ export const shapeAt = (keys: readonly ShapeKey[], beat: number, display: Displa
     split: unit((k) => k.split ?? 1),
     track: hex((k) => k.track ?? TRACK),
   };
+};
+
+/** La forma si disegna, salvo dopo il passaggio al logo: da lì l'arco è quello di `LogoMark`, e due archi uno sull'altro
+ *  si vedrebbero (bordi e colori non combaciano al sottopixel). */
+export const shapeVisible = (keys: readonly ShapeKey[], beat: number): boolean => {
+  const last = keys[keys.length - 1];
+  return !last?.handoff || beat < last.at + lenOf(last);
 };
 
 /**
@@ -212,6 +220,8 @@ export const validateShape = (raw: unknown, total: number): string[] => {
     if (k.zoom !== undefined && !(num(k.zoom) && k.zoom >= 1 && k.zoom <= ZOOM_MAX)) say(`zoom ${k.zoom} fuori da 1-${ZOOM_MAX}`);
     for (const [name, v] of [["bend", k.bend], ["split", k.split]] as const) if (v !== undefined && !(num(v) && v >= 0 && v <= 1)) say(`${name} ${v}: serve un numero fra 0 e 1`);
     if (k.track !== undefined && !(typeof k.track === "string" && /^#[0-9A-Fa-f]{6}$/.test(k.track))) say(`colore del tratto «${k.track}»: atteso #rrggbb`);
+    if (k.handoff !== undefined && k.handoff !== true) say(`handoff «${String(k.handoff)}»: vale solo true`);
+    if (k.handoff !== undefined && i !== keys.length - 1) say("handoff solo sull'ultima chiave: dopo il passaggio al logo la forma non c'è più");
     if (k.gesture !== undefined && !GESTURES.includes(k.gesture)) say(`gesto «${k.gesture}» sconosciuto: ${GESTURES.join(", ")}`);
     // una molla non finisce prima di quella della chiave prima: finché ogni cambio è più avanti del successivo, la somma
     // delle molle resta una miscela dei bersagli; al contrario la forma esce dai bersagli (2951 px su un campo di 2120,

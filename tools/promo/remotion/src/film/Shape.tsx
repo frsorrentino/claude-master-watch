@@ -3,7 +3,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { frameToBeat } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { SHAPE_SHUTTER, arcOf, blurSamples, contentAt, keyRect, shapeAt, shutterCentre } from "./shape.ts";
+import { SHAPE_SHUTTER, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeVisible, shutterCentre } from "./shape.ts";
 import type { Display, ShapeKey } from "./shape.ts";
 import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 
@@ -52,7 +52,7 @@ const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples 
 export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan }> = ({ keys, g, display, content, span }) => {
   const frame = useCurrentFrame();
   const beat = frameToBeat(g, frame);
-  if (!keys.length || !inSpan(span, beat)) return null;
+  if (!keys.length || !inSpan(span, beat) || !shapeVisible(keys, beat)) return null;
   const s = shapeAt(keys, beat, display);
   const c = content ? contentAt(keys, beat) : null;
   const [, , kw, kh] = c ? keyRect(c.key, display) : [0, 0, 0, 0];

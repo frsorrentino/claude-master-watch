@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
+import { SHAPE_SHUTTER, SWAP_IN, SWAP_OUT, arcOf, blurSamples, contentAt, keyRect, shapeAt, shapeSpeed, shapeVisible, shutterCentre, toFrameRect, validateShape, inkOn } from "./shape.ts";
 import type { Display, Rect, ShapeKey, ShapeState } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 import { springSettle, springs } from "./spring.ts";
@@ -256,4 +256,17 @@ test("validazione: piega e divisione fra 0 e 1, colore del tratto esadecimale", 
   assert.deepEqual(validateShape([{ ...ok, bend: 1, split: 0.7, track: "#1B2B4F" }], 20), []);
   const bad = validateShape([{ ...ok, bend: 1.2, split: -0.1, track: "grey" }], 20);
   for (const piece of ["bend", "split", "tratto"]) assert.ok(bad.some((m) => m.includes(piece)), `manca «${piece}»: ${bad.join(" | ")}`);
+});
+
+test("passaggio al logo: dall'arrivo della chiave `handoff` la forma non si disegna più (l'arco lo fa la scena)", () => {
+  const k: ShapeKey[] = [
+    { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000" },
+    { at: 4, anchor: "display", r: 0, color: "#d97757", len: 1.5, handoff: true },
+  ];
+  assert.equal(shapeVisible(k, 5.49), true);
+  assert.equal(shapeVisible(k, 5.5), false);
+  assert.equal(shapeVisible(k.slice(0, 1), 1e6), true);
+  assert.deepEqual(validateShape(k, 20), []);
+  assert.ok(validateShape([{ ...k[0], handoff: true }, k[1]], 20).some((m) => m.includes("handoff") && m.includes("ultima")));
+  assert.ok(validateShape([k[0], { ...k[1], handoff: "yes" }], 20).some((m) => m.includes("handoff")));
 });

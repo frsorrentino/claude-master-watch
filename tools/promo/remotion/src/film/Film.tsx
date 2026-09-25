@@ -2,9 +2,9 @@ import React from "react";
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import raw from "./timeline.json";
 import shortRaw from "./timeline.short.json";
-import { beatToFrame, spanFrames } from "./beats.ts";
+import { beatToFrame, frameToBeat, spanFrames } from "./beats.ts";
 import type { Grid } from "./beats.ts";
-import { MOVE_BEATS, displayUnit, screenAt } from "./moves.ts";
+import { MOVE_BEATS, displayUnit, logoRingAt, screenAt } from "./moves.ts";
 import { validateTimeline } from "./timeline.ts";
 import type { Fx, Scene, Timeline } from "./timeline.ts";
 import { framesOf, gridOf } from "./cut.ts";
@@ -135,6 +135,9 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
     dx: place.x, dy: place.y, u: displayUnit(THEME.frontGlassPx, geo.front.glassR, geo.front.displayR, place.scale), width, height } : null;
   // posizione e scala dell'orologio in un solo transform 3D con will-change: così Chrome tiene la deriva lenta a sottopixel invece
   // di arrotondare left/top a pixel interi (misurato il 18/09: 40k pixel di differenza ogni tre fotogrammi, uno scatto visibile)
+  // l'anello del logo: con `ringFrom` lo disegna la forma fino a lì, sul battito continuo come la forma (shapeVisible),
+  // così nessun fotogramma ha due archi o nessuno
+  const logo = closing ? logoRingAt(frameToBeat(GRID, frame + beatToFrame(GRID, scene.at)) - scene.at, scene.ringFrom, closing.draw) : null;
   const extraOut = interpolate(frame, [leave, leave + (scene.out === "blink" ? 2 : 8)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill>
@@ -152,7 +155,7 @@ export const SceneView: React.FC<{ scene: Scene; overlay?: React.ReactNode; arou
         </>
       ) : w && pose && w.view !== "side" ? (
         <div style={{ position: "absolute", width: 0, height: 0, left: 0, top: 0, transformOrigin: "0 0", willChange: "transform", transform: `translate3d(${place!.x}px, ${place!.y}px, 0) scale(${place!.scale})`, opacity: watchIn * (1 - solo) * fadeOut * (frame >= eAt ? 1 : 0), filter: focus > 0 ? `blur(${8 * focus}px) brightness(${1 - 0.55 * focus})` : undefined }}>
-          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing ? <LogoMark draw={closing.draw} track={logoTrack(scene.endTone)} /> : screenCover > 0 ? <><div style={{ position: "absolute", inset: 0, background: scene.bgFrom ?? actColors(scene.act, TIMELINE.palette)[1], opacity: screenCover }} />{overlay}</> : takeIn ? <>{overlay}<TakeInScreen {...takeIn} /></> : overlay} around={around}
+          <PhotoWatch view={w.view} light={light} rim={sleep ? sleep.rim : 0} clip={w.clip} clipStart={w.clipStart} rate={w.rate} freeze={w.freeze} hold={w.hold ? spanFrames(GRID, scene.at, w.hold) : undefined} still={w.still} reveal={closing?.tilt} bodyOpacity={closing?.body} contentOpacity={closing?.logo} screenOpacity={closing && scene.logoCutout ? screenAt(closing, true) : undefined} bleed={scene.strapBleed} focus={closing?.focus} tilt={pose.tilt} overlay={closing && logo ? <LogoMark draw={logo.draw} ring={logo.ring} track={logoTrack(scene.endTone)} /> : screenCover > 0 ? <><div style={{ position: "absolute", inset: 0, background: scene.bgFrom ?? actColors(scene.act, TIMELINE.palette)[1], opacity: screenCover }} />{overlay}</> : takeIn ? <>{overlay}<TakeInScreen {...takeIn} /></> : overlay} around={around}
             glassPx={w.view === "threeQuarter" ? THEME.q34GlassPx : THEME.frontGlassPx} />
         </div>
       ) : null}

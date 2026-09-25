@@ -6,7 +6,7 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { dollyAt } from "./dolly.ts";
 import { asideAt, contextFill, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
 import { beatToFrame, frameToBeat, spanFrames } from "./beats.ts";
-import { KEY_LEN, SWAP_IN, SWAP_OUT, contentAt, shapeAt } from "./shape.ts";
+import { KEY_LEN, SWAP_IN, SWAP_OUT, contentAt, shapeAt, shapeVisible } from "./shape.ts";
 import type { Rect } from "./shape.ts";
 import { THEME } from "./theme.ts";
 import { laneArrivals } from "./ui/heroes.ts";
@@ -370,4 +370,19 @@ test("forma: comincia agganciata al display e finisce sull'orologio, gesti solo 
   const s = shapeAt(SHAPE, 0.5, restAt), d = restAt(0.5);
   assert.deepEqual([s.x, s.y, s.w, s.h].map(Math.round), d.map(Math.round));
   assert.ok(SHAPE.every((k) => k.gesture === undefined || ["tap", "longPress", "swipe", "send"].includes(k.gesture)), "niente corona (§8.1b)");
+});
+
+// Piano 2, Task 5: il passaggio al logo. La forma arriva nel display come arco e lì passa la mano al LogoMark della scena:
+// in ogni fotogramma del cartello c'è un arco solo, e finché c'è la forma il display è ancora piatto o lei è agganciata.
+const END = short.scenes.find((s) => s.endCard)!;
+const HANDOFF = SHAPE.find((k) => k.handoff);
+test("forma: nel cartello un arco solo — la forma fino a `ringFrom`, poi l'anello della scena; agganciata se il display si inclina",
+  { skip: !(HANDOFF && END.ringFrom !== undefined) && "la traccia non ha ancora il passaggio al logo (piano 2, Task 7)" }, () => {
+  const beat = spanFrames(G, END.at, 1);
+  for (let f = beatToFrame(G, END.at); f < beatToFrame(G, END.at + END.len); f++) {
+    const b = frameToBeat(G, f), rel = f - beatToFrame(G, END.at);
+    assert.equal(shapeVisible(SHAPE, b), b - END.at < END.ringFrom!, `fotogramma ${f}: forma e anello insieme o nessuno dei due`);
+    const tilt = closingAt(rel / beat, END.strapBleed ? BLEED_LIFT : undefined).tilt;
+    if (tilt > 0 && shapeVisible(SHAPE, b)) assert.equal(shapeAt(SHAPE, b, restAt).anchor, 1, `fotogramma ${f}: display inclinato e forma staccata`);
+  }
 });
