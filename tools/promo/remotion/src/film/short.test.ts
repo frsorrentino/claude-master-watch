@@ -98,7 +98,8 @@ test("il terminale del corto è quello del film lungo, per intero: stesse righe 
   // nella bozza 2 il terminale durava 6 battiti e le righe arrivavano al doppio della velocità: metà non si vedeva
   const long = validateTimeline(JSON.parse(readFileSync(new URL("./timeline.json", import.meta.url), "utf8")));
   const a = long.scenes.find((s) => s.id === "watch")!, b = byId("watch");
-  const { at: _a, len: _la, ...lungo } = a, { at: _b, len: _lb, ...corto } = b;
+  // `blur` è del corto (direttive di motion, 25/09): la sfocatura non cambia righe né battiti
+  const { at: _a, len: _la, blur: _ba, ...lungo } = a, { at: _b, len: _lb, blur: _bb, ...corto } = b;
   // la clip sì: nel corto il tasto Write resta fermo in fondo invece di sobbalzare a ogni riga nuova (Franz, 23/09 18:58);
   // n_watch_pinned.mp4 è n_watch_fit.mp4 passata da tools/promo/pin_button.py, stessi fotogrammi e stessa durata
   // e acceso dal primo fotogramma, senza righe finché il PC non le scrive (Franz, 23/09 22:17): n_watch_on.mp4 è

@@ -4,7 +4,8 @@ import { TAKEOVER_CUT, sendAt, takeoverAt, tintAt } from "./takeover.ts";
 
 test("il takeover cresce, tiene un respiro, diventa la scena dopo e si posa: il quadro non resta mai vuoto", () => {
   assert.deepEqual(takeoverAt(0), { grow: 0, hold: 0, become: 0, settle: 0, cover: 0 });
-  const g = takeoverAt(0.3); assert.ok(g.grow > 0.3 && g.grow < 1 && g.become === 0);
+  // con la molla (25/09) a 0,3 dell'arco la scheda copre già il quadro ed è sul suo scavalco (meno dell'1 %); il become non è partito
+  const g = takeoverAt(0.3); assert.ok(g.grow > 0.9 && g.grow < 1.01 && g.cover <= 1 && g.become === 0);
   const h = takeoverAt(0.44); assert.ok(h.grow === 1 && h.hold === 1 && h.become === 0 && h.cover === 1);
   const b = takeoverAt(0.52); assert.ok(b.become > 0.3 && b.become < 1, "a metà arco il campo sta già diventando la scena dopo");
   const s = takeoverAt(0.58); assert.ok(s.become === 1 && s.settle > 0.5 && s.cover < 0.5, "e si dissolve sopra la scena");

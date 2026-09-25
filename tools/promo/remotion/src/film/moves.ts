@@ -1,4 +1,6 @@
 /** L'orologio è un'immagine piatta nello spazio: entra, deriva lentamente, esce. Oltre i 10 gradi sembra finto. */
+import { springEase, springSettle } from "./spring.ts";
+
 export type Move = "riseIn" | "slideIn" | "slideOut" | "pushIn" | "pullOut" | "settleSmall" | "zoomLeft" | "diveIn";
 export type Pose = { x: number; y: number; scale: number; tilt: number };
 export const MAX_TILT = 9;
@@ -33,7 +35,8 @@ const REST: Pose = { x: 0, y: 0, scale: 1, tilt: 0 };
 
 const moveAt = (m: Move, t: number): Pose => {
   switch (m) {
-    case "riseIn": return { x: 0, y: (1 - out3(t)) * 0.95, scale: 0.9 + 0.1 * out3(t), tilt: -6 * (1 - out3(t)) };
+    // molla (direttive di motion, 25/09): l'orologio sale e si posa con uno scavalco di un centesimo, senza rimbalzo
+    case "riseIn": { const s = springEase(t); return { x: 0, y: (1 - s) * 0.95, scale: 0.9 + 0.1 * s, tilt: -6 * (1 - s) }; }
     case "slideIn": return { x: (1 - out3(t)) * 0.75, y: 0, scale: 1, tilt: MAX_TILT * (1 - out3(t)) };
     case "slideOut": return { x: -in3(t) * 0.75, y: 0, scale: 1, tilt: -MAX_TILT * in3(t) };
     case "pushIn": return { x: 0, y: 0, scale: 1 + 0.35 * inOut(t), tilt: 0 };
@@ -85,13 +88,14 @@ const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
  *  0,2 il bordo della foto finiva a 63 px dall'alto e la sfumatura lo nascondeva; con 0,3 resta 45 px fuori quadro. */
 export const BLEED_LIFT = 0.3;
 export const closingAt = (beats: number, lift = 0.2): Closing => {
-  const out = soft(ramp(beats, 2.5, 4.8));
-  const near = 1 - out3(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
+  // tutti i movimenti del cartello sono molle (direttive di motion, 25/09): stessi tempi di prima, curva della molla
+  const out = springEase(ramp(beats, 2.5, 4.8));
+  const near = 1 - springEase(ramp(beats, 0, 2.5));      // speculare all'ingresso nello schermo: si parte da vicino e ci si allontana mentre il logo compare
   return {
     logo: ramp(beats, 0, 2),
-    draw: inOut(ramp(beats, 0.5, 3)),              // l'arco del logo si disegna da zero al suo 70 %, come un gauge che si riempie
-    tilt: soft(ramp(beats, 2.2, 3.6)),
-    body: ramp(beats, 2.35, 3.9) >= 1 ? 1 : inOut(ramp(beats, 2.35, 3.9)) * (beats <= 2.2 ? 0 : 1),
+    draw: springEase(ramp(beats, 0.5, 3)),              // l'arco del logo si disegna da zero al suo 70 %, come un gauge che si riempie
+    tilt: springEase(ramp(beats, 2.2, 3.6)),
+    body: ramp(beats, 2.35, 3.9) >= 1 ? 1 : springSettle(ramp(beats, 2.35, 3.9)) * (beats <= 2.2 ? 0 : 1),   // opacità della cassa: senza scavalco
     focus: 1 - out,
     pose: { x: 0, y: -lift * out, scale: 1.7 + 0.9 * near + (0.5 - 1.7) * out, tilt: 0 },
   };

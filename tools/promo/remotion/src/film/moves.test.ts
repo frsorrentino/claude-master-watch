@@ -63,12 +63,12 @@ test("chiusura speculare: il logo compare mentre ci si allontana da vicino, e il
   assert.equal(closingAt(0.5).draw, 0); assert.equal(closingAt(3).draw, 1);
 });
 
-test("i movimenti finali atterrano morbidi: nell'ultimo quinto del tempo resta meno del 3 % della strada", () => {
+test("i movimenti finali atterrano morbidi: nell'ultimo quinto del tempo resta meno del 3 % della strada (con la molla anche un filo oltre: scavalco sotto l'1 %)", () => {
   const scaleAt = (b: number) => closingAt(b).pose.scale;
   const left = (scaleAt(4.34) - scaleAt(4.8)) / (scaleAt(2.5) - scaleAt(4.8));   // allontanamento: battiti 2,5-4,8
-  assert.ok(left > 0 && left < 0.03, `allontanamento: resta ${left}`);
+  assert.ok(left > -0.01 && left < 0.03, `allontanamento: resta ${left}`);
   const tiltLeft = 1 - closingAt(3.32).tilt;                                       // inclinazione: battiti 2,2-3,6
-  assert.ok(tiltLeft > 0 && tiltLeft < 0.03, `inclinazione: resta ${tiltLeft}`);
+  assert.ok(tiltLeft > -0.01 && tiltLeft < 0.03, `inclinazione: resta ${tiltLeft}`);
 });
 
 test("con il cinturino che sborda l'orologio del cartello sale di più: il bordo alto della foto resta sempre fuori quadro", () => {

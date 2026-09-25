@@ -5,12 +5,14 @@
  * dopo si compone sopra). Il fermo è corto di proposito: con il campo pieno che durava mezzo secondo si vedeva un vuoto. Funzione pura dell'avanzamento 0-1.
  * Regola dei colori (master, 16:10): il colore del componente vive nel become; nel settle lo sfondo torna alla palette.
  */
-import { bezier, soft } from "../moves.ts";
+import { springEase, springSettle } from "../spring.ts";
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const ramp = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
-/** Crescita che accelera e poi frena a lungo: la cosa ti viene addosso e si ferma piena. */
-const growEase = bezier(0.55, 0, 0.2, 1);
+/** Crescita con la molla (direttive di motion, 25/09): parte da ferma, accelera e si posa piena con uno scavalco impercettibile. */
+const growEase = springEase;
+/** Become, settle, colore, cerchio dell'invio e ricomposizione del testo sono miscele e opacità: molla senza scavalco. */
+const soft = springSettle;
 
 export type Takeover = {
   grow: number;     // 0-1: quanto ha coperto il quadro
@@ -25,7 +27,8 @@ export const takeoverAt = (p: number): Takeover => {
   // il campo pieno si dissolve SOPRA la scena dopo, che a quel punto è già composta: prima virava a un colore piatto e
   // restava lì un secondo e mezzo prima che comparisse qualcosa (Franz, 19/09 11:25)
   const settle = soft(ramp(p, 0.46, 0.62));
-  return { grow, hold: p >= 0.42 && p < 0.46 ? 1 : 0, become, settle, cover: grow * (1 - settle) };
+  // `cover` è un'opacità: la molla della crescita scavalca di un centesimo, qui si ferma a 1
+  return { grow, hold: p >= 0.42 && p < 0.46 ? 1 : 0, become, settle, cover: Math.min(1, grow) * (1 - settle) };
 };
 /** Quando il colore del componente vira verso `toColor`. `become` (la regola di sempre): dopo la crescita, a quadro pieno.
  *  `grow`: MENTRE cresce — il «yes» parte celeste, così il tocco si legge, e quando copre il quadro è già il blu scuro
@@ -44,7 +47,7 @@ export const sendAt = (f: number, press: number, cut: number, beat: number): Sen
   finger: ramp(f, press - 0.12 * beat, press) * (1 - ramp(f, press + 0.35 * beat, press + 0.45 * beat)),
   squash: ramp(f, press - 0.04 * beat, press + 0.02 * beat) * (1 - ramp(f, press + 0.3 * beat, press + 0.36 * beat)),
   pop: Math.sin(Math.PI * ramp(f, press + 0.3 * beat, press + 0.55 * beat)),
-  reveal: growEase(ramp(f, cut, cut + 0.75 * beat)),
+  reveal: springSettle(ramp(f, cut, cut + 0.75 * beat)),   // entra in alpha e ombre: senza scavalco
   // l'onda chiara dentro il ✓, dal punto del dito, come i tasti di Wear OS (Franz, 21/09 20:16)
   ripple: ramp(f, press, press + 0.3 * beat),
   // al taglio la frase si ricompone sul posto come testo del terminale («> », monospazio, evidenziata) e poi va al suo

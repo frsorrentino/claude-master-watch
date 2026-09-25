@@ -1,5 +1,6 @@
 /** Coreografie dei momenti forti (piano 3): funzioni pure dell'avanzamento 0-1, come `moves.ts`. */
 import { bezier, bump, soft } from "../moves.ts";
+import { springSettle } from "../spring.ts";
 
 /** Strappo: un oggetto che si stacca prende velocità per un attimo e poi frena a lungo (la curva `soft` parte troppo secca: un
  *  quarto della strada nei primi tre fotogrammi, e senza sfocatura di movimento sembra un taglio). */
@@ -107,7 +108,7 @@ export const optionsBuildAt = (p: number, pressFrom = 0.34): OptionsBuild => ({
 /** Il terminale del PC compare in dissolvenza a tutto sfondo dietro l'orologio (Franz, 13:13: niente uscita e rientro): `show`
  *  0-1 in 0-0,2, resta, e negli ultimi 15 % si ritira verso la scena dopo. */
 export type TerminalPlane = { show: number; exit: number };
-export const terminalPlaneAt = (p: number): TerminalPlane => ({ show: p < 0 ? 0 : soft(ramp(p, 0, 0.2)), exit: soft(ramp(p, 0.85, 1)) });
+export const terminalPlaneAt = (p: number): TerminalPlane => ({ show: p < 0 ? 0 : springSettle(ramp(p, 0, 0.2)), exit: springSettle(ramp(p, 0.85, 1)) });   // molle senza scavalco: sono opacità (25/09)
 
 /**
  * Un pannello della Panoramica che esce e si anima (Franz, 18/09 20:06: «animazioni dei suoi elementi come hai fatto col
@@ -137,7 +138,10 @@ export const railScroll = (steps: number, dwell = 0.58): number => {
  * `p` 0-1 è il tempo della scena; il risultato è l'offset della lista.
  */
 /** Il passo della lista: parte piano, accelera e frena a lungo (più «easing» di uno smoothstep, Franz 18/09 19:25). */
-const railEase = bezier(0.45, 0, 0.22, 1);
+// Molla (direttive di motion, 25/09): la lista è un valore che cambia bersaglio a ogni passo, e ogni passo è una molla
+// che si posa prima del passo dopo, quindi la somma «una molla per cambio» si riduce a: passi interi + la molla in corso.
+// Smorzamento critico: una lista di Wear OS si ferma sulla voce, non la scavalca (e gli arrivi restano esatti, piano 7).
+const railEase = springSettle;
 export const RAIL_MOVE = 0.66;          // il movimento occupa più tempo della sosta: scorre, non scatta
 export const railScrollVar = (p: number, holds: number[], center = 0.8, weights: number[] = []): number => {
   // `weights[i]`: quanto è LUNGO in pixel il passo i rispetto alla media. Con le altezze vere un passo vale il doppio di

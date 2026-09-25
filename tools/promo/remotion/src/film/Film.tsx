@@ -39,6 +39,7 @@ import { Bands } from "./ui/Bands.tsx";
 import { Split } from "./ui/Split.tsx";
 import { splitAt } from "./ui/split.ts";
 import { Blinds } from "./ui/Blinds.tsx";
+import { CameraMotionBlur } from "@remotion/motion-blur";
 import { BLIND_CUT, blindBars, blindSoloAt } from "./ui/blinds.ts";
 import geo from "./mockup.geometry.json";
 import type { Key } from "./ui/carry.ts";
@@ -52,6 +53,15 @@ import type { Stems } from "./Soundtrack.tsx";
 export const FILM_TIMELINE = validateTimeline(raw);
 /** La scaletta che il motore sta rendendo: la passa la composizione (il film lungo o il corto, 23/09). */
 export const FilmTimeline = React.createContext<Timeline>(FILM_TIMELINE);
+/** La sfocatura di movimento è accesa (`blur` della composizione): a false le scene con `blur` rendono come prima, per il confronto e per misurare il costo. */
+export const FilmBlur = React.createContext<boolean>(true);
+/** Quattro sotto-fotogrammi con otturatore a 180° (direttive di motion, 25/09: «4 subframes per frame … motion blur»): ogni strato
+ *  si rende quattro volte a tempi diversi e si somma. Solo le scene che lo dichiarano (`blur` in scaletta), perché costa quattro volte. */
+export const BLUR_SAMPLES = 4, BLUR_SHUTTER = 180;
+const MB: React.FC<{ on?: boolean; children: React.ReactNode }> = ({ on, children }) => {
+  const enabled = React.useContext(FilmBlur);
+  return on && enabled ? <CameraMotionBlur samples={BLUR_SAMPLES} shutterAngle={BLUR_SHUTTER}>{children}</CameraMotionBlur> : <>{children}</>;
+};
 /** I fotogrammi sono assoluti: la musica parte dal fotogramma 0 e il battito 0 cade a offsetSeconds. */
 export const filmFrames = (): number => framesOf(FILM_TIMELINE);
 /** Il corto (design del 23/09): un'altra scaletta sullo stesso motore. */
@@ -230,17 +240,18 @@ const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key =>
 const BLINK_FRAMES = 49;   // 3 battiti (era 78, 2,6 s): la frase se ne va solo quando parte la card, e la parola corre in sincrono con lei (Franz, 21/09 14:00: la card copriva la frase ancora in quadro)
 const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un lampo)
 
-export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, timeline = FILM_TIMELINE }) => {
+export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean }> = ({ stems, timeline = FILM_TIMELINE, blur = true }) => {
   useFilmFonts();
   const TIMELINE = timeline;
   const GRID: Grid = gridOf(timeline);
   return (
     <FilmTimeline.Provider value={timeline}>
+    <FilmBlur.Provider value={blur}>
     <AbsoluteFill style={{ background: "#000" }}>
       <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
       {TIMELINE.scenes.map((s, i) => (
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
-          <SceneView scene={s} {...fxLayers(s, GRID, TIMELINE.scenes[i - 1])} />
+          <MB on={s.blur}><SceneView scene={s} {...fxLayers(s, GRID, TIMELINE.scenes[i - 1])} /></MB>
         </Sequence>
       ))}
       {TIMELINE.scenes.map((s, i) => {
@@ -251,8 +262,8 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
         // l'invio della dettatura si posa sul prompt del terminale della scena dopo
         const term = (next.fx ?? []).find((f) => f.kind === "terminalPlane");
         const body = k.body === "card" ? { kind: "card" as const, text: k.text ?? "" } : k.body === "words" ? { kind: "words" as const, words: k.words ?? [], card: k.card } : k.body === "screen" ? { kind: "screen" as const, lines: k.words ?? [] } : { kind: "plain" as const };
-        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} tint={k.tint} frames={frames} body={body}
-          press={k.press !== undefined ? beatToFrame(GRID, s.at + k.press) - startF : undefined} beat={spanFrames(GRID, s.at, 1)} land={term && term.kind === "terminalPlane" ? term.prompt : undefined} /></Sequence>;
+        return <Sequence key={`take-${s.id}`} from={beatToFrame(GRID, next.at) - Math.round(frames * TAKEOVER_CUT)} durationInFrames={frames + 1} layout="none"><MB on={s.blur}><Takeover x={k.x} y={k.y} w={k.w} h={k.h} r={k.r} tilt={k.tilt} color={k.color} toColor={k.toColor} tint={k.tint} frames={frames} body={body}
+          press={k.press !== undefined ? beatToFrame(GRID, s.at + k.press) - startF : undefined} beat={spanFrames(GRID, s.at, 1)} land={term && term.kind === "terminalPlane" ? term.prompt : undefined} /></MB></Sequence>;
       })}
       {TIMELINE.scenes.map((s, i) => {
         const next = TIMELINE.scenes[i + 1];
@@ -327,9 +338,10 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline }> = ({ stems, 
         <Sequence key={`whip-${b}`} from={beatToFrame(GRID, b) - 3} durationInFrames={8} layout="none"><Whip width={1920} height={1080} /></Sequence>
       ))}
     </AbsoluteFill>
+    </FilmBlur.Provider>
     </FilmTimeline.Provider>
   );
 };
 
 /** Il corto: la stessa macchina del film lungo, con la sua scaletta, la sua musica e la sua tavolozza. */
-export const ShortFilm: React.FC<{ stems?: Stems }> = ({ stems }) => <Film stems={stems} timeline={SHORT_TIMELINE} />;
+export const ShortFilm: React.FC<{ stems?: Stems; blur?: boolean }> = ({ stems, blur }) => <Film stems={stems} timeline={SHORT_TIMELINE} blur={blur} />;
