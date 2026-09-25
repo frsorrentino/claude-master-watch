@@ -8,6 +8,7 @@
  */
 import { ZETA, springSettle, springs } from "./spring.ts";
 import type { Change } from "./spring.ts";
+import { INK } from "./theme.ts";
 
 /** x, y, larghezza, altezza in px del quadro, prima della camera. */
 export type Rect = [number, number, number, number];
@@ -106,6 +107,18 @@ export const shapeSpeed = (keys: readonly ShapeKey[], beat: number, display: Dis
 };
 
 export const blurSamples = (speed: number): 4 | 8 => (speed > BLUR_FAST ? 8 : 4);
+/** L'otturatore del blur della forma: mezzo fotogramma, come le scene (§8.3). */
+export const SHAPE_SHUTTER = 180;
+
+/** L'inchiostro del testo sulla forma: fra quello dei titoli e il bianco, il più contrastato (rapporto WCAG) sul colore. */
+const luminance = (hex: string) => {
+  const [r, g, b] = channels(hex).map((c) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+export const inkOn = (color: string): string => {
+  const l = luminance(color);
+  return (l + 0.05) / (luminance(INK.text) + 0.05) > 1.05 / (l + 0.05) ? INK.text : "#ffffff";
+};
 
 const GESTURES = ["tap", "longPress", "swipe", "send"];
 const half = (v: unknown): v is number => typeof v === "number" && v >= 0 && Number.isInteger(v * 2);

@@ -6,7 +6,7 @@
 import geo from "./mockup.geometry.json";
 import { THEME } from "./theme.ts";
 import { watchColumn } from "./timeline.ts";
-import type { Timeline } from "./timeline.ts";
+import type { Scene, Timeline } from "./timeline.ts";
 import type { Display, Rect } from "./shape.ts";
 
 /** Lo stesso conto di `toFrame` in `Film.tsx`: il vetro frontale è largo `frontGlassPx`, il display ne è la parte displayR/glassR. */
@@ -15,7 +15,7 @@ export const frontDisplayRect = (cx: number, cy = 540): Rect => {
   return [cx - d / 2, cy - d / 2, d, d];
 };
 
-export const restDisplay = (t: Timeline): Display => (beat) => {
-  const scene = t.scenes.find((s) => beat < s.at + s.len) ?? t.scenes[t.scenes.length - 1];
-  return frontDisplayRect(watchColumn(scene) * 1920);
-};
+/** La scena che contiene il battito; oltre la fine l'ultima (la forma c'è anche dopo l'ultimo fotogramma). */
+export const sceneAt = (t: Timeline, beat: number): Scene => t.scenes.find((s) => beat < s.at + s.len) ?? t.scenes[t.scenes.length - 1];
+
+export const restDisplay = (t: Timeline): Display => (beat) => frontDisplayRect(watchColumn(sceneAt(t, beat)) * 1920);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, validateShape } from "./shape.ts";
+import { SWAP_IN, SWAP_OUT, blurSamples, contentAt, shapeAt, shapeSpeed, validateShape, inkOn } from "./shape.ts";
 import type { Display, Rect, ShapeKey } from "./shape.ts";
 import { beatToFrame, frameToBeat } from "./beats.ts";
 
@@ -91,4 +91,11 @@ test("validazione: due scambi di contenuto a meno di mezzo battito sono testi so
     { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "a" },
     { at: 0, rect: [0, 0, 10, 10], r: 0, color: "#000000", content: "b" },
   ], 20).some((m) => m.includes("sovrappo")));
+});
+
+test("inchiostro: scuro sulle forme chiare, bianco sulle scure", () => {
+  assert.equal(inkOn("#f4f2ec"), "#14203A");
+  assert.equal(inkOn("#F4F2EC"), "#14203A");
+  assert.equal(inkOn("#000000"), "#ffffff");
+  assert.equal(inkOn("#ffffff"), "#14203A");
 });

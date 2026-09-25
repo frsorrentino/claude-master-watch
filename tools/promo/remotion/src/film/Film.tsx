@@ -48,6 +48,8 @@ import { watchTextFor } from "./WatchText.tsx";
 import { Soundtrack } from "./Soundtrack.tsx";
 import { Whip } from "./ui/Whip.tsx";
 import type { Stems } from "./Soundtrack.tsx";
+import { CameraFrame, Shape } from "./Shape.tsx";
+import { restDisplay } from "./shapeDisplay.ts";
 
 /** Scaletta sbagliata = il film non parte: l'errore elenca tutti i problemi. */
 export const FILM_TIMELINE = validateTimeline(raw);
@@ -240,15 +242,21 @@ const toFrame = (k: Key & { space?: "display" | "frame" }, scene: Scene): Key =>
 const BLINK_FRAMES = 49;   // 3 battiti (era 78, 2,6 s): la frase se ne va solo quando parte la card, e la parola corre in sincrono con lei (Franz, 21/09 14:00: la card copriva la frase ancora in quadro)
 const CARRY_FRAMES = 22;   // 0,73 s: il passaggio si deve vedere (14 erano un lampo)
 
-export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean }> = ({ stems, timeline = FILM_TIMELINE, blur = true }) => {
+/** `shape`: la forma unica e la sua camera (specifica del 25/09). Spenta, il film è quello di prima: senza chiavi
+ *  `CameraFrame` lascia le scene come sono e la forma non si disegna. */
+export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean; shape?: boolean }> = ({ stems, timeline = FILM_TIMELINE, blur = true, shape = false }) => {
   useFilmFonts();
   const TIMELINE = timeline;
   const GRID: Grid = gridOf(timeline);
+  const shapeKeys = shape ? TIMELINE.shape ?? [] : [];
+  const display = restDisplay(TIMELINE);
   return (
     <FilmTimeline.Provider value={timeline}>
     <FilmBlur.Provider value={blur}>
     <AbsoluteFill style={{ background: "#000" }}>
       <Soundtrack t={TIMELINE} g={GRID} stems={stems ?? "nosfx"} />
+      {/* scene e passaggi nella camera della forma; titoli dei sonni e frustate restano fuori, sopra la forma */}
+      <CameraFrame keys={shapeKeys} g={GRID} display={display}>
       {TIMELINE.scenes.map((s, i) => (
         <Sequence key={s.id} name={s.id} from={beatToFrame(GRID, s.at)} durationInFrames={spanFrames(GRID, s.at, s.len)}>
           <MB on={s.blur}><SceneView scene={s} {...fxLayers(s, GRID, TIMELINE.scenes[i - 1])} /></MB>
@@ -313,6 +321,8 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
       {TIMELINE.scenes.filter((s) => s.out === "blink" || s.out === "lids").map((s) => (
         <Sequence key={`blink-${s.id}`} from={beatToFrame(GRID, s.at + s.len) - BLINK_FRAMES} durationInFrames={BLINK_FRAMES + 12} layout="none"><Blink word={s.out === "blink" ? s.text?.accent ?? "" : ""} cut={BLINK_FRAMES} from={[387, 597]} to={[684, 140]} /></Sequence>
       ))}
+      </CameraFrame>
+      {shapeKeys.length ? <Shape keys={shapeKeys} g={GRID} display={display} /> : null}
       {/* il titolo della scena dopo si scrive MENTRE la camera si sposta, prima della notifica (Franz, 19/09 18:14): è un
           solo disegno che attraversa il taglio, se no al taglio la frase ripartirebbe da capo. Perciò la scena che si
           risveglia non disegna il suo testo: lo disegna qui. */}
@@ -344,4 +354,4 @@ export const Film: React.FC<{ stems?: Stems; timeline?: Timeline; blur?: boolean
 };
 
 /** Il corto: la stessa macchina del film lungo, con la sua scaletta, la sua musica e la sua tavolozza. */
-export const ShortFilm: React.FC<{ stems?: Stems; blur?: boolean }> = ({ stems, blur }) => <Film stems={stems} timeline={SHORT_TIMELINE} blur={blur} />;
+export const ShortFilm: React.FC<{ stems?: Stems; blur?: boolean }> = ({ stems, blur }) => <Film stems={stems} timeline={SHORT_TIMELINE} blur={blur} shape={false} />;   // la forma si accende al passo 3 della specifica
