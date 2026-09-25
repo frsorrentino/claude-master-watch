@@ -10,12 +10,15 @@ import { cameraAt, cameraCss, screenSpeed } from "./camera.ts";
 /** Disegna il contenuto `id` alla misura della chiave che lo porta, non a quella corrente della forma. */
 export type ShapeContent = (id: string, w: number, h: number) => React.ReactNode;
 type Track = { keys: readonly ShapeKey[]; g: Grid; display: Display };
+/** Da che battito a che battito la forma è accesa (`to` escluso; senza, fino alla fine). Fuori non c'è né forma né camera. */
+export type ShapeSpan = { from: number; to?: number };
+const inSpan = (span: ShapeSpan | undefined, beat: number) => !span || (beat >= span.from && (span.to === undefined || beat < span.to));
 
 /** Lo strato che la camera sposta e scala: niente `will-change`, se no lo scalato resta una bitmap sgranata. `shift`:
- *  fotogrammi da togliere a quello corrente (la scatola dentro il blur). */
-const CameraLayer: React.FC<Track & { shift?: number; children: React.ReactNode }> = ({ keys, g, display, shift = 0, children }) => {
+ *  fotogrammi da togliere a quello corrente (la scatola dentro il blur); `span`: fuori, lo strato non trasforma. */
+const CameraLayer: React.FC<Track & { shift?: number; span?: ShapeSpan; children: React.ReactNode }> = ({ keys, g, display, shift = 0, span, children }) => {
   const beat = frameToBeat(g, useCurrentFrame() - shift);
-  return <AbsoluteFill style={{ transform: cameraCss(cameraAt(keys, beat, display)), transformOrigin: "0 0" }}>{children}</AbsoluteFill>;
+  return <AbsoluteFill style={inSpan(span, beat) ? { transform: cameraCss(cameraAt(keys, beat, display)), transformOrigin: "0 0" } : undefined}>{children}</AbsoluteFill>;
 };
 
 /** La scatola: riempimento e bordo, la sola cosa col blur. Stato e camera si leggono QUI, dentro il blur, perché il blur
@@ -46,10 +49,10 @@ const Box: React.FC<Track & { samples: number }> = ({ keys, g, display, samples 
 };
 
 /** La forma unica sopra le scene: la scatola col blur, e sopra il contenuto senza blur, che non scala con la forma. */
-export const Shape: React.FC<Track & { content?: ShapeContent }> = ({ keys, g, display, content }) => {
+export const Shape: React.FC<Track & { content?: ShapeContent; span?: ShapeSpan }> = ({ keys, g, display, content, span }) => {
   const frame = useCurrentFrame();
-  if (!keys.length) return null;
   const beat = frameToBeat(g, frame);
+  if (!keys.length || !inSpan(span, beat)) return null;
   const s = shapeAt(keys, beat, display);
   const c = content ? contentAt(keys, beat) : null;
   const [, , kw, kh] = c ? keyRect(c.key, display) : [0, 0, 0, 0];
@@ -73,6 +76,7 @@ export const Shape: React.FC<Track & { content?: ShapeContent }> = ({ keys, g, d
   );
 };
 
-/** Le scene dentro la stessa camera della forma: scena e forma si muovono insieme (§4). */
-export const CameraFrame: React.FC<Track & { children: React.ReactNode }> = ({ keys, children, ...track }) =>
+/** Le scene dentro la stessa camera della forma: scena e forma si muovono insieme (§4). Fuori da `span` lo strato resta
+ *  ma non trasforma: cambiare l'albero sul battito di `from` rimonterebbe tutte le scene (e i loro video). */
+export const CameraFrame: React.FC<Track & { span?: ShapeSpan; children: React.ReactNode }> = ({ keys, children, ...track }) =>
   keys.length ? <CameraLayer keys={keys} {...track}>{children}</CameraLayer> : <>{children}</>;
