@@ -94,9 +94,9 @@ private fun TransformingLazyColumnItemScope.Toggle(label: String, checked: Boole
     )
 }
 
-/** Impostazioni: lettura vocale, vibrazioni per tipo, account della complication, nuovo pairing; in debug le fixture. */
+/** Impostazioni: lettura vocale, vibrazioni per tipo, account della complication, nuovo pairing, Demo; in debug le fixture. */
 @Composable
-fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}, voices: List<String> = emptyList(), onVoice: (String?) -> Unit = {}, accounts: List<String> = emptyList()) {
+fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: () -> Unit, notificationsEnabled: Boolean = true, onNotificationSettings: () -> Unit = {}, voices: List<String> = emptyList(), onVoice: (String?) -> Unit = {}, accounts: List<String> = emptyList(), onDemo: (Boolean) -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState) { padding ->
@@ -151,8 +151,11 @@ fun SettingsScreen(settings: Settings, onChange: (Settings) -> Unit, onRepair: (
             item { Header(stringResource(R.string.settings_section_pc), spec) }
             item { ValueButton(stringResource(R.string.settings_repair), stringResource(R.string.settings_repair_hint), Icons.Rounded.Link, spec, onClick = onRepair) }
 
+            // Demo anche nelle release (Franz, 26/09 18:09): serve ai tester senza PC e al revisore di Play.
+            item { Header(stringResource(R.string.settings_demo), spec) }
+            item { Toggle(stringResource(R.string.settings_demo_switch), settings.demoMode, spec, onDemo) }
+            // La scelta della fixture resta uno strumento di sviluppo.
             if (BuildConfig.DEBUG) {
-                item { Header(stringResource(R.string.settings_demo), spec) }
                 for (fx in listOf("state-1-question", "state-2-idle", "state-3-stale")) {
                     item {
                         RadioButton(

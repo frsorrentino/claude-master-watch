@@ -13,6 +13,13 @@ class ViewStateTest {
 
     @Test fun unpairedGoesToPairing() =
         assertEquals(Screen.Pairing, ViewState.reduce(snap, paired = false, chosen = Screen.Sessions, seen = emptySet()))
+    // Demo senza PC (Franz, 26/09 18:09): l'orologio non accoppiato con la Demo accesa esce dal pairing.
+    @Test fun unpairedDemoLeavesPairing() =
+        assertEquals(Screen.Sessions, ViewState.reduce(snap, paired = false, chosen = Screen.Pairing, seen = setOf("q-1789210500-1"), demo = true))
+    @Test fun unpairedDemoKeepsChosenScreen() =
+        assertEquals(Screen.Settings, ViewState.reduce(snap, paired = false, chosen = Screen.Settings, seen = setOf("q-1789210500-1"), demo = true))
+    @Test fun unpairedDemoStillOpensQuestion() =
+        assertEquals(Screen.Question("ledger-api"), ViewState.reduce(snap, paired = false, chosen = Screen.Pairing, seen = emptySet(), demo = true))
     @Test fun openQuestionWins() =
         assertEquals(Screen.Question("ledger-api"), ViewState.reduce(snap, true, Screen.Sessions, emptySet()))
     @Test fun seenQuestionDoesNotReopen() =

@@ -14,10 +14,15 @@ sealed class Screen {
     data object Quota : Screen()
 }
 
-/** Un solo ViewState con priorità: non accoppiato > domanda aperta non ancora vista > schermata scelta (design, sezione 2). */
+/**
+ * Un solo ViewState con priorità: non accoppiato > domanda aperta non ancora vista > schermata scelta (design, sezione 2).
+ * Con la Demo accesa l'orologio non accoppiato si usa come se lo fosse: serve ai tester senza PC e al revisore di Play
+ * (Franz, 26/09 18:09).
+ */
 object ViewState {
-    fun reduce(snap: Snapshot, paired: Boolean, chosen: Screen, seen: Set<String>): Screen {
-        if (!paired) return Screen.Pairing
+    fun reduce(snap: Snapshot, paired: Boolean, chosen: Screen, seen: Set<String>, demo: Boolean = false): Screen {
+        if (!paired && !demo) return Screen.Pairing
+        @Suppress("NAME_SHADOWING") val chosen = if (!paired && chosen is Screen.Pairing) Screen.Sessions else chosen
         val sessions = snap.state?.sessions.orEmpty()
         val open = sessions.firstOrNull { it.question != null && it.question.id !in seen }
         if (open != null) return Screen.Question(open.name)

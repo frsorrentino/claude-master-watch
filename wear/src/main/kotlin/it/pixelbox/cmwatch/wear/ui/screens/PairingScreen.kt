@@ -19,9 +19,12 @@ import it.pixelbox.cmwatch.wear.ui.components.WideButton
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import it.pixelbox.cmwatch.wear.ui.theme.morph
 
-/** Accoppiamento (design 24/09): dal telefono, che legge il QR di `relay pair`; il codice a 6 cifre solo se la build ha la configurazione dentro. */
+/**
+ * Accoppiamento (design 24/09): dal telefono, che legge il QR di `relay pair`; il codice a 6 cifre solo se la build ha la
+ * configurazione dentro. In fondo la Demo, per chi non ha un PC (Franz, 26/09 18:09).
+ */
 @Composable
-fun PairingScreen(status: PairingStatus, withCode: Boolean, onOpenPhone: () -> Unit, onEnterCode: () -> Unit, onRetry: () -> Unit) {
+fun PairingScreen(status: PairingStatus, withCode: Boolean, onOpenPhone: () -> Unit, onEnterCode: () -> Unit, onRetry: () -> Unit, onDemo: () -> Unit = {}) {
     val listState = rememberTransformingLazyColumnState()
     val spec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState) { padding ->
@@ -46,6 +49,9 @@ fun PairingScreen(status: PairingStatus, withCode: Boolean, onOpenPhone: () -> U
             }
             if (withCode && status !is PairingStatus.Failed) item {
                 WideButton(stringResource(R.string.pairing_enter_code), onClick = onEnterCode, primary = false, enabled = status !is PairingStatus.Working, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
+            }
+            if (status is PairingStatus.Idle) item {
+                WideButton(stringResource(R.string.pairing_demo), onClick = onDemo, primary = false, transformation = SurfaceTransformation(spec), modifier = Modifier.transformedHeight(this, spec))
             }
         }
     }

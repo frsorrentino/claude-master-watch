@@ -35,6 +35,7 @@
     <string name="pairing_hint_both">On your phone, open claude-master and tap Pair, or use the code from relay pair.</string>
     <string name="pairing_open_phone">Open on phone</string>
     <string name="pairing_continue_phone">Continue on phone</string>
+    <string name="pairing_demo">Try the demo</string>
     <string name="pairing_code_label">6-digit code</string>
     <string name="pairing_working">Pairing</string>
     <string name="pairing_done">Paired with %1$s</string>
@@ -45,7 +46,8 @@
     <string name="settings_haptic_gone">Vibrate when a session disappears</string>
     <string name="settings_complication_account">Complication account</string>
     <string name="settings_repair">Pair again</string>
-    <string name="settings_demo">Demo (fixtures)</string>
+    <string name="settings_demo">Demo</string>
+    <string name="settings_demo_switch">Sample sessions</string>
     <string name="notif_open">Open</string>
     <string name="notif_reply">Reply</string>
     <string name="notif_reset_week">weekly reset</string>

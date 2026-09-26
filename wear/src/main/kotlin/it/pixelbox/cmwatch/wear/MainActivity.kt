@@ -290,9 +290,10 @@ class MainActivity : ComponentActivity() {
         val current = Routes.parse(entry?.destination?.route, entry?.arguments?.getString("name"))
 
         // Un solo ViewState: non accoppiato > domanda > schermata scelta.
-        LaunchedEffect(snapshot.state, paired, seen, deepLink.value) {
+        val demo = settings?.demoMode == true
+        LaunchedEffect(snapshot.state, paired, demo, seen, deepLink.value) {
             val chosen = deepLink.value?.also { deepLink.value = null } ?: current
-            val target = ViewState.reduce(snapshot, paired = paired, chosen = chosen, seen = seen)
+            val target = ViewState.reduce(snapshot, paired = paired, chosen = chosen, seen = seen, demo = demo)
             if (target != current) nav.go(target)
         }
 
@@ -402,6 +403,7 @@ class MainActivity : ComponentActivity() {
                     voices = voices,
                     accounts = snapshot.state?.quota?.keys?.sorted().orEmpty(),
                     onVoice = { v -> scope.launch { app.prefs.update { it.copy(ttsVoice = v) } }; app.speaker.setVoice(v); app.speaker.speak(getString(R.string.tts_voice_sample)) },
+                    onDemo = { on -> app.setDemo(on) },
                 )
             }
             composable(Routes.PAIRING) {
@@ -420,6 +422,7 @@ class MainActivity : ComponentActivity() {
                             .onFailure { pairing = PairingStatus.Failed("no keyboard") }
                     },
                     onRetry = { pairing = PairingStatus.Idle },
+                    onDemo = { app.setDemo(true) },
                 )
             }
             composable(Routes.TERMINAL) { back ->
