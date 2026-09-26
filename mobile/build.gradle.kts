@@ -18,7 +18,9 @@ android {
         applicationId = "it.pixelbox.cmwatch"
         minSdk = 33
         targetSdk = 36
-        versionCode = 1
+        // Stesso pacchetto su Play per telefono e orologio: versionCode = release × 10 + fattore di forma
+        // (1 telefono, 2 orologio), unici nella scheda e con l'orologio sempre sopra il telefono.
+        versionCode = 11
         versionName = "0.1"
     }
     buildFeatures { compose = true }
