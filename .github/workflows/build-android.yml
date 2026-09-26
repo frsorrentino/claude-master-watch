@@ -72,7 +72,8 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
-        run: ./gradlew :wear:assembleRelease :mobile:assembleRelease --console=plain -x lint -x test
+        # Anche gli AAB per Play (26/09): stesso pacchetto, versionCode 11 telefono e 12 orologio.
+        run: ./gradlew :wear:assembleRelease :mobile:assembleRelease :wear:bundleRelease :mobile:bundleRelease --console=plain -x lint -x test
       - uses: actions/upload-artifact@v4
         with:
           name: cmwatch-apk
@@ -81,5 +82,7 @@ jobs:
             wear/build/outputs/apk/release/*.apk
             mobile/build/outputs/apk/debug/*.apk
             mobile/build/outputs/apk/release/*.apk
+            wear/build/outputs/bundle/release/*.aab
+            mobile/build/outputs/bundle/release/*.aab
           # 47 MB a build: con 30 giorni la quota Actions (0,5 GB-mese) finiva in pochi giorni di push. L'APK si scarica subito.
           retention-days: 1
