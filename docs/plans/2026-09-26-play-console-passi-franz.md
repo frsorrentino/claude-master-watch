@@ -18,6 +18,14 @@ i testi della scheda e le immagini. Requisiti verificati il 26/09 sulle pagine d
 
 ## 1. Oggi, senza aspettare nulla da me
 
+Stato al 26/09 alle 20:42, verificato dal master nella Console:
+- l'account è personale, «Francesco Sorrentino», e ha già 3 app con test interni: l'identità è verificata;
+- la verifica sviluppatori Android dice che tutte le app Play sono registrate. `it.pixelbox.cmwatch` si registra da sola
+  quando si crea l'app (passo 3).
+- Gli APK distribuiti fuori da Play (le build firmate da noi e installate con `adb`) vanno registrati con la loro chiave
+  nella pagina «Verifica dello sviluppatore Android». La scadenza del 30/09/2026 vale per Brasile, Indonesia, Singapore e
+  Thailandia; nel resto del mondo dal 2027.
+
 1. **Stato dell'account.** Aprire la Play Console e controllare che l'identità risulti verificata. Dal settembre 2026 i
    nuovi account personali devono verificare l'identità e dimostrare di avere un telefono Android, con l'app Play
    Console. La verifica richiede da 2 a 5 giorni lavorativi: se manca, è il primo passo.
