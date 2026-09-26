@@ -1,0 +1,12 @@
+{
+  "en-US": {
+    "title": "Claude Master App",
+    "shortDescription": "Steer your Claude Code sessions from your phone and your Wear OS watch.",
+    "fullDescription": "Unofficial companion for Claude Code, not affiliated with Anthropic.\n\nClaude Master App and Claude Master Watch show every Claude Code session running on your computer, across your accounts, and let you steer them from your phone and your Wear OS watch.\n\n• See who is waiting on a question, who is working and who is idle, at a glance on the watch tile and complication.\n• Answer a question with one tap, send a prompt, launch a session in a project.\n• Read the terminal of a session and its last answer, or have it read aloud.\n• Quota of each account with the five-hour window.\n• The evening diary and the night report on your phone.\n\nRequires the free claude-master plugin for Claude Code on your computer and a Firebase project of your own, created by the plugin. Everything travels end-to-end encrypted: neither Google nor the author can read it. No account, no ads, no analytics.\n\nTry it without a computer: Demo mode shows every screen with sample sessions."
+  },
+  "it-IT": {
+    "title": "Claude Master App",
+    "shortDescription": "Guida le sessioni di Claude Code dal telefono e dall'orologio Wear OS.",
+    "fullDescription": "Compagna non ufficiale di Claude Code, non affiliata ad Anthropic.\n\nClaude Master App e Claude Master Watch mostrano tutte le sessioni di Claude Code del tuo computer, di tutti i tuoi account, e le guidano dal telefono e dall'orologio Wear OS.\n\n• Chi aspetta una risposta, chi lavora e chi è fermo, a colpo d'occhio nella tile e nella complication dell'orologio.\n• Rispondi a una domanda con un tocco, manda un prompt, lancia una sessione in un progetto.\n• Leggi il terminale di una sessione e la sua ultima risposta, o fattela leggere ad alta voce.\n• La quota di ogni account con la finestra di cinque ore.\n• Il diario della sera e il resoconto della notte sul telefono.\n\nRichiede il plugin gratuito claude-master per Claude Code sul computer e un progetto Firebase tuo, creato dal plugin. Tutto viaggia cifrato da un capo all'altro: né Google né l'autore possono leggerlo. Nessun account, nessuna pubblicità, nessuna statistica.\n\nProvala senza computer: la modalità Demo mostra tutte le schermate con sessioni di esempio."
+  }
+}
