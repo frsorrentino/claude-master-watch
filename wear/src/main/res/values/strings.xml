@@ -47,7 +47,7 @@
     <string name="settings_complication_account">Account della complication</string>
     <string name="settings_repair">Accoppia di nuovo</string>
     <string name="settings_demo">Demo</string>
-    <string name="settings_demo_switch">Sessioni di esempio</string>
+    <string name="settings_demo_switch">Modalità demo</string>
     <string name="notif_open">Apri</string>
     <string name="notif_reply">Rispondi</string>
     <string name="notif_reset_week">reset settimana</string>
