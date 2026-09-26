@@ -9,6 +9,9 @@ for an answer comes first: read its question, tap an option or dictate a reply, 
 session goes on. See what the others are doing, follow one, launch a project, check the
 quota, all without going back to the desk.
 
+> **Just want to try it?** Start from [«Try it» in the claude-master README](https://github.com/frsorrentino/claude-master#try-it):
+> it has everything for a first run. This page is for building the phone and watch apps from source.
+
 ## It needs claude-master on your PC
 
 This app is the wrist of [**claude-master**](https://github.com/frsorrentino/claude-master),
@@ -24,7 +27,7 @@ claude-master init --yes --shim --shell
 ```
 
 The full quickstart, and everything the plugin does from the terminal, is in
-[its README](https://github.com/frsorrentino/claude-master#quickstart).
+[its README](https://github.com/frsorrentino/claude-master#try-it).
 
 **No Wear OS watch?** claude-master works without this app, from the terminal. watchOS is
 not supported yet. Telegram, if you set it up in the plugin, only sends notifications: long
@@ -83,45 +86,66 @@ Pixel Watch 5. Texts grow with the system font size and are read by TalkBack:
 There is no server of ours in between. The relay (`claude-master relay`, part of the plugin)
 publishes the state of your sessions to **your own** Firebase project and runs the commands
 the watch sends: answers, prompts, launches, reopenings. Every document is encrypted end to
-end with AES-256-GCM; the key is agreed at pairing over X25519 and lives in the watch's
-Keystore. Firebase sees blobs, never your prompts or your project names.
+end with AES-256-GCM; the key is agreed at pairing over X25519 and lives in the Keystore of
+the phone and of the watch. Firebase sees blobs, never your prompts or your project names.
 
 ## Requirements
 
 - **PC**: Linux or macOS, always on and awake (the relay covers «sessions closed», not
   «machine off»); `bash`, `tmux`, `python3` ≥ 3.8 with the `cryptography` module, `crontab`;
   Claude Code ≥ 2.1.263 with the [claude-master](https://github.com/frsorrentino/claude-master)
-  plugin. ChromeOS is not required: it is only where the plugin runs daily.
-- **Firebase**: a project of your own with Realtime Database, Cloud Messaging and anonymous
-  sign-in, a service account for the PC and an Android app for the watch.
-- **Watch**: Wear OS 4 or newer (minSdk 33) with Google Play services, paired with an Android
-  phone as Wear OS requires; tried only on a Pixel Watch 5 (Wear OS 7).
-- **Build** (no store build yet): JDK 17, Android SDK 36, `adb` over wireless debugging.
+  plugin; the Firebase CLI (`npm install -g firebase-tools`, `firebase login`) for `relay setup`.
+- **Firebase**: a project of your own. `claude-master relay setup` creates or picks it and sets
+  up Realtime Database, the rules, anonymous sign-in, the Android app and the service account.
+- **Phone**: Android 13 or newer (minSdk 33), paired with the watch as Wear OS requires. It
+  scans the pairing QR and hands the key to the watch.
+- **Watch**: Wear OS 4 or newer (minSdk 33) with Google Play services; tried only on a Pixel
+  Watch 5 (Wear OS 7).
+- **Build**: JDK 17, Android SDK 36, `adb` (USB for the phone, wireless debugging for the watch).
 
-## Set up
+## Build from source
+
+The repository has four Gradle modules: `wear` (the watch app), `mobile` (the phone app),
+`core` (contract, crypto and rules shared by both) and `ui-tokens`. Phone and watch apps share
+the package `it.pixelbox.cmwatch`, as one Play listing will.
 
 1. **The plugin** on your PC: see above.
-2. **Firebase**: a project with Realtime Database and Cloud Messaging, and the relay set up
-   on it: [Relay for the Wear OS app](https://github.com/frsorrentino/claude-master#relay-for-the-wear-os-app)
-   in the plugin's README (service account, rules, `relay install`).
-3. **The app**: there is no store build yet. In the same Firebase project add an Android app
-   with package `it.pixelbox.cmwatch`, put its `google-services.json` in `wear/`, then
+2. **Firebase, guided**: `claude-master relay setup` (`--dry-run` first to see the steps). It
+   saves the Android app's `google-services.json` in the relay's folder; the apps do not need
+   it, the QR carries the same data. Then `claude-master relay install` for the relay's
+   crontab. Details: [Relay for the Wear OS app](https://github.com/frsorrentino/claude-master#relay-for-the-wear-os-app).
+3. **Build and sign** both apps with the same key. Release builds read it from the environment:
 
    ```bash
-   ./gradlew :wear:assembleDebug
+   export KEYSTORE_PATH=/path/to/release.jks KEYSTORE_PASS=… KEY_ALIAS=… KEY_PASS=…
+   ./gradlew :mobile:assembleRelease :wear:assembleRelease
+   adb -s <phone> install -r mobile/build/outputs/apk/release/mobile-release.apk
    adb connect <watch-ip>:<port>        # Wear OS: Developer options → Wireless debugging
-   adb install -r wear/build/outputs/apk/debug/wear-debug.apk
+   adb -s <watch-ip>:<port> install -r wear/build/outputs/apk/release/wear-release.apk
    ```
 
-   Keep one signing key: switching between debug and release builds means uninstalling,
-   and pairing again.
-4. **Pair**: on the PC `claude-master relay pair` shows a 6-digit code; enter it on the watch.
-   To try the app without a PC first: Settings → Demo.
+   Keep one key for good: an app signed with another key cannot be updated in place, and
+   uninstalling it wipes the pairing. Debug builds work too, with the same caveat.
+4. **Pair**: on the PC `claude-master relay pair` shows a QR. On the phone tap «Pair» and scan
+   it (or «Paste the code» with `relay pair --text`). The phone joins your Firebase project,
+   agrees the AES key with the PC over X25519, then passes it to the watch, which keeps it in
+   its Keystore and works on its own over Wi-Fi or LTE. The screen shows the three steps,
+   phone, watch, PC. With no watch connected the phone pairs alone; pair again to add it.
+   A watch build with `google-services.json` in `wear/` can still pair by itself with the
+   6-digit code that `relay pair` prints under the QR.
+5. **Try without a PC**: on the watch's pairing screen tap «Try the demo»: sessions, questions
+   and quota from the demo set, no PC needed. Settings → «Demo mode» turns it off.
+
+Tests: `./gradlew :core:testDebugUnitTest :mobile:testDebugUnitTest`; screens are Paparazzi
+snapshots (`:wear:verifyPaparazziDebug`, `:mobile:verifyPaparazziDebug`), also run by the
+GitHub Actions workflow.
 
 ## Status
 
-Beta, in daily use on a Pixel Watch 5 (45 mm, Wear OS 7); minSdk 33 (Wear OS 4). Built
-with Kotlin, Compose for Wear OS Material 3, ProtoLayout for the tile, Room, Firebase.
+Beta, in daily use on a Pixel Watch 5 (45 mm, Wear OS 7) and a Pixel phone; minSdk 33.
+There is no build on the Play Store yet: you build and sign the apps yourself. A Play testing
+track for phone and watch is being prepared. Built with Kotlin, Compose for Wear OS Material 3,
+ProtoLayout for the tile, Room, Firebase.
 
 Design: [`docs/plans/2026-09-12-app-polso-design.md`](docs/plans/2026-09-12-app-polso-design.md)
 (Italian). Contract with the PC: [`contract/`](contract/): the JSON fixtures the app's tests
