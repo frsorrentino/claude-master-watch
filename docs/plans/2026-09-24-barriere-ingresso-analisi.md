@@ -85,7 +85,7 @@ La sola rete di casa, senza cloud: fuori casa l'orologio perderebbe tutto.
 
 ## Decisioni aperte (Franz)
 
-- Account Play: personale (creato prima o dopo il 13/11/2023) o di organizzazione Pixelfarm?
+- Account Play: personale (creato prima o dopo il 13/11/2023) o di organizzazione?
 - Backend condiviso con Blaze e privacy policy, o si resta su «ognuno il suo Firebase»?
 
 ## Fonti

@@ -23,7 +23,7 @@ Remotion 4.0.490 (Node 24, arm64), Pillow.
 - Testi visibili in `res/values/strings.xml` e `values-en/`; commit in inglese, mai `git add -A`, mai file sensibili.
 - Build locale: `./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1400m -Pkotlin.compiler.execution.strategy=in-process`,
   release firmata con `set -a; . ~/Desktop/workspaces/personali/watchface/release-keystore-credentials.txt;
-  KEYSTORE_PATH=/home/franz/Desktop/workspaces/personali/watchface/release.jks; set +a`, lint vital saltato
+  KEYSTORE_PATH=~/…/watchface/release.jks; set +a`, lint vital saltato
   (`-x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease`). Mai due Gradle insieme (6 GB).
 - Installazione: copia di sicurezza (`pm path` + `adb pull`), controllo Firebase nell'APK
   (`unzip -p APK resources.arsc | grep -a -c firebaseio`), `install -r`, controllo crash all'avvio.

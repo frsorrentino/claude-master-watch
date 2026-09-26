@@ -143,7 +143,7 @@ Un messaggio sul topic, mandato con le funzioni del relay (arriva anche all'orol
 ```bash
 python3 - <<'EOF'
 import importlib.util, sys
-p = "/home/franz/Desktop/workspaces/personali/claude-master/claude-master/scripts/cm-relay.py"
+p = "~/…/claude-master/claude-master/scripts/cm-relay.py"
 s = importlib.util.spec_from_file_location("cmrelay", p); m = importlib.util.module_from_spec(s)
 sys.argv = ["cm-relay"]; s.loader.exec_module(m)
 print(m.fcm_send({"kind": "spike", "session": "spike"}))
@@ -3306,7 +3306,7 @@ Parte quando claude-master risponde al Task 4.
 - [ ] **Step 1: Fixture identiche**
 
 ```bash
-CM=/home/franz/Desktop/workspaces/personali/claude-master
+CM=~/…/claude-master
 cmp contract/pair-qr.json $CM/tests/fixtures/relay/pair-qr.json && cmp contract/pair-response.json $CM/tests/fixtures/relay/pair-response.json && echo identiche
 ```
 
