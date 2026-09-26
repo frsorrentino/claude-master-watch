@@ -11,6 +11,58 @@ valgono dal test chiuso in poi. Quindi:
 - il gruppo si crea subito, e chi si iscrive entra nel test chiuso;
 - nel test interno ci sono solo gli indirizzi scritti a mano (Franz, al massimo qualche persona fidata).
 
+## Manuale o API (Franz, 26/09 19:34)
+
+Dove si può, si passa dalla Google Play Developer API: niente captcha e gestione da remoto. Lo script è
+`scripts/play.py`, con i test offline in `scripts/test_play.py`. Usa la chiave dell'account di servizio da un file 0600
+fuori dal repository, di default `~/.config/claude-master-watch/play-service-account.json`, e rifiuta una chiave
+leggibile da altri o dentro un checkout git.
+
+**Resta per forza manuale** (Franz, nel browser):
+- il Google Group (sezione A);
+- la creazione dell'app e le dichiarazioni (sezioni B e C): l'API non crea app e non compila le Norme;
+- l'account di servizio e i suoi permessi (sezione S qui sotto);
+- **la prima release**. Su un'app ancora in bozza l'API accetta solo release in stato «draft», e la prima uscita va
+  avviata dalla Console. Verificato il 26/09 sui problemi aperti di fastlane e dei client dell'API: l'errore è «Only
+  releases with status draft may be created on draft app». Quindi: primo caricamento e rollout del test interno dalla
+  Console (sezione D);
+- la lista di indirizzi del test interno: l'API gestisce solo i Google Group.
+
+**Passa all'API**, dopo la prima release:
+- i caricamenti successivi: `scripts/play.py upload --track internal mobile-release.aab wear-release.aab --notes "…"`;
+- le tracce di test: `scripts/play.py promote --from internal --to alpha`;
+- i tester del test chiuso: `scripts/play.py testers --track alpha --group claude-master-testers@googlegroups.com`;
+- il rollout: `scripts/play.py rollout --track production --fraction 0.2`, poi `--complete`;
+- lo stato: `scripts/play.py status`.
+
+`--dry-run` stampa le richieste senza mandarle. Nessuna chiamata all'API finché Franz non ha creato l'account di
+servizio.
+
+## S. Account di servizio per l'API (15 minuti, una volta)
+
+- [ ] <https://console.cloud.google.com> → nuovo progetto «claude-master-play». Un progetto a parte da quello Firebase
+      del relay, così la chiave di Play non tocca il bus.
+- [ ] **API e servizi → Libreria →** «Google Play Android Developer API» → **Abilita**.
+- [ ] **IAM e amministrazione → Account di servizio → Crea**:
+      - nome `play-publisher`;
+      - nessun ruolo Cloud.
+      Poi **Chiavi → Aggiungi chiave → JSON**: si scarica un file.
+- [ ] Nel terminale Linux, con il file nei Download condivisi con Linux:
+      ```bash
+      mkdir -p ~/.config/claude-master-watch
+      mv /mnt/chromeos/MyFiles/Downloads/claude-master-play-*.json ~/.config/claude-master-watch/play-service-account.json
+      chmod 600 ~/.config/claude-master-watch/play-service-account.json
+      ```
+- [ ] **Play Console → Utenti e autorizzazioni → Invita nuovi utenti.** Come email, l'indirizzo dell'account di
+      servizio, `play-publisher@claude-master-play.iam.gserviceaccount.com`. **Autorizzazioni app → Claude Master App**:
+      - «Visualizza informazioni sull'app»;
+      - «Rilascia nei canali di test»;
+      - «Gestisci canali di test e modifica elenchi di tester»;
+      - «Rilascia in produzione», solo quando servirà.
+      Poi **Invita**. La pagina «Accesso API» della Console non esiste più: basta l'invito.
+- [ ] Dirmelo. Il primo comando sarà `scripts/play.py status`, di sola lettura. I permessi possono metterci qualche
+      ora prima di valere.
+
 ## A. Google Group dei tester (5 minuti)
 
 - [ ] Aprire <https://groups.google.com> → **Crea gruppo**.
@@ -81,7 +133,8 @@ La release oggi sul tuo polso resta com'è finché non decidi tu.
 
 ## E. Quando il test chiuso parte (più avanti)
 
-- [ ] **Test chiuso → Crea traccia → Tester → Google Group:** `claude-master-testers@googlegroups.com`.
+- [ ] Il gruppo sulla traccia del test chiuso lo metto io, con l'API: `scripts/play.py testers --track alpha --group
+      claude-master-testers@googlegroups.com`. In alternativa, dalla Console: **Test chiuso → Tester → Google Group**.
 - [ ] Il link di adesione del test chiuso va nella descrizione del gruppo, al posto di «(Play link coming soon)».
 
 ## Testi da incollare
