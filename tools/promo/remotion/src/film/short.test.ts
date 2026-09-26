@@ -6,7 +6,7 @@ import { TAKEOVER_CUT } from "./ui/takeover.ts";
 import { dollyAt } from "./dolly.ts";
 import { asideAt, contextFill, fadeOutAt, workBar, workCount } from "./ui/aside.ts";
 import { beatToFrame, frameToBeat, spanFrames } from "./beats.ts";
-import { KEY_LEN, SWAP_IN, SWAP_OUT, contentAt, shapeAt, shapeVisible } from "./shape.ts";
+import { shapeAt, shapeVisible } from "./shape.ts";
 import type { Rect } from "./shape.ts";
 import { THEME } from "./theme.ts";
 import { laneArrivals } from "./ui/heroes.ts";
@@ -75,7 +75,7 @@ test("la corsia riprende le card del film lungo, e dettatura, voce e invio resta
   const loop = byId("loop"), drop = MUSIC.drop + 4;   // l'arrivo di «Deployed», sulla seconda battuta della parte forte
   const fl = (loop.fx ?? []).find((f) => f.kind === "float") as F;
   const say = (loop.fx ?? []).find((f) => f.kind === "spoken") as { at: number };
-  const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined, inShape: undefined });   // `inShape`: la scheda la disegna la forma (25/09), i dati sono quelli
+  const strip = (c: F["cards"][number]) => ({ ...c, hold: undefined });
   assert.deepEqual(fl.cards.slice(0, 2).map(strip), lf.cards.slice(0, 2).map(strip));   // «It keeps you in the loop.» e i controlli
   assert.equal(loop.at + fl.at + fl.len, drop + 12);
   assert.equal(loop.at + say.at, drop + 4);
@@ -152,20 +152,22 @@ test("la camera passa da una scena all'altra senza scatti: quadrante, notifica, 
   assert.equal(dollyAt(a.watch!.dolly, 1), dollyAt(b.watch!.dolly, 0));
   assert.equal(dollyAt(b.watch!.dolly, 1), dollyAt(c.watch!.dolly, 0));
 });
-test("la carrellata: lista con l'esito, «Work», «Open questions», «Context», senza palpebre: le cambia la forma (specifica del 25/09, §2)", () => {
+test("la carrellata: lista con l'esito, «Work», «Open questions», «Context», con tre blink allo stesso passo (Franz, 23/09 14:23 e 21:13)", () => {
   const list = byId("list"), work = byId("work"), q = byId("questions"), ctx = byId("context");
   assert.equal(list.at, 47.5);
   assert.equal(list.at + list.len, work.at);
   assert.equal(work.at + work.len, q.at);
   assert.equal(q.at + q.len, ctx.at);
-  assert.equal(q.at - work.at, ctx.at - q.at, "i cambi allo stesso passo");
-  for (const s of [list, work, q, ctx]) assert.equal(s.out, undefined, `${s.id}: le palpebre non ci sono più`);
-  for (const s of [work, q]) assert.equal(s.text, undefined);
-  for (const b of [work.at, q.at, ctx.at]) assert.ok(Number.isInteger(b), `il cambio al battito ${b} non cade su un battito`);
+  assert.equal(q.at - work.at, ctx.at - q.at, "i blink allo stesso passo");
+  assert.equal(list.out, "lids");                                    // la frase se ne va prima delle palpebre
+  for (const s of [work, q]) {
+    assert.equal(s.out, "blink");
+    assert.equal(s.text, undefined);                                 // senza frase il blink sono le sole palpebre
+  }
+  for (const b of [work.at, q.at, ctx.at]) assert.ok(Number.isInteger(b), `il blink al battito ${b} non cade su un battito`);
   for (const s of [list, work, q, ctx]) assert.equal(watchColumn(s), watchColumn(list), `${s.id} sposta l'orologio`);
-  const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number; inShape?: boolean };
+  const card = (list.fx ?? []).find((f) => f.kind === "doneCard") as { slot?: number; text: string; at: number };
   assert.equal(card.slot, 146);                                      // la riga di payments-api in n_list.mp4 a 11,6 s
-  assert.equal(card.inShape, true, "la card ✓ a riposo la disegna la forma");
   // l'esito c'è dal primo fotogramma della lista: prima col volo del terminale, poi con la card ✓ (piano 4, 23/09)
   const volo = (list.fx ?? []).find((f) => f.kind === "takeIn") as { at: number; len: number } | undefined;
   assert.equal(volo ? volo.at : card.at, 0);
@@ -173,25 +175,14 @@ test("la carrellata: lista con l'esito, «Work», «Open questions», «Context�
   assert.equal(list.watch!.clip, "scenes/n_list.mp4");
   assert.equal(list.watch!.clipStart, 11.6);
   assert.equal(list.watch!.freeze, true);
-  for (const s of [work, q, ctx]) {
-    assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
+  for (const s of [work, q, ctx]) assert.equal(s.watch!.clip, "scenes/n_overview_fit.mp4");
+  // la Panoramica scorre com'è nella registrazione (Franz, 23/09 18:32): «Work» scatta in vista a 6,0 s, «Open questions» a
+  // 8,5 s, «Context» a 10,5 s; ciascuna arriva nel primo mezzo battito della sua scena, mentre le palpebre si riaprono
+  const half = 0.5 * 60 / short.bpm;
+  for (const [s, snap] of [[work, 6.0], [q, 8.5], [ctx, 10.5]] as const) {
     assert.notEqual(s.watch!.freeze, true, `${s.id} è ferma`);
-    assert.ok((s.fx ?? []).some((f) => f.kind === "aside" && f.inShape), `${s.id}: il pannello lo disegna la forma`);
+    assert.ok(snap - s.watch!.clipStart! > 0 && snap - s.watch!.clipStart! <= half, `${s.id}: la scheda arriva ${(snap - s.watch!.clipStart!).toFixed(2)} s dopo il taglio`);
   }
-  // senza palpebre i tagli delle clip si vedrebbero (misurato su n_overview_fit.mp4 il 25/09): «Work» è ferma da 6,25 a
-  // 8,25 s, lo scorrimento verso «Open questions» va da 8,25 a 8,5, la pagina resta ferma fino a 10,0, lo scorrimento verso
-  // «Context» va da 10,0 a 10,5. Work finisce esattamente dove comincia Questions (continuità); il salto verso Context cade
-  // dentro la pagina ferma; ogni scorrimento vero parte sul taglio, cioè sulla chiave della forma (il gesto, §2)
-  const secs = (b: number) => (b * 60) / short.bpm;
-  assert.ok(work.watch!.clipStart! >= 6.25, "Work è già ferma al taglio dalla lista");
-  assert.ok(Math.abs(work.watch!.clipStart! + secs(work.len) - q.watch!.clipStart!) < 0.01, "Work → Questions senza salto");
-  assert.equal(q.watch!.clipStart, 8.25);
-  assert.ok(q.watch!.clipStart! + secs(q.len) >= 8.5 && ctx.watch!.clipStart! <= 10.0, "il salto verso Context cade nella pagina ferma");
-  assert.equal(ctx.watch!.clipStart, 10.0);
-  for (const at of [q.at, ctx.at]) assert.ok(SHAPE.some((k) => k.at === at && k.gesture === "swipe"), `al ${at} lo scorrimento vero è il gesto della forma`);
-  // e il taglio lista → Panoramica (due registrazioni diverse) lo copre la card che si gonfia sul display
-  const cover = SHAPE.find((k) => k.anchor === "display" && k.rect?.join() === "0,0,480,480" && k.at + (k.len ?? KEY_LEN) === work.at);
-  assert.ok(cover, "al 52 la forma copre il display sul taglio");
   for (const id of ["title", "glance", "done", "shipped"]) assert.equal(short.scenes.find((s) => s.id === id), undefined, `c'è ancora «${id}»`);
 });
 test("il terzo blink porta «Open questions» con la sua scheda a sinistra, come nel film lungo (Franz, 23/09 21:13)", () => {
@@ -263,22 +254,20 @@ test("al primo blink c'è la scheda Work a sinistra, come nel film lungo, e si l
   const beats = readable / (g.fps * 60 / g.bpm);
   assert.ok(beats >= 0.8, `la scheda Work si legge per ${beats.toFixed(2)} battiti`);
 });
-test("il finale su nero: Context si allarga in nero sul taglio, poi lo slogan e il cartello (specifica del 25/09; prima: palpebre, Franz 23/09 22:49)", () => {
-  // al posto delle palpebre: il pannello Context (la forma) si allarga a tutto quadro in nero e copre il taglio verso lo
-  // slogan, poi al 58 si ritira nella linea sotto le parole
+test("il finale su nero: il quarto blink chiude le palpebre sul nero, poi lo slogan e il cartello (Franz, 23/09 21:13 e 22:49)", () => {
+  // al posto della tapparella: le palpebre si chiudono su Context e si riaprono sul nero della scena dopo, che è lo
+  // slogan. Stesso linguaggio dei tre blink prima, niente barre né listelli (Franz, 22:49: «palpebre sul nero»)
   const q = byId("questions"), ctx = byId("context"), slogan = byId("slogan"), end = byId("end");
-  assert.equal(ctx.out, undefined);
-  const black = SHAPE.find((k) => k.at + (k.len ?? KEY_LEN) === slogan.at && k.color === "#000000" && k.rect && k.rect[0] <= 0 && k.rect[1] <= 0 && k.rect[0] + k.rect[2] >= 1920 && k.rect[1] + k.rect[3] >= 1080);
-  assert.ok(black, "al 58 la forma copre il quadro in nero");
+  assert.equal(ctx.out, "blink");
   assert.equal(ctx.blinds, undefined);
   assert.equal(short.scenes.find((s) => s.id === "bars"), undefined);
   assert.equal(slogan.at, ctx.at + ctx.len);
-  assert.equal(slogan.at - ctx.at, ctx.at - q.at, "il quarto cambio allo stesso passo");
+  assert.equal(slogan.at - ctx.at, ctx.at - q.at, "il quarto blink allo stesso passo");
   assert.equal(slogan.act, "close");
   assert.equal(slogan.watch, undefined);
   assert.deepEqual(slogan.text?.lines, ["Claude Code,", "on your wrist."]);
   assert.equal(slogan.text?.accent, "wrist.");
-  assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il nero, non dopo un vuoto");
+  assert.ok((slogan.text?.at ?? 0) <= 1, "lo slogan arriva subito dopo il blink, non dopo un vuoto");
   // «Claude Code,» subito, poi una pausa: «on your wrist.» parte al 60, sul primo battito dell'ultima battuta piena (Franz, 23/09 23:20)
   assert.equal(slogan.text?.pause, 1);
   assert.equal(slogan.at + (slogan.text?.at ?? 0) + 2 * 0.5 + slogan.text!.pause!, 60);
@@ -290,13 +279,10 @@ test("il finale su nero: Context si allarga in nero sul taglio, poi lo slogan e 
     assert.ok(contrast(col, "#000000") >= min, `${name} ${col}: contrasto ${contrast(col, "#000000").toFixed(1)}:1`);
   assert.equal(logoTrack(end.endTone), logoTrack());
 });
-test("l'accento delle palpebre passa ai cambi di forma: lo scatto su ogni scorrimento, il soffio sul nero dello slogan (§4)", () => {
-  // con la forma accesa da 0 i suoni sono quelli di prima più i soli quattro accenti: nessun suono nuovo nei tratti
-  // tarati con Franz (lo stop sul «yes», la corsia)
-  const key = (c: { beat: number; name: string }) => `${c.beat}:${c.name}`;
-  const before = new Set(sfxCues(short).map(key));
-  const added = sfxCues(short, 0).map(key).filter((k) => !before.has(k)).sort();
-  assert.deepEqual(added, ["52:shutter", "54:shutter", "56:shutter", "58:whoosh"]);
+test("anche il blink di sole palpebre, dalla lista a «Work», ha lo scatto sul taglio (revisione del 23/09)", () => {
+  const list = byId("list");
+  assert.equal(list.out, "lids");
+  assert.ok(sfxCues(short).some((c) => c.name === "shutter" && c.beat === list.at + list.len), "scatto al battito " + (list.at + list.len));
 });
 test("fra il terminale e la lista il terminale entra nell'orologio e diventa la card ✓ (piano 4, volo; Franz, 23/09 20:15)", () => {
   type TakeIn = { kind: "takeIn"; at: number; len: number; slot: number; name: string; age: string; text: string; badge?: string };
@@ -313,9 +299,9 @@ test("fra il terminale e la lista il terminale entra nell'orologio e diventa la 
   assert.equal("⏺ " + t.text, lines[lines.length - 1], "vola l'ultima riga del terminale");
 });
 
-// La forma unica (specifica del 25/09, §2 e §8.5): la traccia `shape` del corto, controllata fotogramma per fotogramma
-// sul display a riposo. La geometria vera del display (pose, dolly, tre quarti) arriva ai passi 3-4: fino ad allora
-// l'identità col display in face è vera per costruzione e questi test guardano il percorso, non l'aggancio.
+// Il finale della forma unica (Franz, 26/09 13:53: «terrei la versione precedente integrando il finale con la linea che
+// diventa logo»): tutto il corto resta quello approvato, la forma c'è solo dal 58. Nasce sotto la prima parola dello
+// slogan, si allunga parola per parola, al 64 si piega nell'arco del logo e al 66 passa la mano all'anello del LogoMark.
 const GEO = JSON.parse(readFileSync(new URL("./mockup.geometry.json", import.meta.url), "utf8")).front;
 const restAt = (b: number): Rect => {
   const sc = short.scenes.find((s) => b < s.at + s.len) ?? short.scenes[short.scenes.length - 1];
@@ -324,76 +310,28 @@ const restAt = (b: number): Rect => {
 };
 const SHAPE = short.shape ?? [];
 const G = { bpm: short.bpm, fps: short.fps, offsetSeconds: short.offsetSeconds };
-const LAST = beatToFrame(G, totalBeats(short));
-const sceneOf = (b: number) => short.scenes.find((s) => b < s.at + s.len) ?? short.scenes[short.scenes.length - 1];
+const SLOGAN = byId("slogan");
+const END = short.scenes.find((s) => s.endCard)!;
 
-test("forma: c'è in ogni fotogramma del corto, con misura positiva", () => {
-  assert.ok(SHAPE.length > 0, "il corto ha la sua traccia");
-  for (let f = 0; f <= LAST; f++) {
+test("la linea: invisibile fino allo slogan, poi c'è e si allunga sotto le parole, sempre con misura positiva", () => {
+  assert.equal(shapeAt(SHAPE, SLOGAN.at - 0.01, restAt).show, 0, "prima del 58 la forma non si vede");
+  let prevW = 0;
+  for (let f = beatToFrame(G, SLOGAN.at); f < beatToFrame(G, END.at); f++) {
     const s = shapeAt(SHAPE, frameToBeat(G, f), restAt);
     assert.ok(s.w >= 1 && s.h >= 1, `fotogramma ${f}: ${s.w}×${s.h}`);
+    assert.ok(s.w >= prevW - 3, `fotogramma ${f}: la linea si accorcia (${prevW.toFixed(0)} → ${s.w.toFixed(0)})`);
+    prevW = s.w;
   }
+  assert.ok(prevW > 700, "a fine slogan la linea è lunga quanto la frase");
 });
 
-test("forma: si muove solo dentro la finestra di una chiave (fuori, fra due fotogrammi, meno di 4 px)", () => {
-  const moving = (b: number) => SHAPE.some((k) => b >= k.at && b <= k.at + (k.len ?? KEY_LEN) + 1 / 16);
-  let prev = shapeAt(SHAPE, frameToBeat(G, 0), restAt);
-  for (let f = 1; f <= LAST; f++) {
-    const b = frameToBeat(G, f), s = shapeAt(SHAPE, b, restAt);
-    const d = Math.max(Math.abs(s.x - prev.x), Math.abs(s.y - prev.y), Math.abs(s.x + s.w - prev.x - prev.w), Math.abs(s.y + s.h - prev.y - prev.h));
-    if (!moving(b)) assert.ok(d <= 4, `fotogramma ${f} (battito ${b.toFixed(2)}, ${sceneOf(b).id}): salto di ${d.toFixed(1)} px senza chiave`);
-    prev = s;
-  }
+test("il finale non aggiunge suoni: quelli del corto approvato, palpebre comprese", () => {
+  const key = (c: { beat: number; name: string }) => `${c.beat}:${c.name}`;
+  assert.deepEqual(sfxCues(short, SLOGAN.at).map(key).sort(), sfxCues(short).map(key).sort());
 });
 
-// §8.5: nessun battito senza un cambio. Un battito è vivo se una molla della forma corre, se il contenuto si scambia o si
-// anima da sé (l'onda della voce, la dettatura che scrive, le righe del terminale, le barre dei pannelli, l'arco che si
-// disegna), o se è una pausa di lettura: una scena con la frase ferma, al massimo due battiti di fila, e il cartello.
-const SELF_ANIMATED = new Set(["voice", "dict", "screen", "terminal", "work", "questions", "context", "logo"]);
-// Le eccezioni, una per una, con il passo della specifica che le toglie
-const STILL_OK: Record<number, string> = {
-  1: "face: la forma è il display, lo muove il dolly 1→1,08; con la posa vera (passo 4) l'aggancio si muove",
-  14: "answer: la voce legge le opzioni fino al 15; al passo 4 i tasti ricevono il bump (molla ζ 0,7, §8.4)",
-  15: "answer: come il 14",
-};
-test("forma: nessun battito morto (§8.5), salvo le pause di lettura e le eccezioni dichiarate", () => {
-  const dead: string[] = [];
-  let reading = 0;
-  for (let b = 0; b < Math.ceil(totalBeats(short)); b++) {
-    const spring = SHAPE.some((k) => k.at < b + 1 && k.at + (k.len ?? KEY_LEN) > b);
-    const swap = SHAPE.some((k, i) => i > 0 && k.content !== SHAPE[i - 1].content && k.at < b + 1 && k.at + SWAP_OUT + SWAP_IN > b);
-    const c = contentAt(SHAPE, b + 0.5);
-    const sc = sceneOf(b);
-    // con `show` 0 la forma è il fondo della scena (il terminale grigio): è viva se la scena scrive le sue righe
-    const ground = shapeAt(SHAPE, b + 0.5, restAt).show < 0.05 && (sc.fx ?? []).some((f) => f.kind === "terminalPlane");
-    if (spring || swap || ground || (c && SELF_ANIMATED.has(c.id)) || sc.endCard) { reading = 0; continue; }
-    if (sc.text && ++reading <= 2) continue;
-    if (!(b in STILL_OK)) dead.push(`${b} (${sc.id})`);
-  }
-  assert.deepEqual(dead, [], `battiti fermi: ${dead.join(", ")}`);
-});
-
-test("forma: le palpebre della panoramica diventano cambi di forma sul battito 1 delle battute (§4)", () => {
-  for (const at of [52, 56]) {
-    const k = SHAPE.find((x) => x.at === at);
-    assert.ok(k && at % 4 === 0 && k.content, `al ${at} un cambio di pannello sul battito 1`);
-  }
-  assert.ok(SHAPE.some((k) => k.at <= MUSIC.drop && k.at + (k.len ?? KEY_LEN) >= MUSIC.drop), "la musica riparte (20) mentre il campo si ritira nella prima card");
-});
-
-test("forma: comincia agganciata al display e finisce sull'orologio, gesti solo fra quelli dell'app", () => {
-  assert.equal(SHAPE[0].anchor, "display");
-  const s = shapeAt(SHAPE, 0.5, restAt), d = restAt(0.5);
-  assert.deepEqual([s.x, s.y, s.w, s.h].map(Math.round), d.map(Math.round));
-  assert.ok(SHAPE.every((k) => k.gesture === undefined || ["tap", "longPress", "swipe", "send"].includes(k.gesture)), "niente corona (§8.1b)");
-});
-
-// Piano 2, Task 5: il passaggio al logo. La forma arriva nel display come arco e lì passa la mano al LogoMark della scena:
-// in ogni fotogramma del cartello c'è un arco solo, e finché c'è la forma il display è ancora piatto o lei è agganciata.
-const END = short.scenes.find((s) => s.endCard)!;
-const HANDOFF = SHAPE.find((k) => k.handoff);
-test("forma: nel cartello un arco solo — la forma fino a `ringFrom`, poi l'anello della scena; agganciata se il display si inclina",
-  { skip: !(HANDOFF && END.ringFrom !== undefined) && "la traccia non ha ancora il passaggio al logo (piano 2, Task 7)" }, () => {
+test("il logo: un arco solo — la forma fino a `ringFrom`, poi l'anello della scena; agganciata se il display si inclina",
+  () => {
   const beat = spanFrames(G, END.at, 1);
   for (let f = beatToFrame(G, END.at); f < beatToFrame(G, END.at + END.len); f++) {
     const b = frameToBeat(G, f), rel = f - beatToFrame(G, END.at);
