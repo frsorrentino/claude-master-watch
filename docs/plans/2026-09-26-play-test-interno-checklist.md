@@ -65,6 +65,9 @@ servizio.
 
 ## A. Google Group dei tester (5 minuti)
 
+Fatto il 26/09 alle 20:37: il gruppo `claude-master-testers@googlegroups.com` esiste, creato dal master con l'account di Franz
+(captcha risolto da Franz), e il link è già nel README di claude-master 0.4.27.
+
 - [ ] Aprire <https://groups.google.com> → **Crea gruppo**.
 - [ ] Nome «Claude Master testers». Indirizzo email del gruppo `claude-master-testers`: diventa
       `claude-master-testers@googlegroups.com`. Se il nome è preso, scriverne un altro e dirlo a me, perché cambia il
