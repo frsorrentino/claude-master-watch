@@ -158,7 +158,7 @@ La release oggi sul tuo polso resta com'è finché non decidi tu.
   > Claude Master App and Claude Master Watch show every Claude Code session running on your computer, across your
   > accounts, and let you steer them from your phone and your Wear OS watch.
   >
-  > • See who is waiting on a question, who is working and who is idle, at a glance on the watch tile.
+  > • See who is waiting on a question, who is working and who is idle, at a glance on the watch tile and complication.
   > • Answer a question with one tap, send a prompt, launch a session in a project.
   > • Read the terminal of a session and its last answer, or have it read aloud.
   > • Quota of each account with the five-hour window.
@@ -179,7 +179,7 @@ La release oggi sul tuo polso resta com'è finché non decidi tu.
   > Claude Master App e Claude Master Watch mostrano tutte le sessioni di Claude Code del tuo computer, di tutti i tuoi
   > account, e le guidano dal telefono e dall'orologio Wear OS.
   >
-  > • Chi aspetta una risposta, chi lavora e chi è fermo, a colpo d'occhio nella tile dell'orologio.
+  > • Chi aspetta una risposta, chi lavora e chi è fermo, a colpo d'occhio nella tile e nella complication dell'orologio.
   > • Rispondi a una domanda con un tocco, manda un prompt, lancia una sessione in un progetto.
   > • Leggi il terminale di una sessione e la sua ultima risposta, o fattela leggere ad alta voce.
   > • La quota di ogni account con la finestra di cinque ore.
