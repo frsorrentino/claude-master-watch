@@ -25,9 +25,17 @@ i testi della scheda e le immagini. Requisiti verificati il 26/09 sulle pagine d
    - un Google Group: i tester entrano da soli e la lista si gestisce fuori da Play;
    - una lista di indirizzi dentro la Play Console.
    Il Google Group è più comodo se i tester arrivano a ondate. Ogni tester deve avere un telefono Android; l'orologio è
-   facoltativo.
-3. **Crea l'app.** Tutte le app → Crea app. Servono il nome (decisione aperta), la lingua predefinita, «App», «Gratuita»
-   e le due dichiarazioni. «Gratuita» non si può più cambiare in «a pagamento».
+   facoltativo. Deciso da Franz il 26/09: misto, cioè conoscenti più un servizio di tester per arrivare a 15.
+3. **Crea l'app.** Tutte le app → Crea app. Servono:
+   - il nome «Claude Master App» (deciso da Franz il 26/09). La famiglia è Claude Master App, Claude Master Watch e
+     Claude Master Plugin. La scheda è una sola per telefono e orologio, quindi il titolo su Play è uno. Sull'orologio
+     l'icona si chiama «Claude Master Watch»;
+   - la lingua predefinita: inglese, deciso da Franz il 26/09, con l'italiano come traduzione;
+   - «App», «Gratuita» e le due dichiarazioni. «Gratuita» non si può più cambiare in «a pagamento».
+   - Rischio: «Claude» è un marchio di Anthropic, e la revisione può contestarlo (impersonificazione, proprietà
+     intellettuale). Per ridurlo, la prima riga della descrizione dice «Unofficial companion for Claude Code, not
+     affiliated with Anthropic», e l'icona non usa il logo di Claude. Se Play rifiuta, si rinomina solo il titolo: il
+     pacchetto resta.
 
 ## 2. Quando ti mando il primo bundle (dopo il render, build locale o CI)
 
