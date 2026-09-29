@@ -27,9 +27,18 @@ class TimelineTextTest {
     @Test fun groupedByDayNewestFirst() {
         val g = TimelineText.groups(ev, zone)
         assertEquals(listOf("12 set"), g.map { it.day })
-        assertEquals(6, g[0].rows.size)
-        assertEquals("13:01 · 1 yes · ledger-api · answered from watch-pixel5", g[0].rows[0])
-        assertEquals("12:55 · ❓ ledger-api · Deploy ready, waiting for the client's ok. Deploy now?", g[0].rows[1])
+        assertEquals(7, g[0].rows.size)   // 1.18: in più la ripresa della quota; diario e notte restano fuori
+        // 1.18: la ripresa della quota è la più recente; del corpo su più righe resta la prima (una riga sul polso).
+        assertEquals("14:10 · ✓ quota personal back · reset 13:10", g[0].rows[0])
+        assertEquals("13:01 · 1 yes · ledger-api · answered from watch-pixel5", g[0].rows[1])
+        assertEquals("12:55 · ❓ ledger-api · Deploy ready, waiting for the client's ok. Deploy now?", g[0].rows[2])
+        assertTrue(g.flatMap { it.rows }.none { '\n' in it })
+    }
+
+    /** Contratto 1.18: diario e resoconto della notte sono testi lunghi per il telefono; la timeline del polso li salta. */
+    @Test fun timelineSkipsRecapAndNightReport() {
+        val rows = TimelineText.groups(ev, zone).flatMap { it.rows }
+        assertTrue(rows.none { it.contains("Diary") || it.contains("Night:") })
     }
 
     @Test fun filterBySession() {

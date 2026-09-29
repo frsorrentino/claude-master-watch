@@ -190,5 +190,16 @@ class ContractTest {
         val old = Fixtures.stateIdle.replace(Regex(",\\s*\"items\"\\s*:\\s*\\[\\s*\\]"), "")
         assertNull(ContractJson.decodeState(old).night.items)
     }
+
+    // Contratto 1.18 (29/09, richiesta R4): diario delle 20:00 e resoconto della notte arrivano anche all'app come eventi.
+    @Test fun recapAndNightReportEvents() {
+        val ev = ContractJson.decodeEvents(Fixtures.read("events-sample.json"))
+        val recap = ev.single { it.kind == EventKind.RECAP }
+        assertNull(recap.session); assertNull(recap.account); assertTrue(recap.body.isNotBlank()); assertNotNull(recap.ref)
+        val night = ev.single { it.kind == EventKind.NIGHT_REPORT }
+        assertTrue(night.title.isNotBlank()); assertNotNull(night.ref)
+        assertTrue(ev.any { it.kind == EventKind.QUOTA && it.title.startsWith("✓") })
+        assertTrue(ev.all { !it.body.contains("…") && !it.title.contains("\n") })
+    }
 }
 

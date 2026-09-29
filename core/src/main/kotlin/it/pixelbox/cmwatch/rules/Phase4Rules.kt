@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Event
+import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.contract.Night
 import it.pixelbox.cmwatch.contract.Project
 import it.pixelbox.cmwatch.contract.QuotaAccount
@@ -28,13 +29,15 @@ object TimelineText {
         val time = DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochSecond(e.ts).atZone(zone))
         val parts = mutableListOf(time, e.title)
         if (e.session != null && !e.title.contains(e.session)) parts += e.session
-        if (e.body.isNotBlank()) parts += e.body
+        e.body.lineSequence().firstOrNull()?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" · ")
     }
 
     fun groups(events: List<Event>, zone: ZoneId, session: String? = null, locale: Locale = Locale.ITALIAN): List<Group> {
         val dayFmt = DateTimeFormatter.ofPattern("d MMM", locale)
-        return events.filter { session == null || it.session == session }
+        // Contratto 1.18: diario e resoconto della notte sono testi lunghi, per la scheda Diario del telefono.
+        return events.filter { it.kind != EventKind.RECAP && it.kind != EventKind.NIGHT_REPORT }
+            .filter { session == null || it.session == session }
             .sortedByDescending { it.ts }
             .groupBy { Instant.ofEpochSecond(it.ts).atZone(zone).toLocalDate() }
             .entries.sortedByDescending { it.key }

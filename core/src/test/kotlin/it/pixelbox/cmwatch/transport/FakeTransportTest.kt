@@ -66,8 +66,8 @@ class FakeTransportTest {
     @Test fun eventsComeFromFixtureNewestFirst() = runTest {
         val ev = t().events.first()
         // I 6 della fixture ci sono tutti, più i 14 sparsi della demo (16/09 16:05).
-        assertEquals(6 + 14, ev.size); assertTrue(ev.zipWithNext().all { (a, b) -> a.ts >= b.ts })
-        assertEquals(6, ev.count { !it.key.startsWith("demo-") })
+        assertEquals(9 + 14, ev.size); assertTrue(ev.zipWithNext().all { (a, b) -> a.ts >= b.ts })
+        assertEquals(9, ev.count { !it.key.startsWith("demo-") })
     }
 
     @Test fun pairAcceptsAnySixDigits() = runTest {

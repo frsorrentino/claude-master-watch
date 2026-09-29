@@ -18,7 +18,9 @@ enum class Tier { @SerialName("low") LOW, @SerialName("medium") MEDIUM, @SerialN
 @Serializable
 enum class EventKind {
     @SerialName("question") QUESTION, @SerialName("answered") ANSWERED, @SerialName("outcome") OUTCOME,
-    @SerialName("gone") GONE, @SerialName("launched") LAUNCHED, @SerialName("quota") QUOTA, @SerialName("resumed") RESUMED
+    @SerialName("gone") GONE, @SerialName("launched") LAUNCHED, @SerialName("quota") QUOTA, @SerialName("resumed") RESUMED,
+    /** Contratto 1.18 (R4): il diario delle 20:00 e il resoconto della notte; `ref` = giorno ISO, `session` e `account` null. */
+    @SerialName("recap") RECAP, @SerialName("night_report") NIGHT_REPORT,
 }
 
 @Serializable

@@ -112,7 +112,7 @@ class FirebaseTransportTest {
         store["events"] = obj.toString()
         streamBody = ""
         val got = transport().events.first()
-        assertEquals(6, got.size); assertTrue(got[0].ts >= got[1].ts)
+        assertEquals(9, got.size); assertTrue(got[0].ts >= got[1].ts)
         assertTrue(requests.any { it.requestUrl!!.encodedPath == "/events.json" && it.requestUrl!!.queryParameter("orderBy") == "\"\$key\"" })
     }
 
