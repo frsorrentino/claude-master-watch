@@ -1,4 +1,4 @@
-package it.pixelbox.cmwatch.wear
+package it.pixelbox.cmwatch.transport
 
 /**
  * Nomi e testi della demo per i video promozionali (Franz, 16/09 18:11: «nomi meno banali e più verosimili», «più righe»).

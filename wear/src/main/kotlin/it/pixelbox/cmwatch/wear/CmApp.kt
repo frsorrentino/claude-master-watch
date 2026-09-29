@@ -17,6 +17,7 @@ import it.pixelbox.cmwatch.rules.TransportChoice
 import it.pixelbox.cmwatch.rules.Wake
 import it.pixelbox.cmwatch.settings.Prefs
 import it.pixelbox.cmwatch.settings.Settings
+import it.pixelbox.cmwatch.transport.DemoText
 import it.pixelbox.cmwatch.transport.FakeTransport
 import it.pixelbox.cmwatch.transport.FirebaseAuthToken
 import it.pixelbox.cmwatch.transport.FirebaseTransport

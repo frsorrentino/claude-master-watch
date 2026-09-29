@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(ui.phase) {
                     when (ui.phase) {
                         Phase.RESTART -> Restarter.restart(this@MainActivity)
-                        Phase.DONE -> Buzz.done(this@MainActivity)
+                        Phase.DONE -> { Buzz.done(this@MainActivity); app.reconfigure() }
                         else -> Unit
                     }
                 }
