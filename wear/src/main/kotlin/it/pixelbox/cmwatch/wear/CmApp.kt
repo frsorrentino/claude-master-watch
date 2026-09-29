@@ -93,9 +93,15 @@ class CmApp : Application() {
         // Si parte spenti: il processo può nascere in background (FCM, tile) e allora non riceverebbe mai onStop.
         repo.start(live = false)
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) = repo.live(true)
+            override fun onStart(owner: LifecycleOwner) { repo.live(true); scope.launch { repo.flushQueue() } }
             override fun onStop(owner: LifecycleOwner) = repo.live(false)
         })
+        // I comandi dati senza rete partono quando torna (revisione 29/09: nessuno chiamava flushQueue, restavano in coda).
+        runCatching {
+            getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) { scope.launch { repo.flushQueue() } }
+            })
+        }
         follow = FollowOngoing(this)
         scope.launch { repo.snapshot.collect { follow.update(it.state, System.currentTimeMillis() / 1000) } }
         // Il diff che decide le notifiche gira su OGNI nuovo /state (stream o risveglio FCM): con il processo vivo lo stream
@@ -217,7 +223,9 @@ class CmApp : Application() {
         }.onFailure { android.util.Log.w("cmwatch", "fcm: ${it.message}") }
     }
 
+    /** In Demo si è sempre «in linea»: i comandi vanno al finto, mai in coda verso il PC vero. */
     fun isOnline(): Boolean {
+        if (transport.active === fake) return true
         val cm = getSystemService(ConnectivityManager::class.java)
         val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
