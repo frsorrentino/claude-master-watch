@@ -29,6 +29,7 @@ class FirebaseTransportTest {
     private val requests = ArrayList<RecordedRequest>()
     private var streamBody = ""
     private var clock = 1789210800L
+    private var refuseSeen = false
 
     @Before fun up() {
         server.dispatcher = object : Dispatcher() {
@@ -39,6 +40,7 @@ class FirebaseTransportTest {
                 if (request.getHeader("Accept") == "text/event-stream") {
                     return MockResponse().setHeader("Content-Type", "text/event-stream").setBody(streamBody)
                 }
+                if (refuseSeen && path.startsWith("seen/")) return MockResponse().setResponseCode(401)
                 return when (request.method) {
                     "GET" -> MockResponse().setBody(store[path] ?: "null")
                     "PUT" -> { store[path] = request.body.readUtf8(); MockResponse().setBody(store[path]!!) }
@@ -67,7 +69,7 @@ class FirebaseTransportTest {
     @Test fun fetchStateIsOneGet() = runBlocking {
         store["state"] = blobOf(Fixtures.stateIdle)
         assertEquals(1, transport().fetchState().sessions.size)
-        assertEquals("/state.json", requests.last().requestUrl!!.encodedPath)
+        assertEquals(listOf("/state.json"), requests.filter { it.method == "GET" }.map { it.requestUrl!!.encodedPath })
     }
 
     @Test fun wrongKeyIsANetworkError() {
@@ -156,6 +158,26 @@ class FirebaseTransportTest {
         try { transport().share("s2", "image/jpeg", ByteArray(2_000), maxBytes = 1_000); fail("expected TooLarge") }
         catch (e: TransportException.TooLarge) { }
         assertFalse(store.containsKey("share/s2"))
+    }
+
+    // Contratto 1.20 (R6): chi riceve lo dice in /seen/<uid> con l'ora del server; il relay ripiega su Telegram solo se nessuno legge.
+    @Test fun fetchStateMarksSeen() = runBlocking {
+        store["state"] = blobOf(Fixtures.stateIdle)
+        transport().fetchState()
+        assertEquals("{\".sv\":\"timestamp\"}", store["seen/u1"]!!.replace(" ", ""))
+    }
+
+    @Test fun streamMarksSeenWhenItOpens() = runBlocking {
+        streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":${blobOf(Fixtures.stateQuestion)}}\n\nevent: keep-alive\ndata: null\n\n"
+        transport().state.first()
+        assertNotNull(store["seen/u1"])
+    }
+
+    /** Regole RTDB precedenti: la scrittura di /seen viene rifiutata, e la lettura dello stato non ne soffre. */
+    @Test fun refusedSeenDoesNotBreakTheRead() = runBlocking {
+        refuseSeen = true
+        store["state"] = blobOf(Fixtures.stateIdle)
+        assertEquals(1, transport().fetchState().sessions.size)
     }
 }
 

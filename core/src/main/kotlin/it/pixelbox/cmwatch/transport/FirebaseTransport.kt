@@ -62,11 +62,25 @@ class FirebaseTransport(
     }
 
     override val state: Flow<State> = resilient {
+        var marked = false
         rtdb.stream("state").collect { ev ->
             if (ev.event != "put" && ev.event != "patch") return@collect
             val (path, d) = putEvent(ev.data) ?: return@collect
-            if (path == "/" && isBlob(d)) emit(ContractJson.decodeState(open(d)))
+            if (path == "/" && isBlob(d)) {
+                val st = ContractJson.decodeState(open(d))
+                if (!marked) { marked = true; markSeen() }   // prima di emit: chi prende solo il primo stato chiude il flusso
+                emit(st)
+            }
         }
+    }
+
+    /**
+     * Contratto 1.20 (R6): «ho ricevuto», con l'ora del server, così il relay ripiega su Telegram solo se nessun dispositivo
+     * legge. Mai d'ostacolo alla lettura: con le regole RTDB precedenti la scrittura viene rifiutata e si va avanti.
+     */
+    private suspend fun markSeen() {
+        val id = uid() ?: return
+        runCatching { rtdb.put("seen/$id", "{\".sv\":\"timestamp\"}") }
     }
 
     override val events: Flow<List<Event>> = resilient {
@@ -92,7 +106,7 @@ class FirebaseTransport(
     override suspend fun fetchState(): State {
         k()   // non accoppiato: errore subito, senza rete
         val body = rtdb.get("state") ?: throw TransportException.Network("no state on the bus")
-        return ContractJson.decodeState(open(Json.parseToJsonElement(body)))
+        return ContractJson.decodeState(open(Json.parseToJsonElement(body))).also { markSeen() }
     }
 
     /** Busta come /cmd, in chiaro {mime, data}; il limite vale sulla stringa `enc` (contratto 1.19). Nulla si scrive oltre il limite. */
