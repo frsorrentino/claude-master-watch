@@ -89,4 +89,14 @@
     <string name="diary_previous">Giorni precedenti</string>
     <string name="notif_diary">Il diario di oggi è pronto</string>
     <string name="notif_night">Il resoconto della notte è pronto</string>
+    <string name="share_title">Manda a una sessione</string>
+    <string name="share_message">Messaggio</string>
+    <string name="share_with_image">Con l\'immagine condivisa</string>
+    <string name="share_send">Manda</string>
+    <string name="share_update_pc">Aggiorna claude-master sul PC per mandare testi e immagini alle sessioni</string>
+    <string name="share_sent">Mandato a %1$s</string>
+    <string name="share_unreadable">Immagine non leggibile: non mandata</string>
+    <string name="share_too_large">Immagine troppo grande anche ridotta: non mandata</string>
+    <string name="share_offline">Nessuna rete: riprova quando torna</string>
+    <string name="share_failed">Invio non riuscito: riprova</string>
 </resources>

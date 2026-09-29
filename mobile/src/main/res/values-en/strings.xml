@@ -87,4 +87,14 @@
     <string name="diary_previous">Previous days</string>
     <string name="notif_diary">Today\'s diary is ready</string>
     <string name="notif_night">The night report is ready</string>
+    <string name="share_title">Send to a session</string>
+    <string name="share_message">Message</string>
+    <string name="share_with_image">With the shared image</string>
+    <string name="share_send">Send</string>
+    <string name="share_update_pc">Update claude-master on the computer to send texts and images to sessions</string>
+    <string name="share_sent">Sent to %1$s</string>
+    <string name="share_unreadable">Image unreadable: not sent</string>
+    <string name="share_too_large">Image too large even reduced: not sent</string>
+    <string name="share_offline">No network: retry when it is back</string>
+    <string name="share_failed">Sending failed: retry</string>
 </resources>
