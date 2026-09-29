@@ -96,6 +96,23 @@
       "text": "check the draft for typos",
       "issued": 1789210990,
       "by": "watch-pixel5"
+    },
+    {
+      "id": "6f1c2d3e-0123-4000-8000-000000000123",
+      "op": "night_add",
+      "session": null,
+      "arg": "/home/demo/workspaces/work/clients/ledger-api",
+      "text": "Update the changelog for 2.4 and check the migration notes",
+      "issued": 1789210600,
+      "by": "phone-pixel8"
+    },
+    {
+      "id": "6f1c2d3e-0124-4000-8000-000000000124",
+      "op": "night_remove",
+      "session": null,
+      "arg": "5d0e6b92",
+      "issued": 1789210700,
+      "by": "phone-pixel8"
     }
   ],
   "result": [
@@ -171,6 +188,19 @@
       "text": "launched field-notes (personal) with the first message",
       "session": "field-notes-2",
       "at": 1789211010
+    },
+    {
+      "id": "6f1c2d3e-0123-4000-8000-000000000123",
+      "ok": true,
+      "text": "queued for tonight: ledger-api (work), job 7b21d4e8",
+      "job": "7b21d4e8",
+      "at": 1789210620
+    },
+    {
+      "id": "6f1c2d3e-0124-4000-8000-000000000124",
+      "ok": true,
+      "text": "removed from tonight's queue: 5d0e6b92",
+      "at": 1789210705
     }
   ]
 }

@@ -207,6 +207,36 @@ class FakeTransport(
                 val righe = if (ses.id == deployId && growing) extra.take(screenGrowth++.coerceAtMost(extra.size)) else listOf("Edit app/admin.py", "Read app/seed.py")
                 ok((listOf("⏺ Reading the checklist", "Read(RELEASE.md)") + righe).joinToString("\n"))
             }
+            // Contratto 1.17 (R3): i testi del relay, di successo e di rifiuto.
+            CmdOp.NIGHT_ADD -> {
+                val p = s.projects.firstOrNull { it.path == cmd.arg }
+                val items = s.night.items.orEmpty()
+                when {
+                    p == null -> ko("${cmd.arg} is not a published project")
+                    cmd.text.isNullOrBlank() -> ko("empty prompt: nothing to queue")
+                    items.size >= 8 -> ko("tonight's queue is full (8 jobs): remove one first")
+                    else -> {
+                        val id = "%08x".format((cmd.id + now()).hashCode())
+                        val prompt = cmd.text!!.lineSequence().joinToString(" ").trim().let { if (it.length <= 160) it else it.take(160).substringBeforeLast(' ') }
+                        val next = items + NightItem(id, p.path, p.name, prompt, now())
+                        current.value = s.copy(ts = now(), night = s.night.copy(queued = next.size, items = next))
+                        CmdResult(cmd.id, true, "queued for tonight: ${p.name} (${p.account}), job $id", now(), job = id)
+                    }
+                }
+            }
+            CmdOp.NIGHT_REMOVE -> {
+                val items = s.night.items.orEmpty()
+                val it = items.firstOrNull { i -> i.id == cmd.arg }
+                when {
+                    it == null -> ko("no job ${cmd.arg} in tonight's queue")
+                    it.started != null -> ko("job ${it.id} has already started: it cannot be removed")
+                    else -> {
+                        val next = items - it
+                        current.value = s.copy(ts = now(), night = s.night.copy(queued = next.size, items = next))
+                        ok("removed from tonight's queue: ${it.id}")
+                    }
+                }
+            }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")
             // Contratto 1.9: i testi del relay, di successo e di rifiuto.

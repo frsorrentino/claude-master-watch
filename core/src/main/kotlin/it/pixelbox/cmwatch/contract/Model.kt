@@ -32,6 +32,8 @@ enum class CmdOp {
     @SerialName("reopen") REOPEN,
     /** Contratto 1.12 (in preparazione da claude-master): modello ed effort della sessione, validi solo per lei. */
     @SerialName("model") MODEL, @SerialName("effort") EFFORT,
+    /** Contratto 1.17 (R3): la coda della notte dall'app. `arg` = cartella di un progetto, `text` = prompt; per remove `arg` = id. */
+    @SerialName("night_add") NIGHT_ADD, @SerialName("night_remove") NIGHT_REMOVE,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -97,7 +99,16 @@ enum class CmdOp {
     /** Contratto 1.13: epoch s della trascrizione più recente della cartella nel suo account, null se non ce n'è. */
     @SerialName("last_used") val lastUsed: Long? = null,
 )
-@Serializable data class Night(val queued: Int = 0, val running: String? = null)
+/**
+ * Contratto 1.17: `items` = i lavori di stanotte nell'ordine di esecuzione, sempre presente (anche vuoto) per un relay
+ * che la supporta; null = relay precedente, l'app chiede di aggiornare claude-master.
+ */
+@Serializable data class Night(val queued: Int = 0, val running: String? = null, val items: List<NightItem>? = null)
+
+/** Un lavoro della notte (1.17): `prompt` su una riga, tagliato a fine parola entro 160; `started` null finché non parte. */
+@Serializable data class NightItem(
+    val id: String, val dir: String, val name: String, val prompt: String, val added: Long, val started: Long? = null,
+)
 @Serializable data class RecapItem(val project: String, val done: String, val next: String? = null)
 @Serializable data class Recap(val date: String = "", val items: List<RecapItem> = emptyList())
 
@@ -130,4 +141,6 @@ enum class CmdOp {
     val id: String, val ok: Boolean, val text: String, val at: Long,
     /** Contratto 1.13: la sessione nata da un `launch`, come in `sessions[].name`; c'è anche se il messaggio non è arrivato. */
     val session: String? = null,
+    /** Contratto 1.17: l'id del lavoro accodato da `night_add`. */
+    val job: String? = null,
 )

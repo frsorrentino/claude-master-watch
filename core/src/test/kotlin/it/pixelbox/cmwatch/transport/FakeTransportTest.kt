@@ -189,4 +189,20 @@ class FakeTransportTest {
         val s = tr.state.first().sessions.first { it.name == p.name }
         assertEquals(SessionState.BUSY, s.state); assertEquals("Draft a post about the 2.8.0 release", s.toolNote)
     }
+
+    // Demo del contratto 1.17: la coda della notte si modifica anche senza PC, con i testi del relay.
+    @Test fun nightQueueAddAndRemoveInDemo() = runTest {
+        val tr = t()
+        val path = tr.state.first().projects.first().path
+        val add = tr.send(Cmd("n1", CmdOp.NIGHT_ADD, null, path, clock, "test", text = "Refactor the checkout"))
+        assertTrue(add.ok); assertTrue(add.text.startsWith("queued for tonight: ")); val job = add.job!!
+        assertEquals(3, tr.state.first().night.items!!.size); assertEquals(3, tr.state.first().night.queued)
+        assertFalse(tr.send(Cmd("n2", CmdOp.NIGHT_ADD, null, "/nowhere", clock, "test", text = "x")).ok)
+        assertFalse(tr.send(Cmd("n3", CmdOp.NIGHT_ADD, null, path, clock, "test", text = "  ")).ok)
+        val rm = tr.send(Cmd("n4", CmdOp.NIGHT_REMOVE, null, job, clock, "test"))
+        assertTrue(rm.ok); assertEquals("removed from tonight's queue: $job", rm.text)
+        assertEquals(2, tr.state.first().night.items!!.size)
+        assertFalse(tr.send(Cmd("n5", CmdOp.NIGHT_REMOVE, null, "ffffffff", clock, "test")).ok)
+    }
 }
+

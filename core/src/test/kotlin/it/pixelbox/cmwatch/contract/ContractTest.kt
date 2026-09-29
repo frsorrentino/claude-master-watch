@@ -76,8 +76,8 @@ class ContractTest {
         val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
         // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
-        // Contratto 1.13: uno in più, il launch con il primo messaggio.
-        assertEquals(12, results.size); assertEquals(3, results.count { !it.ok })
+        // Contratto 1.13: uno in più, il launch con il primo messaggio. Contratto 1.17: night_add e night_remove.
+        assertEquals(14, results.size); assertEquals(3, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
@@ -165,4 +165,30 @@ class ContractTest {
         val s = ContractJson.decodeState(Fixtures.stateIdle.replaceFirst("\"host\"", "\"extra\": 1, \"host\""))
         assertEquals("crostini-demo", s.host)
     }
+
+    // Contratto 1.17 (29/09, richiesta R3 dell'app): la coda della notte modificabile. `night.items` c'è sempre per un
+    // relay che la supporta, anche vuota; assente = relay precedente, e l'app lo dice invece di fallire.
+    @Test fun nightQueueItemsAndCommands() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val items = s.night.items!!
+        assertEquals(listOf("a3f09c1e", "7b21d4e8"), items.map { it.id })
+        assertEquals("ledger-api", items[1].name); assertNull(items[1].started); assertEquals(1789210620L, items[1].added)
+        assertTrue(items.all { !it.prompt.contains("…") && !it.prompt.contains("\n") })
+        assertEquals(emptyList<NightItem>(), ContractJson.decodeState(Fixtures.stateIdle).night.items)
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+        val add = cmds.single { it.op == CmdOp.NIGHT_ADD }
+        assertEquals("/home/demo/workspaces/work/clients/ledger-api", add.arg); assertTrue(add.text!!.isNotBlank())
+        assertEquals("7b21d4e8", res.single { it.id == add.id }.job)
+        val remove = cmds.single { it.op == CmdOp.NIGHT_REMOVE }
+        assertEquals("5d0e6b92", remove.arg); assertTrue(res.single { it.id == remove.id }.ok)
+        assertTrue(ContractJson.encode(add).contains("\"op\":\"night_add\""))
+    }
+
+    @Test fun olderRelayHasNoNightItems() {
+        val old = Fixtures.stateIdle.replace(Regex(",\\s*\"items\"\\s*:\\s*\\[\\s*\\]"), "")
+        assertNull(ContractJson.decodeState(old).night.items)
+    }
 }
+
