@@ -7,7 +7,7 @@ set -uo pipefail
 MODE=${1:?probe|record|setup|teardown}; shift || true
 A=${ADB:-/usr/bin/adb}; D=${WATCH:?serve WATCH=IP:PORTA}
 OUT=${OUT:-$(cd "$(dirname "$0")" && pwd)/out/clips}; mkdir -p "$OUT"
-PKG=it.pixelbox.cmwatch; ACT=$PKG/.wear.MainActivity
+PKG=com.francescosorrentino.cmaster; ACT=$PKG/it.pixelbox.cmwatch.wear.MainActivity
 # adb senza fili cade senza avviso (17/09 02:23, a metà della scena 4): se il comando fallisce si ricollega e si riprova una volta.
 sh() { timeout 30 "$A" -s "$D" shell "$@" || { timeout 20 "$A" connect "$D" >/dev/null 2>&1; timeout 30 "$A" -s "$D" shell "$@"; }; }
 pause() { sleep "$1"; }

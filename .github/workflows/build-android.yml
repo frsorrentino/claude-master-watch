@@ -72,7 +72,7 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
-        # Anche gli AAB per Play (26/09): stesso pacchetto, versionCode 11 telefono e 12 orologio.
+        # Anche gli AAB per Play (26/09): stesso pacchetto, versionCode 21 telefono e 22 orologio (pacchetto com.francescosorrentino.cmaster dal 29/09).
         run: ./gradlew :wear:assembleRelease :mobile:assembleRelease :wear:bundleRelease :mobile:bundleRelease --console=plain -x lint -x test
       - uses: actions/upload-artifact@v4
         with:

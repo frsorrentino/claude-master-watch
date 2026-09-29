@@ -1,5 +1,9 @@
 # Play Console: cosa fa Franz, in ordine (26/09/2026)
 
+> **29/09/2026:** il pacchetto pubblicato diventa `com.francescosorrentino.cmaster` (versionCode 21 e 22), con un'app
+> nuova in Console. I passi sono in `2026-09-29-play-nuovo-pacchetto-passi-franz.md`; dove qui sotto si legge
+> `it.pixelbox.cmwatch` si intende la vecchia app.
+
 Pezzo 2 del design `2026-09-24-app-telefono-fondamenta-design.md`. Qui ci sono solo i passi che richiedono Franz nella
 Play Console. Tutto il resto lo preparo io: i bundle firmati, la privacy policy, le risposte per la sicurezza dei dati,
 i testi della scheda e le immagini. Requisiti verificati il 26/09 sulle pagine di aiuto di Play (fonti in fondo).

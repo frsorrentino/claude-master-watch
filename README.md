@@ -107,7 +107,8 @@ the phone and of the watch. Firebase sees blobs, never your prompts or your proj
 
 The repository has four Gradle modules: `wear` (the watch app), `mobile` (the phone app),
 `core` (contract, crypto and rules shared by both) and `ui-tokens`. Phone and watch apps share
-the package `it.pixelbox.cmwatch`, as one Play listing will.
+the application id `com.francescosorrentino.cmaster`, as one Play listing does (the Kotlin
+packages keep the older `it.pixelbox.cmwatch` name).
 
 1. **The plugin** on your PC: see above.
 2. **Firebase, guided**: `claude-master relay setup` (`--dry-run` first to see the steps). It

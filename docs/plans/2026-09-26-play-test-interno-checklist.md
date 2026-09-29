@@ -1,5 +1,9 @@
 # Test interno su Play: checklist per Franz (26/09/2026)
 
+> **29/09/2026:** il pacchetto pubblicato diventa `com.francescosorrentino.cmaster` (versionCode 21 e 22), con un'app
+> nuova in Console. I passi sono in `2026-09-29-play-nuovo-pacchetto-passi-franz.md`; dove qui sotto si legge
+> `it.pixelbox.cmwatch` si intende la vecchia app.
+
 Questi passi richiedono l'account Google di Franz e la Play Console. Ogni passo dice cosa fare e cosa copiare; i testi
 da incollare sono in fondo. Il quadro completo, fino alla produzione, è in `2026-09-26-play-console-passi-franz.md`.
 

@@ -15,13 +15,13 @@ android {
     compileSdk = 36
     defaultConfig {
         // Lo stesso dell'orologio: il canale di Wear OS unisce solo app con stesso pacchetto e stessa firma.
-        applicationId = "it.pixelbox.cmwatch"
+        applicationId = "com.francescosorrentino.cmaster"
         minSdk = 33
         targetSdk = 36
         // Stesso pacchetto su Play per telefono e orologio: versionCode = release × 10 + fattore di forma
         // (1 telefono, 2 orologio), unici nella scheda e con l'orologio sempre sopra il telefono.
-        versionCode = 11
-        versionName = "0.1"
+        versionCode = 21
+        versionName = "0.2"
     }
     buildFeatures { compose = true }
     compileOptions {
