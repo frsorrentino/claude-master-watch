@@ -38,7 +38,21 @@ leggibile da altri o dentro un checkout git.
 `--dry-run` stampa le richieste senza mandarle. Nessuna chiamata all'API finché Franz non ha creato l'account di
 servizio.
 
-## S. Account di servizio per l'API (15 minuti, una volta)
+## Stato verificato con l'API (29/09/2026, 15:25)
+
+`scripts/play.py status`, di sola lettura, risponde con la chiave dell'account di servizio: l'app `it.pixelbox.cmwatch`
+esiste e l'account di servizio vi ha accesso. Le sezioni S, B e D sono quindi fatte:
+
+```
+internal       completed  11  0.1 (11)
+wear:internal  completed  12  0.1 (12)
+production, beta, alpha, wear:beta, wear:production: nessuna release
+```
+
+Differenza dal piano: la Console ha messo il bundle dell'orologio sulla traccia dedicata `wear:internal`, non sulla
+traccia comune. Per il test chiuso servono quindi i tester su tutte e due le tracce. Lo script oggi lavora sulle tracce
+comuni (`alpha`); prima di usarlo per il test chiuso va verificato sulle tracce `wear:`.
+
 
 - [ ] <https://console.cloud.google.com> → nuovo progetto «claude-master-play». Un progetto a parte da quello Firebase
       del relay, così la chiave di Play non tocca il bus.
@@ -92,8 +106,9 @@ Fatto il 26/09 alle 20:37: il gruppo `claude-master-testers@googlegroups.com` es
       - spuntare le due dichiarazioni.
 - [ ] **Scheda dello Store → Scheda principale:** incollare i testi B1 (en-US). Aggiungere la traduzione «Italiano –
       it-IT» con i testi B2.
-      - Icona e grafica: se la Console le chiede già per il test interno, usare i file che ti mando in `docs/play/`.
-        Altrimenti arrivano prima del test chiuso.
+      - Icona e grafica, scelte da Franz il 29/09: icona B «luce» in `docs/play/icon-512.png`, grafica in evidenza B
+        «domanda» in `docs/play/feature-graphic-1024x500.png`. Le varianti A restano in `docs/play/icona/` e
+        `docs/play/grafica/`.
 - [ ] **Impostazioni avanzate → Fattori di forma → Aggiungi → Wear OS.** Poi «Opt in to Wear OS and agree to the
       review policy». Lasciare le tracce comuni, senza la traccia dedicata a Wear OS.
 

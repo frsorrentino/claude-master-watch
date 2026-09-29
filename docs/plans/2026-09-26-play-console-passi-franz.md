@@ -81,8 +81,8 @@ Stato al 26/09 alle 20:42, verificato dal master nella Console:
 
 14. Incollare i testi e caricare le immagini che ti mando:
     - descrizione breve (80 caratteri) e descrizione completa, in italiano e in inglese;
-    - icona 512×512;
-    - grafica in evidenza 1024×500;
+    - icona 512×512: `docs/play/icon-512.png`, variante B «luce», scelta da Franz il 29/09;
+    - grafica in evidenza 1024×500: `docs/play/feature-graphic-1024x500.png`, variante B «domanda», scelta da Franz il 29/09;
     - almeno 2 screenshot del telefono;
     - screenshot dell'orologio: quadrati, almeno 384×384, senza cornice rotonda disegnata.
 
