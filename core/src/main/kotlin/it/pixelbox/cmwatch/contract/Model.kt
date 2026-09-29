@@ -36,6 +36,8 @@ enum class CmdOp {
     @SerialName("model") MODEL, @SerialName("effort") EFFORT,
     /** Contratto 1.17 (R3): la coda della notte dall'app. `arg` = cartella di un progetto, `text` = prompt; per remove `arg` = id. */
     @SerialName("night_add") NIGHT_ADD, @SerialName("night_remove") NIGHT_REMOVE,
+    /** Contratto 1.19 (R5): «Condividi». `session` = nome, `text` = messaggio, `arg` = id di /share o null (solo testo). */
+    @SerialName("report") REPORT,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -120,7 +122,11 @@ enum class CmdOp {
     val quota: Map<String, QuotaAccount> = emptyMap(),
     val projects: List<Project> = emptyList(),
     val night: Night = Night(), val recap: Recap = Recap(),
+    /** Contratto 1.19: presente = il relay accetta «Condividi»; `max_bytes` vale sulla stringa cifrata `enc`. */
+    val share: Share? = null,
 )
+
+@Serializable data class Share(@SerialName("max_bytes") val maxBytes: Int)
 
 @Serializable data class Event(
     val key: String, val kind: EventKind, val session: String? = null, val account: String? = null,

@@ -13,6 +13,8 @@ sealed class TransportException(msg: String) : Exception(msg) {
     class Timeout(id: String) : TransportException("no result for $id")
     class NotPaired : TransportException("not paired")
     class Network(msg: String) : TransportException(msg)
+    /** Contratto 1.19: l'immagine cifrata supera `share.max_bytes`. */
+    class TooLarge(size: Int, max: Int) : TransportException("share $size > $max")
 }
 
 /** Il bus con il PC. Due implementazioni: FakeTransport (fixture del contratto) e FirebaseTransport (RTDB). */
@@ -26,6 +28,8 @@ interface Transport {
     /** Scrive /cmd/<id> e attende /result/<id>; TransportException.Timeout dopo RESULT_TIMEOUT_MS. */
     suspend fun send(cmd: Cmd): CmdResult
     suspend fun pair(code: String, deviceName: String): PairingInfo
+    /** Contratto 1.19: scrive l'immagine cifrata in /share/<id> prima del comando `report`. */
+    suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int)
 
     companion object { const val RESULT_TIMEOUT_MS = 20_000L }
 }

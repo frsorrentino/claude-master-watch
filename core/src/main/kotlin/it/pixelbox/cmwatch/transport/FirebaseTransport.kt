@@ -95,6 +95,18 @@ class FirebaseTransport(
         return ContractJson.decodeState(open(Json.parseToJsonElement(body)))
     }
 
+    /** Busta come /cmd, in chiaro {mime, data}; il limite vale sulla stringa `enc` (contratto 1.19). Nulla si scrive oltre il limite. */
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) {
+        val plain = kotlinx.serialization.json.buildJsonObject {
+            put("mime", kotlinx.serialization.json.JsonPrimitive(mime))
+            put("data", kotlinx.serialization.json.JsonPrimitive(java.util.Base64.getEncoder().encodeToString(data)))
+        }.toString()
+        val doc = seal(plain)
+        val enc = Json.parseToJsonElement(doc).jsonObject.getValue("enc").jsonPrimitive.content
+        if (enc.length > maxBytes) throw TransportException.TooLarge(enc.length, maxBytes)
+        rtdb.put("share/$id", doc)
+    }
+
     override suspend fun send(cmd: Cmd): CmdResult {
         k()
         rtdb.put("cmd/${cmd.id}", seal(ContractJson.encode(cmd)))

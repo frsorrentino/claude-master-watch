@@ -161,6 +161,16 @@ class Repo(
         return cmd.id
     }
 
+    /**
+     * Contratto 1.19, «Condividi»: prima l'immagine cifrata in /share/<id>, poi `report` con quell'id; senza immagine solo il
+     * comando. Senza rete non si accoda: l'immagine non avrebbe dove stare, e il chiamante lo dice all'utente.
+     */
+    suspend fun report(session: String, text: String?, mime: String?, image: ByteArray?, maxBytes: Int): String {
+        if (!online()) throw TransportException.Network("offline")
+        val shareId = image?.let { bytes -> UUID.randomUUID().toString().also { transport.share(it, mime ?: "image/jpeg", bytes, maxBytes) } }
+        return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() })
+    }
+
     private suspend fun enqueue(cmd: Cmd) {
         val queued = _snapshot.value.pending.filter { it.status == PendingStatus.QUEUED }.map { it.cmd }
         if (queued.size >= MAX_QUEUE) { _notices.tryEmit(Notice.QueueFull); return }

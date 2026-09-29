@@ -77,7 +77,8 @@ class ContractTest {
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
         // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
         // Contratto 1.13: uno in più, il launch con il primo messaggio. Contratto 1.17: night_add e night_remove.
-        assertEquals(14, results.size); assertEquals(3, results.count { !it.ok })
+        // Contratto 1.19: tre report, uno rifiutato.
+        assertEquals(17, results.size); assertEquals(4, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
@@ -200,6 +201,24 @@ class ContractTest {
         assertTrue(night.title.isNotBlank()); assertNotNull(night.ref)
         assertTrue(ev.any { it.kind == EventKind.QUOTA && it.title.startsWith("✓") })
         assertTrue(ev.all { !it.body.contains("…") && !it.title.contains("\n") })
+    }
+
+    // Contratto 1.19 (29/09, richiesta R5): «Condividi» verso una sessione. `share` nello stato dice che il relay lo supporta.
+    @Test fun reportAndShareSignal() {
+        assertEquals(1_500_000, ContractJson.decodeState(Fixtures.stateIdle).share!!.maxBytes)
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+        val reports = cmds.filter { it.op == CmdOp.REPORT }
+        assertEquals(3, reports.size)
+        assertNotNull(reports[0].arg); assertNull(reports[1].arg)
+        assertEquals("sent to field-notes", res.single { it.id == reports[1].id }.text)
+        assertFalse(res.single { it.id == reports[2].id }.ok)
+    }
+
+    @Test fun olderRelayHasNoShare() {
+        val old = Fixtures.stateIdle.replace(Regex(",\\s*\"share\"\\s*:\\s*\\{[^}]*\\}"), "")
+        assertNull(ContractJson.decodeState(old).share)
     }
 }
 

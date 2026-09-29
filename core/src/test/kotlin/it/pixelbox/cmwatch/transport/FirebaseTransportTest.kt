@@ -142,4 +142,20 @@ class FirebaseTransportTest {
     @Test fun pairingWithUnknownCodeFails() {
         assertThrows(TransportException.Network::class.java) { runBlocking { transport(key = null).pair("000000", "w") } }
     }
+
+    // Contratto 1.19: l'immagine di «Condividi» va cifrata in /share/<id> prima del comando `report`.
+    @Test fun shareWritesTheSealedImage() = runBlocking {
+        val bytes = byteArrayOf(1, 2, 3, 4, 5)
+        transport().share("s1", "image/jpeg", bytes, maxBytes = 1_500_000)
+        val plain = Json.parseToJsonElement(Blob.open(store.getValue("share/s1"), key)).jsonObject
+        assertEquals("image/jpeg", plain.getValue("mime").jsonPrimitive.content)
+        assertArrayEquals(bytes, java.util.Base64.getDecoder().decode(plain.getValue("data").jsonPrimitive.content))
+    }
+
+    @Test fun shareTooLargeIsRefusedBeforeWriting() = runBlocking {
+        try { transport().share("s2", "image/jpeg", ByteArray(2_000), maxBytes = 1_000); fail("expected TooLarge") }
+        catch (e: TransportException.TooLarge) { }
+        assertFalse(store.containsKey("share/s2"))
+    }
 }
+

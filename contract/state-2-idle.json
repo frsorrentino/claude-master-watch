@@ -99,5 +99,8 @@
       "xhigh",
       "max"
     ]
+  },
+  "share": {
+    "max_bytes": 1500000
   }
 }

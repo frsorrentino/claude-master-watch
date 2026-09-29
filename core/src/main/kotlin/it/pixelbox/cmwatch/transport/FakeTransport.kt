@@ -150,6 +150,10 @@ class FakeTransport(
 
     override suspend fun fetchState(): State = current.value
 
+    /** Demo: l'immagine resta in memoria, basta che `report` la trovi. */
+    private val shared = HashSet<String>()
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) { shared += id }
+
     override suspend fun send(cmd: Cmd): CmdResult {
         results[cmd.id]?.let { return it }
         val s = current.value
@@ -236,6 +240,15 @@ class FakeTransport(
                         ok("removed from tonight's queue: ${it.id}")
                     }
                 }
+            }
+            // Contratto 1.19 (R5): i testi del relay; la sessione deve essere viva.
+            CmdOp.REPORT -> when {
+                ses == null || ses.state == SessionState.GONE -> ko("no session ${cmd.session}")
+                (cmd.text?.length ?: 0) > 4000 -> ko("text too long: at most 4000 characters")
+                cmd.arg != null && cmd.arg !in shared -> ko("image missing or unreadable")
+                cmd.arg == null && cmd.text.isNullOrBlank() -> ko("empty report: nothing to send")
+                cmd.arg != null -> ok("sent to ${ses.name}: image saved as docs/segnalazioni/demo-${cmd.arg.take(8)}.jpg")
+                else -> ok("sent to ${ses.name}")
             }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")

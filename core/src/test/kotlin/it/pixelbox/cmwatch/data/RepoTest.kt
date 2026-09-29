@@ -62,6 +62,24 @@ class RepoTest {
         assertEquals(4, repo.snapshot.value.state!!.sessions.size)
     }
 
+    /** Contratto 1.19: l'immagine va in /share prima del comando, e il comando porta il suo id. */
+    @Test fun reportUploadsTheImageThenSendsTheCommand() = runTest {
+        val tr = fake()
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        val id = repo.report("atlas-shop", "grey button", "image/jpeg", byteArrayOf(1, 2, 3), maxBytes = 1_500_000); idle()
+        val r = repo.resultsById.value.getValue(id)
+        assertTrue(r.text, r.ok); assertTrue(r.text.startsWith("sent to atlas-shop: image saved as "))
+    }
+
+    @Test fun reportWithoutNetworkFailsInsteadOfQueueing() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle(); online = false
+        try { repo.report("atlas-shop", "x", "image/jpeg", byteArrayOf(1), maxBytes = 1_500_000); fail("expected Network") }
+        catch (e: TransportException.Network) { }
+        online = true
+    }
+
     /** Un transport il cui stato si cambia a mano, per mandare al Repo una sequenza di stati. */
     private class Pushing(base: FakeTransport, first: State) : Transport by base {
         val flow = MutableStateFlow(first)
