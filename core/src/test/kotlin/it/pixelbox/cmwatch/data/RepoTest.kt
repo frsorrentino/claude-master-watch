@@ -48,6 +48,20 @@ class RepoTest {
         assertEquals(6 + 14, repo.events.value.size)                  // i 6 della fixture e i 14 sparsi della demo (16/09)
     }
 
+    /** Revisione 29/09: una sveglia FCM a freddo arriva prima del caricamento da Room; lo stato vecchio non deve coprire quello fresco. */
+    @Test fun freshRefreshIsNotOverwrittenByTheStoreLoad() = runTest {
+        val mem = MemoryStore()
+        mem.saveState(ContractJson.decodeState(Fixtures.stateIdle), clock - 3600)
+        // Room lento al primo avvio: il GET della sveglia arriva prima.
+        val store = object : Store by mem { override suspend fun loadState() = mem.loadState().also { delay(1_000) } }
+        val repo = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(live = false)
+        testScheduler.advanceTimeBy(10)
+        repo.refresh()
+        idle()
+        assertEquals(4, repo.snapshot.value.state!!.sessions.size)
+    }
+
     /** Un transport il cui stato si cambia a mano, per mandare al Repo una sequenza di stati. */
     private class Pushing(base: FakeTransport, first: State) : Transport by base {
         val flow = MutableStateFlow(first)

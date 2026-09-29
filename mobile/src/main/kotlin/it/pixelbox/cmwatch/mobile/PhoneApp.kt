@@ -78,9 +78,15 @@ class PhoneApp : Application() {
         // Come sull'orologio: lo stream RTDB solo con l'app in primo piano; chiusa, la sveglia è FCM.
         repo.start(live = false)
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) = repo.live(true)
+            override fun onStart(owner: LifecycleOwner) { repo.live(true); scope.launch { repo.flushQueue() } }
             override fun onStop(owner: LifecycleOwner) = repo.live(false)
         })
+        // I comandi scritti senza rete partono quando torna (revisione 29/09: prima restavano in coda per sempre).
+        runCatching {
+            getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) { scope.launch { repo.flushQueue() } }
+            })
+        }
         notifier = PhoneNotifier(this).also { it.ensureChannels() }
         // Il diff che decide le notifiche gira su ogni nuovo /state, come sull'orologio (CmApp.react).
         scope.launch {
@@ -118,6 +124,7 @@ class PhoneApp : Application() {
     /** Stesso topic dell'orologio, solo accoppiati e fuori dalla Demo. */
     fun subscribeTopic() {
         val fb = FirebaseBoot.active ?: return
+        if (runBlocking { prefs.current() }.demoMode) return
         runCatching { FirebaseMessaging.getInstance().subscribeToTopic(fb.topic) }
             .onFailure { android.util.Log.w("cmwatch", "fcm: ${it.message}") }
     }
@@ -140,14 +147,16 @@ class PhoneApp : Application() {
         scope.launch {
             prefs.update { it.copy(demoMode = on) }
             transport.switchTo(choose(prefs.current()))
-            if (on) repo.seedQuotaSamples(fake.demoQuotaSamples()) else repo.refresh()
+            if (on) repo.seedQuotaSamples(fake.demoQuotaSamples()) else { repo.refresh(); subscribeTopic() }
         }
     }
 
     /** Dopo l'accoppiamento o il suo rifacimento: il Transport cambia a caldo. */
     fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())); subscribeTopic() } }
 
+    /** In Demo si è sempre «in linea»: i comandi vanno al finto, mai in coda verso il PC vero (revisione 29/09). */
     fun isOnline(): Boolean {
+        if (transport.active === fake) return true
         val cm = getSystemService(ConnectivityManager::class.java)
         val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

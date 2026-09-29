@@ -41,7 +41,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(PhoneBoard.quotaRows(state), key = { "q-" + it.account }) { QuotaLine(it) }
+            items(PhoneBoard.quotaRows(state, now, dataStale = snapshot.freshness is Freshness.Stale), key = { "q-" + it.account }) { QuotaLine(it) }
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
                 item(key = "stale") {
                     Text(

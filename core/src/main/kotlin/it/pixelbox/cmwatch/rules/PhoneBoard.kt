@@ -20,9 +20,13 @@ object PhoneBoard {
         return Group.entries.mapNotNull { g -> byGroup[g]?.let { Section(g, it) } }
     }
 
-    /** Personale prima, poi alfabetico. Un dato vecchio non mostra l'ora dell'azzeramento: potrebbe essere passata. */
-    fun quotaRows(state: State): List<QuotaRow> =
+    /**
+     * Personale prima, poi alfabetico. Nessuna ora inventata: un dato vecchio (del relay o dell'intero stato) o un
+     * azzeramento già passato non mostrano l'ora (revisione 29/09).
+     */
+    fun quotaRows(state: State, now: Long, dataStale: Boolean = false): List<QuotaRow> =
         state.quota.map { (name, q) ->
-            QuotaRow(name, Accounts.isPersonalQuota(name, q), q.h5, if (q.stale) null else q.resetH5, q.stale)
+            val reset = q.resetH5?.takeIf { !q.stale && !dataStale && it > now }
+            QuotaRow(name, Accounts.isPersonalQuota(name, q), q.h5, reset, q.stale)
         }.sortedWith(compareBy<QuotaRow> { !it.personal }.thenBy { it.account })
 }

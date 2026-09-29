@@ -60,7 +60,8 @@ class Repo(
 
     /** Apertura da Room: l'ultimo stato è leggibile anche senza rete, prima che il Transport risponda. */
     suspend fun loadFromStore() {
-        store.loadState()?.let { (s, _) -> _snapshot.update { it.copy(state = s, freshness = Freshness.of(s.ts, now())) } }
+        // Solo se non è già arrivato uno stato più nuovo: una sveglia FCM a freddo può precedere la lettura (revisione 29/09).
+        store.loadState()?.let { (s, _) -> _snapshot.update { if (it.state != null) it else it.copy(state = s, freshness = Freshness.of(s.ts, now())) } }
         _events.value = store.loadEvents()
         _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
         _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }

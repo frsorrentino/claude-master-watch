@@ -23,6 +23,8 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.PhonePrimary
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -108,13 +110,14 @@ class MainActivity : ComponentActivity() {
         }
         // Il gesto indietro dalla scheda mostra la regia mentre lo si trascina: la scheda si restringe verso la card.
         val seek = remember { SeekableTransitionState(open) }
-        LaunchedEffect(open) { if (seek.targetState != open) seek.animateTo(open) }
+        // Sempre fino in fondo: dopo un gesto completato seekTo ha già messo il bersaglio a null (revisione 29/09).
+        LaunchedEffect(open) { seek.animateTo(open) }
         PredictiveBackHandler(enabled = open != null && !settingsOpen && terminal == null) { progress ->
             try {
                 progress.collect { seek.seekTo(it.progress, targetState = null) }
                 open = null
             } catch (e: CancellationException) {
-                seek.animateTo(open)
+                withContext(NonCancellable) { seek.animateTo(open) }
             }
         }
         val flight = rememberTransition(seek, label = "fly")

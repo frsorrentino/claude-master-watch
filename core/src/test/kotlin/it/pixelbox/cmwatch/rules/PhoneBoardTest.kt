@@ -33,13 +33,19 @@ class PhoneBoardTest {
     }
 
     @Test fun quotaPersonalFirst() {
-        val q = PhoneBoard.quotaRows(state)
+        val q = PhoneBoard.quotaRows(state, now = 100)
         assertEquals(listOf("personale", "lavoro"), q.map { it.account })
         assertEquals(PhoneBoard.QuotaRow("personale", true, 62, 400, false), q[0])
     }
 
     @Test fun staleOrMissingResetInventsNoTime() {
-        val q = PhoneBoard.quotaRows(state.copy(quota = mapOf("personale" to QuotaAccount(h5 = 40, resetH5 = 400, stale = true))))
+        val q = PhoneBoard.quotaRows(now = 100, state = state.copy(quota = mapOf("personale" to QuotaAccount(h5 = 40, resetH5 = 400, stale = true))))
         assertNull(q[0].resetAt); assertTrue(q[0].stale)
     }
+
+    @Test fun passedResetShowsNoTime() =
+        assertNull(PhoneBoard.quotaRows(state, now = 450).first { it.account == "personale" }.resetAt)
+
+    @Test fun oldSnapshotShowsNoTime() =
+        assertNull(PhoneBoard.quotaRows(state, now = 100, dataStale = true).first { it.account == "personale" }.resetAt)
 }
