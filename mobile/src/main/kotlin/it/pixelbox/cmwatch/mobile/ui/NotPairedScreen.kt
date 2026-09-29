@@ -22,16 +22,17 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** Primo avvio: due righe e un solo bottone pieno (design 24/09, schermata 1). */
 @Composable
-fun NotPairedScreen(onPair: () -> Unit, onPaste: () -> Unit) {
+fun NotPairedScreen(onPair: () -> Unit, onPaste: () -> Unit, onDemo: () -> Unit) {
     Column(
         Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding().padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Spacer(Modifier.weight(1f))
+        it.pixelbox.cmwatch.mobile.ui.art.ScanScene(Modifier.fillMaxWidth().weight(1f))
         Text(stringResource(R.string.not_paired_title), style = MaterialTheme.typography.headlineMedium, color = CmColors.text)
         Text(stringResource(R.string.not_paired_body), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
         Spacer(Modifier.weight(1f))
         Button(onClick = onPair, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.pair_button)) }
         TextButton(onClick = onPaste, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.paste_code), color = CmColors.actionIcon) }
+        TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.try_demo), color = CmColors.actionIcon) }
     }
 }
