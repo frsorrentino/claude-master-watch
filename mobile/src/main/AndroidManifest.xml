@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".PhoneApp"
@@ -37,6 +38,11 @@
                 <data android:scheme="wear" android:host="*" android:path="/cmwatch_wear" />
             </intent-filter>
         </service>
+
+        <service android:name=".push.PhoneMessagingService" android:exported="false">
+            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
+        </service>
+        <receiver android:name=".push.ReplyReceiver" android:exported="false" />
 
         <!-- Firebase lo avvia l'app, con la configurazione del QR (design 24/09). -->
         <provider

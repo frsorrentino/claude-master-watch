@@ -78,6 +78,13 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Main(demo: Boolean, ttsMinChars: Int, host: String?, pairingJson: String?, onRepair: () -> Unit) {
         val snap by app.repo.snapshot.collectAsStateWithLifecycle()
+        // Il permesso delle notifiche si chiede solo accoppiati, mai in Demo.
+        val askNotifications = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
+        LaunchedEffect(demo) {
+            if (!demo && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
         val events by app.repo.events.collectAsStateWithLifecycle()
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()

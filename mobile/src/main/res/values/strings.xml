@@ -77,4 +77,7 @@
     <string name="privacy">Privacy</string>
     <string name="version">Versione %1$s</string>
     <string name="privacy_url" translatable="false">https://github.com/frsorrentino/claude-master-watch/blob/master/PRIVACY.md</string>
+    <string name="channel_questions">Domande</string>
+    <string name="channel_quiet">Avvisi silenziosi</string>
+    <string name="waiting_network">In attesa di rete</string>
 </resources>

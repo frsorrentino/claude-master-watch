@@ -4,12 +4,20 @@ import android.app.Application
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import it.pixelbox.cmwatch.crypto.Pairing
 import it.pixelbox.cmwatch.data.Repo
 import it.pixelbox.cmwatch.data.RoomStore
+import com.google.firebase.messaging.FirebaseMessaging
+import it.pixelbox.cmwatch.contract.State
+import it.pixelbox.cmwatch.mobile.push.PhoneNotifier
+import it.pixelbox.cmwatch.mobile.push.WatchPresence
 import it.pixelbox.cmwatch.mobile.pair.KeystoreKeyWrap
+import it.pixelbox.cmwatch.pairing.PairingRecord
+import it.pixelbox.cmwatch.rules.PhoneAlert
+import it.pixelbox.cmwatch.rules.Wake
 import it.pixelbox.cmwatch.mobile.pair.PairingController
 import it.pixelbox.cmwatch.mobile.pair.PcPairer
 import it.pixelbox.cmwatch.mobile.pair.SdkPhoneFirebase
@@ -30,6 +38,9 @@ import it.pixelbox.cmwatch.transport.Transport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -39,6 +50,9 @@ class PhoneApp : Application() {
     lateinit var pairing: PairingController
     lateinit var transport: SwitchableTransport
     lateinit var repo: Repo
+    lateinit var notifier: PhoneNotifier
+    private val watch by lazy { WatchPresence(this) }
+    @Volatile private var lastState: State? = null
     val phoneName: String by lazy {
         android.provider.Settings.Global.getString(contentResolver, android.provider.Settings.Global.DEVICE_NAME) ?: android.os.Build.MODEL
     }
@@ -67,6 +81,45 @@ class PhoneApp : Application() {
             override fun onStart(owner: LifecycleOwner) = repo.live(true)
             override fun onStop(owner: LifecycleOwner) = repo.live(false)
         })
+        notifier = PhoneNotifier(this).also { it.ensureChannels() }
+        // Il diff che decide le notifiche gira su ogni nuovo /state, come sull'orologio (CmApp.react).
+        scope.launch {
+            repo.snapshot.map { it.state }.filterNotNull().distinctUntilChanged().collect { cur ->
+                val prev = lastState; lastState = cur
+                if (prev != null) react(prev, cur)
+            }
+        }
+        subscribeTopic()
+    }
+
+    private fun foreground(): Boolean =
+        runCatching { ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) }.getOrDefault(false)
+
+    /** Notifiche dal diff degli stati: con l'app chiusa, e mai in Demo. L'orologio avvisa per primo (PhoneAlert). */
+    suspend fun react(prev: State, cur: State) {
+        val s = prefs.current()
+        if (s.demoMode || !s.paired) return
+        val watchPaired = PairingRecord.fromJson(s.pairingJson)?.watchName != null
+        for (a in Wake.plan(prev, cur)) when (a) {
+            is Wake.Action.Notify -> if (!foreground()) {
+                val mode = PhoneAlert.mode(a.kind, watchPaired, watchPaired && watch.reachable())
+                when (a.kind) {
+                    Wake.NotifyKind.QUESTION -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.question(it, mode) }
+                    Wake.NotifyKind.OUTCOME -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.outcome(it, mode) }
+                    Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.h5?.let { notifier.quota(acc, "$acc · $it%") } }
+                    Wake.NotifyKind.GONE -> Unit
+                }
+            }
+            is Wake.Action.CloseQuestion -> notifier.closeQuestion(a.session)
+            else -> Unit
+        }
+    }
+
+    /** Stesso topic dell'orologio, solo accoppiati e fuori dalla Demo. */
+    fun subscribeTopic() {
+        val fb = FirebaseBoot.active ?: return
+        runCatching { FirebaseMessaging.getInstance().subscribeToTopic(fb.topic) }
+            .onFailure { android.util.Log.w("cmwatch", "fcm: ${it.message}") }
     }
 
     /** Firebase solo se accoppiato, con la chiave nel vault e Firebase avviato; altrimenti la Demo. */
@@ -92,7 +145,7 @@ class PhoneApp : Application() {
     }
 
     /** Dopo l'accoppiamento o il suo rifacimento: il Transport cambia a caldo. */
-    fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())) } }
+    fun reconfigure() { scope.launch { transport.switchTo(choose(prefs.current())); subscribeTopic() } }
 
     fun isOnline(): Boolean {
         val cm = getSystemService(ConnectivityManager::class.java)

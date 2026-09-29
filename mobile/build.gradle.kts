@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.coroutines.play.services)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.messaging)
     implementation(libs.play.services.wearable)
     implementation(libs.play.services.code.scanner)
     implementation(libs.wear.remote.interactions)
