@@ -45,7 +45,7 @@ fun PairingScreen(ui: PairUi, onRetry: () -> Unit, onRescan: () -> Unit, onWitho
         StepRow(stringResource(R.string.step_watch), watchNote(ui), ui.steps.getValue(Step.WATCH))
         StepRow(stringResource(R.string.step_pc), ui.host, ui.steps.getValue(Step.PC))
         ui.fail?.let { Text(stringResource(failText(it)), style = MaterialTheme.typography.bodyLarge, color = CmColors.gone) }
-        Spacer(Modifier.weight(1f))
+        it.pixelbox.cmwatch.mobile.ui.art.LinkScene(ui.steps.getValue(Step.PHONE), ui.steps.getValue(Step.WATCH), ui.steps.getValue(Step.PC), Modifier.fillMaxWidth().weight(1f))
         val big = Modifier.fillMaxWidth().height(56.dp)
         when {
             ui.phase == Phase.DONE -> Button(onDone, big) { Text(stringResource(R.string.pair_finish)) }
