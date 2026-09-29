@@ -16,6 +16,6 @@ class DiaryScreenTest {
     )
     private val quota = listOf(Event("q1", EventKind.QUOTA, account = "personale", ts = st.ts, title = "personale al 95%", body = "si azzera alle 18:40"))
 
-    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme { DiaryScreen(st, quota, 120, {}) } }
-    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme { DiaryScreen(st.copy(recap = Recap(), night = Night()), emptyList(), 120, {}) } }
+    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, 120, {}) } }
+    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night()), emptyList(), 120, {}) } }
 }

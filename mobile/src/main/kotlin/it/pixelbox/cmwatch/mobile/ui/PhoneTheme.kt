@@ -22,9 +22,13 @@ private val scheme = darkColorScheme(
     outline = CmColors.line, error = CmColors.gone,
 )
 
-/** Solo scuro, i colori dell'orologio, niente colori dinamici (design 24/09, «Aspetto e movimento»). */
+/** Negli snapshot tutto fermo allo stato finale: Paparazzi fotografa il primo fotogramma, prima di ogni animazione. */
+val LocalStill = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** Solo scuro, i colori dell'orologio, niente colori dinamici (design 24/09, «Aspetto e movimento»). `still` per i test. */
 @Composable
-fun CmPhoneTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = scheme, content = content)
+fun CmPhoneTheme(still: Boolean = false, content: @Composable () -> Unit) =
+    androidx.compose.runtime.CompositionLocalProvider(LocalStill provides still) { MaterialTheme(colorScheme = scheme, content = content) }
 
 /** Tempi e curva del movimento: 250 ms e l'easing del sito; con le animazioni spente, subito lo stato finale. */
 object CmMotion {
@@ -32,9 +36,10 @@ object CmMotion {
     fun <T> spec(off: Boolean): FiniteAnimationSpec<T> = if (off) snap() else tween(250, easing = easing)
 }
 
-/** «Riduci animazioni» o animazioni di sistema a zero. Negli snapshot vale sempre «accese». */
+/** «Riduci animazioni» o animazioni di sistema a zero; negli snapshot (LocalStill) sempre «spente»: stato finale. */
 @Composable
 fun animationsOff(): Boolean {
+    if (LocalStill.current) return true
     if (LocalInspectionMode.current) return false
     val ctx = LocalContext.current
     return remember { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }

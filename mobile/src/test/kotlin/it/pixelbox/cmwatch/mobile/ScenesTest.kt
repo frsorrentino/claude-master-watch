@@ -15,9 +15,9 @@ class ScenesTest {
     @get:Rule val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it"), theme = "android:Theme.Material.NoActionBar")
     private val m = Modifier.fillMaxWidth().height(320.dp)
 
-    @Test fun scan() = paparazzi.snapshot { CmPhoneTheme { ScanScene(m) } }
-    @Test fun linkWatchFailed() = paparazzi.snapshot { CmPhoneTheme { LinkScene(StepState.DONE, StepState.FAILED, StepState.WAIT, m) } }
-    @Test fun paired() = paparazzi.snapshot { CmPhoneTheme { PairedScene(watch = true, m) } }
-    @Test fun emptySessions() = paparazzi.snapshot { CmPhoneTheme { EmptySessionsScene(m) } }
-    @Test fun emptyDiary() = paparazzi.snapshot { CmPhoneTheme { EmptyDiaryScene(m) } }
+    @Test fun scan() = paparazzi.snapshot { CmPhoneTheme(still = true) { ScanScene(m) } }
+    @Test fun linkWatchFailed() = paparazzi.snapshot { CmPhoneTheme(still = true) { LinkScene(StepState.DONE, StepState.FAILED, StepState.WAIT, m) } }
+    @Test fun paired() = paparazzi.snapshot { CmPhoneTheme(still = true) { PairedScene(watch = true, m) } }
+    @Test fun emptySessions() = paparazzi.snapshot { CmPhoneTheme(still = true) { EmptySessionsScene(m) } }
+    @Test fun emptyDiary() = paparazzi.snapshot { CmPhoneTheme(still = true) { EmptyDiaryScene(m) } }
 }

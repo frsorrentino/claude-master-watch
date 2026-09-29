@@ -13,7 +13,7 @@ class SessionSheetTest {
     private val st = ContractJson.decodeState(File("../contract/state-1-question.json").readText())
     private val none = SheetActions({}, {}, { _, _ -> }, {}, {}, {}, {}, {}, {})
 
-    @Test fun sheetQuestion() = paparazzi.snapshot { CmPhoneTheme { SessionSheet(st.sessions.first { it.question != null }, st.ts, emptyList(), 120, none) } }
-    @Test fun sheetIdleWithOutcome() = paparazzi.snapshot { CmPhoneTheme { SessionSheet(st.sessions.first { it.state == SessionState.IDLE }, st.ts, emptyList(), 120, none) } }
-    @Test fun sheetClosed() = paparazzi.snapshot { CmPhoneTheme { SessionSheet(st.sessions.first().copy(state = SessionState.GONE, question = null), st.ts, emptyList(), 120, none) } }
+    @Test fun sheetQuestion() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.question != null }, st.ts, emptyList(), 120, none) } }
+    @Test fun sheetIdleWithOutcome() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.state == SessionState.IDLE }, st.ts, emptyList(), 120, none) } }
+    @Test fun sheetClosed() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first().copy(state = SessionState.GONE, question = null), st.ts, emptyList(), 120, none) } }
 }

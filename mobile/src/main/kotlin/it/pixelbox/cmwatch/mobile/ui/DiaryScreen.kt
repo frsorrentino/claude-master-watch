@@ -35,7 +35,7 @@ fun DiaryScreen(state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpea
     }
     LazyColumn(Modifier.fillMaxSize().background(CmColors.bg), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (recap.items.isNotEmpty()) {
-            item { Text(stringResource(R.string.diary_title, dateLabel(recap.date)), style = MaterialTheme.typography.titleLarge, color = CmColors.text) }
+            item { Text(stringResource(R.string.diary_title, dateLabel(recap.date, androidx.compose.ui.platform.LocalConfiguration.current.locales[0])), style = MaterialTheme.typography.titleLarge, color = CmColors.text) }
             items(recap.items) { it ->
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(it.project, fontWeight = FontWeight.SemiBold, color = CmColors.text, style = MaterialTheme.typography.titleSmall)
@@ -65,5 +65,6 @@ fun DiaryScreen(state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpea
     }
 }
 
-private fun dateLabel(iso: String): String =
-    runCatching { LocalDate.parse(iso).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)) }.getOrDefault(iso)
+/** Nella lingua del telefono, non in quella della JVM (negli snapshot usciva in inglese). */
+private fun dateLabel(iso: String, locale: java.util.Locale): String =
+    runCatching { LocalDate.parse(iso).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)) }.getOrDefault(iso)

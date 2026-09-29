@@ -15,27 +15,27 @@ class PhoneScreensTest {
     @get:Rule
     val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it"), theme = "android:Theme.Material.NoActionBar")
 
-    @Test fun notPaired() = paparazzi.snapshot { CmPhoneTheme { NotPairedScreen(onPair = {}, onPaste = {}, onDemo = {}) } }
+    @Test fun notPaired() = paparazzi.snapshot { CmPhoneTheme(still = true) { NotPairedScreen(onPair = {}, onPaste = {}, onDemo = {}) } }
 
     private fun steps(p: StepState, w: StepState, c: StepState) = mapOf(Step.PHONE to p, Step.WATCH to w, Step.PC to c)
 
     @Test fun pairingRunning() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.RUNNING, steps(StepState.DONE, StepState.WORKING, StepState.WAIT)), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.RUNNING, steps(StepState.DONE, StepState.WORKING, StepState.WAIT)), {}, {}, {}, {}, {}) }
     }
     @Test fun pairingNoWatch() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
     }
     @Test fun pairingWatchAppMissing() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.WATCH_APP_MISSING), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.WATCH_APP_MISSING), {}, {}, {}, {}, {}) }
     }
     @Test fun pairingDone() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.DONE, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.DONE, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
     }
     @Test fun pairingDoneWatchPending() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.PENDING, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.PENDING, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
     }
-    @Test fun paired() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = false, onRepair = {}) } }
-    @Test fun pairedWatchPending() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
+    @Test fun paired() = paparazzi.snapshot { CmPhoneTheme(still = true) { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = false, onRepair = {}) } }
+    @Test fun pairedWatchPending() = paparazzi.snapshot { CmPhoneTheme(still = true) { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
 }
 
 /** Le schermate del telefono con i caratteri di sistema grandi (1,3): i testi degli errori e dei passi restano interi (notte del 24/09). */
@@ -45,9 +45,9 @@ class PhoneLargeFontTest {
 
     private fun steps(p: StepState, w: StepState, c: StepState) = mapOf(Step.PHONE to p, Step.WATCH to w, Step.PC to c)
 
-    @Test fun notPairedLargeFont() = paparazzi.snapshot { CmPhoneTheme { NotPairedScreen(onPair = {}, onPaste = {}, onDemo = {}) } }
+    @Test fun notPairedLargeFont() = paparazzi.snapshot { CmPhoneTheme(still = true) { NotPairedScreen(onPair = {}, onPaste = {}, onDemo = {}) } }
     @Test fun pairingNoWatchLargeFont() = paparazzi.snapshot {
-        CmPhoneTheme { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
+        CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.NO_WATCH), {}, {}, {}, {}, {}) }
     }
-    @Test fun pairedWatchPendingLargeFont() = paparazzi.snapshot { CmPhoneTheme { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
+    @Test fun pairedWatchPendingLargeFont() = paparazzi.snapshot { CmPhoneTheme(still = true) { PairedScreen("penguin", "Pixel 9", "Pixel Watch 5", watchPending = true, onRepair = {}) } }
 }
