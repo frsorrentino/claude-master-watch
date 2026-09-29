@@ -21,7 +21,7 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
 @Composable
 fun TerminalScreen(name: String, text: String?, loading: Boolean, onRefresh: () -> Unit) {
     val off = animationsOff()
-    Column(Modifier.fillMaxSize().background(CmColors.bg)) {
+    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Text(name, style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.padding(20.dp))
         if (text == null) {
             Text(stringResource(R.string.terminal_empty), color = CmColors.text2, modifier = Modifier.weight(1f).padding(horizontal = 20.dp))

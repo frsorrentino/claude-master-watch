@@ -10,4 +10,5 @@ class Speech(ctx: Context) {
 
     fun speak(text: String) { if (ready) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "cm-" + text.hashCode()) }
     fun stop() { tts.stop() }
+    fun shutdown() { tts.shutdown() }
 }

@@ -26,7 +26,7 @@ fun AppShell(tab: Tab, demo: Boolean, onTab: (Tab) -> Unit, onSettings: () -> Un
         topBar = {
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Claude Master", style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.app_title), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))
                     IconButton(onClick = onSettings) { Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = CmColors.actionIcon) }
                 }
                 if (demo) {

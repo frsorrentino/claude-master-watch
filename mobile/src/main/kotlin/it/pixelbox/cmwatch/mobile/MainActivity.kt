@@ -93,6 +93,10 @@ class MainActivity : ComponentActivity() {
             }
         }
         val events by app.repo.events.collectAsStateWithLifecycle()
+        // Un comando rifiutato dal PC si dice in chiaro, con il motivo del relay (spec 29/09, «Errori»).
+        LaunchedEffect(Unit) {
+            app.repo.userResults.collect { r -> if (!r.ok && r.text.isNotBlank()) android.widget.Toast.makeText(this@MainActivity, r.text, android.widget.Toast.LENGTH_LONG).show() }
+        }
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         var tab by rememberSaveable { mutableStateOf(Tab.SESSIONS) }
@@ -125,7 +129,7 @@ class MainActivity : ComponentActivity() {
             val r = PairingRecord.fromJson(pairingJson)
             SettingsScreen(
                 host = host, phoneName = app.phoneName, watchName = r?.watchName, watchPending = r?.watchPending == true, demo = demo,
-                version = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty(),
+                version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() },
                 onRepair = onRepair, onDemo = { app.setDemo(it) },
                 onNotifications = { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)) },
                 onPrivacy = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_url)))) },
@@ -184,7 +188,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        speech.stop()
+        speech.shutdown()
         super.onDestroy()
     }
 }

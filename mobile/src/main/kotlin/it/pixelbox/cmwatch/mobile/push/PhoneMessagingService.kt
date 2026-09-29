@@ -11,6 +11,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * (onMessageReceived gira su un thread suo, con circa 10 s): tornando subito il processo poteva morire prima (revisione 29/09).
  */
 class PhoneMessagingService : FirebaseMessagingService() {
+    /** Token nuovo: l'iscrizione al topic si rifà, come sull'orologio. */
+    override fun onNewToken(token: String) { (application as PhoneApp).subscribeTopic() }
+
     override fun onMessageReceived(message: RemoteMessage) {
         val app = application as PhoneApp
         runBlocking { withTimeoutOrNull(8_000) { app.repo.refresh() } }

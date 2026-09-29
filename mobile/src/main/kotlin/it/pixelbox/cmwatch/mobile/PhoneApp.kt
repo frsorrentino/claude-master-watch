@@ -112,7 +112,7 @@ class PhoneApp : Application() {
                 when (a.kind) {
                     Wake.NotifyKind.QUESTION -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.question(it, mode) }
                     Wake.NotifyKind.OUTCOME -> cur.sessions.firstOrNull { it.name == a.session }?.let { notifier.outcome(it, mode) }
-                    Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.h5?.let { notifier.quota(acc, "$acc · $it%") } }
+                    Wake.NotifyKind.QUOTA -> a.session?.let { acc -> cur.quota[acc]?.h5?.let { notifier.quota(acc, getString(R.string.notif_quota, acc, it)) } }
                     Wake.NotifyKind.GONE -> Unit
                 }
             }

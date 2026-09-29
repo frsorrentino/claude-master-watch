@@ -34,7 +34,8 @@ data class SheetActions(
 /** La scheda sessione (design 29/09, schermata 2): domanda, esito, testo libero, azioni, un solo bottone pieno. */
 @Composable
 fun SessionSheet(s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions) {
-    var draft by rememberSaveable(s.id) { mutableStateOf("") }
+    // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
+    var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
