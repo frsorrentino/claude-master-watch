@@ -72,6 +72,15 @@ class PhoneNotifier(private val ctx: Context) {
             .setContentTitle(title).setContentIntent(open(account.hashCode())).setAutoCancel(true))
     }
 
+    /** Diario o resoconto pronti: una notifica silenziosa che apre l'app (il testo sta nella scheda Diario). */
+    fun diary(title: String) {
+        if (!ctx.getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled()) return
+        val prefs = kotlinx.coroutines.runBlocking { (ctx.applicationContext as it.pixelbox.cmwatch.mobile.PhoneApp).prefs.current() }
+        if (prefs.demoMode || !prefs.paired) return
+        post(title.hashCode(), NotificationCompat.Builder(ctx, CH_QUIET).setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title).setContentIntent(open(title.hashCode())).setAutoCancel(true))
+    }
+
     fun waitingNetwork(session: String) {
         post(id(session), NotificationCompat.Builder(ctx, CH_QUIET).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(session).setContentText(ctx.getString(R.string.waiting_network)).setOnlyAlertOnce(true))

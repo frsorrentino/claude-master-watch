@@ -17,9 +17,13 @@ class DiaryScreenTest {
             NightItem("7b21d4e8", "/w/ledger-api", "ledger-api", "Update the changelog for 2.4 and check the migration notes", 1789210620),
         )),
     )
+    private val history = listOf(
+        Event("r1", EventKind.RECAP, ts = st.ts - 86400, title = "Diario del 28/09", body = "Diario 28/09/2026 · 2 progetti\n✓ kb · indice rivisto\n✓ watch · piano A scritto", ref = "2026-09-28"),
+    )
+    private val night = Event("n1", EventKind.NIGHT_REPORT, ts = st.ts - 3600, title = "Notte: 2 lavori, 1 riuscito", body = "✓ atlas-shop: tre test instabili sistemati\n✗ ledger-api: migrazione non trovata", ref = "2026-09-29")
     private val quota = listOf(Event("q1", EventKind.QUOTA, account = "personale", ts = st.ts, title = "personale al 95%", body = "si azzera alle 18:40"))
 
-    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, 120, {}, onAdd = {}, onRemove = {}) } }
-    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night(items = emptyList())), emptyList(), 120, {}, onAdd = {}, onRemove = {}) } }
-    @Test fun diaryOldRelay() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(night = Night(queued = 1)), emptyList(), 120, {}, onAdd = {}, onRemove = {}) } }
+    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, history, night, 120, {}, onAdd = {}, onRemove = {}) } }
+    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night(items = emptyList())), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
+    @Test fun diaryOldRelay() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(night = Night(queued = 1)), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
 }

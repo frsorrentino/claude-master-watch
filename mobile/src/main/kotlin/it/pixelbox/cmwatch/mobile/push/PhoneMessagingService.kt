@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.mobile.push
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import it.pixelbox.cmwatch.mobile.PhoneApp
+import it.pixelbox.cmwatch.mobile.R
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -17,5 +18,10 @@ class PhoneMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val app = application as PhoneApp
         runBlocking { withTimeoutOrNull(8_000) { app.repo.refresh() } }
+        // Contratto 1.18: diario e resoconto della notte arrivano con il push; si avvisa in silenzio, il testo è nel Diario.
+        when (message.data["kind"]) {
+            "recap" -> app.notifier.diary(getString(R.string.notif_diary))
+            "night_report" -> app.notifier.diary(getString(R.string.notif_night))
+        }
     }
 }

@@ -21,6 +21,7 @@ import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
+import it.pixelbox.cmwatch.rules.PhoneDiary
 import it.pixelbox.cmwatch.rules.PhonePrimary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -147,7 +148,7 @@ class MainActivity : ComponentActivity() {
         AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }) {
             if (tab == Tab.DIARY && open == null) {
                 state?.let { st ->
-                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, ttsMinChars, speech::speak,
+                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::speak,
                         onAdd = { nightAdding = true },
                         onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
                 }

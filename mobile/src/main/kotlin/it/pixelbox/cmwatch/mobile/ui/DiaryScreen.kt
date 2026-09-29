@@ -1,11 +1,14 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -23,12 +26,12 @@ import java.time.format.FormatStyle
 /** Scheda Diario (design 29/09, schermata 5) con i dati del contratto di oggi: diario, notte, avvisi di quota. */
 @Composable
 fun DiaryScreen(
-    state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpeak: (String) -> Unit,
+    state: State, quotaEvents: List<Event>, history: List<Event>, nightReport: Event?, ttsMinChars: Int, onSpeak: (String) -> Unit,
     onAdd: () -> Unit, onRemove: (jobId: String) -> Unit,
 ) {
     val recap = state.recap
     val items = state.night.items
-    val empty = recap.items.isEmpty() && state.night.queued == 0 && state.night.running == null && quotaEvents.isEmpty() && items.isNullOrEmpty()
+    val empty = recap.items.isEmpty() && state.night.queued == 0 && state.night.running == null && quotaEvents.isEmpty() && items.isNullOrEmpty() && history.isEmpty() && nightReport == null
     if (empty) {
         Column(Modifier.fillMaxSize().background(CmColors.bg), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             EmptyDiaryScene(Modifier.fillMaxWidth().height(240.dp))
@@ -72,6 +75,20 @@ fun DiaryScreen(
                 }
             }
         }
+        // Contratto 1.18: il resoconto dell'ultima notte e i diari dei giorni precedenti, dagli eventi.
+        nightReport?.let { n ->
+            item(key = "night-report") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(n.title, style = MaterialTheme.typography.titleMedium, color = CmColors.text)
+                    Speakable(n.body, speak = true, onSpeak)
+                }
+            }
+        }
+        val older = history.filter { it.ref != recap.date }
+        if (older.isNotEmpty()) {
+            item(key = "older") { Text(stringResource(R.string.diary_previous), style = MaterialTheme.typography.titleMedium, color = CmColors.text) }
+            items(older, key = { "h-" + it.key }) { e -> PastDay(e, ttsMinChars, onSpeak) }
+        }
         if (quotaEvents.isNotEmpty()) {
             item { Text(stringResource(R.string.quota_alerts), style = MaterialTheme.typography.titleMedium, color = CmColors.text) }
             items(quotaEvents, key = { it.key }) { e ->
@@ -83,6 +100,16 @@ fun DiaryScreen(
         }
     }
     if (items != null) AddButton(onAdd)
+    }
+}
+
+/** Un giorno passato: il titolo, e il testo intero che si apre al tocco. */
+@Composable
+private fun PastDay(e: Event, ttsMinChars: Int, onSpeak: (String) -> Unit) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(e.key) { androidx.compose.runtime.mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().clickable { open = !open }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(e.title, color = CmColors.text, style = MaterialTheme.typography.titleSmall)
+        if (open) Speakable(e.body, speak = e.body.length > ttsMinChars, onSpeak)
     }
 }
 

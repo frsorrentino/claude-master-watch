@@ -84,4 +84,7 @@
     <string name="night_remove">Remove</string>
     <string name="night_started">started</string>
     <string name="night_update_pc">Update claude-master on the computer to manage the queue from here</string>
+    <string name="diary_previous">Previous days</string>
+    <string name="notif_diary">Today\'s diary is ready</string>
+    <string name="notif_night">The night report is ready</string>
 </resources>

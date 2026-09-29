@@ -86,4 +86,7 @@
     <string name="night_remove">Togli</string>
     <string name="night_started">partito</string>
     <string name="night_update_pc">Aggiorna claude-master sul PC per gestire la coda da qui</string>
+    <string name="diary_previous">Giorni precedenti</string>
+    <string name="notif_diary">Il diario di oggi è pronto</string>
+    <string name="notif_night">Il resoconto della notte è pronto</string>
 </resources>
