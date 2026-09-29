@@ -72,7 +72,7 @@ comuni (`alpha`); prima di usarlo per il test chiuso va verificato sulle tracce 
       chmod 600 ~/.config/claude-master-watch/play-service-account.json
       ```
 - [ ] **Play Console → Utenti e autorizzazioni → Invita nuovi utenti.** Come email, l'indirizzo dell'account di
-      servizio, `play-publisher@claude-master-play.iam.gserviceaccount.com`. **Autorizzazioni app → Claude Master App**:
+      servizio, `play-publisher@francesco-sorren-1474290000543.iam.gserviceaccount.com`. **Autorizzazioni app → Claude Master App**:
       - «Visualizza informazioni sull'app»;
       - «Rilascia nei canali di test»;
       - «Gestisci canali di test e modifica elenchi di tester»;

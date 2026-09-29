@@ -38,7 +38,7 @@ L'ordine conta: prima l'app nella Console e il relay, poi la release, poi i disp
       - Pubblico di destinazione: 18 e oltre;
       - Sicurezza dei dati: risposte C2;
       - App governative, finanziarie, sanitarie, notizie, VPN, ID pubblicità: no.
-- [ ] **Account di servizio.** Utenti e autorizzazioni → `play-publisher@claude-master-play.iam.gserviceaccount.com` →
+- [ ] **Account di servizio.** Utenti e autorizzazioni → `play-publisher@francesco-sorren-1474290000543.iam.gserviceaccount.com` →
       Autorizzazioni app → aggiungere la nuova app con gli stessi permessi della vecchia:
       - «Visualizza informazioni sull'app»;
       - «Rilascia nei canali di test»;
