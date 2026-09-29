@@ -1,0 +1,45 @@
+package it.pixelbox.cmwatch.rules
+
+import it.pixelbox.cmwatch.contract.*
+import org.junit.Assert.*
+import org.junit.Test
+
+class PhoneBoardTest {
+    private fun s(id: String, name: String, st: SessionState, account: String = "personale") =
+        Session(id = id, name = name, account = account, project = "p", state = st, since = 0)
+
+    private val state = State(v = 1, ts = 100, host = "pc", sessions = listOf(
+        s("1", "docs", SessionState.IDLE), s("2", "kb", SessionState.BUSY), s("3", "ledger", SessionState.WAITING),
+        s("4", "old", SessionState.GONE), s("5", "watch", SessionState.AWAITING), s("6", "kb", SessionState.BUSY, account = "lavoro"),
+    ), quota = mapOf(
+        "lavoro" to QuotaAccount(h5 = 18, resetH5 = 500, kind = "work"),
+        "personale" to QuotaAccount(h5 = 62, resetH5 = 400, kind = "personal"),
+    ))
+
+    @Test fun groupsInOrderAwaitingCountsAsWorking() {
+        val g = PhoneBoard.sections(state)
+        assertEquals(listOf(PhoneBoard.Group.WAITING, PhoneBoard.Group.WORKING, PhoneBoard.Group.IDLE, PhoneBoard.Group.CLOSED), g.map { it.group })
+        assertEquals(listOf("2", "6", "5"), g[1].sessions.map { it.id })
+    }
+
+    @Test fun sameNameOnTwoAccountsStaysTwoCards() {
+        val working = PhoneBoard.sections(state).first { it.group == PhoneBoard.Group.WORKING }
+        assertEquals(2, working.sessions.count { it.name == "kb" })
+    }
+
+    @Test fun emptyGroupsAreLeftOut() {
+        val only = state.copy(sessions = listOf(s("1", "docs", SessionState.IDLE)))
+        assertEquals(listOf(PhoneBoard.Group.IDLE), PhoneBoard.sections(only).map { it.group })
+    }
+
+    @Test fun quotaPersonalFirst() {
+        val q = PhoneBoard.quotaRows(state)
+        assertEquals(listOf("personale", "lavoro"), q.map { it.account })
+        assertEquals(PhoneBoard.QuotaRow("personale", true, 62, 400, false), q[0])
+    }
+
+    @Test fun staleOrMissingResetInventsNoTime() {
+        val q = PhoneBoard.quotaRows(state.copy(quota = mapOf("personale" to QuotaAccount(h5 = 40, resetH5 = 400, stale = true))))
+        assertNull(q[0].resetAt); assertTrue(q[0].stale)
+    }
+}
