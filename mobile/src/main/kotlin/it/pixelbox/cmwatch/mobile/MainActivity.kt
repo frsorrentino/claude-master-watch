@@ -105,6 +105,7 @@ class MainActivity : ComponentActivity() {
         var screenId by rememberSaveable { mutableStateOf<String?>(null) }
         var settingsOpen by rememberSaveable { mutableStateOf(false) }
         var launching by rememberSaveable { mutableStateOf(false) }
+        var nightAdding by rememberSaveable { mutableStateOf(false) }
         var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
@@ -145,7 +146,11 @@ class MainActivity : ComponentActivity() {
         }
         AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }) {
             if (tab == Tab.DIARY && open == null) {
-                state?.let { st -> DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, ttsMinChars, speech::speak) }
+                state?.let { st ->
+                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, ttsMinChars, speech::speak,
+                        onAdd = { nightAdding = true },
+                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
+                }
                 return@AppShell
             }
             SharedTransitionLayout {
@@ -169,6 +174,14 @@ class MainActivity : ComponentActivity() {
                         ))
                         else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onLaunch = { launching = true })
                     }
+                }
+            }
+        }
+        if (nightAdding && state != null) {
+            ModalBottomSheet(onDismissRequest = { nightAdding = false }) {
+                LaunchSheet(state, action = R.string.night_add) { project, prompt ->
+                    nightAdding = false
+                    if (prompt.isNotBlank()) scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, project.path, prompt) }
                 }
             }
         }

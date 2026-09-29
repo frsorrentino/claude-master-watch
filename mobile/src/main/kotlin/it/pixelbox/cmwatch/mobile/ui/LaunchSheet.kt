@@ -15,9 +15,9 @@ import it.pixelbox.cmwatch.rules.Accounts
 import it.pixelbox.cmwatch.rules.LaunchSuggest
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
-/** Il contenuto del foglio «Lancia» (design 29/09, schermata 4); il foglio stesso lo apre MainActivity. */
+/** Il contenuto del foglio «Lancia» (design 29/09, schermata 4), usato anche per «Aggiungi alla notte» (`action`). */
 @Composable
-fun LaunchSheet(state: State, onLaunch: (project: Project, firstMessage: String) -> Unit) {
+fun LaunchSheet(state: State, action: Int = R.string.launch, onLaunch: (project: Project, firstMessage: String) -> Unit) {
     val accounts = remember(state) {
         (state.quota.keys + state.projects.map { it.account }).distinct()
             .sortedWith(compareBy<String> { a -> !(state.quota[a]?.let { Accounts.isPersonalQuota(a, it) } ?: Accounts.personal(a, null)) }.thenBy { it })
@@ -46,6 +46,6 @@ fun LaunchSheet(state: State, onLaunch: (project: Project, firstMessage: String)
             onClick = { chosen?.let { onLaunch(it, first.trim()) } }, enabled = chosen != null,
             colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
             modifier = Modifier.fillMaxWidth().height(56.dp),
-        ) { Text(stringResource(R.string.launch)) }
+        ) { Text(stringResource(action)) }
     }
 }

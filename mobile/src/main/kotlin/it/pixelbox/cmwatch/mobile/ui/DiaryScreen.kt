@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,17 +22,23 @@ import java.time.format.FormatStyle
 
 /** Scheda Diario (design 29/09, schermata 5) con i dati del contratto di oggi: diario, notte, avvisi di quota. */
 @Composable
-fun DiaryScreen(state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpeak: (String) -> Unit) {
+fun DiaryScreen(
+    state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpeak: (String) -> Unit,
+    onAdd: () -> Unit, onRemove: (jobId: String) -> Unit,
+) {
     val recap = state.recap
-    val empty = recap.items.isEmpty() && state.night.queued == 0 && state.night.running == null && quotaEvents.isEmpty()
+    val items = state.night.items
+    val empty = recap.items.isEmpty() && state.night.queued == 0 && state.night.running == null && quotaEvents.isEmpty() && items.isNullOrEmpty()
     if (empty) {
         Column(Modifier.fillMaxSize().background(CmColors.bg), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             EmptyDiaryScene(Modifier.fillMaxWidth().height(240.dp))
             Text(stringResource(R.string.diary_empty), color = CmColors.text2, style = MaterialTheme.typography.bodyLarge)
+            if (items != null) AddButton(onAdd)
         }
         return
     }
-    LazyColumn(Modifier.fillMaxSize().background(CmColors.bg), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().background(CmColors.bg)) {
+    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (recap.items.isNotEmpty()) {
             item { Text(stringResource(R.string.diary_title, dateLabel(recap.date, androidx.compose.ui.platform.LocalConfiguration.current.locales[0])), style = MaterialTheme.typography.titleLarge, color = CmColors.text) }
             items(recap.items) { it ->
@@ -51,6 +56,20 @@ fun DiaryScreen(state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpea
                     color = CmColors.text, style = MaterialTheme.typography.titleSmall,
                 )
                 state.night.running?.let { Text(stringResource(R.string.night_running, it), color = CmColors.busy) }
+                // Contratto 1.17: senza `items` il relay è precedente e la coda non si tocca dall'app.
+                if (items == null) Text(stringResource(R.string.night_update_pc), color = CmColors.text2, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        items?.let { list ->
+            items(list, key = { "n-" + it.id }) { job ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(job.name, fontWeight = FontWeight.SemiBold, color = CmColors.text, style = MaterialTheme.typography.titleSmall)
+                        Text(job.prompt, color = CmColors.text2, style = MaterialTheme.typography.bodyMedium)
+                        if (job.started != null) Text(stringResource(R.string.night_started), color = CmColors.busy, style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = { onRemove(job.id) }, enabled = job.started == null) { Text(stringResource(R.string.night_remove)) }
+                }
             }
         }
         if (quotaEvents.isNotEmpty()) {
@@ -63,7 +82,16 @@ fun DiaryScreen(state: State, quotaEvents: List<Event>, ttsMinChars: Int, onSpea
             }
         }
     }
+    if (items != null) AddButton(onAdd)
+    }
 }
+
+/** Il solo bottone pieno della scheda Diario: «Aggiungi alla notte», solo con un relay 1.17. */
+@Composable
+private fun AddButton(onAdd: () -> Unit) = Button(
+    onClick = onAdd, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(56.dp),
+) { Text(stringResource(R.string.night_add)) }
 
 /** Nella lingua del telefono, non in quella della JVM (negli snapshot usciva in inglese). */
 private fun dateLabel(iso: String, locale: java.util.Locale): String =

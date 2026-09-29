@@ -82,4 +82,8 @@
     <string name="waiting_network">In attesa di rete</string>
     <string name="app_title" translatable="false">Claude Master</string>
     <string name="notif_quota">%1$s · %2$d%%</string>
+    <string name="night_add">Aggiungi alla notte</string>
+    <string name="night_remove">Togli</string>
+    <string name="night_started">partito</string>
+    <string name="night_update_pc">Aggiorna claude-master sul PC per gestire la coda da qui</string>
 </resources>

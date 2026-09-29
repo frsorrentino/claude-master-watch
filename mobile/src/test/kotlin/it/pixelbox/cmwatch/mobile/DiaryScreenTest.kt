@@ -12,10 +12,14 @@ class DiaryScreenTest {
     @get:Rule val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it"), theme = "android:Theme.Material.NoActionBar")
     private val st = ContractJson.decodeState(File("../contract/state-2-idle.json").readText()).copy(
         recap = Recap("2026-09-29", listOf(RecapItem("kb", "Distillata l'analisi Play", "Rivedere l'indice"), RecapItem("watch", "Specifica del pezzo 3"))),
-        night = Night(queued = 2, running = null),
+        night = Night(queued = 2, running = null, items = listOf(
+            NightItem("a3f09c1e", "/w/atlas-shop", "atlas-shop", "Go through the open issues labelled flaky and fix the real ones", 1789207200, started = 1789236000),
+            NightItem("7b21d4e8", "/w/ledger-api", "ledger-api", "Update the changelog for 2.4 and check the migration notes", 1789210620),
+        )),
     )
     private val quota = listOf(Event("q1", EventKind.QUOTA, account = "personale", ts = st.ts, title = "personale al 95%", body = "si azzera alle 18:40"))
 
-    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, 120, {}) } }
-    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night()), emptyList(), 120, {}) } }
+    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, 120, {}, onAdd = {}, onRemove = {}) } }
+    @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night(items = emptyList())), emptyList(), 120, {}, onAdd = {}, onRemove = {}) } }
+    @Test fun diaryOldRelay() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(night = Night(queued = 1)), emptyList(), 120, {}, onAdd = {}, onRemove = {}) } }
 }
