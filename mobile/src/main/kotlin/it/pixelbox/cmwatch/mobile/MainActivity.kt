@@ -5,6 +5,10 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.rememberTransition
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +22,7 @@ import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.PhonePrimary
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,7 +79,7 @@ class MainActivity : ComponentActivity() {
     }
 
     /** L'app accoppiata, o in Demo (design 29/09): due schede, scheda sessione, terminale, Lancia, impostazioni. */
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
     @Composable
     private fun Main(demo: Boolean, ttsMinChars: Int, host: String?, pairingJson: String?, onRepair: () -> Unit) {
         val snap by app.repo.snapshot.collectAsStateWithLifecycle()
@@ -98,13 +103,21 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
 
-        BackHandler(enabled = settingsOpen || terminal != null || open != null) {
-            when {
-                settingsOpen -> settingsOpen = false
-                terminal != null -> { terminal = null; screenId = null }
-                else -> open = null
+        BackHandler(enabled = settingsOpen || terminal != null) {
+            if (settingsOpen) settingsOpen = false else { terminal = null; screenId = null }
+        }
+        // Il gesto indietro dalla scheda mostra la regia mentre lo si trascina: la scheda si restringe verso la card.
+        val seek = remember { SeekableTransitionState(open) }
+        LaunchedEffect(open) { if (seek.targetState != open) seek.animateTo(open) }
+        PredictiveBackHandler(enabled = open != null && !settingsOpen && terminal == null) { progress ->
+            try {
+                progress.collect { seek.seekTo(it.progress, targetState = null) }
+                open = null
+            } catch (e: CancellationException) {
+                seek.animateTo(open)
             }
         }
+        val flight = rememberTransition(seek, label = "fly")
         if (settingsOpen) {
             val r = PairingRecord.fromJson(pairingJson)
             SettingsScreen(
@@ -123,26 +136,33 @@ class MainActivity : ComponentActivity() {
             })
             return
         }
-        val session = open?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
         AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }) {
-            when {
-                session != null -> SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
-                    answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
-                    allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
-                    send = { target, text ->
-                        scope.launch {
-                            if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
-                        }
-                    },
-                    follow = { on -> scope.launch { app.repo.command(if (on) CmdOp.FOLLOW else CmdOp.UNFOLLOW, session.name, null) } },
-                    reopen = { scope.launch { app.repo.command(CmdOp.REOPEN, session.name, null) } },
-                    terminal = { terminal = session.name; screenId = null },
-                    openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
-                    speak = speech::speak,
-                    retry = { id -> scope.launch { app.repo.retry(id) } },
-                ))
-                tab == Tab.SESSIONS -> SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onLaunch = { launching = true })
-                else -> state?.let { st -> DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, ttsMinChars, speech::speak) }
+            if (tab == Tab.DIARY && open == null) {
+                state?.let { st -> DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, ttsMinChars, speech::speak) }
+                return@AppShell
+            }
+            SharedTransitionLayout {
+                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }) { name ->
+                    CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
+                        val session = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
+                        if (session != null) SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
+                            answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
+                            allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
+                            send = { target, text ->
+                                scope.launch {
+                                    if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
+                                }
+                            },
+                            follow = { on -> scope.launch { app.repo.command(if (on) CmdOp.FOLLOW else CmdOp.UNFOLLOW, session.name, null) } },
+                            reopen = { scope.launch { app.repo.command(CmdOp.REOPEN, session.name, null) } },
+                            terminal = { terminal = session.name; screenId = null },
+                            openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
+                            speak = speech::speak,
+                            retry = { id -> scope.launch { app.repo.retry(id) } },
+                        ))
+                        else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onLaunch = { launching = true })
+                    }
+                }
             }
         }
         if (launching && state != null) {

@@ -70,7 +70,7 @@ fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier =
         s.state == SessionState.WAITING -> s.question?.text?.lineSequence()?.firstOrNull()
         else -> null
     }
-    Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp), modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp), modifier = modifier.fly("card-${s.id}").fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.height(IntrinsicSize.Min)) {
             Box(Modifier.width(4.dp).fillMaxHeight().alpha(breath).background(stateColor(s.state)))
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -35,7 +35,7 @@ data class SheetActions(
 @Composable
 fun SessionSheet(s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions) {
     var draft by rememberSaveable(s.id) { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(CmColors.bg)) {
+    Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
