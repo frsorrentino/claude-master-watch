@@ -99,4 +99,5 @@
     <string name="share_too_large">Immagine troppo grande anche ridotta: non mandata</string>
     <string name="share_offline">Nessuna rete: riprova quando torna</string>
     <string name="share_failed">Invio non riuscito: riprova</string>
+    <string name="chat_about_this">Parliamone</string>
 </resources>

@@ -97,4 +97,5 @@
     <string name="share_too_large">Image too large even reduced: not sent</string>
     <string name="share_offline">No network: retry when it is back</string>
     <string name="share_failed">Sending failed: retry</string>
+    <string name="chat_about_this">Chat about this</string>
 </resources>

@@ -29,6 +29,8 @@ data class SheetActions(
     val answer: (Int) -> Unit, val allowAll: () -> Unit, val send: (PhonePrimary.Target, String) -> Unit,
     val follow: (Boolean) -> Unit, val reopen: () -> Unit, val terminal: () -> Unit, val openInClaude: () -> Unit,
     val speak: (String) -> Unit, val retry: (cmdId: String) -> Unit,
+    /** «Chat about this» (contratto 1.10), come sull'orologio: la domanda resta gestibile anche senza opzioni. */
+    val chat: () -> Unit = {},
 )
 
 /** La scheda sessione (design 29/09, schermata 2): domanda, esito, testo libero, azioni, un solo bottone pieno. */
@@ -55,7 +57,8 @@ fun SessionSheet(s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int
                         q.options.forEach { o ->
                             FilledTonalButton(onClick = { actions.answer(o.n) }, modifier = Modifier.fillMaxWidth()) { Text(QuestionRules.optionLabel(o)) }
                         }
-                        if (q.kind == QuestionKind.PERMISSION) {
+                        OutlinedButton(onClick = actions.chat, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.chat_about_this)) }
+                        if (QuestionRules.allowAllVisible(q)) {
                             OutlinedButton(onClick = actions.allowAll, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.allow_all)) }
                         }
                     }

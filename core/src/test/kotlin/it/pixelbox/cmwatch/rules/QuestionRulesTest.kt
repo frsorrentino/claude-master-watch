@@ -15,6 +15,10 @@ class QuestionRulesTest {
         assertFalse(QuestionRules.needsLongPress(Tier.MEDIUM)); assertFalse(QuestionRules.needsLongPress(Tier.LOW))
     }
 
+    /** Dal vivo 30/09: un permesso senza opzioni lette (strumento Agent) non ha «non chiedere più», e il relay rifiuta allow_all. */
+    @Test fun allowAllHiddenWhenThePermissionHasNoOptions() =
+        assertFalse(QuestionRules.allowAllVisible(q.copy(kind = QuestionKind.PERMISSION, options = emptyList())))
+
     @Test fun allowAllOnlyForPermissionsBelowHigh() {
         assertFalse(QuestionRules.allowAllVisible(q))                                          // kind = ask
         assertTrue(QuestionRules.allowAllVisible(q.copy(kind = QuestionKind.PERMISSION)))

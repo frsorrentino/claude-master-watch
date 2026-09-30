@@ -8,7 +8,8 @@ import it.pixelbox.cmwatch.contract.Tier
 /** Regole della Domanda (design, sezioni 2 e 5): tier high con pressione lunga, «consenti sempre» mai per high. */
 object QuestionRules {
     fun needsLongPress(tier: Tier) = tier == Tier.HIGH
-    fun allowAllVisible(q: Question) = q.kind == QuestionKind.PERMISSION && q.tier != Tier.HIGH
+    /** Senza opzioni lette non c'è «non chiedere più»: il relay rifiuterebbe allow_all (dal vivo, 30/09). */
+    fun allowAllVisible(q: Question) = q.kind == QuestionKind.PERMISSION && q.tier != Tier.HIGH && q.options.isNotEmpty()
     /**
      * «n · etichetta» sulla prima riga che dice qualcosa: l'anteprima dell'opzione arriva disegnata a caratteri
      * (┌─│) e sul tasto diventava righe vuote e un nome tagliato (Franz, 15/09 16:13).

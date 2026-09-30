@@ -139,6 +139,8 @@ class MainActivity : ComponentActivity() {
             return
         }
         terminal?.let { name ->
+            // Dal vivo 30/09: il terminale si legge da solo all'apertura, non dopo «Aggiorna».
+            LaunchedEffect(name) { if (screenId == null) screenId = app.repo.command(CmdOp.SCREEN, name, null) }
             val text = screenId?.let { results[it]?.text }
             TerminalScreen(name, text, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { screenId = app.repo.command(CmdOp.SCREEN, name, null) }
@@ -172,6 +174,7 @@ class MainActivity : ComponentActivity() {
                             openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
                             speak = speech::speak,
                             retry = { id -> scope.launch { app.repo.retry(id) } },
+                            chat = { scope.launch { app.repo.chat(session.name) } },
                         ))
                         else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onLaunch = { launching = true })
                     }
