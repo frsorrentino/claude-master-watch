@@ -1,6 +1,6 @@
 # Telefono: invio, modello ed effort, chat con stato (design, 30/09/2026)
 
-Richiesta di Franz dopo la prima prova dal vivo del restyling (30/09 20:17): il messaggio inviato spariva, il tasto
+Approvato da Franz il 30/09 alle 20:26, con le parti 4 e 5. Richiesta di Franz dopo la prima prova dal vivo del restyling (30/09 20:17): il messaggio inviato spariva, il tasto
 «Invia» finiva sotto la tastiera, modello ed effort si vedevano ma non si cambiavano, e un messaggio inviato deve
 restare visibile come in una chat, con il suo stato. Scelta di Franz alle 20:25: nella chat anche l'esito del turno.
 
@@ -39,12 +39,29 @@ chiesta a `pix-claude-master` il 30/09. Da questa parte il contratto non cambia.
 - Il passaggio fra gli stati si registra sul messaggio (inizio e fine del turno visti), perché lo stato del PC dice
   solo il turno di adesso.
 
+## 4. Completamento nella ricerca di «Lancia» (Franz, 20:24)
+
+- Un menu a tendina attaccato al campo del progetto, che si apre mentre si scrive (al posto della lista staccata).
+- Ordine: prima i nomi che iniziano con il testo, poi quelli che lo contengono, poi quelli che lo hanno nella cartella;
+  a pari merito il più recente. Campo vuoto: i 6 usati più di recente.
+- Tutti e due gli account insieme, con il pallino dell'account su ogni riga; scegliere un progetto imposta l'account.
+  La scelta dell'account in testa resta come filtro facoltativo.
+- La parte del nome che corrisponde al testo in evidenza.
+
+## 5. «Accoppia di nuovo» nelle Impostazioni (Franz, 20:26)
+
+- Il bottone pieno in fondo sembrava «Salva». Accoppiati: diventa una voce con l'icona QR dentro la card del PC e
+  dell'orologio, non piena; le Impostazioni non hanno un'azione principale.
+- In Demo, non accoppiati: «Accoppia» resta pieno ma dentro una card «Collega il PC» in cima alla schermata.
+
 ## Test
 
-- `core`, con TDD: `choices` letto dalle fixture; la regola degli stati della chat, un test per stato e per i passaggi
+- `core`, con TDD: l'ordine dei suggerimenti di «Lancia» (inizio, contenuto, cartella, recenti, due account);
+  `choices` letto dalle fixture; la regola degli stati della chat, un test per stato e per i passaggi
   (in coda → in lavorazione → elaborato, esito agganciato solo se è del turno); scadenza dopo 7 giorni.
 - Room: migrazione 2 → 3 con il test di migrazione.
-- Paparazzi: scheda con la chat nei sei stati, barra di scrittura, foglio di modello ed effort; carattere 1,3.
+- Paparazzi: scheda con la chat nei sei stati, barra di scrittura, foglio di modello ed effort, «Lancia» con il
+  menu aperto, Impostazioni accoppiate e in Demo; carattere 1,3.
 - Dal vivo, dopo la correzione del relay: un prompt dal telefono arriva nella sessione e passa da consegnato a
   elaborato con l'esito; cambio di modello e di effort su una sessione vera.
 
