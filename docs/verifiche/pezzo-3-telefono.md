@@ -3,7 +3,7 @@
 Design `docs/plans/2026-09-29-telefono-pezzo-3-design.md`, piano A `docs/plans/2026-09-29-telefono-pezzo-3-piano-a.md`.
 Ogni riga si spunta con data ed esito visto sul telefono o al polso; una riga che fallisce resta aperta con la nota.
 
-- [ ] 1. Regia con i due account veri e la quota di entrambi.
+- [x] 1. Regia con i due account veri e la quota di entrambi. — 30/09 15:49, Pixel 11 Pro XL: personale 0 % e professionale 25 % con l'ora di azzeramento; card in ordine (chi aspetta, poi chi lavora) con lo strumento in corso dal vivo.
 - [ ] 2. Card → scheda con il volo; gesto indietro che, trascinato, riporta la scheda verso la card.
 - [ ] 3. Risposta a una domanda dal telefono; la notifica sparisce anche dall'orologio.
 - [ ] 4. Con l'orologio collegato la notifica del telefono è silenziosa; a orologio spento suona.
@@ -13,3 +13,7 @@ Ogni riga si spunta con data ed esito visto sul telefono o al polso; una riga ch
 - [ ] 8. Demo da installazione pulita, senza PC: tutte le schermate, fascia «Demo» sempre visibile.
 - [ ] 9. «Riduci animazioni» acceso: nessun movimento, stati finali subito.
 - [ ] Piano B: coda della notte modificabile (R3), resoconto della notte (R4), Condividi (R5), riserva di Telegram (R6).
+
+## Difetti trovati dal vivo
+
+- 30/09 15:49: su un permesso senza opzioni (my-pixelbox-it, strumento Agent) la scheda del telefono offre solo «Allow all» e il testo libero; l'orologio mostra anche «Chat about this». Da allineare.
