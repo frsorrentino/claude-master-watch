@@ -26,7 +26,8 @@ fun LaunchSheet(state: State, action: Int = R.string.launch, onLaunch: (project:
     var typed by rememberSaveable { mutableStateOf("") }
     var chosen by remember { mutableStateOf<Project?>(null) }
     var first by rememberSaveable { mutableStateOf("") }
-    Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(stringResource(action), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
         if (accounts.size > 1) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 accounts.forEachIndexed { i, a ->
@@ -34,14 +35,19 @@ fun LaunchSheet(state: State, action: Int = R.string.launch, onLaunch: (project:
                 }
             }
         }
-        OutlinedTextField(typed, { typed = it; chosen = null }, label = { Text(stringResource(R.string.launch_project)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        LaunchSuggest.projects(state, account, if (chosen != null) "" else typed).forEach { p ->
-            Text(
-                p.name, color = if (p == chosen) CmColors.actionIcon else CmColors.text, style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.fillMaxWidth().clickable { chosen = p; typed = p.name }.padding(vertical = 10.dp),
-            )
+        OutlinedTextField(typed, { typed = it; chosen = null }, label = { Text(stringResource(R.string.launch_project)) }, singleLine = true, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth())
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LaunchSuggest.projects(state, account, if (chosen != null) "" else typed).forEach { p ->
+                val on = p == chosen
+                Surface(
+                    onClick = { chosen = p; typed = p.name }, color = if (on) CmColors.surfaceHigh else CmColors.surface, shape = MaterialTheme.shapes.medium,
+                    border = if (on) androidx.compose.foundation.BorderStroke(2.dp, CmColors.actionIcon) else null, modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(p.name, color = if (on) CmColors.actionIcon else CmColors.text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                }
+            }
         }
-        OutlinedTextField(first, { first = it }, label = { Text(stringResource(R.string.launch_first)) }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(first, { first = it }, label = { Text(stringResource(R.string.launch_first)) }, minLines = 3, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth())
         Button(
             onClick = { chosen?.let { onLaunch(it, first.trim()) } }, enabled = chosen != null,
             colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),

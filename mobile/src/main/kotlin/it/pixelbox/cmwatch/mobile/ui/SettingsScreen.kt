@@ -29,29 +29,33 @@ fun SettingsScreen(
 ) {
     var choosing by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium, color = CmColors.text)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
             if (host != null) {
                 PairedScene(watch = watchName != null, modifier = Modifier.fillMaxWidth().height(160.dp))
                 Text(stringResource(R.string.paired_title, host), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
-                Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp)) {
+                Surface(color = CmColors.briefCard, shape = MaterialTheme.shapes.large) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         Device(Icons.Rounded.PhoneAndroid, phoneName, stringResource(R.string.paired_this_phone), false)
                         watchName?.let { Device(Icons.Rounded.Watch, it, stringResource(if (watchPending) R.string.step_watch_pending else R.string.paired_key_delivered), watchPending) }
                     }
                 }
             }
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.language)) },
-                supportingContent = { Text(languageName(language)) },
-                modifier = Modifier.clickable { choosing = true },
-                colors = ListItemDefaults.colors(containerColor = CmColors.bg),
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.demo_mode)) }, supportingContent = { Text(stringResource(R.string.demo_mode_sub)) },
-                trailingContent = { Switch(checked = demo, onCheckedChange = onDemo) },
-                colors = ListItemDefaults.colors(containerColor = CmColors.bg),
-            )
+            Surface(color = CmColors.briefCard, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.language)) },
+                        supportingContent = { Text(languageName(language)) },
+                        modifier = Modifier.clickable { choosing = true },
+                        colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.demo_mode)) }, supportingContent = { Text(stringResource(R.string.demo_mode_sub)) },
+                        trailingContent = { Switch(checked = demo, onCheckedChange = onDemo) },
+                        colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
+                    )
+                }
+            }
             TextButton(onClick = onNotifications) { Text(stringResource(R.string.notifications), color = CmColors.actionIcon) }
             TextButton(onClick = onPrivacy) { Text(stringResource(R.string.privacy), color = CmColors.actionIcon) }
             Text(stringResource(R.string.version, version), color = CmColors.text2, style = MaterialTheme.typography.bodySmall)

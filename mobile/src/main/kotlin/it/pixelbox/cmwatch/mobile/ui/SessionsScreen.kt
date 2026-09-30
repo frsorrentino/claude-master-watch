@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
@@ -30,7 +32,7 @@ import java.time.format.DateTimeFormatter
 fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) -> Unit) {
     val state = snapshot.state
     if (state == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = CmColors.actionIcon) }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularWavyProgressIndicator(color = CmColors.actionIcon) }
         return
     }
     var closedOpen by rememberSaveable { mutableStateOf(false) }
@@ -39,7 +41,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(PhoneBoard.quotaRows(state, now, dataStale = snapshot.freshness is Freshness.Stale), key = { "q-" + it.account }) { QuotaLine(it) }
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
@@ -83,9 +85,9 @@ private fun QuotaLine(q: PhoneBoard.QuotaRow) {
             Text(q.account, color = CmColors.text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(q.pct?.let { "$it%" } ?: "", color = CmColors.text, style = MaterialTheme.typography.titleSmall)
         }
-        LinearProgressIndicator(
+        LinearWavyProgressIndicator(
             progress = { spec.fill / 100f }, color = if ((q.pct ?: 0) >= 90) CmColors.waiting else CmColors.briefRing,
-            trackColor = CmColors.briefTrack, modifier = Modifier.fillMaxWidth().height(6.dp),
+            trackColor = CmColors.briefTrack, modifier = Modifier.fillMaxWidth(),
         )
         val reset = q.resetAt
         val note = when {

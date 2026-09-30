@@ -1,6 +1,11 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.text.font.FontWeight
+import it.pixelbox.cmwatch.contract.Durations
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,8 +34,8 @@ fun ShareScreen(state: State, text: String, hasImage: Boolean, sending: Boolean,
     var chosen by rememberSaveable { mutableStateOf<String?>(null) }
     var message by rememberSaveable { mutableStateOf(text) }
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
-        Column(Modifier.weight(1f).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.share_title), style = MaterialTheme.typography.headlineSmall, color = CmColors.text)
+        Column(Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.share_title), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
             if (state.share == null) {
                 // Contratto 1.19: senza `share` il relay non accetta ancora «Condividi».
                 Text(stringResource(R.string.share_update_pc), color = CmColors.text2, style = MaterialTheme.typography.bodyLarge)
@@ -40,18 +45,21 @@ fun ShareScreen(state: State, text: String, hasImage: Boolean, sending: Boolean,
                 Icon(Icons.Rounded.Image, null, tint = CmColors.actionIcon)
                 Text(stringResource(R.string.share_with_image), color = CmColors.text2)
             }
-            OutlinedTextField(message, { message = it }, label = { Text(stringResource(R.string.share_message)) }, minLines = 2, modifier = Modifier.fillMaxWidth())
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            OutlinedTextField(message, { message = it }, label = { Text(stringResource(R.string.share_message)) }, minLines = 2, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth())
+            if (sending) LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth(), color = CmColors.actionIcon, trackColor = CmColors.briefTrack)
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(alive, key = { it.id }) { s ->
                     val on = s.name == chosen
-                    Row(
-                        Modifier.fillMaxWidth().background(if (on) CmColors.surfaceHigh else CmColors.surface, RoundedCornerShape(14.dp))
-                            .clickable { chosen = s.name }.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    // Le card della regia in piccolo: la scelta si vede dal bordo azzurro e dalla superficie più alta.
+                    Surface(
+                        onClick = { chosen = s.name }, color = if (on) CmColors.surfaceHigh else CmColors.surface, shape = MaterialTheme.shapes.large,
+                        border = if (on) BorderStroke(2.dp, CmColors.actionIcon) else null, modifier = Modifier.fillMaxWidth(),
                     ) {
-                        AccountDot(Accounts.isPersonal(s))
-                        Text(stateGlyph(s.state), color = stateColor(s.state))
-                        Text(s.name, color = if (on) CmColors.actionIcon else CmColors.text, style = MaterialTheme.typography.titleSmall)
+                        Row(Modifier.padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            AccountDot(Accounts.isPersonal(s))
+                            Text(s.name, color = if (on) CmColors.actionIcon else CmColors.text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.weight(1f))
+                            StatePill(s.state, Durations.since(s.since, state.ts))
+                        }
                     }
                 }
             }
