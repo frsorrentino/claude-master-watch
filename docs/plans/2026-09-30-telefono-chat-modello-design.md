@@ -54,6 +54,12 @@ chiesta a `pix-claude-master` il 30/09. Da questa parte il contratto non cambia.
   dell'orologio, non piena; le Impostazioni non hanno un'azione principale.
 - In Demo, non accoppiati: «Accoppia» resta pieno ma dentro una card «Collega il PC» in cima alla schermata.
 
+## 6. Badge come l'orologio e il desktop (Franz, 20:31)
+
+- Il badge della sessione di `core` (`Badge.of`), come sul polso e nella tile: forma = account (cerchio personale,
+  quadrato lavoro), riempimento = colore della sessione, glifo di stato dentro.
+- Dove c'è solo l'account (quota, «Lancia», filtro) la forma vuota. Il pallino rosso/verde per account sparisce.
+
 ## Test
 
 - `core`, con TDD: l'ordine dei suggerimenti di «Lancia» (inizio, contenuto, cartella, recenti, due account);
