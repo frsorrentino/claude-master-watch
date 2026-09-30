@@ -299,11 +299,25 @@ class MainActivity : ComponentActivity() {
                 return@AppShell
             }
             SharedTransitionLayout {
-                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }) { name ->
+                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }, contentKey = { it != null }) { name ->
                     CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
-                        val session = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
+                        val opened = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
+                        // Swipe laterale fra le sessioni, nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
+                        // sessioni»); la sessione della pagina corrente è quella aperta, e il menu in alto la segue.
+                        val names = remember(state?.sessions, opened?.name) {
+                            val live = state?.let { st -> PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
+                            if (opened != null && opened.name !in live) live + opened.name else live
+                        }
+                        if (opened != null && names.isNotEmpty()) {
+                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = names.indexOf(opened.name).coerceAtLeast(0)) { names.size }
+                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (it != open) open = it } }
+                        LaunchedEffect(open) { val i = names.indexOf(open); if (i >= 0 && i != pager.currentPage) pager.scrollToPage(i) }
+                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { names[it] }, beyondViewportPageCount = 0) { page ->
+                        val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
+                        // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
+                        val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
-                        if (session != null) {
+                        run {
                         fun sendAndLog(target: PhonePrimary.Target, text: String) = scope.launch {
                             val sentAt = System.currentTimeMillis() / 1000
                             val id = runCatching {
@@ -355,14 +369,16 @@ class MainActivity : ComponentActivity() {
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
                         ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
-                            feed = if (transcriptOk && !unsupported && entries.isNotEmpty()) ChatFeed.merge(entries, rows.map { it.sent to it.status }, more) else null,
-                            loadingFeed = transcriptOk && !unsupported && entries.isEmpty(),
-                            more = more,
+                            feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
+                            loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
+                            more = more && session.name == open,
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }
                             },
                         )
+                        }
+                        }
                         } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
                     }
                 }
