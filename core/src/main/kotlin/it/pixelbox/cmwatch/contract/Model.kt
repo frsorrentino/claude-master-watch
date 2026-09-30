@@ -181,6 +181,8 @@ enum class CmdOp {
     val turn: TranscriptTurn? = null, val files: List<TranscriptFile>? = null,
     /** Da dove è arrivato un messaggio dell'utente (phone, watch, pc); null con un relay che non lo dice. */
     val origin: String? = null,
+    /** Scritto a turno in corso e non ancora preso da Claude: «in coda». Poi la stessa voce (stesso id) diventa false. */
+    val queued: Boolean = false,
 )
 
 /** `in` comprende la cache letta e scritta; per il costo del turno conta di più `out`. */

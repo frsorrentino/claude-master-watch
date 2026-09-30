@@ -24,15 +24,32 @@ object ChatFeed {
     fun arg(lastId: String?): String = if (lastId == null) "$PAGE" else "$PAGE:after=$lastId"
     fun olderArg(firstId: String): String = "$PAGE:before=$firstId"
 
-    /** Una pagina nuova sulla lista che c'è: `AFTER` in coda, `BEFORE` in testa, `FRESH` al posto; mai due voci con lo stesso id. */
+    /**
+     * Una pagina nuova sulla lista che c'è: `AFTER` in coda, `BEFORE` in testa, `FRESH` al posto. Una voce già presente
+     * si sostituisce con la sua versione nuova (una voce «in coda» che diventa normale, il costo del turno arrivato dopo):
+     * mai due voci con lo stesso id.
+     */
     fun append(old: List<TranscriptEntry>, page: TranscriptPage, mode: Page): List<TranscriptEntry> {
+        val byId = page.entries.associateBy { it.id }
+        val updated = old.map { byId[it.id] ?: it }
         val seen = old.map { it.id }.toSet()
         val fresh = page.entries.filter { it.id !in seen }
         return when (mode) {
             Page.FRESH -> page.entries
-            Page.AFTER -> old + fresh
-            Page.BEFORE -> fresh + old
+            Page.AFTER -> updated + fresh
+            Page.BEFORE -> fresh + updated
         }
+    }
+
+    /**
+     * Da dove ripartire con `after`: prima della prima voce ancora in coda, così la si vede cambiare; senza code dalla
+     * penultima, così l'ultima si rilegge quando le arriva il costo del turno. Null = prima lettura.
+     */
+    fun anchor(entries: List<TranscriptEntry>): String? {
+        if (entries.isEmpty()) return null
+        val q = entries.indexOfFirst { it.queued }
+        val i = if (q >= 0) q - 1 else entries.size - 2
+        return entries.getOrNull(i.coerceAtLeast(0))?.id?.takeIf { i >= 0 } ?: entries.first().id
     }
 
     fun merge(entries: List<TranscriptEntry>, sent: List<Pair<Sent, ChatRules.Status>>, more: Boolean = false): List<Item> {

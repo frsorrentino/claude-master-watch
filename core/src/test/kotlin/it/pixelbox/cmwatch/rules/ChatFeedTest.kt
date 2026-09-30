@@ -15,7 +15,7 @@ class ChatFeedTest {
     private val after = ContractJson.decodeTranscript(results[20].text)
 
     @Test fun parsesTheFixturePage() {
-        assertEquals(14, first.entries.size)
+        assertEquals(17, first.entries.size)
         assertFalse(first.more)
         assertEquals("image/png", first.entries.first { it.id == "a6.0" }.files!!.single().mime)
         assertEquals(130L, first.entries.first { it.id == "a4.0" }.turn!!.out)
@@ -101,5 +101,25 @@ class ChatFeedTest {
         val e = TranscriptEntry("u8.0", "user", text = "now", at = 1000, origin = "pc")
         val feed = ChatFeed.merge(listOf(e), listOf(Sent("e", "kb", "long ago", sentAt = 10) to ChatRules.Status.DONE), more = true)
         assertTrue(feed.none { it is ChatFeed.Item.Mine })
+    }
+
+    // Contratto 1.22 aggiornato (30/09 22:37): un messaggio scritto a turno in corso nasce «in coda» e poi la stessa voce
+    // diventa normale; la chat la sostituisce, senza doppioni.
+    @Test fun queuedEntryUpdatesInPlace() {
+        val q = first.entries.single { it.queued }
+        val page = TranscriptPage(listOf(q.copy(queued = false)), more = false)
+        val merged = ChatFeed.append(first.entries, page, ChatFeed.Page.AFTER)
+        assertEquals(first.entries.size, merged.size)
+        assertFalse(merged.single { it.id == q.id }.queued)
+    }
+
+    // La lettura riparte da prima della prima voce in coda, così la vede cambiare; senza code, dalla penultima (il costo
+    // del turno arriva sull'ultima dopo).
+    @Test fun readsAnchorBeforeTheFirstQueued() {
+        val firstQueued = first.entries.indexOfFirst { it.queued }
+        assertEquals(first.entries[firstQueued - 1].id, ChatFeed.anchor(first.entries))
+        val settled = first.entries.map { it.copy(queued = false) }
+        assertEquals(settled[settled.size - 2].id, ChatFeed.anchor(settled))
+        assertNull(ChatFeed.anchor(emptyList()))
     }
 }

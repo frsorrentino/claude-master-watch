@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
                         mode = if (entries.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
                         // Una lettura persa non resta fra i comandi in sospeso (revisione 30/09).
                         pendingId?.let { app.repo.forget(it) }
-                        pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(entries.lastOrNull()?.id)) }.getOrNull()
+                        pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(ChatFeed.anchor(entries))) }.getOrNull()
                     }
                     delay(1_000)
                 }

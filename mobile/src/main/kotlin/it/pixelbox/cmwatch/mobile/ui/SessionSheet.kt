@@ -123,7 +123,8 @@ fun SessionSheet(
                 }
                 items(feed, key = { feedKey(it) }) { it ->
                     when (it) {
-                        is ChatFeed.Item.Mine -> MineBubble(it.sent, it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                        // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
+                        is ChatFeed.Item.Mine -> MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
@@ -372,6 +373,7 @@ private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (
                 else -> null
             }
             from?.let { Text(stringResource(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2) }
+            if (e.queued) Text(" · " + stringResource(R.string.chat_queued), style = MaterialTheme.typography.labelMedium, color = CmColors.stale)
             e.at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(horizontal = 4.dp)) }
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
             SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(text) }
@@ -557,10 +559,12 @@ private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boole
     val tunable = canTune && choices != null && s.state != SessionState.GONE
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatePill(s.state, Durations.since(s.since, now))
-            TunePill(ModelText.short(s.model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
-            EffortPill(s.effort, tunable) { picker = "effort" }
-            Spacer(Modifier.weight(1f))
+            // Le pillole vanno a capo invece di spingere fuori anello e menu (provini 30/09 22:37).
+            FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatePill(s.state, Durations.since(s.since, now))
+                TunePill(ModelText.short(s.model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
+                EffortPill(s.effort, tunable) { picker = "effort" }
+            }
             s.context?.let { ContextRing(it) }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
