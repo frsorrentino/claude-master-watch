@@ -12,4 +12,24 @@ object LaunchSuggest {
             .sortedByDescending { it.lastUsed ?: Long.MIN_VALUE }
             .take(limit)
     }
+
+    /**
+     * La ricerca con completamento di «Lancia» (Franz, 30/09): prima i nomi che iniziano con il testo, poi quelli che lo
+     * contengono, poi quelli che lo hanno nella cartella; a pari merito il più recente. `account` null = tutti e due.
+     */
+    fun ranked(state: State, typed: String, account: String? = null, limit: Int = 6): List<Project> {
+        val t = typed.trim().lowercase()
+        fun rank(p: Project): Int? = when {
+            t.isEmpty() -> 0
+            p.name.lowercase().startsWith(t) -> 0
+            t in p.name.lowercase() -> 1
+            t in p.path.lowercase() -> 2
+            else -> null
+        }
+        return state.projects.filter { account == null || it.account == account }
+            .mapNotNull { p -> rank(p)?.let { it to p } }
+            .sortedWith(compareBy<Pair<Int, Project>> { it.first }.thenByDescending { it.second.lastUsed ?: Long.MIN_VALUE })
+            .map { it.second }
+            .take(limit)
+    }
 }
