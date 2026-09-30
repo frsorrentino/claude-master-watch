@@ -194,7 +194,7 @@ class Repo(
                 _snapshot.update { it.copy(pending = it.pending.filter { p -> p.cmd.id != cmd.id }) }
                 _resultsById.update { m -> (m + (r.id to r)).entries.toList().takeLast(MAX_RESULTS).associate { e -> e.key to e.value } }
                 _results.emit(r)
-                if (cmd.op != CmdOp.SCREEN && cmd.op != CmdOp.LAST) _userResults.emit(r)
+                if (cmd.op !in PASSIVE) _userResults.emit(r)
             }
         }
     }
@@ -259,5 +259,7 @@ class Repo(
          * seguire (campanella e bordo). Il prossimo stato che arriva dal PC comanda comunque.
          */
         private val OPTIMISTIC = setOf(CmdOp.ANSWER, CmdOp.PROMPT, CmdOp.FOLLOW, CmdOp.UNFOLLOW)
+        /** Le letture che le schermate fanno da sole (terminale, chat): i loro risultati non sono azioni dell'utente. */
+        private val PASSIVE = setOf(CmdOp.SCREEN, CmdOp.LAST, CmdOp.TRANSCRIPT)
     }
 }

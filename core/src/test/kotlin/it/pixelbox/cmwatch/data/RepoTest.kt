@@ -174,6 +174,15 @@ class RepoTest {
         assertTrue(repo.resultsById.value.containsKey(last))
     }
 
+    // Contratto 1.22: la chat chiede `transcript` ogni pochi secondi; i suoi risultati, anche i rifiuti, non sono avvisi.
+    @Test fun leLettureDellaChatNonSonoAzioniDellUtente() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
+        val got = mutableListOf<String>(); bg().launch { repo.userResults.collect { got += it.id } }; idle()
+        val page = repo.command(CmdOp.TRANSCRIPT, "atlas-shop", "50"); idle()
+        assertTrue(got.isEmpty())
+        assertTrue(repo.resultsById.value.containsKey(page))
+    }
+
     // Segui e non seguire si vedono subito (Franz, 16/09 01:58): la campanella e il bordo non aspettano il PC, altrimenti
     // dopo la pressione lunga non cambia niente sullo schermo. Se il comando fallisce, il prossimo stato rimette a posto.
     @Test fun seguireSiVedeSubito() = runTest {
