@@ -77,8 +77,8 @@ class ContractTest {
         assertEquals(CmdOp.entries.size - 1, cmds.map { it.op }.toSet().size) // manca «unfollow» nella fixture
         // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
         // Contratto 1.13: uno in più, il launch con il primo messaggio. Contratto 1.17: night_add e night_remove.
-        // Contratto 1.19: tre report, uno rifiutato.
-        assertEquals(17, results.size); assertEquals(4, results.count { !it.ok })
+        // Contratto 1.19: tre report, uno rifiutato. Contratto 1.21: due interrupt, «stopped» e «nothing to stop».
+        assertEquals(19, results.size); assertEquals(5, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))

@@ -32,4 +32,26 @@ class PhonePrimaryTest {
 
     @Test fun questionWithoutOptionsKeepsSend() =
         assertEquals(PhonePrimary.Button.SEND, PhonePrimary.button(s(SessionState.WAITING, q.copy(options = emptyList())), "B"))
+
+    private val ops = listOf("prompt", "interrupt")
+
+    @Test fun stopWhileWorkingWithAnEmptyField() =
+        assertEquals(PhonePrimary.Composer.STOP, PhonePrimary.composer(s(SessionState.BUSY), "", ops))
+
+    @Test fun typingTurnsStopBackIntoSend() =
+        assertEquals(PhonePrimary.Composer.SEND, PhonePrimary.composer(s(SessionState.BUSY), "and also", ops))
+
+    @Test fun noStopWithoutRelaySupport() {
+        assertEquals(PhonePrimary.Composer.NONE, PhonePrimary.composer(s(SessionState.BUSY), "", null))
+        assertEquals(PhonePrimary.Composer.NONE, PhonePrimary.composer(s(SessionState.BUSY), "", listOf("prompt")))
+    }
+
+    @Test fun sendIsTonalWhenTheFirstOptionIsFilled() =
+        assertEquals(PhonePrimary.Composer.SEND_TONAL, PhonePrimary.composer(s(SessionState.WAITING, q), "B", ops))
+
+    @Test fun closedSessionReopensFromTheBar() =
+        assertEquals(PhonePrimary.Composer.REOPEN, PhonePrimary.composer(s(SessionState.GONE), "text", ops))
+
+    @Test fun idleWithEmptyFieldHasNothingToDo() =
+        assertEquals(PhonePrimary.Composer.NONE, PhonePrimary.composer(s(SessionState.IDLE), " ", ops))
 }

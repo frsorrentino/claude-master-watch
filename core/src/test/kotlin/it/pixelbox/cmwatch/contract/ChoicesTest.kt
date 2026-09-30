@@ -13,4 +13,9 @@ class ChoicesTest {
     }
 
     @Test fun olderRelayHasNoChoices() = assertNull(ContractJson.decodeState("""{"v":1,"ts":1,"host":"h"}""").choices)
+
+    @Test fun opsReadFromTheFixture() =
+        assertEquals(true, ContractJson.decodeState(Fixtures.stateQuestion).ops?.contains("interrupt"))
+
+    @Test fun olderRelayHasNoOps() = assertNull(ContractJson.decodeState("""{"v":1,"ts":1,"host":"h"}""").ops)
 }

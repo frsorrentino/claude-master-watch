@@ -38,6 +38,8 @@ enum class CmdOp {
     @SerialName("night_add") NIGHT_ADD, @SerialName("night_remove") NIGHT_REMOVE,
     /** Contratto 1.19 (R5): «Condividi». `session` = nome, `text` = messaggio, `arg` = id di /share o null (solo testo). */
     @SerialName("report") REPORT,
+    /** Contratto 1.21: il tasto Stop, un solo Esc e solo a turno in corso. Si mostra solo se `state.ops` lo contiene. */
+    @SerialName("interrupt") INTERRUPT,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -126,6 +128,8 @@ enum class CmdOp {
     val share: Share? = null,
     /** Contratto 1.12: modelli ed effort che il selettore di una sessione accetta; null con un relay precedente. */
     val choices: Choices? = null,
+    /** Contratto 1.21: le op di /cmd che questo relay esegue; null con un relay precedente (vale la lista del contratto). */
+    val ops: List<String>? = null,
 )
 
 /** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */

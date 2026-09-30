@@ -260,6 +260,15 @@ class FakeTransport(
             }
             // Contratto 1.12: la demo non cambia modello né effort, lo dice come farebbe il relay con una sessione occupata.
             CmdOp.MODEL, CmdOp.EFFORT -> ko("${cmd.session}: not available in demo")
+            // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
+            CmdOp.INTERRUPT -> when {
+                ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")
+                ses.state != SessionState.BUSY && ses.state != SessionState.AWAITING -> ko("${ses.name}: nothing to stop")
+                else -> {
+                    current.value = current.value.let { st -> st.copy(sessions = st.sessions.map { if (it.name == ses.name) it.copy(state = SessionState.IDLE, turnStarted = null) else it }) }
+                    ok("${ses.name}: stopped")
+                }
+            }
         }
         results[cmd.id] = r
         return r

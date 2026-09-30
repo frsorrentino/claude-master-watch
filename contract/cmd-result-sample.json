@@ -140,6 +140,22 @@
       "text": "check the pricing page",
       "issued": 1789210730,
       "by": "phone-pixel8"
+    },
+    {
+      "id": "6f1c2d3e-0128-4000-8000-000000000128",
+      "op": "interrupt",
+      "session": "atlas-shop",
+      "arg": null,
+      "issued": 1789210740,
+      "by": "phone-pixel8"
+    },
+    {
+      "id": "6f1c2d3e-0129-4000-8000-000000000129",
+      "op": "interrupt",
+      "session": "field-notes",
+      "arg": null,
+      "issued": 1789210750,
+      "by": "phone-pixel8"
     }
   ],
   "result": [
@@ -246,6 +262,18 @@
       "ok": false,
       "text": "no session orbit-docs",
       "at": 1789210731
+    },
+    {
+      "id": "6f1c2d3e-0128-4000-8000-000000000128",
+      "ok": true,
+      "text": "atlas-shop: stopped",
+      "at": 1789210742
+    },
+    {
+      "id": "6f1c2d3e-0129-4000-8000-000000000129",
+      "ok": false,
+      "text": "field-notes: nothing to stop",
+      "at": 1789210751
     }
   ]
 }
