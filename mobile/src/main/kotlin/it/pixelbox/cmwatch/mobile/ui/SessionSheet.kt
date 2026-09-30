@@ -388,7 +388,8 @@ private fun ClaudeBubble(
                 turn?.let { t ->
                     val secs = (t.ended ?: 0) - (t.started ?: 0)
                     val parts = listOfNotNull(
-                        secs.takeIf { t.started != null && t.ended != null && it > 0 }?.let { d -> Durations.since(0, d) },
+                        // Sotto il minuto in secondi: «0 m» per un turno di 45 s diceva niente (provini 30/09).
+                        secs.takeIf { t.started != null && t.ended != null && it > 0 }?.let { d -> if (d < 60) "$d s" else Durations.since(0, d) },
                         t.out?.let { o -> stringResource(R.string.turn_tokens, o) },
                     )
                     if (parts.isNotEmpty()) Text(parts.joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = CmColors.briefSecondary)
