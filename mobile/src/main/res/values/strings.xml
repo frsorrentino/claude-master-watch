@@ -104,4 +104,27 @@
     <string name="language_system">Come il telefono</string>
     <string name="language_it">Italiano</string>
     <string name="language_en">English</string>
+    <string name="tab_overview">Panoramica</string>
+    <string name="ov_quota">Quota</string>
+    <string name="ov_work">Lavoro</string>
+    <string name="ov_no_quota">Nessuna lettura della quota per ora</string>
+    <string name="ov_five_hours">5 ore</string>
+    <string name="ov_week">settimana %1$d%%</string>
+    <string name="ov_pace">a questo ritmo %1$d%% alle %2$s</string>
+    <string name="ov_now">Adesso</string>
+    <plurals name="ov_working"><item quantity="one">lavora</item><item quantity="other">lavorano</item></plurals>
+    <plurals name="ov_legend_waiting"><item quantity="one">%1$d aspetta te</item><item quantity="other">%1$d aspettano te</item></plurals>
+    <plurals name="ov_legend_working"><item quantity="one">%1$d lavora</item><item quantity="other">%1$d lavorano</item></plurals>
+    <plurals name="ov_legend_idle"><item quantity="one">%1$d ferma</item><item quantity="other">%1$d ferme</item></plurals>
+    <string name="ov_none_live">Nessuna sessione aperta</string>
+    <string name="ov_questions">Domande aperte</string>
+    <string name="ov_question_oldest">%1$s · da %2$s</string>
+    <string name="ov_context">Contesto</string>
+    <string name="ov_today">Oggi</string>
+    <plurals name="ov_today_events"><item quantity="one">evento</item><item quantity="other">eventi</item></plurals>
+    <string name="ov_night">Notte</string>
+    <plurals name="ov_night_queued"><item quantity="one">in coda</item><item quantity="other">in coda</item></plurals>
+    <string name="ov_updated_now">aggiornato ora · %1$s</string>
+    <string name="ov_updated_ago">aggiornato %1$d min fa · %2$s</string>
+    <string name="ov_stale">PC fermo da %1$d min · %2$s</string>
 </resources>

@@ -102,4 +102,27 @@
     <string name="language_system">Same as the phone</string>
     <string name="language_it">Italiano</string>
     <string name="language_en">English</string>
+    <string name="tab_overview">Overview</string>
+    <string name="ov_quota">Quota</string>
+    <string name="ov_work">Work</string>
+    <string name="ov_no_quota">No quota reading yet</string>
+    <string name="ov_five_hours">5 hours</string>
+    <string name="ov_week">week %1$d%%</string>
+    <string name="ov_pace">at this pace %1$d%% by %2$s</string>
+    <string name="ov_now">Now</string>
+    <plurals name="ov_working"><item quantity="one">working</item><item quantity="other">working</item></plurals>
+    <plurals name="ov_legend_waiting"><item quantity="one">%1$d waiting for you</item><item quantity="other">%1$d waiting for you</item></plurals>
+    <plurals name="ov_legend_working"><item quantity="one">%1$d working</item><item quantity="other">%1$d working</item></plurals>
+    <plurals name="ov_legend_idle"><item quantity="one">%1$d idle</item><item quantity="other">%1$d idle</item></plurals>
+    <string name="ov_none_live">No open sessions</string>
+    <string name="ov_questions">Open questions</string>
+    <string name="ov_question_oldest">%1$s · for %2$s</string>
+    <string name="ov_context">Context</string>
+    <string name="ov_today">Today</string>
+    <plurals name="ov_today_events"><item quantity="one">event</item><item quantity="other">events</item></plurals>
+    <string name="ov_night">Tonight</string>
+    <plurals name="ov_night_queued"><item quantity="one">queued</item><item quantity="other">queued</item></plurals>
+    <string name="ov_updated_now">updated now · %1$s</string>
+    <string name="ov_updated_ago">updated %1$d min ago · %2$s</string>
+    <string name="ov_stale">PC idle for %1$d min · %2$s</string>
 </resources>
