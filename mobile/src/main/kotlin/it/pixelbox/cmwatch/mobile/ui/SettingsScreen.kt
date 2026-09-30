@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,17 @@ fun SettingsScreen(
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
+            // Non accoppiati (Demo): accoppiare è l'azione principale, in una card in cima.
+            if (host == null) Surface(color = CmColors.briefCard, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.connect_pc), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
+                    Text(stringResource(R.string.connect_pc_sub), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+                    Button(
+                        onClick = onRepair, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                    ) { Text(stringResource(R.string.pair_button)) }
+                }
+            }
             if (host != null) {
                 PairedScene(watch = watchName != null, modifier = Modifier.fillMaxWidth().height(160.dp))
                 Text(stringResource(R.string.paired_title, host), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
@@ -38,6 +50,12 @@ fun SettingsScreen(
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         Device(Icons.Rounded.PhoneAndroid, phoneName, stringResource(R.string.paired_this_phone), false)
                         watchName?.let { Device(Icons.Rounded.Watch, it, stringResource(if (watchPending) R.string.step_watch_pending else R.string.paired_key_delivered), watchPending) }
+                        // Una voce della card, non un bottone pieno in fondo: là sembrava «Salva» (Franz, 30/09 20:26).
+                        TextButton(onClick = onRepair) {
+                            Icon(Icons.Rounded.QrCodeScanner, null, tint = CmColors.actionIcon)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.paired_repair), color = CmColors.actionIcon)
+                        }
                     }
                 }
             }
@@ -60,10 +78,6 @@ fun SettingsScreen(
             TextButton(onClick = onPrivacy) { Text(stringResource(R.string.privacy), color = CmColors.actionIcon) }
             Text(stringResource(R.string.version, version), color = CmColors.text2, style = MaterialTheme.typography.bodySmall)
         }
-        Button(
-            onClick = onRepair, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(56.dp),
-        ) { Text(stringResource(if (host != null) R.string.paired_repair else R.string.pair_button)) }
     }
     if (choosing) {
         AlertDialog(
