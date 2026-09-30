@@ -60,6 +60,7 @@ import it.pixelbox.cmwatch.rules.SessionMeters
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import java.time.Instant
+import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -104,10 +105,15 @@ fun SessionSheet(
     val atBottom by remember { derivedStateOf { !list.canScrollForward } }
     var justSent by remember { mutableStateOf(false) }
     val reasons = chat.associate { it.sent.id to it.reason }
+    // Alla prima apertura, e quando arriva la prima pagina della conversazione vera, la chat parte dal fondo
+    // (Franz, 30/09 22:55: «ancorato alla fine»).
+    var anchored by remember(s.id, feed != null) { mutableStateOf(false) }
     LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size, feed?.lastOrNull()) {
-        if ((atBottom || justSent) && (chat.isNotEmpty() || !feed.isNullOrEmpty())) {
-            list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
-            justSent = false
+        if (chat.isEmpty() && feed.isNullOrEmpty()) return@LaunchedEffect
+        val count = androidx.compose.runtime.snapshotFlow { list.layoutInfo.totalItemsCount }.first { it > 0 }
+        when {
+            !anchored -> { list.scrollToItem(count - 1); anchored = true }
+            atBottom || justSent -> { list.animateScrollToItem(count - 1); justSent = false }
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
