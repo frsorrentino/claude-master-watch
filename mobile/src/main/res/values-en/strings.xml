@@ -133,4 +133,5 @@
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>
     <string name="question_hold">Press and hold to confirm</string>
+    <string name="ov_week_reset">week %1$d%% · %2$s</string>
 </resources>

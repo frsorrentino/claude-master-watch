@@ -86,9 +86,10 @@ private fun QuotaLine(q: PhoneBoard.QuotaRow) {
             Text(q.account, color = CmColors.text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(q.pct?.let { "$it%" } ?: "", color = CmColors.text, style = MaterialTheme.typography.titleSmall)
         }
-        LinearWavyProgressIndicator(
+        // Piatta: è una misura ferma, non un avanzamento; l'onda a valori bassi sembrava uno scarabocchio (provini 30/09).
+        LinearProgressIndicator(
             progress = { spec.fill / 100f }, color = if ((q.pct ?: 0) >= 90) CmColors.waiting else CmColors.briefRing,
-            trackColor = CmColors.briefTrack, modifier = Modifier.fillMaxWidth(),
+            trackColor = CmColors.briefTrack, modifier = Modifier.fillMaxWidth().height(6.dp),
         )
         val reset = q.resetAt
         val note = when {

@@ -9,9 +9,13 @@ import java.time.ZoneId
  * domande, contesto, «Oggi», notte e ora dell'aggiornamento.
  */
 object PhoneOverview {
-    /** `pace` null senza almeno due campioni o senza l'ora della ripartenza: l'anello resta, il ritmo no. */
+    /**
+     * `pace` null senza almeno due campioni o senza l'ora della ripartenza: l'anello resta, il ritmo no. `weekResetAt`:
+     * quando si azzera la settimana, per la pillola come sul polso; `stale`: la lettura del conto è vecchia.
+     */
     data class Ring(
         val account: String, val personal: Boolean, val h5: Int?, val w7: Int?, val resetAt: Long?, val pace: QuotaHistory.Pace?,
+        val weekResetAt: Long? = null, val stale: Boolean = false,
     )
 
     /** Una riga del contesto: le soglie della card delle misure, più modello ed effort come li legge il PC. */
@@ -30,7 +34,8 @@ object PhoneOverview {
             val q = state.quota.getValue(row.account)
             val pace = samples[row.account]?.takeIf { it.size >= 2 && row.resetAt != null }
                 ?.let { QuotaHistory.pace(it, row.resetAt!!, now) }
-            Ring(row.account, row.personal, q.h5, q.w7, row.resetAt, pace)
+            val weekReset = q.resetW7?.takeIf { !q.stale && !stale && it > now }
+            Ring(row.account, row.personal, q.h5, q.w7, row.resetAt, pace, weekReset, row.stale)
         }
         val contexts = WorkPanel.contexts(state).map { c ->
             val s = state.sessions.first { it.name == c.name }

@@ -50,4 +50,15 @@ class PhoneOverviewTest {
         assertEquals("crostini-demo", u.host)
         assertTrue(u.stale)
     }
+
+    @Test fun weekPillCarriesItsReset() {
+        assertEquals(1789610400L, build().rings.first().weekResetAt)
+        assertTrue(build(stale = true).rings.all { it.weekResetAt == null })
+    }
+
+    @Test fun staleAccountIsFlagged() {
+        val rings = build().rings
+        assertFalse(rings.first { it.account == "personal" }.stale)
+        assertTrue(rings.first { it.account == "work" }.stale)
+    }
 }

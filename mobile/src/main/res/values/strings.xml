@@ -135,4 +135,5 @@
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>
     <string name="question_hold">Tieni premuto per confermare</string>
+    <string name="ov_week_reset">settimana %1$d%% · %2$s</string>
 </resources>

@@ -124,6 +124,11 @@ private fun BigNumber(value: String, unit: String?, color: Color = CmColors.brie
 private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
 private fun hhmm(epoch: Long) = HHMM.format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
 
+/** Giorno e ora del reset settimanale nella lingua del telefono, come la pillola «7d» del polso. */
+@Composable
+private fun dayTime(epoch: Long): String = DateTimeFormatter.ofPattern("EEE HH:mm", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+    .format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
+
 /** Doppio anello come sul polso: 5 ore fuori (azzurro), settimana dentro (lavanda). Accanto numeri, reset e ritmo. */
 @Composable
 private fun QuotaRingCard(r: PhoneOverview.Ring) {
@@ -157,11 +162,13 @@ private fun QuotaRingCard(r: PhoneOverview.Ring) {
                     BigNumber(r.h5?.let { "$it%" } ?: "–", stringResource(R.string.ov_five_hours))
                     r.w7?.let { w ->
                         Text(
-                            stringResource(R.string.ov_week, w), style = MaterialTheme.typography.labelLarge, color = CmColors.briefWeekInk,
+                            r.weekResetAt?.let { stringResource(R.string.ov_week_reset, w, dayTime(it)) } ?: stringResource(R.string.ov_week, w), style = MaterialTheme.typography.labelLarge, color = CmColors.briefWeekInk,
                             modifier = Modifier.background(CmColors.briefWeek, CircleShape).padding(horizontal = 10.dp, vertical = 3.dp),
                         )
                     }
                     r.resetAt?.let { Text(stringResource(R.string.quota_resets_at, hhmm(it)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefSecondary) }
+                    // Senza lettura recente niente numeri inventati: lo si dice, come la riga «dato vecchio» della regia.
+                    if (r.stale) Text(stringResource(R.string.quota_old), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarn)
                 }
             }
             if (narrow) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
