@@ -1,44 +1,60 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package it.pixelbox.cmwatch.mobile.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.NotificationsActive
-import androidx.compose.material.icons.rounded.NotificationsOff
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import it.pixelbox.cmwatch.contract.Choices
 import it.pixelbox.cmwatch.contract.Durations
-import it.pixelbox.cmwatch.contract.QuestionKind
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.Tier
 import it.pixelbox.cmwatch.data.Pending
 import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.mobile.R
-import it.pixelbox.cmwatch.rules.Accounts
+import it.pixelbox.cmwatch.rules.ChatRules
 import it.pixelbox.cmwatch.rules.ModelText
-import it.pixelbox.cmwatch.rules.SessionMeters
-import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.PhonePrimary
 import it.pixelbox.cmwatch.rules.QuestionRules
+import it.pixelbox.cmwatch.rules.Sent
+import it.pixelbox.cmwatch.rules.SessionMeters
+import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.ui.tokens.CmColors
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 data class SheetActions(
     val answer: (Int) -> Unit, val allowAll: () -> Unit, val send: (PhonePrimary.Target, String) -> Unit,
@@ -46,132 +62,325 @@ data class SheetActions(
     val speak: (String) -> Unit, val retry: (cmdId: String) -> Unit,
     /** «Chat about this» (contratto 1.10), come sull'orologio: la domanda resta gestibile anche senza opzioni. */
     val chat: () -> Unit = {},
+    /** Contratto 1.12: modello ed effort di questa sola sessione. */
+    val setModel: (id: String) -> Unit = {}, val setEffort: (level: String) -> Unit = {},
+    /** Contratto 1.21: il tasto Stop. */
+    val interrupt: () -> Unit = {},
+    /** Un'immagine dalla galleria, con il testo scritto accanto (contratto 1.19, come «Condividi»). */
+    val attach: (Uri, String) -> Unit = { _, _ -> },
 )
 
+/** Un messaggio della chat con il suo stato, calcolato in `MainActivity` da `ChatRules.status`. */
+data class ChatRow(val sent: Sent, val status: ChatRules.Status)
+
 /**
- * La scheda sessione (design 29/09, schermata 2; restyling 30/09): testata con badge e contatori, la domanda come
- * sull'orologio (prima opzione piena, pressione lunga per il rischio alto), esito, testo libero, azioni. Un solo bottone
- * pieno: la prima opzione quando la domanda ne ha, altrimenti «Invia» o «Riapri».
+ * La scheda sessione (design 29/09; restyling e chat 30/09): testata con badge e contatori toccabili (modello, effort),
+ * la domanda come sull'orologio, la chat dei messaggi mandati con il loro stato e l'esito di ogni turno, e in fondo la
+ * barra di scrittura sopra la tastiera. Un solo bottone pieno: la prima opzione se la domanda ne ha, altrimenti il tasto
+ * della barra (Invia o Stop) o «Riapri».
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun SessionSheet(s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions) {
+fun SessionSheet(
+    s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions,
+    chat: List<ChatRow> = emptyList(), choices: Choices? = null, ops: List<String>? = null,
+    canTune: Boolean = true, canAttach: Boolean = false,
+) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
     val primary = PhonePrimary.button(s, draft)
+    val list = rememberLazyListState()
+    // Il messaggio appena mandato e l'esito appena arrivato si vedono senza scorrere.
+    LaunchedEffect(chat.size, chat.lastOrNull()?.status) {
+        if (chat.isNotEmpty()) list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+    }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
-        Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        LazyColumn(
+            Modifier.weight(1f).fillMaxWidth(), state = list,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SheetHeader(s, now)
-
+            item(key = "head") { SheetHeader(s, now, choices, canTune, actions) }
+            item(key = "actions") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActionChip(stringResource(R.string.terminal), Icons.Rounded.Terminal, actions.terminal)
+                    ActionChip(stringResource(if (s.followed) R.string.unfollow else R.string.follow), if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive) { actions.follow(!s.followed) }
+                    if (s.link.isNotBlank()) ActionChip(stringResource(R.string.open_in_claude), Icons.AutoMirrored.Rounded.OpenInNew, actions.openInClaude)
+                }
+            }
             s.question?.let { q ->
-                Surface(color = CmColors.surfaceHigh, shape = MaterialTheme.shapes.extraLarge, border = BorderStroke(2.dp, if (q.tier == Tier.HIGH) CmColors.gone else CmColors.waiting)) {
-                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Speakable(q.text, speak = true, actions.speak)
-                        val long = QuestionRules.needsLongPress(q.tier)
-                        if (long) Text(
-                            stringResource(if (holdHint) R.string.question_hold else R.string.question_high_risk),
-                            style = MaterialTheme.typography.labelLarge, color = if (holdHint) CmColors.waiting else CmColors.briefAlert,
-                        )
-                        q.options.forEachIndexed { i, o ->
-                            OptionButton(
-                                QuestionRules.optionLabel(o), filled = i == 0 && primary == PhonePrimary.Button.OPTION,
-                                onClick = { if (long) holdHint = true else actions.answer(o.n) },
-                                onLongClick = if (long) ({ actions.answer(o.n) }) else null,
-                            )
-                        }
-                        val allowAll = QuestionRules.allowAllVisible(q)
-                        ButtonGroup(
-                            overflowIndicator = { ButtonGroupDefaults.OverflowIndicator(it) },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            customItem(
-                                buttonGroupContent = {
-                                    val src = remember { MutableInteractionSource() }
-                                    OutlinedButton(onClick = actions.chat, interactionSource = src, modifier = Modifier.weight(1f).animateWidth(src)) {
-                                        Text(stringResource(R.string.chat_about_this), maxLines = 1)
-                                    }
-                                },
-                                menuContent = { m -> DropdownMenuItem(text = { Text(stringResource(R.string.chat_about_this)) }, onClick = { m.dismiss(); actions.chat() }) },
-                            )
-                            if (allowAll) customItem(
-                                buttonGroupContent = {
-                                    val src = remember { MutableInteractionSource() }
-                                    OutlinedButton(onClick = actions.allowAll, interactionSource = src, modifier = Modifier.weight(1f).animateWidth(src)) {
-                                        Text(stringResource(R.string.allow_all), maxLines = 1)
-                                    }
-                                },
-                                menuContent = { m -> DropdownMenuItem(text = { Text(stringResource(R.string.allow_all)) }, onClick = { m.dismiss(); actions.allowAll() }) },
-                            )
+                item(key = "q-" + q.id) {
+                    QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
+                }
+            }
+            items(chat, key = { "c-" + it.sent.id }) { row ->
+                ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
+            }
+            // L'esito di un turno partito dal PC, che nessun messaggio del telefono ha agganciato.
+            s.outcome?.takeIf { o -> chat.none { it.sent.outcomeFull == o.full } }?.let { o ->
+                item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
+            }
+            pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }
+                .filter { it.status == PendingStatus.FAILED && chat.none { c -> c.sent.id == it.cmd.id } }
+                .forEach { p ->
+                    item(key = "p-" + p.cmd.id) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.not_delivered), color = CmColors.goneDim, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { actions.retry(p.cmd.id) }) { Text(stringResource(R.string.retry), color = CmColors.actionIcon) }
                         }
                     }
                 }
-            }
-            s.outcome?.let { Speakable(it.full, speak = true, actions.speak) }
-
-            OutlinedTextField(
-                value = draft, onValueChange = { draft = it }, minLines = 2, modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
-                enabled = s.state != SessionState.GONE, shape = MaterialTheme.shapes.medium,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionChip(stringResource(R.string.terminal), Icons.Rounded.Terminal, actions.terminal)
-                ActionChip(stringResource(if (s.followed) R.string.unfollow else R.string.follow), if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive) { actions.follow(!s.followed) }
-                if (s.link.isNotBlank()) ActionChip(stringResource(R.string.open_in_claude), Icons.AutoMirrored.Rounded.OpenInNew, actions.openInClaude)
-            }
-            pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }.filter { it.status == PendingStatus.FAILED }.forEach { p ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.not_delivered), color = CmColors.goneDim, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { actions.retry(p.cmd.id) }) { Text(stringResource(R.string.retry), color = CmColors.actionIcon) }
-                }
-            }
         }
-        val filled = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
-        val mod = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(56.dp)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = "" })
+    }
+}
+
+/** La barra di scrittura (design 30/09, parti 1 e 7): sopra la tastiera, «+» per un'immagine, il tasto a destra. */
+@Composable
+private fun Composer(
+    s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
+) {
+    val mode = PhonePrimary.composer(s, draft, ops)
+    val bar = Modifier.fillMaxWidth().background(CmColors.bg).imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
+    if (mode == PhonePrimary.Composer.REOPEN) {
+        Button(
+            onClick = actions.reopen, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
+            modifier = bar.height(56.dp),
+        ) { Text(stringResource(R.string.reopen)) }
+        return
+    }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) { actions.attach(uri, draft.trim()); onSent() }
+    }
+    Row(bar, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (canAttach) IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+            Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon)
+        }
+        OutlinedTextField(
+            value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
+            shape = MaterialTheme.shapes.extraLarge,
+        )
         val send = {
             PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
-            draft = ""
+            onSent()
         }
-        when (primary) {
-            PhonePrimary.Button.SEND -> Button(onClick = send, colors = filled, modifier = mod) { Text(stringResource(R.string.send)) }
-            PhonePrimary.Button.REOPEN -> Button(onClick = actions.reopen, colors = filled, modifier = mod) { Text(stringResource(R.string.reopen)) }
-            // La prima opzione è il bottone pieno: «Invia» resta tonale e compare solo con del testo scritto.
-            PhonePrimary.Button.OPTION -> if (draft.isNotBlank()) FilledTonalButton(onClick = send, modifier = mod) { Text(stringResource(R.string.send)) }
-            PhonePrimary.Button.NONE -> Unit
+        val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
+        val size = Modifier.size(52.dp)
+        when (mode) {
+            PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
+                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+            }
+            PhonePrimary.Composer.SEND_TONAL -> FilledTonalIconButton(onClick = send, modifier = size) {
+                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+            }
+            PhonePrimary.Composer.STOP -> FilledIconButton(onClick = actions.interrupt, colors = filled, modifier = size) {
+                Icon(Icons.Rounded.Stop, stringResource(R.string.stop))
+            }
+            else -> FilledTonalIconButton(onClick = {}, enabled = false, modifier = size) {
+                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+            }
         }
     }
 }
 
-/** Testata: nome, account e progetto, lo stato come pillola, e i contatori della sessione (modello, effort, contesto). */
+/** La domanda come sull'orologio: prima opzione piena, pressione lunga per il rischio alto, «Parliamone», «Consenti tutto». */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SheetHeader(s: Session, now: Long) {
+private fun QuestionCard(
+    q: it.pixelbox.cmwatch.contract.Question, firstFilled: Boolean, holdHint: Boolean, onHold: () -> Unit, actions: SheetActions,
+) {
+    Surface(color = CmColors.surfaceHigh, shape = MaterialTheme.shapes.extraLarge, border = BorderStroke(2.dp, if (q.tier == Tier.HIGH) CmColors.gone else CmColors.waiting)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Speakable(q.text, speak = true, actions.speak)
+            val long = QuestionRules.needsLongPress(q.tier)
+            if (long) Text(
+                stringResource(if (holdHint) R.string.question_hold else R.string.question_high_risk),
+                style = MaterialTheme.typography.labelLarge, color = if (holdHint) CmColors.waiting else CmColors.briefAlert,
+            )
+            q.options.forEachIndexed { i, o ->
+                OptionButton(
+                    QuestionRules.optionLabel(o), filled = i == 0 && firstFilled,
+                    onClick = { if (long) onHold() else actions.answer(o.n) },
+                    onLongClick = if (long) ({ actions.answer(o.n) }) else null,
+                )
+            }
+            val allowAll = QuestionRules.allowAllVisible(q)
+            ButtonGroup(overflowIndicator = { ButtonGroupDefaults.OverflowIndicator(it) }, modifier = Modifier.fillMaxWidth()) {
+                customItem(
+                    buttonGroupContent = {
+                        val src = remember { MutableInteractionSource() }
+                        OutlinedButton(onClick = actions.chat, interactionSource = src, modifier = Modifier.weight(1f).animateWidth(src)) {
+                            Text(stringResource(R.string.chat_about_this), maxLines = 1)
+                        }
+                    },
+                    menuContent = { m -> DropdownMenuItem(text = { Text(stringResource(R.string.chat_about_this)) }, onClick = { m.dismiss(); actions.chat() }) },
+                )
+                if (allowAll) customItem(
+                    buttonGroupContent = {
+                        val src = remember { MutableInteractionSource() }
+                        OutlinedButton(onClick = actions.allowAll, interactionSource = src, modifier = Modifier.weight(1f).animateWidth(src)) {
+                            Text(stringResource(R.string.allow_all), maxLines = 1)
+                        }
+                    },
+                    menuContent = { m -> DropdownMenuItem(text = { Text(stringResource(R.string.allow_all)) }, onClick = { m.dismiss(); actions.allowAll() }) },
+                )
+            }
+        }
+    }
+}
+
+private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+private fun hhmm(epoch: Long) = HHMM.format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
+
+/** Un messaggio mandato (a destra, con lo stato e le azioni) e, se il suo turno è finito con un esito, Claude a sinistra. */
+@Composable
+private fun ChatTurn(row: ChatRow, ttsMinChars: Int, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
+    val m = row.sent
+    val clip = LocalClipboardManager.current
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+            Surface(
+                color = CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
+                modifier = Modifier.widthIn(max = 320.dp).then(if (row.status == ChatRules.Status.FAILED) Modifier.clickable { actions.retry(m.id) } else Modifier),
+            ) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    m.attachment?.let { AttachmentThumb(it) }
+                    if (m.text.isNotBlank()) Text(m.text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                StatusMark(row.status)
+                Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
+                SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
+                SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
+                SmallAction(Icons.Rounded.Replay, stringResource(R.string.resend)) { onResend(m.text) }
+            }
+        }
+        m.outcomeFull?.let { ClaudeBubble(it, m.doneAt, ttsMinChars, actions.speak) }
+    }
+}
+
+/** L'esito di un turno come fumetto di Claude, con Copia e Ascolta sotto (come nell'app nativa, senza fissa e dirama). */
+@Composable
+private fun ClaudeBubble(text: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit) {
+    val clip = LocalClipboardManager.current
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+        Surface(color = CmColors.briefCard, shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp), modifier = Modifier.widthIn(max = 340.dp)) {
+            Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
+            // Esiti sempre leggibili a voce (regola del ▶: esiti, risposte e domande, oltre alla soglia dei 120 caratteri).
+            SmallAction(Icons.AutoMirrored.Rounded.VolumeUp, stringResource(R.string.read_aloud)) { onSpeak(text) }
+            at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(start = 4.dp)) }
+        }
+    }
+}
+
+/** Lo stato di un messaggio come icona, con la parola solo per chi deve fare qualcosa (non consegnato). */
+@Composable
+private fun StatusMark(st: ChatRules.Status) {
+    val (icon, tint, label) = when (st) {
+        ChatRules.Status.SENDING -> Triple(Icons.Rounded.Schedule, CmColors.text2, R.string.chat_sending)
+        ChatRules.Status.FAILED -> Triple(Icons.Rounded.ErrorOutline, CmColors.gone, R.string.chat_failed)
+        ChatRules.Status.DELIVERED -> Triple(Icons.Rounded.Check, CmColors.actionIcon, R.string.chat_delivered)
+        ChatRules.Status.QUEUED -> Triple(Icons.Rounded.Check, CmColors.stale, R.string.chat_queued)
+        ChatRules.Status.WORKING -> Triple(Icons.Rounded.PlayArrow, CmColors.busy, R.string.chat_working)
+        ChatRules.Status.DONE -> Triple(Icons.Rounded.DoneAll, CmColors.actionIcon, R.string.chat_done)
+    }
+    val text = stringResource(label)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(icon, text, tint = tint, modifier = Modifier.size(16.dp))
+        if (st == ChatRules.Status.FAILED || st == ChatRules.Status.QUEUED || st == ChatRules.Status.WORKING) {
+            Text(text, style = MaterialTheme.typography.labelMedium, color = tint)
+        }
+    }
+}
+
+@Composable
+private fun SmallAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) =
+    IconButton(onClick = onClick, modifier = Modifier.size(36.dp)) { Icon(icon, label, tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
+
+/** L'anteprima dell'immagine allegata, dalla copia locale; niente se il file non c'è più. */
+@Composable
+private fun AttachmentThumb(path: String) {
+    val bmp = remember(path) { runCatching { android.graphics.BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() } ?: return
+    androidx.compose.foundation.Image(
+        bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop,
+        modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp).clip(RoundedCornerShape(14.dp)),
+    )
+}
+
+/**
+ * Testata: account e progetto, stato come pillola, modello ed effort toccabili (contratto 1.12) con il foglio delle
+ * scelte, contesto, obiettivo e bassa priorità. Il nome sta nel menu delle sessioni in alto.
+ */
+@Composable
+private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions) {
+    var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
+    val tunable = canTune && choices != null && s.state != SessionState.GONE
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(s.name, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountDot(Accounts.isPersonal(s))
+            SessionBadge(s, size = 18.dp)
             Text("${s.account} · ${s.project}", style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
         }
         StatePill(s.state, Durations.since(s.since, now))
         val model = ModelText.short(s.model)
         val effort = SessionMeters.effortStep(s.effort)
-        if (model != null || effort != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            model?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.text) }
-            effort?.let { step ->
-                Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.effort), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
-                    repeat(SessionMeters.EFFORT_STEPS) { i ->
-                        Box(Modifier.size(width = 10.dp, height = 6.dp).background(if (i < step) CmColors.briefRing else CmColors.briefTrack, CircleShape))
+        if (model != null || effort != null || tunable) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AssistChip(
+                onClick = { picker = "model" }, enabled = tunable,
+                label = { Text(model ?: stringResource(R.string.model_title)) },
+                trailingIcon = if (tunable) ({ Icon(Icons.Rounded.ArrowDropDown, null) }) else null,
+                shape = CircleShape, border = null,
+                colors = AssistChipDefaults.assistChipColors(containerColor = CmColors.surface, labelColor = CmColors.text, disabledContainerColor = CmColors.surface, disabledLabelColor = CmColors.text),
+            )
+            AssistChip(
+                onClick = { picker = "effort" }, enabled = tunable,
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(stringResource(R.string.effort))
+                        repeat(SessionMeters.EFFORT_STEPS) { i ->
+                            Box(Modifier.size(width = 10.dp, height = 6.dp).background(if (effort != null && i < effort) CmColors.briefRing else CmColors.briefTrack, CircleShape))
+                        }
                     }
-                }
-            }
+                },
+                trailingIcon = if (tunable) ({ Icon(Icons.Rounded.ArrowDropDown, null) }) else null,
+                shape = CircleShape, border = null,
+                colors = AssistChipDefaults.assistChipColors(containerColor = CmColors.surface, labelColor = CmColors.text2, disabledContainerColor = CmColors.surface, disabledLabelColor = CmColors.text2),
+            )
         }
         s.context?.let { ContextBar(it, null) }
         SessionsText.goalLine(s, stringResource(R.string.goal))?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.briefLabel) }
         SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered))?.let {
             Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.waiting)
+        }
+    }
+    if (picker != null && choices != null) {
+        ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(if (picker == "model") R.string.model_title else R.string.effort_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text,
+                )
+                Text(stringResource(R.string.choice_this_session), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+                Spacer(Modifier.height(8.dp))
+                val rows: List<Pair<String, String>> = if (picker == "model") choices.models.map { it.id to (it.label ?: ModelText.short(it) ?: it.id) }
+                    else choices.efforts.map { it to it }
+                val current = if (picker == "model") s.model?.id else s.effort
+                rows.forEach { (value, label) ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable {
+                            if (picker == "model") actions.setModel(value) else actions.setEffort(value)
+                            picker = null
+                        }.padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        RadioButton(selected = value == current, onClick = null)
+                        Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                    }
+                }
+            }
         }
     }
 }

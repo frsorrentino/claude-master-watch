@@ -134,4 +134,24 @@
     <string name="question_high_risk">High risk: press and hold an option to answer</string>
     <string name="question_hold">Press and hold to confirm</string>
     <string name="ov_week_reset">week %1$d%% · %2$s</string>
+    <string name="state_awaiting">prompt from the phone in progress</string>
+    <string name="badge_personal">personal account</string>
+    <string name="badge_work">work account</string>
+    <string name="attach_image">Attach an image</string>
+    <string name="stop">Stop</string>
+    <string name="copy">Copy</string>
+    <string name="edit">Edit</string>
+    <string name="resend">Send again</string>
+    <string name="chat_sending">sending</string>
+    <string name="chat_failed">not delivered, tap to retry</string>
+    <string name="chat_delivered">delivered</string>
+    <string name="chat_queued">queued</string>
+    <string name="chat_working">in progress</string>
+    <string name="chat_done">done</string>
+    <string name="model_title">Model</string>
+    <string name="effort_title">Effort</string>
+    <string name="choice_this_session">Applies to this session only</string>
+    <string name="all_sessions">All sessions</string>
+    <string name="connect_pc">Connect the PC</string>
+    <string name="connect_pc_sub">Scan the QR the PC shows with claude-master relay pair</string>
 </resources>

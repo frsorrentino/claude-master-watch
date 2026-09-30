@@ -57,6 +57,11 @@ class PhoneApp : Application() {
         android.provider.Settings.Global.getString(contentResolver, android.provider.Settings.Global.DEVICE_NAME) ?: android.os.Build.MODEL
     }
 
+    /** I messaggi mandati dal telefono, per la chat della scheda sessione (design 30/09): su file, 7 giorni. */
+    val chatLog: it.pixelbox.cmwatch.data.ChatLog by lazy {
+        it.pixelbox.cmwatch.data.ChatLog(java.io.File(filesDir, "chat.json")) { System.currentTimeMillis() / 1000 }
+    }
+
     /** La Demo (design 29/09): le fixture del contratto con i testi della demo, come sull'orologio. */
     val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
@@ -92,6 +97,8 @@ class PhoneApp : Application() {
         scope.launch {
             repo.snapshot.map { it.state }.filterNotNull().distinctUntilChanged().collect { cur ->
                 val prev = lastState; lastState = cur
+                // I passaggi dei messaggi della chat (in coda, in lavorazione, elaborato) si vedono a ogni stato.
+                chatLog.advance(cur)
                 if (prev != null) react(prev, cur)
             }
         }

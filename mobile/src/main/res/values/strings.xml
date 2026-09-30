@@ -136,4 +136,24 @@
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>
     <string name="question_hold">Tieni premuto per confermare</string>
     <string name="ov_week_reset">settimana %1$d%% · %2$s</string>
+    <string name="state_awaiting">prompt dal telefono in corso</string>
+    <string name="badge_personal">account personale</string>
+    <string name="badge_work">account di lavoro</string>
+    <string name="attach_image">Allega un\'immagine</string>
+    <string name="stop">Ferma</string>
+    <string name="copy">Copia</string>
+    <string name="edit">Modifica</string>
+    <string name="resend">Reinvia</string>
+    <string name="chat_sending">in invio</string>
+    <string name="chat_failed">non consegnato, tocca per riprovare</string>
+    <string name="chat_delivered">consegnato</string>
+    <string name="chat_queued">in coda</string>
+    <string name="chat_working">in lavorazione</string>
+    <string name="chat_done">elaborato</string>
+    <string name="model_title">Modello</string>
+    <string name="effort_title">Effort</string>
+    <string name="choice_this_session">Vale solo per questa sessione</string>
+    <string name="all_sessions">Tutte le sessioni</string>
+    <string name="connect_pc">Collega il PC</string>
+    <string name="connect_pc_sub">Inquadra il QR che il PC mostra con claude-master relay pair</string>
 </resources>

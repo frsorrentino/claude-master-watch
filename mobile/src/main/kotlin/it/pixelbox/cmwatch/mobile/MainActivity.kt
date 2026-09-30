@@ -24,7 +24,10 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.PhoneDiary
+import it.pixelbox.cmwatch.rules.ChatRules
+import it.pixelbox.cmwatch.rules.PhoneBoard
 import it.pixelbox.cmwatch.rules.PhoneOverview
+import it.pixelbox.cmwatch.rules.Sent
 import it.pixelbox.cmwatch.rules.PhoneTerminal
 import it.pixelbox.cmwatch.rules.TerminalLive
 import it.pixelbox.cmwatch.rules.StartRoute
@@ -118,6 +121,7 @@ class MainActivity : ComponentActivity() {
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
+        val chatLog by app.chatLog.messages.collectAsStateWithLifecycle()
         var tab by rememberSaveable { mutableStateOf(StartRoute.tab(restored = null)) }
         var open by rememberSaveable { mutableStateOf<String?>(null) }       // nome della sessione aperta
         var terminal by rememberSaveable { mutableStateOf<String?>(null) }   // nome della sessione del terminale
@@ -194,7 +198,11 @@ class MainActivity : ComponentActivity() {
                 onLaunch = { launching = true }, onNight = if (state.night.items != null) ({ nightAdding = true }) else null,
             )
         }
-        AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab) {
+        AppShell(
+            tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
+            sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
+            current = open, onPick = { n -> if (n != null) tab = StartRoute.Tab.SESSIONS; open = n },
+        ) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
                 state?.let { st ->
                     val model = remember(st, events, samples, now, snap.freshness) {
@@ -218,23 +226,38 @@ class MainActivity : ComponentActivity() {
                 flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }) { name ->
                     CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
                         val session = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
-                        if (session != null) SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
+                        // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
+                        if (session != null) {
+                        fun sendAndLog(target: PhonePrimary.Target, text: String) = scope.launch {
+                            val id = if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
+                            app.chatLog.add(Sent(id, session.name, text, System.currentTimeMillis() / 1000))
+                        }
+                        val rows = chatLog.filter { it.session == session.name }.sortedBy { it.sentAt }.map { m ->
+                            ChatRow(m, ChatRules.status(m, snap.pending.firstOrNull { it.cmd.id == m.id }?.status, results[m.id], session))
+                        }
+                        SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
                             allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
-                            send = { target, text ->
-                                scope.launch {
-                                    if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
-                                }
-                            },
+                            send = { target, text -> sendAndLog(target, text) },
                             follow = { on -> scope.launch { app.repo.command(if (on) CmdOp.FOLLOW else CmdOp.UNFOLLOW, session.name, null) } },
                             reopen = { scope.launch { app.repo.command(CmdOp.REOPEN, session.name, null) } },
                             terminal = { terminal = session.name; screenId = null },
                             openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
                             speak = speech::speak,
-                            retry = { id -> scope.launch { app.repo.retry(id) } },
+                            // Un comando perso si riprova con lo stesso id; uno rifiutato dal PC si rimanda come nuovo.
+                            retry = { id ->
+                                scope.launch {
+                                    if (app.repo.snapshot.value.pending.any { it.cmd.id == id }) app.repo.retry(id)
+                                    else chatLog.firstOrNull { it.id == id }?.let { sendAndLog(PhonePrimary.Target.PROMPT, it.text) }
+                                }
+                            },
                             chat = { scope.launch { app.repo.chat(session.name) } },
-                        ))
-                        else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
+                            setModel = { v -> scope.launch { app.repo.command(CmdOp.MODEL, session.name, v) } },
+                            setEffort = { v -> scope.launch { app.repo.command(CmdOp.EFFORT, session.name, v) } },
+                            interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
+                            attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
+                        ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null)
+                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
                     }
                 }
             }
@@ -254,6 +277,22 @@ class MainActivity : ComponentActivity() {
                     scope.launch { app.repo.command(CmdOp.LAUNCH, null, project.path, first.ifBlank { null }) }
                 }
             }
+        }
+    }
+
+    /**
+     * Un'immagine dalla barra di scrittura: ridotta come in «Condividi» (contratto 1.19), mandata con `report`, e una copia
+     * locale per l'anteprima nel fumetto della chat.
+     */
+    private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {
+        app.scope.launch {
+            val bytes = it.pixelbox.cmwatch.mobile.share.ImageShrink.jpeg(this@MainActivity, uri) ?: return@launch
+            val id = runCatching { app.repo.report(session, text, "image/jpeg", bytes, maxBytes) }.getOrElse {
+                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, getString(R.string.share_failed), android.widget.Toast.LENGTH_LONG).show() }
+                return@launch
+            }
+            val copy = java.io.File(java.io.File(filesDir, "chat").apply { mkdirs() }, "$id.jpg").apply { writeBytes(bytes) }
+            app.chatLog.add(Sent(id, session, text, System.currentTimeMillis() / 1000, attachment = copy.path))
         }
     }
 
