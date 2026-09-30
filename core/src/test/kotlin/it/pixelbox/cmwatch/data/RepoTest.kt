@@ -22,7 +22,7 @@ import org.junit.Test
 class RepoTest {
     private class Slow(var delayMs: Long, base: FakeTransport) : Transport by base {
         var fail = false
-        override suspend fun send(cmd: Cmd): CmdResult {
+        override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult {
             delay(delayMs)
             if (fail) throw TransportException.Network("down")
             return CmdResult(cmd.id, true, "answered ${cmd.arg}. ok", 0)
@@ -216,7 +216,8 @@ class RepoTest {
         val store = MemoryStore()
         val repo = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
         val notices = mutableListOf<Repo.Notice>(); bg().launch { repo.notices.collect { notices += it } }; idle()
-        repeat(12) { repo.prompt("atlas-shop", "m$it") }
+        // Dalla revisione del 30/09 l'undicesimo e il dodicesimo sono rifiutati a voce alta, non scartati in silenzio.
+        repeat(12) { runCatching { repo.prompt("atlas-shop", "m$it") } }
         idle()
         assertEquals(10, repo.snapshot.value.pending.size)
         assertTrue(repo.snapshot.value.pending.all { it.status == PendingStatus.QUEUED })
@@ -253,10 +254,58 @@ class RepoTest {
         assertEquals("phone", tr.cmds.single { it.id == id }.device)
     }
 
+    /** Lo stato preciso (30/09 22:13): appena il comando è scritto sul canale è «inviato al PC», prima del risultato. */
+    @Test fun pendingBecomesSentOnceWritten() = runTest {
+        val tr = Paused(fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        val id = repo.prompt("atlas-shop", "run the tests")
+        tr.written.await()
+        assertEquals(PendingStatus.SENT, repo.snapshot.value.pending.single { it.cmd.id == id }.status)
+        tr.release.complete(Unit); idle()
+        assertTrue(repo.snapshot.value.pending.none { it.cmd.id == id })
+    }
+
+    /** Un'immagine che il canale rifiuta si dice subito, con il motivo, sotto lo stesso id del messaggio. */
+    @Test fun uploadFailureIsRecordedUnderTheMessageId() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        try { repo.report("atlas-shop", "x", "image/jpeg", ByteArray(10), maxBytes = 5, id = "m1"); fail("expected TooLarge") }
+        catch (e: TransportException.TooLarge) { }
+        assertTrue(repo.uploads.value["m1"] is it.pixelbox.cmwatch.rules.ChatRules.Upload.Failed)
+    }
+
+    /** Revisione 30/09: senza rete le letture della chat non riempiono la coda dei comandi dell'utente. */
+    @Test fun passiveReadsAreNeverQueued() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle(); online = false
+        try { repo.command(CmdOp.TRANSCRIPT, "atlas-shop", "50"); fail("expected Network") } catch (e: TransportException.Network) { }
+        assertTrue(repo.snapshot.value.pending.isEmpty())
+        online = true
+    }
+
+    /** Con la coda piena un messaggio non si finge partito: il chiamante riceve l'errore. */
+    @Test fun aFullQueueRefusesLoudly() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle(); online = false
+        repeat(10) { repo.prompt("atlas-shop", "m$it") }
+        try { repo.prompt("atlas-shop", "one too many"); fail("expected QueueFull") } catch (e: Repo.QueueFull) { }
+        online = true
+    }
+
+    /** Il trasporto della demo che si ferma dopo aver scritto il comando, finché il test non lo lascia andare. */
+    private class Paused(private val inner: it.pixelbox.cmwatch.transport.Transport) : it.pixelbox.cmwatch.transport.Transport by inner {
+        val written = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        override suspend fun send(cmd: it.pixelbox.cmwatch.contract.Cmd, onWritten: () -> Unit): it.pixelbox.cmwatch.contract.CmdResult {
+            onWritten(); written.complete(Unit); release.await(); return inner.send(cmd)
+        }
+    }
+
     /** Il trasporto della demo, con la lista dei comandi mandati: solo per guardarli nel test. */
     private class Recording(private val inner: it.pixelbox.cmwatch.transport.Transport) : it.pixelbox.cmwatch.transport.Transport by inner {
         val cmds = mutableListOf<it.pixelbox.cmwatch.contract.Cmd>()
-        override suspend fun send(cmd: it.pixelbox.cmwatch.contract.Cmd) = inner.send(cmd).also { cmds += cmd }
+        override suspend fun send(cmd: it.pixelbox.cmwatch.contract.Cmd, onWritten: () -> Unit) = inner.send(cmd, onWritten).also { cmds += cmd }
     }
 }
 

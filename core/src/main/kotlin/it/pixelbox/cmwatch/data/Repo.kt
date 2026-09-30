@@ -10,6 +10,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import it.pixelbox.cmwatch.rules.ChatRules
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import java.util.UUID
 
-enum class PendingStatus { SENDING, QUEUED, FAILED }
+/** SENDING = si sta scrivendo; SENT = il comando è sul canale, il PC non ha ancora risposto; QUEUED = senza rete. */
+enum class PendingStatus { SENDING, SENT, QUEUED, FAILED }
 data class Pending(val cmd: Cmd, val status: PendingStatus)
 data class Snapshot(val state: State?, val freshness: Freshness, val pending: List<Pending> = emptyList())
 
@@ -50,6 +52,12 @@ class Repo(
     private val _resultsById = MutableStateFlow<Map<String, CmdResult>>(emptyMap())
     /** Gli ultimi risultati per id: per chi si iscrive dopo l'arrivo (es. il Terminale). */
     val resultsById: StateFlow<Map<String, CmdResult>> = _resultsById
+    /** La coda senza rete è piena: il comando non parte e il chiamante lo deve dire. */
+    class QueueFull : Exception("offline queue full")
+
+    private val _uploads = MutableStateFlow<Map<String, ChatRules.Upload>>(emptyMap())
+    /** Le immagini in caricamento o rifiutate, per id del messaggio: la chat ne mostra il passaggio e il motivo. */
+    val uploads: StateFlow<Map<String, ChatRules.Upload>> = _uploads
     private val _userResults = MutableSharedFlow<CmdResult>(extraBufferCapacity = 16)
     /**
      * Solo i risultati delle azioni dell'utente (risposte, prompt, lanci, riaperture): per vibrazione e conferma. Le
@@ -156,9 +164,13 @@ class Repo(
 
     /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
     /** `text`: il primo messaggio di un `launch` (contratto 1.13); per gli altri comandi resta null. */
-    suspend fun command(op: CmdOp, session: String?, arg: String?, text: String? = null): String {
-        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by, text = text, device = device)
-        if (!online()) { enqueue(cmd); return cmd.id }
+    suspend fun command(op: CmdOp, session: String?, arg: String?, text: String? = null, id: String = UUID.randomUUID().toString()): String {
+        val cmd = Cmd(id, op, session, arg, now(), by, text = text, device = device)
+        if (!online()) {
+            // Le letture delle schermate non entrano nella coda dei comandi dell'utente (revisione 30/09).
+            if (op in PASSIVE) throw TransportException.Network("offline")
+            enqueue(cmd); return cmd.id
+        }
         dispatch(cmd)
         return cmd.id
     }
@@ -167,15 +179,23 @@ class Repo(
      * Contratto 1.19, «Condividi»: prima l'immagine cifrata in /share/<id>, poi `report` con quell'id; senza immagine solo il
      * comando. Senza rete non si accoda: l'immagine non avrebbe dove stare, e il chiamante lo dice all'utente.
      */
-    suspend fun report(session: String, text: String?, mime: String?, image: ByteArray?, maxBytes: Int): String {
-        if (!online()) throw TransportException.Network("offline")
-        val shareId = image?.let { bytes -> UUID.randomUUID().toString().also { transport.share(it, mime ?: "image/jpeg", bytes, maxBytes) } }
-        return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() })
+    suspend fun report(session: String, text: String?, mime: String?, image: ByteArray?, maxBytes: Int, id: String = UUID.randomUUID().toString()): String {
+        // Il caricamento dell'immagine è un passaggio visibile, e un rifiuto si dice subito con il motivo (30/09 22:13).
+        val fail = { e: Exception -> _uploads.update { it + (id to ChatRules.Upload.Failed(e.message ?: "upload failed")) } }
+        if (!online()) { val e = TransportException.Network("offline"); fail(e); throw e }
+        val shareId = image?.let { bytes ->
+            _uploads.update { it + (id to ChatRules.Upload.Going) }
+            val sid = UUID.randomUUID().toString()
+            try { transport.share(sid, mime ?: "image/jpeg", bytes, maxBytes) } catch (e: Exception) { fail(e); throw e }
+            _uploads.update { it - id }
+            sid
+        }
+        return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() }, id = id)
     }
 
     private suspend fun enqueue(cmd: Cmd) {
         val queued = _snapshot.value.pending.filter { it.status == PendingStatus.QUEUED }.map { it.cmd }
-        if (queued.size >= MAX_QUEUE) { _notices.tryEmit(Notice.QueueFull); return }
+        if (queued.size >= MAX_QUEUE) { _notices.tryEmit(Notice.QueueFull); throw QueueFull() }
         _snapshot.update { it.copy(pending = it.pending + Pending(cmd, PendingStatus.QUEUED)) }
         store.savePending(queued + cmd)
     }
@@ -186,7 +206,11 @@ class Repo(
         jobs[cmd.id]?.cancel()
         jobs[cmd.id] = scope.launch {
             val r = try {
-                withTimeout(Transport.RESULT_TIMEOUT_MS) { transport.send(cmd) }
+                withTimeout(Transport.RESULT_TIMEOUT_MS) {
+                    transport.send(cmd) {
+                        _snapshot.update { it.copy(pending = it.pending.map { p -> if (p.cmd.id == cmd.id && p.status == PendingStatus.SENDING) p.copy(status = PendingStatus.SENT) else p }) }
+                    }
+                }
             } catch (e: TimeoutCancellationException) { null } catch (e: TransportException) { null }
             if (r == null) {
                 _snapshot.update { it.copy(pending = it.pending.map { p -> if (p.cmd.id == cmd.id) p.copy(status = PendingStatus.FAILED) else p }) }

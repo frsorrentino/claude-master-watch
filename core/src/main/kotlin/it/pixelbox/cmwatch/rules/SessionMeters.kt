@@ -10,7 +10,8 @@ object SessionMeters {
     fun effortStep(effort: String?): Int? = when (effort?.trim()?.lowercase()) {
         "low" -> 1
         "medium" -> 2
-        "high" -> 3
+        // xhigh e max vanno oltre high: tutte le tacche accese (dal vivo 30/09 21:57 restavano spente).
+        "high", "xhigh", "max" -> 3
         else -> null
     }
 

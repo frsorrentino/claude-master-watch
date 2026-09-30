@@ -152,9 +152,14 @@ class FakeTransport(
 
     /** Demo: l'immagine resta in memoria, basta che `report` la trovi. */
     private val shared = HashSet<String>()
-    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) { shared += id }
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) {
+        // Come il canale vero: oltre il limite si rifiuta prima di scrivere.
+        if (data.size > maxBytes) throw TransportException.TooLarge(data.size, maxBytes)
+        shared += id
+    }
 
-    override suspend fun send(cmd: Cmd): CmdResult {
+    override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult {
+        onWritten()
         results[cmd.id]?.let { return it }
         val s = current.value
         val ses = s.sessions.firstOrNull { it.name == cmd.session }

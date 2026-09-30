@@ -20,7 +20,7 @@ class SwitchableTransport(initial: Transport) : Transport {
     override val state: Flow<State> = current.flatMapLatest { it.state }
     override val events: Flow<List<Event>> = current.flatMapLatest { it.events }
     override suspend fun fetchState(): State = current.value.fetchState()
-    override suspend fun send(cmd: Cmd): CmdResult = current.value.send(cmd)
+    override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult = current.value.send(cmd, onWritten)
     override suspend fun pair(code: String, deviceName: String): PairingInfo = current.value.pair(code, deviceName)
     override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) = current.value.share(id, mime, data, maxBytes)
 }

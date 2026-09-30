@@ -74,4 +74,32 @@ class ChatFeedTest {
         assertEquals("50:after=a5.0", ChatFeed.arg("a5.0"))
         assertEquals("50:before=u1.0", ChatFeed.olderArg("u1.0"))
     }
+
+    // Revisione 30/09: una risposta corta ripetuta va al messaggio più vicino nel tempo, non al più vecchio.
+    @Test fun nearestMessageWins() {
+        val e = TranscriptEntry("u5.0", "user", text = "sì", at = 1000, origin = "phone")
+        val old = Sent("a", "kb", "sì", sentAt = 100) to ChatRules.Status.DELIVERED
+        val new = Sent("b", "kb", "sì", sentAt = 998) to ChatRules.Status.DELIVERED
+        val mine = ChatFeed.merge(listOf(e), listOf(old, new)).filterIsInstance<ChatFeed.Item.Mine>()
+        assertEquals("u5.0", mine.single { it.sent.id == "b" }.entry?.id)
+    }
+
+    @Test fun watchEntriesAreNotMine() {
+        val e = TranscriptEntry("u6.0", "user", text = "status?", at = 1000, origin = "watch")
+        val feed = ChatFeed.merge(listOf(e), listOf(Sent("c", "kb", "status?", sentAt = 999) to ChatRules.Status.DELIVERED))
+        assertTrue(feed.any { it is ChatFeed.Item.User })
+    }
+
+    @Test fun failedMessagesDoNotMatch() {
+        val e = TranscriptEntry("u7.0", "user", text = "deploy", at = 1000, origin = "phone")
+        val feed = ChatFeed.merge(listOf(e), listOf(Sent("d", "kb", "deploy", sentAt = 999, failed = "x") to ChatRules.Status.FAILED))
+        assertTrue(feed.any { it is ChatFeed.Item.User })
+    }
+
+    // Con pagine più vecchie ancora da caricare, i messaggi più vecchi della pagina non si accumulano in testa.
+    @Test fun leftoversOlderThanThePageHideWhileMore() {
+        val e = TranscriptEntry("u8.0", "user", text = "now", at = 1000, origin = "pc")
+        val feed = ChatFeed.merge(listOf(e), listOf(Sent("e", "kb", "long ago", sentAt = 10) to ChatRules.Status.DONE), more = true)
+        assertTrue(feed.none { it is ChatFeed.Item.Mine })
+    }
 }

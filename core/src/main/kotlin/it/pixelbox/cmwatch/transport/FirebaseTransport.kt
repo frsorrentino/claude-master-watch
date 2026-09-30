@@ -121,9 +121,10 @@ class FirebaseTransport(
         rtdb.put("share/$id", doc)
     }
 
-    override suspend fun send(cmd: Cmd): CmdResult {
+    override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult {
         k()
         rtdb.put("cmd/${cmd.id}", seal(ContractJson.encode(cmd)))
+        onWritten()
         val r = withTimeoutOrNull(resultTimeoutMs) {
             while (true) {
                 rtdb.get("result/${cmd.id}")?.let { return@withTimeoutOrNull ContractJson.decodeResult(open(Json.parseToJsonElement(it))) }

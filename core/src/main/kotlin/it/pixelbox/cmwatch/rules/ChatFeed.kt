@@ -35,26 +35,33 @@ object ChatFeed {
         }
     }
 
-    fun merge(entries: List<TranscriptEntry>, sent: List<Pair<Sent, ChatRules.Status>>): List<Item> {
+    fun merge(entries: List<TranscriptEntry>, sent: List<Pair<Sent, ChatRules.Status>>, more: Boolean = false): List<Item> {
         val left = sent.sortedBy { it.first.sentAt }.toMutableList()
         val items = entries.map { e ->
             when (e.role) {
                 "user" -> {
                     // Il relay antepone al prompt le sue istruzioni: basta che la voce finisca con il testo mandato.
                     val t = e.text?.trim().orEmpty()
-                    // Una voce scritta al PC non è mai un messaggio del telefono, anche con lo stesso testo.
-                    val hit = if (e.origin == "pc") null else left.firstOrNull { (m, _) ->
-                        m.text.isNotBlank() && t.endsWith(m.text.trim()) && (e.at ?: Long.MAX_VALUE) >= m.sentAt - ChatRules.SKEW_S
-                    }
+                    // Solo le voci arrivate dal telefono (o da un relay che non lo dice), mai i messaggi falliti; fra più
+                    // candidati con lo stesso testo quello più vicino nel tempo (revisione 30/09).
+                    val at = e.at ?: Long.MAX_VALUE
+                    val hit = if (e.origin != null && e.origin != "phone") null else left
+                        .filter { (m, st) ->
+                            st != ChatRules.Status.FAILED && m.failed == null && m.text.isNotBlank() && t.endsWith(m.text.trim()) &&
+                                at >= m.sentAt - ChatRules.SKEW_S
+                        }
+                        .minByOrNull { (m, _) -> kotlin.math.abs(at - m.sentAt) }
                     if (hit != null) { left.remove(hit); Item.Mine(hit.first, hit.second, e) } else Item.User(e)
                 }
                 "tool" -> Item.Tool(e)
                 else -> Item.Claude(e)
             }
         }
-        // I messaggi non ancora nella trascrizione, al loro orario fra le voci.
+        // I messaggi non ancora nella trascrizione, al loro orario fra le voci. Con pagine più vecchie ancora da caricare,
+        // quelli più vecchi della pagina aspettano la loro pagina invece di accumularsi in testa.
         val result = items.toMutableList()
-        left.forEach { (m, st) ->
+        val first = entries.firstOrNull()?.at
+        left.filterNot { (m, _) -> more && first != null && m.sentAt < first }.forEach { (m, st) ->
             val at = result.indexOfFirst { atOf(it) > m.sentAt }
             val item = Item.Mine(m, st, null)
             if (at < 0) result.add(item) else result.add(at, item)

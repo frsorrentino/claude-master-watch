@@ -25,8 +25,11 @@ interface Transport {
     val events: Flow<List<Event>>
     /** Un GET (sveglia FCM). */
     suspend fun fetchState(): State
-    /** Scrive /cmd/<id> e attende /result/<id>; TransportException.Timeout dopo RESULT_TIMEOUT_MS. */
-    suspend fun send(cmd: Cmd): CmdResult
+    /**
+     * Scrive /cmd/<id> e attende /result/<id>; TransportException.Timeout dopo RESULT_TIMEOUT_MS. `onWritten` scatta
+     * appena il comando è sul canale, prima del risultato: la chat lo mostra come «inviato al PC» (30/09 22:13).
+     */
+    suspend fun send(cmd: Cmd, onWritten: () -> Unit = {}): CmdResult
     suspend fun pair(code: String, deviceName: String): PairingInfo
     /** Contratto 1.19: scrive l'immagine cifrata in /share/<id> prima del comando `report`. */
     suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int)

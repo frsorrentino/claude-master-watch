@@ -38,5 +38,11 @@ class ChatLog(private val file: File, private val now: () -> Long) {
         if (next != _messages.value) save(next)
     }
 
+    /** Il motivo di un invio fallito resta sul messaggio: non si perde con i risultati in memoria né con un riavvio. */
+    @Synchronized fun markFailed(id: String, reason: String) {
+        val next = _messages.value.map { if (it.id == id && it.failed == null) it.copy(failed = reason) else it }
+        if (next != _messages.value) save(next)
+    }
+
     fun forSession(name: String): List<Sent> = _messages.value.filter { it.session == name }.sortedBy { it.sentAt }
 }

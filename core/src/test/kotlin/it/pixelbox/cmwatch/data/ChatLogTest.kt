@@ -45,4 +45,10 @@ class ChatLogTest {
         l.advance(null)
         assertTrue(log().forSession("kb").isEmpty())
     }
+
+    @Test fun failureIsSavedOnTheMessage() {
+        log().add(m)
+        log().markFailed("c1", "kb is not running")
+        assertEquals("kb is not running", log().forSession("kb").single().failed)
+    }
 }

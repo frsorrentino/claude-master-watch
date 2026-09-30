@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.contract
 import it.pixelbox.cmwatch.Fixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChoicesTest {
@@ -18,4 +19,11 @@ class ChoicesTest {
         assertEquals(true, ContractJson.decodeState(Fixtures.stateQuestion).ops?.contains("interrupt"))
 
     @Test fun olderRelayHasNoOps() = assertNull(ContractJson.decodeState("""{"v":1,"ts":1,"host":"h"}""").ops)
+
+    // Contratto 1.23: il prompt suggerito, solo per la sessione ferma.
+    @Test fun suggestionOnlyForTheIdleSession() {
+        val st = ContractJson.decodeState(Fixtures.stateQuestion)
+        assertEquals("commit the README changes and open a PR", st.sessions.single { it.name == "field-notes" }.suggestion)
+        assertTrue(st.sessions.filter { it.name != "field-notes" }.all { it.suggestion == null })
+    }
 }

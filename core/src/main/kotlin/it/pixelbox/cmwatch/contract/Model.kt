@@ -82,6 +82,8 @@ enum class CmdOp {
     @SerialName("low_priority") val lowPriority: String? = null,
     /** Contratto 1.16: la condizione di completamento data con /goal, null senza obiettivo. */
     val goal: Goal? = null,
+    /** Contratto 1.23: il prompt suggerito che il terminale mostra attenuato dopo ❯; solo per una sessione ferma. */
+    val suggestion: String? = null,
 )
 
 /** Contratto 1.16: testo dell'obiettivo (/goal), da quando, e se è soddisfatto quando il PC lo sa dire. */

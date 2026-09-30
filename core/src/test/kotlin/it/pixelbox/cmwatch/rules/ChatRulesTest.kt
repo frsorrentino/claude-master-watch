@@ -76,4 +76,49 @@ class ChatRulesTest {
         val list = listOf(m, m.copy(id = "old", sentAt = t - ChatRules.KEEP_S - 1))
         assertEquals(listOf("c1"), ChatRules.prune(list, now = t).map { it.id })
     }
+
+    // Lo stato preciso di ogni invio (Franz, 30/09 22:13): ogni passaggio si vede, e un fallimento dice perché.
+    @Test fun uploadingWhileTheImageGoesUp() =
+        assertEquals(Status.UPLOADING, ChatRules.status(m, null, null, s(SessionState.IDLE), ChatRules.Upload.Going))
+
+    @Test fun uploadFailureIsFailedWithItsReason() {
+        val up = ChatRules.Upload.Failed("image too large")
+        assertEquals(Status.FAILED, ChatRules.status(m, null, null, s(SessionState.IDLE), up))
+        assertEquals("image too large", ChatRules.reason(null, null, up))
+    }
+
+    @Test fun sentOnceWrittenOnTheBus() = assertEquals(Status.SENT, ChatRules.status(m, PendingStatus.SENT, null, s(SessionState.IDLE)))
+
+    @Test fun offlineWaitsForTheNetwork() = assertEquals(Status.OFFLINE, ChatRules.status(m, PendingStatus.QUEUED, null, s(SessionState.IDLE)))
+
+    @Test fun rejectedCarriesTheRelayReason() =
+        assertEquals("kb is not running: nothing sent", ChatRules.reason(null, ok.copy(ok = false, text = "kb is not running: nothing sent"), null))
+
+    @Test fun lostHasNoReasonFromThePc() = assertNull(ChatRules.reason(PendingStatus.FAILED, null, null))
+
+    // Revisione 30/09: il relay mette la sessione in «awaiting» appena consegna il prompt; conta come turno partito.
+    @Test fun awaitingCountsAsStarted() {
+        val a = ChatRules.advance(m, s(SessionState.AWAITING), now = t + 3)
+        assertEquals(t + 3, a.startedAt)
+    }
+
+    // Una domanda di permesso a metà turno non chiude il turno.
+    @Test fun waitingKeepsTheTurnOpen() {
+        val started = m.copy(startedAt = t + 1)
+        assertNull(ChatRules.advance(started, s(SessionState.WAITING), now = t + 60).doneAt)
+    }
+
+    // Un messaggio fallito resta fallito: il turno dopo non lo prende, neanche ore dopo.
+    @Test fun failedMessagesDoNotAdvance() {
+        val failed = m.copy(failed = "kb is not running")
+        assertEquals(failed, ChatRules.advance(failed, s(SessionState.BUSY, turn = t + 30), now = t + 40))
+        assertEquals(Status.FAILED, ChatRules.status(failed, null, null, s(SessionState.IDLE)))
+        assertEquals("kb is not running", ChatRules.reason(null, null, null, failed))
+    }
+
+    // Un turno partito molto dopo l'invio non è di quel messaggio.
+    @Test fun lateTurnsAreNotClaimed() {
+        val a = ChatRules.advance(m, s(SessionState.BUSY, turn = t + ChatRules.CLAIM_S + 1), now = t + ChatRules.CLAIM_S + 5)
+        assertNull(a.startedAt)
+    }
 }

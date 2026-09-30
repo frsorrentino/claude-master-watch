@@ -15,6 +15,12 @@ class SessionMetersTest {
         assertEquals(3, SessionMeters.effortStep("high"))
     }
 
+    // Dal vivo 30/09 21:57: una sessione a «max» mostrava tre tacche spente. xhigh e max sono oltre high: tutte accese.
+    @Test fun extraHighAndMaxFillAllTicks() {
+        assertEquals(3, SessionMeters.effortStep("xhigh"))
+        assertEquals(3, SessionMeters.effortStep("max"))
+    }
+
     @Test fun lEffortSiLeggeComunqueSiaScritto() {
         assertEquals(3, SessionMeters.effortStep("HIGH"))
         assertEquals(2, SessionMeters.effortStep(" Medium "))

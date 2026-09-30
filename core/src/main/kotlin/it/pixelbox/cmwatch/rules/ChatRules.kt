@@ -15,6 +15,8 @@ import kotlinx.serialization.Serializable
     val startedAt: Long? = null, val doneAt: Long? = null, val outcomeShort: String? = null, val outcomeFull: String? = null,
     /** La copia locale dell'immagine allegata, per l'anteprima nel fumetto; null senza allegato. */
     val attachment: String? = null,
+    /** Il motivo per cui non è stato consegnato, salvato quando si vede (revisione 30/09); null finché va bene. */
+    val failed: String? = null,
 )
 
 /**
@@ -22,35 +24,63 @@ import kotlinx.serialization.Serializable
  * PC dice solo il turno di adesso, quindi inizio e fine si registrano sul messaggio man mano che si vedono.
  */
 object ChatRules {
-    enum class Status { SENDING, FAILED, DELIVERED, QUEUED, WORKING, DONE }
+    /**
+     * I passaggi di un invio, nell'ordine (Franz, 30/09 22:13: lo stato preciso in tempo reale): senza rete, caricamento
+     * dell'immagine, scrittura sul canale, inviato al PC, consegnato alla sessione, in coda dietro un turno, preso in
+     * carico, elaborato; oppure non consegnato, con il motivo quando c'è.
+     */
+    enum class Status { OFFLINE, UPLOADING, SENDING, SENT, FAILED, DELIVERED, QUEUED, WORKING, DONE }
+
+    /** Il caricamento dell'immagine di un messaggio (contratto 1.19). */
+    sealed interface Upload {
+        data object Going : Upload
+        data class Failed(val reason: String) : Upload
+    }
 
     /** Scarto tollerato fra l'orologio del telefono (`sentAt`) e quello del PC (`turnStarted`, esito). */
     const val SKEW_S = 10L
     const val KEEP_S = 7 * 86_400L
+    /** Oltre questo tempo dall'invio un turno nuovo non è più di quel messaggio (revisione 30/09). */
+    const val CLAIM_S = 1_800L
 
-    fun status(m: Sent, pending: PendingStatus?, result: CmdResult?, s: Session?): Status = when {
-        pending == PendingStatus.FAILED || result?.ok == false -> Status.FAILED
+    fun status(m: Sent, pending: PendingStatus?, result: CmdResult?, s: Session?, upload: Upload? = null): Status = when {
+        m.failed != null || upload is Upload.Failed || pending == PendingStatus.FAILED || result?.ok == false -> Status.FAILED
+        upload == Upload.Going -> Status.UPLOADING
         m.doneAt != null -> Status.DONE
         m.startedAt != null -> Status.WORKING
+        result == null && pending == PendingStatus.QUEUED -> Status.OFFLINE
+        result == null && pending == PendingStatus.SENT -> Status.SENT
         result == null && pending != null -> Status.SENDING
         s?.state == SessionState.BUSY && (s.turnStarted ?: Long.MAX_VALUE) < m.sentAt - SKEW_S -> Status.QUEUED
         else -> Status.DELIVERED
     }
 
+    /** Perché non è stato consegnato: il rifiuto del caricamento o del PC; null se il PC non ha risposto in tempo. */
+    fun reason(pending: PendingStatus?, result: CmdResult?, upload: Upload?, m: Sent? = null): String? = when {
+        m?.failed != null -> m.failed
+        upload is Upload.Failed -> upload.reason
+        result?.ok == false -> result.text.takeIf { it.isNotBlank() }
+        else -> null
+    }
+
     fun advance(m: Sent, s: Session?, now: Long): Sent {
-        if (m.doneAt != null || s == null) return m
+        if (m.doneAt != null || m.failed != null || s == null) return m
         val from = m.sentAt - SKEW_S
-        val running = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
+        val until = m.sentAt + CLAIM_S
+        // Una domanda di permesso a metà turno non lo chiude (revisione 30/09).
+        val running = s.state == SessionState.BUSY || s.state == SessionState.AWAITING || s.state == SessionState.WAITING
         val out = s.outcome
         return when {
-            m.startedAt == null && s.state == SessionState.BUSY && (s.turnStarted ?: Long.MIN_VALUE) >= from ->
+            m.startedAt == null && s.state == SessionState.BUSY && (s.turnStarted ?: Long.MIN_VALUE) in from..until ->
                 m.copy(startedAt = s.turnStarted)
+            // Il relay mette la sessione in «awaiting» appena consegna il prompt: il turno è suo da lì.
+            m.startedAt == null && s.state == SessionState.AWAITING && now <= until -> m.copy(startedAt = now)
             m.startedAt != null && !running -> {
                 val mine = out?.takeIf { it.at >= m.startedAt }
                 m.copy(doneAt = now, outcomeShort = mine?.short, outcomeFull = mine?.full)
             }
             // Turno partito e finito fra due stati: lo dice solo l'esito, più nuovo dell'invio.
-            m.startedAt == null && !running && out != null && out.at >= from ->
+            m.startedAt == null && !running && out != null && out.at in from..until ->
                 m.copy(startedAt = m.sentAt, doneAt = out.at, outcomeShort = out.short, outcomeFull = out.full)
             else -> m
         }
