@@ -124,7 +124,12 @@ enum class CmdOp {
     val night: Night = Night(), val recap: Recap = Recap(),
     /** Contratto 1.19: presente = il relay accetta «Condividi»; `max_bytes` vale sulla stringa cifrata `enc`. */
     val share: Share? = null,
+    /** Contratto 1.12: modelli ed effort che il selettore di una sessione accetta; null con un relay precedente. */
+    val choices: Choices? = null,
 )
+
+/** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */
+@Serializable data class Choices(val models: List<Model> = emptyList(), val efforts: List<String> = emptyList())
 
 @Serializable data class Share(@SerialName("max_bytes") val maxBytes: Int)
 
