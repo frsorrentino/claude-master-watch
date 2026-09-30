@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
         val chatLog by app.chatLog.messages.collectAsStateWithLifecycle()
+        val uploads by app.repo.uploads.collectAsStateWithLifecycle()
         var tab by rememberSaveable { mutableStateOf(StartRoute.tab(restored = null)) }
         var open by rememberSaveable { mutableStateOf<String?>(null) }       // nome della sessione aperta
         var terminal by rememberSaveable { mutableStateOf<String?>(null) }   // nome della sessione del terminale
@@ -182,7 +183,8 @@ class MainActivity : ComponentActivity() {
                     prev = cur
                     if (moved || PhoneTerminal.shouldAsk(cur, askedAt, answered, t)) {
                         askedAt = t
-                        screenId = app.repo.command(CmdOp.SCREEN, name, null)
+                        // Senza rete una lettura passiva non parte: si riprova al giro dopo, senza chiudere l'app.
+                        runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it }
                     }
                     delay(1_000)
                 }
@@ -190,7 +192,7 @@ class MainActivity : ComponentActivity() {
             val text = screenId?.let { results[it]?.text }
             LaunchedEffect(text) { if (text != null) shown = text }
             TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
-                scope.launch { screenId = app.repo.command(CmdOp.SCREEN, name, null) }
+                scope.launch { runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it } }
             })
             return
         }
@@ -232,25 +234,33 @@ class MainActivity : ComponentActivity() {
                     if (moved || PhoneTerminal.shouldAsk(cur, askedAt, answered, t)) {
                         askedAt = t
                         mode = if (entries.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
-                        pendingId = app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(entries.lastOrNull()?.id))
+                        // Una lettura persa non resta fra i comandi in sospeso (revisione 30/09).
+                        pendingId?.let { app.repo.forget(it) }
+                        pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(entries.lastOrNull()?.id)) }.getOrNull()
                     }
                     delay(1_000)
                 }
             }
         }
         // «Carica i messaggi precedenti»: una pagina `before` in testa.
-        LaunchedEffect(olderId) {
+        // Legata alla sessione aperta e con un limite: una pagina persa non blocca il tasto, e non finisce in un'altra
+        // sessione (revisione 30/09).
+        LaunchedEffect(open) { olderId = null }
+        LaunchedEffect(open, olderId) {
             val id = olderId ?: return@LaunchedEffect
-            while (true) {
+            val until = System.currentTimeMillis() + PhoneTerminal.LOST_MS
+            while (System.currentTimeMillis() < until) {
                 val r = app.repo.resultsById.value[id]
                 if (r != null) {
                     if (r.ok) runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
                         entries = ChatFeed.append(entries, page, ChatFeed.Page.BEFORE); more = page.more
                     }
-                    olderId = null; break
+                    break
                 }
                 delay(500)
             }
+            app.repo.forget(id)
+            olderId = null
         }
         val fab: @Composable () -> Unit = {
             // «Aggiungi alla notte» solo con un relay 1.17, come nel Diario: prima il PC la rifiuterebbe.
@@ -289,11 +299,27 @@ class MainActivity : ComponentActivity() {
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
                         if (session != null) {
                         fun sendAndLog(target: PhonePrimary.Target, text: String) = scope.launch {
-                            val id = if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
-                            app.chatLog.add(Sent(id, session.name, text, System.currentTimeMillis() / 1000))
+                            val sentAt = System.currentTimeMillis() / 1000
+                            val id = runCatching {
+                                if (target == PhonePrimary.Target.ANSWER_TEXT) app.repo.answerText(session.name, text) else app.repo.prompt(session.name, text)
+                            }.getOrElse {
+                                // Coda senza rete piena: il messaggio non si finge partito (revisione 30/09).
+                                android.widget.Toast.makeText(this@MainActivity, getString(R.string.queue_full), android.widget.Toast.LENGTH_LONG).show()
+                                return@launch
+                            }
+                            // Una risposta continua il turno della domanda: è presa in carico appena consegnata.
+                            app.chatLog.add(Sent(id, session.name, text, sentAt, startedAt = if (target == PhonePrimary.Target.ANSWER_TEXT) sentAt else null))
                         }
                         val rows = chatLog.filter { it.session == session.name }.sortedBy { it.sentAt }.map { m ->
-                            ChatRow(m, ChatRules.status(m, snap.pending.firstOrNull { it.cmd.id == m.id }?.status, results[m.id], session))
+                            val p = snap.pending.firstOrNull { it.cmd.id == m.id }?.status
+                            val up = uploads[m.id]
+                            ChatRow(m, ChatRules.status(m, p, results[m.id], session, up), ChatRules.reason(p, results[m.id], up, m))
+                        }
+                        // Un fallimento si salva sul messaggio: non si perde con i risultati in memoria né con un riavvio.
+                        LaunchedEffect(rows.map { it.sent.id to it.status }) {
+                            rows.filter { it.status == ChatRules.Status.FAILED && it.sent.failed == null }.forEach { r ->
+                                app.chatLog.markFailed(r.sent.id, r.reason ?: getString(R.string.chat_no_answer))
+                            }
                         }
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
@@ -307,8 +333,13 @@ class MainActivity : ComponentActivity() {
                             // Un comando perso si riprova con lo stesso id; uno rifiutato dal PC si rimanda come nuovo.
                             retry = { id ->
                                 scope.launch {
-                                    if (app.repo.snapshot.value.pending.any { it.cmd.id == id }) app.repo.retry(id)
-                                    else chatLog.firstOrNull { it.id == id }?.let { sendAndLog(PhonePrimary.Target.PROMPT, it.text) }
+                                    val m = chatLog.firstOrNull { it.id == id }
+                                    when {
+                                        app.repo.snapshot.value.pending.any { it.cmd.id == id } -> app.repo.retry(id)
+                                        // Un'immagine rifiutata si rimanda dalla sua copia locale, con lo stesso testo.
+                                        m?.attachment != null -> attachImage(session.name, Uri.fromFile(java.io.File(m.attachment!!)), m.text, state?.share?.maxBytes ?: 0)
+                                        m != null -> sendAndLog(PhonePrimary.Target.PROMPT, m.text)
+                                    }
                                 }
                             },
                             chat = { scope.launch { app.repo.chat(session.name) } },
@@ -321,7 +352,7 @@ class MainActivity : ComponentActivity() {
                             more = more,
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
-                                if (first != null && olderId == null) scope.launch { olderId = app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }
+                                if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }
                             },
                         )
                         } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
@@ -354,12 +385,11 @@ class MainActivity : ComponentActivity() {
     private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {
         app.scope.launch {
             val bytes = it.pixelbox.cmwatch.mobile.share.ImageShrink.jpeg(this@MainActivity, uri) ?: return@launch
-            val id = runCatching { app.repo.report(session, text, "image/jpeg", bytes, maxBytes) }.getOrElse {
-                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, getString(R.string.share_failed), android.widget.Toast.LENGTH_LONG).show() }
-                return@launch
-            }
+            // Il messaggio compare subito nella chat; caricamento, invio e rifiuto sono suoi passaggi (30/09 22:13).
+            val id = java.util.UUID.randomUUID().toString()
             val copy = java.io.File(java.io.File(filesDir, "chat").apply { mkdirs() }, "$id.jpg").apply { writeBytes(bytes) }
             app.chatLog.add(Sent(id, session, text, System.currentTimeMillis() / 1000, attachment = copy.path))
+            runCatching { app.repo.report(session, text, "image/jpeg", bytes, maxBytes, id = id) }
         }
     }
 

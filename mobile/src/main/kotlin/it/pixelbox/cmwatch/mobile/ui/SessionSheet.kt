@@ -30,6 +30,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -75,8 +77,8 @@ data class SheetActions(
     val attach: (Uri, String) -> Unit = { _, _ -> },
 )
 
-/** Un messaggio della chat con il suo stato, calcolato in `MainActivity` da `ChatRules.status`. */
-data class ChatRow(val sent: Sent, val status: ChatRules.Status)
+/** Un messaggio della chat con il suo stato e, se non è stato consegnato, il motivo (`ChatRules.status`/`reason`). */
+data class ChatRow(val sent: Sent, val status: ChatRules.Status, val reason: String? = null)
 
 /**
  * La scheda sessione (design 29/09; restyling e chat 30/09): testata con badge e contatori toccabili (modello, effort),
@@ -97,36 +99,31 @@ fun SessionSheet(
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
     val primary = PhonePrimary.button(s, draft)
     val list = rememberLazyListState()
-    // Il messaggio appena mandato e l'esito appena arrivato si vedono senza scorrere.
-    LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size) {
-        if (chat.isNotEmpty() || !feed.isNullOrEmpty()) list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+    // Si scende da soli solo se si era già in fondo o dopo un proprio invio: chi rilegge più su non viene tirato giù, e
+    // una pagina di messaggi precedenti non rimbalza in fondo (revisione 30/09).
+    val atBottom by remember { derivedStateOf { !list.canScrollForward } }
+    var justSent by remember { mutableStateOf(false) }
+    val reasons = chat.associate { it.sent.id to it.reason }
+    LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size, feed?.lastOrNull()) {
+        if ((atBottom || justSent) && (chat.isNotEmpty() || !feed.isNullOrEmpty())) {
+            list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+            justSent = false
+        }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
+        // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
+        SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null)
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(), state = list,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item(key = "head") { SheetHeader(s, now, choices, canTune, actions) }
-            item(key = "actions") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
-                    if (feed == null) ActionChip(stringResource(R.string.terminal), Icons.Rounded.Terminal, actions.terminal)
-                    ActionChip(stringResource(if (s.followed) R.string.unfollow else R.string.follow), if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive) { actions.follow(!s.followed) }
-                    if (s.link.isNotBlank()) ActionChip(stringResource(R.string.open_in_claude), Icons.AutoMirrored.Rounded.OpenInNew, actions.openInClaude)
-                }
-            }
-            s.question?.let { q ->
-                item(key = "q-" + q.id) {
-                    QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
-                }
-            }
             if (feed != null) {
                 if (more) item(key = "older") {
                     TextButton(onClick = onOlder, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                 }
                 items(feed, key = { feedKey(it) }) { it ->
                     when (it) {
-                        is ChatFeed.Item.Mine -> MineBubble(it.sent, it.status, actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                        is ChatFeed.Item.Mine -> MineBubble(it.sent, it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
@@ -141,7 +138,15 @@ fun SessionSheet(
                     item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
                 }
             }
+            // La domanda dopo la chat, sopra la barra: il suo bottone pieno resta in vista (revisione 30/09).
+            s.question?.let { q ->
+                item(key = "q-" + q.id) {
+                    QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
+                }
+            }
+            // Solo i comandi dell'utente: le letture delle schermate non diventano righe «non consegnato».
             pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }
+                .filter { it.cmd.op !in PASSIVE_OPS }
                 .filter { it.status == PendingStatus.FAILED && chat.none { c -> c.sent.id == it.cmd.id } }
                 .forEach { p ->
                     item(key = "p-" + p.cmd.id) {
@@ -152,16 +157,24 @@ fun SessionSheet(
                     }
                 }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = "" })
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; justSent = true })
     }
 }
 
-/** La barra di scrittura (design 30/09, parti 1 e 7): sopra la tastiera, «+» per un'immagine, il tasto a destra. */
+/**
+ * La barra di scrittura (design 30/09, parti 1 e 7): sopra la tastiera, «+» per un'immagine, il tasto a destra.
+ * L'immagine scelta resta in attesa sopra il campo, con la sua anteprima e la ×, e parte con Invia insieme al testo
+ * (Franz, 30/09 22:03: prima partiva subito).
+ */
 @Composable
 private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
 ) {
-    val mode = PhonePrimary.composer(s, draft, ops)
+    var image by rememberSaveable(s.id) { mutableStateOf<Uri?>(null) }
+    val base = PhonePrimary.composer(s, draft, ops)
+    // Con un'immagine in attesa c'è sempre qualcosa da mandare, anche con il campo vuoto.
+    val mode = if (image != null && base != PhonePrimary.Composer.REOPEN && base != PhonePrimary.Composer.SEND && base != PhonePrimary.Composer.SEND_TONAL)
+        (if (PhonePrimary.button(s, "x") == PhonePrimary.Button.OPTION) PhonePrimary.Composer.SEND_TONAL else PhonePrimary.Composer.SEND) else base
     val bar = Modifier.fillMaxWidth().background(CmColors.bg).imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
     if (mode == PhonePrimary.Composer.REOPEN) {
         Button(
@@ -170,34 +183,77 @@ private fun Composer(
         ) { Text(stringResource(R.string.reopen)) }
         return
     }
-    Row(bar, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (canAttach) AttachButton { uri -> actions.attach(uri, draft.trim()); onSent() }
-        OutlinedTextField(
-            value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.weight(1f),
-            placeholder = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
-            shape = MaterialTheme.shapes.extraLarge,
-        )
+    Column(bar, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Contratto 1.23: il prompt suggerito del terminale come chip; tocco = manda, pressione lunga = nel campo.
+        s.suggestion?.takeIf { draft.isBlank() && image == null }?.let { sug -> SuggestionPill(sug, onSend = { actions.send(PhonePrimary.Target.PROMPT, sug); onSent() }, onEdit = { onDraft(sug) }) }
+        image?.let { uri ->
+            Box {
+                UriThumb(uri, Modifier.size(72.dp).clip(RoundedCornerShape(14.dp)))
+                SmallAction(Icons.Rounded.Close, stringResource(R.string.remove_image)) { image = null }
+            }
+        }
         val send = {
-            PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
+            val pending = image
+            if (pending != null) actions.attach(pending, draft.trim())
+            else PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
+            image = null
             onSent()
         }
-        val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
-        val size = Modifier.size(52.dp)
-        when (mode) {
-            PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
-                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
-            }
-            PhonePrimary.Composer.SEND_TONAL -> FilledTonalIconButton(onClick = send, modifier = size) {
-                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
-            }
-            PhonePrimary.Composer.STOP -> FilledIconButton(onClick = actions.interrupt, colors = filled, modifier = size) {
-                Icon(Icons.Rounded.Stop, stringResource(R.string.stop))
-            }
-            else -> FilledTonalIconButton(onClick = {}, enabled = false, modifier = size) {
-                Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
-            }
+        // Allegato e invio dentro il campo, centrati sulla sua altezza (Franz, 30/09 22:13).
+        OutlinedTextField(
+            value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
+            shape = MaterialTheme.shapes.extraLarge,
+            leadingIcon = if (canAttach) ({ AttachButton { uri -> image = uri } }) else null,
+            trailingIcon = {
+                val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
+                val size = Modifier.padding(end = 4.dp).size(44.dp)
+                when (mode) {
+                    PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
+                        Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+                    }
+                    PhonePrimary.Composer.SEND_TONAL -> FilledTonalIconButton(onClick = send, modifier = size) {
+                        Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+                    }
+                    PhonePrimary.Composer.STOP -> FilledIconButton(onClick = actions.interrupt, colors = filled, modifier = size) {
+                        Icon(Icons.Rounded.Stop, stringResource(R.string.stop))
+                    }
+                    else -> FilledTonalIconButton(onClick = {}, enabled = false, modifier = size) {
+                        Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
+                    }
+                }
+            },
+        )
+    }
+}
+
+/** Il prompt suggerito come pillola tonale, a una riga logica; pressione lunga = nel campo per modificarlo. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SuggestionPill(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
+    Surface(
+        color = CmColors.surfaceHigh, contentColor = CmColors.text, shape = MaterialTheme.shapes.large,
+        modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.suggested), tint = CmColors.actionIcon, modifier = Modifier.size(16.dp))
+            Text(text, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+
+/** L'anteprima di un'immagine scelta dalla galleria, ridotta mentre si legge (una foto intera occuperebbe troppa memoria). */
+@Composable
+private fun UriThumb(uri: Uri, modifier: Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val bmp = remember(uri) {
+        runCatching {
+            val o = android.graphics.BitmapFactory.Options().apply { inSampleSize = 8 }
+            ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, o) }?.asImageBitmap()
+        }.getOrNull()
+    }
+    if (bmp == null) Box(modifier.background(CmColors.surface)) else
+        androidx.compose.foundation.Image(bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop, modifier = modifier)
 }
 
 /**
@@ -265,19 +321,20 @@ private fun hhmm(epoch: Long) = HHMM.format(Instant.ofEpochSecond(epoch).atZone(
 @Composable
 private fun ChatTurn(row: ChatRow, ttsMinChars: Int, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MineBubble(row.sent, row.status, actions, onEdit, onResend)
+        MineBubble(row.sent, row.status, row.reason, actions, onEdit, onResend)
         row.sent.outcomeFull?.let { ClaudeBubble(it, row.sent.doneAt, ttsMinChars, actions.speak) }
     }
 }
 
 /** Un messaggio mandato dal telefono: a destra, con l'anteprima dell'allegato, lo stato, l'ora e Copia, Modifica, Reinvia. */
 @Composable
-private fun MineBubble(m: Sent, status: ChatRules.Status, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
+private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
     val clip = LocalClipboardManager.current
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+    // Tutta la larghezza meno un margine a sinistra, non una colonna stretta (Franz, 30/09 22:17).
+    Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
         Surface(
             color = CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
-            modifier = Modifier.widthIn(max = 320.dp).then(if (status == ChatRules.Status.FAILED) Modifier.clickable { actions.retry(m.id) } else Modifier),
+            modifier = if (status == ChatRules.Status.FAILED) Modifier.clickable { actions.retry(m.id) } else Modifier,
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 m.attachment?.let { AttachmentThumb(it) }
@@ -291,6 +348,10 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, actions: SheetActions,
             SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
             SmallAction(Icons.Rounded.Replay, stringResource(R.string.resend)) { onResend(m.text) }
         }
+        if (status == ChatRules.Status.FAILED) Text(
+            stringResource(R.string.chat_failed_why, reason ?: stringResource(R.string.chat_no_answer)),
+            style = MaterialTheme.typography.labelMedium, color = CmColors.goneDim,
+        )
     }
 }
 
@@ -299,8 +360,8 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, actions: SheetActions,
 private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
     val clip = LocalClipboardManager.current
     val text = e.text.orEmpty()
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-        Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp), modifier = Modifier.widthIn(max = 320.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
+        Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)) {
             Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -379,9 +440,10 @@ private fun ClaudeBubble(
     text: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit, cut: Boolean = false, turn: TranscriptTurn? = null,
 ) {
     val clip = LocalClipboardManager.current
+    // Claude a tutta larghezza, senza fumetto, come nell'app nativa (Franz, 30/09 22:17: «non limitiamo nei balloon»).
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-        Surface(color = CmColors.briefCard, shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp), modifier = Modifier.widthIn(max = 340.dp)) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
                 if (cut) Text(stringResource(R.string.text_cut), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
                 // Il costo del turno sull'ultima voce: durata e token scritti (quelli letti comprendono la cache).
@@ -405,84 +467,130 @@ private fun ClaudeBubble(
     }
 }
 
-/** Lo stato di un messaggio come icona, con la parola solo per chi deve fare qualcosa (non consegnato). */
+/**
+ * Lo stato preciso di un messaggio, sempre con la parola (Franz, 30/09 22:13): orologio mentre parte, una spunta quando è
+ * sul canale, due quando la sessione l'ha ricevuto, azzurre quando Claude l'ha preso in carico e quando ha finito.
+ */
 @Composable
 private fun StatusMark(st: ChatRules.Status) {
     val (icon, tint, label) = when (st) {
+        ChatRules.Status.OFFLINE -> Triple(Icons.Rounded.CloudOff, CmColors.stale, R.string.chat_offline)
+        ChatRules.Status.UPLOADING -> Triple(Icons.Rounded.CloudUpload, CmColors.text2, R.string.chat_uploading)
         ChatRules.Status.SENDING -> Triple(Icons.Rounded.Schedule, CmColors.text2, R.string.chat_sending)
+        ChatRules.Status.SENT -> Triple(Icons.Rounded.Check, CmColors.text2, R.string.chat_sent)
         ChatRules.Status.FAILED -> Triple(Icons.Rounded.ErrorOutline, CmColors.gone, R.string.chat_failed)
-        ChatRules.Status.DELIVERED -> Triple(Icons.Rounded.Check, CmColors.actionIcon, R.string.chat_delivered)
-        ChatRules.Status.QUEUED -> Triple(Icons.Rounded.Check, CmColors.stale, R.string.chat_queued)
-        ChatRules.Status.WORKING -> Triple(Icons.Rounded.PlayArrow, CmColors.busy, R.string.chat_working)
+        ChatRules.Status.DELIVERED -> Triple(Icons.Rounded.DoneAll, CmColors.text2, R.string.chat_delivered)
+        ChatRules.Status.QUEUED -> Triple(Icons.Rounded.DoneAll, CmColors.stale, R.string.chat_queued)
+        ChatRules.Status.WORKING -> Triple(Icons.Rounded.DoneAll, CmColors.busy, R.string.chat_working)
         ChatRules.Status.DONE -> Triple(Icons.Rounded.DoneAll, CmColors.actionIcon, R.string.chat_done)
     }
     val text = stringResource(label)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(icon, text, tint = tint, modifier = Modifier.size(16.dp))
-        if (st == ChatRules.Status.FAILED || st == ChatRules.Status.QUEUED || st == ChatRules.Status.WORKING) {
-            Text(text, style = MaterialTheme.typography.labelMedium, color = tint)
-        }
+        Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = tint)
     }
 }
+
+/** Le letture che le schermate fanno da sole: non sono comandi dell'utente e non diventano righe «non consegnato». */
+private val PASSIVE_OPS = setOf(it.pixelbox.cmwatch.contract.CmdOp.SCREEN, it.pixelbox.cmwatch.contract.CmdOp.LAST, it.pixelbox.cmwatch.contract.CmdOp.TRANSCRIPT)
 
 @Composable
 private fun SmallAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) =
     IconButton(onClick = onClick, modifier = Modifier.size(36.dp)) { Icon(icon, label, tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
 
-/** L'anteprima dell'immagine allegata, dalla copia locale; niente se il file non c'è più. */
+/**
+ * L'anteprima dell'immagine allegata, piccola nel fumetto e letta ridotta (con l'immagine intera il fumetto restava vuoto);
+ * tocco = visore a tutto schermo con lo zoom. Niente se il file non c'è più.
+ */
 @Composable
 private fun AttachmentThumb(path: String) {
-    val bmp = remember(path) { runCatching { android.graphics.BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() } ?: return
+    var full by remember { mutableStateOf(false) }
+    val bmp = remember(path) { decodeScaled(path, 720) } ?: return
     androidx.compose.foundation.Image(
         bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop,
-        modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp).clip(RoundedCornerShape(14.dp)),
+        modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 180.dp).clip(RoundedCornerShape(14.dp)).clickable { full = true },
     )
+    if (full) ImageViewer(path) { full = false }
+}
+
+/** Decodifica un file immagine riducendolo fino a stare entro `max` pixel sul lato lungo. */
+private fun decodeScaled(path: String, max: Int): androidx.compose.ui.graphics.ImageBitmap? = runCatching {
+    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    android.graphics.BitmapFactory.decodeFile(path, bounds)
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / sample > max) sample *= 2
+    android.graphics.BitmapFactory.decodeFile(path, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+}.getOrNull()
+
+/** L'immagine a tutto schermo su fondo nero, con zoom e trascinamento; × per chiudere. */
+@Composable
+private fun ImageViewer(path: String, onClose: () -> Unit) {
+    val bmp = remember(path) { decodeScaled(path, 2048) } ?: return
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    val zoom = androidx.compose.foundation.gestures.rememberTransformableState { z, pan, _ ->
+        scale = (scale * z).coerceIn(1f, 6f); offset += pan
+    }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().background(CmColors.bg)) {
+            androidx.compose.foundation.Image(
+                bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale; translationX = offset.x; translationY = offset.y }
+                    .transformable(zoom),
+            )
+            IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).systemBarsPadding().padding(8.dp)) {
+                Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text)
+            }
+        }
+    }
 }
 
 /**
- * Testata: account e progetto, stato come pillola, modello ed effort toccabili (contratto 1.12) con il foglio delle
- * scelte, contesto, obiettivo e bassa priorità. Il nome sta nel menu delle sessioni in alto.
+ * Testata fissa e compatta (Franz, 30/09 22:01: «grafica premium»): stato ed età, contesto ad anello, ⋮ con Segui, Apri
+ * in Claude e Terminale; sotto modello ed effort toccabili (contratto 1.12) e, se ci sono, obiettivo e bassa priorità. Il
+ * nome e la forma dell'account stanno nel menu delle sessioni in alto.
  */
 @Composable
-private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions) {
+private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean) {
     var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
+    var menu by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SessionBadge(s, size = 18.dp)
-            Text("${s.account} · ${s.project}", style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+    Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatePill(s.state, Durations.since(s.since, now))
+            TunePill(ModelText.short(s.model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
+            EffortPill(s.effort, tunable) { picker = "effort" }
+            Spacer(Modifier.weight(1f))
+            s.context?.let { ContextRing(it) }
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (s.followed) R.string.unfollow else R.string.follow)) },
+                        leadingIcon = { Icon(if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive, null, tint = CmColors.actionIcon) },
+                        onClick = { menu = false; actions.follow(!s.followed) },
+                    )
+                    if (s.link.isNotBlank()) DropdownMenuItem(
+                        text = { Text(stringResource(R.string.open_in_claude)) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, tint = CmColors.actionIcon) },
+                        onClick = { menu = false; actions.openInClaude() },
+                    )
+                    // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
+                    if (showTerminal) DropdownMenuItem(
+                        text = { Text(stringResource(R.string.terminal)) },
+                        leadingIcon = { Icon(Icons.Rounded.Terminal, null, tint = CmColors.actionIcon) },
+                        onClick = { menu = false; actions.terminal() },
+                    )
+                }
+            }
         }
-        StatePill(s.state, Durations.since(s.since, now))
-        val model = ModelText.short(s.model)
-        val effort = SessionMeters.effortStep(s.effort)
-        if (model != null || effort != null || tunable) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(
-                onClick = { picker = "model" }, enabled = tunable,
-                label = { Text(model ?: stringResource(R.string.model_title)) },
-                trailingIcon = if (tunable) ({ Icon(Icons.Rounded.ArrowDropDown, null) }) else null,
-                shape = CircleShape, border = null,
-                colors = AssistChipDefaults.assistChipColors(containerColor = CmColors.surface, labelColor = CmColors.text, disabledContainerColor = CmColors.surface, disabledLabelColor = CmColors.text),
-            )
-            AssistChip(
-                onClick = { picker = "effort" }, enabled = tunable,
-                label = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(stringResource(R.string.effort))
-                        repeat(SessionMeters.EFFORT_STEPS) { i ->
-                            Box(Modifier.size(width = 10.dp, height = 6.dp).background(if (effort != null && i < effort) CmColors.briefRing else CmColors.briefTrack, CircleShape))
-                        }
-                    }
-                },
-                trailingIcon = if (tunable) ({ Icon(Icons.Rounded.ArrowDropDown, null) }) else null,
-                shape = CircleShape, border = null,
-                colors = AssistChipDefaults.assistChipColors(containerColor = CmColors.surface, labelColor = CmColors.text2, disabledContainerColor = CmColors.surface, disabledLabelColor = CmColors.text2),
-            )
-        }
-        s.context?.let { ContextBar(it, null) }
-        SessionsText.goalLine(s, stringResource(R.string.goal))?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.briefLabel) }
-        SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered))?.let {
-            Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.waiting)
-        }
+        val notes = listOfNotNull(
+            SessionsText.goalLine(s, stringResource(R.string.goal)),
+            SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
+        )
+        notes.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 16.dp)) }
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider(color = CmColors.line)
     }
     if (picker != null && choices != null) {
         ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
@@ -528,19 +636,62 @@ private fun OptionButton(label: String, filled: Boolean, onClick: () -> Unit, on
     }
 }
 
-@Composable
-private fun ActionChip(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) =
-    AssistChip(
-        onClick = onClick, label = { Text(label) }, leadingIcon = { Icon(icon, null, tint = CmColors.actionIcon) },
-        shape = CircleShape, colors = AssistChipDefaults.assistChipColors(containerColor = CmColors.surface, labelColor = CmColors.text),
-        border = null,
-    )
-
 /** Testo con il tasto ▶ accanto (regola di Franz 12/09: testi lunghi, esiti, risposte e domande). */
 @Composable
 fun Speakable(text: String, speak: Boolean, onSpeak: (String) -> Unit) {
     Row(verticalAlignment = Alignment.Top) {
         Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
         if (speak) IconButton(onClick = { onSpeak(text) }) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.read_aloud), tint = CmColors.actionIcon) }
+    }
+}
+
+/** Una pillola compatta e toccabile per il modello (contratto 1.12); la freccia solo se si può cambiare. */
+@Composable
+private fun TunePill(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
+        Row(Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text)
+            if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/** L'effort come parola e tacche: xhigh e max accendono tutte le tacche (dal vivo 30/09 21:57). */
+@Composable
+private fun EffortPill(effort: String?, enabled: Boolean, onClick: () -> Unit) {
+    val step = SessionMeters.effortStep(effort)
+    Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
+        Row(
+            Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Text(effort?.trim()?.lowercase() ?: stringResource(R.string.effort), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
+            Spacer(Modifier.width(2.dp))
+            repeat(SessionMeters.EFFORT_STEPS) { i ->
+                Box(Modifier.size(width = 8.dp, height = 5.dp).background(if (step != null && i < step) CmColors.briefRing else CmColors.briefTrack, CircleShape))
+            }
+            if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/** Il contesto come anellino con la percentuale accanto, nel colore delle soglie (`SessionMeters`). */
+@Composable
+private fun ContextRing(pct: Int) {
+    val tone = when (SessionMeters.contextTone(pct)) {
+        it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
+        it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
+        else -> CmColors.briefRing
+    }
+    val frac = SessionMeters.contextFraction(pct) ?: 0f
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
+            val w = 3.dp.toPx()
+            val inset = w / 2
+            val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
+            drawArc(CmColors.briefTrack, -90f, 360f, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w))
+            drawArc(tone, -90f, 360f * frac, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        }
+        Text("$pct%", style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
     }
 }

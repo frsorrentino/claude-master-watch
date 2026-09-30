@@ -144,11 +144,11 @@
     <string name="copy">Copia</string>
     <string name="edit">Modifica</string>
     <string name="resend">Reinvia</string>
-    <string name="chat_sending">in invio</string>
-    <string name="chat_failed">non consegnato, tocca per riprovare</string>
-    <string name="chat_delivered">consegnato</string>
+    <string name="chat_sending">invio</string>
+    <string name="chat_failed">non consegnato</string>
+    <string name="chat_delivered">consegnato alla sessione</string>
     <string name="chat_queued">in coda</string>
-    <string name="chat_working">in lavorazione</string>
+    <string name="chat_working">preso in carico</string>
     <string name="chat_done">elaborato</string>
     <string name="model_title">Modello</string>
     <string name="effort_title">Effort</string>
@@ -162,4 +162,14 @@
     <string name="origin_phone">dal telefono</string>
     <string name="text_cut">testo accorciato dal PC</string>
     <string name="turn_tokens">%1$d token scritti</string>
+    <string name="remove_image">Togli l\'immagine</string>
+    <string name="close">Chiudi</string>
+    <string name="more">Altro</string>
+    <string name="chat_offline">senza rete, parte appena torna</string>
+    <string name="chat_uploading">carico l\'immagine</string>
+    <string name="chat_sent">inviato al PC</string>
+    <string name="chat_failed_why">%1$s · tocca per riprovare</string>
+    <string name="chat_no_answer">il PC non ha risposto in 20 s</string>
+    <string name="suggested">Prompt suggerito</string>
+    <string name="queue_full">Troppi messaggi in attesa di rete: questo non è partito</string>
 </resources>

@@ -143,10 +143,10 @@
     <string name="edit">Edit</string>
     <string name="resend">Send again</string>
     <string name="chat_sending">sending</string>
-    <string name="chat_failed">not delivered, tap to retry</string>
-    <string name="chat_delivered">delivered</string>
+    <string name="chat_failed">not delivered</string>
+    <string name="chat_delivered">delivered to the session</string>
     <string name="chat_queued">queued</string>
-    <string name="chat_working">in progress</string>
+    <string name="chat_working">taken up</string>
     <string name="chat_done">done</string>
     <string name="model_title">Model</string>
     <string name="effort_title">Effort</string>
@@ -160,4 +160,14 @@
     <string name="origin_phone">from the phone</string>
     <string name="text_cut">text shortened by the PC</string>
     <string name="turn_tokens">%1$d tokens written</string>
+    <string name="remove_image">Remove the image</string>
+    <string name="close">Close</string>
+    <string name="more">More</string>
+    <string name="chat_offline">offline, leaves when the network is back</string>
+    <string name="chat_uploading">uploading the image</string>
+    <string name="chat_sent">sent to the PC</string>
+    <string name="chat_failed_why">%1$s · tap to retry</string>
+    <string name="chat_no_answer">the PC did not answer in 20 s</string>
+    <string name="suggested">Suggested prompt</string>
+    <string name="queue_full">Too many messages waiting for the network: this one did not leave</string>
 </resources>
