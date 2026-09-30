@@ -79,7 +79,7 @@ class PhoneApp : Application() {
             phoneName = phoneName,
         )
         transport = SwitchableTransport(choose(settings))
-        repo = Repo(RoomStore.open(this), transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, phoneName)
+        repo = Repo(RoomStore.open(this), transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, phoneName, device = "phone")
         // Come sull'orologio: lo stream RTDB solo con l'app in primo piano; chiusa, la sveglia è FCM.
         repo.start(live = false)
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {

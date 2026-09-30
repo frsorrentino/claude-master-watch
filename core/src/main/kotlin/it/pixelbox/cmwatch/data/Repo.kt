@@ -34,6 +34,8 @@ class Repo(
     private val online: () -> Boolean,
     private val by: String,
     private val freshnessTickMs: Long = FRESHNESS_TICK_MS,
+    /** Contratto 1.22: "phone" o "watch" su ogni comando. */
+    private val device: String? = null,
 ) {
     private val _snapshot = MutableStateFlow(Snapshot(null, Freshness.Stale(0)))
     val snapshot: StateFlow<Snapshot> = _snapshot
@@ -155,7 +157,7 @@ class Repo(
     /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
     /** `text`: il primo messaggio di un `launch` (contratto 1.13); per gli altri comandi resta null. */
     suspend fun command(op: CmdOp, session: String?, arg: String?, text: String? = null): String {
-        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by, text = text)
+        val cmd = Cmd(UUID.randomUUID().toString(), op, session, arg, now(), by, text = text, device = device)
         if (!online()) { enqueue(cmd); return cmd.id }
         dispatch(cmd)
         return cmd.id

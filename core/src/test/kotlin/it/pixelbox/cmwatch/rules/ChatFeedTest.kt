@@ -1,0 +1,77 @@
+package it.pixelbox.cmwatch.rules
+
+import it.pixelbox.cmwatch.Fixtures
+import it.pixelbox.cmwatch.contract.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import org.junit.Assert.*
+import org.junit.Test
+
+class ChatFeedTest {
+    private val results = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject.getValue("result").jsonArray
+        .map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+    private val first = ContractJson.decodeTranscript(results[19].text)
+    private val after = ContractJson.decodeTranscript(results[20].text)
+
+    @Test fun parsesTheFixturePage() {
+        assertEquals(14, first.entries.size)
+        assertFalse(first.more)
+        assertEquals("image/png", first.entries.first { it.id == "a6.0" }.files!!.single().mime)
+        assertEquals(130L, first.entries.first { it.id == "a4.0" }.turn!!.out)
+    }
+
+    @Test fun phoneMessageBecomesMineWithItsStatus() {
+        val p1 = first.entries.first { it.id == "p1.0" }
+        val sent = Sent("c1", "field-notes", "Also add the attendees list", sentAt = p1.at!! - 2)
+        val feed = ChatFeed.merge(first.entries, listOf(sent to ChatRules.Status.DONE))
+        val mine = feed.filterIsInstance<ChatFeed.Item.Mine>().single()
+        assertEquals("p1.0", mine.entry!!.id)
+        assertEquals(ChatRules.Status.DONE, mine.status)
+        assertTrue(feed.none { it is ChatFeed.Item.User && it.entry.id == "p1.0" })
+    }
+
+    @Test fun textTypedAtThePcIsNeverMine() {
+        val sent = Sent("c3", "field-notes", "Also fix the typo in the title", sentAt = 1789207318)
+        val feed = ChatFeed.merge(first.entries, listOf(sent to ChatRules.Status.DELIVERED))
+        assertTrue(feed.any { it is ChatFeed.Item.User && it.entry.id == "u2.0" })
+        assertNull(feed.filterIsInstance<ChatFeed.Item.Mine>().single().entry)
+    }
+
+    @Test fun prefixedUserEntryStillMatches() {
+        val e = TranscriptEntry("u9.0", "user", text = "Dall'utente via polso (watch). Chiudi con Watch. run the tests", at = 100)
+        val feed = ChatFeed.merge(listOf(e), listOf(Sent("c9", "kb", "run the tests", sentAt = 99) to ChatRules.Status.DELIVERED))
+        assertTrue(feed.single() is ChatFeed.Item.Mine)
+    }
+
+    @Test fun unmatchedSentGoesByTime() {
+        val sent = Sent("c2", "field-notes", "one more thing", sentAt = 1789207400)
+        val feed = ChatFeed.merge(first.entries, listOf(sent to ChatRules.Status.SENDING))
+        val last = feed.last() as ChatFeed.Item.Mine
+        assertNull(last.entry)
+        assertEquals("c2", last.sent.id)
+    }
+
+    @Test fun rolesMapToItems() {
+        val feed = ChatFeed.merge(first.entries, emptyList())
+        assertTrue(feed.first() is ChatFeed.Item.User)
+        assertTrue(feed.first { (it as? ChatFeed.Item.Tool)?.entry?.id == "a3.0" } is ChatFeed.Item.Tool)
+        assertTrue(feed.last() is ChatFeed.Item.Claude)
+    }
+
+    @Test fun afterPageAppendsWithoutDuplicates() {
+        val merged = ChatFeed.append(first.entries.take(5), after, ChatFeed.Page.AFTER)
+        assertEquals(first.entries.map { it.id }, merged.map { it.id })
+    }
+
+    @Test fun beforePagePrepends() {
+        val older = TranscriptPage(listOf(TranscriptEntry("u0.0", "user", text = "earlier", at = 1)), more = false)
+        assertEquals("u0.0", ChatFeed.append(first.entries, older, ChatFeed.Page.BEFORE).first().id)
+    }
+
+    @Test fun argForThePolls() {
+        assertEquals("50", ChatFeed.arg(null))
+        assertEquals("50:after=a5.0", ChatFeed.arg("a5.0"))
+        assertEquals("50:before=u1.0", ChatFeed.olderArg("u1.0"))
+    }
+}

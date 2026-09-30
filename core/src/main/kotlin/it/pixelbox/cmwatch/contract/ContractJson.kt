@@ -9,4 +9,6 @@ object ContractJson {
     fun decodeEvents(raw: String): List<Event> = json.decodeFromString(ListSerializer(Event.serializer()), raw)
     fun encode(cmd: Cmd): String = json.encodeToString(Cmd.serializer(), cmd)
     fun decodeResult(raw: String): CmdResult = json.decodeFromString(CmdResult.serializer(), raw)
+    /** Contratto 1.22: il `text` di un risultato `transcript` è a sua volta JSON. */
+    fun decodeTranscript(raw: String): TranscriptPage = json.decodeFromString(TranscriptPage.serializer(), raw)
 }

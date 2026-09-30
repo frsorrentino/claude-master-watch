@@ -234,6 +234,21 @@ class RepoTest {
         repo.seedQuotaSamples(mapOf("personal" to dopo))
         assertEquals(dopo, repo.quotaSamples.value["personal"])
     }
+
+    /** Contratto 1.22: ogni comando dice da che dispositivo arriva, così il relay sceglie il prefisso giusto. */
+    @Test fun commandsCarryTheDevice() = runTest {
+        val tr = Recording(fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0, device = "phone")
+        repo.start(); idle()
+        val id = repo.prompt("atlas-shop", "run the tests"); idle()
+        assertEquals("phone", tr.cmds.single { it.id == id }.device)
+    }
+
+    /** Il trasporto della demo, con la lista dei comandi mandati: solo per guardarli nel test. */
+    private class Recording(private val inner: it.pixelbox.cmwatch.transport.Transport) : it.pixelbox.cmwatch.transport.Transport by inner {
+        val cmds = mutableListOf<it.pixelbox.cmwatch.contract.Cmd>()
+        override suspend fun send(cmd: it.pixelbox.cmwatch.contract.Cmd) = inner.send(cmd).also { cmds += cmd }
+    }
 }
 
 class MemoryStore : Store {

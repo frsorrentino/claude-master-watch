@@ -40,6 +40,8 @@ enum class CmdOp {
     @SerialName("report") REPORT,
     /** Contratto 1.21: il tasto Stop, un solo Esc e solo a turno in corso. Si mostra solo se `state.ops` lo contiene. */
     @SerialName("interrupt") INTERRUPT,
+    /** Contratto 1.22: la conversazione della sessione a pagine; `arg` = "n", "n:before=<id>" o "n:after=<id>". */
+    @SerialName("transcript") TRANSCRIPT,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -152,6 +154,10 @@ enum class CmdOp {
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
     val text: String? = null,
+    /** Contratto 1.22: "phone" o "watch", per il prefisso del prompt e l'`origin` della trascrizione. Assente, non scritto. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val device: String? = null,
 )
 
 @Serializable data class CmdResult(
@@ -161,3 +167,23 @@ enum class CmdOp {
     /** Contratto 1.17: l'id del lavoro accodato da `night_add`. */
     val job: String? = null,
 )
+
+/**
+ * Contratto 1.22: una voce della conversazione di una sessione, dalla sua trascrizione. `role` = user, assistant o tool;
+ * `id` è opaco e serve solo per le pagine `before`/`after`; `cut` = testo accorciato dal PC oltre 4000 caratteri; `turn`
+ * sta sull'ultima voce di un turno chiuso; `files` = i file prodotti in quel passo (percorso sul PC).
+ */
+@Serializable data class TranscriptEntry(
+    val id: String, val role: String, val text: String? = null, val at: Long? = null,
+    val tool: String? = null, val note: String? = null, val error: Boolean? = null, val cut: Boolean = false,
+    val turn: TranscriptTurn? = null, val files: List<TranscriptFile>? = null,
+    /** Da dove è arrivato un messaggio dell'utente (phone, watch, pc); null con un relay che non lo dice. */
+    val origin: String? = null,
+)
+
+/** `in` comprende la cache letta e scritta; per il costo del turno conta di più `out`. */
+@Serializable data class TranscriptTurn(val started: Long? = null, val ended: Long? = null, @SerialName("in") val input: Long? = null, val out: Long? = null)
+
+@Serializable data class TranscriptFile(val path: String, val mime: String? = null, val size: Long? = null)
+
+@Serializable data class TranscriptPage(val entries: List<TranscriptEntry> = emptyList(), val more: Boolean = false)

@@ -119,6 +119,7 @@
     "night_add",
     "night_remove",
     "report",
-    "interrupt"
+    "interrupt",
+    "transcript"
   ]
 }

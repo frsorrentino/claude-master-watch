@@ -87,7 +87,7 @@ class CmApp : Application() {
         FirebaseBoot.start(this, FirebaseConfig.fromJson(settings.firebaseJson))
         transport = SwitchableTransport(choose(settings))
         val store = RoomStore.open(this)
-        repo = Repo(store, transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, settings.deviceName)
+        repo = Repo(store, transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, settings.deviceName, device = "watch")
         // Batteria (Franz, 14/09 17:18): gli stream RTDB solo con l'app in primo piano. Aperti ad app chiusa costavano
         // 40 mAh in 15 ore e, senza Wi-Fi, riprovavano ogni 30 s; chiusa, la sveglia è FCM e la tile rilegge da sé.
         // Si parte spenti: il processo può nascere in background (FCM, tile) e allora non riceverebbe mai onStop.

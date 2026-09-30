@@ -78,7 +78,8 @@ class ContractTest {
         // Contratto 1.12: due risultati in più, «model» riuscito ed «effort» rifiutato su una sessione occupata.
         // Contratto 1.13: uno in più, il launch con il primo messaggio. Contratto 1.17: night_add e night_remove.
         // Contratto 1.19: tre report, uno rifiutato. Contratto 1.21: due interrupt, «stopped» e «nothing to stop».
-        assertEquals(19, results.size); assertEquals(5, results.count { !it.ok })
+        // Contratto 1.22: due transcript, la prima pagina e una pagina `after`, e un prompt con `device`.
+        assertEquals(22, results.size); assertEquals(5, results.count { !it.ok })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))
         assertEquals(cmds[0], ContractJson.json.decodeFromString(Cmd.serializer(), enc))
@@ -220,5 +221,13 @@ class ContractTest {
         val old = Fixtures.stateIdle.replace(Regex(",\\s*\"share\"\\s*:\\s*\\{[^}]*\\}"), "")
         assertNull(ContractJson.decodeState(old).share)
     }
-}
 
+    /** Contratto 1.22: `device` dice al relay se il prompt arriva dal telefono o dall'orologio; assente, non si scrive. */
+    @Test fun promptCarriesTheDevice() {
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last()
+        assertEquals("phone", cmd.device)
+        assertTrue(ContractJson.encode(cmd).contains("\"device\":\"phone\""))
+        assertFalse(ContractJson.encode(cmd.copy(device = null)).contains("device"))
+    }
+}
