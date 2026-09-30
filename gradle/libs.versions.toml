@@ -12,6 +12,9 @@ appcompat = "1.7.1"
 activityCompose = "1.13.0"
 lifecycle = "2.10.0"
 composeBom = "2026.06.01"
+# Solo il telefono: i componenti Expressive (ButtonGroup, FAB menu, indicatori ondulati) esistono solo in 1.5 alpha (Franz, 30/09).
+# alpha18 è l'ultima che compila con compileSdk 36 e AGP 8.13: dalla alpha20 servono SDK 37 e AGP 9.1.
+material3Expressive = "1.5.0-alpha18"
 wearCompose = "1.6.2"
 protolayout = "1.4.2"
 tiles = "1.6.2"
@@ -30,6 +33,7 @@ paparazzi = "2.0.0-alpha02"
 [libraries]
 play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "codeScanner" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material3-expressive = { module = "androidx.compose.material3:material3", version.ref = "material3Expressive" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 wear-remote-interactions = { module = "androidx.wear:wear-remote-interactions", version.ref = "remoteInteractions" }
