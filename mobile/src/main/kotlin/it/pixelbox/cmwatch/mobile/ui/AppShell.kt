@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
@@ -50,7 +51,8 @@ fun AppShell(
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     SessionMenu(sessions, current, onPick, Modifier.weight(1f))
-                    IconButton(onClick = onSettings) { Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = CmColors.actionIcon) }
+                    // Al posto di ⚙ il menu dell'app (Franz, 30/09 23:04): con una scheda aperta le schede in basso non ci sono.
+                    AppMenu(onTab, onSettings)
                 }
                 if (demo) {
                     Text(
@@ -144,6 +146,22 @@ private fun SessionMenu(
                     leadingIcon = { SessionBadge(s, size = 20.dp) }, onClick = { open = false; onPick(s.name) },
                 )
             }
+        }
+    }
+}
+
+/** Il menu dell'app in alto a destra: Panoramica, Sessioni, Diario, Impostazioni (poi la Scrivania). */
+@Composable
+private fun AppMenu(onTab: (Tab) -> Unit, onSettings: () -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CmColors.surface) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.tab_overview)) }, leadingIcon = { Icon(Icons.Rounded.Dashboard, null) }, onClick = { open = false; onTab(Tab.OVERVIEW) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.tab_sessions)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.List, null) }, onClick = { open = false; onTab(Tab.SESSIONS) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.tab_diary)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, null) }, onClick = { open = false; onTab(Tab.DIARY) })
+            HorizontalDivider(color = CmColors.line)
+            DropdownMenuItem(text = { Text(stringResource(R.string.settings)) }, leadingIcon = { Icon(Icons.Rounded.Settings, null) }, onClick = { open = false; onSettings() })
         }
     }
 }

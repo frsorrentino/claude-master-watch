@@ -170,4 +170,12 @@
     <string name="chat_no_answer">the PC did not answer in 20 s</string>
     <string name="suggested">Suggested prompt</string>
     <string name="queue_full">Too many messages waiting for the network: this one did not leave</string>
+    <string name="chat_uncertain">waiting for the PC</string>
+    <string name="chat_uncertain_hint">the PC has not confirmed yet; if it does not appear in the chat, retry</string>
+    <string name="stop_reading">Stop reading</string>
+    <string name="live_thinking">thinking</string>
+    <string name="live_s">%1$d s</string>
+    <string name="live_ms">%1$d min %2$d s</string>
+    <string name="live_hm">%1$d h %2$d min</string>
+    <string name="menu">Menu</string>
 </resources>

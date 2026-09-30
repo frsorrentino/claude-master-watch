@@ -231,7 +231,8 @@ class MainActivity : ComponentActivity() {
                     val moved = answered && TerminalLive.next(prev, cur) != null
                     prev = cur
                     val t = System.currentTimeMillis()
-                    if (moved || PhoneTerminal.shouldAsk(cur, askedAt, answered, t)) {
+                    // Letture diradate: ogni lettura costa al relay 5-8 s (dal vivo 30/09 23:00).
+                    if (moved || PhoneTerminal.shouldAskChat(cur, askedAt, answered, t)) {
                         askedAt = t
                         mode = if (entries.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
                         // Una lettura persa non resta fra i comandi in sospeso (revisione 30/09).
@@ -268,6 +269,8 @@ class MainActivity : ComponentActivity() {
                 onLaunch = { launching = true }, onNight = if (state.night.items != null) ({ nightAdding = true }) else null,
             )
         }
+        val speaking by speech.speaking.collectAsStateWithLifecycle()
+        CompositionLocalProvider(LocalSpeaking provides speaking) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
@@ -286,7 +289,7 @@ class MainActivity : ComponentActivity() {
             }
             if (tab == StartRoute.Tab.DIARY && open == null) {
                 state?.let { st ->
-                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::speak,
+                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
                         onAdd = { nightAdding = true },
                         onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
                 }
@@ -317,8 +320,9 @@ class MainActivity : ComponentActivity() {
                         }
                         // Un fallimento si salva sul messaggio: non si perde con i risultati in memoria né con un riavvio.
                         LaunchedEffect(rows.map { it.sent.id to it.status }) {
-                            rows.filter { it.status == ChatRules.Status.FAILED && it.sent.failed == null }.forEach { r ->
-                                app.chatLog.markFailed(r.sent.id, r.reason ?: getString(R.string.chat_no_answer))
+                            // Solo i rifiuti con un motivo: un'attesa senza risposta non è un fallimento (dal vivo 30/09 23:00).
+                            rows.filter { it.status == ChatRules.Status.FAILED && it.sent.failed == null && it.reason != null }.forEach { r ->
+                                app.chatLog.markFailed(r.sent.id, r.reason!!)
                             }
                         }
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
@@ -329,7 +333,7 @@ class MainActivity : ComponentActivity() {
                             reopen = { scope.launch { app.repo.command(CmdOp.REOPEN, session.name, null) } },
                             terminal = { terminal = session.name; screenId = null },
                             openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
-                            speak = speech::speak,
+                            speak = speech::toggle,
                             // Un comando perso si riprova con lo stesso id; uno rifiutato dal PC si rimanda come nuovo.
                             retry = { id ->
                                 scope.launch {
@@ -359,6 +363,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
         }
         if (nightAdding && state != null) {
             ModalBottomSheet(onDismissRequest = { nightAdding = false }) {
