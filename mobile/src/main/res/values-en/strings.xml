@@ -98,4 +98,8 @@
     <string name="share_offline">No network: retry when it is back</string>
     <string name="share_failed">Sending failed: retry</string>
     <string name="chat_about_this">Chat about this</string>
+    <string name="language">Language</string>
+    <string name="language_system">Same as the phone</string>
+    <string name="language_it">Italiano</string>
+    <string name="language_en">English</string>
 </resources>

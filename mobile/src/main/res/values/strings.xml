@@ -100,4 +100,8 @@
     <string name="share_offline">Nessuna rete: riprova quando torna</string>
     <string name="share_failed">Invio non riuscito: riprova</string>
     <string name="chat_about_this">Parliamone</string>
+    <string name="language">Lingua</string>
+    <string name="language_system">Come il telefono</string>
+    <string name="language_it">Italiano</string>
+    <string name="language_en">English</string>
 </resources>

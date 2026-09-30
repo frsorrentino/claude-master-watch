@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le lingue dell'app (restyling 30/09): così la scelta compare anche nelle impostazioni di sistema. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="it"/>
+    <locale android:name="en"/>
+</locale-config>
