@@ -68,7 +68,12 @@ object ChatFeed {
                                 at >= m.sentAt - ChatRules.SKEW_S
                         }
                         .minByOrNull { (m, _) -> kotlin.math.abs(at - m.sentAt) }
-                    if (hit != null) { left.remove(hit); Item.Mine(hit.first, hit.second, e) } else Item.User(e)
+                    // La voce nella trascrizione prova che il messaggio è arrivato, anche senza il risultato del comando.
+                    if (hit != null) {
+                        left.remove(hit)
+                        val st = if (hit.second in listOf(ChatRules.Status.UNCERTAIN, ChatRules.Status.SENT, ChatRules.Status.SENDING)) ChatRules.Status.DELIVERED else hit.second
+                        Item.Mine(hit.first, st, e)
+                    } else Item.User(e)
                 }
                 "tool" -> Item.Tool(e)
                 else -> Item.Claude(e)

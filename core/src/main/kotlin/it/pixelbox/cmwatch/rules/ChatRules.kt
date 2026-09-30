@@ -29,7 +29,7 @@ object ChatRules {
      * dell'immagine, scrittura sul canale, inviato al PC, consegnato alla sessione, in coda dietro un turno, preso in
      * carico, elaborato; oppure non consegnato, con il motivo quando c'è.
      */
-    enum class Status { OFFLINE, UPLOADING, SENDING, SENT, FAILED, DELIVERED, QUEUED, WORKING, DONE }
+    enum class Status { OFFLINE, UPLOADING, SENDING, SENT, UNCERTAIN, FAILED, DELIVERED, QUEUED, WORKING, DONE }
 
     /** Il caricamento dell'immagine di un messaggio (contratto 1.19). */
     sealed interface Upload {
@@ -44,10 +44,12 @@ object ChatRules {
     const val CLAIM_S = 1_800L
 
     fun status(m: Sent, pending: PendingStatus?, result: CmdResult?, s: Session?, upload: Upload? = null): Status = when {
-        m.failed != null || upload is Upload.Failed || pending == PendingStatus.FAILED || result?.ok == false -> Status.FAILED
+        m.failed != null || upload is Upload.Failed || result?.ok == false -> Status.FAILED
         upload == Upload.Going -> Status.UPLOADING
         m.doneAt != null -> Status.DONE
         m.startedAt != null -> Status.WORKING
+        // Nessuna risposta in 20 s: spesso il messaggio è arrivato lo stesso (dal vivo 30/09 23:00). «In attesa del PC».
+        pending == PendingStatus.FAILED && result == null -> Status.UNCERTAIN
         result == null && pending == PendingStatus.QUEUED -> Status.OFFLINE
         result == null && pending == PendingStatus.SENT -> Status.SENT
         result == null && pending != null -> Status.SENDING

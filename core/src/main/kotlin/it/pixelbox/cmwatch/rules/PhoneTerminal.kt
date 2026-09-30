@@ -22,4 +22,20 @@ object PhoneTerminal {
         !answered -> now - lastAskedAt >= LOST_MS
         else -> now - lastAskedAt >= POLL_MS
     }
+
+    /**
+     * La chat legge molto meno del terminale (dal vivo 30/09 23:00): per il relay una lettura costa 5-8 s, e ogni 4 s i
+     * prompt restavano in coda oltre i 20 s. Ogni 10 s mentre la sessione lavora, ogni minuto quando è ferma; in più una
+     * lettura quando lo stato della sessione cambia (`TerminalLive.next`), decisa da chi chiama.
+     */
+    const val CHAT_BUSY_MS = 10_000L
+    const val CHAT_IDLE_MS = 60_000L
+
+    fun shouldAskChat(session: Session?, lastAskedAt: Long?, answered: Boolean, now: Long): Boolean {
+        if (session == null || session.state == SessionState.GONE) return false
+        if (lastAskedAt == null) return true
+        if (!answered) return now - lastAskedAt >= LOST_MS
+        val busy = session.state == SessionState.BUSY || session.state == SessionState.AWAITING
+        return now - lastAskedAt >= if (busy) CHAT_BUSY_MS else CHAT_IDLE_MS
+    }
 }

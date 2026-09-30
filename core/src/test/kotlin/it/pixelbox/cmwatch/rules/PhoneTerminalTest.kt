@@ -29,4 +29,20 @@ class PhoneTerminalTest {
         assertFalse(PhoneTerminal.shouldAsk(s(SessionState.BUSY), t0, answered = false, now = t0 + PhoneTerminal.LOST_MS - 1))
         assertTrue(PhoneTerminal.shouldAsk(s(SessionState.BUSY), t0, answered = false, now = t0 + PhoneTerminal.LOST_MS))
     }
+
+    // Dal vivo 30/09 23:00: una lettura della chat costa al relay 5-8 s; ogni 4 s i prompt restavano in coda oltre i 20 s.
+    @Test fun chatPollsEveryTenSecondsWhileWorking() {
+        assertFalse(PhoneTerminal.shouldAskChat(s(SessionState.BUSY), t0, answered = true, now = t0 + PhoneTerminal.CHAT_BUSY_MS - 1))
+        assertTrue(PhoneTerminal.shouldAskChat(s(SessionState.BUSY), t0, answered = true, now = t0 + PhoneTerminal.CHAT_BUSY_MS))
+    }
+
+    @Test fun chatPollsEveryMinuteWhenIdle() {
+        assertFalse(PhoneTerminal.shouldAskChat(s(SessionState.IDLE), t0, answered = true, now = t0 + PhoneTerminal.CHAT_BUSY_MS))
+        assertTrue(PhoneTerminal.shouldAskChat(s(SessionState.IDLE), t0, answered = true, now = t0 + PhoneTerminal.CHAT_IDLE_MS))
+    }
+
+    @Test fun chatAsksAtOpenAndNeverForAClosedSession() {
+        assertTrue(PhoneTerminal.shouldAskChat(s(SessionState.IDLE), null, answered = false, now = t0))
+        assertFalse(PhoneTerminal.shouldAskChat(s(SessionState.GONE), null, answered = false, now = t0))
+    }
 }

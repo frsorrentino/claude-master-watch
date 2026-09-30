@@ -122,4 +122,12 @@ class ChatFeedTest {
         assertEquals(settled[settled.size - 2].id, ChatFeed.anchor(settled))
         assertNull(ChatFeed.anchor(emptyList()))
     }
+
+    // Se la voce è nella trascrizione il messaggio è arrivato, qualunque cosa dica il risultato che non è venuto.
+    @Test fun matchedEntryProvesDelivery() {
+        val e = TranscriptEntry("p9.0", "user", text = "check the logs", at = 1000, origin = "phone")
+        val mine = ChatFeed.merge(listOf(e), listOf(Sent("f", "kb", "check the logs", sentAt = 990) to ChatRules.Status.UNCERTAIN))
+            .filterIsInstance<ChatFeed.Item.Mine>().single()
+        assertEquals(ChatRules.Status.DELIVERED, mine.status)
+    }
 }

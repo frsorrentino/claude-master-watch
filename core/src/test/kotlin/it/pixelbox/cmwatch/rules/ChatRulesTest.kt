@@ -18,7 +18,8 @@ class ChatRulesTest {
     @Test fun failedWhenRejected() =
         assertEquals(Status.FAILED, ChatRules.status(m, null, ok.copy(ok = false, text = "kb is not running"), s(SessionState.GONE)))
 
-    @Test fun failedWhenLost() = assertEquals(Status.FAILED, ChatRules.status(m, PendingStatus.FAILED, null, s(SessionState.IDLE)))
+    // Dal vivo 30/09 23:00: senza risposta in 20 s il messaggio spesso è arrivato lo stesso; non è «non consegnato».
+    @Test fun timeoutIsUncertainNotFailed() = assertEquals(Status.UNCERTAIN, ChatRules.status(m, PendingStatus.FAILED, null, s(SessionState.IDLE)))
 
     @Test fun deliveredWhenIdle() = assertEquals(Status.DELIVERED, ChatRules.status(m, null, ok, s(SessionState.IDLE)))
 
