@@ -60,6 +60,19 @@ chiesta a `pix-claude-master` il 30/09. Da questa parte il contratto non cambia.
   quadrato lavoro), riempimento = colore della sessione, glifo di stato dentro.
 - Dove c'è solo l'account (quota, «Lancia», filtro) la forma vuota. Il pallino rosso/verde per account sparisce.
 
+## 7. Stop (Franz, 20:36)
+
+- Come in Claude Code: mentre la sessione lavora e il campo è vuoto, al posto di «Invia» un tasto Stop (quadrato);
+  appena si scrive torna «Invia».
+- Serve un comando nuovo nel contratto (`interrupt`, Esc nella sessione), chiesto a `pix-claude-master` alle 20:37.
+  Finché il relay non lo supporta il tasto non compare.
+
+## 8. Più spazio in alto (Franz, 20:38)
+
+- Via il titolo «Claude Master». Al suo posto un menu a tendina delle sessioni: mostra la sessione aperta (o «Tutte le
+  sessioni» sulle schede), si apre con le sessioni vive in ordine della regia, con il badge; sceglierne una apre la
+  sua scheda. ⚙ resta a destra; la barra è compatta.
+
 ## Test
 
 - `core`, con TDD: l'ordine dei suggerimenti di «Lancia» (inizio, contenuto, cartella, recenti, due account);

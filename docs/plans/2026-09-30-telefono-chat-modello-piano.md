@@ -224,6 +224,22 @@ class ChatLog(private val file: java.io.File, private val now: () -> Long) {
   contesto; `AccountDot` sparisce. La pillola di stato resta (testo ed età) ma senza icona, che ora è nel badge.
 - [ ] **Step 4:** compilazione → OK. Commit `feat(phone): session badges like the watch — account shape, session colour, state glyph`.
 
+### Task 8b: barra in alto con il menu delle sessioni
+
+**Files:** Modify `ui/AppShell.kt`, `MainActivity.kt`, stringhe; snapshot `ShellScreensTest`.
+
+- [ ] **Step 1:** `AppShell` riceve `sessions: List<Session>`, `current: String?`, `onPick: (String?) -> Unit`. Al posto
+  del titolo un `ExposedDropdownMenuBox` compatto (testo `titleMedium`, freccia): etichetta = sessione aperta o
+  «Tutte le sessioni» (`all_sessions`); voci = sessioni non chiuse da `PhoneBoard.sections`, con `SessionBadge`; «Tutte
+  le sessioni» in testa chiude la scheda. Barra alta 56 dp, ⚙ a destra, fascia Demo sotto.
+- [ ] **Step 2:** in `MainActivity` la scheda aperta passa ad `AppShell`; la scheda sessione vive dentro `AppShell`
+  (anche per il terminale resta la sua testata). Compilazione → OK. Commit `feat(phone): session menu replaces the title in the top bar`.
+
+### Task 8c: Stop (quando il relay ha `interrupt`)
+
+- [ ] Dopo la risposta di `pix-claude-master`: `CmdOp.INTERRUPT` nel contratto con il test sulla fixture, e nella barra di
+  scrittura `FilledTonalIconButton` Stop quando `session.state == BUSY` e il campo è vuoto e il relay lo supporta.
+
 ### Task 9: registrazione, provini, revisione
 
 - [ ] **Step 1:** push di `feature/telefono`, `gh workflow run build-android.yml --ref feature/telefono -f record=true`,
