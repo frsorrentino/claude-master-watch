@@ -24,6 +24,8 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.PhoneDiary
+import it.pixelbox.cmwatch.contract.ContractJson
+import it.pixelbox.cmwatch.rules.ChatFeed
 import it.pixelbox.cmwatch.rules.ChatRules
 import it.pixelbox.cmwatch.rules.PhoneBoard
 import it.pixelbox.cmwatch.rules.PhoneOverview
@@ -192,6 +194,64 @@ class MainActivity : ComponentActivity() {
             })
             return
         }
+        // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
+        val transcriptOk = !demo && state?.ops?.contains("transcript") == true
+        var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
+        var more by remember { mutableStateOf(false) }
+        var olderId by remember { mutableStateOf<String?>(null) }
+        var unsupported by remember { mutableStateOf(false) }
+        val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+        LaunchedEffect(open, transcriptOk, unsupported) {
+            entries = emptyList(); more = false
+            val name = open ?: return@LaunchedEffect
+            if (!transcriptOk || unsupported) return@LaunchedEffect
+            lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                var askedAt: Long? = null
+                var pendingId: String? = null
+                var mode = ChatFeed.Page.FRESH
+                var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
+                while (true) {
+                    val cur = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
+                    pendingId?.let { app.repo.resultsById.value[it] }?.let { r ->
+                        when {
+                            r.ok -> runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
+                                entries = ChatFeed.append(entries, page, mode)
+                                if (mode == ChatFeed.Page.FRESH) more = page.more
+                            }
+                            // L'ultima voce non c'è più (conversazione compattata): si riparte dalle ultime.
+                            r.text.contains("no entry") -> entries = emptyList()
+                            // Relay aggiornato ma servizio ancora vecchio: resta la chat dei messaggi mandati.
+                            r.text.contains("not allowed") -> unsupported = true
+                        }
+                        pendingId = null
+                    }
+                    val answered = pendingId == null
+                    val moved = answered && TerminalLive.next(prev, cur) != null
+                    prev = cur
+                    val t = System.currentTimeMillis()
+                    if (moved || PhoneTerminal.shouldAsk(cur, askedAt, answered, t)) {
+                        askedAt = t
+                        mode = if (entries.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
+                        pendingId = app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(entries.lastOrNull()?.id))
+                    }
+                    delay(1_000)
+                }
+            }
+        }
+        // «Carica i messaggi precedenti»: una pagina `before` in testa.
+        LaunchedEffect(olderId) {
+            val id = olderId ?: return@LaunchedEffect
+            while (true) {
+                val r = app.repo.resultsById.value[id]
+                if (r != null) {
+                    if (r.ok) runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
+                        entries = ChatFeed.append(entries, page, ChatFeed.Page.BEFORE); more = page.more
+                    }
+                    olderId = null; break
+                }
+                delay(500)
+            }
+        }
         val fab: @Composable () -> Unit = {
             // «Aggiungi alla notte» solo con un relay 1.17, come nel Diario: prima il PC la rifiuterebbe.
             if (open == null && tab != StartRoute.Tab.DIARY && state != null) LaunchFab(
@@ -256,7 +316,14 @@ class MainActivity : ComponentActivity() {
                             setEffort = { v -> scope.launch { app.repo.command(CmdOp.EFFORT, session.name, v) } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
-                        ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null)
+                        ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
+                            feed = if (transcriptOk && !unsupported && entries.isNotEmpty()) ChatFeed.merge(entries, rows.map { it.sent to it.status }) else null,
+                            more = more,
+                            onOlder = {
+                                val first = entries.firstOrNull()?.id
+                                if (first != null && olderId == null) scope.launch { olderId = app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }
+                            },
+                        )
                         } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
                     }
                 }

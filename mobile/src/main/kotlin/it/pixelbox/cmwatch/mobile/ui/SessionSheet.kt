@@ -44,6 +44,10 @@ import it.pixelbox.cmwatch.contract.Tier
 import it.pixelbox.cmwatch.data.Pending
 import it.pixelbox.cmwatch.data.PendingStatus
 import it.pixelbox.cmwatch.mobile.R
+import it.pixelbox.cmwatch.contract.TranscriptEntry
+import it.pixelbox.cmwatch.contract.TranscriptFile
+import it.pixelbox.cmwatch.contract.TranscriptTurn
+import it.pixelbox.cmwatch.rules.ChatFeed
 import it.pixelbox.cmwatch.rules.ChatRules
 import it.pixelbox.cmwatch.rules.ModelText
 import it.pixelbox.cmwatch.rules.PhonePrimary
@@ -84,6 +88,8 @@ fun SessionSheet(
     s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions,
     chat: List<ChatRow> = emptyList(), choices: Choices? = null, ops: List<String>? = null,
     canTune: Boolean = true, canAttach: Boolean = false,
+    /** Contratto 1.22: la conversazione vera; null = relay senza `transcript`, resta la chat dei messaggi mandati. */
+    feed: List<ChatFeed.Item>? = null, more: Boolean = false, onOlder: () -> Unit = {},
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -91,8 +97,8 @@ fun SessionSheet(
     val primary = PhonePrimary.button(s, draft)
     val list = rememberLazyListState()
     // Il messaggio appena mandato e l'esito appena arrivato si vedono senza scorrere.
-    LaunchedEffect(chat.size, chat.lastOrNull()?.status) {
-        if (chat.isNotEmpty()) list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+    LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size) {
+        if (chat.isNotEmpty() || !feed.isNullOrEmpty()) list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
         LazyColumn(
@@ -102,7 +108,8 @@ fun SessionSheet(
             item(key = "head") { SheetHeader(s, now, choices, canTune, actions) }
             item(key = "actions") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ActionChip(stringResource(R.string.terminal), Icons.Rounded.Terminal, actions.terminal)
+                    // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
+                    if (feed == null) ActionChip(stringResource(R.string.terminal), Icons.Rounded.Terminal, actions.terminal)
                     ActionChip(stringResource(if (s.followed) R.string.unfollow else R.string.follow), if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive) { actions.follow(!s.followed) }
                     if (s.link.isNotBlank()) ActionChip(stringResource(R.string.open_in_claude), Icons.AutoMirrored.Rounded.OpenInNew, actions.openInClaude)
                 }
@@ -112,12 +119,26 @@ fun SessionSheet(
                     QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
                 }
             }
-            items(chat, key = { "c-" + it.sent.id }) { row ->
-                ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
-            }
-            // L'esito di un turno partito dal PC, che nessun messaggio del telefono ha agganciato.
-            s.outcome?.takeIf { o -> chat.none { it.sent.outcomeFull == o.full } }?.let { o ->
-                item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
+            if (feed != null) {
+                if (more) item(key = "older") {
+                    TextButton(onClick = onOlder, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
+                }
+                items(feed, key = { feedKey(it) }) { it ->
+                    when (it) {
+                        is ChatFeed.Item.Mine -> MineBubble(it.sent, it.status, actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                        is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                        is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
+                        is ChatFeed.Item.Tool -> ToolLine(it.entry)
+                    }
+                }
+            } else {
+                items(chat, key = { "c-" + it.sent.id }) { row ->
+                    ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
+                }
+                // L'esito di un turno partito dal PC, che nessun messaggio del telefono ha agganciato.
+                s.outcome?.takeIf { o -> chat.none { it.sent.outcomeFull == o.full } }?.let { o ->
+                    item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
+                }
             }
             pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }
                 .filter { it.status == PendingStatus.FAILED && chat.none { c -> c.sent.id == it.cmd.id } }
@@ -235,38 +256,136 @@ private fun hhmm(epoch: Long) = HHMM.format(Instant.ofEpochSecond(epoch).atZone(
 /** Un messaggio mandato (a destra, con lo stato e le azioni) e, se il suo turno è finito con un esito, Claude a sinistra. */
 @Composable
 private fun ChatTurn(row: ChatRow, ttsMinChars: Int, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
-    val m = row.sent
-    val clip = LocalClipboardManager.current
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-            Surface(
-                color = CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
-                modifier = Modifier.widthIn(max = 320.dp).then(if (row.status == ChatRules.Status.FAILED) Modifier.clickable { actions.retry(m.id) } else Modifier),
-            ) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    m.attachment?.let { AttachmentThumb(it) }
-                    if (m.text.isNotBlank()) Text(m.text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                StatusMark(row.status)
-                Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
-                SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
-                SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
-                SmallAction(Icons.Rounded.Replay, stringResource(R.string.resend)) { onResend(m.text) }
+        MineBubble(row.sent, row.status, actions, onEdit, onResend)
+        row.sent.outcomeFull?.let { ClaudeBubble(it, row.sent.doneAt, ttsMinChars, actions.speak) }
+    }
+}
+
+/** Un messaggio mandato dal telefono: a destra, con l'anteprima dell'allegato, lo stato, l'ora e Copia, Modifica, Reinvia. */
+@Composable
+private fun MineBubble(m: Sent, status: ChatRules.Status, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
+    val clip = LocalClipboardManager.current
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+        Surface(
+            color = CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
+            modifier = Modifier.widthIn(max = 320.dp).then(if (status == ChatRules.Status.FAILED) Modifier.clickable { actions.retry(m.id) } else Modifier),
+        ) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                m.attachment?.let { AttachmentThumb(it) }
+                if (m.text.isNotBlank()) Text(m.text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
             }
         }
-        m.outcomeFull?.let { ClaudeBubble(it, m.doneAt, ttsMinChars, actions.speak) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            StatusMark(status)
+            Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
+            SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
+            SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
+            SmallAction(Icons.Rounded.Replay, stringResource(R.string.resend)) { onResend(m.text) }
+        }
     }
+}
+
+/** Un messaggio scritto altrove (al PC, dall'orologio): a destra come i propri, su una superficie più bassa, con da dove. */
+@Composable
+private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
+    val clip = LocalClipboardManager.current
+    val text = e.text.orEmpty()
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+        Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp), modifier = Modifier.widthIn(max = 320.dp)) {
+            Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            val from = when (e.origin) {
+                "pc" -> R.string.origin_pc
+                "watch" -> R.string.origin_watch
+                "phone" -> R.string.origin_phone
+                else -> null
+            }
+            from?.let { Text(stringResource(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2) }
+            e.at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(horizontal = 4.dp)) }
+            SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
+            SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(text) }
+            SmallAction(Icons.Rounded.Replay, stringResource(R.string.resend)) { onResend(text) }
+        }
+    }
+}
+
+/** Una chiamata a uno strumento in una riga compatta: nome, cosa fa, esito; sotto i file prodotti, se ce ne sono. */
+@Composable
+private fun ToolLine(e: TranscriptEntry) {
+    Column(Modifier.fillMaxWidth().padding(start = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(
+                if (e.error == true) Icons.Rounded.ErrorOutline else Icons.Rounded.Build, null,
+                tint = if (e.error == true) CmColors.gone else CmColors.text2, modifier = Modifier.size(16.dp).padding(top = 2.dp),
+            )
+            Text(
+                listOfNotNull(e.tool, e.note ?: e.text).joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium, color = if (e.error == true) CmColors.goneDim else CmColors.text2,
+            )
+        }
+        e.files?.takeIf { it.isNotEmpty() }?.let { files ->
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 24.dp)) {
+                files.forEach { FileChip(it) }
+            }
+        }
+    }
+}
+
+/** Un file prodotto da Claude: icona per tipo, nome e peso. L'anteprima e l'apertura arrivano con il trasferimento dei file. */
+@Composable
+private fun FileChip(f: TranscriptFile) {
+    val icon = when {
+        f.mime?.startsWith("image/") == true -> Icons.Rounded.Image
+        f.mime == "application/pdf" -> Icons.Rounded.PictureAsPdf
+        f.mime?.startsWith("video/") == true -> Icons.Rounded.Movie
+        f.mime?.startsWith("audio/") == true -> Icons.Rounded.AudioFile
+        else -> Icons.Rounded.InsertDriveFile
+    }
+    Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
+            Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text)
+            f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2) }
+        }
+    }
+}
+
+private fun sizeLabel(b: Long): String = when {
+    b >= 1_000_000 -> "%.1f MB".format(b / 1_000_000.0)
+    b >= 1_000 -> "${b / 1_000} KB"
+    else -> "$b B"
+}
+
+private fun feedKey(i: ChatFeed.Item): String = when (i) {
+    is ChatFeed.Item.Mine -> "m-" + i.sent.id
+    is ChatFeed.Item.User -> "u-" + i.entry.id
+    is ChatFeed.Item.Claude -> "a-" + i.entry.id
+    is ChatFeed.Item.Tool -> "t-" + i.entry.id
 }
 
 /** L'esito di un turno come fumetto di Claude, con Copia e Ascolta sotto (come nell'app nativa, senza fissa e dirama). */
 @Composable
-private fun ClaudeBubble(text: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit) {
+private fun ClaudeBubble(
+    text: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit, cut: Boolean = false, turn: TranscriptTurn? = null,
+) {
     val clip = LocalClipboardManager.current
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Surface(color = CmColors.briefCard, shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp), modifier = Modifier.widthIn(max = 340.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                if (cut) Text(stringResource(R.string.text_cut), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+                // Il costo del turno sull'ultima voce: durata e token scritti (quelli letti comprendono la cache).
+                turn?.let { t ->
+                    val secs = (t.ended ?: 0) - (t.started ?: 0)
+                    val parts = listOfNotNull(
+                        secs.takeIf { t.started != null && t.ended != null && it > 0 }?.let { d -> Durations.since(0, d) },
+                        t.out?.let { o -> stringResource(R.string.turn_tokens, o) },
+                    )
+                    if (parts.isNotEmpty()) Text(parts.joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = CmColors.briefSecondary)
+                }
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }

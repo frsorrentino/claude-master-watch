@@ -19,4 +19,10 @@ class ShellScreensTest {
     @Test fun shellFabOpen() = paparazzi.snapshot {
         CmPhoneTheme(still = true) { AppShell(Tab.SESSIONS, demo = false, {}, {}, fab = { LaunchFab({}, {}, startOpen = true) }) { Text("contenuto") } }
     }
+
+    // Il menu delle sessioni al posto del titolo, con una scheda aperta: niente schede in basso.
+    @Test fun shellSheetOpen() = paparazzi.snapshot {
+        val st = it.pixelbox.cmwatch.contract.ContractJson.decodeState(java.io.File("../contract/state-1-question.json").readText())
+        CmPhoneTheme(still = true) { AppShell(Tab.SESSIONS, demo = false, {}, {}, sessions = st.sessions, current = st.sessions.first().name) { Text("contenuto") } }
+    }
 }
