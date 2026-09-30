@@ -29,6 +29,11 @@ class ChatLogTest {
         assertEquals("All good.", log().forSession("kb").single().outcomeFull)
     }
 
+    @Test fun attachmentSurvivesTheRoundTrip() {
+        log().add(m.copy(id = "c2", attachment = "/data/chat/c2.jpg"))
+        assertEquals("/data/chat/c2.jpg", log().forSession("kb").single { it.id == "c2" }.attachment)
+    }
+
     @Test fun corruptFileStartsEmpty() {
         java.io.File(tmp.root, "chat.json").writeText("{not json")
         assertTrue(log().forSession("kb").isEmpty())

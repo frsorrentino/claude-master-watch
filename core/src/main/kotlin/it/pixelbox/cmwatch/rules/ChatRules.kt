@@ -13,6 +13,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class Sent(
     val id: String, val session: String, val text: String, val sentAt: Long,
     val startedAt: Long? = null, val doneAt: Long? = null, val outcomeShort: String? = null, val outcomeFull: String? = null,
+    /** La copia locale dell'immagine allegata, per l'anteprima nel fumetto; null senza allegato. */
+    val attachment: String? = null,
 )
 
 /**
