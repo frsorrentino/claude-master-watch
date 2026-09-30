@@ -25,9 +25,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** La regia (design 29/09, schermata 1): quota per account, card per stato, chiuse raccolte, «Lancia». */
+/** La regia (design 29/09, schermata 1): quota per account, card per stato, chiuse raccolte. «Lancia» è nel bottone mobile. */
 @Composable
-fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) -> Unit, onLaunch: () -> Unit) {
+fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) -> Unit) {
     val state = snapshot.state
     if (state == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = CmColors.actionIcon) }
@@ -71,10 +71,6 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
                 items(sec.sessions, key = { it.id }) { s -> SessionCard(s, now, onClick = { onOpen(s.id) }, modifier = Modifier.animateItem()) }
             }
         }
-        Button(
-            onClick = onLaunch, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(56.dp),
-        ) { Text(stringResource(R.string.launch)) }
     }
 }
 

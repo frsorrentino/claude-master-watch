@@ -16,19 +16,19 @@ class SessionsScreensTest {
 
     @Test fun sessionsQuestion() {
         val s = fixture("state-1-question")
-        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}, {}) } }
+        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}) } }
     }
     @Test fun sessionsStale() {
         val s = fixture("state-3-stale")
-        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Stale(6)), s.ts + 360, {}, {}) } }
+        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Stale(6)), s.ts + 360, {}) } }
     }
     @Test fun sessionsEmpty() {
         val s = fixture("state-2-idle").copy(sessions = emptyList())
-        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}, {}) } }
+        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}) } }
     }
     @Test fun sessionsLargeFont() {
         val s = fixture("state-1-question")
         paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it", fontScale = 1.3f))
-        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}, {}) } }
+        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionsScreen(Snapshot(s, Freshness.Fresh), s.ts, {}) } }
     }
 }

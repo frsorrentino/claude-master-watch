@@ -23,6 +23,9 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.PhoneDiary
+import it.pixelbox.cmwatch.rules.PhoneOverview
+import it.pixelbox.cmwatch.rules.StartRoute
+import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.rules.PhonePrimary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -34,10 +37,17 @@ class MainActivity : ComponentActivity() {
     private val app get() = application as PhoneApp
     private val speech by lazy { Speech(this) }
     private val localeManager by lazy { getSystemService(android.app.LocaleManager::class.java) }
+    /**
+     * Un avvio nuovo cambia l'id, una rotazione lo tiene (restyling 30/09): sotto `key(launchId)` lo stato salvato di
+     * schede e scheda aperta si ritrova solo dopo una rotazione, non quando il sistema ricrea l'app uccisa in background.
+     */
+    private var launchId = ""
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val rotating = savedInstanceState?.getBoolean(KEY_ROTATING) == true
+        launchId = savedInstanceState?.getString(KEY_LAUNCH)?.takeIf { rotating } ?: java.util.UUID.randomUUID().toString()
         enableEdgeToEdge()
         setContent {
             CmPhoneTheme {
@@ -75,7 +85,7 @@ class MainActivity : ComponentActivity() {
                         onInstallOnWatch = { scope.launch { app.pairing.installOnWatch() } },
                         onDone = { app.pairing.reset() },
                     )
-                    s.paired || s.demoMode -> Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan)
+                    s.paired || s.demoMode -> key(launchId) { Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan) }
                     else -> NotPairedScreen(onPair = ::scan, onPaste = { paste = true }, onDemo = { app.setDemo(true) })
                 }
                 if (paste) PasteDialog(onPair = { t -> paste = false; scope.launch { app.pairing.run(t) } }, onDismiss = { paste = false })
@@ -83,7 +93,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** L'app accoppiata, o in Demo (design 29/09): due schede, scheda sessione, terminale, Lancia, impostazioni. */
+    /** L'app accoppiata, o in Demo: tre schede (restyling 30/09), scheda sessione, terminale, Lancia, impostazioni. */
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
     @Composable
     private fun Main(demo: Boolean, ttsMinChars: Int, host: String?, pairingJson: String?, onRepair: () -> Unit) {
@@ -102,7 +112,8 @@ class MainActivity : ComponentActivity() {
         }
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
-        var tab by rememberSaveable { mutableStateOf(Tab.SESSIONS) }
+        val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
+        var tab by rememberSaveable { mutableStateOf(StartRoute.tab(restored = null)) }
         var open by rememberSaveable { mutableStateOf<String?>(null) }       // nome della sessione aperta
         var terminal by rememberSaveable { mutableStateOf<String?>(null) }   // nome della sessione del terminale
         var screenId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -152,8 +163,22 @@ class MainActivity : ComponentActivity() {
             })
             return
         }
-        AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }) {
-            if (tab == Tab.DIARY && open == null) {
+        val fab: @Composable () -> Unit = {
+            if (open == null && tab != StartRoute.Tab.DIARY && state != null) LaunchFab(onLaunch = { launching = true }, onNight = { nightAdding = true })
+        }
+        AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab) {
+            if (tab == StartRoute.Tab.OVERVIEW && open == null) {
+                state?.let { st ->
+                    val model = remember(st, events, samples, now, snap.freshness) {
+                        PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
+                    }
+                    OverviewScreen(model, snap.freshness,
+                        onQuestion = { model.questions?.let { q -> tab = StartRoute.Tab.SESSIONS; open = q.oldest } },
+                        onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n })
+                }
+                return@AppShell
+            }
+            if (tab == StartRoute.Tab.DIARY && open == null) {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::speak,
                         onAdd = { nightAdding = true },
@@ -181,7 +206,7 @@ class MainActivity : ComponentActivity() {
                             retry = { id -> scope.launch { app.repo.retry(id) } },
                             chat = { scope.launch { app.repo.chat(session.name) } },
                         ))
-                        else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onLaunch = { launching = true })
+                        else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
                     }
                 }
             }
@@ -204,6 +229,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_ROTATING, isChangingConfigurations)
+        outState.putString(KEY_LAUNCH, launchId)
+    }
+
     override fun onResume() {
         super.onResume()
         app.scope.launch { app.pairing.completePending() }
@@ -212,5 +243,10 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         speech.shutdown()
         super.onDestroy()
+    }
+
+    private companion object {
+        const val KEY_ROTATING = "cm.rotating"
+        const val KEY_LAUNCH = "cm.launch"
     }
 }
