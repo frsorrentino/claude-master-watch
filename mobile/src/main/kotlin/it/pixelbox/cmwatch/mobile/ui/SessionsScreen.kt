@@ -82,7 +82,7 @@ private fun QuotaLine(q: PhoneBoard.QuotaRow) {
     val spec = QuotaBar.of(q.pct)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountDot(q.personal)
+            AccountMark(q.personal)
             Text(q.account, color = CmColors.text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(q.pct?.let { "$it%" } ?: "", color = CmColors.text, style = MaterialTheme.typography.titleSmall)
         }

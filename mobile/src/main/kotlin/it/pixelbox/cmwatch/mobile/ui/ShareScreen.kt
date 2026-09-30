@@ -56,7 +56,7 @@ fun ShareScreen(state: State, text: String, hasImage: Boolean, sending: Boolean,
                         border = if (on) BorderStroke(2.dp, CmColors.actionIcon) else null, modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(Modifier.padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            AccountDot(Accounts.isPersonal(s))
+                            SessionBadge(s)
                             Text(s.name, color = if (on) CmColors.actionIcon else CmColors.text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.weight(1f))
                             StatePill(s.state, Durations.since(s.since, state.ts))
                         }

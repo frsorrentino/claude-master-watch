@@ -154,7 +154,7 @@ private fun QuotaRingCard(r: PhoneOverview.Ring) {
                         arc(inner, CmColors.briefTrack, 360f)
                         if (r.w7 != null) arc(inner, CmColors.briefWeek, 360f * w7)
                     }
-                    AccountDot(r.personal)
+                    AccountMark(r.personal, size = 18.dp)
                 }
             }
             val numbers: @Composable (Modifier) -> Unit = { m ->

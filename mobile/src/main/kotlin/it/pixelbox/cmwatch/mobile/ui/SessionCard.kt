@@ -57,10 +57,6 @@ fun stateLabel(s: SessionState): String = stringResource(when (s) {
     SessionState.GONE -> R.string.state_closed
 })
 
-@Composable
-fun AccountDot(personal: Boolean, modifier: Modifier = Modifier) =
-    Box(modifier.size(10.dp).background(if (personal) CmColors.accountPersonale else CmColors.accountAgenzia, CircleShape))
-
 /**
  * Card della regia come la cella dell'orologio (restyling 30/09): account, nome, stato ed età in testa; sotto cosa sta
  * facendo e cosa segue (`SessionsText.cell`), l'obiettivo, la bassa priorità e la barretta del contesto. La forma segue lo
@@ -98,7 +94,7 @@ fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier =
     ) {
         Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AccountDot(Accounts.isPersonal(s))
+                SessionBadge(s)
                 Text(
                     s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = if (closed) CmColors.text2 else CmColors.text, modifier = Modifier.weight(1f),
@@ -123,7 +119,6 @@ fun StatePill(state: SessionState, age: String, modifier: Modifier = Modifier) {
         modifier.background(stateColor(state).copy(alpha = 0.16f), CircleShape).padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(stateIcon(state), null, tint = stateColor(state), modifier = Modifier.size(16.dp))
         Text("${stateLabel(state)} · $age", style = MaterialTheme.typography.labelLarge, color = stateColor(state))
     }
 }
