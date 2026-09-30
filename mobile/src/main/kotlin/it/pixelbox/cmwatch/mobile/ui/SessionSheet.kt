@@ -149,7 +149,7 @@ fun SessionSheet(
                 }
             }
             // Che cosa sta facendo, come la riga dell'app nativa: asterisco, tempo del turno, strumento o pensiero.
-            if (s.state == SessionState.BUSY || s.state == SessionState.AWAITING) item(key = "live") { ActivityLine(s) }
+            if (s.state == SessionState.BUSY || s.state == SessionState.AWAITING) item(key = "live") { ActivityLine(s, now) }
             // La domanda dopo la chat, sopra la barra: il suo bottone pieno resta in vista (revisione 30/09).
             s.question?.let { q ->
                 item(key = "q-" + q.id) {
@@ -734,10 +734,11 @@ val LocalSpeaking = androidx.compose.runtime.staticCompositionLocalOf<String?> {
  * pensando»). Ferma con le animazioni spente.
  */
 @Composable
-private fun ActivityLine(s: Session) {
+private fun ActivityLine(s: Session, now: Long) {
     val off = animationsOff()
-    val nowS by androidx.compose.runtime.produceState(System.currentTimeMillis() / 1000, s.turnStarted) {
-        while (true) { value = System.currentTimeMillis() / 1000; kotlinx.coroutines.delay(1_000) }
+    // Parte dall'ora della scheda e conta al secondo solo con le animazioni accese: negli snapshot resta ferma.
+    val nowS by androidx.compose.runtime.produceState(now, s.turnStarted, off) {
+        if (!off) while (true) { value = System.currentTimeMillis() / 1000; kotlinx.coroutines.delay(1_000) }
     }
     val spin = if (off) 0f else {
         val a by androidx.compose.animation.core.rememberInfiniteTransition(label = "spin")
