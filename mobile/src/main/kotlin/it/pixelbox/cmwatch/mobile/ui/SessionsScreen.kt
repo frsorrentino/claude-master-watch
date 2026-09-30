@@ -40,7 +40,8 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
     Column(Modifier.fillMaxSize().background(CmColors.bg)) {
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            // In fondo lo spazio del bottone mobile: l'ultima card non ci finisce sotto (revisione 30/09).
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(PhoneBoard.quotaRows(state, now, dataStale = snapshot.freshness is Freshness.Stale), key = { "q-" + it.account }) { QuotaLine(it) }

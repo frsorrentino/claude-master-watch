@@ -13,7 +13,7 @@ class PhoneTerminalTest {
     @Test fun asksAtOpen() = assertTrue(PhoneTerminal.shouldAsk(s(SessionState.BUSY), lastAskedAt = null, answered = false, now = t0))
 
     @Test fun waitsForTheAnswer() =
-        assertFalse(PhoneTerminal.shouldAsk(s(SessionState.BUSY), lastAskedAt = t0, answered = false, now = t0 + 60_000))
+        assertFalse(PhoneTerminal.shouldAsk(s(SessionState.BUSY), lastAskedAt = t0, answered = false, now = t0 + PhoneTerminal.POLL_MS * 2))
 
     @Test fun asksAgainAfterPoll() {
         assertFalse(PhoneTerminal.shouldAsk(s(SessionState.BUSY), t0, answered = true, now = t0 + PhoneTerminal.POLL_MS - 1))
@@ -23,5 +23,10 @@ class PhoneTerminalTest {
     @Test fun neverForAClosedSession() {
         assertFalse(PhoneTerminal.shouldAsk(s(SessionState.GONE), lastAskedAt = null, answered = false, now = t0))
         assertFalse(PhoneTerminal.shouldAsk(null, lastAskedAt = null, answered = false, now = t0))
+    }
+
+    @Test fun aLostReadDoesNotFreezeTheTerminal() {
+        assertFalse(PhoneTerminal.shouldAsk(s(SessionState.BUSY), t0, answered = false, now = t0 + PhoneTerminal.LOST_MS - 1))
+        assertTrue(PhoneTerminal.shouldAsk(s(SessionState.BUSY), t0, answered = false, now = t0 + PhoneTerminal.LOST_MS))
     }
 }

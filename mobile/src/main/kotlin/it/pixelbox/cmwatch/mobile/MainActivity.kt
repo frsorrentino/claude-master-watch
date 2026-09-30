@@ -16,6 +16,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
@@ -43,7 +44,9 @@ class MainActivity : ComponentActivity() {
      * Un avvio nuovo cambia l'id, una rotazione lo tiene (restyling 30/09): sotto `key(launchId)` lo stato salvato di
      * schede e scheda aperta si ritrova solo dopo una rotazione, non quando il sistema ricrea l'app uccisa in background.
      */
-    private var launchId = ""
+    private var launchId by mutableStateOf("")
+    /** Quando l'app è uscita di scena, non per una rotazione: al ritorno dopo un'assenza lunga si riparte dalla Panoramica. */
+    private var stoppedAt: Long? = null
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -160,7 +163,9 @@ class MainActivity : ComponentActivity() {
             // Dal vivo, come sull'orologio (restyling 30/09): una lettura all'apertura, poi una ogni pochi secondi dopo la
             // risposta alla precedente, e subito quando la sessione cambia. Il ciclo muore con la schermata.
             var shown by remember(name) { mutableStateOf<String?>(null) }
-            LaunchedEffect(name) {
+            val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+            // Solo con l'app in primo piano (revisione 30/09): a schermo spento o in background nessuna lettura al PC.
+            LaunchedEffect(name) { lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 var askedAt: Long? = null
                 var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
                 while (true) {
@@ -175,7 +180,7 @@ class MainActivity : ComponentActivity() {
                     }
                     delay(1_000)
                 }
-            }
+            } }
             val text = screenId?.let { results[it]?.text }
             LaunchedEffect(text) { if (text != null) shown = text }
             TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
@@ -184,7 +189,10 @@ class MainActivity : ComponentActivity() {
             return
         }
         val fab: @Composable () -> Unit = {
-            if (open == null && tab != StartRoute.Tab.DIARY && state != null) LaunchFab(onLaunch = { launching = true }, onNight = { nightAdding = true })
+            // «Aggiungi alla notte» solo con un relay 1.17, come nel Diario: prima il PC la rifiuterebbe.
+            if (open == null && tab != StartRoute.Tab.DIARY && state != null) LaunchFab(
+                onLaunch = { launching = true }, onNight = if (state.night.items != null) ({ nightAdding = true }) else null,
+            )
         }
         AppShell(tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
@@ -253,6 +261,18 @@ class MainActivity : ComponentActivity() {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_ROTATING, isChangingConfigurations)
         outState.putString(KEY_LAUNCH, launchId)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val away = stoppedAt?.let { System.currentTimeMillis() - it }
+        stoppedAt = null
+        if (away != null && StartRoute.resetOnReturn(away)) launchId = java.util.UUID.randomUUID().toString()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) stoppedAt = System.currentTimeMillis()
     }
 
     override fun onResume() {

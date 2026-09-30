@@ -32,7 +32,7 @@ fun TerminalScreen(name: String, text: String?, loading: Boolean, onRefresh: () 
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(name, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
-            IconButton(onClick = onRefresh, enabled = !loading) { Icon(Icons.Rounded.Refresh, stringResource(R.string.refresh), tint = CmColors.actionIcon) }
+            IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.refresh), tint = CmColors.actionIcon) }
         }
         Box(Modifier.fillMaxWidth().height(10.dp).padding(horizontal = 20.dp)) {
             if (loading) LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth(), color = CmColors.actionIcon, trackColor = CmColors.briefTrack)

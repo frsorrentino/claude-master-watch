@@ -131,31 +131,45 @@ private fun QuotaRingCard(r: PhoneOverview.Ring) {
     val w7 = fillOnEntry((r.w7 ?: 0) / 100f)
     val outer = if ((r.h5 ?: 0) >= 90) CmColors.briefAlertRing else CmColors.briefRing
     BriefShell(r.account) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
-                Canvas(Modifier.fillMaxSize()) {
-                    val w = 10.dp.toPx()
-                    fun arc(inset: Float, color: Color, sweep: Float) = drawArc(
-                        color, -90f, sweep, false, topLeft = Offset(inset, inset),
-                        size = Size(size.width - 2 * inset, size.height - 2 * inset), style = Stroke(w, cap = StrokeCap.Round),
-                    )
-                    arc(w / 2, CmColors.briefTrack, 360f)
-                    if (r.h5 != null) arc(w / 2, outer, 360f * h5)
-                    val inner = w / 2 + w + 4.dp.toPx()
-                    arc(inner, CmColors.briefTrack, 360f)
-                    if (r.w7 != null) arc(inner, CmColors.briefWeek, 360f * w7)
+        // Su uno schermo stretto (720 px, carattere grande) i numeri vanno sotto l'anello: accanto si spezzavano in
+        // colonne di frammenti (revisione 30/09).
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val narrow = maxWidth < 280.dp
+            val ring: @Composable () -> Unit = {
+                Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        val w = 10.dp.toPx()
+                        fun arc(inset: Float, color: Color, sweep: Float) = drawArc(
+                            color, -90f, sweep, false, topLeft = Offset(inset, inset),
+                            size = Size(size.width - 2 * inset, size.height - 2 * inset), style = Stroke(w, cap = StrokeCap.Round),
+                        )
+                        arc(w / 2, CmColors.briefTrack, 360f)
+                        if (r.h5 != null) arc(w / 2, outer, 360f * h5)
+                        val inner = w / 2 + w + 4.dp.toPx()
+                        arc(inner, CmColors.briefTrack, 360f)
+                        if (r.w7 != null) arc(inner, CmColors.briefWeek, 360f * w7)
+                    }
+                    AccountDot(r.personal)
                 }
-                AccountDot(r.personal)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                BigNumber(r.h5?.let { "$it%" } ?: "–", stringResource(R.string.ov_five_hours))
-                r.w7?.let { w ->
-                    Text(
-                        stringResource(R.string.ov_week, w), style = MaterialTheme.typography.labelLarge, color = CmColors.briefWeekInk,
-                        modifier = Modifier.background(CmColors.briefWeek, CircleShape).padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
+            val numbers: @Composable (Modifier) -> Unit = { m ->
+                Column(m, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    BigNumber(r.h5?.let { "$it%" } ?: "–", stringResource(R.string.ov_five_hours))
+                    r.w7?.let { w ->
+                        Text(
+                            stringResource(R.string.ov_week, w), style = MaterialTheme.typography.labelLarge, color = CmColors.briefWeekInk,
+                            modifier = Modifier.background(CmColors.briefWeek, CircleShape).padding(horizontal = 10.dp, vertical = 3.dp),
+                        )
+                    }
+                    r.resetAt?.let { Text(stringResource(R.string.quota_resets_at, hhmm(it)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefSecondary) }
                 }
-                r.resetAt?.let { Text(stringResource(R.string.quota_resets_at, hhmm(it)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefSecondary) }
+            }
+            if (narrow) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                ring()
+                numbers(Modifier.fillMaxWidth())
+            } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                ring()
+                numbers(Modifier.weight(1f))
             }
         }
         r.pace?.let { PaceLine(it, r.resetAt!!) }

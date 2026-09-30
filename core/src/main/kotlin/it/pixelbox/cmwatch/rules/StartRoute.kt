@@ -10,4 +10,12 @@ object StartRoute {
     fun tab(restored: Tab?): Tab = restored ?: Tab.OVERVIEW
 
     fun openSheet(freshLaunch: Boolean, restored: String?): String? = if (freshLaunch) null else restored
+
+    /**
+     * L'app ancora viva e riaperta dopo un'assenza lunga vale un avvio nuovo (revisione 30/09): si torna sulla
+     * Panoramica. Un giro breve, come «Apri in Claude» e ritorno, lascia la scheda dov'era.
+     */
+    const val AWAY_RESET_MS = 10 * 60_000L
+
+    fun resetOnReturn(awayMs: Long): Boolean = awayMs >= AWAY_RESET_MS
 }

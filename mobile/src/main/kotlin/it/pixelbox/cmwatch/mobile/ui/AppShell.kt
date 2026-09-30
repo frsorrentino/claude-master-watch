@@ -76,7 +76,7 @@ fun AppShell(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun LaunchFab(onLaunch: () -> Unit, onNight: () -> Unit, startOpen: Boolean = false) {
+fun LaunchFab(onLaunch: () -> Unit, onNight: (() -> Unit)?, startOpen: Boolean = false) {
     var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(startOpen) }
     androidx.activity.compose.BackHandler(enabled = open) { open = false }
     FloatingActionButtonMenu(
@@ -96,7 +96,7 @@ fun LaunchFab(onLaunch: () -> Unit, onNight: () -> Unit, startOpen: Boolean = fa
             icon = { Icon(Icons.Rounded.RocketLaunch, null) },
             containerColor = CmColors.primary, contentColor = CmColors.onPrimary,
         )
-        FloatingActionButtonMenuItem(
+        if (onNight != null) FloatingActionButtonMenuItem(
             onClick = { open = false; onNight() }, text = { Text(stringResource(R.string.night_add)) },
             icon = { Icon(Icons.Rounded.Bedtime, null) },
             containerColor = CmColors.primary, contentColor = CmColors.onPrimary,
