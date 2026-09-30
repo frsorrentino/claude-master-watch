@@ -127,4 +127,12 @@
     <string name="ov_updated_now">aggiornato ora · %1$s</string>
     <string name="ov_updated_ago">aggiornato %1$d min fa · %2$s</string>
     <string name="ov_stale">PC fermo da %1$d min · %2$s</string>
+    <string name="turn_running">turno in corso</string>
+    <string name="goal">Obiettivo</string>
+    <string name="low_priority">bassa priorità</string>
+    <string name="low_priority_offered">bassa priorità proposta</string>
+    <string name="context_pct">%1$d%% contesto</string>
+    <string name="effort">Effort</string>
+    <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>
+    <string name="question_hold">Tieni premuto per confermare</string>
 </resources>

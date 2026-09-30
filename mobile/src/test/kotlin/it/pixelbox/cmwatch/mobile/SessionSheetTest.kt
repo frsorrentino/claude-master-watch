@@ -16,4 +16,9 @@ class SessionSheetTest {
     @Test fun sheetQuestion() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.question != null }, st.ts, emptyList(), 120, none) } }
     @Test fun sheetIdleWithOutcome() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.state == SessionState.IDLE }, st.ts, emptyList(), 120, none) } }
     @Test fun sheetClosed() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first().copy(state = SessionState.GONE, question = null), st.ts, emptyList(), 120, none) } }
+    @Test fun sheetHighTier() = paparazzi.snapshot {
+        val s = st.sessions.first { it.question != null }
+        CmPhoneTheme(still = true) { SessionSheet(s.copy(question = s.question!!.copy(tier = Tier.HIGH)), st.ts, emptyList(), 120, none) }
+    }
+    @Test fun sheetBusyWithGoal() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.goal != null }, st.ts, emptyList(), 120, none) } }
 }

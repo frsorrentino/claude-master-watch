@@ -26,4 +26,10 @@ class PhonePrimaryTest {
         // La domanda si è chiusa sul PC mentre il campo era pieno: il testo diventa un prompt, non una risposta a vuoto.
         assertEquals(PhonePrimary.Target.PROMPT, PhonePrimary.target(s(SessionState.IDLE), "B"))
     }
+
+    @Test fun firstOptionIsTheFilledButtonWhenTheQuestionHasOptions() =
+        assertEquals(PhonePrimary.Button.OPTION, PhonePrimary.button(s(SessionState.WAITING, q), "anche testo"))
+
+    @Test fun questionWithoutOptionsKeepsSend() =
+        assertEquals(PhonePrimary.Button.SEND, PhonePrimary.button(s(SessionState.WAITING, q.copy(options = emptyList())), "B"))
 }

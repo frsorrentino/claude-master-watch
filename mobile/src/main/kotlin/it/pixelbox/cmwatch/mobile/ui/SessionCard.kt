@@ -1,11 +1,16 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Durations
@@ -22,6 +29,10 @@ import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.Accounts
+import it.pixelbox.cmwatch.rules.BriefCards
+import it.pixelbox.cmwatch.rules.ModelText
+import it.pixelbox.cmwatch.rules.SessionMeters
+import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 fun stateColor(s: SessionState): Color = when (s) {
@@ -50,7 +61,11 @@ fun stateLabel(s: SessionState): String = stringResource(when (s) {
 fun AccountDot(personal: Boolean, modifier: Modifier = Modifier) =
     Box(modifier.size(10.dp).background(if (personal) CmColors.accountPersonale else CmColors.accountAgenzia, CircleShape))
 
-/** Card della regia: account, stato, nome intero; sotto cosa sta facendo o l'esito breve (design 29/09). */
+/**
+ * Card della regia come la cella dell'orologio (restyling 30/09): account, nome, stato ed età in testa; sotto cosa sta
+ * facendo e cosa segue (`SessionsText.cell`), l'obiettivo, la bassa priorità e la barretta del contesto. La forma segue lo
+ * stato: chi aspetta te è più morbida, in rilievo e con il bordo ambra; la chiusa è piatta.
+ */
 @Composable
 fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val working = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
@@ -64,24 +79,75 @@ fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier =
         SessionState.BUSY, SessionState.AWAITING -> s.turnStarted ?: s.since
         else -> s.since
     }
-    val detail = when {
-        working -> s.toolNote ?: s.tool
-        s.state == SessionState.IDLE -> s.outcome?.short
-        s.state == SessionState.WAITING -> s.question?.text?.lineSequence()?.firstOrNull()
-        else -> null
-    }
-    Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp), modifier = modifier.fly("card-${s.id}").fillMaxWidth().clickable(onClick = onClick)) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Box(Modifier.width(4.dp).fillMaxHeight().alpha(breath).background(stateColor(s.state)))
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AccountDot(Accounts.isPersonal(s))
-                    Text(stateGlyph(s.state), color = stateColor(s.state))
-                    Text(s.name, style = MaterialTheme.typography.titleMedium, color = CmColors.text)
-                }
-                Text("${stateLabel(s.state)} · ${Durations.since(since, now)}", style = MaterialTheme.typography.bodyMedium, color = stateColor(s.state))
-                detail?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2) }
+    val cell = SessionsText.cell(s, now, stringResource(R.string.turn_running), stringResource(R.string.state_idle))
+    val goal = SessionsText.goalLine(s, stringResource(R.string.goal))
+    val priority = SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered))
+    val waiting = s.state == SessionState.WAITING || s.question != null
+    val closed = s.state == SessionState.GONE
+    Surface(
+        onClick = onClick,
+        color = when { waiting -> CmColors.surfaceHigh; closed -> CmColors.surfaceLow; else -> CmColors.surface },
+        shape = if (waiting) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.large,
+        border = when {
+            waiting -> BorderStroke(2.dp, CmColors.waiting)
+            s.followed -> BorderStroke(1.5.dp, CmColors.followed)
+            else -> null
+        },
+        shadowElevation = if (waiting) 6.dp else 0.dp,
+        modifier = modifier.fly("card-${s.id}").fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AccountDot(Accounts.isPersonal(s))
+                Text(
+                    s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (closed) CmColors.text2 else CmColors.text, modifier = Modifier.weight(1f),
+                )
+                StatePill(s.state, Durations.since(since, now), Modifier.alpha(breath))
             }
+            cell.title?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.bodyLarge, color = if (closed) CmColors.text2 else CmColors.text)
+            }
+            cell.detail?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2) }
+            goal?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.briefLabel) }
+            priority?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.waiting) }
+            if (!closed) s.context?.let { ContextBar(it, ModelText.short(s.model)) }
         }
+    }
+}
+
+/** Lo stato come pillola colorata con l'icona e l'età, come il badge dell'orologio. */
+@Composable
+fun StatePill(state: SessionState, age: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier.background(stateColor(state).copy(alpha = 0.16f), CircleShape).padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(stateIcon(state), null, tint = stateColor(state), modifier = Modifier.size(16.dp))
+        Text("${stateLabel(state)} · $age", style = MaterialTheme.typography.labelLarge, color = stateColor(state))
+    }
+}
+
+/** Le icone di stato con gli stessi significati di Telegram: ❓ aspetta, ▶ lavora, ✓ ferma, ✗ chiusa. */
+fun stateIcon(s: SessionState): ImageVector = when (s) {
+    SessionState.WAITING -> Icons.AutoMirrored.Rounded.HelpOutline
+    SessionState.BUSY, SessionState.AWAITING -> Icons.Rounded.PlayArrow
+    SessionState.IDLE -> Icons.Rounded.Check
+    SessionState.GONE -> Icons.Rounded.Close
+}
+
+/** La barretta del contesto nel colore delle soglie (`SessionMeters`), con percentuale e modello accanto. */
+@Composable
+fun ContextBar(pct: Int, model: String?) {
+    val tone = when (SessionMeters.contextTone(pct)) {
+        BriefCards.Tone.ALERT -> CmColors.briefAlertRing
+        BriefCards.Tone.WARN -> CmColors.briefWarn
+        else -> CmColors.briefRing
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(Modifier.weight(1f).height(6.dp).background(CmColors.briefTrack, CircleShape)) {
+            Box(Modifier.fillMaxWidth(SessionMeters.contextFraction(pct) ?: 0f).fillMaxHeight().background(tone, CircleShape))
+        }
+        Text(listOfNotNull(stringResource(R.string.context_pct, pct), model).joinToString(" · "), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
     }
 }
