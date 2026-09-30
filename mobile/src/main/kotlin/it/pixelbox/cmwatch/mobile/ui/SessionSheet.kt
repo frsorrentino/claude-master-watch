@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
@@ -169,13 +170,8 @@ private fun Composer(
         ) { Text(stringResource(R.string.reopen)) }
         return
     }
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) { actions.attach(uri, draft.trim()); onSent() }
-    }
     Row(bar, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (canAttach) IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-            Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon)
-        }
+        if (canAttach) AttachButton { uri -> actions.attach(uri, draft.trim()); onSent() }
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.weight(1f),
             placeholder = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
@@ -202,6 +198,18 @@ private fun Composer(
             }
         }
     }
+}
+
+/**
+ * «+» per un'immagine dalla galleria. Il selettore si registra solo dove c'è un'activity che lo ospita: negli snapshot
+ * (Paparazzi) non c'è, e il tasto resta disegnato senza selettore.
+ */
+@Composable
+private fun AttachButton(onPicked: (Uri) -> Unit) {
+    val icon: @Composable () -> Unit = { Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon) }
+    if (androidx.activity.compose.LocalActivityResultRegistryOwner.current == null) { IconButton(onClick = {}, content = icon); return }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) onPicked(uri) }
+    IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, content = icon)
 }
 
 /** La domanda come sull'orologio: prima opzione piena, pressione lunga per il rischio alto, «Parliamone», «Consenti tutto». */
@@ -341,7 +349,7 @@ private fun FileChip(f: TranscriptFile) {
         f.mime == "application/pdf" -> Icons.Rounded.PictureAsPdf
         f.mime?.startsWith("video/") == true -> Icons.Rounded.Movie
         f.mime?.startsWith("audio/") == true -> Icons.Rounded.AudioFile
-        else -> Icons.Rounded.InsertDriveFile
+        else -> Icons.AutoMirrored.Rounded.InsertDriveFile
     }
     Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
