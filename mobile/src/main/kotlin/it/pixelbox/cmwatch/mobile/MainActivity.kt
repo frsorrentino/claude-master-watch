@@ -24,6 +24,8 @@ import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.PhoneDiary
 import it.pixelbox.cmwatch.rules.PhoneOverview
+import it.pixelbox.cmwatch.rules.PhoneTerminal
+import it.pixelbox.cmwatch.rules.TerminalLive
 import it.pixelbox.cmwatch.rules.StartRoute
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.rules.PhonePrimary
@@ -155,10 +157,28 @@ class MainActivity : ComponentActivity() {
             return
         }
         terminal?.let { name ->
-            // Dal vivo 30/09: il terminale si legge da solo all'apertura, non dopo «Aggiorna».
-            LaunchedEffect(name) { if (screenId == null) screenId = app.repo.command(CmdOp.SCREEN, name, null) }
+            // Dal vivo, come sull'orologio (restyling 30/09): una lettura all'apertura, poi una ogni pochi secondi dopo la
+            // risposta alla precedente, e subito quando la sessione cambia. Il ciclo muore con la schermata.
+            var shown by remember(name) { mutableStateOf<String?>(null) }
+            LaunchedEffect(name) {
+                var askedAt: Long? = null
+                var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
+                while (true) {
+                    val cur = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
+                    val answered = screenId?.let { app.repo.resultsById.value[it] } != null
+                    val t = System.currentTimeMillis()
+                    val moved = answered && TerminalLive.next(prev, cur) != null
+                    prev = cur
+                    if (moved || PhoneTerminal.shouldAsk(cur, askedAt, answered, t)) {
+                        askedAt = t
+                        screenId = app.repo.command(CmdOp.SCREEN, name, null)
+                    }
+                    delay(1_000)
+                }
+            }
             val text = screenId?.let { results[it]?.text }
-            TerminalScreen(name, text, loading = screenId != null && text == null, onRefresh = {
+            LaunchedEffect(text) { if (text != null) shown = text }
+            TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { screenId = app.repo.command(CmdOp.SCREEN, name, null) }
             })
             return
