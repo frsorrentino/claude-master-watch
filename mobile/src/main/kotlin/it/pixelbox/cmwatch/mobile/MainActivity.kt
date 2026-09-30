@@ -199,12 +199,14 @@ class MainActivity : ComponentActivity() {
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
         val transcriptOk = !demo && state?.ops?.contains("transcript") == true
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
+        // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
+        val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
         var more by remember { mutableStateOf(false) }
         var olderId by remember { mutableStateOf<String?>(null) }
         var unsupported by remember { mutableStateOf(false) }
         val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
         LaunchedEffect(open, transcriptOk, unsupported) {
-            entries = emptyList(); more = false
+            entries = open?.let { feedCache[it] }.orEmpty(); more = false
             val name = open ?: return@LaunchedEffect
             if (!transcriptOk || unsupported) return@LaunchedEffect
             lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
@@ -218,6 +220,7 @@ class MainActivity : ComponentActivity() {
                         when {
                             r.ok -> runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
                                 entries = ChatFeed.append(entries, page, mode)
+                                feedCache[name] = entries
                                 if (mode == ChatFeed.Page.FRESH) more = page.more
                             }
                             // L'ultima voce non c'è più (conversazione compattata): si riparte dalle ultime.
@@ -352,7 +355,8 @@ class MainActivity : ComponentActivity() {
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
                         ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
-                            feed = if (transcriptOk && !unsupported && entries.isNotEmpty()) ChatFeed.merge(entries, rows.map { it.sent to it.status }) else null,
+                            feed = if (transcriptOk && !unsupported && entries.isNotEmpty()) ChatFeed.merge(entries, rows.map { it.sent to it.status }, more) else null,
+                            loadingFeed = transcriptOk && !unsupported && entries.isEmpty(),
                             more = more,
                             onOlder = {
                                 val first = entries.firstOrNull()?.id

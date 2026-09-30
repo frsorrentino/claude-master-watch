@@ -97,6 +97,8 @@ fun SessionSheet(
     canTune: Boolean = true, canAttach: Boolean = false,
     /** Contratto 1.22: la conversazione vera; null = relay senza `transcript`, resta la chat dei messaggi mandati. */
     feed: List<ChatFeed.Item>? = null, more: Boolean = false, onOlder: () -> Unit = {},
+    /** La conversazione vera sta arrivando: niente chat di ripiego nel frattempo, che poi salterebbe (dal vivo 30/09 23:36). */
+    loadingFeed: Boolean = false,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -137,6 +139,12 @@ fun SessionSheet(
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
+                    }
+                }
+            } else if (loadingFeed) {
+                item(key = "loading") {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                        CircularWavyProgressIndicator(color = CmColors.actionIcon)
                     }
                 }
             } else {
