@@ -9,6 +9,10 @@ object StartRoute {
 
     fun tab(restored: Tab?): Tab = restored ?: Tab.OVERVIEW
 
+    /** La scheda dopo uno scorrimento laterale (segnalazione 01/10 20:12), nell'ordine della barra; ai bordi si resta. */
+    fun swipe(from: Tab, toNext: Boolean): Tab =
+        Tab.entries.getOrNull(from.ordinal + if (toNext) 1 else -1) ?: from
+
     fun openSheet(freshLaunch: Boolean, restored: String?): String? = if (freshLaunch) null else restored
 
     /**

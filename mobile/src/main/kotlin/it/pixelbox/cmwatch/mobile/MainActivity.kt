@@ -316,7 +316,7 @@ class MainActivity : ComponentActivity() {
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
             current = open, onPick = { n -> if (n != null) tab = StartRoute.Tab.SESSIONS; open = n },
-            onSearch = { searchOpen = true },
+            onSearch = { searchOpen = true }, swipeTabs = open == null,
         ) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
                 state?.let { st ->

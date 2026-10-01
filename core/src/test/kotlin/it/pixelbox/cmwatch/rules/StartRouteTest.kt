@@ -14,4 +14,13 @@ class StartRouteTest {
 
     @Test fun shortTripAwayKeepsTheSheet() = assertFalse(StartRoute.resetOnReturn(awayMs = StartRoute.AWAY_RESET_MS - 1))
     @Test fun longAbsenceReopensOnOverview() = assertTrue(StartRoute.resetOnReturn(awayMs = StartRoute.AWAY_RESET_MS))
+
+    // Segnalazione 01/10 20:12: lo scorrimento laterale cambia scheda, nell'ordine della barra in basso.
+    @Test fun swipeMovesBetweenTheThreeTabs() {
+        assertEquals(StartRoute.Tab.SESSIONS, StartRoute.swipe(StartRoute.Tab.OVERVIEW, toNext = true))
+        assertEquals(StartRoute.Tab.DIARY, StartRoute.swipe(StartRoute.Tab.SESSIONS, toNext = true))
+        assertEquals(StartRoute.Tab.SESSIONS, StartRoute.swipe(StartRoute.Tab.DIARY, toNext = false))
+        assertEquals(StartRoute.Tab.DIARY, StartRoute.swipe(StartRoute.Tab.DIARY, toNext = true))
+        assertEquals(StartRoute.Tab.OVERVIEW, StartRoute.swipe(StartRoute.Tab.OVERVIEW, toNext = false))
+    }
 }

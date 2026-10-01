@@ -30,7 +30,10 @@ import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.mobile.R
+import it.pixelbox.cmwatch.rules.StartRoute
 import it.pixelbox.cmwatch.rules.StartRoute.Tab
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
@@ -45,6 +48,8 @@ fun AppShell(
     sessions: List<Session> = emptyList(), current: String? = null, onPick: (String?) -> Unit = {},
     /** La ricerca (piano 30/09, Task 5): la lente accanto al menu; null = niente lente. */
     onSearch: (() -> Unit)? = null,
+    /** Lo scorrimento laterale cambia scheda; spento con una scheda sessione aperta, dove scorre fra le sessioni. */
+    swipeTabs: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Scaffold(
@@ -83,7 +88,20 @@ fun AppShell(
                 )
             }
         },
-    ) { pad -> Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize()) { content() } }
+    ) { pad ->
+        // Scorrere a sinistra o a destra passa fra Panoramica, Sessioni e Diario (segnalazione 01/10 20:12). Il gesto
+        // conta solo se nessun figlio l'ha già preso (liste orizzontali), e oltre una soglia, per non scattare
+        // mentre si scorre in verticale.
+        val swipe = if (!swipeTabs) Modifier else Modifier.pointerInput(tab) {
+            var dx = 0f
+            val min = 80.dp.toPx()
+            detectHorizontalDragGestures(
+                onDragStart = { dx = 0f },
+                onDragEnd = { if (kotlin.math.abs(dx) > min) StartRoute.swipe(tab, toNext = dx < 0).takeIf { it != tab }?.let(onTab) },
+            ) { _, d -> dx += d }
+        }
+        Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize().then(swipe)) { content() }
+    }
 }
 
 /**
