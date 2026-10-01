@@ -424,7 +424,7 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 m.attachment?.let { AttachmentThumb(it) }
-                if (m.text.isNotBlank()) Text(m.text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                if (m.text.isNotBlank()) Text(linked(m.text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -454,7 +454,7 @@ private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (
     val text = e.text.orEmpty()
     Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
         Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             val from = when (e.origin) {
@@ -589,7 +589,7 @@ private fun ClaudeBubble(
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
                 if (cut) Text(stringResource(R.string.text_cut), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
                 // Il costo del turno sull'ultima voce: durata e token scritti (quelli letti comprendono la cache).
                 turn?.let { t ->
@@ -785,11 +785,20 @@ private fun OptionButton(label: String, filled: Boolean, onClick: () -> Unit, on
     }
 }
 
+/** I link `http(s)://` del testo toccabili, nel colore delle azioni e sottolineati; il tocco apre il browser (Franz, 01/10 20:05). */
+private fun linked(text: String): AnnotatedString = androidx.compose.ui.text.buildAnnotatedString {
+    append(text)
+    val style = androidx.compose.ui.text.TextLinkStyles(androidx.compose.ui.text.SpanStyle(color = CmColors.actionIcon, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline))
+    it.pixelbox.cmwatch.rules.Links.find(text).forEach { r ->
+        addLink(androidx.compose.ui.text.LinkAnnotation.Url(text.substring(r), style), r.first, r.last + 1)
+    }
+}
+
 /** Testo con il tasto ▶ accanto (regola di Franz 12/09: testi lunghi, esiti, risposte e domande). */
 @Composable
 fun Speakable(text: String, speak: Boolean, onSpeak: (String) -> Unit) {
     Row(verticalAlignment = Alignment.Top) {
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+        Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
         val reading = LocalSpeaking.current == text
         if (speak) IconButton(onClick = { onSpeak(text) }) {
             Icon(if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon)
