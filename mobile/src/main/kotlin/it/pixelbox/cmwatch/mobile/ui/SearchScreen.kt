@@ -53,7 +53,7 @@ fun SearchScreen(sent: List<Sent>, events: List<Event>, onOpen: (session: String
             Text(stringResource(R.string.search_none), color = CmColors.text2, modifier = Modifier.padding(horizontal = 20.dp))
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-            items(hits, key = { "${it.kind}-${it.at}-${it.session}-${it.line.hashCode()}" }) { h ->
+            items(hits, key = { it.ref }) { h ->
                 Column(Modifier.fillMaxWidth().clickable { onOpen(h.session) }.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(h.session ?: stringResource(R.string.tab_diary), style = MaterialTheme.typography.labelLarge, color = CmColors.actionIcon, modifier = Modifier.weight(1f), maxLines = 1)

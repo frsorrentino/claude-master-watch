@@ -62,4 +62,13 @@ class ChatLogTest {
         assertTrue(log().claimDue().isEmpty())
         assertEquals(now, log().forSession("kb").single().sentAt)
     }
+
+    /** Revisione finale 01/10 (C1): un invio non riuscito torna programmato e si riprende al giro dopo. */
+    @Test fun unclaimMakesItDueAgain() {
+        val l = log(); l.add(m.copy(id = "s1", scheduledFor = now + 60))
+        now += 120
+        l.claimDue()
+        l.unclaim("s1")
+        assertEquals(listOf("s1"), l.claimDue().map { it.id })
+    }
 }

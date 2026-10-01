@@ -20,4 +20,7 @@ object AttentionQueue {
         val i = all.indexOfFirst { it.questionId == current }
         return if (i < 0) all.firstOrNull() else all.getOrNull(i + 1) ?: all.firstOrNull()
     }
+
+    /** La pagina della domanda `questionId` nella fila di adesso; null se non c'è più. */
+    fun page(items: List<Item>, questionId: String?): Int? = items.indexOfFirst { it.questionId == questionId }.takeIf { it >= 0 }
 }

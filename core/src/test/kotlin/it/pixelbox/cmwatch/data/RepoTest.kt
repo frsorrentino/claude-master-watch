@@ -4,6 +4,7 @@ import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.rules.QuotaHistory
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.transport.*
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -307,6 +308,25 @@ class RepoTest {
         val cmds = mutableListOf<it.pixelbox.cmwatch.contract.Cmd>()
         override suspend fun send(cmd: it.pixelbox.cmwatch.contract.Cmd, onWritten: () -> Unit) = inner.send(cmd, onWritten).also { cmds += cmd }
     }
+
+    /** Revisione finale 01/10 (C1): l'invio programmato aspetta l'esito; senza rete o senza risposta non risulta partito. */
+    @Test fun deliverWaitsForTheResult() = runTest {
+        val slow = Slow(10, fake())
+        val repo = Repo(MemoryStore(), slow, bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
+        val done = async(bg().coroutineContext) { repo.deliver(CmdOp.PROMPT, "atlas-shop", "x", "s1") }
+        idle()
+        assertTrue((done.await() as Repo.Delivery.Done).result.ok)
+
+        slow.delayMs = 25_000
+        val late = async(bg().coroutineContext) { repo.deliver(CmdOp.PROMPT, "atlas-shop", "x", "s2") }
+        advanceTimeBy(21_000); idle()
+        assertEquals(Repo.Delivery.NotSent, late.await())
+        assertTrue(repo.snapshot.value.pending.none { it.cmd.id == "s2" })
+
+        online = false
+        assertEquals(Repo.Delivery.NotSent, repo.deliver(CmdOp.PROMPT, "atlas-shop", "x", "s3"))
+        assertTrue(repo.snapshot.value.pending.isEmpty())
+    }
 }
 
 class MemoryStore : Store {
@@ -326,4 +346,5 @@ class MemoryStore : Store {
         samples.filter { it.second.ts >= since }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.sortedBy { it.ts } }
     override suspend fun pruneQuotaSamples(olderThan: Long) { samples.removeAll { it.second.ts < olderThan } }
     override suspend fun clearQuotaSamples(account: String) { samples.removeAll { it.first == account } }
+
 }

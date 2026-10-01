@@ -93,13 +93,14 @@ class RefreshAction : ActionCallback {
 }
 
 private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+private const val ARC_MAX_PX = 96
 
 @Composable
 private fun Content(cards: List<WidgetModel.Card>, config: WidgetModel.Config) {
     val ctx = LocalContext.current
     val size = LocalSize.current
     val ink = Palette(config.mono)
-    val bg = Color(0xFF12141A).copy(alpha = config.opacity / 100f)
+    val bg = CmColors.surfaceLow.copy(alpha = config.opacity / 100f)
     val main = cards.first()
     Column(
         GlanceModifier.fillMaxSize().background(bg).cornerRadius(config.corners.dp).padding(horizontal = 12.dp, vertical = 8.dp)
@@ -175,7 +176,8 @@ private fun SessionRow(c: WidgetModel.Card, ink: Palette) {
 @Composable
 private fun Arc(c: WidgetModel.Card, ink: Palette, sizeDp: Int, showValue: Boolean = true) {
     val ctx = LocalContext.current
-    val px = (sizeDp * ctx.resources.displayMetrics.density).toInt().coerceAtLeast(8)
+    // Al massimo 96 px: le quattro taglie viaggiano insieme in un RemoteViews e il binder regge 1 MB (revisione 01/10, I6).
+    val px = (sizeDp * ctx.resources.displayMetrics.density).toInt().coerceIn(8, ARC_MAX_PX)
     val bmp = remember(c.arcPct, px, ink.mono) { arcBitmap(px, c.arcPct, ink) }
     Box(GlanceModifier.size(sizeDp.dp), contentAlignment = Alignment.Center) {
         Image(ImageProvider(bmp), null, modifier = GlanceModifier.fillMaxSize())

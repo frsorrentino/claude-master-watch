@@ -105,7 +105,7 @@ class PhoneApp : Application() {
                 // I passaggi dei messaggi della chat (in coda, in lavorazione, elaborato) si vedono a ogni stato.
                 chatLog.advance(cur)
                 // Il widget si ridisegna a ogni stato che arriva (spec «Widget»), non ogni 30 minuti.
-                runCatching { CmWidget().updateAll(this@PhoneApp) }
+                launch { runCatching { CmWidget().updateAll(this@PhoneApp) } }
                 if (prev != null) react(prev, cur)
             }
         }

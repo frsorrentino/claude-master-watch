@@ -11,25 +11,25 @@ import java.text.Normalizer
 object ChatSearch {
     enum class Kind { SENT, OUTCOME, EVENT }
 
-    /** `start`/`end`: la parte trovata dentro `line`, nel testo originale. */
-    data class Hit(val session: String?, val at: Long, val line: String, val start: Int, val end: Int, val kind: Kind)
+    /** `start`/`end`: la parte trovata dentro `line`, nel testo originale. `ref`: unico per risultato, per le liste. */
+    data class Hit(val session: String?, val at: Long, val line: String, val start: Int, val end: Int, val kind: Kind, val ref: String = "")
 
     fun find(query: String, sent: List<Sent>, events: List<Event>): List<Hit> {
         val q = fold(query.trim())
         if (q.isEmpty()) return emptyList()
         val hits = mutableListOf<Hit>()
-        fun scan(text: String?, session: String?, at: Long, kind: Kind) {
+        fun scan(text: String?, session: String?, at: Long, kind: Kind, ref: String) {
             // La prima riga che contiene il testo cercato: un risultato per testo, non uno per riga.
             text?.lines()?.firstNotNullOfOrNull { raw ->
                 val line = raw.trim()
-                fold(line).indexOf(q).takeIf { it >= 0 }?.let { i -> Hit(session, at, line, i, i + q.length, kind) }
+                fold(line).indexOf(q).takeIf { it >= 0 }?.let { i -> Hit(session, at, line, i, i + q.length, kind, "$kind-$ref") }
             }?.let(hits::add)
         }
         sent.forEach { m ->
-            scan(m.text, m.session, m.sentAt, Kind.SENT)
-            scan(m.outcomeFull, m.session, m.doneAt ?: m.sentAt, Kind.OUTCOME)
+            scan(m.text, m.session, m.sentAt, Kind.SENT, m.id)
+            scan(m.outcomeFull, m.session, m.doneAt ?: m.sentAt, Kind.OUTCOME, m.id)
         }
-        events.forEach { e -> scan(listOf(e.title, e.body).filter { it.isNotBlank() }.joinToString("\n"), e.session, e.ts, Kind.EVENT) }
+        events.forEachIndexed { i, e -> scan(listOf(e.title, e.body).filter { it.isNotBlank() }.joinToString("\n"), e.session, e.ts, Kind.EVENT, "${e.key}-$i") }
         return hits.sortedByDescending { it.at }
     }
 

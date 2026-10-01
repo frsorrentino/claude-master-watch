@@ -57,5 +57,11 @@ class ChatLog(private val file: File, private val now: () -> Long) {
         return next.filter { it.id in due }
     }
 
+    /** Un invio programmato non riuscito torna in attesa: il prossimo giro lo riprende (revisione finale 01/10). */
+    @Synchronized fun unclaim(id: String) {
+        val next = _messages.value.map { m -> if (m.id == id && m.scheduledFor != null) m.copy(sentAt = minOf(m.sentAt, m.scheduledFor - 1)) else m }
+        if (next != _messages.value) save(next)
+    }
+
     fun forSession(name: String): List<Sent> = _messages.value.filter { it.session == name }.sortedBy { it.sentAt }
 }

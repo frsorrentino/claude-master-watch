@@ -81,7 +81,8 @@ data class SheetActions(
     /** Un'immagine dalla galleria, con il testo scritto accanto (contratto 1.19, come «Condividi»). */
     val attach: (Uri, String) -> Unit = { _, _ -> },
     /** Avviso quota (piano 30/09, Task 3): il testo scritto parte alla ripartenza della finestra, o va nella notte. */
-    val sendAtReset: (String) -> Unit = {}, val sendTonight: (String) -> Unit = {},
+    /** Vero se il testo è partito (o programmato): solo allora la bozza si svuota (revisione finale 01/10, I5). */
+    val sendAtReset: (String) -> Boolean = { false }, val sendTonight: (String) -> Boolean = { false },
     /** Tocco sulla riga dell'avviso: la Panoramica, casa dei dati della quota. */
     val overview: () -> Unit = {},
 )
@@ -108,6 +109,8 @@ fun SessionSheet(
     quota: QuotaWarning.Warn? = null,
     /** Le frasi rapide del progetto (`QuickPhrases`), come chip sopra la barra. */
     phrases: List<String> = emptyList(),
+    /** «Manda stanotte» possibile: il relay ha la notte e la cartella del progetto è nota. */
+    canTonight: Boolean = false,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -146,7 +149,7 @@ fun SessionSheet(
         ) {
             if (feed != null) {
                 if (more) item(key = "older") {
-                    TextButton(onClick = onOlder, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
+                    TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                 }
                 items(feed, key = { feedKey(it) }) { it ->
                     when (it) {
@@ -193,7 +196,7 @@ fun SessionSheet(
                     }
                 }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight)
     }
 }
 
@@ -205,7 +208,7 @@ fun SessionSheet(
 @Composable
 private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
-    quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(),
+    quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(), canTonight: Boolean = false,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     val image = images.firstOrNull()
@@ -223,7 +226,8 @@ private fun Composer(
     }
     Column(bar, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         quota?.let { w ->
-            QuotaLine(w, draft.trim(), canDefer = draft.isNotBlank() && s.question == null && images.isEmpty(), actions, onDeferred = onSent)
+            val can = draft.isNotBlank() && s.question == null && images.isEmpty()
+            QuotaLine(w, draft.trim(), canDefer = can, canTonight = can && canTonight, actions, onDeferred = onSent)
         }
         // Contratto 1.23: il prompt suggerito del terminale come chip; tocco = manda, pressione lunga = nel campo.
         s.suggestion?.takeIf { draft.isBlank() && image == null }?.let { sug -> SuggestionPill(sug, onSend = { actions.send(PhonePrimary.Target.PROMPT, sug); onSent() }, onEdit = { onDraft(sug) }) }
@@ -281,15 +285,15 @@ private fun Composer(
  * scritto (alla ripartenza o stanotte). Senza testo nel campo i bottoni restano spenti; tocco sulla riga = Panoramica.
  */
 @Composable
-private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, actions: SheetActions, onDeferred: () -> Unit) {
+private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, canTonight: Boolean, actions: SheetActions, onDeferred: () -> Unit) {
     Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(CmColors.briefWarn).clickable(onClick = actions.overview).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 2.dp)) {
         Text(
             stringResource(if (w.projected) R.string.quota_warn_pace else R.string.quota_warn, w.pct, hhmm(w.resetAt)),
             style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarnInk,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = { actions.sendAtReset(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_at_reset), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
-            TextButton(onClick = { actions.sendTonight(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_tonight), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
+            TextButton(onClick = { if (actions.sendAtReset(draft)) onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_at_reset), color = CmColors.briefWarnInk.copy(alpha = if (canDefer) 1f else 0.45f)) }
+            TextButton(onClick = { if (actions.sendTonight(draft)) onDeferred() }, enabled = canTonight) { Text(stringResource(R.string.send_tonight), color = CmColors.briefWarnInk.copy(alpha = if (canTonight) 1f else 0.45f)) }
         }
     }
 }
@@ -422,7 +426,8 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             StatusMark(status, m.scheduledFor)
-            Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
+            // Un programmato dice solo quando parte: l'ora in cui è stato scritto accanto confondeva (provini 01/10).
+            if (status != ChatRules.Status.SCHEDULED) Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
             SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
         }

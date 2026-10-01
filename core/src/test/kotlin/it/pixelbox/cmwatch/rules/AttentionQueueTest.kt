@@ -46,4 +46,16 @@ class AttentionQueueTest {
         assertTrue(AttentionQueue.items(s).isEmpty())
         assertNull(AttentionQueue.next(s, null))
     }
+
+    /**
+     * Revisione finale 01/10 (I1): la risposta toglie subito la domanda (ottimistica). La pagina dopo è quella della
+     * domanda che seguiva, cercata per id nella fila già accorciata, non «indice + 1» (che saltava una domanda).
+     */
+    @Test fun pageAfterAnswerFollowsTheNextQuestionById() {
+        val before = three()
+        val target = AttentionQueue.next(before, "qb")!!.questionId
+        val after = before.copy(sessions = before.sessions.map { if (it.name == "b") it.copy(question = null) else it })
+        assertEquals(0, AttentionQueue.page(AttentionQueue.items(after), target))
+        assertNull(AttentionQueue.page(AttentionQueue.items(after), "gone"))
+    }
 }

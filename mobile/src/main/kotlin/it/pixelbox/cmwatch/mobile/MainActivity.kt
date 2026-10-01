@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
             if (n.isEmpty()) { open = null; tab = StartRoute.Tab.OVERVIEW } else { tab = StartRoute.Tab.SESSIONS; open = n }
             sessionAsked = null
         }
-        LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; settingsOpen = false; terminal = null; queueAsked = false } }
+        LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; searchOpen = false; settingsOpen = false; terminal = null; queueAsked = false } }
         var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
@@ -357,6 +357,7 @@ class MainActivity : ComponentActivity() {
                         val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
                         // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                         val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+                        val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
                         run {
@@ -415,13 +416,18 @@ class MainActivity : ComponentActivity() {
                                 val t = System.currentTimeMillis() / 1000
                                 app.chatLog.add(Sent(java.util.UUID.randomUUID().toString(), session.name, text, t, scheduledFor = w.resetAt))
                                 ScheduledSend.schedule(this@MainActivity, w.resetAt)
-                            } },
-                            sendTonight = { text -> state?.let { st -> ChatRules.nightDir(st, session) }?.let { dir ->
-                                scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, dir, text) }
-                                android.widget.Toast.makeText(this@MainActivity, getString(R.string.night_added), android.widget.Toast.LENGTH_SHORT).show()
-                            } },
+                                true
+                            } ?: false },
+                            sendTonight = { text -> nightDir?.let { dir ->
+                                // L'avviso dopo il comando; una coda senza rete piena si dice invece di chiudere l'app.
+                                scope.launch {
+                                    val ok = runCatching { app.repo.command(CmdOp.NIGHT_ADD, null, dir, text) }.isSuccess
+                                    android.widget.Toast.makeText(this@MainActivity, getString(if (ok) R.string.night_added else R.string.queue_full), android.widget.Toast.LENGTH_LONG).show()
+                                }
+                                true
+                            } ?: false },
                             overview = { open = null; tab = StartRoute.Tab.OVERVIEW },
-                        ), chat = rows, quota = quotaWarn,
+                        ), chat = rows, quota = quotaWarn, canTonight = nightDir != null,
                             phrases = state?.let { st -> it.pixelbox.cmwatch.rules.QuickPhrases.of(chatLog, st, session, session.suggestion) }.orEmpty(), choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),

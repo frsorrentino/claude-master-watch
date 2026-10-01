@@ -18,4 +18,10 @@ class ReplyRouteTest {
     /** Revisione 29/09: la domanda si è chiusa sul PC con la notifica ancora aperta: il testo diventa un prompt. */
     @Test fun textBecomesPromptWhenQuestionClosed() = assertEquals(PhonePrimary.Target.PROMPT, ReplyRoute.textTarget(s(null).copy(state = SessionState.IDLE), "B"))
     @Test fun textForUnknownSessionIsPrompt() = assertEquals(PhonePrimary.Target.PROMPT, ReplyRoute.textTarget(null, "B"))
+
+    /**
+     * Revisione finale 01/10 (I2): la notifica della domanda (apre la coda) e quella dell'esito della stessa sessione non
+     * condividono il PendingIntent: con lo stesso codice l'ultima riscriveva gli extra dell'altra.
+     */
+    @Test fun queueTapHasItsOwnRequestCode() = assertNotEquals(PhoneNotifier.openCode("kb", queue = true), PhoneNotifier.openCode("kb", queue = false))
 }

@@ -42,7 +42,9 @@ class WidgetConfigActivity : ComponentActivity() {
         val app = application as PhoneApp
         setContent {
             CmPhoneTheme {
-                WidgetConfigScreen(app.repo.snapshot.value.state, WidgetPrefs.load(this, id)) { c ->
+                // Dallo stato che arriva: a freddo Room lo carica dopo l'apertura (revisione finale 01/10, I3).
+                val snap by app.repo.snapshot.collectAsState()
+                WidgetConfigScreen(snap.state, remember { WidgetPrefs.load(this, id) }) { c ->
                     WidgetPrefs.save(this, id, c)
                     lifecycleScope.launch {
                         val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(id)

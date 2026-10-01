@@ -10,6 +10,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import it.pixelbox.cmwatch.rules.ChatRules
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -191,6 +192,27 @@ class Repo(
             sid
         }
         return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() }, id = id)
+    }
+
+    /** L'esito di `deliver`: il risultato del PC, oppure niente (senza rete, o nessuna risposta entro il limite). */
+    sealed interface Delivery {
+        data class Done(val result: CmdResult) : Delivery
+        data object NotSent : Delivery
+    }
+
+    /**
+     * Un invio che aspetta il suo esito, per il lavoro in background (invio programmato, revisione finale 01/10): senza
+     * rete non entra nella coda offline, che scarta dopo 10 minuti, e il chiamante può riprovare con lo stesso id (il PC
+     * ignora i duplicati). Aspetta anche l'apertura da Room, così non sovrascrive i comandi in sospeso salvati.
+     */
+    suspend fun deliver(op: CmdOp, session: String?, arg: String?, id: String): Delivery {
+        loaded.await()
+        if (!online()) return Delivery.NotSent
+        dispatch(Cmd(id, op, session, arg, now(), by, device = device))
+        snapshot.first { s -> s.pending.none { it.cmd.id == id && (it.status == PendingStatus.SENDING || it.status == PendingStatus.SENT) } }
+        val r = _resultsById.value[id]
+        if (r == null) forget(id)
+        return r?.let { Delivery.Done(it) } ?: Delivery.NotSent
     }
 
     private suspend fun enqueue(cmd: Cmd) {

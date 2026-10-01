@@ -41,4 +41,11 @@ class ChatSearchTest {
     }
 
     @Test fun blankFindsNothing() = assertTrue(ChatSearch.find("  ", sent, events).isEmpty())
+
+    /** Revisione finale 01/10 (I4): due risultati uguali (stessa frase nello stesso secondo) hanno chiavi diverse. */
+    @Test fun sameLineTwiceHasDistinctRefs() {
+        val twice = listOf(Sent("x1", "kb", "continua", sentAt = 500), Sent("x2", "kb", "continua", sentAt = 500))
+        val hits = ChatSearch.find("continua", twice, emptyList())
+        assertEquals(2, hits.map { it.ref }.toSet().size)
+    }
 }

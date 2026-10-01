@@ -51,7 +51,7 @@ class PhoneNotifier(private val ctx: Context) {
         val plan = NotificationPlan.question(s, labels, emptyList())
         val b = NotificationCompat.Builder(ctx, channel(mode)).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(plan.title).setContentText(q.text).setStyle(NotificationCompat.BigTextStyle().bigText(q.text))
-            .setSubText(plan.subText).setContentIntent(open(id(s.name), queue = true)).setOnlyAlertOnce(true)
+            .setSubText(plan.subText).setContentIntent(open(openCode(s.name, queue = true), queue = true)).setOnlyAlertOnce(true)
         q.options.take(3).forEach { o ->
             b.addAction(0, it.pixelbox.cmwatch.rules.QuestionRules.optionLabel(o), broadcast(ReplyRoute.OPTION, s.name, o.n, id(s.name) * 10 + o.n))
         }
@@ -66,7 +66,7 @@ class PhoneNotifier(private val ctx: Context) {
         val o = s.outcome ?: return
         post(id(s.name), NotificationCompat.Builder(ctx, channel(mode)).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(s.name).setContentText(o.short).setStyle(NotificationCompat.BigTextStyle().bigText(o.full))
-            .setSubText(s.account).setContentIntent(open(id(s.name))).setAutoCancel(true))
+            .setSubText(s.account).setContentIntent(open(openCode(s.name, queue = false))).setAutoCancel(true))
     }
 
     fun quota(account: String, title: String) {
@@ -93,5 +93,8 @@ class PhoneNotifier(private val ctx: Context) {
     companion object {
         const val CH_SOUND = "phone_questions"
         const val CH_QUIET = "phone_quiet"
+
+        /** Il codice del tocco: la domanda (apre la coda) e l'esito della stessa sessione hanno PendingIntent distinti. */
+        fun openCode(session: String, queue: Boolean): Int = session.hashCode() * 2 + if (queue) 1 else 0
     }
 }

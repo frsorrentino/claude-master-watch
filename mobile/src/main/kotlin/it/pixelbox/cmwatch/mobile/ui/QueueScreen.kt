@@ -21,7 +21,6 @@ import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.AttentionQueue
 import it.pixelbox.cmwatch.ui.tokens.CmColors
-import kotlinx.coroutines.launch
 
 /**
  * «Ti aspettano» (piano 30/09, Task 1): le domande aperte di tutte le sessioni in fila, dalla più vecchia, una per
@@ -41,7 +40,13 @@ fun QueueScreen(state: State, now: Long, actionsFor: (Session) -> SheetActions, 
             return@Column
         }
         val pager = rememberPagerState { items.size }
-        val scope = rememberCoroutineScope()
+        // Dopo una risposta: la domanda che seguiva, cercata per id quando la fila si è accorciata (revisione 01/10).
+        var goTo by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(goTo, items) {
+            val i = AttentionQueue.page(items, goTo) ?: return@LaunchedEffect
+            if (i != pager.currentPage) pager.animateScrollToPage(i)
+            goTo = null
+        }
         HorizontalPager(pager, key = { items[it].questionId }, modifier = Modifier.weight(1f)) { page ->
             val item = items[page]
             val s = state.sessions.firstOrNull { it.name == item.session } ?: return@HorizontalPager
@@ -50,8 +55,8 @@ fun QueueScreen(state: State, now: Long, actionsFor: (Session) -> SheetActions, 
             val base = actionsFor(s)
             // Dopo la risposta la pagina dopo, subito: la domanda sparisce dalla fila quando il PC la chiude.
             val actions = base.copy(answer = { n ->
+                goTo = AttentionQueue.next(state, q.id)?.questionId?.takeIf { it != q.id }
                 base.answer(n)
-                scope.launch { if (page + 1 < pager.pageCount) pager.animateScrollToPage(page + 1) }
             })
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(
@@ -66,7 +71,7 @@ fun QueueScreen(state: State, now: Long, actionsFor: (Session) -> SheetActions, 
             }
         }
         Text(
-            stringResource(R.string.queue_position, pager.currentPage + 1, items.size), style = MaterialTheme.typography.labelLarge,
+            stringResource(R.string.queue_position, (pager.currentPage + 1).coerceAtMost(items.size), items.size), style = MaterialTheme.typography.labelLarge,
             color = CmColors.text2, modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp),
         )
     }
