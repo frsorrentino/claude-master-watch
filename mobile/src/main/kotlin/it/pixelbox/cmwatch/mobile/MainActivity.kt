@@ -138,6 +138,8 @@ class MainActivity : ComponentActivity() {
         var launching by rememberSaveable { mutableStateOf(false) }
         var nightAdding by rememberSaveable { mutableStateOf(false) }
         var queueOpen by rememberSaveable { mutableStateOf(false) }
+        // La Panoramica in un foglio dal basso sopra la scheda (Franz, 01/10 12:34): si guarda la quota e si torna.
+        var overviewSheet by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(sessionAsked) {
             val n = sessionAsked ?: return@LaunchedEffect
@@ -426,7 +428,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 true
                             } ?: false },
-                            overview = { open = null; tab = StartRoute.Tab.OVERVIEW },
+                            overview = { overviewSheet = true },
                         ), chat = rows, quota = quotaWarn, canTonight = nightDir != null,
                             phrases = state?.let { st -> it.pixelbox.cmwatch.rules.QuickPhrases.of(chatLog, st, session, session.suggestion) }.orEmpty(), choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
@@ -451,6 +453,16 @@ class MainActivity : ComponentActivity() {
                     nightAdding = false
                     if (prompt.isNotBlank()) scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, project.path, prompt) }
                 }
+            }
+        }
+        if (overviewSheet && state != null) {
+            ModalBottomSheet(onDismissRequest = { overviewSheet = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.bg) {
+                val model = remember(state, events, samples, now, snap.freshness) {
+                    PhoneOverview.build(state, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
+                }
+                OverviewScreen(model, snap.freshness,
+                    onQuestion = { overviewSheet = false; queueOpen = true },
+                    onSession = { n -> overviewSheet = false; tab = StartRoute.Tab.SESSIONS; open = n })
             }
         }
         if (launching && state != null) {
