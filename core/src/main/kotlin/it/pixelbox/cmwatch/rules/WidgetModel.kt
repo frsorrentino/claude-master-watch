@@ -25,6 +25,8 @@ object WidgetModel {
         val innerPct: Int? = null,
         /** Lo stato di una sessione (colore della riga), null per le card di account e regia. */
         val seg: WorkPanel.Seg? = null,
+        /** La quota dell'arco è una lettura vecchia: si mostra attenuata, non sparisce (segnalazione 01/10 21:55). */
+        val stale: Boolean = false,
     )
 
     /** Etichette dell'arco, uguali in ogni lingua come «5h» e «ctx» sul polso. */
@@ -51,16 +53,19 @@ object WidgetModel {
                 val name = Accounts.resolve(state, config.target.orEmpty())
                 val q = name?.let { state.quota[it] }
                 val scope = state.sessions.filter { it.account.equals(name, ignoreCase = true) }
-                val fresh = q?.takeUnless { it.stale }
-                listOf(Card(name.orEmpty(), fresh?.h5, ARC_5H, metrics.map { it to value(it, state, scope, name, now) }, state.ts, innerPct = fresh?.w7))
+                listOf(Card(name.orEmpty(), q?.h5, ARC_5H, metrics.map { it to value(it, state, scope, name, now) }, state.ts, innerPct = q?.w7,
+                    stale = q != null && q.stale && q.h5 != null))
             }
             Mode.SESSION -> {
                 val s = pick(state, config.target) ?: return listOf(Card(config.target.orEmpty(), null, ARC_CTX, metrics.map { it to NONE }, state.ts))
                 listOf(sessionCard(state, s, metrics, now))
             }
             Mode.BOARD -> {
-                val fullest = state.quota.values.filter { !it.stale && it.h5 != null }.maxByOrNull { it.h5!! }
-                val board = Card(state.host, fullest?.h5, ARC_5H, metrics.map { it to value(it, state, state.sessions, null, now) }, state.ts, innerPct = fullest?.w7)
+                // La quota più piena fra le letture fresche; solo se sono tutte vecchie, la più piena delle vecchie.
+                val read = state.quota.values.filter { it.h5 != null }
+                val fullest = (read.filter { !it.stale }.ifEmpty { read }).maxByOrNull { it.h5!! }
+                val board = Card(state.host, fullest?.h5, ARC_5H, metrics.map { it to value(it, state, state.sessions, null, now) }, state.ts, innerPct = fullest?.w7,
+                    stale = fullest?.stale == true)
                 val live = PhoneBoard.sections(state).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }
                 listOf(board) + live.map { sessionCard(state, it, defaults(Mode.SESSION), now) }
             }
@@ -81,7 +86,7 @@ object WidgetModel {
         val counts = WorkPanel.now(state.copy(sessions = scope))
         return when (m) {
             Metric.WEEK -> (account?.let { a -> state.quota.entries.firstOrNull { it.key.equals(a, ignoreCase = true) }?.value }
-                ?: Accounts.personalQuota(state)?.let { state.quota[it] })?.takeUnless { it.stale }?.w7?.let { "$it%" } ?: NONE
+                ?: Accounts.personalQuota(state)?.let { state.quota[it] })?.w7?.let { "$it%" } ?: NONE
             Metric.WORKING -> counts.working.toString()
             Metric.WAITING -> counts.waiting.toString()
             Metric.IDLE -> counts.idle.toString()

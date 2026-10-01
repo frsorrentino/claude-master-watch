@@ -215,8 +215,10 @@ private val COUNTS = setOf(Metric.WAITING, Metric.WORKING, Metric.IDLE)
 private fun Ring(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M, size: Int) {
     val ctx = LocalContext.current
     val px = (size * ctx.resources.displayMetrics.density).toInt().coerceIn(16, MAX_PX)
-    val outer = c.arcPct?.let { if (c.arcLabel == WidgetModel.ARC_CTX) ink.context(it) else ink.quota(it) } ?: ink.track
-    val week = ink.metric(Metric.WEEK)
+    // Una lettura vecchia resta, in grigio, con l'etichetta in ambra (segnalazione 01/10 21:55: spariva).
+    val outer = if (c.stale) ink.text2.copy(alpha = 0.55f) else c.arcPct?.let { if (c.arcLabel == WidgetModel.ARC_CTX) ink.context(it) else ink.quota(it) } ?: ink.track
+    val week = if (c.stale) ink.text2.copy(alpha = 0.35f) else ink.metric(Metric.WEEK)
+    val label = if (c.stale) ink.stale else ink.text2
     val bmp = remember(c.arcPct, c.innerPct, outer, week, px, m.gauge, m.ringStroke) {
         // Nella striscia un arco solo come in ads-widget: con l'anello della settimana il valore non ci stava.
         rings(px, c.arcPct, outer, if (m.gauge) null else c.innerPct, week, ink.track, if (m.gauge) 240f else 360f, m.ringStroke * px / size.toFloat())
@@ -226,10 +228,10 @@ private fun Ring(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M, size: Int
         Column(GlanceModifier.fillMaxSize().padding(bottom = if (m.gauge) (size * 0.12f).dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally) {
             Value(c.arcPct?.let { "$it%" } ?: WidgetModel.NONE, m.ringValue, ink)
-            if (!m.gauge) Text(c.arcLabel, style = TextStyle(color = ColorProvider(ink.text2), fontSize = m.ringLabel.sp, fontWeight = FontWeight.Medium))
+            if (!m.gauge) Text(c.arcLabel, style = TextStyle(color = ColorProvider(label), fontSize = m.ringLabel.sp, fontWeight = FontWeight.Medium))
         }
         if (m.gauge) Box(GlanceModifier.fillMaxSize().padding(bottom = 2.dp), contentAlignment = Alignment.BottomCenter) {
-            Text(c.arcLabel, style = TextStyle(color = ColorProvider(ink.text2), fontSize = m.ringLabel.sp, fontWeight = FontWeight.Medium))
+            Text(c.arcLabel, style = TextStyle(color = ColorProvider(label), fontSize = m.ringLabel.sp, fontWeight = FontWeight.Medium))
         }
     }
 }
@@ -378,6 +380,8 @@ private class Palette(val mono: Boolean) {
     val text = c(CmColors.widgetText)
     val text2 = c(CmColors.widgetText2)
     val accent = c(CmColors.widgetAccent)
+    /** L'etichetta dell'arco con una lettura vecchia: l'ambra di «dato vecchio» nella Panoramica. */
+    val stale = c(CmColors.waiting)
     fun quota(pct: Int): Color = c(if (pct >= 90) CmColors.briefAlertRing else CmColors.briefRing)
     /** Le soglie della card delle misure (`SessionMeters.contextTone`): ambra dal 75 %, rosso dal 90 %. */
     fun context(pct: Int): Color = c(when (SessionMeters.contextTone(pct)) {

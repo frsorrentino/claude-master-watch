@@ -71,4 +71,20 @@ class WidgetModelTest {
         assertEquals("Atlas-shop", WidgetModel.heading("atlas-shop"))
         assertEquals("", WidgetModel.heading(""))
     }
+
+    // Segnalazione 01/10 21:55: «a volte le quote spariscono dal widget». Una lettura vecchia resta, segnata come vecchia,
+    // come nella Panoramica («dato vecchio»): sparire faceva pensare a un guasto.
+    @Test fun staleQuotaStaysMarkedAsStale() {
+        val old = state.copy(quota = state.quota.mapValues { (_, q) -> q.copy(stale = true) })
+        val c = WidgetModel.cards(old, cfg(Mode.ACCOUNT, "personal", listOf(Metric.WEEK)), now).single()
+        assertEquals(11, c.arcPct); assertEquals(36, c.innerPct); assertTrue(c.stale)
+        assertEquals(listOf(Metric.WEEK to "36%"), c.columns)
+        val board = WidgetModel.cards(old, cfg(Mode.BOARD), now).first()
+        assertEquals(11, board.arcPct); assertTrue(board.stale)
+    }
+
+    @Test fun boardPrefersAFreshQuota() {
+        val board = WidgetModel.cards(state, cfg(Mode.BOARD), now).first()
+        assertEquals(11, board.arcPct); assertFalse(board.stale)
+    }
 }
