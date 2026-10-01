@@ -50,6 +50,8 @@ fun AppShell(
     onSearch: (() -> Unit)? = null,
     /** Lo scorrimento laterale cambia scheda; spento con una scheda sessione aperta, dove scorre fra le sessioni. */
     swipeTabs: Boolean = false,
+    /** Tirare giù aggiorna lo stato dal PC (segnalazione 01/10 21:08); null = niente gesto, come con una scheda aperta. */
+    onRefresh: (() -> Unit)? = null, refreshing: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Scaffold(
@@ -100,7 +102,10 @@ fun AppShell(
                 onDragEnd = { if (kotlin.math.abs(dx) > min) StartRoute.swipe(tab, toNext = dx < 0).takeIf { it != tab }?.let(onTab) },
             ) { _, d -> dx += d }
         }
-        Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize().then(swipe)) { content() }
+        Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize().then(swipe)) {
+            if (onRefresh == null) content()
+            else androidx.compose.material3.pulltorefresh.PullToRefreshBox(refreshing, onRefresh, Modifier.fillMaxSize()) { content() }
+        }
     }
 }
 

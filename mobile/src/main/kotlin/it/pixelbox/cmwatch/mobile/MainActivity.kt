@@ -129,6 +129,7 @@ class MainActivity : ComponentActivity() {
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         // Modello ed effort scelti dal telefono, per sessione: «nome/model», «nome/effort» (`Tune`).
         val tunePicks = remember { androidx.compose.runtime.mutableStateMapOf<String, Tune.Pick>() }
+        var refreshing by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
         val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
         val chatLog by app.chatLog.messages.collectAsStateWithLifecycle()
@@ -320,6 +321,9 @@ class MainActivity : ComponentActivity() {
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
             current = open, onPick = { n -> if (n != null) tab = StartRoute.Tab.SESSIONS; open = n },
             onSearch = { searchOpen = true }, swipeTabs = open == null,
+            // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
+            onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
+            refreshing = refreshing,
         ) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
                 state?.let { st ->
