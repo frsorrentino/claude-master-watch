@@ -21,6 +21,15 @@ import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.pairing.PairingRecord
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.PhoneDiary
@@ -240,6 +249,11 @@ class MainActivity : ComponentActivity() {
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
         val transcriptOk = !demo && state?.ops?.contains("transcript") == true
+        // La casa della master (design 01/10): sulla prima scheda, senza schede aperte, la chat è quella della master.
+        val masterName = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.name
+        val chatName = open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // I resoconti della notte già ascoltati: spariscono da «Per te».
+        val readReports = remember { androidx.compose.runtime.mutableStateListOf<String>() }
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
         val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
@@ -247,9 +261,9 @@ class MainActivity : ComponentActivity() {
         var olderId by remember { mutableStateOf<String?>(null) }
         var unsupported by remember { mutableStateOf(false) }
         val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-        LaunchedEffect(open, transcriptOk, unsupported) {
-            entries = open?.let { feedCache[it] }.orEmpty(); more = false
-            val name = open ?: return@LaunchedEffect
+        LaunchedEffect(chatName, transcriptOk, unsupported) {
+            entries = chatName?.let { feedCache[it] }.orEmpty(); more = false
+            val name = chatName ?: return@LaunchedEffect
             if (!transcriptOk || unsupported) return@LaunchedEffect
             lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 var askedAt: Long? = null
@@ -291,8 +305,8 @@ class MainActivity : ComponentActivity() {
         // «Carica i messaggi precedenti»: una pagina `before` in testa.
         // Legata alla sessione aperta e con un limite: una pagina persa non blocca il tasto, e non finisce in un'altra
         // sessione (revisione 30/09).
-        LaunchedEffect(open) { olderId = null }
-        LaunchedEffect(open, olderId) {
+        LaunchedEffect(chatName) { olderId = null }
+        LaunchedEffect(chatName, olderId) {
             val id = olderId ?: return@LaunchedEffect
             val until = System.currentTimeMillis() + PhoneTerminal.LOST_MS
             while (System.currentTimeMillis() < until) {
@@ -310,63 +324,34 @@ class MainActivity : ComponentActivity() {
         }
         val fab: @Composable () -> Unit = {
             // «Aggiungi alla notte» solo con un relay 1.17, come nel Diario: prima il PC la rifiuterebbe.
-            if (open == null && tab != StartRoute.Tab.DIARY && state != null) LaunchFab(
+            if (open == null && tab == StartRoute.Tab.SESSIONS && state != null) LaunchFab(
                 onLaunch = { launching = true }, onNight = if (state.night.items != null) ({ nightAdding = true }) else null,
             )
         }
         val speaking by speech.speaking.collectAsStateWithLifecycle()
-        CompositionLocalProvider(LocalSpeaking provides speaking) {
-        AppShell(
-            tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
-            sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
-            current = open, onPick = { n -> if (n != null) tab = StartRoute.Tab.SESSIONS; open = n },
-            onSearch = { searchOpen = true }, swipeTabs = open == null,
-            // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
-            onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
-            refreshing = refreshing,
-        ) {
-            if (tab == StartRoute.Tab.OVERVIEW && open == null) {
-                state?.let { st ->
-                    val model = remember(st, events, samples, now, snap.freshness) {
-                        PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
-                    }
-                    OverviewScreen(model, snap.freshness,
-                        onQuestion = { queueOpen = true },
-                        onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n },
-                        scheduled = chatLog.filter { ChatRules.waiting(it) }
-                            .groupBy { m -> st.sessions.firstOrNull { it.name == m.session }?.account }
-                            .filterKeys { it != null }
-                            .map { (acc, ms) -> acc!! to (ms.size to ms.minOf { it.scheduledFor!! }) }.toMap())
-                }
-                return@AppShell
+        // Un prompt a una sessione, registrato nella sua chat come quelli scritti a mano.
+        val sendPrompt: (String, String) -> Unit = { name, text ->
+            scope.launch {
+                runCatching { app.repo.prompt(name, text) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, name, text, System.currentTimeMillis() / 1000)) }
             }
-            if (tab == StartRoute.Tab.DIARY && open == null) {
-                state?.let { st ->
-                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
-                        onAdd = { nightAdding = true },
-                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
+        }
+        val forYouAction: (it.pixelbox.cmwatch.rules.MasterHome.Row) -> Unit = { row ->
+            when (row.kind) {
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> queueOpen = true
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.CONTEXT -> row.session?.let { n -> sendPrompt(n, getString(R.string.ctx_handoff_prompt)) }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT_REPORT -> { row.detail?.let { speech.toggle(it) }; row.key?.let { readReports.add(it) } }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT -> nightAdding = true
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.NEXT_STEP -> {
+                    val text = row.detail.orEmpty()
+                    val n = row.session
+                    if (n != null) sendPrompt(n, text) else row.project?.let { p -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, p, text.ifBlank { null }) } }
                 }
-                return@AppShell
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.SCHEDULED -> { tab = StartRoute.Tab.SESSIONS; open = row.session }
             }
-            SharedTransitionLayout {
-                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }, contentKey = { it != null }) { name ->
-                    CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
-                        val opened = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
-                        // Swipe laterale fra le sessioni, nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
-                        // sessioni»); la sessione della pagina corrente è quella aperta, e il menu in alto la segue.
-                        val names = remember(state?.sessions, opened?.name) {
-                            val live = state?.let { st -> PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
-                            if (opened != null && opened.name !in live) live + opened.name else live
-                        }
-                        if (opened != null && names.isNotEmpty()) {
-                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = names.indexOf(opened.name).coerceAtLeast(0)) { names.size }
-                        // Solo con una scheda aperta: durante l'uscita (open già null) la pagina non deve riaprirla.
-                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (open != null && it != open) open = it } }
-                        LaunchedEffect(open) { val i = names.indexOf(open); if (i >= 0 && i != pager.currentPage) pager.scrollToPage(i) }
-                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { names[it] }, beyondViewportPageCount = 0) { page ->
-                        val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
-                        // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
-                        val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+        }
+        // La pagina di una sessione (scheda e chat), usata dallo scorrimento fra le sessioni e dalla casa della master,
+        // che le aggiunge «Per te» e il Quadro in cima (`top`).
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, top ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
@@ -464,17 +449,82 @@ class MainActivity : ComponentActivity() {
                             choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
-                            more = more && session.name == open,
+                            more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
+                            top = top, grid = top != null,
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }
                             },
                         )
                         }
+        }
+        CompositionLocalProvider(LocalSpeaking provides speaking) {
+        AppShell(
+            tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
+            sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
+            current = open, onPick = { n -> tab = StartRoute.Tab.SESSIONS; open = n },
+            home = masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }, onQuadro = { overviewSheet = true },
+            onSearch = { searchOpen = true }, swipeTabs = open == null,
+            // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
+            onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
+            refreshing = refreshing,
+        ) {
+            if (tab == StartRoute.Tab.OVERVIEW && open == null) {
+                state?.let { st ->
+                    val model = remember(st, events, samples, now, snap.freshness) {
+                        PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
+                    }
+                    val forYou = remember(st, events, chatLog, now, readReports.toList()) {
+                        it.pixelbox.cmwatch.rules.MasterHome.forYou(st, events, chatLog, now, java.time.ZoneId.systemDefault(), readReports.toSet(), limit = Int.MAX_VALUE)
+                    }
+                    val chips = PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.filter { it.name != masterName }
+                    val top: @Composable () -> Unit = {
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ForYouCard(forYou.rows, onAction = forYouAction)
+                            QuadroStrip(model, chips, onOpen = { overviewSheet = true }, onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n })
                         }
-                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onQuota = { tab = StartRoute.Tab.OVERVIEW })
+                    }
+                    val master = st.sessions.firstOrNull { it.name == masterName }
+                    if (master != null) sessionPage(master, entries, top)
+                    else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState())) {
+                        top()
+                        Box(Modifier.padding(horizontal = 16.dp)) { MasterAbsent { scope.launch { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
+                    }
+                }
+                return@AppShell
+            }
+            if (tab == StartRoute.Tab.DIARY && open == null) {
+                state?.let { st ->
+                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
+                        onAdd = { nightAdding = true },
+                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
+                }
+                return@AppShell
+            }
+            SharedTransitionLayout {
+                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }, contentKey = { it != null }) { name ->
+                    CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
+                        val opened = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
+                        // Swipe laterale fra le sessioni, nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
+                        // sessioni»); la sessione della pagina corrente è quella aperta, e il menu in alto la segue.
+                        val names = remember(state?.sessions, opened?.name) {
+                            val live = state?.let { st -> PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
+                            if (opened != null && opened.name !in live) live + opened.name else live
+                        }
+                        if (opened != null && names.isNotEmpty()) {
+                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = names.indexOf(opened.name).coerceAtLeast(0)) { names.size }
+                        // Solo con una scheda aperta: durante l'uscita (open già null) la pagina non deve riaprirla.
+                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (open != null && it != open) open = it } }
+                        LaunchedEffect(open) { val i = names.indexOf(open); if (i >= 0 && i != pager.currentPage) pager.scrollToPage(i) }
+                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { names[it] }, beyondViewportPageCount = 0) { page ->
+                        val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
+                        // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
+                        val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+                        sessionPage(session, pageEntries, null)
+                        }
+                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onQuota = { overviewSheet = true })
                     }
                 }
             }

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
@@ -50,6 +51,10 @@ fun AppShell(
     onSearch: (() -> Unit)? = null,
     /** Lo scorrimento laterale cambia scheda; spento con una scheda sessione aperta, dove scorre fra le sessioni. */
     swipeTabs: Boolean = false,
+    /** La casa della master (design 01/10): il nome della master nel menu in alto quando nessuna scheda è aperta. */
+    home: String? = null,
+    /** «Quadro» nel menu ≡: il foglio della Panoramica (la Panoramica non è più una scheda). */
+    onQuadro: () -> Unit = {},
     /** Tirare giù aggiorna lo stato dal PC (segnalazione 01/10 21:08); null = niente gesto, come con una scheda aperta. */
     onRefresh: (() -> Unit)? = null, refreshing: Boolean = false,
     content: @Composable () -> Unit,
@@ -60,10 +65,10 @@ fun AppShell(
         topBar = {
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SessionMenu(sessions, current, onPick, Modifier.weight(1f))
+                    SessionMenu(sessions, current ?: home, onPick, Modifier.weight(1f))
                     // Al posto di ⚙ il menu dell'app (Franz, 30/09 23:04): con una scheda aperta le schede in basso non ci sono.
                     onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
-                    AppMenu(onTab, onSettings)
+                    AppMenu(onTab, onSettings, onQuadro)
                 }
                 if (demo) {
                     Text(
@@ -78,7 +83,8 @@ fun AppShell(
             if (current == null) NavigationBar(containerColor = CmColors.surfaceLow) {
                 NavigationBarItem(
                     selected = tab == Tab.OVERVIEW, onClick = { onTab(Tab.OVERVIEW) },
-                    icon = { Icon(Icons.Rounded.Dashboard, null) }, label = { Text(stringResource(R.string.tab_overview)) },
+                    // La prima scheda è la casa della master (design 01/10): il valore resta `Tab.OVERVIEW` per non cambiare lo stato salvato.
+                    icon = { Icon(Icons.Rounded.Person, null) }, label = { Text(stringResource(R.string.tab_master)) },
                 )
                 NavigationBarItem(
                     selected = tab == Tab.SESSIONS, onClick = { onTab(Tab.SESSIONS) },
@@ -182,12 +188,13 @@ private fun SessionMenu(
 
 /** Il menu dell'app in alto a destra: Panoramica, Sessioni, Diario, Impostazioni (poi la Scrivania). */
 @Composable
-private fun AppMenu(onTab: (Tab) -> Unit, onSettings: () -> Unit) {
+private fun AppMenu(onTab: (Tab) -> Unit, onSettings: () -> Unit, onQuadro: () -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CmColors.surface) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.tab_overview)) }, leadingIcon = { Icon(Icons.Rounded.Dashboard, null) }, onClick = { open = false; onTab(Tab.OVERVIEW) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.tab_master)) }, leadingIcon = { Icon(Icons.Rounded.Person, null) }, onClick = { open = false; onTab(Tab.OVERVIEW) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.quadro_title)) }, leadingIcon = { Icon(Icons.Rounded.Dashboard, null) }, onClick = { open = false; onQuadro() })
             DropdownMenuItem(text = { Text(stringResource(R.string.tab_sessions)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.List, null) }, onClick = { open = false; onTab(Tab.SESSIONS) })
             DropdownMenuItem(text = { Text(stringResource(R.string.tab_diary)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, null) }, onClick = { open = false; onTab(Tab.DIARY) })
             HorizontalDivider(color = CmColors.line)

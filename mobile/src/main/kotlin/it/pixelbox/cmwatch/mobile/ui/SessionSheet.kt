@@ -117,6 +117,10 @@ fun SessionSheet(
     canTonight: Boolean = false,
     /** Modello ed effort da mostrare: la scelta fatta dal telefono finché il PC non la riporta (`Tune`). */
     model: it.pixelbox.cmwatch.contract.Model? = s.model, effort: String? = s.effort,
+    /** La casa della master: «Per te» e il Quadro sopra la chat; si chiudono quando si scorre indietro per rileggere. */
+    top: (@Composable () -> Unit)? = null,
+    /** La griglia di puntini dello stile tech dietro la chat (casa della master). */
+    grid: Boolean = false,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -146,9 +150,10 @@ fun SessionSheet(
             if (follow && below && n > 0 && !list.isScrollInProgress) list.scrollToItem(n - 1, Int.MAX_VALUE)
         }
     }
-    Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
+    Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
         SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
+        top?.let { block -> androidx.compose.animation.AnimatedVisibility(visible = follow) { block() } }
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(), state = list,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),

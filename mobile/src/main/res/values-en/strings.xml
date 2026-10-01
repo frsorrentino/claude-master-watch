@@ -251,4 +251,32 @@
     <string name="ask_master">Ask the master to check</string>
     <string name="ask_master_prompt">Check session %1$s and tell me briefly where it stands and whether it needs anything from me.</string>
     <string name="ask_master_done">Asked the master</string>
+    <string name="fy_title">For you</string>
+    <string name="fy_question">%1$s is asking</string>
+    <string name="fy_context">%1$s context at %2$d%%</string>
+    <string name="fy_context_detail">A handoff is worth it before going on</string>
+    <string name="fy_night_queued">Night: %1$d queued</string>
+    <string name="fy_night_empty">Night: nothing queued</string>
+    <string name="fy_night_detail">You can leave a job for tonight</string>
+    <string name="fy_next">%1$s · next step</string>
+    <string name="fy_scheduled_detail">The first one leaves at %1$s</string>
+    <string name="fy_btn_answer">Answer</string>
+    <string name="fy_btn_handoff">Handoff and restart</string>
+    <string name="fy_btn_listen">Listen</string>
+    <string name="fy_btn_add">Add</string>
+    <string name="fy_btn_start">Start</string>
+    <string name="fy_btn_see">See</string>
+    <string name="fy_more">+%1$d more</string>
+    <string name="quadro_title">Board</string>
+    <string name="quadro_all">All ›</string>
+    <string name="quadro_week">%1$s · week %2$d%%</string>
+    <string name="quadro_resets">resets at %1$s</string>
+    <string name="quadro_old">old reading</string>
+    <string name="master_absent">The master is not open</string>
+    <string name="master_absent_detail">Reopen it to write to it from here.</string>
+    <string name="tab_master">Master</string>
+    <plurals name="fy_scheduled">
+        <item quantity="one">%1$d scheduled message</item>
+        <item quantity="other">%1$d scheduled messages</item>
+    </plurals>
 </resources>

@@ -253,4 +253,32 @@
     <string name="ask_master">Fai controllare alla master</string>
     <string name="ask_master_prompt">Controlla la sessione %1$s e dimmi in breve a che punto è e se serve qualcosa da me.</string>
     <string name="ask_master_done">Chiesto alla master</string>
+    <string name="fy_title">Per te</string>
+    <string name="fy_question">%1$s ti chiede</string>
+    <string name="fy_context">Contesto di %1$s al %2$d%%</string>
+    <string name="fy_context_detail">Conviene un handoff prima di continuare</string>
+    <string name="fy_night_queued">Notte: %1$d in coda</string>
+    <string name="fy_night_empty">Notte: niente in coda</string>
+    <string name="fy_night_detail">Puoi lasciare un lavoro per stanotte</string>
+    <string name="fy_next">%1$s · prossimo passo</string>
+    <string name="fy_scheduled_detail">Il primo parte alle %1$s</string>
+    <string name="fy_btn_answer">Rispondi</string>
+    <string name="fy_btn_handoff">Handoff e riavvio</string>
+    <string name="fy_btn_listen">Ascolta</string>
+    <string name="fy_btn_add">Aggiungi</string>
+    <string name="fy_btn_start">Avvia</string>
+    <string name="fy_btn_see">Vedi</string>
+    <string name="fy_more">+%1$d altre</string>
+    <string name="quadro_title">Quadro</string>
+    <string name="quadro_all">Tutto ›</string>
+    <string name="quadro_week">%1$s · sett. %2$d%%</string>
+    <string name="quadro_resets">si azzera alle %1$s</string>
+    <string name="quadro_old">dato vecchio</string>
+    <string name="master_absent">La master non è aperta</string>
+    <string name="master_absent_detail">Riaprila per scriverle da qui.</string>
+    <string name="tab_master">Master</string>
+    <plurals name="fy_scheduled">
+        <item quantity="one">%1$d messaggio programmato</item>
+        <item quantity="other">%1$d messaggi programmati</item>
+    </plurals>
 </resources>

@@ -36,6 +36,8 @@ object MasterHome {
 
     fun forYou(
         state: State, events: List<Event>, sent: List<Sent>, now: Long, zone: ZoneId, read: Set<String> = emptySet(),
+        /** Quante righe tenere: [MAX] nella card, tutte quando si apre «+N». */
+        limit: Int = MAX,
     ): ForYou {
         val local = Instant.ofEpochSecond(now).atZone(zone)
         val today = local.toLocalDate()
@@ -64,6 +66,6 @@ object MasterHome {
                 add(Row(Kind.SCHEDULED, session = first.session, number = waiting.size, at = first.scheduledFor))
             }
         }
-        return ForYou(all.take(MAX), (all.size - MAX).coerceAtLeast(0))
+        return ForYou(all.take(limit), (all.size - limit).coerceAtLeast(0))
     }
 }

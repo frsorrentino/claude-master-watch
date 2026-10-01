@@ -36,6 +36,8 @@ class MasterHomeTest {
         val f = MasterHome.forYou(st(s("a", ctx = 81), s("b", ctx = 82), s("c", ctx = 83), s("d", ctx = 84)), emptyList(), emptyList(), at(15), zone)
         assertEquals(3, f.rows.size); assertEquals(1, f.more)
         assertEquals(listOf("d", "c", "b"), f.rows.map { it.session })
+        // Aprendo «+N» si vedono tutte.
+        assertEquals(4, MasterHome.forYou(st(s("a", ctx = 81), s("b", ctx = 82), s("c", ctx = 83), s("d", ctx = 84)), emptyList(), emptyList(), at(15), zone, limit = Int.MAX_VALUE).rows.size)
     }
 
     private val report = Event("nr-1", EventKind.NIGHT_REPORT, ts = at(6, 10), title = "Stanotte", body = "3 lavori fatti")
