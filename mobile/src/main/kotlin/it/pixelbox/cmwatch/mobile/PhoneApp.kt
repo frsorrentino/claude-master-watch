@@ -102,8 +102,11 @@ class PhoneApp : Application() {
             val sp = getSharedPreferences("widget-preview", MODE_PRIVATE)
             val v = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
             if (sp.getLong("version", -1) != v) runCatching {
-                val r = androidx.glance.appwidget.GlanceAppWidgetManager(this@PhoneApp).setWidgetPreviews(it.pixelbox.cmwatch.mobile.widget.CmWidgetReceiver::class)
-                if (r == androidx.glance.appwidget.GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) sp.edit().putLong("version", v).apply()
+                val manager = androidx.glance.appwidget.GlanceAppWidgetManager(this@PhoneApp)
+                val r = manager.setWidgetPreviews(it.pixelbox.cmwatch.mobile.widget.CmWidgetReceiver::class)
+                val r2 = manager.setWidgetPreviews(it.pixelbox.cmwatch.mobile.widget.MasterWidgetReceiver::class)
+                val ok = androidx.glance.appwidget.GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS
+                if (r == ok && r2 == ok) sp.edit().putLong("version", v).apply()
             }
         }
         // Un invio programmato perso con il telefono spento parte al primo giro (piano 30/09, Task 4).
@@ -116,6 +119,7 @@ class PhoneApp : Application() {
                 chatLog.advance(cur)
                 // Il widget si ridisegna a ogni stato che arriva (spec «Widget»), non ogni 30 minuti.
                 launch { runCatching { CmWidget().updateAll(this@PhoneApp) } }
+                launch { runCatching { it.pixelbox.cmwatch.mobile.widget.MasterWidget().updateAll(this@PhoneApp) } }
                 if (prev != null) react(prev, cur)
             }
         }

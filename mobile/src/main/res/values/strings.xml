@@ -281,4 +281,13 @@
         <item quantity="one">%1$d messaggio programmato</item>
         <item quantity="other">%1$d messaggi programmati</item>
     </plurals>
+    <string name="mw_label">Master</string>
+    <string name="mw_desc">La master: il suo ultimo messaggio, scriverle, le sessioni aperte</string>
+    <string name="mw_write">Scrivi alla master</string>
+    <string name="mw_reply">Rispondi alla master</string>
+    <string name="mw_asks">Ti chiede</string>
+    <string name="mw_state_work">lavora</string>
+    <string name="mw_state_wait">ti aspetta</string>
+    <string name="mw_state_idle">ferma</string>
+    <string name="mw_state_gone">chiusa</string>
 </resources>

@@ -279,4 +279,13 @@
         <item quantity="one">%1$d scheduled message</item>
         <item quantity="other">%1$d scheduled messages</item>
     </plurals>
+    <string name="mw_label">Master</string>
+    <string name="mw_desc">The master: its last message, write to it, open sessions</string>
+    <string name="mw_write">Write to the master</string>
+    <string name="mw_reply">Answer the master</string>
+    <string name="mw_asks">Asking you</string>
+    <string name="mw_state_work">working</string>
+    <string name="mw_state_wait">waiting for you</string>
+    <string name="mw_state_idle">idle</string>
+    <string name="mw_state_gone">closed</string>
 </resources>

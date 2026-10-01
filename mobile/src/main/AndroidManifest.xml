@@ -63,6 +63,15 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/cm_widget_info" />
         </receiver>
+        <!-- Il secondo widget, «Master» (spec 01/10), e il suo foglio di scrittura. -->
+        <receiver android:name=".widget.MasterWidgetReceiver" android:exported="true" android:label="@string/mw_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/master_widget_info" />
+        </receiver>
+        <activity android:name=".widget.WriteToMasterActivity" android:exported="false" android:theme="@style/Theme.CmPhone.Sheet"
+            android:excludeFromRecents="true" android:taskAffinity="" android:windowSoftInputMode="adjustResize|stateVisible" />
         <activity android:name=".widget.WidgetConfigActivity" android:exported="true" android:theme="@style/Theme.CmPhone">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
