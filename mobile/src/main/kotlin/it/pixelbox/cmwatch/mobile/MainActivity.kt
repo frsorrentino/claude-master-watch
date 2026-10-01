@@ -449,7 +449,9 @@ class MainActivity : ComponentActivity() {
                             } ?: false },
                             overview = { overviewSheet = true },
                         ), chat = rows, quota = quotaWarn, canTonight = nightDir != null,
-                            phrases = state?.let { st -> it.pixelbox.cmwatch.rules.QuickPhrases.of(chatLog, st, session, session.suggestion) }.orEmpty(), choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
+                            // Niente frasi rapide (Franz, 01/10 23:34: «via» fisso, generico e fuori luogo): i consigli in più
+                            // li scriverà la sessione stessa a fine turno.
+                            choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
                             more = more && session.name == open,
