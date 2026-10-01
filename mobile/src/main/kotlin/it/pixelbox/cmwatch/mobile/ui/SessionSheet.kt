@@ -105,10 +105,13 @@ fun SessionSheet(
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
     val primary = PhonePrimary.button(s, draft)
     val list = rememberLazyListState()
-    // Si scende da soli solo se si era già in fondo o dopo un proprio invio: chi rilegge più su non viene tirato giù, e
-    // una pagina di messaggi precedenti non rimbalza in fondo (revisione 30/09).
-    val atBottom by remember { derivedStateOf { !list.canScrollForward } }
-    var justSent by remember { mutableStateOf(false) }
+    // La chat segue l'ultimo testo finché non la si sposta a mano per rileggere (Franz, 01/10 06:52). «Segui» si decide
+    // solo quando lo scorrimento si ferma: letto dopo l'arrivo di un testo nuovo, il fondo era già più giù e la chat
+    // restava ferma. Un proprio invio torna a seguire; una pagina di messaggi precedenti non rimbalza in fondo.
+    var follow by remember(s.id) { mutableStateOf(true) }
+    LaunchedEffect(list) {
+        androidx.compose.runtime.snapshotFlow { list.isScrollInProgress }.collect { moving -> if (!moving) follow = !list.canScrollForward }
+    }
     val reasons = chat.associate { it.sent.id to it.reason }
     // Alla prima apertura, e quando arriva la prima pagina della conversazione vera, la chat parte dal fondo
     // (Franz, 30/09 22:55: «ancorato alla fine»).
@@ -116,9 +119,13 @@ fun SessionSheet(
     LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size, feed?.lastOrNull()) {
         if (chat.isEmpty() && feed.isNullOrEmpty()) return@LaunchedEffect
         val count = androidx.compose.runtime.snapshotFlow { list.layoutInfo.totalItemsCount }.first { it > 0 }
-        when {
-            !anchored -> { list.scrollToItem(count - 1); anchored = true }
-            atBottom || justSent -> { list.animateScrollToItem(count - 1); justSent = false }
+        if (!anchored) { list.scrollToItem(count - 1, Int.MAX_VALUE); anchored = true; follow = true }
+    }
+    // Ogni testo nuovo o più lungo in fondo (risposta, riga dal vivo, domanda): giù fino alla fine dell'ultima voce.
+    LaunchedEffect(list, anchored) {
+        if (!anchored) return@LaunchedEffect
+        androidx.compose.runtime.snapshotFlow { list.layoutInfo.totalItemsCount to list.canScrollForward }.collect { (n, below) ->
+            if (follow && below && n > 0 && !list.isScrollInProgress) list.scrollToItem(n - 1, Int.MAX_VALUE)
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
@@ -177,7 +184,7 @@ fun SessionSheet(
                     }
                 }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; justSent = true })
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true })
     }
 }
 
