@@ -73,20 +73,22 @@ Ogni dato della Panoramica ha un posto:
 Il Diario resta la sua scheda e l'archivio: recap completo, giorni passati, avvisi di quota, gestione della coda della
 notte. In Per te compaiono solo i rimandi del momento (tabella sopra), come chiede la regola «un dato, una casa» del 30/09.
 
-## Stile: l'attuale, più tech
+## Stile: l'attuale, più tech (deciso)
 
-Stessi caratteri, colori, card piene, pillole e fumetti di oggi, con quattro tocchi (Franz, 01/10 23:02: approvata):
+Franz, 01/10 23:06: i primi quattro tocchi non si vedevano; 23:16: «vai con la variante tech decisa». Stessi caratteri,
+colori, pillole e fumetti di oggi, con cinque elementi ben visibili:
 
-1. **Cifre monospaziate** per numeri e orari: percentuali (contesto, quote), orari, «aggiornato ora · PC», durate. Il
-   monospazio di sistema con cifre a larghezza fissa, stessa dimensione e colore di oggi; il resto del testo non cambia.
-2. **Etichette di sezione** («PER TE», «QUADRO»): 11 sp, maiuscolo, 1,5 sp fra le lettere, semigrassetto; ambra per
-   Per te, verde per Quadro. Oggi sono titoli in grassetto da 13 sp.
-3. **Un filo di bordo** sulle card: 1 dp, bianco al 7 %; angoli da 20 a 18 dp.
-4. **Un led** accanto a «aggiornato ora»: pallino verde da 7 dp con un alone, che pulsa (opacità dal 100 al 35 % e
-   ritorno in 1,6 s); con un dato vecchio è ambra e fermo. Sui chip delle sessioni al lavoro la barretta ha lo stesso
-   alone. Fermo solo nei provini, come l'asterisco della riga dal vivo.
-
-L'anello del contesto nella pillola è già disegnato nell'app (`ContextRing`): il simbolo ◔ era solo nel mockup.
+1. **Griglia di puntini** dietro la schermata: puntini da 1 dp, bianco al 7,5 %, passo 14 dp. Solo sul fondo, mai
+   dentro le card.
+2. **Card come vetro:** bordo 1 dp bianco al 14 %, angoli 16 dp, e un riflesso in alto (sfumatura dal bianco al 6 % al
+   trasparente nel primo 45 % dell'altezza). «Per te» ha il bordo ambra al 75 % e un velo ambra al 6 %.
+3. **Numeri da strumento:** le percentuali del Quadro a 24 sp in monospazio, con il «%» a 12 sp grigio; il contesto
+   nella pillola in monospazio a 15 sp; orari e «aggiornato ora · PC» in monospazio.
+4. **Etichette con riga:** «PER TE» e «QUADRO» a 11 sp, maiuscolo, 2 sp fra le lettere, grassetto; «PER TE» seguita da
+   una riga sottile fino al bordo; ambra per Per te, verde per Quadro.
+5. **Luce:** il led accanto a «aggiornato ora» (8 dp, verde) con un alone di 10 dp che pulsa in 1,6 s, ambra e fermo
+   con un dato vecchio; la barretta dei chip delle sessioni al lavoro (4 dp) con un alone blu; un filo di bordo sulle
+   pillole di modello ed effort. Fermi solo nei provini, come l'asterisco della riga dal vivo.
 
 Si applica alla Master e, per coerenza, alle altre schermate dove ci sono gli stessi elementi.
 
