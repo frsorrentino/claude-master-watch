@@ -194,4 +194,7 @@
         <item quantity="one">%1$d messaggio parte alle %2$s</item>
         <item quantity="other">%1$d messaggi partono alle %2$s</item>
     </plurals>
+    <string name="search">Cerca</string>
+    <string name="search_hint">Cerca nelle chat e nel diario</string>
+    <string name="search_none">Nessun risultato</string>
 </resources>

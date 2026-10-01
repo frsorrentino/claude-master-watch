@@ -192,4 +192,7 @@
         <item quantity="one">%1$d message leaves at %2$s</item>
         <item quantity="other">%1$d messages leave at %2$s</item>
     </plurals>
+    <string name="search">Search</string>
+    <string name="search_hint">Search chats and the diary</string>
+    <string name="search_none">No results</string>
 </resources>

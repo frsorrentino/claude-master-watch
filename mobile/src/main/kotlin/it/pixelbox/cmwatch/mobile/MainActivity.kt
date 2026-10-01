@@ -136,13 +136,15 @@ class MainActivity : ComponentActivity() {
         var launching by rememberSaveable { mutableStateOf(false) }
         var nightAdding by rememberSaveable { mutableStateOf(false) }
         var queueOpen by rememberSaveable { mutableStateOf(false) }
+        var searchOpen by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; settingsOpen = false; terminal = null; queueAsked = false } }
         var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
 
-        BackHandler(enabled = settingsOpen || terminal != null || queueOpen) {
+        BackHandler(enabled = settingsOpen || terminal != null || queueOpen || searchOpen) {
             when {
+                searchOpen -> searchOpen = false
                 settingsOpen -> settingsOpen = false
                 terminal != null -> { terminal = null; screenId = null }
                 else -> queueOpen = false
@@ -203,6 +205,10 @@ class MainActivity : ComponentActivity() {
             TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it } }
             })
+            return
+        }
+        if (searchOpen) {
+            SearchScreen(chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { tab = StartRoute.Tab.SESSIONS; open = n } else { open = null; tab = StartRoute.Tab.DIARY } })
             return
         }
         if (queueOpen && state != null) {
@@ -300,6 +306,7 @@ class MainActivity : ComponentActivity() {
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
             current = open, onPick = { n -> if (n != null) tab = StartRoute.Tab.SESSIONS; open = n },
+            onSearch = { searchOpen = true },
         ) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
                 state?.let { st ->

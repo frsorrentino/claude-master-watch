@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.RocketLaunch
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -42,6 +43,8 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
 fun AppShell(
     tab: Tab, demo: Boolean, onTab: (Tab) -> Unit, onSettings: () -> Unit, fab: @Composable () -> Unit = {},
     sessions: List<Session> = emptyList(), current: String? = null, onPick: (String?) -> Unit = {},
+    /** La ricerca (piano 30/09, Task 5): la lente accanto al menu; null = niente lente. */
+    onSearch: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Scaffold(
@@ -52,6 +55,7 @@ fun AppShell(
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     SessionMenu(sessions, current, onPick, Modifier.weight(1f))
                     // Al posto di ⚙ il menu dell'app (Franz, 30/09 23:04): con una scheda aperta le schede in basso non ci sono.
+                    onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
                     AppMenu(onTab, onSettings)
                 }
                 if (demo) {

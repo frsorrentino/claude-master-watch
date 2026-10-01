@@ -1,0 +1,43 @@
+package it.pixelbox.cmwatch.rules
+
+import it.pixelbox.cmwatch.contract.Event
+import java.text.Normalizer
+
+/**
+ * La ricerca del telefono (piano 30/09, Task 5): nei messaggi mandati, negli esiti dei loro turni e negli eventi del
+ * diario. Senza accenti né maiuscole («perche» trova «Perché»); il risultato è la riga trovata con la parte da mettere in
+ * grassetto, dalla più recente.
+ */
+object ChatSearch {
+    enum class Kind { SENT, OUTCOME, EVENT }
+
+    /** `start`/`end`: la parte trovata dentro `line`, nel testo originale. */
+    data class Hit(val session: String?, val at: Long, val line: String, val start: Int, val end: Int, val kind: Kind)
+
+    fun find(query: String, sent: List<Sent>, events: List<Event>): List<Hit> {
+        val q = fold(query.trim())
+        if (q.isEmpty()) return emptyList()
+        val hits = mutableListOf<Hit>()
+        fun scan(text: String?, session: String?, at: Long, kind: Kind) {
+            // La prima riga che contiene il testo cercato: un risultato per testo, non uno per riga.
+            text?.lines()?.firstNotNullOfOrNull { raw ->
+                val line = raw.trim()
+                fold(line).indexOf(q).takeIf { it >= 0 }?.let { i -> Hit(session, at, line, i, i + q.length, kind) }
+            }?.let(hits::add)
+        }
+        sent.forEach { m ->
+            scan(m.text, m.session, m.sentAt, Kind.SENT)
+            scan(m.outcomeFull, m.session, m.doneAt ?: m.sentAt, Kind.OUTCOME)
+        }
+        events.forEach { e -> scan(listOf(e.title, e.body).filter { it.isNotBlank() }.joinToString("\n"), e.session, e.ts, Kind.EVENT) }
+        return hits.sortedByDescending { it.at }
+    }
+
+    /** Minuscole e senza segni diacritici, carattere per carattere: gli indici restano quelli del testo originale. */
+    fun fold(s: String): String = buildString(s.length) {
+        s.forEach { c ->
+            val base = Normalizer.normalize(c.toString(), Normalizer.Form.NFD).firstOrNull() ?: c
+            append(base.lowercaseChar())
+        }
+    }
+}
