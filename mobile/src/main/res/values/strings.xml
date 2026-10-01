@@ -219,4 +219,12 @@
     <string name="wcfg_corners">Angoli</string>
     <string name="wcfg_mono">Monocromo</string>
     <string name="wcfg_save">Metti il widget</string>
+    <string name="ws_week">settimana</string>
+    <string name="ws_working">lavorano</string>
+    <string name="ws_waiting">aspettano</string>
+    <string name="ws_idle">ferme</string>
+    <string name="ws_night">notte</string>
+    <string name="ws_context">contesto</string>
+    <string name="ws_turn">turno</string>
+    <string name="ws_outcome">esito</string>
 </resources>

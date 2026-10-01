@@ -120,32 +120,48 @@ private fun Content(cards: List<WidgetModel.Card>, config: WidgetModel.Config) {
 @Composable
 private fun Header(c: WidgetModel.Card, ink: Palette) {
     val ctx = LocalContext.current
-    Row(GlanceModifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("▸ " + c.title.ifEmpty { ctx.getString(R.string.app_name) }, maxLines = 1,
-            style = TextStyle(color = ColorProvider(ink.label), fontSize = 14.sp, fontWeight = FontWeight.Medium), modifier = GlanceModifier.defaultWeight())
+    // Come ads-widget (segnalazione 01/10 13:07): ▸ piccolo e grigio, nome bianco in grassetto, ora grigia, ↻ in una pastiglia.
+    Row(GlanceModifier.fillMaxWidth().height(32.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("▸", style = TextStyle(color = ColorProvider(ink.text2), fontSize = 11.sp))
+        Spacer(GlanceModifier.width(6.dp))
+        Text(c.title.ifEmpty { ctx.getString(R.string.app_name) }, maxLines = 1,
+            style = TextStyle(color = ColorProvider(ink.text), fontSize = 16.sp, fontWeight = FontWeight.Bold), modifier = GlanceModifier.defaultWeight())
         Text(c.updatedAt?.let { HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) } ?: "",
-            style = TextStyle(color = ColorProvider(ink.text2), fontSize = 13.sp))
-        Image(ImageProvider(R.drawable.ic_w_refresh), ctx.getString(R.string.refresh), colorFilter = ColorFilter.tint(ColorProvider(ink.text2)),
-            modifier = GlanceModifier.size(30.dp).padding(6.dp).clickable(actionRunCallback<RefreshAction>()))
+            style = TextStyle(color = ColorProvider(ink.text2), fontSize = 14.sp))
+        Spacer(GlanceModifier.width(10.dp))
+        Box(GlanceModifier.size(30.dp).cornerRadius(10.dp).background(ink.chip).clickable(actionRunCallback<RefreshAction>()), contentAlignment = Alignment.Center) {
+            Image(ImageProvider(R.drawable.ic_w_refresh), ctx.getString(R.string.refresh), colorFilter = ColorFilter.tint(ColorProvider(ink.text2)), modifier = GlanceModifier.size(18.dp))
+        }
     }
 }
 
-/** L'anello a sinistra, alto quanto lo spazio; a destra un elemento per dato, in colonna se l'altezza lo permette. */
+/**
+ * Come ads-widget: l'arco a sinistra e una colonna per dato (icona e numero grande, etichetta sotto). Con altezza in più,
+ * sotto la barra «Adesso» a segmenti e l'esito su due righe intere.
+ */
 @Composable
 private fun Main(c: WidgetModel.Card, ink: Palette, modifier: GlanceModifier, wide: Dp) {
     val size = LocalSize.current
-    val ring = minOf(size.height - 50.dp, 112.dp, wide * 0.3f).coerceAtLeast(44.dp)
+    val ring = minOf(size.height - 50.dp, 96.dp, wide * 0.28f).coerceAtLeast(52.dp)
+    val tiles = c.columns.filter { it.first != Metric.OUTCOME }
+    val outcome = c.columns.firstOrNull { it.first == Metric.OUTCOME }?.second?.takeIf { it != WidgetModel.NONE }
     val counts = c.columns.filter { it.first in COUNTS }
-    val bar = counts.size >= 2
-    val singles = c.columns.filter { !(bar && it.first in COUNTS) }
-    val tall = ring >= 84.dp
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Ring(c, ink, ring)
-        Spacer(GlanceModifier.width(14.dp))
-        Column(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-            if (bar) { NowBar(counts, ink); Spacer(GlanceModifier.height(if (tall) 8.dp else 4.dp)) }
-            if (tall) singles.forEach { (m, v) -> MetricRow(m, v, ink); Spacer(GlanceModifier.height(4.dp)) }
-            else Row(GlanceModifier.fillMaxWidth()) { singles.forEach { (m, v) -> MetricTile(m, v, ink) } }
+    val extra = size.height >= 150.dp
+    Column(modifier) {
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Ring(c, ink, ring)
+            Spacer(GlanceModifier.width(8.dp))
+            tiles.forEach { (m, v) -> MetricTile(m, v, ink) }
+        }
+        if (extra && counts.size >= 2) { Spacer(GlanceModifier.height(8.dp)); NowBar(counts, ink) }
+        if (extra && outcome != null) {
+            Spacer(GlanceModifier.height(8.dp))
+            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Image(ImageProvider(icon(Metric.OUTCOME)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(Metric.OUTCOME))), modifier = GlanceModifier.size(18.dp))
+                Spacer(GlanceModifier.width(8.dp))
+                // L'esito su due righe intere, mai tagliato con i puntini.
+                Text(outcome, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = 14.sp), modifier = GlanceModifier.defaultWeight())
+            }
         }
     }
 }
@@ -163,69 +179,33 @@ private fun Ring(c: WidgetModel.Card, ink: Palette, size: Dp) {
     }
     Box(GlanceModifier.size(size), contentAlignment = Alignment.Center) {
         Image(ImageProvider(bmp), null, modifier = GlanceModifier.fillMaxSize())
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(c.arcPct?.let { "$it%" } ?: WidgetModel.NONE, style = TextStyle(color = ColorProvider(ink.text), fontSize = (size.value / 4.6f).sp, fontWeight = FontWeight.Bold))
-            if (size >= 64.dp) Text(c.arcLabel, style = TextStyle(color = ColorProvider(ink.text2), fontSize = 11.sp))
+        Text(c.arcPct?.let { "$it%" } ?: WidgetModel.NONE, style = TextStyle(color = ColorProvider(ink.text), fontSize = (size.value / 4.2f).sp, fontWeight = FontWeight.Bold))
+        // L'etichetta nel varco in basso dell'arco, come «Spesa» in ads-widget.
+        Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Text(c.arcLabel, style = TextStyle(color = ColorProvider(ink.text2), fontSize = 12.sp, fontWeight = FontWeight.Medium))
         }
     }
 }
 
-/** «Adesso» come nella Panoramica: una barra a segmenti nei colori dei badge, con i numeri sotto. */
+/** «Adesso» come nella Panoramica: la barra a segmenti nei colori dei badge; i numeri stanno nelle colonne sopra. */
 @Composable
 private fun NowBar(counts: List<Pair<Metric, String>>, ink: Palette) {
-    val ctx = LocalContext.current
     val n = counts.map { it.first to (it.second.toIntOrNull() ?: 0) }
     val bmp = remember(n, ink.mono) { segments(n.map { ink.metric(it.first) to it.second }, ink) }
     Image(ImageProvider(bmp), null, modifier = GlanceModifier.fillMaxWidth().height(8.dp))
-    Spacer(GlanceModifier.height(5.dp))
-    Row(GlanceModifier.fillMaxWidth()) {
-        n.forEach { (m, v) ->
-            Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-                Text("$v", style = TextStyle(color = ColorProvider(ink.text), fontSize = 20.sp, fontWeight = FontWeight.Bold))
-                Spacer(GlanceModifier.width(4.dp))
-                Text(ctx.getString(metricLabel(m)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.metric(m)), fontSize = 12.sp))
-            }
-        }
-    }
 }
 
-/** Un dato su una riga: icona colorata, valore, etichetta; settimana e contesto con la loro barra. */
-@Composable
-private fun MetricRow(m: Metric, v: String, ink: Palette) {
-    val ctx = LocalContext.current
-    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Image(ImageProvider(icon(m)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(m))), modifier = GlanceModifier.size(18.dp))
-        Spacer(GlanceModifier.width(8.dp))
-        if (m == Metric.OUTCOME) {
-            // L'esito su due righe intere, mai tagliato con i puntini.
-            Text(v, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = 13.sp), modifier = GlanceModifier.defaultWeight())
-            return@Row
-        }
-        Text(v, maxLines = 1, style = TextStyle(color = ColorProvider(ink.text), fontSize = 17.sp, fontWeight = FontWeight.Bold))
-        Spacer(GlanceModifier.width(6.dp))
-        Text(ctx.getString(metricLabel(m)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = 12.sp))
-        val pct = v.removeSuffix("%").toIntOrNull()
-        if (pct != null && (m == Metric.WEEK || m == Metric.CONTEXT)) {
-            Spacer(GlanceModifier.width(8.dp))
-            val bmp = remember(pct, m, ink.mono) { bar(pct, if (m == Metric.CONTEXT) ink.context(pct) else ink.metric(m), ink) }
-            Image(ImageProvider(bmp), null, modifier = GlanceModifier.defaultWeight().height(6.dp))
-        }
-    }
-}
-
-/** Un dato in colonna, quando l'altezza non basta per le righe. L'esito qui resta un'icona: il testo intero sta nella scheda. */
+/** Una colonna come in ads-widget: icona colorata e numero grande sulla stessa riga, etichetta sotto, centrate. */
 @Composable
 private fun RowScope.MetricTile(m: Metric, v: String, ink: Palette) {
     val ctx = LocalContext.current
     Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(ImageProvider(icon(m)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(m))), modifier = GlanceModifier.size(16.dp))
-            if (m != Metric.OUTCOME) {
-                Spacer(GlanceModifier.width(4.dp))
-                Text(v, maxLines = 1, style = TextStyle(color = ColorProvider(ink.text), fontSize = 18.sp, fontWeight = FontWeight.Bold))
-            }
+            Image(ImageProvider(icon(m)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(m))), modifier = GlanceModifier.size(20.dp))
+            Spacer(GlanceModifier.width(4.dp))
+            Text(v, maxLines = 1, style = TextStyle(color = ColorProvider(ink.text), fontSize = 26.sp, fontWeight = FontWeight.Bold))
         }
-        Text(ctx.getString(metricLabel(m)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = 11.sp))
+        Text(ctx.getString(metricShort(m)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = 14.sp, fontWeight = FontWeight.Medium))
     }
 }
 
@@ -259,8 +239,9 @@ private fun rings(px: Int, outerPct: Int?, outer: Color?, innerPct: Int?, ink: P
     val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = w; strokeCap = Paint.Cap.ROUND }
     fun ring(inset: Float, color: Color, pct: Int?) {
         val r = RectF(inset, inset, px - inset, px - inset)
-        p.color = ink.track.toArgb(); cv.drawArc(r, 0f, 360f, false, p)
-        if (pct != null && pct > 0) { p.color = color.toArgb(); cv.drawArc(r, -90f, 360f * pct.coerceAtMost(100) / 100f, false, p) }
+        // Arco aperto in basso (270°), come ads-widget: il varco ospita l'etichetta.
+        p.color = ink.track.toArgb(); cv.drawArc(r, 135f, 270f, false, p)
+        if (pct != null && pct > 0) { p.color = color.toArgb(); cv.drawArc(r, 135f, 270f * pct.coerceAtMost(100) / 100f, false, p) }
     }
     ring(w / 2, outer ?: ink.track, outerPct)
     if (innerPct != null) ring(w / 2 + w + px * 0.03f, ink.metric(Metric.WEEK), innerPct)
@@ -315,6 +296,18 @@ private fun icon(m: Metric) = when (m) {
     Metric.OUTCOME -> R.drawable.ic_w_outcome
 }
 
+/** Le etichette corte delle colonne: una parola, mai tagliata. */
+private fun metricShort(m: Metric) = when (m) {
+    Metric.WEEK -> R.string.ws_week
+    Metric.WORKING -> R.string.ws_working
+    Metric.WAITING -> R.string.ws_waiting
+    Metric.IDLE -> R.string.ws_idle
+    Metric.NIGHT -> R.string.ws_night
+    Metric.CONTEXT -> R.string.ws_context
+    Metric.TURN_AGE -> R.string.ws_turn
+    Metric.OUTCOME -> R.string.ws_outcome
+}
+
 private fun segIcon(s: WorkPanel.Seg) = when (s) {
     WorkPanel.Seg.WAITING -> R.drawable.ic_w_waiting
     WorkPanel.Seg.WORKING -> R.drawable.ic_w_working
@@ -327,7 +320,8 @@ private class Palette(val mono: Boolean) {
     val row = CmColors.surfaceHigh
     val text = CmColors.text
     val text2 = CmColors.text2
-    val label = if (mono) CmColors.text2 else CmColors.briefLabel
+    /** La pastiglia di ↻, un velo chiaro sul fondo. */
+    val chip = Color.White.copy(alpha = 0.08f)
     val track = CmColors.briefTrack
     fun quota(pct: Int): Color = if (mono) CmColors.text else if (pct >= 90) CmColors.briefAlertRing else CmColors.briefRing
     /** Le soglie della card delle misure (`SessionMeters.contextTone`): ambra dal 75 %, rosso dal 90 %. */

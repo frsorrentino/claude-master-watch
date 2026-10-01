@@ -217,4 +217,12 @@
     <string name="wcfg_corners">Corners</string>
     <string name="wcfg_mono">Monochrome</string>
     <string name="wcfg_save">Place the widget</string>
+    <string name="ws_week">week</string>
+    <string name="ws_working">working</string>
+    <string name="ws_waiting">waiting</string>
+    <string name="ws_idle">idle</string>
+    <string name="ws_night">tonight</string>
+    <string name="ws_context">context</string>
+    <string name="ws_turn">turn</string>
+    <string name="ws_outcome">outcome</string>
 </resources>
