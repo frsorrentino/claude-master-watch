@@ -29,4 +29,10 @@ class WidgetPrefsTest {
         val back = WidgetPrefs.read(p)
         assertFalse(back.mono); assertNull(back.target); assertEquals(Mode.SESSION, back.mode)
     }
+
+    /** Monocromo acceso di partenza (Franz, 01/10 23:16), anche per un widget senza scelte salvate. */
+    @Test fun monoIsOnByDefault() {
+        assertTrue(WidgetPrefs.DEFAULT.mono)
+        assertTrue(WidgetPrefs.read(androidx.datastore.preferences.core.mutablePreferencesOf()).mono)
+    }
 }

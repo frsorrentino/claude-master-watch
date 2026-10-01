@@ -76,11 +76,15 @@ class CmWidget : GlanceAppWidget() {
 
     /**
      * L'anteprima nella lista dei widget del launcher (segnalazione 01/10 20:19: un riquadro bianco con l'icona): il
-     * widget vero con lo stato della Demo e la configurazione di partenza. Android 15 e oltre; prima resta l'icona.
+     * widget vero con la configurazione di partenza, sullo stato vero se c'è già, altrimenti su quello della Demo.
+     * Android 15 e oltre; prima resta l'icona. Disegnata alla misura della striscia 4×1, quella della posa: con la misura
+     * minima (110×50 dp, il default di Glance) il launcher la stirava e usciva deforme (segnalazione 01/10 23:15).
      */
+    override val previewSizeMode = SizeMode.Responsive(setOf(androidx.compose.ui.unit.DpSize(401.dp, 103.dp)))
+
     override suspend fun providePreview(context: Context, widgetCategory: Int) {
         val app = context.applicationContext as PhoneApp
-        val state = app.fake.state.first()
+        val state = app.repo.snapshot.value.state ?: app.fake.state.first()
         provideContent { WidgetContent(WidgetModel.cards(state, WidgetPrefs.DEFAULT, state.ts), WidgetPrefs.DEFAULT, interactive = false) }
     }
 }

@@ -13,7 +13,8 @@ import it.pixelbox.cmwatch.rules.WidgetModel
  */
 object WidgetPrefs {
     /** Senza configurazione: la regia, opaca all'85 %, angoli da 24 dp, a colori. */
-    val DEFAULT = WidgetModel.Config(WidgetModel.Mode.BOARD, null, WidgetModel.defaults(WidgetModel.Mode.BOARD), 85, 24, false)
+    /** Monocromo acceso di partenza (Franz, 01/10 23:16): anche l'anteprima nella lista dei widget. */
+    val DEFAULT = WidgetModel.Config(WidgetModel.Mode.BOARD, null, WidgetModel.defaults(WidgetModel.Mode.BOARD), 85, 24, true)
 
     private val MODE = stringPreferencesKey("mode")
     private val TARGET = stringPreferencesKey("target")
@@ -27,7 +28,7 @@ object WidgetPrefs {
         val metrics = p[METRICS].orEmpty().split(',').mapNotNull { runCatching { WidgetModel.Metric.valueOf(it) }.getOrNull() }
         return WidgetModel.Config(
             mode, p[TARGET], metrics.ifEmpty { WidgetModel.defaults(mode) },
-            p[OPACITY] ?: DEFAULT.opacity, p[CORNERS] ?: DEFAULT.corners, p[MONO] ?: false,
+            p[OPACITY] ?: DEFAULT.opacity, p[CORNERS] ?: DEFAULT.corners, p[MONO] ?: DEFAULT.mono,
         )
     }
 
