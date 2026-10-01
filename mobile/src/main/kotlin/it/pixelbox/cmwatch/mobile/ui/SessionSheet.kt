@@ -823,7 +823,7 @@ private fun ActivityLine(s: Session, now: Long) {
     val secs = s.turnStarted?.let { (nowS - it).coerceAtLeast(0) }
     val what = s.toolNote?.takeIf { it.isNotBlank() } ?: s.tool?.takeIf { it.isNotBlank() } ?: stringResource(R.string.live_thinking)
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        androidx.compose.foundation.Canvas(Modifier.size(22.dp).graphicsLayer { rotationZ = spin; scaleX = pulse; scaleY = pulse; alpha = 0.55f + 0.45f * ((pulse - 0.7f) / 0.45f) }) {
+        androidx.compose.foundation.Canvas(Modifier.size(22.dp).graphicsLayer { rotationZ = spin; scaleX = pulse; scaleY = pulse; alpha = if (motion == null) 1f else 0.55f + 0.45f * ((pulse - 0.7f) / 0.45f) }) {
             val c = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2)
             val r = size.minDimension / 2
             repeat(8) { i ->
