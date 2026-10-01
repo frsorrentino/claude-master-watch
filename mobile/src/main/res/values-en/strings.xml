@@ -115,7 +115,7 @@
     <plurals name="ov_legend_working"><item quantity="one">%1$d working</item><item quantity="other">%1$d working</item></plurals>
     <plurals name="ov_legend_idle"><item quantity="one">%1$d idle</item><item quantity="other">%1$d idle</item></plurals>
     <string name="ov_none_live">No open sessions</string>
-    <string name="ov_questions">Open questions</string>
+    <string name="ov_questions">Waiting for you</string>
     <string name="ov_question_oldest">%1$s · for %2$s</string>
     <string name="ov_context">Context</string>
     <string name="ov_today">Today</string>
@@ -178,4 +178,8 @@
     <string name="live_ms">%1$d min %2$d s</string>
     <string name="live_hm">%1$d h %2$d min</string>
     <string name="menu">Menu</string>
+    <string name="queue_title">Waiting for you</string>
+    <string name="queue_empty">No one is waiting for you</string>
+    <string name="queue_age">for %1$s</string>
+    <string name="queue_position">%1$d of %2$d</string>
 </resources>

@@ -33,8 +33,10 @@ class PhoneNotifier(private val ctx: Context) {
         notDelivered = ctx.getString(R.string.not_delivered), sessions = ctx.getString(R.string.tab_sessions),
     )
 
-    private fun open(code: Int) = PendingIntent.getActivity(
-        ctx, code, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    /** `queue`: il tocco apre la coda «Ti aspettano» invece dell'app dov'era (piano 30/09, Task 1). */
+    private fun open(code: Int, queue: Boolean = false) = PendingIntent.getActivity(
+        ctx, code, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP).putExtra(MainActivity.EXTRA_QUEUE, queue),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
     private fun broadcast(action: String, session: String, n: Int, code: Int, mutable: Boolean = false) = PendingIntent.getBroadcast(
@@ -49,7 +51,7 @@ class PhoneNotifier(private val ctx: Context) {
         val plan = NotificationPlan.question(s, labels, emptyList())
         val b = NotificationCompat.Builder(ctx, channel(mode)).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(plan.title).setContentText(q.text).setStyle(NotificationCompat.BigTextStyle().bigText(q.text))
-            .setSubText(plan.subText).setContentIntent(open(id(s.name))).setOnlyAlertOnce(true)
+            .setSubText(plan.subText).setContentIntent(open(id(s.name), queue = true)).setOnlyAlertOnce(true)
         q.options.take(3).forEach { o ->
             b.addAction(0, it.pixelbox.cmwatch.rules.QuestionRules.optionLabel(o), broadcast(ReplyRoute.OPTION, s.name, o.n, id(s.name) * 10 + o.n))
         }

@@ -52,10 +52,13 @@ class MainActivity : ComponentActivity() {
     private var launchId by mutableStateOf("")
     /** Quando l'app è uscita di scena, non per una rotazione: al ritorno dopo un'assenza lunga si riparte dalla Panoramica. */
     private var stoppedAt: Long? = null
+    /** Una notifica con domanda chiede la coda «Ti aspettano» (piano 30/09, Task 1); `Main` la apre e la azzera. */
+    private var queueAsked by mutableStateOf(false)
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) queueAsked = intent?.getBooleanExtra(EXTRA_QUEUE, false) == true
         val rotating = savedInstanceState?.getBoolean(KEY_ROTATING) == true
         launchId = savedInstanceState?.getString(KEY_LAUNCH)?.takeIf { rotating } ?: java.util.UUID.randomUUID().toString()
         enableEdgeToEdge()
@@ -132,12 +135,18 @@ class MainActivity : ComponentActivity() {
         var settingsOpen by rememberSaveable { mutableStateOf(false) }
         var launching by rememberSaveable { mutableStateOf(false) }
         var nightAdding by rememberSaveable { mutableStateOf(false) }
+        var queueOpen by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; settingsOpen = false; terminal = null; queueAsked = false } }
         var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
 
-        BackHandler(enabled = settingsOpen || terminal != null) {
-            if (settingsOpen) settingsOpen = false else { terminal = null; screenId = null }
+        BackHandler(enabled = settingsOpen || terminal != null || queueOpen) {
+            when {
+                settingsOpen -> settingsOpen = false
+                terminal != null -> { terminal = null; screenId = null }
+                else -> queueOpen = false
+            }
         }
         // Il gesto indietro dalla scheda mostra la regia mentre lo si trascina: la scheda si restringe verso la card.
         val seek = remember { SeekableTransitionState(open) }
@@ -194,6 +203,19 @@ class MainActivity : ComponentActivity() {
             TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it } }
             })
+            return
+        }
+        if (queueOpen && state != null) {
+            // La coda usa solo la card della domanda: risposta, «Parliamone», «Consenti tutto» e la lettura a voce.
+            QueueScreen(state, now, actionsFor = { s ->
+                SheetActions(
+                    answer = { n -> scope.launch { app.repo.answer(s.name, n) } },
+                    allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, s.name, null) } },
+                    send = { _, _ -> }, follow = {}, reopen = {}, terminal = {}, openInClaude = {},
+                    speak = speech::toggle, retry = {},
+                    chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; tab = StartRoute.Tab.SESSIONS; open = s.name },
+                )
+            }, onSession = { n -> queueOpen = false; tab = StartRoute.Tab.SESSIONS; open = n })
             return
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
@@ -285,7 +307,7 @@ class MainActivity : ComponentActivity() {
                         PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
                     }
                     OverviewScreen(model, snap.freshness,
-                        onQuestion = { model.questions?.let { q -> tab = StartRoute.Tab.SESSIONS; open = q.oldest } },
+                        onQuestion = { queueOpen = true },
                         onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n })
                 }
                 return@AppShell
@@ -418,6 +440,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_QUEUE, false)) queueAsked = true
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_ROTATING, isChangingConfigurations)
@@ -446,8 +473,10 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private companion object {
-        const val KEY_ROTATING = "cm.rotating"
-        const val KEY_LAUNCH = "cm.launch"
+    companion object {
+        private const val KEY_ROTATING = "cm.rotating"
+        private const val KEY_LAUNCH = "cm.launch"
+        /** Extra dell'intent delle notifiche con domanda: apre la coda «Ti aspettano». */
+        const val EXTRA_QUEUE = "cm.queue"
     }
 }

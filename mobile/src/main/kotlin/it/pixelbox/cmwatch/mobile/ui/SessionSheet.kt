@@ -294,7 +294,7 @@ private fun AttachButton(onPicked: (List<Uri>) -> Unit) {
 /** La domanda come sull'orologio: prima opzione piena, pressione lunga per il rischio alto, «Parliamone», «Consenti tutto». */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun QuestionCard(
+internal fun QuestionCard(
     q: it.pixelbox.cmwatch.contract.Question, firstFilled: Boolean, holdHint: Boolean, onHold: () -> Unit, actions: SheetActions,
 ) {
     Surface(color = CmColors.surfaceHigh, shape = MaterialTheme.shapes.extraLarge, border = BorderStroke(2.dp, if (q.tier == Tier.HIGH) CmColors.gone else CmColors.waiting)) {
