@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Project
+import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.State
 
 /** I progetti da proporre nel foglio «Lancia»: dell'account scelto, per pezzo di nome, i più recenti prima. */
@@ -30,6 +31,26 @@ object LaunchSuggest {
             .mapNotNull { p -> rank(p)?.let { it to p } }
             .sortedWith(compareBy<Pair<Int, Project>> { it.first }.thenByDescending { it.second.lastUsed ?: Long.MIN_VALUE })
             .map { it.second }
+            .take(limit)
+    }
+
+    /**
+     * I recenti del foglio a campo vuoto: solo i progetti con una data d'uso, i più recenti prima (segnalazione 01/10
+     * 23:20: senza data l'ordine sembrava casuale). `account` null = tutti e due.
+     */
+    fun recent(state: State, account: String?, limit: Int = 6): List<Project> =
+        state.projects.filter { (account == null || it.account == account) && it.lastUsed != null }
+            .sortedByDescending { it.lastUsed }.take(limit)
+
+    /**
+     * Le sessioni con il testo nel nome, prima quelle che cominciano così (segnalazione 01/10 23:20: «master» non trovava
+     * nulla, perché la master gira in `workspaces`, che non è fra i progetti). Una chiusa si riapre, una aperta si apre.
+     */
+    fun sessions(state: State, typed: String, limit: Int = 3): List<Session> {
+        val t = typed.trim().lowercase()
+        if (t.isEmpty()) return emptyList()
+        return state.sessions.filter { t in it.name.lowercase() }
+            .sortedWith(compareBy<Session> { if (it.name.lowercase().startsWith(t)) 0 else 1 }.thenBy { it.name })
             .take(limit)
     }
 }

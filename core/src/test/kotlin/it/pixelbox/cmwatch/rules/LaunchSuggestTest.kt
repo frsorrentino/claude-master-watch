@@ -38,4 +38,22 @@ class LaunchSuggestTest {
         assertEquals(listOf("data-tools", "field-notes"), LaunchSuggest.ranked(many, "", limit = 2).map { it.name })
 
     @Test fun caseAndSpacesIgnored() = assertEquals(listOf("atlas-shop"), LaunchSuggest.ranked(many, "  Atlas ").map { it.name })
+
+    // Segnalazione 01/10 23:20: «mostra di default 3 sessioni che sembrano casuali e cercando master non appare nulla».
+    // I recenti sono solo i progetti con una data d'uso; la ricerca trova anche le sessioni per nome (la master gira in
+    // `workspaces`, che non è fra i progetti).
+    @Test fun recentOnlyWithADate() {
+        assertEquals(listOf("/a/docs", "/a/kb"), LaunchSuggest.recent(st, "personale").map { it.path })
+        assertEquals(listOf("/w/kb", "/a/docs", "/a/kb"), LaunchSuggest.recent(st, null).map { it.path })
+    }
+
+    @Test fun sessionsByName() {
+        val s = State(v = 1, ts = 0, host = "pc", sessions = listOf(
+            Session(id = "1", name = "claude-master", account = "personale", project = "claude-master", state = SessionState.IDLE, since = 0),
+            Session(id = "2", name = "master", account = "personale", project = "workspaces", state = SessionState.GONE, since = 0),
+            Session(id = "3", name = "kb", account = "personale", project = "kb", state = SessionState.IDLE, since = 0),
+        ))
+        assertEquals(listOf("master", "claude-master"), LaunchSuggest.sessions(s, "master").map { it.name })
+        assertEquals(emptyList<String>(), LaunchSuggest.sessions(s, "").map { it.name })
+    }
 }

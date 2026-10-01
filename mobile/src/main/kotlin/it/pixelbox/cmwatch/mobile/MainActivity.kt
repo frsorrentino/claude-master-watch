@@ -490,7 +490,10 @@ class MainActivity : ComponentActivity() {
         }
         if (launching && state != null) {
             ModalBottomSheet(onDismissRequest = { launching = false }) {
-                LaunchSheet(state) { project, first ->
+                LaunchSheet(state, onSession = { name, reopen ->
+                    launching = false
+                    if (reopen) scope.launch { app.repo.command(CmdOp.REOPEN, name, null) } else { tab = StartRoute.Tab.SESSIONS; open = name }
+                }) { project, first ->
                     launching = false
                     scope.launch { app.repo.command(CmdOp.LAUNCH, null, project.path, first.ifBlank { null }) }
                 }

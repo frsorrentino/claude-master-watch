@@ -240,4 +240,6 @@
     <string name="quota_write_hint">Scrivi il messaggio: potrai farlo partire alla ripartenza o stanotte.</string>
     <string name="quota_write_hint_reset">Scrivi il messaggio: potrai farlo partire alla ripartenza.</string>
     <string name="outcome_label">Esito</string>
+    <string name="launch_recent">Recenti</string>
+    <string name="launch_open">Apri</string>
 </resources>
