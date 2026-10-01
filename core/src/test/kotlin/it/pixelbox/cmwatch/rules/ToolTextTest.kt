@@ -54,4 +54,19 @@ class ToolTextTest {
         assertEquals("cm-quota.py" to "claude-master/scripts", ToolText.row("Read", "claude-master/scripts/cm-quota.py", null))
         assertEquals("notes.py" to null, ToolText.row("Edit", "notes.py", null))
     }
+
+    // Segnalazione 01/10 18:06: gli strumenti MCP arrivano senza testo né nota e la riga aperta restava vuota, e il
+    // nome grezzo «mcp__chrome-bridge__execute_js» andava a capo nell'intestazione.
+    @Test fun mcpToolsGoByTheirShortName() {
+        assertEquals("execute_js", ToolText.short("mcp__chrome-bridge__execute_js"))
+        assertEquals("Bash", ToolText.short("Bash"))
+        assertEquals("execute_js" to null, ToolText.row("mcp__chrome-bridge__execute_js", "", null))
+        assertEquals("?" to null, ToolText.row(null, null, null))
+    }
+
+    @Test fun browserMcpToolsAreWeb() {
+        assertEquals(ToolText.Kind.WEB, ToolText.kind("mcp__chrome-bridge__click"))
+        assertEquals(ToolText.Kind.WEB, ToolText.kind("mcp__claude-in-chrome__navigate"))
+        assertEquals(ToolText.Kind.OTHER, ToolText.kind("mcp__firebase__auth_get_users"))
+    }
 }

@@ -17,9 +17,9 @@ object ChatFeed {
         data class Tool(val entry: TranscriptEntry) : Item
         /** Due o più passaggi di fila fra due messaggi (Franz, 01/10 15:59): una card chiusa che si apre al tocco. */
         data class Steps(val entries: List<TranscriptEntry>) : Item {
-            /** Quanti passaggi per strumento, dal più usato: «7 Bash · 2 Read». */
+            /** Quanti passaggi per strumento, dal più usato: «7 Bash · 2 Read»; gli MCP col nome corto. */
             val counts: List<Pair<String, Int>>
-                get() = entries.groupingBy { it.tool ?: "?" }.eachCount().entries
+                get() = entries.groupingBy { it.tool?.let(ToolText::short) ?: "?" }.eachCount().entries
                     .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).map { it.key to it.value }
         }
     }

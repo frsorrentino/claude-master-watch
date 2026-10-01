@@ -509,7 +509,8 @@ private fun toolIcon(k: ToolText.Kind): androidx.compose.ui.graphics.vector.Imag
     ToolText.Kind.MESSAGE -> Icons.Rounded.Forum
     ToolText.Kind.DELEGATE -> Icons.Rounded.SmartToy
     ToolText.Kind.PLAN -> Icons.Rounded.Checklist
-    ToolText.Kind.OTHER -> Icons.Rounded.Build
+    // Il pezzo di puzzle per gli strumenti senza tipo (MCP, plugin): la chiave inglese non diceva niente (segnalazione 01/10 18:06).
+    ToolText.Kind.OTHER -> Icons.Rounded.Extension
 }
 
 /** Un file prodotto da Claude: icona per tipo, nome e peso. L'anteprima e l'apertura arrivano con il trasferimento dei file. */
@@ -525,8 +526,10 @@ private fun FileChip(f: TranscriptFile) {
     Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(icon, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
-            Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text)
-            f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2) }
+            // Il nome va a capo nello spazio che resta; il peso sta sempre su una riga (segnalazione 01/10 18:16: con un
+            // nome lungo il peso finiva in colonna, una lettera per riga).
+            Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.weight(1f, fill = false))
+            f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, softWrap = false) }
         }
     }
 }
@@ -557,8 +560,7 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
     Surface(color = CmColors.surfaceLow, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Build, null, tint = CmColors.text2, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(8.dp))
+                // Niente icona davanti al conteggio: le righe sotto hanno già la loro (segnalazione 01/10 18:06).
                 val total = androidx.compose.ui.res.pluralStringResource(R.plurals.steps_count, g.entries.size, g.entries.size)
                 val errors = if (failed > 0) androidx.compose.ui.res.pluralStringResource(R.plurals.steps_failed, failed, failed) else null
                 Text(
@@ -867,8 +869,14 @@ private fun ActivityLine(s: Session, now: Long) {
     val nowS by androidx.compose.runtime.produceState(now, s.turnStarted, still) {
         if (!still) while (true) { value = System.currentTimeMillis() / 1000; kotlinx.coroutines.delay(1_000) }
     }
-    val blink by androidx.compose.runtime.produceState(true, still) {
-        if (!still) while (true) { kotlinx.coroutines.delay(600); value = !value }
+    // Lampeggio graduale, non acceso/spento (Franz, 01/10 18:13): l'opacità segue un coseno di 1,2 s calcolato a mano,
+    // perché con le scale a zero le animazioni di Compose saltano subito al valore finale.
+    val fade by androidx.compose.runtime.produceState(1f, still) {
+        if (!still) while (true) {
+            val t = (System.currentTimeMillis() % 1_200) / 1_200.0
+            value = 0.3f + 0.7f * (0.5f + 0.5f * kotlin.math.cos(2 * Math.PI * t).toFloat())
+            kotlinx.coroutines.delay(33)
+        }
     }
     // Gira e pulsa mentre la sessione elabora (Franz, 01/10 06:44: «il simbolo accanto alla riga di stato pulsante»).
     val motion = if (off) null else androidx.compose.animation.core.rememberInfiniteTransition(label = "spin")
@@ -883,7 +891,7 @@ private fun ActivityLine(s: Session, now: Long) {
     val secs = s.turnStarted?.let { (nowS - it).coerceAtLeast(0) }
     val what = s.toolNote?.takeIf { it.isNotBlank() } ?: s.tool?.takeIf { it.isNotBlank() } ?: stringResource(R.string.live_thinking)
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        androidx.compose.foundation.Canvas(Modifier.size(22.dp).graphicsLayer { rotationZ = spin; scaleX = pulse; scaleY = pulse; alpha = if (motion == null) (if (blink) 1f else 0.3f) else 0.55f + 0.45f * ((pulse - 0.7f) / 0.45f) }) {
+        androidx.compose.foundation.Canvas(Modifier.size(18.dp).graphicsLayer { rotationZ = spin; scaleX = pulse; scaleY = pulse; alpha = if (motion == null) fade else 0.55f + 0.45f * ((pulse - 0.7f) / 0.45f) }) {
             val c = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2)
             val r = size.minDimension / 2
             repeat(8) { i ->

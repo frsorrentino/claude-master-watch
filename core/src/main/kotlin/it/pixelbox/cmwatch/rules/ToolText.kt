@@ -10,7 +10,13 @@ object ToolText {
     /** Il tipo di strumento, per l'icona della riga del passaggio (Franz, 01/10 15:59). */
     enum class Kind { RUN, READ, EDIT, WRITE, SEARCH, WEB, MESSAGE, DELEGATE, PLAN, OTHER }
 
-    fun kind(tool: String?): Kind = when (tool?.trim()?.substringBefore(' ')?.lowercase()) {
+    fun kind(tool: String?): Kind = when (val n = tool?.trim()?.substringBefore(' ')?.lowercase()) {
+        // Gli strumenti del browser via MCP (chrome-bridge, claude-in-chrome) sono navigazione: icona del web.
+        null -> Kind.OTHER
+        else -> if (n.startsWith("mcp__")) (if ("chrome" in n || "browser" in n) Kind.WEB else Kind.OTHER) else plain(n)
+    }
+
+    private fun plain(n: String): Kind = when (n) {
         "bash", "shell", "run" -> Kind.RUN
         "read", "notebookread", "view" -> Kind.READ
         "edit", "multiedit", "notebookedit", "update" -> Kind.EDIT
@@ -22,6 +28,12 @@ object ToolText {
         "todowrite", "exitplanmode", "enterplanmode" -> Kind.PLAN
         else -> Kind.OTHER
     }
+
+    /**
+     * Il nome da mostrare: «mcp__chrome-bridge__execute_js» → «execute_js» (segnalazione 01/10 18:06: il nome intero
+     * andava a capo nell'intestazione del gruppo). Gli altri restano come sono.
+     */
+    fun short(tool: String): String = if (tool.startsWith("mcp__")) tool.substringAfterLast("__") else tool
 
     /**
      * Le due righe di un passaggio: in chiaro sopra, il dettaglio sotto (in monospazio nell'app). Un comando con la sua
@@ -36,7 +48,8 @@ object ToolText {
                 val dir = t.substringBeforeLast('/', "").takeIf { it.isNotEmpty() }
                 (n ?: name) to (if (n != null) t else dir)
             }
-            else -> if (n != null) n to t.takeIf { it.isNotEmpty() } else t to null
+            // Gli MCP arrivano senza testo né nota: la riga dice almeno quale strumento (mai una riga vuota).
+            else -> if (n != null) n to t.takeIf { it.isNotEmpty() } else (t.ifEmpty { short(tool?.trim()?.ifEmpty { null } ?: "?") }) to null
         }
     }
 

@@ -38,4 +38,16 @@ class QuickPhrasesTest {
         val sent = listOf(m("kb", "continua"), m("kb", "continua"), m("kb", "push"), m("kb", "push"))
         assertEquals(listOf("push"), QuickPhrases.of(sent, state, kb, suggestion = "Continua"))
     }
+
+    // Segnalazione 01/10 18:11: «non vedo aggiornamento terminale in tempo reale», un vecchio messaggio, compariva come
+    // frase rapida e usciva dallo schermo. Una frase rapida è corta; lo stesso invio ripetuto (stesso id) conta una volta.
+    @Test fun longMessagesAreNotQuickPhrases() {
+        val long = "non vedo aggiornamento terminale in tempo reale"
+        assertTrue(QuickPhrases.of(listOf(m("kb", long), m("kb", long)), state, kb, null).isEmpty())
+    }
+
+    @Test fun theSameSendCountsOnce() {
+        val once = Sent("x", "kb", "continua", sentAt = 1)
+        assertTrue(QuickPhrases.of(listOf(once, once.copy(sentAt = 2)), state, kb, null).isEmpty())
+    }
 }
