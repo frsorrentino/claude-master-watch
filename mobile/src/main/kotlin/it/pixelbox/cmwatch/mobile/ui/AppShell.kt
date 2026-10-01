@@ -103,8 +103,11 @@ fun AppShell(
             ) { _, d -> dx += d }
         }
         Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize().then(swipe)) {
-            if (onRefresh == null) content()
-            else androidx.compose.material3.pulltorefresh.PullToRefreshBox(refreshing, onRefresh, Modifier.fillMaxSize()) { content() }
+            // Sempre lo stesso contenitore, spento con una scheda aperta: cambiarlo ricreava il contenuto a metà del gesto
+            // indietro e la scheda si riapriva al rilascio (segnalazioni 01/10 21:50 e 23:04).
+            androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                refreshing, onRefresh ?: {}, Modifier.fillMaxSize(), enabled = onRefresh != null,
+            ) { content() }
         }
     }
 }

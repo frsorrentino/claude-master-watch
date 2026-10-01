@@ -360,7 +360,8 @@ class MainActivity : ComponentActivity() {
                         }
                         if (opened != null && names.isNotEmpty()) {
                         val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = names.indexOf(opened.name).coerceAtLeast(0)) { names.size }
-                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (it != open) open = it } }
+                        // Solo con una scheda aperta: durante l'uscita (open già null) la pagina non deve riaprirla.
+                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (open != null && it != open) open = it } }
                         LaunchedEffect(open) { val i = names.indexOf(open); if (i >= 0 && i != pager.currentPage) pager.scrollToPage(i) }
                         androidx.compose.foundation.pager.HorizontalPager(pager, key = { names[it] }, beyondViewportPageCount = 0) { page ->
                         val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
