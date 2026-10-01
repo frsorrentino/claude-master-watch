@@ -748,15 +748,20 @@ private fun ActivityLine(s: Session, now: Long) {
     val nowS by androidx.compose.runtime.produceState(now, s.turnStarted, off) {
         if (!off) while (true) { value = System.currentTimeMillis() / 1000; kotlinx.coroutines.delay(1_000) }
     }
-    val spin = if (off) 0f else {
-        val a by androidx.compose.animation.core.rememberInfiniteTransition(label = "spin")
-            .animateFloat(0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.LinearEasing)), label = "a")
+    // Gira e pulsa mentre la sessione elabora (Franz, 01/10 06:44: «il simbolo accanto alla riga di stato pulsante»).
+    val motion = if (off) null else androidx.compose.animation.core.rememberInfiniteTransition(label = "spin")
+    val spin = motion?.let {
+        val a by it.animateFloat(0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.LinearEasing)), label = "a")
         a
-    }
+    } ?: 0f
+    val pulse = motion?.let {
+        val p by it.animateFloat(0.7f, 1.15f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(700), androidx.compose.animation.core.RepeatMode.Reverse), label = "p")
+        p
+    } ?: 1f
     val secs = s.turnStarted?.let { (nowS - it).coerceAtLeast(0) }
     val what = s.toolNote?.takeIf { it.isNotBlank() } ?: s.tool?.takeIf { it.isNotBlank() } ?: stringResource(R.string.live_thinking)
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        androidx.compose.foundation.Canvas(Modifier.size(22.dp).graphicsLayer { rotationZ = spin }) {
+        androidx.compose.foundation.Canvas(Modifier.size(22.dp).graphicsLayer { rotationZ = spin; scaleX = pulse; scaleY = pulse; alpha = 0.55f + 0.45f * ((pulse - 0.7f) / 0.45f) }) {
             val c = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2)
             val r = size.minDimension / 2
             repeat(8) { i ->
