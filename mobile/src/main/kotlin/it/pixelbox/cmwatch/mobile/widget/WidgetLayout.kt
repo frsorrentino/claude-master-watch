@@ -17,6 +17,8 @@ object WidgetLayout {
         val chip: Int, val chipRadius: Int, val refreshGlyph: Int, val refreshBox: Int,
         val ring: Int, val ringStroke: Int, val ringValue: Int, val ringLabel: Int, val gauge: Boolean,
         val icon: Int, val value: Int, val label: Int, val gap: Int,
+        /** L'icona accanto al numero nelle colonne: quella della striscia di ads-widget (18 sf) in ogni taglia. */
+        val tileIcon: Int,
     )
 
     fun of(width: Float, height: Float): M {
@@ -53,6 +55,7 @@ object WidgetLayout {
             value = if (ticker) r(21 * sf, 12f, 28f) else r(22 * sf, 12f, 32f),
             label = if (ticker) r(10 * sf, 6f, 13f) else r(10 * sf, 7f, 14f),
             gap = s(3f),
+            tileIcon = r(18 * sf, 7f, 24f),
         )
     }
 }

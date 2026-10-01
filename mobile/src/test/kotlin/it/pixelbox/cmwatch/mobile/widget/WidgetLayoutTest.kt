@@ -21,7 +21,11 @@ class WidgetLayoutTest {
         // Misurato sul telefono (screenshot 01/10 13:22, scala caratteri 1,3): le cifre dei KPI di ads-widget sono alte
         // 21 dp, cioè 24sp, non i 29 della formula.
         assertEquals(24, m.value)
+        assertEquals(21, m.tileIcon)
     }
+
+    /** Anteprima 01/10 15:28: nelle colonne icona+numero l'icona è quella della striscia (18 sf), non 12 sf. */
+    @Test fun tileIconMatchesTheStripInEverySize() = assertEquals(18, WidgetLayout.of(401f, 220f).tileIcon)
 
     @Test fun tallWidgetHasTheFullHeader() {
         val m = WidgetLayout.of(401f, 220f)

@@ -159,7 +159,8 @@ private fun ColumnScope.Tall(cards: List<WidgetModel.Card>, ink: Palette, m: Wid
     val inner = width - 2 * m.padH
     val column = if (narrow) inner / tiles.size.coerceAtLeast(1) else inner / (tiles.size + 1)
     val labels = column >= 80
-    val ring = if (narrow) minOf(m.ring.toFloat(), (height - 2 * m.padV - m.headerHeight) * 0.45f).toInt() else m.ring
+    // L'anello sta nella sua colonna: più largo veniva tagliato a sinistra (anteprima 01/10 15:28).
+    val ring = if (narrow) minOf(m.ring.toFloat(), (height - 2 * m.padV - m.headerHeight) * 0.45f).toInt() else minOf(m.ring.toFloat(), column - 6).toInt()
     var left = height - 2 * m.padV - m.headerHeight - (if (narrow) ring + 56 else ring + 8)
     Spacer(GlanceModifier.defaultWeight())
     if (narrow) {
@@ -245,7 +246,7 @@ private fun RowScope.Kpi(metric: Metric, v: String, ink: Palette, m: WidgetLayou
     val ctx = LocalContext.current
     Column(GlanceModifier.defaultWeight().padding(horizontal = (2 * m.sf).dp), horizontalAlignment = Alignment.CenterHorizontally, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(ImageProvider(icon(metric)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(metric))), modifier = GlanceModifier.size(m.icon.dp))
+            Image(ImageProvider(icon(metric)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(metric))), modifier = GlanceModifier.size(m.tileIcon.dp))
             Spacer(GlanceModifier.width(m.gap.dp))
             if (metric == Metric.OUTCOME) Text(v, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = m.label.sp, fontWeight = FontWeight.Bold))
             else Value(v, m.value, ink)
