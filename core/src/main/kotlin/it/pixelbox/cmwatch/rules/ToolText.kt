@@ -7,6 +7,39 @@ package it.pixelbox.cmwatch.rules
  * al nome del file, perché al polso la cartella è rumore.
  */
 object ToolText {
+    /** Il tipo di strumento, per l'icona della riga del passaggio (Franz, 01/10 15:59). */
+    enum class Kind { RUN, READ, EDIT, WRITE, SEARCH, WEB, MESSAGE, DELEGATE, PLAN, OTHER }
+
+    fun kind(tool: String?): Kind = when (tool?.trim()?.substringBefore(' ')?.lowercase()) {
+        "bash", "shell", "run" -> Kind.RUN
+        "read", "notebookread", "view" -> Kind.READ
+        "edit", "multiedit", "notebookedit", "update" -> Kind.EDIT
+        "write", "create" -> Kind.WRITE
+        "grep", "glob", "search", "find" -> Kind.SEARCH
+        "webfetch", "websearch", "fetch" -> Kind.WEB
+        "sendmessage", "listagents", "senduserfile" -> Kind.MESSAGE
+        "task", "agent", "workflow" -> Kind.DELEGATE
+        "todowrite", "exitplanmode", "enterplanmode" -> Kind.PLAN
+        else -> Kind.OTHER
+    }
+
+    /**
+     * Le due righe di un passaggio: in chiaro sopra, il dettaglio sotto (in monospazio nell'app). Un comando con la sua
+     * descrizione: descrizione, poi comando. Un file: il nome, poi la cartella. Altrimenti il testo, senza seconda riga.
+     */
+    fun row(tool: String?, text: String?, note: String?): Pair<String, String?> {
+        val t = text?.trim().orEmpty()
+        val n = note?.trim()?.takeIf { it.isNotEmpty() }
+        return when (kind(tool)) {
+            Kind.READ, Kind.EDIT, Kind.WRITE -> {
+                val name = t.substringAfterLast('/')
+                val dir = t.substringBeforeLast('/', "").takeIf { it.isNotEmpty() }
+                (n ?: name) to (if (n != null) t else dir)
+            }
+            else -> if (n != null) n to t.takeIf { it.isNotEmpty() } else t to null
+        }
+    }
+
     data class Labels(
         val run: String,
         val read: String,

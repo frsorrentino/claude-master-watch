@@ -225,4 +225,14 @@
     <string name="ws_context">context</string>
     <string name="ws_turn">turn</string>
     <string name="ws_outcome">outcome</string>
+    <plurals name="steps_count">
+        <item quantity="one">1 step</item>
+        <item quantity="other">%1$d steps</item>
+    </plurals>
+    <plurals name="steps_failed">
+        <item quantity="one">1 failed</item>
+        <item quantity="other">%1$d failed</item>
+    </plurals>
+    <string name="steps_open">Show the steps</string>
+    <string name="steps_close">Hide the steps</string>
 </resources>

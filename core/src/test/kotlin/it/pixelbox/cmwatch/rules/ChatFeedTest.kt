@@ -139,4 +139,26 @@ class ChatFeedTest {
         assertEquals(ChatRules.Status.SCHEDULED, feed.filterIsInstance<ChatFeed.Item.Mine>().single().status)
         assertNull(feed.filterIsInstance<ChatFeed.Item.Mine>().single().entry)
     }
+
+    // Franz, 01/10 15:59 («Gruppi + righe ricche»): i passaggi fra due messaggi di Claude diventano un gruppo.
+    private fun tool(id: String, name: String, text: String, note: String? = null) =
+        ChatFeed.Item.Tool(TranscriptEntry(id = id, role = "tool", tool = name, text = text, note = note, at = 1))
+    private fun claude(id: String) = ChatFeed.Item.Claude(TranscriptEntry(id = id, role = "assistant", text = "ok", at = 1))
+
+    @Test fun consecutiveToolsBecomeOneGroup() {
+        val out = ChatFeed.group(listOf(claude("c1"), tool("t1", "Bash", "ls"), tool("t2", "Read", "a.md"), tool("t3", "Bash", "pwd"), claude("c2")))
+        assertEquals(3, out.size)
+        val steps = out[1] as ChatFeed.Item.Steps
+        assertEquals(listOf("t1", "t2", "t3"), steps.entries.map { it.id })
+    }
+
+    @Test fun singleToolStaysARow() {
+        val out = ChatFeed.group(listOf(claude("c1"), tool("t1", "Bash", "ls"), claude("c2")))
+        assertTrue(out[1] is ChatFeed.Item.Tool)
+    }
+
+    @Test fun stepsCountByToolMostFirst() {
+        val steps = ChatFeed.group(listOf(tool("t1", "Read", "a"), tool("t2", "Bash", "b"), tool("t3", "Bash", "c"))).single() as ChatFeed.Item.Steps
+        assertEquals(listOf("Bash" to 2, "Read" to 1), steps.counts)
+    }
 }

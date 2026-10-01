@@ -15,6 +15,30 @@ object ChatFeed {
         data class User(val entry: TranscriptEntry) : Item
         data class Claude(val entry: TranscriptEntry) : Item
         data class Tool(val entry: TranscriptEntry) : Item
+        /** Due o più passaggi di fila fra due messaggi (Franz, 01/10 15:59): una card chiusa che si apre al tocco. */
+        data class Steps(val entries: List<TranscriptEntry>) : Item {
+            /** Quanti passaggi per strumento, dal più usato: «7 Bash · 2 Read». */
+            val counts: List<Pair<String, Int>>
+                get() = entries.groupingBy { it.tool ?: "?" }.eachCount().entries
+                    .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).map { it.key to it.value }
+        }
+    }
+
+    /** I passaggi consecutivi diventano un gruppo; uno solo resta una riga. */
+    fun group(items: List<Item>): List<Item> {
+        val out = mutableListOf<Item>()
+        var run = mutableListOf<TranscriptEntry>()
+        fun flush() {
+            when (run.size) {
+                0 -> Unit
+                1 -> out += Item.Tool(run.single())
+                else -> out += Item.Steps(run.toList())
+            }
+            run = mutableListOf()
+        }
+        items.forEach { if (it is Item.Tool) run += it.entry else { flush(); out += it } }
+        flush()
+        return out
     }
 
     enum class Page { FRESH, AFTER, BEFORE }
@@ -96,5 +120,6 @@ object ChatFeed {
         is Item.User -> i.entry.at ?: 0
         is Item.Claude -> i.entry.at ?: 0
         is Item.Tool -> i.entry.at ?: 0
+        is Item.Steps -> i.entries.first().at ?: 0
     }
 }

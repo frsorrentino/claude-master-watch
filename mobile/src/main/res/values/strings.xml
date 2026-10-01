@@ -227,4 +227,14 @@
     <string name="ws_context">contesto</string>
     <string name="ws_turn">turno</string>
     <string name="ws_outcome">esito</string>
+    <plurals name="steps_count">
+        <item quantity="one">1 passaggio</item>
+        <item quantity="other">%1$d passaggi</item>
+    </plurals>
+    <plurals name="steps_failed">
+        <item quantity="one">1 fallito</item>
+        <item quantity="other">%1$d falliti</item>
+    </plurals>
+    <string name="steps_open">Apri i passaggi</string>
+    <string name="steps_close">Chiudi i passaggi</string>
 </resources>

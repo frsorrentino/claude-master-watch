@@ -34,4 +34,24 @@ class ToolTextTest {
         assertNull(ToolText.phrase(null, l))
         assertNull(ToolText.phrase("   ", l))
     }
+
+    // Righe ricche dei passaggi (Franz, 01/10 15:59): icona per tipo, testo in chiaro e sotto comando o cartella.
+    @Test fun kindOfTools() {
+        assertEquals(ToolText.Kind.RUN, ToolText.kind("Bash"))
+        assertEquals(ToolText.Kind.READ, ToolText.kind("Read"))
+        assertEquals(ToolText.Kind.EDIT, ToolText.kind("MultiEdit"))
+        assertEquals(ToolText.Kind.WRITE, ToolText.kind("Write"))
+        assertEquals(ToolText.Kind.SEARCH, ToolText.kind("Grep"))
+        assertEquals(ToolText.Kind.OTHER, ToolText.kind(null))
+    }
+
+    @Test fun bashRowShowsTheDescriptionThenTheCommand() {
+        assertEquals("Trova la cartella" to "grep -n source cm-config.py", ToolText.row("Bash", "grep -n source cm-config.py", "Trova la cartella"))
+        assertEquals("ls -la" to null, ToolText.row("Bash", "ls -la", null))
+    }
+
+    @Test fun fileRowShowsTheNameThenTheFolder() {
+        assertEquals("cm-quota.py" to "claude-master/scripts", ToolText.row("Read", "claude-master/scripts/cm-quota.py", null))
+        assertEquals("notes.py" to null, ToolText.row("Edit", "notes.py", null))
+    }
 }

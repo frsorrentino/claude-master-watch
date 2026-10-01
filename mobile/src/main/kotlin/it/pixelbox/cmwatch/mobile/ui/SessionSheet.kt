@@ -62,6 +62,7 @@ import it.pixelbox.cmwatch.rules.QuotaWarning
 import it.pixelbox.cmwatch.rules.Sent
 import it.pixelbox.cmwatch.rules.SessionMeters
 import it.pixelbox.cmwatch.rules.SessionsText
+import it.pixelbox.cmwatch.rules.ToolText
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -151,13 +152,15 @@ fun SessionSheet(
                 if (more) item(key = "older") {
                     TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                 }
-                items(feed, key = { feedKey(it) }) { it ->
+                // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
+                items(ChatFeed.group(feed), key = { feedKey(it) }) { it ->
                     when (it) {
                         // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
                         is ChatFeed.Item.Mine -> MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
+                        is ChatFeed.Item.Steps -> StepsCard(it)
                     }
                 }
             } else if (loadingFeed) {
@@ -471,24 +474,42 @@ private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (
 
 /** Una chiamata a uno strumento in una riga compatta: nome, cosa fa, esito; sotto i file prodotti, se ce ne sono. */
 @Composable
-private fun ToolLine(e: TranscriptEntry) {
+private fun ToolLine(e: TranscriptEntry, files: Boolean = true) {
+    val (main, detail) = ToolText.row(e.tool, e.text, e.note)
+    val error = e.error == true
     Column(Modifier.fillMaxWidth().padding(start = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(
-                if (e.error == true) Icons.Rounded.ErrorOutline else Icons.Rounded.Build, null,
-                tint = if (e.error == true) CmColors.gone else CmColors.text2, modifier = Modifier.size(16.dp).padding(top = 2.dp),
-            )
-            Text(
-                listOfNotNull(e.tool, e.note ?: e.text).joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium, color = if (e.error == true) CmColors.goneDim else CmColors.text2,
-            )
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Un'icona per tipo di strumento, come nell'app nativa; un passaggio fallito ha la ✗ rossa.
+            Icon(if (error) Icons.Rounded.ErrorOutline else toolIcon(ToolText.kind(e.tool)), e.tool,
+                tint = if (error) CmColors.gone else CmColors.text2, modifier = Modifier.size(18.dp).padding(top = 1.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(main, style = MaterialTheme.typography.bodyMedium, color = if (error) CmColors.goneDim else CmColors.text)
+                // Il comando o la cartella sotto, in monospazio grigio; al massimo tre righe, tagliate senza puntini.
+                detail?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                        color = CmColors.stale, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                }
+            }
         }
-        e.files?.takeIf { it.isNotEmpty() }?.let { files ->
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 24.dp)) {
-                files.forEach { FileChip(it) }
+        if (files) e.files?.takeIf { it.isNotEmpty() }?.let { fs ->
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 28.dp)) {
+                fs.forEach { FileChip(it) }
             }
         }
     }
+}
+
+private fun toolIcon(k: ToolText.Kind): androidx.compose.ui.graphics.vector.ImageVector = when (k) {
+    ToolText.Kind.RUN -> Icons.Rounded.Terminal
+    ToolText.Kind.READ -> Icons.Rounded.Description
+    ToolText.Kind.EDIT -> Icons.Rounded.Edit
+    ToolText.Kind.WRITE -> Icons.Rounded.Save
+    ToolText.Kind.SEARCH -> Icons.Rounded.Search
+    ToolText.Kind.WEB -> Icons.Rounded.Public
+    ToolText.Kind.MESSAGE -> Icons.Rounded.Forum
+    ToolText.Kind.DELEGATE -> Icons.Rounded.SmartToy
+    ToolText.Kind.PLAN -> Icons.Rounded.Checklist
+    ToolText.Kind.OTHER -> Icons.Rounded.Build
 }
 
 /** Un file prodotto da Claude: icona per tipo, nome e peso. L'anteprima e l'apertura arrivano con il trasferimento dei file. */
@@ -521,6 +542,39 @@ private fun feedKey(i: ChatFeed.Item): String = when (i) {
     is ChatFeed.Item.User -> "u-" + i.entry.id
     is ChatFeed.Item.Claude -> "a-" + i.entry.id
     is ChatFeed.Item.Tool -> "t-" + i.entry.id
+    // Dal primo passaggio: il gruppo che cresce in fondo resta lo stesso elemento della lista.
+    is ChatFeed.Item.Steps -> "s-" + i.entries.first().id
+}
+
+/**
+ * Un gruppo di passaggi (Franz, 01/10 15:59): chiuso, il conteggio per strumento e l'ultimo passaggio; aperto, tutte le
+ * righe. I file prodotti restano sempre in vista sotto, aperto o chiuso.
+ */
+@Composable
+private fun StepsCard(g: ChatFeed.Item.Steps) {
+    var open by rememberSaveable(g.entries.first().id) { mutableStateOf(false) }
+    val failed = g.entries.count { it.error == true }
+    Surface(color = CmColors.surfaceLow, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Build, null, tint = CmColors.text2, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                val total = androidx.compose.ui.res.pluralStringResource(R.plurals.steps_count, g.entries.size, g.entries.size)
+                val errors = if (failed > 0) androidx.compose.ui.res.pluralStringResource(R.plurals.steps_failed, failed, failed) else null
+                Text(
+                    (listOf(total) + g.counts.map { (tool, n) -> "$n $tool" } + listOfNotNull(errors)).joinToString(" · "),
+                    style = MaterialTheme.typography.labelLarge, color = CmColors.text2, modifier = Modifier.weight(1f),
+                )
+                Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2)
+            }
+            if (open) g.entries.forEach { ToolLine(it, files = false) } else ToolLine(g.entries.last(), files = false)
+            g.entries.flatMap { it.files.orEmpty() }.takeIf { it.isNotEmpty() }?.let { files ->
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 28.dp)) {
+                    files.forEach { FileChip(it) }
+                }
+            }
+        }
+    }
 }
 
 /** L'esito di un turno come fumetto di Claude, con Copia e Ascolta sotto (come nell'app nativa, senza fissa e dirama). */
