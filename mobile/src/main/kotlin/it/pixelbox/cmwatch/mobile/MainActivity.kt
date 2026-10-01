@@ -27,6 +27,7 @@ import it.pixelbox.cmwatch.rules.PhoneDiary
 import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.rules.ChatFeed
 import it.pixelbox.cmwatch.rules.ChatRules
+import it.pixelbox.cmwatch.rules.Tune
 import it.pixelbox.cmwatch.rules.PhoneBoard
 import it.pixelbox.cmwatch.rules.PhoneOverview
 import it.pixelbox.cmwatch.rules.Sent
@@ -126,6 +127,8 @@ class MainActivity : ComponentActivity() {
             app.repo.userResults.collect { r -> if (!r.ok && r.text.isNotBlank()) android.widget.Toast.makeText(this@MainActivity, r.text, android.widget.Toast.LENGTH_LONG).show() }
         }
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
+        // Modello ed effort scelti dal telefono, per sessione: «nome/model», «nome/effort» (`Tune`).
+        val tunePicks = remember { androidx.compose.runtime.mutableStateMapOf<String, Tune.Pick>() }
         val scope = rememberCoroutineScope()
         val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
         val chatLog by app.chatLog.messages.collectAsStateWithLifecycle()
@@ -409,8 +412,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             chat = { scope.launch { app.repo.chat(session.name) } },
-                            setModel = { v -> scope.launch { app.repo.command(CmdOp.MODEL, session.name, v) } },
-                            setEffort = { v -> scope.launch { app.repo.command(CmdOp.EFFORT, session.name, v) } },
+                            // La scelta si vede subito, finché il PC non la riporta al turno dopo (segnalazione 01/10 20:25).
+                            setModel = { v -> scope.launch {
+                                val was = session.model?.id
+                                runCatching { app.repo.command(CmdOp.MODEL, session.name, v) }.getOrNull()?.let { id ->
+                                    tunePicks[session.name + "/model"] = Tune.Pick(id, System.currentTimeMillis() / 1000, model = state?.choices?.models?.firstOrNull { it.id == v }, was = was)
+                                }
+                            } },
+                            setEffort = { v -> scope.launch {
+                                val was = session.effort
+                                runCatching { app.repo.command(CmdOp.EFFORT, session.name, v) }.getOrNull()?.let { id ->
+                                    tunePicks[session.name + "/effort"] = Tune.Pick(id, System.currentTimeMillis() / 1000, effort = v, was = was)
+                                }
+                            } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
                             // Avviso quota (piano 30/09, Task 4): il testo resta nella chat come «parte alle …».
@@ -434,6 +448,8 @@ class MainActivity : ComponentActivity() {
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
                             more = more && session.name == open,
+                            model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
+                            effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }

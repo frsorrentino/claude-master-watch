@@ -112,6 +112,8 @@ fun SessionSheet(
     phrases: List<String> = emptyList(),
     /** «Manda stanotte» possibile: il relay ha la notte e la cartella del progetto è nota. */
     canTonight: Boolean = false,
+    /** Modello ed effort da mostrare: la scelta fatta dal telefono finché il PC non la riporta (`Tune`). */
+    model: it.pixelbox.cmwatch.contract.Model? = s.model, effort: String? = s.effort,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -143,7 +145,7 @@ fun SessionSheet(
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
-        SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null)
+        SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(), state = list,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -699,7 +701,10 @@ private fun ImageViewer(path: String, onClose: () -> Unit) {
  * nome e la forma dell'account stanno nel menu delle sessioni in alto.
  */
 @Composable
-private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean) {
+private fun SheetHeader(
+    s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean,
+    model: it.pixelbox.cmwatch.contract.Model? = s.model, effort: String? = s.effort,
+) {
     var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
     var menu by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
@@ -707,8 +712,8 @@ private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boole
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Una riga sola: modello, effort, contesto e menu. Lo stato e il tempo vanno nella riga dal vivo in fondo alla chat
             // (Franz, 30/09 23:01: «disordinata», «lavora 5 h potrebbe essere rimosso»).
-            TunePill(ModelText.short(s.model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
-            EffortPill(s.effort, tunable) { picker = "effort" }
+            TunePill(ModelText.short(model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
+            EffortPill(effort, tunable) { picker = "effort" }
             Spacer(Modifier.weight(1f))
             s.context?.let { ContextRing(it) }
             Box {
@@ -752,7 +757,8 @@ private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boole
                 Spacer(Modifier.height(8.dp))
                 val rows: List<Pair<String, String>> = if (picker == "model") choices.models.map { it.id to (it.label ?: ModelText.short(it) ?: it.id) }
                     else choices.efforts.map { it to it }
-                val current = if (picker == "model") s.model?.id else s.effort
+                // La lista porta «claude-opus-5-5[1m]», la sessione «claude-opus-5-5»: stesso modello (segnalazione 01/10 20:22).
+                fun selected(value: String) = if (picker == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
                 rows.forEach { (value, label) ->
                     Row(
                         Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable {
@@ -761,7 +767,7 @@ private fun SheetHeader(s: Session, now: Long, choices: Choices?, canTune: Boole
                         }.padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        RadioButton(selected = value == current, onClick = null)
+                        RadioButton(selected = selected(value), onClick = null)
                         Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
                     }
                 }
@@ -787,10 +793,24 @@ private fun OptionButton(label: String, filled: Boolean, onClick: () -> Unit, on
 
 /** I link `http(s)://` del testo toccabili, nel colore delle azioni e sottolineati; il tocco apre il browser (Franz, 01/10 20:05). */
 private fun linked(text: String): AnnotatedString = androidx.compose.ui.text.buildAnnotatedString {
-    append(text)
-    val style = androidx.compose.ui.text.TextLinkStyles(androidx.compose.ui.text.SpanStyle(color = CmColors.actionIcon, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline))
-    it.pixelbox.cmwatch.rules.Links.find(text).forEach { r ->
-        addLink(androidx.compose.ui.text.LinkAnnotation.Url(text.substring(r), style), r.first, r.last + 1)
+    // La formattazione del markdown (Franz, 01/10 20:17: «**prova**» si vedeva con gli asterischi): il testo senza i
+    // segni, poi grassetto, corsivo, codice in monospazio e link con testo; infine i link nudi.
+    val md = it.pixelbox.cmwatch.rules.Markdown.parse(text)
+    val plain = md.text
+    append(plain)
+    val link = androidx.compose.ui.text.TextLinkStyles(androidx.compose.ui.text.SpanStyle(color = CmColors.actionIcon, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline))
+    val linked = mutableListOf<IntRange>()
+    md.spans.forEach { sp ->
+        val (a, b) = sp.range.first to sp.range.last + 1
+        when (sp.kind) {
+            it.pixelbox.cmwatch.rules.Markdown.Kind.BOLD -> addStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold), a, b)
+            it.pixelbox.cmwatch.rules.Markdown.Kind.ITALIC -> addStyle(androidx.compose.ui.text.SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), a, b)
+            it.pixelbox.cmwatch.rules.Markdown.Kind.CODE -> addStyle(androidx.compose.ui.text.SpanStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, background = CmColors.surfaceHigh), a, b)
+            it.pixelbox.cmwatch.rules.Markdown.Kind.LINK -> { addLink(androidx.compose.ui.text.LinkAnnotation.Url(sp.url!!, link), a, b); linked += sp.range }
+        }
+    }
+    it.pixelbox.cmwatch.rules.Links.find(plain).filter { r -> linked.none { l -> r.first <= l.last && l.first <= r.last } }.forEach { r ->
+        addLink(androidx.compose.ui.text.LinkAnnotation.Url(plain.substring(r), link), r.first, r.last + 1)
     }
 }
 
