@@ -75,14 +75,18 @@ notte. In Per te compaiono solo i rimandi del momento (tabella sopra), come chie
 
 ## Stile: l'attuale, più tech
 
-Stessi caratteri, colori, card piene, pillole e fumetti di oggi, con cinque tocchi:
+Stessi caratteri, colori, card piene, pillole e fumetti di oggi, con quattro tocchi (Franz, 01/10 23:02: approvata):
 
-1. cifre monospaziate per numeri e orari (percentuali, ore, «aggiornato ora»);
-2. etichette piccole in maiuscolo spaziato («PER TE», «QUADRO») al posto dei titoli in grassetto;
-3. un filo di bordo sulle card e angoli un po' meno tondi;
-4. un led che pulsa accanto a «aggiornato ora» e sui chip di chi lavora (fermo con le animazioni spente solo nei provini,
-   come l'asterisco);
-5. l'anello del contesto disegnato nella pillola, al posto del simbolo.
+1. **Cifre monospaziate** per numeri e orari: percentuali (contesto, quote), orari, «aggiornato ora · PC», durate. Il
+   monospazio di sistema con cifre a larghezza fissa, stessa dimensione e colore di oggi; il resto del testo non cambia.
+2. **Etichette di sezione** («PER TE», «QUADRO»): 11 sp, maiuscolo, 1,5 sp fra le lettere, semigrassetto; ambra per
+   Per te, verde per Quadro. Oggi sono titoli in grassetto da 13 sp.
+3. **Un filo di bordo** sulle card: 1 dp, bianco al 7 %; angoli da 20 a 18 dp.
+4. **Un led** accanto a «aggiornato ora»: pallino verde da 7 dp con un alone, che pulsa (opacità dal 100 al 35 % e
+   ritorno in 1,6 s); con un dato vecchio è ambra e fermo. Sui chip delle sessioni al lavoro la barretta ha lo stesso
+   alone. Fermo solo nei provini, come l'asterisco della riga dal vivo.
+
+L'anello del contesto nella pillola è già disegnato nell'app (`ContextRing`): il simbolo ◔ era solo nel mockup.
 
 Si applica alla Master e, per coerenza, alle altre schermate dove ci sono gli stessi elementi.
 
