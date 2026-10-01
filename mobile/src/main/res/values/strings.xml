@@ -244,4 +244,5 @@
     <string name="launch_open">Apri</string>
     <string name="next_steps">Prossimi</string>
     <string name="suggestion_use">Usa</string>
+    <string name="tts_code">Codice</string>
 </resources>

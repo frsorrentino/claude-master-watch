@@ -242,4 +242,5 @@
     <string name="launch_open">Open</string>
     <string name="next_steps">Next</string>
     <string name="suggestion_use">Use</string>
+    <string name="tts_code">Code</string>
 </resources>

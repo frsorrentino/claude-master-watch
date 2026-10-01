@@ -36,6 +36,13 @@ object SpeechText {
         return t.replace(Regex("[ \\t]+"), " ").replace(Regex("\\n{2,}"), "\n").trim()
     }
 
+    /**
+     * Il testo che legge il telefono (Franz, 02/10 00:01: leggeva «asterisco asterisco»): senza la riga dei consigli
+     * (`NextSteps`), con «Watch:» letto come esito (`OutcomeLine`), poi `clean` come sull'orologio.
+     */
+    fun forPhone(text: String, codeLabel: String, outcomeLabel: String): String =
+        clean(OutcomeLine.forPhone(NextSteps.parse(text).text, outcomeLabel), codeLabel)
+
     /** Pezzi da leggere di fila, ognuno entro `max`, tagliati a fine frase; una frase più lunga si taglia a uno spazio. */
     fun chunks(text: String, max: Int = MAX_CHUNK): List<String> {
         val frasi = text.trim().split(Regex("(?<=[.!?…:;])\\s+|\\n+")).map { it.trim() }.filter { it.isNotEmpty() }
