@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo nella build debug: le anteprime del widget disegnate fuori dal launcher, per verificarle via adb. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver android:name="it.pixelbox.cmwatch.mobile.widget.WidgetRenderReceiver" android:exported="true" />
+    </application>
+</manifest>

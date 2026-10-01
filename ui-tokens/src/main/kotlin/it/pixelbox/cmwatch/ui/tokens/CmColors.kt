@@ -64,4 +64,12 @@ object CmColors {
     val modelSonnet = Color(0xFF8BB4F7)
     val modelHaiku = Color(0xFF65C581)
     val modelOther = Color(0xFFB0B8C4)
+
+    // Widget della home, accordato al widget di ads-widget (Franz, 01/10 13:22): stessa tavolozza scura del suo tema.
+    val widgetBg = Color(0xFF12141A)
+    val widgetText = Color(0xFFE3E3E8)
+    val widgetText2 = Color(0xFF9CA3AF)
+    val widgetAccent = Color(0xFF8AB4F8)
+    val widgetChip = Color(0x0FFFFFFF)    // bianco al 6 %: la pastiglia di ↻
+    val widgetTrack = Color(0x1AFFFFFF)   // bianco al 10 %: il binario degli archi e delle barre
 }
