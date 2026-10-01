@@ -21,15 +21,11 @@ import it.pixelbox.cmwatch.data.Snapshot
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.mobile.ui.art.EmptySessionsScene
 import it.pixelbox.cmwatch.rules.PhoneBoard
-import it.pixelbox.cmwatch.rules.QuotaBar
 import it.pixelbox.cmwatch.ui.tokens.CmColors
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /** La regia (design 29/09, schermata 1): quota per account, card per stato, chiuse raccolte. «Lancia» è nel bottone mobile. */
 @Composable
-fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) -> Unit) {
+fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) -> Unit, onQuota: () -> Unit = {}) {
     val state = snapshot.state
     if (state == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularWavyProgressIndicator(color = CmColors.actionIcon) }
@@ -44,7 +40,11 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(PhoneBoard.quotaRows(state, now, dataStale = snapshot.freshness is Freshness.Stale), key = { "q-" + it.account }) { QuotaLine(it) }
+            // Una riga di chip al posto delle due barre (Franz, 01/10 22:07, variante 2): la quota ha casa nella Panoramica,
+            // qui resta un rimando piccolo e toccabile.
+            PhoneBoard.quotaRows(state, now, dataStale = snapshot.freshness is Freshness.Stale).takeIf { it.isNotEmpty() }?.let { rows ->
+                item(key = "quota") { QuotaChips(rows, onQuota) }
+            }
             (snapshot.freshness as? Freshness.Stale)?.let { st ->
                 item(key = "stale") {
                     Text(
@@ -78,27 +78,34 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
 }
 
 @Composable
-private fun QuotaLine(q: PhoneBoard.QuotaRow) {
-    val spec = QuotaBar.of(q.pct)
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountMark(q.personal)
-            Text(q.account, color = CmColors.text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Text(q.pct?.let { "$it%" } ?: "", color = CmColors.text, style = MaterialTheme.typography.titleSmall)
+private fun QuotaChips(rows: List<PhoneBoard.QuotaRow>, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { q ->
+            Row(
+                Modifier.clip(RoundedCornerShape(50)).background(CmColors.surface).clickable(onClick = onClick).padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                MiniRing(q.pct, if (q.stale) CmColors.text2 else if ((q.pct ?: 0) >= 90) CmColors.waiting else CmColors.briefRing)
+                Text(q.account, color = CmColors.text, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    q.pct?.let { "$it%" } ?: "–", style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
+                    color = if (q.stale) CmColors.waiting else CmColors.text2,
+                )
+            }
         }
-        // Piatta: è una misura ferma, non un avanzamento; l'onda a valori bassi sembrava uno scarabocchio (provini 30/09).
-        LinearProgressIndicator(
-            progress = { spec.fill / 100f }, color = if ((q.pct ?: 0) >= 90) CmColors.waiting else CmColors.briefRing,
-            trackColor = CmColors.briefTrack, modifier = Modifier.fillMaxWidth().height(6.dp),
-        )
-        val reset = q.resetAt
-        val note = when {
-            q.stale -> stringResource(R.string.quota_old)
-            reset != null -> stringResource(R.string.quota_resets_at, HHMM.format(Instant.ofEpochSecond(reset).atZone(ZoneId.systemDefault())))
-            else -> null
-        }
-        note?.let { Text(it, color = CmColors.text2, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
-private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+/** L'anello piccolo del chip: la finestra di 5 ore, come gli anelli della Panoramica. */
+@Composable
+private fun MiniRing(pct: Int?, color: androidx.compose.ui.graphics.Color) {
+    androidx.compose.foundation.Canvas(Modifier.size(16.dp)) {
+        val w = 3.dp.toPx(); val inset = w / 2
+        val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
+        val tl = androidx.compose.ui.geometry.Offset(inset, inset)
+        drawArc(CmColors.briefTrack, -90f, 360f, false, topLeft = tl, size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w))
+        if (pct != null && pct > 0) drawArc(color, -90f, 360f * (pct.coerceIn(0, 100) / 100f), false, topLeft = tl, size = sz,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+}
+

@@ -461,7 +461,7 @@ class MainActivity : ComponentActivity() {
                         )
                         }
                         }
-                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name })
+                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onQuota = { tab = StartRoute.Tab.OVERVIEW })
                     }
                 }
             }
