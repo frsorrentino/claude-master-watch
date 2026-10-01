@@ -243,4 +243,12 @@
     <string name="next_steps">Next</string>
     <string name="suggestion_use">Use</string>
     <string name="tts_code">Code</string>
+    <string name="ctx_title">Context %1$d%%</string>
+    <string name="ctx_handoff">Write the handoff and restart clean</string>
+    <string name="ctx_handoff_prompt">Write the handoff with /fable-director:handoff --here, then restart clean with claude-master restart --clean.</string>
+    <string name="ctx_compact">Compact the conversation</string>
+    <string name="ctx_wider">Switch to the 1M window</string>
+    <string name="ask_master">Ask the master to check</string>
+    <string name="ask_master_prompt">Check session %1$s and tell me briefly where it stands and whether it needs anything from me.</string>
+    <string name="ask_master_done">Asked the master</string>
 </resources>

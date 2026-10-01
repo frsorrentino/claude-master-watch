@@ -87,6 +87,8 @@ data class SheetActions(
     val sendAtReset: (String) -> Boolean = { false }, val sendTonight: (String) -> Boolean = { false },
     /** Tocco sulla riga dell'avviso: la Panoramica, casa dei dati della quota. */
     val overview: () -> Unit = {},
+    /** «Fai controllare alla master» dal menu ⋮; null sulla master stessa o senza master aperta. */
+    val askMaster: (() -> Unit)? = null,
 )
 
 /** Un messaggio della chat con il suo stato e, se non è stato consegnato, il motivo (`ChatRules.status`/`reason`). */
@@ -766,6 +768,7 @@ private fun SheetHeader(
 ) {
     var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
     var menu by remember { mutableStateOf(false) }
+    var ctxSheet by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -774,7 +777,8 @@ private fun SheetHeader(
             TunePill(ModelText.short(model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
             EffortPill(effort, tunable) { picker = "effort" }
             Spacer(Modifier.weight(1f))
-            s.context?.let { ContextRing(it) }
+            // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
+            s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
@@ -788,6 +792,13 @@ private fun SheetHeader(
                         leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, tint = CmColors.actionIcon) },
                         onClick = { menu = false; actions.openInClaude() },
                     )
+                    actions.askMaster?.let { ask ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.ask_master)) },
+                            leadingIcon = { Icon(Icons.Rounded.SupervisorAccount, null, tint = CmColors.actionIcon) },
+                            onClick = { menu = false; ask() },
+                        )
+                    }
                     // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
                     if (showTerminal) DropdownMenuItem(
                         text = { Text(stringResource(R.string.terminal)) },
@@ -805,6 +816,7 @@ private fun SheetHeader(
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(color = CmColors.line)
     }
+    if (ctxSheet) s.context?.let { pct -> ContextSheet(pct, it.pixelbox.cmwatch.rules.ContextActions.wider(s.copy(model = model), choices), actions) { ctxSheet = false } }
     if (picker != null && choices != null) {
         ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -831,6 +843,26 @@ private fun SheetHeader(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Il foglio del contesto: «Scrivi l'handoff e riparti pulita» (pieno dall'80 %, `ContextActions.urgent`), «Compatta» e,
+ * se il modello ha una finestra più grande fra le scelte, «Passa alla finestra da 1M». Sono prompt normali alla sessione.
+ */
+@Composable
+private fun ContextSheet(pct: Int, wider: it.pixelbox.cmwatch.contract.Model?, actions: SheetActions, onClose: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    ModalBottomSheet(onDismissRequest = onClose, containerColor = CmColors.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.ctx_title, pct), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+            val handoff = { actions.send(PhonePrimary.Target.PROMPT, ctx.getString(R.string.ctx_handoff_prompt)); onClose() }
+            if (it.pixelbox.cmwatch.rules.ContextActions.urgent(pct)) {
+                Button(onClick = handoff, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)) { Text(stringResource(R.string.ctx_handoff)) }
+            } else FilledTonalButton(onClick = handoff, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_handoff)) }
+            FilledTonalButton(onClick = { actions.send(PhonePrimary.Target.PROMPT, "/compact"); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_compact)) }
+            wider?.let { m -> FilledTonalButton(onClick = { actions.setModel(m.id); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_wider)) } }
         }
     }
 }

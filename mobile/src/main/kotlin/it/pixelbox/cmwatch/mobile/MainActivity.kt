@@ -448,6 +448,16 @@ class MainActivity : ComponentActivity() {
                                 true
                             } ?: false },
                             overview = { overviewSheet = true },
+                            // Proposta approvata (01/10 21:19): la master legge la sessione e risponde nella sua chat.
+                            askMaster = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.takeIf { m -> m.name != session.name }?.let { m -> {
+                                scope.launch {
+                                    val text = getString(R.string.ask_master_prompt, session.name)
+                                    runCatching { app.repo.prompt(m.name, text) }.getOrNull()?.let { id ->
+                                        app.chatLog.add(Sent(id, m.name, text, System.currentTimeMillis() / 1000))
+                                        android.widget.Toast.makeText(this@MainActivity, getString(R.string.ask_master_done), android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } },
                         ), chat = rows, quota = quotaWarn, canTonight = nightDir != null,
                             // Niente frasi rapide (Franz, 01/10 23:34: «via» fisso, generico e fuori luogo): i consigli in più
                             // li scriverà la sessione stessa a fine turno.
