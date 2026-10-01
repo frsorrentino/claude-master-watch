@@ -195,4 +195,26 @@
     <string name="search">Search</string>
     <string name="search_hint">Search chats and the diary</string>
     <string name="search_none">No results</string>
+    <string name="widget_desc">Quota, sessions and questions on the home screen</string>
+    <string name="widget_waiting">waiting for the PC</string>
+    <string name="w_week">week</string>
+    <string name="w_working">working</string>
+    <string name="w_waiting">waiting for you</string>
+    <string name="w_idle">idle</string>
+    <string name="w_night">tonight</string>
+    <string name="w_context">context</string>
+    <string name="w_turn">turn</string>
+    <string name="w_outcome">outcome</string>
+    <string name="wcfg_title">The widget</string>
+    <string name="wcfg_mode">What it shows</string>
+    <string name="wcfg_board">The board</string>
+    <string name="wcfg_account">An account</string>
+    <string name="wcfg_session">A session</string>
+    <string name="wcfg_which">Which one</string>
+    <string name="wcfg_followed">The followed one</string>
+    <string name="wcfg_columns">Columns, up to three</string>
+    <string name="wcfg_opacity">Opacity</string>
+    <string name="wcfg_corners">Corners</string>
+    <string name="wcfg_mono">Monochrome</string>
+    <string name="wcfg_save">Place the widget</string>
 </resources>

@@ -1,5 +1,8 @@
 package it.pixelbox.cmwatch.mobile
 
+import androidx.glance.appwidget.updateAll
+import it.pixelbox.cmwatch.mobile.widget.CmWidget
+
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -101,6 +104,8 @@ class PhoneApp : Application() {
                 val prev = lastState; lastState = cur
                 // I passaggi dei messaggi della chat (in coda, in lavorazione, elaborato) si vedono a ogni stato.
                 chatLog.advance(cur)
+                // Il widget si ridisegna a ogni stato che arriva (spec «Widget»), non ogni 30 minuti.
+                runCatching { CmWidget().updateAll(this@PhoneApp) }
                 if (prev != null) react(prev, cur)
             }
         }

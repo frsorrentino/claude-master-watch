@@ -54,11 +54,13 @@ class MainActivity : ComponentActivity() {
     private var stoppedAt: Long? = null
     /** Una notifica con domanda chiede la coda «Ti aspettano» (piano 30/09, Task 1); `Main` la apre e la azzera. */
     private var queueAsked by mutableStateOf(false)
+    /** Dal widget: il nome della sessione da aprire, "" per la Panoramica, null per niente. */
+    private var sessionAsked by mutableStateOf<String?>(null)
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) queueAsked = intent?.getBooleanExtra(EXTRA_QUEUE, false) == true
+        if (savedInstanceState == null) intent?.let(::route)
         val rotating = savedInstanceState?.getBoolean(KEY_ROTATING) == true
         launchId = savedInstanceState?.getString(KEY_LAUNCH)?.takeIf { rotating } ?: java.util.UUID.randomUUID().toString()
         enableEdgeToEdge()
@@ -137,6 +139,12 @@ class MainActivity : ComponentActivity() {
         var nightAdding by rememberSaveable { mutableStateOf(false) }
         var queueOpen by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(sessionAsked) {
+            val n = sessionAsked ?: return@LaunchedEffect
+            settingsOpen = false; terminal = null; queueOpen = false; searchOpen = false
+            if (n.isEmpty()) { open = null; tab = StartRoute.Tab.OVERVIEW } else { tab = StartRoute.Tab.SESSIONS; open = n }
+            sessionAsked = null
+        }
         LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; settingsOpen = false; terminal = null; queueAsked = false } }
         var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
@@ -466,7 +474,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        route(intent)
+    }
+
+    /** Notifica con domanda → la coda; widget → la scheda della sessione o la Panoramica. */
+    private fun route(intent: Intent) {
         if (intent.getBooleanExtra(EXTRA_QUEUE, false)) queueAsked = true
+        intent.getStringExtra(EXTRA_SESSION)?.let { sessionAsked = it }
+        if (intent.getBooleanExtra(EXTRA_OVERVIEW, false)) sessionAsked = ""
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -502,5 +517,8 @@ class MainActivity : ComponentActivity() {
         private const val KEY_LAUNCH = "cm.launch"
         /** Extra dell'intent delle notifiche con domanda: apre la coda «Ti aspettano». */
         const val EXTRA_QUEUE = "cm.queue"
+        /** Extra del widget: la sessione da aprire, o la Panoramica. */
+        const val EXTRA_SESSION = "cm.session"
+        const val EXTRA_OVERVIEW = "cm.overview"
     }
 }

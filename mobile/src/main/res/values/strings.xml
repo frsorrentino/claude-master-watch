@@ -197,4 +197,26 @@
     <string name="search">Cerca</string>
     <string name="search_hint">Cerca nelle chat e nel diario</string>
     <string name="search_none">Nessun risultato</string>
+    <string name="widget_desc">Quota, sessioni e domande sulla schermata home</string>
+    <string name="widget_waiting">in attesa del PC</string>
+    <string name="w_week">settimana</string>
+    <string name="w_working">al lavoro</string>
+    <string name="w_waiting">ti aspettano</string>
+    <string name="w_idle">ferme</string>
+    <string name="w_night">notte</string>
+    <string name="w_context">contesto</string>
+    <string name="w_turn">turno</string>
+    <string name="w_outcome">esito</string>
+    <string name="wcfg_title">Il widget</string>
+    <string name="wcfg_mode">Che cosa mostra</string>
+    <string name="wcfg_board">La regia</string>
+    <string name="wcfg_account">Un account</string>
+    <string name="wcfg_session">Una sessione</string>
+    <string name="wcfg_which">Quale</string>
+    <string name="wcfg_followed">La seguita</string>
+    <string name="wcfg_columns">Colonne, fino a tre</string>
+    <string name="wcfg_opacity">Opacità</string>
+    <string name="wcfg_corners">Angoli</string>
+    <string name="wcfg_mono">Monocromo</string>
+    <string name="wcfg_save">Metti il widget</string>
 </resources>
