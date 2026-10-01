@@ -21,6 +21,10 @@ object WidgetModel {
     data class Card(
         val title: String, val arcPct: Int?, val arcLabel: String, val columns: List<Pair<Metric, String>>, val updatedAt: Long?,
         val session: String? = null,
+        /** L'anello interno come nella Panoramica: la settimana dell'account; null dove non c'è. */
+        val innerPct: Int? = null,
+        /** Lo stato di una sessione (colore della riga), null per le card di account e regia. */
+        val seg: WorkPanel.Seg? = null,
     )
 
     /** Etichette dell'arco, uguali in ogni lingua come «5h» e «ctx» sul polso. */
@@ -44,15 +48,16 @@ object WidgetModel {
                 val name = Accounts.resolve(state, config.target.orEmpty())
                 val q = name?.let { state.quota[it] }
                 val scope = state.sessions.filter { it.account.equals(name, ignoreCase = true) }
-                listOf(Card(name.orEmpty(), q?.takeUnless { it.stale }?.h5, ARC_5H, metrics.map { it to value(it, state, scope, name, now) }, state.ts))
+                val fresh = q?.takeUnless { it.stale }
+                listOf(Card(name.orEmpty(), fresh?.h5, ARC_5H, metrics.map { it to value(it, state, scope, name, now) }, state.ts, innerPct = fresh?.w7))
             }
             Mode.SESSION -> {
                 val s = pick(state, config.target) ?: return listOf(Card(config.target.orEmpty(), null, ARC_CTX, metrics.map { it to NONE }, state.ts))
                 listOf(sessionCard(state, s, metrics, now))
             }
             Mode.BOARD -> {
-                val fullest = state.quota.values.filter { !it.stale }.mapNotNull { it.h5 }.maxOrNull()
-                val board = Card(state.host, fullest, ARC_5H, metrics.map { it to value(it, state, state.sessions, null, now) }, state.ts)
+                val fullest = state.quota.values.filter { !it.stale && it.h5 != null }.maxByOrNull { it.h5!! }
+                val board = Card(state.host, fullest?.h5, ARC_5H, metrics.map { it to value(it, state, state.sessions, null, now) }, state.ts, innerPct = fullest?.w7)
                 val live = PhoneBoard.sections(state).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }
                 listOf(board) + live.map { sessionCard(state, it, defaults(Mode.SESSION), now) }
             }
@@ -66,7 +71,8 @@ object WidgetModel {
             ?: PhoneBoard.sections(state).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.firstOrNull()
 
     private fun sessionCard(state: State, s: Session, metrics: List<Metric>, now: Long) =
-        Card(s.name, s.context, ARC_CTX, metrics.map { it to value(it, state, listOf(s), s.account, now) }, state.ts, session = s.name)
+        Card(s.name, s.context, ARC_CTX, metrics.map { it to value(it, state, listOf(s), s.account, now) }, state.ts, session = s.name,
+            seg = WorkPanel.now(state.copy(sessions = listOf(s))).segments.firstOrNull())
 
     private fun value(m: Metric, state: State, scope: List<Session>, account: String?, now: Long): String {
         val counts = WorkPanel.now(state.copy(sessions = scope))

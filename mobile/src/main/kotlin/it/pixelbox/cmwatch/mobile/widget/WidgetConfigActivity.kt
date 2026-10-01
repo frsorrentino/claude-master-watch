@@ -17,6 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
@@ -40,17 +43,23 @@ class WidgetConfigActivity : ComponentActivity() {
         setResult(RESULT_CANCELED, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))
         if (id == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return }
         val app = application as PhoneApp
-        setContent {
-            CmPhoneTheme {
-                // Dallo stato che arriva: a freddo Room lo carica dopo l'apertura (revisione finale 01/10, I3).
-                val snap by app.repo.snapshot.collectAsState()
-                WidgetConfigScreen(snap.state, remember { WidgetPrefs.load(this, id) }) { c ->
-                    WidgetPrefs.save(this, id, c)
-                    lifecycleScope.launch {
-                        val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(id)
-                        CmWidget().update(this@WidgetConfigActivity, glanceId)
-                        setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))
-                        finish()
+        lifecycleScope.launch {
+            // La configurazione sta nello stato Glance del widget: scriverla e chiamare update lo ridisegna subito.
+            val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(id)
+            val initial = WidgetPrefs.read(getAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId))
+            setContent {
+                CmPhoneTheme {
+                    // Dallo stato che arriva: a freddo Room lo carica dopo l'apertura (revisione finale 01/10, I3).
+                    val snap by app.repo.snapshot.collectAsState()
+                    WidgetConfigScreen(snap.state, initial) { c ->
+                        lifecycleScope.launch {
+                            updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { p ->
+                                p.toMutablePreferences().apply { WidgetPrefs.write(this, c) }
+                            }
+                            CmWidget().update(this@WidgetConfigActivity, glanceId)
+                            setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))
+                            finish()
+                        }
                     }
                 }
             }

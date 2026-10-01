@@ -55,4 +55,13 @@ class WidgetModelTest {
         val order = listOf(Metric.IDLE, Metric.WEEK, Metric.WAITING)
         assertEquals(order, WidgetModel.cards(state, cfg(Mode.ACCOUNT, "personal", order), now).single().columns.map { it.first })
     }
+
+    /** Revisione dal vivo 01/10: doppio anello come la Panoramica (5 ore fuori, settimana dentro) e stato per riga. */
+    @Test fun accountRingCarriesTheWeekAndRowsTheirState() {
+        assertEquals(36, WidgetModel.cards(state, cfg(Mode.ACCOUNT, "personal"), now).single().innerPct)
+        val board = WidgetModel.cards(state, cfg(Mode.BOARD), now)
+        assertEquals(WorkPanel.Seg.WAITING, board.first { it.session == "ledger-api" }.seg)
+        assertEquals(WorkPanel.Seg.WORKING, board.first { it.session == "atlas-shop" }.seg)
+        assertNull(board.first().seg)
+    }
 }

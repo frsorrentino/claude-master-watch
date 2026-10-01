@@ -1,33 +1,42 @@
 package it.pixelbox.cmwatch.mobile.widget
 
-import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import it.pixelbox.cmwatch.rules.WidgetModel
 
-/** La configurazione di ogni widget posato, per id: scelta alla posa, cambiabile toccando a lungo il widget. */
+/**
+ * La configurazione di ogni widget posato, nel suo stato Glance (`PreferencesGlanceStateDefinition`): scriverla e poi
+ * chiamare `update` lo ridisegna subito (Franz, 01/10 12:37: con un file a parte le scelte arrivavano dopo tempo).
+ */
 object WidgetPrefs {
-    private fun prefs(ctx: Context) = ctx.getSharedPreferences("cm_widget", Context.MODE_PRIVATE)
-
     /** Senza configurazione: la regia, opaca all'85 %, angoli da 24 dp, a colori. */
     val DEFAULT = WidgetModel.Config(WidgetModel.Mode.BOARD, null, WidgetModel.defaults(WidgetModel.Mode.BOARD), 85, 24, false)
 
-    fun load(ctx: Context, id: Int): WidgetModel.Config {
-        val p = prefs(ctx)
-        val mode = p.getString("$id.mode", null)?.let { runCatching { WidgetModel.Mode.valueOf(it) }.getOrNull() } ?: return DEFAULT
-        val metrics = p.getString("$id.metrics", "").orEmpty().split(',').mapNotNull { runCatching { WidgetModel.Metric.valueOf(it) }.getOrNull() }
+    private val MODE = stringPreferencesKey("mode")
+    private val TARGET = stringPreferencesKey("target")
+    private val METRICS = stringPreferencesKey("metrics")
+    private val OPACITY = intPreferencesKey("opacity")
+    private val CORNERS = intPreferencesKey("corners")
+    private val MONO = booleanPreferencesKey("mono")
+
+    fun read(p: Preferences): WidgetModel.Config {
+        val mode = p[MODE]?.let { runCatching { WidgetModel.Mode.valueOf(it) }.getOrNull() } ?: return DEFAULT
+        val metrics = p[METRICS].orEmpty().split(',').mapNotNull { runCatching { WidgetModel.Metric.valueOf(it) }.getOrNull() }
         return WidgetModel.Config(
-            mode, p.getString("$id.target", null), metrics.ifEmpty { WidgetModel.defaults(mode) },
-            p.getInt("$id.opacity", DEFAULT.opacity), p.getInt("$id.corners", DEFAULT.corners), p.getBoolean("$id.mono", false),
+            mode, p[TARGET], metrics.ifEmpty { WidgetModel.defaults(mode) },
+            p[OPACITY] ?: DEFAULT.opacity, p[CORNERS] ?: DEFAULT.corners, p[MONO] ?: false,
         )
     }
 
-    fun save(ctx: Context, id: Int, c: WidgetModel.Config) = prefs(ctx).edit()
-        .putString("$id.mode", c.mode.name).putString("$id.target", c.target)
-        .putString("$id.metrics", c.metrics.joinToString(",") { it.name })
-        .putInt("$id.opacity", c.opacity).putInt("$id.corners", c.corners).putBoolean("$id.mono", c.mono)
-        .apply()
-
-    fun delete(ctx: Context, id: Int) {
-        val p = prefs(ctx)
-        p.edit().apply { p.all.keys.filter { it.startsWith("$id.") }.forEach { remove(it) } }.apply()
+    fun write(p: MutablePreferences, c: WidgetModel.Config) {
+        p[MODE] = c.mode.name
+        c.target?.let { p[TARGET] = it } ?: p.remove(TARGET)
+        p[METRICS] = c.metrics.joinToString(",") { it.name }
+        p[OPACITY] = c.opacity
+        p[CORNERS] = c.corners
+        p[MONO] = c.mono
     }
 }
