@@ -30,7 +30,7 @@ import java.io.File
  * e alla scala dei caratteri del telefono di Franz (390 dpi, 1,3). Serve a confrontarlo con ads-widget pixel per pixel
  * senza il telefono in mano:
  * `adb shell am broadcast -n com.francescosorrentino.cmaster/it.pixelbox.cmwatch.mobile.widget.WidgetRenderReceiver`
- * poi `adb shell run-as com.francescosorrentino.cmaster tar c files/widget-renders > renders.tar`.
+ * poi `adb pull /sdcard/Android/data/com.francescosorrentino.cmaster/files/widget-renders`.
  */
 class WidgetRenderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -45,7 +45,8 @@ class WidgetRenderReceiver : BroadcastReceiver() {
         val conf = Configuration(base.resources.configuration).apply { densityDpi = 390; fontScale = 1.3f }
         val ctx = base.createConfigurationContext(conf)
         val state = (base.applicationContext as PhoneApp).fake.state.first()
-        val dir = File(base.filesDir, "widget-renders").apply { deleteRecursively(); mkdirs() }
+        // Nella cartella esterna dell'app: adb la legge anche dove run-as è spento (l'Android del Chromebook).
+        val dir = File(base.getExternalFilesDir(null), "widget-renders").apply { deleteRecursively(); mkdirs() }
         val sizes = listOf("strip" to (401f to 103f), "medium" to (401f to 200f), "large" to (401f to 300f), "small" to (190f to 190f))
         val d = WidgetPrefs.DEFAULT
         val configs = listOf(
@@ -73,6 +74,6 @@ class WidgetRenderReceiver : BroadcastReceiver() {
             view.draw(c)
             File(dir, "$sn-$cn.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
-        android.util.Log.i("cmwatch", "widget renders: ${dir.list()?.size}")
+        android.util.Log.i("cmwatch", "widget renders: ${dir.list()?.size} in ${dir.absolutePath}")
     }
 }
