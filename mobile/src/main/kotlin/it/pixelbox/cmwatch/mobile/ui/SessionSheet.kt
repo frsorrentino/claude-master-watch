@@ -229,8 +229,9 @@ private fun Composer(
             val can = draft.isNotBlank() && s.question == null && images.isEmpty()
             QuotaLine(w, draft.trim(), canDefer = can, canTonight = can && canTonight, actions, onDeferred = onSent)
         }
-        // Contratto 1.23: il prompt suggerito del terminale come chip; tocco = manda, pressione lunga = nel campo.
-        s.suggestion?.takeIf { draft.isBlank() && image == null }?.let { sug -> SuggestionPill(sug, onSend = { actions.send(PhonePrimary.Target.PROMPT, sug); onSent() }, onEdit = { onDraft(sug) }) }
+        // Contratto 1.23: il prompt suggerito del terminale, solo per una sessione ferma. Il tocco lo mette nel campo, da
+        // ritoccare prima di mandarlo (Franz, 01/10 14:57: prima partiva subito e la pillola restava lì).
+        PhonePrimary.suggestion(s, draft)?.takeIf { image == null }?.let { sug -> SuggestionPill(sug, onEdit = { onDraft(sug) }) }
         // Frasi rapide (piano 30/09, Task 6): stesse mosse del suggerito, solo senza una domanda aperta.
         if (phrases.isNotEmpty() && draft.isBlank() && image == null && s.question == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -310,13 +311,12 @@ private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
     }
 }
 
-/** Il prompt suggerito come pillola tonale, a una riga logica; pressione lunga = nel campo per modificarlo. */
-@OptIn(ExperimentalFoundationApi::class)
+/** Il prompt suggerito come pillola tonale, a una riga logica; il tocco lo mette nel campo per modificarlo. */
 @Composable
-private fun SuggestionPill(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
+private fun SuggestionPill(text: String, onEdit: () -> Unit) {
     Surface(
         color = CmColors.surfaceHigh, contentColor = CmColors.text, shape = MaterialTheme.shapes.large,
-        modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
+        modifier = Modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onEdit),
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.suggested), tint = CmColors.actionIcon, modifier = Modifier.size(16.dp))

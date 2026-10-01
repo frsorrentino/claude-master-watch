@@ -38,4 +38,12 @@ object PhonePrimary {
         (s.state == SessionState.BUSY || s.state == SessionState.AWAITING) && ops?.contains("interrupt") == true -> Composer.STOP
         else -> Composer.NONE
     }
+
+    /**
+     * Il prompt suggerito da mostrare sopra la barra (contratto 1.23): solo per una sessione ferma, senza domanda, con il
+     * campo vuoto. Lo stato ottimistico dopo un invio mette la sessione al lavoro e così la pillola sparisce subito
+     * (Franz, 01/10 14:57).
+     */
+    fun suggestion(s: Session, draft: String): String? =
+        s.suggestion?.takeIf { it.isNotBlank() && s.state == SessionState.IDLE && s.question == null && draft.isBlank() }
 }
