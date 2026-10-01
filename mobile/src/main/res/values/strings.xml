@@ -184,4 +184,14 @@
     <string name="queue_empty">Nessuno ti aspetta</string>
     <string name="queue_age">da %1$s</string>
     <string name="queue_position">%1$d di %2$d</string>
+    <string name="quota_warn">Finestra al %1$d%%, riparte alle %2$s</string>
+    <string name="quota_warn_pace">Finestra al %1$d%%: a questo ritmo finisce prima delle %2$s</string>
+    <string name="send_at_reset">Invia alla ripartenza</string>
+    <string name="send_tonight">Manda stanotte</string>
+    <string name="chat_scheduled">parte alle %1$s</string>
+    <string name="night_added">Messo nella notte</string>
+    <plurals name="ov_scheduled">
+        <item quantity="one">%1$d messaggio parte alle %2$s</item>
+        <item quantity="other">%1$d messaggi partono alle %2$s</item>
+    </plurals>
 </resources>

@@ -61,4 +61,18 @@ class SessionSheetTest {
         val s = st.sessions.first { it.state == SessionState.BUSY }
         CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, choices = st.choices, ops = st.ops) }
     }
+
+    /** Finestra al 94 %: la riga dell'avviso sopra la barra, e un messaggio programmato alla ripartenza nella chat. */
+    @Test fun sheetQuotaWarning() {
+        val s = st.sessions.first { it.state == SessionState.IDLE }
+        val reset = st.ts + 3 * 3600
+        val later = it.pixelbox.cmwatch.rules.Sent("m-later", s.name, "Run the nightly import again", st.ts - 60, scheduledFor = reset)
+        paparazzi.snapshot {
+            CmPhoneTheme(still = true) {
+                SessionSheet(s, st.ts, emptyList(), 120, none,
+                    chat = listOf(ChatRow(later, it.pixelbox.cmwatch.rules.ChatRules.Status.SCHEDULED)),
+                    quota = it.pixelbox.cmwatch.rules.QuotaWarning.Warn(s.account, 94, reset, projected = false))
+            }
+        }
+    }
 }

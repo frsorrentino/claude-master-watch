@@ -122,4 +122,33 @@ class ChatRulesTest {
         val a = ChatRules.advance(m, s(SessionState.BUSY, turn = t + ChatRules.CLAIM_S + 1), now = t + ChatRules.CLAIM_S + 5)
         assertNull(a.startedAt)
     }
+
+    // Invio programmato (piano 30/09, Task 4): scritto ora, parte alla ripartenza della quota.
+    private val later = m.copy(scheduledFor = t + 3600)
+
+    @Test fun scheduledIsItsOwnStatus() {
+        assertEquals(Status.SCHEDULED, ChatRules.status(later, null, null, s(SessionState.BUSY, turn = t - 600)))
+        // Un turno che parte prima dell'invio non è suo.
+        assertNull(ChatRules.advance(later, s(SessionState.BUSY, turn = t + 5), now = t + 10).startedAt)
+    }
+
+    /** Telefono spento all'ora giusta: parte appena possibile, una volta sola. */
+    @Test fun scheduledSendsOnceWhenLate() {
+        assertTrue(ChatRules.due(listOf(later), now = t + 60).isEmpty())
+        assertEquals(listOf("c1"), ChatRules.due(listOf(later, m), now = t + 3 * 3600).map { it.id })
+        val sent = later.copy(sentAt = t + 3 * 3600)
+        assertTrue(ChatRules.due(listOf(sent), now = t + 4 * 3600).isEmpty())
+        assertNotEquals(Status.SCHEDULED, ChatRules.status(sent, PendingStatus.SENDING, null, s(SessionState.IDLE)))
+    }
+
+    /** «Manda stanotte»: la cartella del progetto della sessione, dai progetti dello stato. */
+    @Test fun nightDirFromTheSessionProject() {
+        val st = State(v = 1, ts = t, host = "pc", projects = listOf(
+            Project("/home/demo/workspaces/personal/atlas-shop", "atlas-shop", "personal"),
+            Project("/home/demo/workspaces/work/clients/ledger-api", "ledger-api", "work"),
+        ))
+        val ledger = s(SessionState.IDLE).copy(name = "ledger-api", project = "work/clients/ledger-api", account = "work")
+        assertEquals("/home/demo/workspaces/work/clients/ledger-api", ChatRules.nightDir(st, ledger))
+        assertNull(ChatRules.nightDir(st, ledger.copy(project = "work/other")))
+    }
 }

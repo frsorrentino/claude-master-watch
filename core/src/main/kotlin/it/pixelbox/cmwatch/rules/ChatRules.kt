@@ -17,6 +17,11 @@ import kotlinx.serialization.Serializable
     val attachment: String? = null,
     /** Il motivo per cui non è stato consegnato, salvato quando si vede (revisione 30/09); null finché va bene. */
     val failed: String? = null,
+    /**
+     * Invio programmato (piano 30/09, Task 4): l'ora in cui deve partire. Finché `sentAt` è prima di quest'ora il messaggio
+     * aspetta; quando parte `sentAt` diventa l'ora vera dell'invio e il messaggio prosegue come gli altri.
+     */
+    val scheduledFor: Long? = null,
 )
 
 /**
@@ -29,7 +34,7 @@ object ChatRules {
      * dell'immagine, scrittura sul canale, inviato al PC, consegnato alla sessione, in coda dietro un turno, preso in
      * carico, elaborato; oppure non consegnato, con il motivo quando c'è.
      */
-    enum class Status { OFFLINE, UPLOADING, SENDING, SENT, UNCERTAIN, FAILED, DELIVERED, QUEUED, WORKING, DONE }
+    enum class Status { SCHEDULED, OFFLINE, UPLOADING, SENDING, SENT, UNCERTAIN, FAILED, DELIVERED, QUEUED, WORKING, DONE }
 
     /** Il caricamento dell'immagine di un messaggio (contratto 1.19). */
     sealed interface Upload {
@@ -45,6 +50,7 @@ object ChatRules {
 
     fun status(m: Sent, pending: PendingStatus?, result: CmdResult?, s: Session?, upload: Upload? = null): Status = when {
         m.failed != null || upload is Upload.Failed || result?.ok == false -> Status.FAILED
+        waiting(m) -> Status.SCHEDULED
         upload == Upload.Going -> Status.UPLOADING
         m.doneAt != null -> Status.DONE
         m.startedAt != null -> Status.WORKING
@@ -66,7 +72,7 @@ object ChatRules {
     }
 
     fun advance(m: Sent, s: Session?, now: Long): Sent {
-        if (m.doneAt != null || m.failed != null || s == null) return m
+        if (m.doneAt != null || m.failed != null || s == null || waiting(m)) return m
         val from = m.sentAt - SKEW_S
         val until = m.sentAt + CLAIM_S
         // Una domanda di permesso a metà turno non lo chiude (revisione 30/09).
@@ -87,6 +93,19 @@ object ChatRules {
             else -> m
         }
     }
+
+    /** Programmato e non ancora partito. */
+    fun waiting(m: Sent): Boolean = m.scheduledFor != null && m.sentAt < m.scheduledFor
+
+    /**
+     * I programmati da mandare adesso: l'ora è passata, anche da molto (telefono spento o senza rete all'ora giusta).
+     * Chi li manda aggiorna `sentAt`, e da lì non tornano più qui: partono una volta sola.
+     */
+    fun due(list: List<Sent>, now: Long): List<Sent> = list.filter { waiting(it) && it.scheduledFor!! <= now }
+
+    /** «Manda stanotte»: la cartella del progetto della sessione fra quelle che il PC conosce; null se non c'è. */
+    fun nightDir(state: it.pixelbox.cmwatch.contract.State, s: Session): String? =
+        state.projects.firstOrNull { it.path == s.project || it.path.endsWith("/" + s.project) }?.path
 
     fun prune(list: List<Sent>, now: Long): List<Sent> = list.filter { it.sentAt >= now - KEEP_S }
 }

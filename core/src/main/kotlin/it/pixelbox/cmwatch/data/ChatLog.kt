@@ -44,5 +44,18 @@ class ChatLog(private val file: File, private val now: () -> Long) {
         if (next != _messages.value) save(next)
     }
 
+    /**
+     * I programmati da mandare adesso (`ChatRules.due`), segnati come partiti nello stesso passo: due giri insieme del
+     * lavoro in background non li mandano due volte. Chi li riceve li manda con il loro id.
+     */
+    @Synchronized fun claimDue(): List<Sent> {
+        val t = now()
+        val due = ChatRules.due(_messages.value, t).map { it.id }.toSet()
+        if (due.isEmpty()) return emptyList()
+        val next = _messages.value.map { if (it.id in due) it.copy(sentAt = t) else it }
+        save(next)
+        return next.filter { it.id in due }
+    }
+
     fun forSession(name: String): List<Sent> = _messages.value.filter { it.session == name }.sortedBy { it.sentAt }
 }

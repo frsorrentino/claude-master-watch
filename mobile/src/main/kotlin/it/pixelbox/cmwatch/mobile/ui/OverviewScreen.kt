@@ -48,7 +48,11 @@ import java.time.format.DateTimeFormatter
  * doppio anello e il ritmo, poi il lavoro: «Adesso», le domande, il contesto, «Oggi», la notte, l'ora dell'aggiornamento.
  */
 @Composable
-fun OverviewScreen(model: PhoneOverview.Model, stale: Freshness, onQuestion: () -> Unit, onSession: (name: String) -> Unit) {
+fun OverviewScreen(
+    model: PhoneOverview.Model, stale: Freshness, onQuestion: () -> Unit, onSession: (name: String) -> Unit,
+    /** Invii programmati per account (piano 30/09, Task 4): quanti e il primo a partire. */
+    scheduled: Map<String, Pair<Int, Long>> = emptyMap(),
+) {
     LazyColumn(
         Modifier.fillMaxSize().background(CmColors.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
@@ -66,7 +70,7 @@ fun OverviewScreen(model: PhoneOverview.Model, stale: Freshness, onQuestion: () 
         if (model.rings.isEmpty()) item(key = "no-quota") {
             Text(stringResource(R.string.ov_no_quota), color = CmColors.text2, style = MaterialTheme.typography.bodyLarge)
         }
-        items(model.rings, key = { "ring-" + it.account }) { QuotaRingCard(it) }
+        items(model.rings, key = { "ring-" + it.account }) { QuotaRingCard(it, scheduled[it.account]) }
         item(key = "h-work") { SectionTitle(stringResource(R.string.ov_work)) }
         item(key = "now") { NowCard(model.now) }
         model.questions?.let { q -> item(key = "questions") { QuestionsCard(q, onQuestion) } }
@@ -131,7 +135,7 @@ private fun dayTime(epoch: Long): String = DateTimeFormatter.ofPattern("EEE HH:m
 
 /** Doppio anello come sul polso: 5 ore fuori (azzurro), settimana dentro (lavanda). Accanto numeri, reset e ritmo. */
 @Composable
-private fun QuotaRingCard(r: PhoneOverview.Ring) {
+private fun QuotaRingCard(r: PhoneOverview.Ring, scheduled: Pair<Int, Long>? = null) {
     val h5 = fillOnEntry((r.h5 ?: 0) / 100f)
     val w7 = fillOnEntry((r.w7 ?: 0) / 100f)
     val outer = if ((r.h5 ?: 0) >= 90) CmColors.briefAlertRing else CmColors.briefRing
@@ -167,6 +171,10 @@ private fun QuotaRingCard(r: PhoneOverview.Ring) {
                         )
                     }
                     r.resetAt?.let { Text(stringResource(R.string.quota_resets_at, hhmm(it)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefSecondary) }
+                    // Gli invii programmati alla ripartenza: l'anello è in percentuale, l'ora si dice a parole.
+                    scheduled?.let { (n, at) ->
+                        Text(pluralStringResource(R.plurals.ov_scheduled, n, n, hhmm(at)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefRing)
+                    }
                     // Senza lettura recente niente numeri inventati: lo si dice, come la riga «dato vecchio» della regia.
                     if (r.stale) Text(stringResource(R.string.quota_old), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarn)
                 }

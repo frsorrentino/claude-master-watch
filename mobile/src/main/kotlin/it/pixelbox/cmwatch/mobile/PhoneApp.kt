@@ -93,6 +93,8 @@ class PhoneApp : Application() {
             })
         }
         notifier = PhoneNotifier(this).also { it.ensureChannels() }
+        // Un invio programmato perso con il telefono spento parte al primo giro (piano 30/09, Task 4).
+        if (chatLog.messages.value.any { it.scheduledFor != null }) ScheduledSend.sweep(this)
         // Il diff che decide le notifiche gira su ogni nuovo /state, come sull'orologio (CmApp.react).
         scope.launch {
             repo.snapshot.map { it.state }.filterNotNull().distinctUntilChanged().collect { cur ->

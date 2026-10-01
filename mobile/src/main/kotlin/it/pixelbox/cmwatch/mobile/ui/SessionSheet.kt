@@ -58,6 +58,7 @@ import it.pixelbox.cmwatch.rules.ChatRules
 import it.pixelbox.cmwatch.rules.ModelText
 import it.pixelbox.cmwatch.rules.PhonePrimary
 import it.pixelbox.cmwatch.rules.QuestionRules
+import it.pixelbox.cmwatch.rules.QuotaWarning
 import it.pixelbox.cmwatch.rules.Sent
 import it.pixelbox.cmwatch.rules.SessionMeters
 import it.pixelbox.cmwatch.rules.SessionsText
@@ -79,6 +80,10 @@ data class SheetActions(
     val interrupt: () -> Unit = {},
     /** Un'immagine dalla galleria, con il testo scritto accanto (contratto 1.19, come «Condividi»). */
     val attach: (Uri, String) -> Unit = { _, _ -> },
+    /** Avviso quota (piano 30/09, Task 3): il testo scritto parte alla ripartenza della finestra, o va nella notte. */
+    val sendAtReset: (String) -> Unit = {}, val sendTonight: (String) -> Unit = {},
+    /** Tocco sulla riga dell'avviso: la Panoramica, casa dei dati della quota. */
+    val overview: () -> Unit = {},
 )
 
 /** Un messaggio della chat con il suo stato e, se non è stato consegnato, il motivo (`ChatRules.status`/`reason`). */
@@ -99,6 +104,8 @@ fun SessionSheet(
     feed: List<ChatFeed.Item>? = null, more: Boolean = false, onOlder: () -> Unit = {},
     /** La conversazione vera sta arrivando: niente chat di ripiego nel frattempo, che poi salterebbe (dal vivo 30/09 23:36). */
     loadingFeed: Boolean = false,
+    /** La finestra di 5 ore dell'account della sessione sta finendo (`QuotaWarning`); null = nessun avviso. */
+    quota: QuotaWarning.Warn? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -184,7 +191,7 @@ fun SessionSheet(
                     }
                 }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true })
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota)
     }
 }
 
@@ -196,6 +203,7 @@ fun SessionSheet(
 @Composable
 private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
+    quota: QuotaWarning.Warn? = null,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     val image = images.firstOrNull()
@@ -212,6 +220,9 @@ private fun Composer(
         return
     }
     Column(bar, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        quota?.let { w ->
+            QuotaLine(w, draft.trim(), canDefer = draft.isNotBlank() && s.question == null && images.isEmpty(), actions, onDeferred = onSent)
+        }
         // Contratto 1.23: il prompt suggerito del terminale come chip; tocco = manda, pressione lunga = nel campo.
         s.suggestion?.takeIf { draft.isBlank() && image == null }?.let { sug -> SuggestionPill(sug, onSend = { actions.send(PhonePrimary.Target.PROMPT, sug); onSent() }, onEdit = { onDraft(sug) }) }
         // Più immagini insieme (Franz, 30/09 23:04: l'ultima sostituiva la precedente), ognuna con la sua ×.
@@ -254,6 +265,24 @@ private fun Composer(
                 }
             },
         )
+    }
+}
+
+/**
+ * L'avviso della quota sopra la barra: la finestra e quando riparte, e due bottoni testuali che rimandano il testo
+ * scritto (alla ripartenza o stanotte). Senza testo nel campo i bottoni restano spenti; tocco sulla riga = Panoramica.
+ */
+@Composable
+private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, actions: SheetActions, onDeferred: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(CmColors.briefWarn).clickable(onClick = actions.overview).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 2.dp)) {
+        Text(
+            stringResource(if (w.projected) R.string.quota_warn_pace else R.string.quota_warn, w.pct, hhmm(w.resetAt)),
+            style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarnInk,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { actions.sendAtReset(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_at_reset), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
+            TextButton(onClick = { actions.sendTonight(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_tonight), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
+        }
     }
 }
 
@@ -372,7 +401,7 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            StatusMark(status)
+            StatusMark(status, m.scheduledFor)
             Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
             SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
@@ -508,8 +537,9 @@ private fun ClaudeBubble(
  * sul canale, due quando la sessione l'ha ricevuto, azzurre quando Claude l'ha preso in carico e quando ha finito.
  */
 @Composable
-private fun StatusMark(st: ChatRules.Status) {
+private fun StatusMark(st: ChatRules.Status, scheduledFor: Long? = null) {
     val (icon, tint, label) = when (st) {
+        ChatRules.Status.SCHEDULED -> Triple(Icons.Rounded.Alarm, CmColors.waiting, R.string.chat_scheduled)
         ChatRules.Status.OFFLINE -> Triple(Icons.Rounded.CloudOff, CmColors.stale, R.string.chat_offline)
         ChatRules.Status.UPLOADING -> Triple(Icons.Rounded.CloudUpload, CmColors.text2, R.string.chat_uploading)
         ChatRules.Status.SENDING -> Triple(Icons.Rounded.Schedule, CmColors.text2, R.string.chat_sending)
@@ -521,7 +551,7 @@ private fun StatusMark(st: ChatRules.Status) {
         ChatRules.Status.WORKING -> Triple(Icons.Rounded.DoneAll, CmColors.busy, R.string.chat_working)
         ChatRules.Status.DONE -> Triple(Icons.Rounded.DoneAll, CmColors.actionIcon, R.string.chat_done)
     }
-    val text = stringResource(label)
+    val text = if (st == ChatRules.Status.SCHEDULED && scheduledFor != null) stringResource(label, hhmm(scheduledFor)) else stringResource(label)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
         Text(text, style = MaterialTheme.typography.labelMedium, color = tint)

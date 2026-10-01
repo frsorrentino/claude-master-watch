@@ -130,4 +130,13 @@ class ChatFeedTest {
             .filterIsInstance<ChatFeed.Item.Mine>().single()
         assertEquals(ChatRules.Status.DELIVERED, mine.status)
     }
+
+    /** Un programmato non ancora partito non si aggancia a una voce con lo stesso testo: resta «parte alle …». */
+    @Test fun scheduledIsNeverMatched() {
+        val p1 = first.entries.first { it.id == "p1.0" }
+        val sent = Sent("c1", "field-notes", "Also add the attendees list", sentAt = p1.at!! - 2, scheduledFor = p1.at!! + 3600)
+        val feed = ChatFeed.merge(first.entries, listOf(sent to ChatRules.Status.SCHEDULED))
+        assertEquals(ChatRules.Status.SCHEDULED, feed.filterIsInstance<ChatFeed.Item.Mine>().single().status)
+        assertNull(feed.filterIsInstance<ChatFeed.Item.Mine>().single().entry)
+    }
 }

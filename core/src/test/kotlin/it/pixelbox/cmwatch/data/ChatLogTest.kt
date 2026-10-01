@@ -51,4 +51,15 @@ class ChatLogTest {
         log().markFailed("c1", "kb is not running")
         assertEquals("kb is not running", log().forSession("kb").single().failed)
     }
+
+    /** Due giri del lavoro in background insieme: il programmato si prende una volta sola, e resta preso dopo un riavvio. */
+    @Test fun claimDueOnce() {
+        val l = log(); l.add(m.copy(id = "s1", scheduledFor = now + 3600))
+        assertTrue(l.claimDue().isEmpty())
+        now += 7200
+        assertEquals(listOf("s1"), l.claimDue().map { it.id })
+        assertTrue(l.claimDue().isEmpty())
+        assertTrue(log().claimDue().isEmpty())
+        assertEquals(now, log().forSession("kb").single().sentAt)
+    }
 }

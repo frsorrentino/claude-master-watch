@@ -308,7 +308,11 @@ class MainActivity : ComponentActivity() {
                     }
                     OverviewScreen(model, snap.freshness,
                         onQuestion = { queueOpen = true },
-                        onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n })
+                        onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n },
+                        scheduled = chatLog.filter { ChatRules.waiting(it) }
+                            .groupBy { m -> st.sessions.firstOrNull { it.name == m.session }?.account }
+                            .filterKeys { it != null }
+                            .map { (acc, ms) -> acc!! to (ms.size to ms.minOf { it.scheduledFor!! }) }.toMap())
                 }
                 return@AppShell
             }
@@ -338,6 +342,7 @@ class MainActivity : ComponentActivity() {
                         val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
                         // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                         val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+                        val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
                         run {
                         fun sendAndLog(target: PhonePrimary.Target, text: String) = scope.launch {
@@ -390,7 +395,18 @@ class MainActivity : ComponentActivity() {
                             setEffort = { v -> scope.launch { app.repo.command(CmdOp.EFFORT, session.name, v) } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
-                        ), chat = rows, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
+                            // Avviso quota (piano 30/09, Task 4): il testo resta nella chat come «parte alle …».
+                            sendAtReset = { text -> quotaWarn?.let { w ->
+                                val t = System.currentTimeMillis() / 1000
+                                app.chatLog.add(Sent(java.util.UUID.randomUUID().toString(), session.name, text, t, scheduledFor = w.resetAt))
+                                ScheduledSend.schedule(this@MainActivity, w.resetAt)
+                            } },
+                            sendTonight = { text -> state?.let { st -> ChatRules.nightDir(st, session) }?.let { dir ->
+                                scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, dir, text) }
+                                android.widget.Toast.makeText(this@MainActivity, getString(R.string.night_added), android.widget.Toast.LENGTH_SHORT).show()
+                            } },
+                            overview = { open = null; tab = StartRoute.Tab.OVERVIEW },
+                        ), chat = rows, quota = quotaWarn, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
                             more = more && session.name == open,

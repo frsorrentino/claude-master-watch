@@ -64,7 +64,7 @@ object ChatFeed {
                     val at = e.at ?: Long.MAX_VALUE
                     val hit = if (e.origin != null && e.origin != "phone") null else left
                         .filter { (m, st) ->
-                            st != ChatRules.Status.FAILED && m.failed == null && m.text.isNotBlank() && t.endsWith(m.text.trim()) &&
+                            st != ChatRules.Status.FAILED && m.failed == null && !ChatRules.waiting(m) && m.text.isNotBlank() && t.endsWith(m.text.trim()) &&
                                 at >= m.sentAt - ChatRules.SKEW_S
                         }
                         .minByOrNull { (m, _) -> kotlin.math.abs(at - m.sentAt) }

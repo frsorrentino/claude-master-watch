@@ -182,4 +182,14 @@
     <string name="queue_empty">No one is waiting for you</string>
     <string name="queue_age">for %1$s</string>
     <string name="queue_position">%1$d of %2$d</string>
+    <string name="quota_warn">Window at %1$d%%, resets at %2$s</string>
+    <string name="quota_warn_pace">Window at %1$d%%: at this pace it runs out before %2$s</string>
+    <string name="send_at_reset">Send at the reset</string>
+    <string name="send_tonight">Send tonight</string>
+    <string name="chat_scheduled">leaves at %1$s</string>
+    <string name="night_added">Added to tonight</string>
+    <plurals name="ov_scheduled">
+        <item quantity="one">%1$d message leaves at %2$s</item>
+        <item quantity="other">%1$d messages leave at %2$s</item>
+    </plurals>
 </resources>

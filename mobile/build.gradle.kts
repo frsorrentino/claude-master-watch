@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.play.services.wearable)
     implementation(libs.play.services.code.scanner)
     implementation(libs.wear.remote.interactions)
+    implementation(libs.work.runtime)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
