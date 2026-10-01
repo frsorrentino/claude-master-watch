@@ -26,6 +26,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
+import kotlinx.coroutines.flow.first
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
@@ -71,6 +72,16 @@ class CmWidget : GlanceAppWidget() {
             val config = WidgetPrefs.read(currentState<Preferences>())
             WidgetContent(WidgetModel.cards(snap.state, config, System.currentTimeMillis() / 1000), config)
         }
+    }
+
+    /**
+     * L'anteprima nella lista dei widget del launcher (segnalazione 01/10 20:19: un riquadro bianco con l'icona): il
+     * widget vero con lo stato della Demo e la configurazione di partenza. Android 15 e oltre; prima resta l'icona.
+     */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        val app = context.applicationContext as PhoneApp
+        val state = app.fake.state.first()
+        provideContent { WidgetContent(WidgetModel.cards(state, WidgetPrefs.DEFAULT, state.ts), WidgetPrefs.DEFAULT, interactive = false) }
     }
 }
 

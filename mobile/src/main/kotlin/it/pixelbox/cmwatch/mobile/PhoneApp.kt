@@ -96,6 +96,16 @@ class PhoneApp : Application() {
             })
         }
         notifier = PhoneNotifier(this).also { it.ensureChannels() }
+        // L'anteprima del widget nella lista del launcher, una volta per installazione (il versionCode resta 21): il sistema limita quante se ne
+        // pubblicano (SET_WIDGET_PREVIEWS_RESULT_RATE_LIMITED); se rifiuta si riprova al prossimo avvio.
+        if (android.os.Build.VERSION.SDK_INT >= 35) scope.launch {
+            val sp = getSharedPreferences("widget-preview", MODE_PRIVATE)
+            val v = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+            if (sp.getLong("version", -1) != v) runCatching {
+                val r = androidx.glance.appwidget.GlanceAppWidgetManager(this@PhoneApp).setWidgetPreviews(it.pixelbox.cmwatch.mobile.widget.CmWidgetReceiver::class)
+                if (r == androidx.glance.appwidget.GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) sp.edit().putLong("version", v).apply()
+            }
+        }
         // Un invio programmato perso con il telefono spento parte al primo giro (piano 30/09, Task 4).
         if (chatLog.messages.value.any { it.scheduledFor != null }) ScheduledSend.sweep(this)
         // Il diff che decide le notifiche gira su ogni nuovo /state, come sull'orologio (CmApp.react).
