@@ -240,4 +240,6 @@
     <string name="outcome_label">Outcome</string>
     <string name="launch_recent">Recent</string>
     <string name="launch_open">Open</string>
+    <string name="next_steps">Next</string>
+    <string name="suggestion_use">Use</string>
 </resources>

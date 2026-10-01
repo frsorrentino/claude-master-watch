@@ -155,12 +155,22 @@ fun SessionSheet(
                     TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                 }
                 // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
-                items(ChatFeed.group(feed), key = { feedKey(it) }) { it ->
+                val grouped = ChatFeed.group(feed)
+                // I consigli della sessione (design 01/10, variante C) solo sotto l'ultima risposta, se dopo non c'è un tuo
+                // messaggio, a sessione ferma e con il campo vuoto: spariscono appena scrivi o mandi.
+                val lastReply = grouped.lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps }
+                    ?.takeIf { it is ChatFeed.Item.Claude }?.let { feedKey(it) }
+                val stepsOn = draft.isBlank() && s.state == SessionState.IDLE && s.question == null
+                items(grouped, key = { feedKey(it) }) { it ->
                     when (it) {
                         // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
                         is ChatFeed.Item.Mine -> MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
-                        is ChatFeed.Item.Claude -> ClaudeBubble(it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn)
+                        is ChatFeed.Item.Claude -> ClaudeBubble(
+                            it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
+                            withSteps = stepsOn && feedKey(it) == lastReply,
+                            onStep = { t -> draft = t }, onSendStep = { t -> actions.send(PhonePrimary.Target.PROMPT, t) },
+                        )
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
                         is ChatFeed.Item.Steps -> StepsCard(it)
                     }
@@ -234,9 +244,9 @@ private fun Composer(
             val can = draft.isNotBlank() && s.question == null && images.isEmpty()
             QuotaLine(w, draft.trim(), canDefer = can, canTonight = can && canTonight, actions, onDeferred = onSent, night = canTonight)
         }
-        // Contratto 1.23: il prompt suggerito del terminale, solo per una sessione ferma. Il tocco lo mette nel campo, da
-        // ritoccare prima di mandarlo (Franz, 01/10 14:57: prima partiva subito e la pillola restava lì).
-        PhonePrimary.suggestion(s, draft)?.takeIf { image == null }?.let { sug -> SuggestionPill(sug, onEdit = { onDraft(sug) }) }
+        // Contratto 1.23: il prompt suggerito del terminale, solo per una sessione ferma: attenuato nel campo vuoto, come
+        // dopo ❯ nel terminale, e «Usa» lo mette nel campo da ritoccare (design 01/10, variante C; prima era una pillola).
+        val sug = PhonePrimary.suggestion(s, draft)?.takeIf { image == null }
         // Frasi rapide (piano 30/09, Task 6): stesse mosse del suggerito, solo senza una domanda aperta.
         if (phrases.isNotEmpty() && draft.isBlank() && image == null && s.question == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -261,10 +271,14 @@ private fun Composer(
         // Allegato e invio dentro il campo, centrati sulla sua altezza (Franz, 30/09 22:13).
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt)) },
+            placeholder = {
+                if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
+                else Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt))
+            },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
-            trailingIcon = {
+            trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
                 val size = Modifier.padding(end = 4.dp).size(44.dp)
                 when (mode) {
@@ -281,7 +295,7 @@ private fun Composer(
                         Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
                     }
                 }
-            },
+            } },
         )
     }
 }
@@ -318,6 +332,19 @@ private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
         modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+    }
+}
+
+/** Un consiglio sotto la risposta: «↳» e il testo nel colore delle azioni; tocco = nel campo, pressione lunga = invio. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NextStep(text: String, onEdit: () -> Unit, onSend: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).combinedClickable(onClick = onEdit, onLongClick = onSend).padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("↳", style = MaterialTheme.typography.bodyLarge, color = CmColors.stale)
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = CmColors.actionIcon)
     }
 }
 
@@ -589,14 +616,23 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
 /** L'esito di un turno come fumetto di Claude, con Copia e Ascolta sotto (come nell'app nativa, senza fissa e dirama). */
 @Composable
 private fun ClaudeBubble(
-    text: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit, cut: Boolean = false, turn: TranscriptTurn? = null,
+    raw: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit, cut: Boolean = false, turn: TranscriptTurn? = null,
+    /** Mostra i consigli della riga `Prossimi:` (solo l'ultima risposta); la riga non si vede mai nel testo. */
+    withSteps: Boolean = false, onStep: (String) -> Unit = {}, onSendStep: (String) -> Unit = {},
 ) {
+    val parsed = it.pixelbox.cmwatch.rules.NextSteps.parse(raw)
+    val text = parsed.text
     val clip = LocalClipboardManager.current
     // Claude a tutta larghezza, senza fumetto, come nell'app nativa (Franz, 30/09 22:17: «non limitiamo nei balloon»).
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                // Variante C: «Prossimi» e i consigli in colonna; tocco = nel campo, pressione lunga = invio.
+                if (withSteps && parsed.steps.isNotEmpty()) Column(Modifier.padding(top = 2.dp)) {
+                    Text(stringResource(R.string.next_steps), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+                    parsed.steps.forEach { step -> NextStep(step, onEdit = { onStep(step) }, onSend = { onSendStep(step) }) }
+                }
                 if (cut) Text(stringResource(R.string.text_cut), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
                 // Il costo del turno sull'ultima voce: durata e token scritti (quelli letti comprendono la cache).
                 turn?.let { t ->
