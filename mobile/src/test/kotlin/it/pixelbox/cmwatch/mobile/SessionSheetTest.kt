@@ -75,4 +75,10 @@ class SessionSheetTest {
             }
         }
     }
+
+    /** Sessione ferma con le frasi rapide del progetto sopra la barra. */
+    @Test fun sheetQuickPhrases() {
+        val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = null)
+        paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, phrases = listOf("continua", "esegui i test", "fai il commit e il push")) } }
+    }
 }

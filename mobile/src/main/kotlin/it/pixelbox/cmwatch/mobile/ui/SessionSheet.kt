@@ -106,6 +106,8 @@ fun SessionSheet(
     loadingFeed: Boolean = false,
     /** La finestra di 5 ore dell'account della sessione sta finendo (`QuotaWarning`); null = nessun avviso. */
     quota: QuotaWarning.Warn? = null,
+    /** Le frasi rapide del progetto (`QuickPhrases`), come chip sopra la barra. */
+    phrases: List<String> = emptyList(),
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -191,7 +193,7 @@ fun SessionSheet(
                     }
                 }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases)
     }
 }
 
@@ -203,7 +205,7 @@ fun SessionSheet(
 @Composable
 private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
-    quota: QuotaWarning.Warn? = null,
+    quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(),
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     val image = images.firstOrNull()
@@ -225,6 +227,12 @@ private fun Composer(
         }
         // Contratto 1.23: il prompt suggerito del terminale come chip; tocco = manda, pressione lunga = nel campo.
         s.suggestion?.takeIf { draft.isBlank() && image == null }?.let { sug -> SuggestionPill(sug, onSend = { actions.send(PhonePrimary.Target.PROMPT, sug); onSent() }, onEdit = { onDraft(sug) }) }
+        // Frasi rapide (piano 30/09, Task 6): stesse mosse del suggerito, solo senza una domanda aperta.
+        if (phrases.isNotEmpty() && draft.isBlank() && image == null && s.question == null) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                phrases.forEach { p -> PhraseChip(p, onSend = { actions.send(PhonePrimary.Target.PROMPT, p); onSent() }, onEdit = { onDraft(p) }) }
+            }
+        }
         // Più immagini insieme (Franz, 30/09 23:04: l'ultima sostituiva la precedente), ognuna con la sua ×.
         if (images.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             images.forEach { uri ->
@@ -283,6 +291,18 @@ private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, ac
             TextButton(onClick = { actions.sendAtReset(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_at_reset), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
             TextButton(onClick = { actions.sendTonight(draft); onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_tonight), color = if (canDefer) CmColors.briefWarnInk else CmColors.text2) }
         }
+    }
+}
+
+/** Una frase rapida: chip tonale su una riga; tocco = manda, pressione lunga = nel campo. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
+    Surface(
+        color = CmColors.surfaceHigh, contentColor = CmColors.text, shape = MaterialTheme.shapes.large,
+        modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
+    ) {
+        Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
     }
 }
 

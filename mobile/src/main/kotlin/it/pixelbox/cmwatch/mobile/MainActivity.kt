@@ -413,7 +413,8 @@ class MainActivity : ComponentActivity() {
                                 android.widget.Toast.makeText(this@MainActivity, getString(R.string.night_added), android.widget.Toast.LENGTH_SHORT).show()
                             } },
                             overview = { open = null; tab = StartRoute.Tab.OVERVIEW },
-                        ), chat = rows, quota = quotaWarn, choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
+                        ), chat = rows, quota = quotaWarn,
+                            phrases = state?.let { st -> it.pixelbox.cmwatch.rules.QuickPhrases.of(chatLog, st, session, session.suggestion) }.orEmpty(), choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
                             more = more && session.name == open,
