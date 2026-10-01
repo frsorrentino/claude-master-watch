@@ -136,7 +136,7 @@ private fun Header(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M, interac
 
 /** La striscia: quattro colonne uguali, l'arco nella prima, i dati nelle altre, tutto centrato. */
 @Composable
-private fun Strip(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M) {
+private fun ColumnScope.Strip(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M) {
     val size = LocalSize.current
     val body = size.height.value - 2 * m.padV - m.headerHeight
     val ring = minOf(m.ring.toFloat(), body - 2).coerceAtLeast(24f).toInt()
