@@ -107,7 +107,7 @@ internal fun WidgetContent(cards: List<WidgetModel.Card>, config: WidgetModel.Co
             }
             return@Column
         }
-        if (m.ticker) Strip(main, ink, m) else Tall(cards, ink, m, size.height.value, interactive)
+        if (m.ticker) Strip(main, ink, m) else Tall(cards, ink, m, size.width.value, size.height.value, interactive)
     }
 }
 
@@ -142,39 +142,55 @@ private fun ColumnScope.Strip(c: WidgetModel.Card, ink: Palette, m: WidgetLayout
     val ring = minOf(m.ring.toFloat(), body - 2).coerceAtLeast(24f).toInt()
     Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
         Box(GlanceModifier.defaultWeight(), contentAlignment = Alignment.Center) { Ring(c, ink, m, ring) }
-        c.columns.take(3).forEach { (metric, v) -> Kpi(metric, v, ink, m) }
+        c.columns.take(3).forEach { (metric, v) -> Kpi(metric, v, ink, m, labels = true) }
     }
 }
 
-/** Più alto: anello e card dei dati, poi la barra «Adesso», l'esito e le sessioni vive dove c'è posto. */
+/**
+ * Più alto: lo stesso schema della striscia in grande (anello e colonne dei dati), poi la barra «Adesso», l'esito e le
+ * sessioni vive dove c'è posto; il blocco sta al centro dell'altezza. Stretto (sotto 300 dp) l'anello va sopra e le
+ * colonne sotto; le etichette si tolgono quando la colonna è più stretta della parola, come in ads-widget.
+ */
 @Composable
-private fun Tall(cards: List<WidgetModel.Card>, ink: Palette, m: WidgetLayout.M, height: Float, interactive: Boolean) {
+private fun ColumnScope.Tall(cards: List<WidgetModel.Card>, ink: Palette, m: WidgetLayout.M, width: Float, height: Float, interactive: Boolean) {
     val c = cards.first()
-    Spacer(GlanceModifier.height(m.headerBottom.dp))
-    Row(GlanceModifier.fillMaxWidth().height((m.ring + 4).dp), verticalAlignment = Alignment.CenterVertically) {
-        Ring(c, ink, m, m.ring)
-        Spacer(GlanceModifier.width((6 * m.sf).dp))
-        c.columns.filter { it.first != Metric.OUTCOME }.take(3).forEach { (metric, v) -> KpiCard(metric, v, ink, m) }
+    val tiles = c.columns.filter { it.first != Metric.OUTCOME }.take(3)
+    val narrow = width < 300
+    val inner = width - 2 * m.padH
+    val column = if (narrow) inner / tiles.size.coerceAtLeast(1) else inner / (tiles.size + 1)
+    val labels = column >= 80
+    val ring = if (narrow) minOf(m.ring.toFloat(), (height - 2 * m.padV - m.headerHeight) * 0.45f).toInt() else m.ring
+    var left = height - 2 * m.padV - m.headerHeight - (if (narrow) ring + 56 else ring + 8)
+    Spacer(GlanceModifier.defaultWeight())
+    if (narrow) {
+        Box(GlanceModifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Ring(c, ink, m, ring) }
+        Spacer(GlanceModifier.height(m.gap.dp))
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { tiles.forEach { (metric, v) -> Kpi(metric, v, ink, m, labels) } }
+    } else {
+        Row(GlanceModifier.fillMaxWidth().height((ring + 8).dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(GlanceModifier.defaultWeight(), contentAlignment = Alignment.Center) { Ring(c, ink, m, ring) }
+            tiles.forEach { (metric, v) -> Kpi(metric, v, ink, m, labels) }
+        }
     }
-    var left = height - 2 * m.padV - m.headerHeight - m.headerBottom - (m.ring + 4)
     val counts = c.columns.filter { it.first in COUNTS }
     if (counts.size >= 2 && left >= 20) {
-        Spacer(GlanceModifier.height((6 * m.sf).dp)); NowBar(counts, ink); left -= 16
+        Spacer(GlanceModifier.height((8 * m.sf).dp)); NowBar(counts, ink, m); left -= 8 * m.sf + 8
     }
-    c.columns.firstOrNull { it.first == Metric.OUTCOME }?.second?.takeIf { it != WidgetModel.NONE && left >= 40 }?.let { text ->
-        Spacer(GlanceModifier.height((6 * m.sf).dp))
+    c.columns.firstOrNull { it.first == Metric.OUTCOME }?.second?.takeIf { it != WidgetModel.NONE && left >= 48 }?.let { text ->
+        Spacer(GlanceModifier.height((8 * m.sf).dp))
         Row(GlanceModifier.fillMaxWidth().padding(horizontal = (4 * m.sf).dp), verticalAlignment = Alignment.Top) {
             Image(ImageProvider(icon(Metric.OUTCOME)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(Metric.OUTCOME))), modifier = GlanceModifier.size(m.icon.dp))
             Spacer(GlanceModifier.width(m.gap.dp))
             // L'esito su due righe intere, mai tagliato con i puntini.
-            Text(text, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = (m.label + 2).sp), modifier = GlanceModifier.defaultWeight())
+            Text(text, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = m.label.sp), modifier = GlanceModifier.defaultWeight())
         }
-        left -= 44
+        left -= 8 * m.sf + 40
     }
-    val rowH = (22 * m.sf + 10 * m.sf + 2 * m.sf)
-    val rows = cards.drop(1).take(((left - 6) / rowH).toInt().coerceAtLeast(0))
-    if (rows.isNotEmpty()) Spacer(GlanceModifier.height((6 * m.sf).dp))
+    val rowH = 30f * m.sf + 8
+    val rows = cards.drop(1).take(((left - 8) / rowH).toInt().coerceAtLeast(0))
+    if (rows.isNotEmpty()) Spacer(GlanceModifier.height((8 * m.sf).dp))
     rows.forEach { SessionRow(it, ink, m, interactive) }
+    Spacer(GlanceModifier.defaultWeight())
 }
 
 private val COUNTS = setOf(Metric.WAITING, Metric.WORKING, Metric.IDLE)
@@ -190,7 +206,8 @@ private fun Ring(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M, size: Int
     val outer = c.arcPct?.let { if (c.arcLabel == WidgetModel.ARC_CTX) ink.context(it) else ink.quota(it) } ?: ink.track
     val week = ink.metric(Metric.WEEK)
     val bmp = remember(c.arcPct, c.innerPct, outer, week, px, m.gauge, m.ringStroke) {
-        rings(px, c.arcPct, outer, c.innerPct, week, ink.track, if (m.gauge) 240f else 360f, m.ringStroke * px / size.toFloat())
+        // Nella striscia un arco solo come in ads-widget: con l'anello della settimana il valore non ci stava.
+        rings(px, c.arcPct, outer, if (m.gauge) null else c.innerPct, week, ink.track, if (m.gauge) 240f else 360f, m.ringStroke * px / size.toFloat())
     }
     Box(GlanceModifier.size(size.dp), contentAlignment = Alignment.Center) {
         Image(ImageProvider(bmp), null, modifier = GlanceModifier.fillMaxSize())
@@ -219,43 +236,33 @@ private fun Value(v: String, size: Int, ink: Palette) {
     }
 }
 
-/** Una colonna della striscia: icona e numero sulla stessa riga, etichetta sotto, centrate. */
+/**
+ * Una colonna come in ads-widget, in ogni taglia: icona e numero sulla stessa riga, etichetta in grassetto sotto, tutto
+ * centrato. Senza posto per la parola l'etichetta non c'è (mai tagliata con i puntini).
+ */
 @Composable
-private fun RowScope.Kpi(metric: Metric, v: String, ink: Palette, m: WidgetLayout.M) {
+private fun RowScope.Kpi(metric: Metric, v: String, ink: Palette, m: WidgetLayout.M, labels: Boolean) {
     val ctx = LocalContext.current
     Column(GlanceModifier.defaultWeight().padding(horizontal = (2 * m.sf).dp), horizontalAlignment = Alignment.CenterHorizontally, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(ImageProvider(icon(metric)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(metric))), modifier = GlanceModifier.size(m.icon.dp))
             Spacer(GlanceModifier.width(m.gap.dp))
-            if (metric == Metric.OUTCOME) Text(v, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = m.label.sp, fontWeight = FontWeight.Medium))
+            if (metric == Metric.OUTCOME) Text(v, maxLines = 2, style = TextStyle(color = ColorProvider(ink.text), fontSize = m.label.sp, fontWeight = FontWeight.Bold))
             else Value(v, m.value, ink)
         }
-        Text(ctx.getString(metricShort(metric)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = m.label.sp, fontWeight = FontWeight.Medium))
-    }
-}
-
-/** Una card dei dati più in alto, come la KpiCard di ads-widget: icona ed etichetta sopra, numero sotto. */
-@Composable
-private fun RowScope.KpiCard(metric: Metric, v: String, ink: Palette, m: WidgetLayout.M) {
-    val ctx = LocalContext.current
-    Column(GlanceModifier.defaultWeight().padding(horizontal = (2 * m.sf).dp), verticalAlignment = Alignment.CenterVertically) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(ImageProvider(icon(metric)), null, colorFilter = ColorFilter.tint(ColorProvider(ink.metric(metric))), modifier = GlanceModifier.size(m.icon.dp))
-            Spacer(GlanceModifier.width(m.gap.dp))
-            Text(ctx.getString(metricShort(metric)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = m.label.sp, fontWeight = FontWeight.Medium))
-        }
-        Spacer(GlanceModifier.height(m.gap.dp))
-        Value(v, m.value, ink)
+        if (labels) Text(ctx.getString(metricShort(metric)), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text2), fontSize = m.label.sp, fontWeight = FontWeight.Bold))
     }
 }
 
 /** «Adesso» come nella Panoramica: la barra a segmenti nei colori dei badge. */
 @Composable
-private fun NowBar(counts: List<Pair<Metric, String>>, ink: Palette) {
+private fun NowBar(counts: List<Pair<Metric, String>>, ink: Palette, m: WidgetLayout.M) {
     val n = counts.map { it.first to (it.second.toIntOrNull() ?: 0) }
     val colors = n.map { ink.metric(it.first) }
     val bmp = remember(n, colors) { segments(n.map { ink.metric(it.first) to it.second }, ink.track) }
-    Image(ImageProvider(bmp), null, modifier = GlanceModifier.fillMaxWidth().height(8.dp))
+    // Tutta la larghezza: senza FillBounds l'immagine teneva le sue proporzioni e restava stretta al centro.
+    Image(ImageProvider(bmp), null, contentScale = androidx.glance.layout.ContentScale.FillBounds,
+        modifier = GlanceModifier.fillMaxWidth().height((7 * m.sf).dp).padding(horizontal = (4 * m.sf).dp))
 }
 
 /** Una sessione viva come una riga campagna di ads-widget: pallino dello stato, nome, contesto ed età del turno. */
