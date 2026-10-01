@@ -34,6 +34,9 @@ object WidgetModel {
     const val NONE = "–"
     const val MAX_COLUMNS = 3
 
+    /** Il titolo della testata con l'iniziale maiuscola (Franz, 01/10 15:51): «penguin» → «Penguin». */
+    fun heading(title: String): String = title.replaceFirstChar { it.titlecase() }
+
     fun defaults(mode: Mode): List<Metric> = when (mode) {
         Mode.ACCOUNT -> listOf(Metric.WEEK, Metric.WORKING, Metric.WAITING)
         Mode.SESSION -> listOf(Metric.TURN_AGE, Metric.OUTCOME, Metric.WEEK)

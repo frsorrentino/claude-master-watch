@@ -64,4 +64,11 @@ class WidgetModelTest {
         assertEquals(WorkPanel.Seg.WORKING, board.first { it.session == "atlas-shop" }.seg)
         assertNull(board.first().seg)
     }
+
+    /** Franz, 01/10 15:51: il titolo della testata con l'iniziale maiuscola («Penguin», «Personal»). */
+    @Test fun headingStartsWithACapital() {
+        assertEquals("Penguin", WidgetModel.heading("penguin"))
+        assertEquals("Atlas-shop", WidgetModel.heading("atlas-shop"))
+        assertEquals("", WidgetModel.heading(""))
+    }
 }

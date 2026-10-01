@@ -119,7 +119,7 @@ private fun Header(c: WidgetModel.Card, ink: Palette, m: WidgetLayout.M, interac
         verticalAlignment = Alignment.CenterVertically) {
         Text("▶", style = TextStyle(color = ColorProvider(ink.accent), fontSize = m.arrow.sp))
         Spacer(GlanceModifier.width((2 * m.sf).dp))
-        Text(c.title.ifEmpty { ctx.getString(R.string.app_name) }, maxLines = 1,
+        Text(WidgetModel.heading(c.title.ifEmpty { ctx.getString(R.string.app_name) }), maxLines = 1,
             style = TextStyle(color = ColorProvider(ink.text), fontSize = m.title.sp, fontWeight = FontWeight.Bold), modifier = GlanceModifier.defaultWeight())
         c.updatedAt?.let {
             Text(HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())), maxLines = 1, style = TextStyle(color = ColorProvider(ink.text), fontSize = m.time.sp))
