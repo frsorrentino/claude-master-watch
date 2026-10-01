@@ -197,6 +197,8 @@ class MainActivity : ComponentActivity() {
                 language = AppLanguage.fromTags(localeManager.applicationLocales.toLanguageTags()),
                 // Il sistema ricrea l'activity nella lingua nuova; con «come il telefono» la lista vuota torna a seguirlo.
                 onLanguage = { localeManager.applicationLocales = android.os.LocaleList.forLanguageTags(it.tag) },
+                voices = speech.voices.collectAsStateWithLifecycle().value, voice = speech.voice.collectAsStateWithLifecycle().value,
+                onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
             )
             return
         }
@@ -434,6 +436,7 @@ class MainActivity : ComponentActivity() {
                             } ?: false },
                             overview = { overviewSheet = true },
                             // Proposta approvata (01/10 21:19): la master legge la sessione e risponde nella sua chat.
+                            speakFrom = { t, i -> speech.speakBlocks(t, i) },
                             askMaster = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.takeIf { m -> m.name != session.name }?.let { m -> {
                                 scope.launch {
                                     val text = getString(R.string.ask_master_prompt, session.name)
@@ -460,7 +463,8 @@ class MainActivity : ComponentActivity() {
                         )
                         }
         }
-        CompositionLocalProvider(LocalSpeaking provides speaking) {
+        val speakingBlock by speech.block.collectAsStateWithLifecycle()
+        CompositionLocalProvider(LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),

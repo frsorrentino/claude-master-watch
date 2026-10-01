@@ -290,4 +290,8 @@
     <string name="mw_state_wait">ti aspetta</string>
     <string name="mw_state_idle">ferma</string>
     <string name="mw_state_gone">chiusa</string>
+    <string name="voice">Voce</string>
+    <string name="voice_default">Predefinita del telefono</string>
+    <string name="voice_try">Prova</string>
+    <string name="voice_sample">Ciao Franz, questa è la voce che leggerà le risposte.</string>
 </resources>

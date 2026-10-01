@@ -288,4 +288,8 @@
     <string name="mw_state_wait">waiting for you</string>
     <string name="mw_state_idle">idle</string>
     <string name="mw_state_gone">closed</string>
+    <string name="voice">Voice</string>
+    <string name="voice_default">Phone default</string>
+    <string name="voice_try">Try</string>
+    <string name="voice_sample">Hi Franz, this is the voice that will read the replies.</string>
 </resources>

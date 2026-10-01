@@ -27,8 +27,11 @@ fun SettingsScreen(
     host: String?, phoneName: String, watchName: String?, watchPending: Boolean, demo: Boolean, version: String,
     onRepair: () -> Unit, onDemo: (Boolean) -> Unit, onNotifications: () -> Unit, onPrivacy: () -> Unit,
     language: AppLanguage.Choice = AppLanguage.Choice.SYSTEM, onLanguage: (AppLanguage.Choice) -> Unit = {},
+    /** La voce che legge (Franz, 02/10 00:01): le voci italiane del motore, quella scelta (null = predefinita), la prova. */
+    voices: List<String> = emptyList(), voice: String? = null, onVoice: (String?) -> Unit = {}, onTryVoice: () -> Unit = {},
 ) {
     var choosing by remember { mutableStateOf(false) }
+    var choosingVoice by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
@@ -68,6 +71,12 @@ fun SettingsScreen(
                         colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
                     )
                     ListItem(
+                        headlineContent = { Text(stringResource(R.string.voice)) },
+                        supportingContent = { Text(voice ?: stringResource(R.string.voice_default)) },
+                        modifier = Modifier.clickable { choosingVoice = true },
+                        colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
+                    )
+                    ListItem(
                         headlineContent = { Text(stringResource(R.string.demo_mode)) }, supportingContent = { Text(stringResource(R.string.demo_mode_sub)) },
                         trailingContent = { Switch(checked = demo, onCheckedChange = onDemo) },
                         colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
@@ -78,6 +87,27 @@ fun SettingsScreen(
             TextButton(onClick = onPrivacy) { Text(stringResource(R.string.privacy), color = CmColors.actionIcon) }
             Text(stringResource(R.string.version, version), color = CmColors.text2, style = MaterialTheme.typography.bodySmall)
         }
+    }
+    if (choosingVoice) {
+        AlertDialog(
+            onDismissRequest = { choosingVoice = false },
+            confirmButton = { TextButton(onClick = onTryVoice) { Text(stringResource(R.string.voice_try), color = CmColors.actionIcon) } },
+            dismissButton = { TextButton(onClick = { choosingVoice = false }) { Text(stringResource(R.string.close), color = CmColors.actionIcon) } },
+            title = { Text(stringResource(R.string.voice)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    (listOf<String?>(null) + voices).forEach { v ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onVoice(v) }.padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            RadioButton(selected = v == voice, onClick = null)
+                            Text(v ?: stringResource(R.string.voice_default), color = CmColors.text)
+                        }
+                    }
+                }
+            },
+        )
     }
     if (choosing) {
         AlertDialog(

@@ -89,6 +89,8 @@ data class SheetActions(
     val overview: () -> Unit = {},
     /** «Fai controllare alla master» dal menu ⋮; null sulla master stessa o senza master aperta. */
     val askMaster: (() -> Unit)? = null,
+    /** La lettura a voce da un paragrafo toccato (Franz, 02/10 00:01: «come in orologio»). */
+    val speakFrom: (text: String, block: Int) -> Unit = { _, _ -> },
 )
 
 /** Un messaggio della chat con il suo stato e, se non è stato consegnato, il motivo (`ChatRules.status`/`reason`). */
@@ -178,6 +180,7 @@ fun SessionSheet(
                             it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
                             withSteps = stepsOn && feedKey(it) == lastReply,
                             onStep = { t -> draft = t }, onSendStep = { t -> actions.send(PhonePrimary.Target.PROMPT, t) },
+                            onSpeakFrom = actions.speakFrom,
                         )
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
                         is ChatFeed.Item.Steps -> StepsCard(it)
@@ -644,6 +647,7 @@ private fun ClaudeBubble(
     raw: String, at: Long?, ttsMinChars: Int, onSpeak: (String) -> Unit, cut: Boolean = false, turn: TranscriptTurn? = null,
     /** Mostra i consigli della riga `Prossimi:` (solo l'ultima risposta); la riga non si vede mai nel testo. */
     withSteps: Boolean = false, onStep: (String) -> Unit = {}, onSendStep: (String) -> Unit = {},
+    onSpeakFrom: (String, Int) -> Unit = { _, _ -> },
 ) {
     val parsed = it.pixelbox.cmwatch.rules.NextSteps.parse(raw)
     val text = parsed.text
@@ -652,7 +656,20 @@ private fun ClaudeBubble(
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                // Durante la lettura a voce il testo si mostra a paragrafi, quello letto in evidenza; il tocco su un paragrafo
+                // fa ripartire la lettura da lì (Franz, 02/10 00:01: «come in orologio»).
+                if (LocalSpeaking.current == text) {
+                    val blocks = LocalBlocksOf.current(text)
+                    val cur = LocalSpeakingBlock.current
+                    blocks.forEachIndexed { i, b ->
+                        Text(
+                            linked(b.text), style = MaterialTheme.typography.bodyLarge, color = if (i == cur) CmColors.text else CmColors.text2,
+                            modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                                .background(if (i == cur) CmColors.surfaceHigh else androidx.compose.ui.graphics.Color.Transparent)
+                                .clickable { onSpeakFrom(text, i) }.padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
+                    }
+                } else Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
                 // Variante C: «Prossimi» e i consigli in colonna; tocco = nel campo, pressione lunga = invio.
                 if (withSteps && parsed.steps.isNotEmpty()) Column(Modifier.padding(top = 2.dp)) {
                     Text(stringResource(R.string.next_steps), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
@@ -978,6 +995,12 @@ private const val MAX_IMAGES = 5
 
 /** Il testo che la voce sta leggendo: il suo tasto diventa Stop. Fornito da `MainActivity` da `Speech.speaking`. */
 val LocalSpeaking = androidx.compose.runtime.staticCompositionLocalOf<String?> { null }
+
+/** Il paragrafo che la voce sta leggendo (`Speech.block`) e come dividere un testo in paragrafi (`Speech.blocksOf`). */
+val LocalSpeakingBlock = androidx.compose.runtime.staticCompositionLocalOf<Int?> { null }
+val LocalBlocksOf = androidx.compose.runtime.staticCompositionLocalOf<(String) -> List<it.pixelbox.cmwatch.rules.AnswerText.Block>> {
+    { t: String -> listOf(it.pixelbox.cmwatch.rules.AnswerText.Block(it.pixelbox.cmwatch.rules.AnswerText.Kind.PARA, t)) }
+}
 
 /**
  * La riga dal vivo in fondo alla chat, come nell'app nativa (Franz, 30/09 23:06): asterisco che gira nel corallo di
