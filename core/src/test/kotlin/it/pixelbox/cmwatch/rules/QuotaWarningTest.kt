@@ -52,4 +52,16 @@ class QuotaWarningTest {
         val ledger = base.sessions.first { it.name == "ledger-api" }
         assertNull(QuotaWarning.of(st, ledger, emptyList(), now))
     }
+
+    // Segnalazione 01/10 21:58: «mostra 1% e mi avvisa già che a questo ritmo non arriva alle 02:50?». Con la finestra
+    // appena ripartita due campioni vicini danno un ritmo enorme: il giudizio aspetta mezz'ora di campioni e il 20 %.
+    @Test fun noPaceWarningOnTooLittleEvidence() {
+        val p = base.quota.getValue("personal")
+        val early = listOf(QuotaHistory.Sample(now, 0), QuotaHistory.Sample(now + 120, 1))
+        assertNull(QuotaWarning.of(personal(p.copy(h5 = 1)), atlas, early, now + 120))
+        val short = listOf(QuotaHistory.Sample(now, 10), QuotaHistory.Sample(now + 600, 30))
+        assertNull(QuotaWarning.of(personal(p.copy(h5 = 30)), atlas, short, now + 600))
+        val low = listOf(QuotaHistory.Sample(now, 2), QuotaHistory.Sample(now + 3600, 15))
+        assertNull(QuotaWarning.of(personal(p.copy(h5 = 15)), atlas, low, now + 3600))
+    }
 }

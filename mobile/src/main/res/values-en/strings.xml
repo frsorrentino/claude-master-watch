@@ -235,4 +235,7 @@
     </plurals>
     <string name="steps_open">Show the steps</string>
     <string name="steps_close">Hide the steps</string>
+    <string name="quota_write_hint">Write the message: you can send it when the window resets or tonight.</string>
+    <string name="quota_write_hint_reset">Write the message: you can send it when the window resets.</string>
+    <string name="outcome_label">Outcome</string>
 </resources>

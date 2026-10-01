@@ -11,6 +11,13 @@ import it.pixelbox.cmwatch.contract.State
 object QuotaWarning {
     const val THRESHOLD = 90
 
+    /**
+     * Il giudizio sul ritmo aspetta prove sufficienti (segnalazione 01/10 21:58: all'1 % avvisava già): campioni che
+     * coprono almeno mezz'ora e la finestra almeno al 20 %. Prima, due campioni vicini fanno sembrare enorme qualunque ritmo.
+     */
+    const val MIN_SPAN_S = 30 * 60L
+    const val MIN_PCT = 20
+
     data class Warn(val account: String, val pct: Int, val resetAt: Long, val projected: Boolean)
 
     /** `samples`: i campioni delle 5 ore dell'account della sessione. */
@@ -20,7 +27,11 @@ object QuotaWarning {
         val pct = q.h5 ?: return null
         val reset = q.resetH5?.takeIf { it > now } ?: return null
         if (pct >= THRESHOLD) return Warn(name, pct, reset, projected = false)
-        val projected = QuotaHistory.pace(samples, reset, now).projected ?: return null
+        if (pct < MIN_PCT) return null
+        val pace = QuotaHistory.pace(samples, reset, now)
+        val span = pace.points.takeIf { it.size >= 2 }?.let { it.last().ts - it.first().ts } ?: 0
+        if (span < MIN_SPAN_S) return null
+        val projected = pace.projected ?: return null
         return if (projected >= 100) Warn(name, pct, reset, projected = true) else null
     }
 }

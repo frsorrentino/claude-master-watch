@@ -232,7 +232,7 @@ private fun Composer(
     Column(bar, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         quota?.let { w ->
             val can = draft.isNotBlank() && s.question == null && images.isEmpty()
-            QuotaLine(w, draft.trim(), canDefer = can, canTonight = can && canTonight, actions, onDeferred = onSent)
+            QuotaLine(w, draft.trim(), canDefer = can, canTonight = can && canTonight, actions, onDeferred = onSent, night = canTonight)
         }
         // Contratto 1.23: il prompt suggerito del terminale, solo per una sessione ferma. Il tocco lo mette nel campo, da
         // ritoccare prima di mandarlo (Franz, 01/10 14:57: prima partiva subito e la pillola restava lì).
@@ -291,15 +291,20 @@ private fun Composer(
  * scritto (alla ripartenza o stanotte). Senza testo nel campo i bottoni restano spenti; tocco sulla riga = Panoramica.
  */
 @Composable
-private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, canTonight: Boolean, actions: SheetActions, onDeferred: () -> Unit) {
+private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, canTonight: Boolean, actions: SheetActions, onDeferred: () -> Unit, night: Boolean = false) {
     Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(CmColors.briefWarn).clickable(onClick = actions.overview).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 2.dp)) {
         Text(
             stringResource(if (w.projected) R.string.quota_warn_pace else R.string.quota_warn, w.pct, hhmm(w.resetAt)),
             style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarnInk,
         )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = { if (actions.sendAtReset(draft)) onDeferred() }, enabled = canDefer) { Text(stringResource(R.string.send_at_reset), color = CmColors.briefWarnInk.copy(alpha = if (canDefer) 1f else 0.45f)) }
-            TextButton(onClick = { if (actions.sendTonight(draft)) onDeferred() }, enabled = canTonight) { Text(stringResource(R.string.send_tonight), color = CmColors.briefWarnInk.copy(alpha = if (canTonight) 1f else 0.45f)) }
+        // Senza testo nel campo, al posto di due bottoni spenti e illeggibili sull'ambra (segnalazione 01/10 21:58) una riga
+        // che dice cosa si può fare; scritto il testo, compaiono i bottoni.
+        if (draft.isBlank()) Text(
+            stringResource(if (night) R.string.quota_write_hint else R.string.quota_write_hint_reset), style = MaterialTheme.typography.bodySmall, color = CmColors.briefWarnInk,
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+        ) else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            if (canDefer) TextButton(onClick = { if (actions.sendAtReset(draft)) onDeferred() }) { Text(stringResource(R.string.send_at_reset), color = CmColors.briefWarnInk, fontWeight = FontWeight.SemiBold) }
+            if (canTonight) TextButton(onClick = { if (actions.sendTonight(draft)) onDeferred() }) { Text(stringResource(R.string.send_tonight), color = CmColors.briefWarnInk, fontWeight = FontWeight.SemiBold) }
         }
     }
 }
@@ -591,7 +596,7 @@ private fun ClaudeBubble(
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
                 if (cut) Text(stringResource(R.string.text_cut), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
                 // Il costo del turno sull'ultima voce: durata e token scritti (quelli letti comprendono la cache).
                 turn?.let { t ->
