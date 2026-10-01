@@ -13,16 +13,16 @@ Ogni riga si spunta con data ed esito visto sul telefono o al polso; una riga ch
 - [ ] 8. Demo da installazione pulita, senza PC: tutte le schermate, fascia «Demo» sempre visibile.
 - [ ] 9. «Riduci animazioni» acceso: nessun movimento, stati finali subito.
 - [ ] Piano B: coda della notte modificabile (R3), resoconto della notte (R4), Condividi (R5), riserva di Telegram (R6).
-- [ ] 10. Panoramica con i due account e il contesto delle sessioni; lingua cambiata da Impostazioni.
-- [ ] 11. Prompt dal telefono fino a «elaborato»: stati in ordine, testo che resta in chat, la chat che segue l'ultimo testo e si ferma se scorro su.
-- [ ] 12. Modello ed effort cambiati dalla testata della scheda.
-- [ ] 13. Simbolo della riga dal vivo che pulsa mentre la sessione elabora; fermo con «Riduci animazioni».
-- [ ] 14. Coda «Ti aspettano»: dalla card e dalla notifica; dopo una risposta la domanda successiva, nessuna saltata.
-- [ ] 15. Swipe laterale fra le sessioni nella scheda, nell'ordine della regia.
-- [ ] 16. Avviso quota sopra la barra; «Invia alla ripartenza» che parte una volta sola anche a telefono spento; «Manda stanotte» nella card Notte.
-- [ ] 17. Ricerca: «perche» trova «perché»; tocco sul risultato apre la sessione.
-- [ ] 18. Frasi rapide del progetto sopra la barra: tocco manda, pressione lunga nel campo.
-- [ ] 19. Widget nelle quattro taglie, configurazione alla posa, ↻, tocco su regia e sulle righe delle sessioni.
+- [x] 10. Panoramica con i due account e il contesto delle sessioni; lingua cambiata da Impostazioni. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 11. Prompt dal telefono fino a «elaborato»: stati in ordine, testo che resta in chat, la chat che segue l'ultimo testo e si ferma se scorro su. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 12. Modello ed effort cambiati dalla testata della scheda. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 13. Simbolo della riga dal vivo che pulsa mentre la sessione elabora; con le animazioni di sistema a 0 lampeggia e il contatore avanza. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 14. Coda «Ti aspettano»: dalla card e dalla notifica; dopo una risposta la domanda successiva, nessuna saltata. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 15. Swipe laterale fra le sessioni nella scheda, nell'ordine della regia. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 16. Avviso quota sopra la barra; «Invia alla ripartenza» che parte una volta sola anche a telefono spento; «Manda stanotte» nella card Notte. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 17. Ricerca: «perche» trova «perché»; tocco sul risultato apre la sessione. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 18. Frasi rapide del progetto sopra la barra: tocco manda, pressione lunga nel campo. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
+- [x] 19. Widget nelle quattro taglie, configurazione alla posa, ↻, tocco su regia e sulle righe delle sessioni. — 01/10 17:23: ok dal vivo (Franz, dal telefono, riferito dalla master).
 
 ## Difetti trovati dal vivo
 
