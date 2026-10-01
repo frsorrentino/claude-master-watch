@@ -1,17 +1,23 @@
 """Icona dell'app «>_ nel quadrante» (scelta da Franz il 17-18/09/2026: variante A5, simboli al 72 %, senza disco di fondo).
 Un'unica geometria, la stessa di tools/promo/remotion/src/film/LogoMark.tsx, per i quattro vettoriali Android e per l'SVG:
   python3 docs/icona/gen_icona.py        riscrive wear/src/main/res/drawable/{ic_launcher_fg,ic_launcher_mono,ic_app_mono,ic_tile}.xml
-Quadrante: arco aperto in basso (130°→410°, senso orario dalle ore 3), riempito al 70 %, traccia più scura dietro."""
+                                         e mobile/src/main/res/drawable/{ic_launcher_fg,ic_launcher_mono}.xml
+Quadrante: arco aperto in basso (130°→410°, senso orario dalle ore 3), riempito al 70 %, traccia più scura dietro.
+Sul telefono l'arco è più spesso (Franz, 01/10 21:21: «come quello dell'icona di ads-widget»): lo spessore è il 19 % del
+raggio esterno, misurato sull'icona monocroma di ads-widget (54 px su 300, 17 px su 16 al confronto disegnato); il bordo esterno resta dov'è."""
 import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RES = ROOT / "wear/src/main/res/drawable"
+RES_PHONE = ROOT / "mobile/src/main/res/drawable"
+THICK = 0.19 * 43   # spessore dell'arco del telefono, in unità u: il 19 % del raggio esterno
 CORAL, TRACK = "#FFD97757", "#FF3A404C"
 
-def mark(cx, cy, r_out, fg, track):
-    """Percorsi del segno con raggio esterno del quadrante r_out. Restituisce una lista di <path> (stringhe)."""
-    u = r_out / 43; g = 0.72 * u; w = 7.2 * g; yc = cy - 2 * u; r = 40.2 * u; aw = 5.6 * u
+def mark(cx, cy, r_out, fg, track, arc_u=5.6):
+    """Percorsi del segno con raggio esterno del quadrante r_out. Restituisce una lista di <path> (stringhe).
+    `arc_u`: spessore dell'arco in unità u; il raggio si accorcia di metà della differenza, così il bordo esterno resta fermo."""
+    u = r_out / 43; g = 0.72 * u; w = 7.2 * g; yc = cy - 2 * u; r = (40.2 - (arc_u - 5.6) / 2) * u; aw = arc_u * u
     def pt(deg): return cx + r * math.cos(math.radians(deg)), cy + r * math.sin(math.radians(deg))
     def arc(a0, a1, color):
         (x0, y0), (x1, y1) = pt(a0), pt(a1); large = 1 if (a1 - a0) > 180 else 0
@@ -27,9 +33,9 @@ def mark(cx, cy, r_out, fg, track):
                f'android:pathData="M{cx + 2 * g + w / 2:.3f},{y:.3f} L{cx + 23 * g - w / 2:.3f},{y:.3f}" />')
     return out
 
-def vector(name, comment, size_dp, viewport, paths):
+def vector(name, comment, size_dp, viewport, paths, res=RES):
     body = "\n".join("    " + p for p in paths)
-    (RES / name).write_text(f'''<?xml version="1.0" encoding="utf-8"?>
+    (res / name).write_text(f'''<?xml version="1.0" encoding="utf-8"?>
 <!-- {comment}
      Generato da docs/icona/gen_icona.py: non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -48,4 +54,8 @@ if __name__ == "__main__":
            24, 48, mark(24, 24, 21, "#FFFFFFFF", "#59FFFFFF"))
     vector("ic_tile.xml", "Icona della tile: segno blu notte in un cerchio del colore base, come le tile di sistema (Franz, 13/09 17:38).",
            48, 48, ['<path android:fillColor="#FFD3E3FD" android:pathData="M24,0 A24,24 0 1 1 23.9,0 Z" />'] + mark(24, 24, 16.5, "#FF0A2050", "#400A2050"))
+    vector("ic_launcher_fg.xml", "Primo piano dell'icona adattiva del telefono: «>_» corallo nel quadrante dall'arco spesso, su sfondo nero (@color/ic_bg). Il segno sta nella zona sicura (66 dp su 108).",
+           108, 108, mark(54, 54, 30, CORAL, TRACK, THICK), RES_PHONE)
+    vector("ic_launcher_mono.xml", "Livello monocromatico dell'icona adattiva del telefono (icone a tema): senza traccia, perché la tinta unica chiuderebbe il quadrante.",
+           108, 108, mark(54, 54, 30, "#FFFFFFFF", None, THICK), RES_PHONE)
     print("scritti:", *sorted(p.name for p in RES.glob("ic_launcher_*.xml")), "ic_app_mono.xml ic_tile.xml")
