@@ -45,6 +45,21 @@ class SlashTest {
             Slash.panel(cost, ok("sent /cost to kb\n\n   Session\n\n(the panel is still open on the PC)")))
     }
 
+    // Dal vivo 02/10 16:31 («il testo ricevuto è più lungo del necessario»): via le schede in testa, l'ingombro delle skill
+    // dei plugin e la freccia di scorrimento; restano costo, durate, modelli, cache e quota.
+    @Test fun panelDropsWhatThePhoneDoesNotNeed() {
+        val raw = "sent /cost to kb\n\nSettings  Status   Config   Usage   Stats\n   Session\n   Total cost:            \$0.42\n" +
+            "   Prompt cache (main):   12 requests · 98% of input tokens from cache\n" +
+            "   Plugin skill-listing footprint\n   What each plugin's skill descriptions add to the system prompt (cached input after the first turn).\n" +
+            "   alpha                       7 skills · ~300 tok/turn\n   beta                        1 skill · ~52 tok/turn\n" +
+            "   Total                       ~352 tok/turn\n   Current session\n                                          0% used\n" +
+            "   Resets 9pm (Europe/Rome)\n                                                        ↓"
+        assertEquals(
+            "Session\nTotal cost: \$0.42\nPrompt cache (main): 12 requests · 98% of input tokens from cache\nCurrent session\n0% used\nResets 9pm (Europe/Rome)",
+            Slash.panel(cost, ok(raw)),
+        )
+    }
+
     @Test fun noPanelWithoutOne() {
         assertNull(Slash.panel(cost, ok("sent /compact to kb")))
         assertNull(Slash.panel(cost, CmdResult("c1", ok = false, text = "kb is busy\n\nlater", at = 2)))

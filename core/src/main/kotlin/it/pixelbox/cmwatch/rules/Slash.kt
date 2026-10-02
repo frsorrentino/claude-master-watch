@@ -36,9 +36,21 @@ object Slash {
     fun panel(m: Sent, result: CmdResult?): String? {
         if (result?.ok != true || !m.text.startsWith("/")) return null
         return result.text.substringAfter("\n\n", "").lines()
-            .map { it.trim().replace(COLUMNS, " ") }.filter { it.isNotEmpty() }
+            .map { it.trim().replace(COLUMNS, " ") }.filter { it.isNotEmpty() && NOISE.none { n -> n.containsMatchIn(it) } }
             .joinToString("\n").ifEmpty { null }
     }
 
     private val COLUMNS = Regex("""\s{2,}""")
+
+    /**
+     * Le righe che al telefono non servono (dal vivo 02/10 16:31: «il testo ricevuto è più lungo del necessario»): le
+     * schede del pannello in testa, la freccia che dice che continua sotto, l'ingombro delle skill dei plugin.
+     */
+    private val NOISE = listOf(
+        Regex("""^Settings\b.*\bStatus\b.*\bConfig\b"""),
+        Regex("""^[↑↓]+$"""),
+        Regex("""^Plugin skill-listing footprint$"""),
+        Regex("""^What each plugin's skill descriptions"""),
+        Regex("""tok/turn$"""),
+    )
 }
