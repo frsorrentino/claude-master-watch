@@ -151,6 +151,7 @@
     <string name="goal">Goal</string>
     <string name="low_priority">low priority</string>
     <string name="low_priority_offered">low priority offered</string>
+    <string name="no_window">no window</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

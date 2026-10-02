@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Durations
+import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 
 import java.time.Instant
@@ -243,5 +244,13 @@ class SessionsLiveTest {
     @Test fun senzaIlTerminaleResterebbeTurnoInCorsoMaConLUltimoEsitoSotto() {
         val c = SessionsText.sheet(lavora, st.ts, "turno in corso", "a riposo", null, zone)
         assertEquals("turno in corso", c.title); assertEquals("piano consegna 1 pronto, 15 task", c.detail)
+    }
+
+    // Dal vivo 02/10 14:51: fable-director, con la finestra chiusa, sembrava chiusa ma accettava messaggi. È viva: lo si dice.
+    @Test fun unaSessioneSenzaFinestraLoDice() {
+        val viva = Session(id = "1", name = "kb", account = "personal", project = "p", state = SessionState.IDLE, since = 0)
+        assertEquals("senza finestra", SessionsText.window(viva.copy(attached = false), "senza finestra"))
+        assertNull(SessionsText.window(viva.copy(attached = true), "senza finestra"))
+        assertNull(SessionsText.window(viva.copy(state = SessionState.GONE), "senza finestra"))   // chiusa: niente da dire
     }
 }

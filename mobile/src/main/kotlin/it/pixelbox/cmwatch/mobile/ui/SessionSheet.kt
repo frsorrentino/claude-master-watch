@@ -914,6 +914,7 @@ private fun SheetHeader(
         val notes = listOfNotNull(
             SessionsText.goalLine(s, stringResource(R.string.goal)),
             SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
+            SessionsText.window(s, stringResource(R.string.no_window)),
         )
         notes.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 16.dp)) }
         Spacer(Modifier.height(8.dp))

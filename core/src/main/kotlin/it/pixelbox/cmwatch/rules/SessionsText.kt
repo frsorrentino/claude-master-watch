@@ -73,6 +73,12 @@ object SessionsText {
         else -> null
     }
 
+    /**
+     * La finestra del terminale chiusa con la sessione ancora viva (dal vivo 02/10 14:51: fable-director sembrava chiusa ma
+     * accettava messaggi): `label` se non c'è un terminale attaccato, null se c'è o se la sessione è chiusa davvero.
+     */
+    fun window(s: Session, label: String): String? = label.takeIf { !s.attached && s.state != SessionState.GONE }
+
     /** Contratto 1.16: «Obiettivo: <testo intero>» dato con /goal; null senza obiettivo o con testo vuoto. */
     fun goalLine(s: Session, label: String): String? = s.goal?.text?.trim()?.takeIf { it.isNotEmpty() }?.let { "$label: $it" }
 

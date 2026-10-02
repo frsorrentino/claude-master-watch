@@ -78,6 +78,7 @@ fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier =
     val cell = SessionsText.cell(s, now, stringResource(R.string.turn_running), stringResource(R.string.state_idle))
     val goal = SessionsText.goalLine(s, stringResource(R.string.goal))
     val priority = SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered))
+    val window = SessionsText.window(s, stringResource(R.string.no_window))
     val waiting = s.state == SessionState.WAITING || s.question != null
     val closed = s.state == SessionState.GONE
     Surface(
@@ -107,6 +108,8 @@ fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier =
             cell.detail?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2) }
             goal?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.briefLabel) }
             priority?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.waiting) }
+            // Finestra chiusa ma sessione viva (dal vivo 02/10 14:51): riceve ancora i messaggi.
+            window?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.text2) }
             if (!closed) s.context?.let { ContextBar(it, ModelText.short(s.model)) }
         }
     }
