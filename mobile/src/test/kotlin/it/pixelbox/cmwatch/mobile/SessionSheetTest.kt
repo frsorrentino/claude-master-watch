@@ -81,4 +81,25 @@ class SessionSheetTest {
         val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = null)
         paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, phrases = listOf("continua", "esegui i test", "fai il commit e il push")) } }
     }
+
+    // Casa A (mockup approvato da Franz, 02/10 07:38): esito della master con i consigli, Per te, In corso, quota.
+    @Test fun masterHomeA() = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null)
+        val reply = TranscriptEntry("a1", "assistant", "Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb · prova la casa dal vivo", st.ts - 600)
+        val hero = it.pixelbox.cmwatch.rules.MasterHome.hero(listOf(reply), m)
+        val q = st.sessions.first { it.question != null }
+        val rows = listOf(it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION, q.name, q.question!!.text, session = q.name))
+        val rings = listOf(
+            it.pixelbox.cmwatch.rules.PhoneOverview.Ring("personale", true, 3, 11, null, null),
+            it.pixelbox.cmwatch.rules.PhoneOverview.Ring("professionale", false, 0, 63, null, null, stale = true),
+        )
+        CmPhoneTheme(still = true) {
+            SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ ->
+                HeroCard(hero, m, {}, {}, {}, {})
+                ForYouCard(rows) {}
+                RunningList(it.pixelbox.cmwatch.rules.MasterHome.running(st.copy(sessions = st.sessions + m))) {}
+                QuotaBars(rings) {}
+            })
+        }
+    }
 }

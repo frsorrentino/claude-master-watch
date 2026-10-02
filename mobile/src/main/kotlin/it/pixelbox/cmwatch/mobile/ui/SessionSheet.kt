@@ -124,6 +124,11 @@ fun SessionSheet(
     top: (@Composable () -> Unit)? = null,
     /** La griglia di puntini dello stile tech dietro la chat (casa della master). */
     grid: Boolean = false,
+    /**
+     * Casa A (02/10): al posto della chat la pagina della master, con la stessa barra di scrittura. Riceve come mettere un
+     * testo nel campo e come mandarlo subito.
+     */
+    home: (@Composable ColumnScope.(onDraft: (String) -> Unit, onSend: (String) -> Unit) -> Unit)? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -159,6 +164,10 @@ fun SessionSheet(
         // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
         // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+        if (home != null) Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) { home({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) }) } else {
         top?.let { block ->
             androidx.compose.animation.AnimatedVisibility(visible = follow && !ime) {
                 Box(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) { block() }
@@ -229,6 +238,7 @@ fun SessionSheet(
                         }
                     }
                 }
+        }
         }
         Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight)
     }

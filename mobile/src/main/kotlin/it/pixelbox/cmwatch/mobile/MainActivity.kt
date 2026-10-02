@@ -24,6 +24,7 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -360,7 +361,7 @@ class MainActivity : ComponentActivity() {
         }
         // La pagina di una sessione (scheda e chat), usata dallo scorrimento fra le sessioni e dalla casa della master,
         // che le aggiunge «Per te» e il Quadro in cima (`top`).
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, top ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?) -> Unit = { session, pageEntries, home ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
@@ -462,7 +463,7 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            top = top, grid = top != null,
+                            home = home, grid = home != null,
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }
@@ -495,19 +496,28 @@ class MainActivity : ComponentActivity() {
                     val forYou = remember(st, events, chatLog, now, readReports.toList()) {
                         it.pixelbox.cmwatch.rules.MasterHome.forYou(st, events, chatLog, now, java.time.ZoneId.systemDefault(), readReports.toSet(), limit = Int.MAX_VALUE)
                     }
-                    val chips = PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.filter { it.name != masterName }
-                    val top: @Composable () -> Unit = {
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            ForYouCard(forYou.rows, onAction = forYouAction)
-                            QuadroStrip(model, chips, onOpen = { overviewSheet = true }, onSession = { n -> tab = StartRoute.Tab.SESSIONS; open = n })
-                        }
-                    }
                     val master = st.sessions.firstOrNull { it.name == masterName }
                     // Durante lo scorrimento da un'altra scheda la conversazione viva è un'altra: si mostra quella salvata.
-                    if (master != null) sessionPage(master, if (chatName == master.name) entries else feedCache[master.name].orEmpty(), top)
-                    else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState())) {
-                        top()
-                        Box(Modifier.padding(horizontal = 16.dp)) { MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } } }
+                    val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
+                    val running = remember(st) { it.pixelbox.cmwatch.rules.MasterHome.running(st) }
+                    val toSession: (String) -> Unit = { n -> tab = StartRoute.Tab.SESSIONS; open = n }
+                    // Casa A (mockup approvato da Franz, 02/10 07:38): esito della master, Per te, In corso, quota.
+                    val home: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { onDraft, onSend ->
+                        master?.let { m ->
+                            val hero = remember(masterEntries, m.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, m) }
+                            HeroCard(hero, m, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
+                                onConversation = { toSession(m.name) }, onStep = onDraft, onSendStep = onSend)
+                        }
+                        ForYouCard(forYou.rows, onAction = forYouAction)
+                        RunningList(running, onSession = toSession)
+                        QuotaBars(model.rings, onOpen = { overviewSheet = true })
+                    }
+                    if (master != null) sessionPage(master, masterEntries, home)
+                    else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
+                        ForYouCard(forYou.rows, onAction = forYouAction)
+                        RunningList(running, onSession = toSession)
+                        QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }
                 }
                 return@AppShell

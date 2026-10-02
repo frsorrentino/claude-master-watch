@@ -2,7 +2,9 @@ package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,4 +189,96 @@ fun MasterAbsent(onReopen: () -> Unit) {
         Text(stringResource(R.string.master_absent_detail), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
         Button(onClick = onReopen, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)) { Text(stringResource(R.string.reopen)) }
     }
+}
+
+/**
+ * Casa A (mockup approvato da Franz, 02/10 07:38): l'ultimo esito della master in grande con i consigli, poi «Per te»,
+ * le sessioni in corso una riga ciascuna e la quota in due barre. La conversazione intera è a un tocco.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onConversation: () -> Unit, onStep: (String) -> Unit, onSendStep: (String) -> Unit) {
+    GlassCard(Modifier.clickable(onClick = onConversation)) {
+        RuledLabel(hero?.at?.let { stringResource(R.string.home_last, hm(it)) } ?: stringResource(R.string.home_last_bare), CmColors.idle, rule = false) {
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(master.state)))
+        }
+        hero?.let { h ->
+            Text(h.headline, style = MaterialTheme.typography.headlineSmall, color = CmColors.text)
+            if (h.body.isNotBlank()) Text(h.body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 4, overflow = TextOverflow.Clip)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (hero != null) TextButton(onClick = onSpeak) { Text("▶ " + stringResource(R.string.fy_btn_listen), color = CmColors.actionIcon) }
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            TextButton(onClick = onConversation) { Text(stringResource(R.string.home_conversation), color = CmColors.actionIcon) }
+        }
+        if (hero != null && hero.steps.isNotEmpty()) {
+            androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+            Text(stringResource(R.string.next_steps), style = MonoSmall)
+            // Come sotto l'ultima risposta: tocco = nel campo, pressione lunga = invio subito.
+            hero.steps.forEach { step ->
+                Text(
+                    "↳ $step", style = MaterialTheme.typography.bodyLarge, color = CmColors.actionIcon,
+                    modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                        .combinedClickable(onClick = { onStep(step) }, onLongClick = { onSendStep(step) }).padding(vertical = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Le sessioni in corso, una riga ciascuna: stato, nome, che cosa fa, contesto. Tocco = la sua scheda. */
+@Composable
+fun RunningList(rows: List<MasterHome.Running>, onSession: (String) -> Unit) {
+    if (rows.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        RuledLabel(stringResource(R.string.home_running), CmColors.idle, rule = false) {
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            Text(rows.size.toString(), style = MonoSmall)
+        }
+        val shape = RoundedCornerShape(16.dp)
+        Column(Modifier.fillMaxWidth().clip(shape).border(1.dp, CmColors.line, shape)) {
+            rows.forEachIndexed { i, r ->
+                if (i > 0) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+                Row(
+                    Modifier.fillMaxWidth().clickable { onSession(r.session.name) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(r.session.state)))
+                    Text(r.session.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, maxLines = 1)
+                    Text(r.detail.orEmpty(), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+                    r.session.context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.text2)) }
+                }
+            }
+        }
+    }
+}
+
+/** La quota in due barre (le 5 ore), con la settimana nel testo; tocco = il Quadro completo. */
+@Composable
+fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
+    if (rings.isEmpty()) return
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        rings.forEach { r ->
+            Column(
+                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(CmColors.surfaceLow).clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    if (r.stale) stringResource(R.string.home_quota_old, r.account) else stringResource(R.string.home_quota, r.account, r.h5 ?: 0, r.w7 ?: 0),
+                    style = MaterialTheme.typography.labelMedium, color = if (r.stale) CmColors.waiting else CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip,
+                )
+                Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
+                    Box(Modifier.fillMaxWidth(((r.h5 ?: 0).coerceIn(0, 100)) / 100f).fillMaxHeight().background(if (r.stale) CmColors.text2 else CmColors.briefRing))
+                }
+            }
+        }
+    }
+}
+
+private fun stateColor(st: SessionState) = when (st) {
+    SessionState.WAITING -> CmColors.waiting
+    SessionState.BUSY, SessionState.AWAITING -> CmColors.busy
+    SessionState.GONE -> CmColors.goneDim
+    else -> CmColors.idle
 }
