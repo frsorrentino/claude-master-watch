@@ -204,7 +204,7 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
             Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(master.state)))
         }
         hero?.let { h ->
-            Text(h.headline, style = MaterialTheme.typography.headlineSmall, color = CmColors.text)
+            Text(h.headline, style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
             if (h.body.isNotBlank()) Text(h.body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 4, overflow = TextOverflow.Clip)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
