@@ -276,9 +276,3 @@ fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
     }
 }
 
-private fun stateColor(st: SessionState) = when (st) {
-    SessionState.WAITING -> CmColors.waiting
-    SessionState.BUSY, SessionState.AWAITING -> CmColors.busy
-    SessionState.GONE -> CmColors.goneDim
-    else -> CmColors.idle
-}
