@@ -92,7 +92,7 @@ fun ForYouCard(
         val shown = all.take(MasterHome.MAX)
         val (attention, service) = shown.partition { it.kind == MasterHome.Kind.QUESTION || it.kind == MasterHome.Kind.FINISHED }
         attention.forEach { row -> item(row, onAction) }
-        if (working.isNotEmpty()) WorkingGroup(working, onSession)
+        if (working.isNotEmpty()) WorkingGroup(working, now, onSession)
         service.forEach { row -> item(row, onAction) }
         val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
@@ -107,7 +107,7 @@ fun ForYouCard(
 
 /** «Al lavoro · N» dentro «Per te»: fulmine, nome, da quanto lavora, cosa sta facendo, contesto; il tocco apre la sessione. */
 @Composable
-private fun WorkingGroup(rows: List<MasterHome.Running>, onSession: (String) -> Unit) {
+private fun WorkingGroup(rows: List<MasterHome.Running>, now: Long, onSession: (String) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.fy_working, rows.size).uppercase(), style = MonoSmall.copy(color = CmColors.briefRing))
         Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefRing.copy(alpha = 0.25f)))
@@ -123,7 +123,7 @@ private fun WorkingGroup(rows: List<MasterHome.Running>, onSession: (String) -> 
                     androidx.compose.ui.text.buildAnnotatedString {
                         pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)); append(r.session.name); pop()
                         (r.session.turnStarted ?: r.session.since).takeIf { it > 0 }?.let { from ->
-                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.text2)); append(" · " + it.pixelbox.cmwatch.contract.Durations.since(from, System.currentTimeMillis() / 1000)); pop()
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.text2)); append(" · " + it.pixelbox.cmwatch.contract.Durations.since(from, now)); pop()
                         }
                     },
                     style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
