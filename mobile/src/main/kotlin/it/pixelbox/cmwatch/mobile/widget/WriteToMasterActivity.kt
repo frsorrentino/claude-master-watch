@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import it.pixelbox.cmwatch.mobile.PhoneApp
 import it.pixelbox.cmwatch.mobile.R
@@ -48,7 +49,9 @@ class WriteToMasterActivity : ComponentActivity() {
         val app = application as PhoneApp
         setContent {
             CmPhoneTheme {
-                val master = ContextActions.master(app.repo.snapshot.value.state)
+                // Osservato, non letto una volta: a freddo lo stato arriva dopo la prima composizione (revisione finale 02/10).
+                val snap by app.repo.snapshot.collectAsStateWithLifecycle()
+                val master = ContextActions.master(snap.state)
                 val asking = master?.question != null
                 var text by rememberSaveable { mutableStateOf("") }
                 val focus = remember { FocusRequester() }
@@ -73,9 +76,10 @@ class WriteToMasterActivity : ComponentActivity() {
                             enabled = master != null && text.isNotBlank(), modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
                         ) { Text(stringResource(R.string.send)) }
+                        // Dentro il foglio, che si compone in una finestra sua: fuori il fuoco non arrivava al campo.
+                        LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
                     }
                 }
-                LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
             }
         }
     }

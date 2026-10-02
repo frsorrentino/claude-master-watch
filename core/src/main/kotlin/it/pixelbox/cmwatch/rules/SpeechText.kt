@@ -43,6 +43,13 @@ object SpeechText {
     fun forPhone(text: String, codeLabel: String, outcomeLabel: String): String =
         clean(OutcomeLine.forPhone(NextSteps.parse(text).text, outcomeLabel), codeLabel)
 
+    /**
+     * Un paragrafo da leggere (`AnswerText.blocks`): il codice si annuncia soltanto, il resto si pulisce come sopra
+     * (revisione finale 02/10: i blocchi di codice, già senza ```, si leggevano parola per parola).
+     */
+    fun forBlock(kind: AnswerText.Kind, text: String, codeLabel: String): String =
+        if (kind == AnswerText.Kind.CODE) "$codeLabel." else clean(text, codeLabel)
+
     /** Pezzi da leggere di fila, ognuno entro `max`, tagliati a fine frase; una frase più lunga si taglia a uno spazio. */
     fun chunks(text: String, max: Int = MAX_CHUNK): List<String> {
         val frasi = text.trim().split(Regex("(?<=[.!?…:;])\\s+|\\n+")).map { it.trim() }.filter { it.isNotEmpty() }

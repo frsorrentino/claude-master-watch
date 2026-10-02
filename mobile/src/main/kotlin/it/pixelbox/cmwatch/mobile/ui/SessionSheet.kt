@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -155,7 +156,14 @@ fun SessionSheet(
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
         SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
-        top?.let { block -> androidx.compose.animation.AnimatedVisibility(visible = follow) { block() } }
+        // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
+        // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
+        val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+        top?.let { block ->
+            androidx.compose.animation.AnimatedVisibility(visible = follow && !ime) {
+                Box(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) { block() }
+            }
+        }
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(), state = list,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),

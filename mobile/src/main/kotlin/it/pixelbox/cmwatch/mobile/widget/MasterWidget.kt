@@ -90,18 +90,20 @@ private val WAIT = Color(0xFFFFB020)
 private fun MasterContent(state: State?, interactive: Boolean) {
     val ctx = LocalContext.current
     val size = LocalSize.current
-    val large = size.height.value >= 180f
+    // Il 4×4 (chip) dalla terza riga di celle: il 4×2 di posa è alto 200 dp (revisione finale 02/10).
+    val large = size.height.value >= 260f
     val m = MasterWidgetModel.build(state, maxChips = if (large) 8 else 0, outcomeLabel = ctx.getString(R.string.outcome_label))
     val root = GlanceModifier.fillMaxSize().background(CmColors.widgetBg.copy(alpha = 0.92f)).cornerRadius(24.dp).padding(14.dp)
     Column(root) {
         // Testata: icona a tratto e parola dello stato (variante ibrida), «Master», l'ora del messaggio.
         val head = GlanceModifier.fillMaxWidth().let { if (interactive) it.clickable(actionStartActivity(openSession(ctx, m.master?.name))) else it }
         Row(head, verticalAlignment = Alignment.CenterVertically) {
-            val (icon, word) = stateOf(m.master?.state)
-            Image(ImageProvider(icon), null, modifier = GlanceModifier.size(16.dp), colorFilter = ColorFilter.tint(ColorProvider(if (m.asking) WAIT else INK)))
-            Spacer(GlanceModifier.width(6.dp))
-            Text(ctx.getString(word), style = TextStyle(color = ColorProvider(if (m.asking) WAIT else INK2), fontSize = 12.sp, fontWeight = FontWeight.Medium))
-            Spacer(GlanceModifier.width(10.dp))
+            // Senza stato niente icona né parola: «chiusa» con la luna faceva pensare a una master spenta.
+            if (state != null) {
+                val (icon, word) = stateOf(m.master?.state)
+                Image(ImageProvider(icon), null, modifier = GlanceModifier.size(16.dp), colorFilter = ColorFilter.tint(ColorProvider(if (m.asking) WAIT else INK)))
+                Text(ctx.getString(word), style = TextStyle(color = ColorProvider(if (m.asking) WAIT else INK2), fontSize = 12.sp, fontWeight = FontWeight.Medium), modifier = GlanceModifier.padding(start = 6.dp, end = 10.dp))
+            }
             Text(ctx.getString(R.string.tab_master), style = TextStyle(color = ColorProvider(INK), fontSize = 16.sp, fontWeight = FontWeight.Bold), modifier = GlanceModifier.defaultWeight())
             m.at?.let { Text(HHMM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())), style = TextStyle(color = ColorProvider(INK2), fontSize = 12.sp)) }
         }
@@ -152,13 +154,10 @@ private fun ChipRows(m: MasterWidgetModel.Model, width: Float, interactive: Bool
     Column(GlanceModifier.fillMaxWidth()) {
         rows.forEachIndexed { r, row ->
             if (r > 0) Spacer(GlanceModifier.height(6.dp))
+            // Senza Spacer fra i chip: Glance tiene al massimo 10 figli per riga e li perdeva (revisione finale 02/10).
             Row {
-                row.forEachIndexed { i, c ->
-                    if (i > 0) Spacer(GlanceModifier.width(6.dp))
-                    Chip(c, interactive)
-                }
+                row.forEach { c -> Chip(c, interactive) }
                 if (r == rows.lastIndex && hidden > 0) {
-                    Spacer(GlanceModifier.width(6.dp))
                     val more = GlanceModifier.background(CmColors.widgetChip).cornerRadius(12.dp).padding(horizontal = 10.dp, vertical = 5.dp)
                         .let { if (interactive) it.clickable(actionStartActivity(openSession(ctx, null))) else it }
                     Box(more) { Text("+$hidden", style = TextStyle(color = ColorProvider(INK2), fontSize = 12.sp)) }
@@ -180,7 +179,8 @@ private fun Chip(c: MasterWidgetModel.Chip, interactive: Boolean) {
     val mod = GlanceModifier.background(if (waiting) WAIT.copy(alpha = 0.18f) else CmColors.widgetChip).cornerRadius(12.dp)
         .padding(start = 8.dp, end = 10.dp, top = 5.dp, bottom = 5.dp)
         .let { if (interactive) it.clickable(actionStartActivity(openSession(ctx, c.name))) else it }
-    Row(mod, verticalAlignment = Alignment.CenterVertically) {
+    // Il margine a destra del chip al posto dello Spacer fra i chip.
+    Box(GlanceModifier.padding(end = 6.dp)) { Row(mod, verticalAlignment = Alignment.CenterVertically) {
         // La barretta di colore della variante ibrida; la campanella solo per chi aspetta.
         Box(GlanceModifier.width(3.dp).height(12.dp).background(bar).cornerRadius(2.dp)) {}
         Spacer(GlanceModifier.width(6.dp))
@@ -189,7 +189,7 @@ private fun Chip(c: MasterWidgetModel.Chip, interactive: Boolean) {
             Spacer(GlanceModifier.width(4.dp))
         }
         Text(c.name, maxLines = 1, style = TextStyle(color = ColorProvider(INK), fontSize = 12.sp))
-    }
+    } }
 }
 
 /** Icona e parola dello stato della master (variante ibrida). */

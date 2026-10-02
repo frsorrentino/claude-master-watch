@@ -30,6 +30,9 @@ object MasterHome {
     data class ForYou(val rows: List<Row>, val more: Int)
 
     const val MAX = 3
+
+    /** La chiave di un prossimo passo avviato dal telefono: ricordata, il passo non torna (revisione finale 02/10). */
+    fun nextKey(project: String, next: String) = "next:$project:$next"
     /** Il resoconto della notte resta fino a mezzogiorno; la notte si propone dalle 20. */
     const val MORNING_END = 12
     const val EVENING = 20
@@ -56,6 +59,9 @@ object MasterHome {
             if (recapDay != null && !recapDay.isBefore(today.minusDays(1))) state.recap.items.forEach { item ->
                 val next = item.next?.trim()?.takeIf { it.isNotEmpty() } ?: return@forEach
                 val s = live.firstOrNull { it.project == item.project }
+                // Già avviato: ricordato dall'app, o già mandato a quella sessione come prompt.
+                if (nextKey(item.project, next) in read) return@forEach
+                if (s != null && sent.any { it.session == s.name && it.text.trim() == next }) return@forEach
                 when {
                     s == null -> add(Row(Kind.NEXT_STEP, item.project, next, project = state.projects.firstOrNull { it.name == item.project }?.path))
                     s.state == SessionState.IDLE -> add(Row(Kind.NEXT_STEP, item.project, next, session = s.name))

@@ -37,4 +37,10 @@ class MasterWidgetModelTest {
         val gone = MasterWidgetModel.build(st(s("master", SessionState.GONE), s("kb")), maxChips = 6, outcomeLabel = "Esito")
         assertNull(gone.master); assertEquals(listOf("kb"), gone.chips.map { it.name })
     }
+
+    // Revisione finale 02/10 (#8): il widget non mostra i segni del markdown.
+    @Test fun noMarkdownSymbols() {
+        val m = MasterWidgetModel.build(st(s("master", outcome = Outcome("x", "Fatto il **push** di `3d353f4`.", 1))), maxChips = 0, outcomeLabel = "Esito")
+        assertEquals("Fatto il push di 3d353f4.", m.text)
+    }
 }

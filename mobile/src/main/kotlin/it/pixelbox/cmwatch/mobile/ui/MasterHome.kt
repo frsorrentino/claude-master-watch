@@ -55,22 +55,31 @@ import java.time.format.DateTimeFormatter
 private val HM = DateTimeFormatter.ofPattern("HH:mm")
 private fun hm(epoch: Long) = HM.format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
 
-/** «Per te»: al massimo tre righe con un tasto ciascuna; il pieno solo sulla prima; «+N» apre tutte le righe qui. */
+/**
+ * «Per te»: al massimo tre righe con un tasto tonale ciascuna (il bottone pieno della schermata è Invia della chat);
+ * «+N» apre tutte le righe in un foglio (revisione finale 02/10).
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ForYouCard(all: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit) {
     if (all.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
-    val shown = if (open) all else all.take(MasterHome.MAX)
     GlassCard(tint = CmColors.waiting) {
         RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
-        shown.forEachIndexed { i, row -> ForYouRow(row, primary = i == 0, onAction) }
-        val more = all.size - shown.size
+        all.take(MasterHome.MAX).forEach { row -> ForYouRow(row, onAction) }
+        val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
+    }
+    if (open) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { open = false }, containerColor = CmColors.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
+            all.forEach { row -> ForYouRow(row) { open = false; onAction(it) } }
+        }
     }
 }
 
 @Composable
-private fun ForYouRow(row: MasterHome.Row, primary: Boolean, onAction: (MasterHome.Row) -> Unit) {
+private fun ForYouRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) {
     val (title, detail, action) = when (row.kind) {
         MasterHome.Kind.QUESTION -> Triple(stringResource(R.string.fy_question, row.title), row.detail, R.string.fy_btn_answer)
         MasterHome.Kind.CONTEXT -> Triple(stringResource(R.string.fy_context, row.title, row.number ?: 0), stringResource(R.string.fy_context_detail), R.string.fy_btn_handoff)
@@ -90,8 +99,7 @@ private fun ForYouRow(row: MasterHome.Row, primary: Boolean, onAction: (MasterHo
             Text(title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
             detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 2, overflow = TextOverflow.Clip) }
         }
-        if (primary) Button(onClick = { onAction(row) }, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)) { Text(stringResource(action)) }
-        else FilledTonalButton(onClick = { onAction(row) }) { Text(stringResource(action)) }
+        FilledTonalButton(onClick = { onAction(row) }) { Text(stringResource(action)) }
     }
 }
 

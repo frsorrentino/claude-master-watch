@@ -16,4 +16,10 @@ class SpeechTextPhoneTest {
     @Test fun watchLineReadAsOutcome() {
         assertEquals("Fatto.\nEsito: release avviata.", SpeechText.forPhone("Fatto.\nWatch: release avviata", "Codice", "Esito"))
     }
+
+    // Revisione finale 02/10 (#1): un paragrafo di codice si annuncia, non si legge parola per parola.
+    @Test fun codeBlockIsAnnounced() {
+        assertEquals("Codice.", SpeechText.forBlock(AnswerText.Kind.CODE, "val x = foo(bar) // calcola", "Codice"))
+        assertEquals("Fatto il push.", SpeechText.forBlock(AnswerText.Kind.PARA, "Fatto il **push**", "Codice"))
+    }
 }

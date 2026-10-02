@@ -71,7 +71,7 @@ class Speech(ctx: Context) {
         _speaking.value = text
         prefix = "cm-" + text.hashCode() + "-"
         val code = app.getString(R.string.tts_code)
-        val items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.clean(b.text, code)).map { i to it } }
+        val items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.forBlock(b.kind, b.text, code)).map { i to it } }
         if (items.isEmpty()) { finished(); return }
         items.forEachIndexed { k, (i, p) ->
             tts.speak(p, if (k == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, prefix + "b" + i + "-" + k + if (k == items.lastIndex) "-end" else "")

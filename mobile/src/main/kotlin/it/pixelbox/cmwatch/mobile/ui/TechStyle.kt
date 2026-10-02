@@ -1,11 +1,5 @@
 package it.pixelbox.cmwatch.mobile.ui
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -88,10 +82,14 @@ fun RuledLabel(text: String, color: Color, rule: Boolean = true, trailing: (@Com
 fun Led(stale: Boolean, dot: Dp = 8.dp) {
     val color = if (stale) CmColors.waiting else CmColors.idle
     val still = LocalStill.current || stale
-    val glow = if (still) 1f else {
-        val t = rememberInfiniteTransition(label = "led")
-        val v by t.animateFloat(1f, 0.35f, infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse), label = "glow")
-        v
+    // Calcolato a mano come l'asterisco della riga dal vivo: con la scala delle animazioni a zero (il telefono di Franz)
+    // le animazioni di Compose saltano alla fine e il led restava fermo (revisione finale 02/10).
+    val glow by androidx.compose.runtime.produceState(1f, still) {
+        if (!still) while (true) {
+            val t = (System.currentTimeMillis() % 1_600) / 1_600.0
+            value = 0.35f + 0.65f * (0.5f + 0.5f * kotlin.math.cos(2 * Math.PI * t).toFloat())
+            kotlinx.coroutines.delay(50)
+        }
     }
     Canvas(Modifier.size(dot + 10.dp)) {
         val c = Offset(size.width / 2, size.height / 2)

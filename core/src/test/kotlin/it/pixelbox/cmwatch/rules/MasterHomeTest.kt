@@ -76,4 +76,15 @@ class MasterHomeTest {
         val f = MasterHome.forYou(st(s("kb")), emptyList(), sent, at(15), zone)
         assertEquals(listOf(Kind.SCHEDULED), kinds(f)); assertEquals(2, f.rows[0].number); assertEquals(at(15, 30), f.rows[0].at)
     }
+
+    // Revisione finale 02/10 (#4): un prossimo passo già avviato non torna, né con la chiave ricordata né se è già stato
+    // mandato a quella sessione.
+    @Test fun startedNextStepDoesNotComeBack() {
+        val recap = Recap("2026-10-02", listOf(RecapItem("kb", "nota scritta", "distillare la nota")))
+        val state = st(s("kb"), recap = recap)
+        val key = MasterHome.nextKey("kb", "distillare la nota")
+        assertTrue(MasterHome.forYou(state, emptyList(), emptyList(), at(15), zone, read = setOf(key)).rows.isEmpty())
+        val sent = listOf(Sent("1", "kb", "distillare la nota", sentAt = at(14)))
+        assertTrue(MasterHome.forYou(state, emptyList(), sent, at(15), zone).rows.isEmpty())
+    }
 }

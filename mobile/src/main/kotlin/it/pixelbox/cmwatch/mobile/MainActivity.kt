@@ -254,8 +254,11 @@ class MainActivity : ComponentActivity() {
         // La casa della master (design 01/10): sulla prima scheda, senza schede aperte, la chat è quella della master.
         val masterName = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.name
         val chatName = open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
-        // I resoconti della notte già ascoltati: spariscono da «Per te».
-        val readReports = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+        // I resoconti della notte già ascoltati e i prossimi passi già avviati: spariscono da «Per te» e non tornano,
+        // nemmeno dopo la coda, una rotazione o un riavvio (revisione finale 02/10: in memoria si perdevano).
+        val forYouPrefs = remember { getSharedPreferences("for-you", MODE_PRIVATE) }
+        val readReports = remember { androidx.compose.runtime.mutableStateListOf<String>().apply { addAll(forYouPrefs.getStringSet("read", emptySet()).orEmpty()) } }
+        val markRead: (String) -> Unit = { k -> if (k !in readReports) { readReports.add(k); forYouPrefs.edit().putStringSet("read", readReports.toSet()).apply() } }
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
         val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
@@ -341,12 +344,14 @@ class MainActivity : ComponentActivity() {
             when (row.kind) {
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> queueOpen = true
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.CONTEXT -> row.session?.let { n -> sendPrompt(n, getString(R.string.ctx_handoff_prompt)) }
-                it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT_REPORT -> { row.detail?.let { speech.toggle(it) }; row.key?.let { readReports.add(it) } }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT_REPORT -> { row.detail?.let { speech.toggle(it) }; row.key?.let(markRead) }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT -> nightAdding = true
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NEXT_STEP -> {
                     val text = row.detail.orEmpty()
                     val n = row.session
-                    if (n != null) sendPrompt(n, text) else row.project?.let { p -> scope.launch { app.repo.command(CmdOp.LAUNCH, null, p, text.ifBlank { null }) } }
+                    markRead(it.pixelbox.cmwatch.rules.MasterHome.nextKey(row.title, text))
+                    // Con la coda senza rete piena il comando si rifiuta: niente chiusura dell'app (revisione finale 02/10).
+                    if (n != null) sendPrompt(n, text) else row.project?.let { p -> scope.launch { runCatching { app.repo.command(CmdOp.LAUNCH, null, p, text.ifBlank { null }) } } }
                 }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.SCHEDULED -> { tab = StartRoute.Tab.SESSIONS; open = row.session }
             }
@@ -476,6 +481,10 @@ class MainActivity : ComponentActivity() {
             refreshing = refreshing,
         ) {
             if (tab == StartRoute.Tab.OVERVIEW && open == null) {
+                // Prima del primo stato la rotella, come in Sessioni: mai una casa vuota (revisione finale 02/10).
+                if (state == null) Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator(color = it.pixelbox.cmwatch.ui.tokens.CmColors.actionIcon)
+                }
                 state?.let { st ->
                     val model = remember(st, events, samples, now, snap.freshness) {
                         PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
@@ -494,7 +503,7 @@ class MainActivity : ComponentActivity() {
                     if (master != null) sessionPage(master, entries, top)
                     else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState())) {
                         top()
-                        Box(Modifier.padding(horizontal = 16.dp)) { MasterAbsent { scope.launch { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
+                        Box(Modifier.padding(horizontal = 16.dp)) { MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } } }
                     }
                 }
                 return@AppShell

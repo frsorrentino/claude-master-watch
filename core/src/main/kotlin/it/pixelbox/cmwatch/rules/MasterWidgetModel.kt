@@ -19,7 +19,8 @@ object MasterWidgetModel {
         val master = ContextActions.master(state)
         val q = master?.question
         val text = q?.text ?: master?.outcome?.full?.let { full ->
-            OutcomeLine.forPhone(NextSteps.parse(full).text, outcomeLabel).replace(Regex("\n{2,}"), "\n").trim()
+            // Senza i segni del markdown (revisione finale 02/10): il widget non sa formattare.
+            Markdown.parse(OutcomeLine.forPhone(NextSteps.parse(full).text, outcomeLabel)).text.replace(Regex("\n{2,}"), "\n").trim()
         }
         val live = PhoneBoard.sections(state).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }
             .filter { it.name != master?.name }
