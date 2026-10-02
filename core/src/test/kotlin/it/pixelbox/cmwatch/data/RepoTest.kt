@@ -50,6 +50,19 @@ class RepoTest {
     }
 
     /** Revisione 29/09: una sveglia FCM a freddo arriva prima del caricamento da Room; lo stato vecchio non deve coprire quello fresco. */
+    // Segnalazione 02/10: gli eventi della Demo restavano in Room (con l'ora spostata ad adesso) e il Diario li mostrava.
+    @Test fun demoEventsAreDropped() = runTest {
+        val store = MemoryStore()
+        val tr = fake()
+        val repo = Repo(store, tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.loadFromStore(); repo.start(); idle()
+        assertEquals(9 + 14, repo.events.value.size)
+        repo.live(false)
+        repo.dropEvents(tr.eventKeys)
+        assertTrue(repo.events.value.isEmpty())
+        assertTrue(store.loadEvents().isEmpty())
+    }
+
     @Test fun freshRefreshIsNotOverwrittenByTheStoreLoad() = runTest {
         val mem = MemoryStore()
         mem.saveState(ContractJson.decodeState(Fixtures.stateIdle), clock - 3600)
@@ -338,6 +351,7 @@ class MemoryStore : Store {
     override suspend fun loadEvents() = events
     override suspend fun saveEvents(ev: List<Event>) { events = (ev + events).distinctBy { it.key }.sortedByDescending { it.ts } }
     override suspend fun pruneEvents(olderThan: Long) { events = events.filter { it.ts >= olderThan } }
+    override suspend fun dropEvents(keys: Collection<String>) { events = events.filter { it.key !in keys } }
     override suspend fun loadPending() = pending
     override suspend fun savePending(c: List<Cmd>) { pending = c }
     private val samples = ArrayList<Pair<String, it.pixelbox.cmwatch.rules.QuotaHistory.Sample>>()

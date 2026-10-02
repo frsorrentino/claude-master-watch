@@ -28,6 +28,7 @@ import it.pixelbox.cmwatch.rules.QuotaHistory
     @Query("SELECT * FROM events ORDER BY ts DESC") suspend fun events(): List<EventRow>
     @Upsert suspend fun putEvents(rows: List<EventRow>)
     @Query("DELETE FROM events WHERE ts < :olderThan") suspend fun pruneEvents(olderThan: Long)
+    @Query("DELETE FROM events WHERE `key` IN (:keys)") suspend fun dropEvents(keys: List<String>)
     @Query("SELECT * FROM pending ORDER BY issued") suspend fun pending(): List<PendingRow>
     @Query("DELETE FROM pending") suspend fun clearPending()
     @Insert suspend fun putPending(rows: List<PendingRow>)
@@ -70,6 +71,7 @@ class RoomStore(private val dao: CmDao) : Store {
     override suspend fun saveEvents(ev: List<Event>) =
         dao.putEvents(ev.map { EventRow(it.key, it.ts, it.session, ContractJson.json.encodeToString(Event.serializer(), it)) })
     override suspend fun pruneEvents(olderThan: Long) = dao.pruneEvents(olderThan)
+    override suspend fun dropEvents(keys: Collection<String>) = dao.dropEvents(keys.toList())
     override suspend fun loadPending() = dao.pending().map { ContractJson.json.decodeFromString(Cmd.serializer(), it.json) }
     override suspend fun savePending(c: List<Cmd>) {
         dao.clearPending()

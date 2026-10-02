@@ -85,6 +85,8 @@ class PhoneApp : Application() {
         repo = Repo(RoomStore.open(this), transport, scope, { System.currentTimeMillis() / 1000 }, ::isOnline, phoneName, device = "phone")
         // Come sull'orologio: lo stream RTDB solo con l'app in primo piano; chiusa, la sveglia è FCM.
         repo.start(live = false)
+        // Fuori dalla Demo i suoi eventi non restano nel Registro (segnalazione 02/10: storefront e payments-api).
+        if (!settings.demoMode) scope.launch { repo.dropEvents(fake.eventKeys) }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) { repo.live(true); scope.launch { repo.flushQueue() } }
             override fun onStop(owner: LifecycleOwner) = repo.live(false)
@@ -175,7 +177,7 @@ class PhoneApp : Application() {
         scope.launch {
             prefs.update { it.copy(demoMode = on) }
             transport.switchTo(choose(prefs.current()))
-            if (on) repo.seedQuotaSamples(fake.demoQuotaSamples()) else { repo.refresh(); subscribeTopic() }
+            if (on) repo.seedQuotaSamples(fake.demoQuotaSamples()) else { repo.dropEvents(fake.eventKeys); repo.refresh(); subscribeTopic() }
         }
     }
 

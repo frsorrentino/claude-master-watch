@@ -18,12 +18,19 @@ class DiaryScreenTest {
         )),
     )
     private val history = listOf(
-        Event("r1", EventKind.RECAP, ts = st.ts - 86400, title = "Diario del 28/09", body = "Diario 28/09/2026 · 2 progetti\n✓ kb · indice rivisto\n✓ watch · piano A scritto", ref = "2026-09-28"),
+        Event("r1", EventKind.RECAP, ts = st.ts - 86400, title = "Diario del 28/09", body = "Diario 28/09/2026 · 2 progetti\n\nCHIUSI OGGI\n✓ kb · 3 turni\n   Indice rivisto\n✓ watch · 5 turni\n   Piano A scritto", ref = "2026-09-28"),
     )
-    private val night = Event("n1", EventKind.NIGHT_REPORT, ts = st.ts - 3600, title = "Notte: 2 lavori, 1 riuscito", body = "✓ atlas-shop: tre test instabili sistemati\n✗ ledger-api: migrazione non trovata", ref = "2026-09-29")
+    private val night = Event("n1", EventKind.NIGHT_REPORT, ts = st.ts - 3600, title = "Notte: 2 lavori, 1 riuscito", body = "Notte: 2 lavori, 0 ancora in coda\n✓ atlas-shop (personale, 812 s, rc=0): Tre test instabili sistemati, due erano veri.\n   /w/atlas-shop/docs/notte/a3f09c1e.md\n✗ ledger-api (lavoro, 3600 s, rc=124): tempo scaduto\n   /w/ledger-api/docs/notte/7b21d4e8.md", ref = "2026-09-29")
     private val quota = listOf(Event("q1", EventKind.QUOTA, account = "personale", ts = st.ts, title = "personale al 95%", body = "si azzera alle 18:40"))
 
-    @Test fun diaryFull() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st, quota, history, night, 120, {}, onAdd = {}, onRemove = {}) } }
+    // Il Registro (mockup approvato da Franz, 02/10 09:10): Stanotte, Notte a righe, Oggi aperto, Ieri chiuso, quota.
+    private val rings = listOf(
+        it.pixelbox.cmwatch.rules.PhoneOverview.Ring("personale", true, 42, 18, null, null),
+        it.pixelbox.cmwatch.rules.PhoneOverview.Ring("lavoro", false, 7, 63, null, null),
+    )
+    @Test fun diaryFull() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) { DiaryScreen(st, quota, history, night, 120, {}, onAdd = {}, onRemove = {}, rings = rings, today = java.time.LocalDate.of(2026, 9, 29)) }
+    }
     @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night(items = emptyList())), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
     @Test fun diaryOldRelay() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(night = Night(queued = 1)), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
 }

@@ -21,16 +21,29 @@ import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.mobile.ui.art.EmptyDiaryScene
+import it.pixelbox.cmwatch.rules.PhoneOverview
+import it.pixelbox.cmwatch.rules.Registro
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-/** Scheda Diario (design 29/09, schermata 5) con i dati del contratto di oggi: diario, notte, avvisi di quota. */
+/**
+ * Il Registro (ex Diario; mockup approvato da Franz il 02/10 alle 09:10): blocchi uguali, uno sotto l'altro. Stanotte
+ * (coda e «Aggiungi»), la Notte (un lavoro per riga, senza percorsi), i giorni (Oggi aperto, i precedenti chiusi, una riga
+ * per progetto), la quota. Lo storico giorno per giorno della quota non c'è: l'app tiene i campioni di poche ore, quindi
+ * la quota mostra le barre di adesso e gli avvisi.
+ */
 @Composable
 fun DiaryScreen(
     state: State, quotaEvents: List<Event>, history: List<Event>, nightReport: Event?, ttsMinChars: Int, onSpeak: (String) -> Unit,
     onAdd: () -> Unit, onRemove: (jobId: String) -> Unit,
+    rings: List<PhoneOverview.Ring> = emptyList(), onQuadro: () -> Unit = {}, onSession: (String) -> Unit = {},
+    today: LocalDate = LocalDate.now(),
 ) {
     val recap = state.recap
     val items = state.night.items
@@ -39,95 +52,139 @@ fun DiaryScreen(
         Column(Modifier.fillMaxSize().background(CmColors.bg), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             EmptyDiaryScene(Modifier.fillMaxWidth().height(240.dp))
             Text(stringResource(R.string.diary_empty), color = CmColors.text2, style = MaterialTheme.typography.bodyLarge)
-            if (items != null) AddButton(onAdd)
+            if (items != null) FilledTonalButton(onClick = onAdd, modifier = Modifier.padding(top = 12.dp)) { Text(stringResource(R.string.reg_add)) }
         }
         return
     }
-    Column(Modifier.fillMaxSize().background(CmColors.bg)) {
-    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (recap.items.isNotEmpty()) {
-            item { DiaryTitle(stringResource(R.string.diary_title, dateLabel(recap.date, androidx.compose.ui.platform.LocalConfiguration.current.locales[0]))) }
-            items(recap.items) { it ->
-                DiaryCard(it.project) {
-                    Speakable(it.done, speak = it.done.length > ttsMinChars, onSpeak)
-                    it.next?.let { n -> Text(stringResource(R.string.diary_next, n), color = CmColors.briefSecondary, style = MaterialTheme.typography.bodyMedium) }
-                }
-            }
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    LazyColumn(Modifier.fillMaxSize().background(CmColors.bg), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item(key = "tonight") { Tonight(state, onAdd, onRemove) }
+        nightReport?.let { n -> item(key = "night") { NightCard(n, onSpeak) } }
+        if (recap.items.isNotEmpty()) item(key = "today") {
+            DayCard(stringResource(R.string.reg_today), recap.items.map { Registro.Line(it.project, it.done) }, null, startOpen = true, onSession, onSpeak, ttsMinChars)
         }
-        item {
-            DiaryCard(if (state.night.queued > 0) stringResource(R.string.night_queued, state.night.queued) else stringResource(R.string.night_empty)) {
-                state.night.running?.let {
-                    Text(stringResource(R.string.night_running, it), color = CmColors.busy, style = MaterialTheme.typography.bodyLarge)
-                    LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth(), color = CmColors.busy, trackColor = CmColors.briefTrack)
-                }
-                // Contratto 1.17: senza `items` il relay è precedente e la coda non si tocca dall'app.
-                if (items == null) Text(stringResource(R.string.night_update_pc), color = CmColors.briefSecondary, style = MaterialTheme.typography.bodyMedium)
-                items?.forEach { job ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(job.name, fontWeight = FontWeight.SemiBold, color = CmColors.briefBig, style = MaterialTheme.typography.titleSmall)
-                            Text(job.prompt, color = CmColors.briefSecondary, style = MaterialTheme.typography.bodyMedium)
-                            if (job.started != null) Text(stringResource(R.string.night_started), color = CmColors.busy, style = MaterialTheme.typography.bodySmall)
-                        }
-                        TextButton(onClick = { onRemove(job.id) }, enabled = job.started == null) { Text(stringResource(R.string.night_remove), color = CmColors.actionIcon) }
+        items(history.filter { it.ref != recap.date }, key = { "h-" + it.key }) { e ->
+            val day = runCatching { LocalDate.parse(e.ref) }.getOrNull()
+            val title = when {
+                day == today -> stringResource(R.string.reg_today)
+                day == today.minusDays(1) -> stringResource(R.string.reg_yesterday)
+                else -> dateLabel(e.ref.orEmpty(), locale)
+            }
+            DayCard(title, Registro.recap(e.body), e.body, startOpen = false, onSession, onSpeak, ttsMinChars)
+        }
+        if (rings.isNotEmpty() || quotaEvents.isNotEmpty()) item(key = "quota") {
+            RegCard {
+                RegLabel(stringResource(R.string.reg_quota))
+                QuotaBars(rings, onQuadro)
+                quotaEvents.take(5).forEach { e ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(e.title, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Clip)
+                        Text(hhmm(e.ts), style = MonoSmall)
                     }
                 }
             }
         }
-        // Contratto 1.18: il resoconto dell'ultima notte e i diari dei giorni precedenti, dagli eventi.
-        nightReport?.let { n ->
-            item(key = "night-report") { DiaryCard(n.title) { Speakable(n.body, speak = true, onSpeak) } }
+    }
+}
+
+/** Stanotte: una riga con «Aggiungi» tonale (il bottone pieno in fondo non c'è più), poi i lavori in coda. */
+@Composable
+private fun Tonight(state: State, onAdd: () -> Unit, onRemove: (String) -> Unit) {
+    val items = state.night.items
+    RegCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                RegLabel(stringResource(R.string.reg_tonight))
+                Text(
+                    if (state.night.queued > 0) stringResource(R.string.night_queued, state.night.queued) else stringResource(R.string.night_empty),
+                    style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
+                )
+            }
+            // Contratto 1.17: senza `items` il relay è precedente e la coda non si tocca dall'app.
+            if (items != null) FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.reg_add)) }
         }
-        val older = history.filter { it.ref != recap.date }
-        if (older.isNotEmpty()) {
-            item(key = "older") { DiaryTitle(stringResource(R.string.diary_previous)) }
-            items(older, key = { "h-" + it.key }) { e -> PastDay(e, ttsMinChars, onSpeak) }
+        state.night.running?.let {
+            Text(stringResource(R.string.night_running, it), color = CmColors.busy, style = MaterialTheme.typography.bodyMedium)
+            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth(), color = CmColors.busy, trackColor = CmColors.briefTrack)
         }
-        if (quotaEvents.isNotEmpty()) {
-            item { DiaryTitle(stringResource(R.string.quota_alerts)) }
-            items(quotaEvents, key = { it.key }) { e ->
-                DiaryCard(e.title, labelColor = CmColors.briefWarn) {
-                    if (e.body.isNotBlank()) Text(e.body, color = CmColors.briefSecondary, style = MaterialTheme.typography.bodyMedium)
+        if (items == null) Text(stringResource(R.string.night_update_pc), color = CmColors.text2, style = MaterialTheme.typography.bodyMedium)
+        items?.forEach { job ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(job.name, fontWeight = FontWeight.SemiBold, color = CmColors.text, style = MaterialTheme.typography.bodyMedium)
+                    Text(job.prompt, color = CmColors.text2, style = MaterialTheme.typography.bodySmall)
+                    if (job.started != null) Text(stringResource(R.string.night_started), color = CmColors.busy, style = MaterialTheme.typography.bodySmall)
+                }
+                TextButton(onClick = { onRemove(job.id) }, enabled = job.started == null) { Text(stringResource(R.string.night_remove), color = CmColors.actionIcon) }
+            }
+        }
+    }
+}
+
+/** La notte: un lavoro per riga con ✓ o ✗, durata e una frase; ▶ legge il resoconto; il tocco apre il testo intero. */
+@Composable
+private fun NightCard(n: Event, onSpeak: (String) -> Unit) {
+    val jobs = Registro.night(n.body)
+    var open by androidx.compose.runtime.saveable.rememberSaveable(n.key) { androidx.compose.runtime.mutableStateOf(false) }
+    RegCard(Modifier.clickable { open = !open }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { RegLabel(n.title) }
+            IconButton(onClick = { onSpeak(n.body) }) { Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon) }
+        }
+        if (jobs.isEmpty() || open) Text(n.body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+        else jobs.forEachIndexed { i, j ->
+            if (i > 0) HorizontalDivider(color = CmColors.line)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.padding(top = 2.dp).size(22.dp).clip(CircleShape).background(if (j.ok) CmColors.briefGoodInk else CmColors.briefAlertInk), contentAlignment = Alignment.Center) {
+                    Text(if (j.ok) "✓" else "✗", style = MaterialTheme.typography.labelMedium, color = if (j.ok) CmColors.briefGood else CmColors.briefAlert)
+                }
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(j.project, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+                        j.seconds?.let { Text(stringResource(R.string.reg_minutes, Registro.minutes(it)), style = MonoSmall) }
+                    }
+                    Text(j.text, style = MaterialTheme.typography.bodySmall, color = CmColors.text2)
                 }
             }
         }
     }
-    if (items != null) AddButton(onAdd)
+}
+
+/** Un giorno: titolo e quanti progetti; aperto, una riga per progetto (tocco = la sua sessione), o il testo se non si legge. */
+@Composable
+private fun DayCard(title: String, lines: List<Registro.Line>, raw: String?, startOpen: Boolean, onSession: (String) -> Unit, onSpeak: (String) -> Unit, ttsMinChars: Int) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(startOpen) }
+    RegCard {
+        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
+            if (lines.isNotEmpty()) Text(pluralStringResource(R.plurals.reg_projects, lines.size, lines.size), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+            Icon(if (open) androidx.compose.material.icons.Icons.Rounded.ExpandLess else androidx.compose.material.icons.Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
+        }
+        if (open) {
+            if (lines.isEmpty()) raw?.let { Speakable(it, speak = it.length > ttsMinChars, onSpeak) }
+            lines.forEach { l ->
+                Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { onSession(l.project) }.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(l.project, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.width(128.dp))
+                    Text(l.text, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 
-/** Un giorno passato: il titolo, e il testo intero che si apre al tocco. */
+/** Il blocco del Registro: fondo basso, angoli ampi, come nel mockup. */
 @Composable
-private fun PastDay(e: Event, ttsMinChars: Int, onSpeak: (String) -> Unit) {
-    var open by androidx.compose.runtime.saveable.rememberSaveable(e.key) { androidx.compose.runtime.mutableStateOf(false) }
-    DiaryCard(e.title, modifier = Modifier.clickable { open = !open }) {
-        if (open) Speakable(e.body, speak = e.body.length > ttsMinChars, onSpeak)
-    }
-}
+private fun RegCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) =
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).then(modifier).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp), content = content,
+    )
 
-/** Titolo di sezione pesante, come nella Panoramica. */
 @Composable
-private fun DiaryTitle(text: String) =
-    Text(text, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+private fun RegLabel(text: String) = Text(text.uppercase(), style = MonoSmall.copy(color = CmColors.briefLabel, letterSpacing = androidx.compose.ui.unit.TextUnit(1.5f, androidx.compose.ui.unit.TextUnitType.Sp)))
 
-/** La card del brief dell'orologio: superficie alta, angoli ampi, etichetta in testa. */
-@Composable
-private fun DiaryCard(
-    label: String, modifier: Modifier = Modifier, labelColor: androidx.compose.ui.graphics.Color = CmColors.briefLabel,
-    content: @Composable ColumnScope.() -> Unit,
-) = Surface(color = CmColors.briefCard, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).then(modifier)) {
-    Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = labelColor)
-        content()
-    }
-}
-
-/** Il solo bottone pieno della scheda Diario: «Aggiungi alla notte», solo con un relay 1.17. */
-@Composable
-private fun AddButton(onAdd: () -> Unit) = Button(
-    onClick = onAdd, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(56.dp),
-) { Text(stringResource(R.string.night_add)) }
+private val HM = DateTimeFormatter.ofPattern("HH:mm")
+private fun hhmm(epoch: Long) = HM.format(java.time.Instant.ofEpochSecond(epoch).atZone(java.time.ZoneId.systemDefault()))
 
 /** Nella lingua del telefono, non in quella della JVM (negli snapshot usciva in inglese). */
 private fun dateLabel(iso: String, locale: java.util.Locale): String =

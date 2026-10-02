@@ -33,7 +33,7 @@
     <string name="paste_title">Paste the relay pair code</string>
     <string name="cancel">Cancel</string>
     <string name="tab_sessions">Sessions</string>
-    <string name="tab_diary">Diary</string>
+    <string name="tab_diary">Log</string>
     <string name="settings">Settings</string>
     <string name="demo_banner">Demo: sample sessions, no computer connected</string>
     <string name="launch">Launch</string>
@@ -85,6 +85,16 @@
     <string name="night_started">started</string>
     <string name="night_update_pc">Update claude-master on the computer to manage the queue from here</string>
     <string name="diary_previous">Previous days</string>
+    <string name="reg_tonight">Tonight</string>
+    <string name="reg_add">Add</string>
+    <string name="reg_today">Today</string>
+    <string name="reg_yesterday">Yesterday</string>
+    <string name="reg_quota">Quota</string>
+    <string name="reg_minutes">%1$d min</string>
+    <plurals name="reg_projects">
+        <item quantity="one">%1$d project</item>
+        <item quantity="other">%1$d projects</item>
+    </plurals>
     <string name="notif_diary">Today\'s diary is ready</string>
     <string name="notif_night">The night report is ready</string>
     <string name="share_title">Send to a session</string>

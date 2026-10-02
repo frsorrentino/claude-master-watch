@@ -21,6 +21,8 @@ class FakeTransport(
 
     override val state: Flow<State> get() = current
     override val events: Flow<List<Event>> = MutableStateFlow(eventList)
+    /** Le chiavi degli eventi della Demo: fuori dalla Demo si tolgono da Room. */
+    val eventKeys: Set<String> get() = eventList.map { it.key }.toSet()
 
     // Ruoli della storia, per id della fixture `state-1-question`: la sessione della domanda è quella del deploy, la ferma
     // scrive il post. Per id e non per posizione: ogni risposta riordina la lista.

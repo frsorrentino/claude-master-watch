@@ -117,6 +117,12 @@ class Repo(
         }
     }
 
+    /** Toglie dal Diario gli eventi della Demo (`FakeTransport.eventKeys`), fuori dalla Demo. */
+    suspend fun dropEvents(keys: Collection<String>) {
+        store.dropEvents(keys)
+        _events.value = store.loadEvents()
+    }
+
     private suspend fun accept(s: State) {
         val ordered = s.copy(sessions = Order.sessions(s.sessions))
         store.saveState(ordered, now())

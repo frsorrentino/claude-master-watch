@@ -33,7 +33,7 @@
     <string name="paste_title">Incolla il codice di relay pair</string>
     <string name="cancel">Annulla</string>
     <string name="tab_sessions">Sessioni</string>
-    <string name="tab_diary">Diario</string>
+    <string name="tab_diary">Registro</string>
     <string name="settings">Impostazioni</string>
     <string name="demo_banner">Demo: sessioni di esempio, nessun PC collegato</string>
     <string name="launch">Lancia</string>
@@ -87,6 +87,16 @@
     <string name="night_started">partito</string>
     <string name="night_update_pc">Aggiorna claude-master sul PC per gestire la coda da qui</string>
     <string name="diary_previous">Giorni precedenti</string>
+    <string name="reg_tonight">Stanotte</string>
+    <string name="reg_add">Aggiungi</string>
+    <string name="reg_today">Oggi</string>
+    <string name="reg_yesterday">Ieri</string>
+    <string name="reg_quota">Quota</string>
+    <string name="reg_minutes">%1$d min</string>
+    <plurals name="reg_projects">
+        <item quantity="one">%1$d progetto</item>
+        <item quantity="other">%1$d progetti</item>
+    </plurals>
     <string name="notif_diary">Il diario di oggi è pronto</string>
     <string name="notif_night">Il resoconto della notte è pronto</string>
     <string name="share_title">Manda a una sessione</string>

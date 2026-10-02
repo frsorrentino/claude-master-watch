@@ -12,6 +12,8 @@ interface Store {
     suspend fun loadEvents(): List<Event>
     suspend fun saveEvents(ev: List<Event>)
     suspend fun pruneEvents(olderThan: Long)
+    /** Toglie gli eventi con queste chiavi: quelli della Demo, che non devono restare dopo (segnalazione 02/10). */
+    suspend fun dropEvents(keys: Collection<String>)
     suspend fun loadPending(): List<Cmd>
     suspend fun savePending(c: List<Cmd>)
     /** «Ritmo 5 ore» (Franz, 16/09 13:00): un campione della quota delle 5 ore per account, registrato dall'orologio. */

@@ -526,7 +526,11 @@ class MainActivity : ComponentActivity() {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
                         onAdd = { nightAdding = true },
-                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } })
+                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } },
+                        rings = PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings,
+                        onQuadro = { overviewSheet = true },
+                        // Una riga del Registro apre la sessione del progetto, se è viva.
+                        onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { tab = StartRoute.Tab.SESSIONS; open = n } })
                 }
                 return@AppShell
             }
