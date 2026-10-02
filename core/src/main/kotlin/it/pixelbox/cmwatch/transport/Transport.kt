@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.transport
 
 import it.pixelbox.cmwatch.contract.Cmd
+import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.CmdResult
 import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.contract.State
@@ -39,5 +40,14 @@ interface Transport {
     /** Contratto 1.24: legge e cancella /file/<id> dopo il comando `file` riuscito; null se non c'è (la Demo non ha file). */
     suspend fun fetchFile(id: String): FileBlob? = null
 
-    companion object { const val RESULT_TIMEOUT_MS = 20_000L }
+    companion object {
+        const val RESULT_TIMEOUT_MS = 20_000L
+        /**
+         * Un comando slash che apre un pannello (/cost): il relay aspetta che compaia e smetta di cambiare prima di
+         * rispondere, e ci mette più di 20 s (dal vivo 02/10 16:30: «in attesa del PC», poi la risposta con Riprova).
+         */
+        const val SLASH_RESULT_TIMEOUT_MS = 60_000L
+
+        fun resultTimeoutMs(op: CmdOp): Long = if (op == CmdOp.SLASH) SLASH_RESULT_TIMEOUT_MS else RESULT_TIMEOUT_MS
+    }
 }

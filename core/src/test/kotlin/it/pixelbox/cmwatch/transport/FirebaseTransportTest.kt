@@ -55,10 +55,10 @@ class FirebaseTransportTest {
     @After fun down() = server.shutdown()
 
     private fun blobOf(json: String) = Blob.seal(json, key)
-    private fun transport(timeout: Long = 20_000, key: ByteArray? = this.key) = FirebaseTransport(
+    private fun transport(timeout: Long = 20_000, key: ByteArray? = this.key, slashTimeout: Long = 60_000) = FirebaseTransport(
         rtdb = Rtdb(server.url("/").toString().removeSuffix("/"), token = { "t0k" }),
         key = { key }, uid = { "u1" }, deviceKeyPair = { Pairing.newKeyPair() }, now = { clock },
-        resultTimeoutMs = timeout, pollMs = 10, backoffMs = listOf(10),
+        resultTimeoutMs = timeout, slashTimeoutMs = slashTimeout, pollMs = 10, backoffMs = listOf(10),
     )
 
     @Test fun stateArrivesFromTheStreamDecrypted() = runBlocking {
@@ -106,6 +106,25 @@ class FirebaseTransportTest {
     @Test fun noResultIsATimeout() {
         assertThrows(TransportException.Timeout::class.java) {
             runBlocking { transport(timeout = 200).send(Cmd("id-2", CmdOp.SCREEN, "x", null, clock, "watch")) }
+        }
+    }
+
+    // Dal vivo 02/10 16:30: il relay risponde a /cost dopo aver letto il pannello; lo slash aspetta più degli altri comandi.
+    @Test fun aSlashCommandWaitsLongerThanTheOthers() {
+        val late = blobOf("""{"id":"id-3","ok":true,"text":"sent /cost to x","at":1}""")
+        val start = System.currentTimeMillis()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                val path = request.requestUrl!!.encodedPath.removePrefix("/").removeSuffix(".json")
+                if (request.method == "PUT") { store[path] = request.body.readUtf8(); return MockResponse().setBody(store[path]!!) }
+                if (path == "result/id-3" && System.currentTimeMillis() - start > 600) return MockResponse().setBody(late)
+                return MockResponse().setBody("null")
+            }
+        }
+        val t = transport(timeout = 200, slashTimeout = 5_000)
+        assertEquals("sent /cost to x", runBlocking { t.send(Cmd("id-3", CmdOp.SLASH, "x", "cost", clock, "phone")) }.text)
+        assertThrows(TransportException.Timeout::class.java) {
+            runBlocking { t.send(Cmd("id-4", CmdOp.SCREEN, "x", null, clock, "phone")) }
         }
     }
 

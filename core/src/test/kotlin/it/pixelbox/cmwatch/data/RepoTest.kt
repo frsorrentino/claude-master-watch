@@ -226,6 +226,19 @@ class RepoTest {
         assertTrue(repo.snapshot.value.pending.isEmpty())
     }
 
+    // Dal vivo 02/10 16:30: per /cost il relay aspetta che il pannello compaia e si fermi, e risponde dopo più di 20 s. Un
+    // comando slash non diventa «in attesa del PC» prima del suo tempo, e il risultato arriva senza Riprova.
+    @Test fun aSlashCommandWaitsLongerForItsPanel() = runTest {
+        val slow = Slow(35_000, fake())
+        val repo = Repo(MemoryStore(), slow, bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()
+        val id = repo.command(CmdOp.SLASH, "field-notes", "cost")
+        advanceTimeBy(21_000)
+        assertNotEquals(PendingStatus.FAILED, repo.snapshot.value.pending.single().status)
+        advanceTimeBy(15_000)
+        assertTrue(repo.snapshot.value.pending.isEmpty())
+        assertNotNull(repo.resultsById.value[id])
+    }
+
     @Test fun networkErrorBecomesFailed() = runTest {
         val slow = Slow(10, fake()).apply { fail = true }
         val repo = Repo(MemoryStore(), slow, bg(), { clock }, { online }, "test", freshnessTickMs = 0); repo.start(); idle()

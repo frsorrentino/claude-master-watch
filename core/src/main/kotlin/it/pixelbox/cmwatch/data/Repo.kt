@@ -253,7 +253,7 @@ class Repo(
         jobs[cmd.id]?.cancel()
         jobs[cmd.id] = scope.launch {
             val r = try {
-                withTimeout(Transport.RESULT_TIMEOUT_MS) {
+                withTimeout(Transport.resultTimeoutMs(cmd.op)) {
                     transport.send(cmd) {
                         _snapshot.update { it.copy(pending = it.pending.map { p -> if (p.cmd.id == cmd.id && p.status == PendingStatus.SENDING) p.copy(status = PendingStatus.SENT) else p }) }
                     }
