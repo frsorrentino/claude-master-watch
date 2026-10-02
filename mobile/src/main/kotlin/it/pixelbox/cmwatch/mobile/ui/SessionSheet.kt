@@ -1044,7 +1044,7 @@ private fun TableBlock(t: it.pixelbox.cmwatch.rules.MarkdownTable.Table) {
 }
 
 /** I link `http(s)://` del testo toccabili, nel colore delle azioni e sottolineati; il tocco apre il browser (Franz, 01/10 20:05). */
-private fun linked(text: String): AnnotatedString = androidx.compose.ui.text.buildAnnotatedString {
+internal fun linked(text: String): AnnotatedString = androidx.compose.ui.text.buildAnnotatedString {
     // La formattazione del markdown (Franz, 01/10 20:17: «**prova**» si vedeva con gli asterischi): il testo senza i
     // segni, poi grassetto, corsivo, codice in monospazio e link con testo; infine i link nudi.
     val md = it.pixelbox.cmwatch.rules.Markdown.parse(text)

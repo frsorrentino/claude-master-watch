@@ -302,7 +302,6 @@
     <string name="quadro_title">Quadro</string>
     <string name="home_last">Ultimo esito · %1$s</string>
     <string name="home_last_bare">Ultimo esito</string>
-    <string name="home_conversation">Conversazione ›</string>
     <string name="home_quota">%1$s %2$d%% · sett. %3$d%%</string>
     <string name="home_quota_old">%1$s · vecchio</string>
     <string name="quadro_all">Tutto ›</string>

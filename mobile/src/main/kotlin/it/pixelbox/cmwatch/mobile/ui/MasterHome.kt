@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -320,14 +322,20 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(master.state)))
         }
+        // Il markdown come nella chat (segnalazione 02/10 18:47: le backtick del percorso si vedevano).
         hero?.let { h ->
-            Text(h.headline, style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
-            if (h.body.isNotBlank()) Text(h.body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 4, overflow = TextOverflow.Clip)
+            Text(linked(h.headline), style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
+            if (h.body.isNotBlank()) Text(linked(h.body), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 4, overflow = TextOverflow.Clip)
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            if (hero != null) TextButton(onClick = onSpeak) { Text("▶ " + stringResource(R.string.fy_btn_listen), color = CmColors.actionIcon) }
-            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-            TextButton(onClick = onConversation) { Text(stringResource(R.string.home_conversation), color = CmColors.actionIcon) }
+        // Variante 3 dei mockup (Franz, 02/10 21:56): ▶ tondo per ascoltare, la pillola larga per la conversazione.
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (hero != null) androidx.compose.material3.FilledTonalIconButton(onClick = onSpeak, modifier = Modifier.size(44.dp)) {
+                androidx.compose.material3.Icon(Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon)
+            }
+            FilledTonalButton(onClick = onConversation, modifier = Modifier.weight(1f).height(44.dp)) {
+                Text(stringResource(R.string.fy_open_conversation))
+                androidx.compose.material3.Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+            }
         }
         if (hero != null && hero.steps.isNotEmpty()) {
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
