@@ -202,7 +202,11 @@ fun SessionSheet(
                 items(grouped, key = { feedKey(it) }) { it ->
                     when (it) {
                         // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
-                        is ChatFeed.Item.Mine -> MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                        is ChatFeed.Item.Mine -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                            // Il pannello che un comando slash ha aperto sul PC (/cost) risponde sotto il comando.
+                            it.sent.panel?.let { p -> ClaudeBubble(p, it.sent.sentAt, ttsMinChars, actions.speak) }
+                        }
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(
                             it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
@@ -510,6 +514,7 @@ private fun ChatTurn(row: ChatRow, ttsMinChars: Int, actions: SheetActions, onEd
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MineBubble(row.sent, row.status, row.reason, actions, onEdit, onResend)
         row.sent.outcomeFull?.let { ClaudeBubble(it, row.sent.doneAt, ttsMinChars, actions.speak) }
+        row.sent.panel?.let { ClaudeBubble(it, row.sent.sentAt, ttsMinChars, actions.speak) }
     }
 }
 

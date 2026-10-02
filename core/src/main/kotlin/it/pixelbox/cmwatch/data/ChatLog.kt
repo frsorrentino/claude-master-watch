@@ -44,6 +44,12 @@ class ChatLog(private val file: File, private val now: () -> Long) {
         if (next != _messages.value) save(next)
     }
 
+    /** Il pannello di un comando slash resta sul messaggio: il risultato del PC vive solo in memoria. */
+    @Synchronized fun markPanel(id: String, text: String) {
+        val next = _messages.value.map { if (it.id == id && it.panel == null) it.copy(panel = text) else it }
+        if (next != _messages.value) save(next)
+    }
+
     /**
      * I programmati da mandare adesso (`ChatRules.due`), segnati come partiti nello stesso passo: due giri insieme del
      * lavoro in background non li mandano due volte. Chi li riceve li manda con il loro id.

@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.rules
 
+import it.pixelbox.cmwatch.contract.CmdResult
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -30,5 +31,24 @@ class SlashTest {
     @Test fun clearAndExitAskFirst() {
         assertTrue(Slash.confirm("clear")); assertTrue(Slash.confirm("exit"))
         assertFalse(Slash.confirm("compact"))
+    }
+
+    // Dal vivo 02/10 14:51: /cost dal telefono non mostrava niente. Il relay 0.5.6 rimanda il pannello dopo «sent /cost to …»;
+    // le colonne del terminale diventano un solo spazio, una riga per riga.
+    private val cost = Sent("c1", "kb", "/cost", sentAt = 1)
+    private fun ok(text: String) = CmdResult("c1", ok = true, text = text, at = 2)
+
+    @Test fun panelTextFollowsTheSentLine() {
+        assertEquals("Session\nTotal cost: \$0.42", Slash.panel(cost, ok("sent /cost to kb\n\n   Session\n   Total cost:            \$0.42")))
+        // Pannello rimasto aperto: l'avviso del relay resta in fondo.
+        assertEquals("Session\n(the panel is still open on the PC)",
+            Slash.panel(cost, ok("sent /cost to kb\n\n   Session\n\n(the panel is still open on the PC)")))
+    }
+
+    @Test fun noPanelWithoutOne() {
+        assertNull(Slash.panel(cost, ok("sent /compact to kb")))
+        assertNull(Slash.panel(cost, CmdResult("c1", ok = false, text = "kb is busy\n\nlater", at = 2)))
+        assertNull(Slash.panel(cost, null))
+        assertNull(Slash.panel(cost.copy(text = "ciao"), ok("delivered\n\nsomething")))   // un prompt non ha pannello
     }
 }

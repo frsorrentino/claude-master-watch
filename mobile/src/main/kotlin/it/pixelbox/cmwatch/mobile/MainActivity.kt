@@ -41,6 +41,7 @@ import it.pixelbox.cmwatch.rules.Tune
 import it.pixelbox.cmwatch.rules.PhoneBoard
 import it.pixelbox.cmwatch.rules.PhoneOverview
 import it.pixelbox.cmwatch.rules.Sent
+import it.pixelbox.cmwatch.rules.Slash
 import it.pixelbox.cmwatch.rules.PhoneTerminal
 import it.pixelbox.cmwatch.rules.TerminalLive
 import it.pixelbox.cmwatch.rules.StartRoute
@@ -415,6 +416,10 @@ class MainActivity : ComponentActivity() {
                             // Solo i rifiuti con un motivo: un'attesa senza risposta non è un fallimento (dal vivo 30/09 23:00).
                             rows.filter { it.status == ChatRules.Status.FAILED && it.sent.failed == null && it.reason != null }.forEach { r ->
                                 app.chatLog.markFailed(r.sent.id, r.reason!!)
+                            }
+                            // Il pannello di un comando slash (/cost) arriva col risultato e si salva sul messaggio come il motivo.
+                            rows.filter { it.sent.panel == null }.forEach { r ->
+                                Slash.panel(r.sent, results[r.sent.id])?.let { p -> app.chatLog.markPanel(r.sent.id, p) }
                             }
                         }
                         CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap())) {

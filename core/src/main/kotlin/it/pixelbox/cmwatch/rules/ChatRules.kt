@@ -22,6 +22,8 @@ import kotlinx.serialization.Serializable
      * aspetta; quando parte `sentAt` diventa l'ora vera dell'invio e il messaggio prosegue come gli altri.
      */
     val scheduledFor: Long? = null,
+    /** Il pannello che un comando slash ha aperto sul PC (`Slash.panel`), salvato quando arriva; null senza. */
+    val panel: String? = null,
 )
 
 /**

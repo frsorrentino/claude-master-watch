@@ -52,6 +52,13 @@ class ChatLogTest {
         assertEquals("kb is not running", log().forSession("kb").single().failed)
     }
 
+    /** Il pannello di un comando slash resta sul messaggio, come il motivo di un fallimento (dal vivo 02/10 14:51). */
+    @Test fun panelIsSavedOnTheMessage() {
+        log().add(m)
+        log().markPanel("c1", "Total cost: \$0.42")
+        assertEquals("Total cost: \$0.42", log().forSession("kb").single().panel)
+    }
+
     /** Due giri del lavoro in background insieme: il programmato si prende una volta sola, e resta preso dopo un riavvio. */
     @Test fun claimDueOnce() {
         val l = log(); l.add(m.copy(id = "s1", scheduledFor = now + 3600))
