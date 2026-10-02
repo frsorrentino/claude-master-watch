@@ -95,6 +95,8 @@ data class SheetActions(
     val sendAtReset: (String) -> Boolean = { false }, val sendTonight: (String) -> Boolean = { false },
     /** Tocco sulla riga dell'avviso: la Panoramica, casa dei dati della quota. */
     val overview: () -> Unit = {},
+    /** Contratto 1.25: un comando slash consentito, senza «/», con i suoi argomenti o null. */
+    val slash: (cmd: String, args: String?) -> Unit = { _, _ -> },
     /** «Fai controllare alla master» dal menu ⋮; null sulla master stessa o senza master aperta. */
     val askMaster: (() -> Unit)? = null,
     /** La lettura a voce da un paragrafo toccato (Franz, 02/10 00:01: «come in orologio»). */
@@ -115,6 +117,8 @@ fun SessionSheet(
     s: Session, now: Long, pending: List<Pending>, ttsMinChars: Int, actions: SheetActions,
     chat: List<ChatRow> = emptyList(), choices: Choices? = null, ops: List<String>? = null,
     canTune: Boolean = true, canAttach: Boolean = false,
+    /** Contratto 1.25: i comandi slash consentiti (`state.slash`); null = il relay non li supporta. */
+    slash: List<String>? = null,
     /** Contratto 1.22: la conversazione vera; null = relay senza `transcript`, resta la chat dei messaggi mandati. */
     feed: List<ChatFeed.Item>? = null, more: Boolean = false, onOlder: () -> Unit = {},
     /** La conversazione vera sta arrivando: niente chat di ripiego nel frattempo, che poi salterebbe (dal vivo 30/09 23:36). */
@@ -247,7 +251,7 @@ fun SessionSheet(
                 }
         }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash)
     }
 }
 
@@ -260,8 +264,11 @@ fun SessionSheet(
 private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
     quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(), canTonight: Boolean = false,
+    slash: List<String>? = null,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
+    // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
+    var confirm by remember(s.id) { mutableStateOf<it.pixelbox.cmwatch.rules.Slash.Parsed?>(null) }
     val image = images.firstOrNull()
     val base = PhonePrimary.composer(s, draft, ops)
     // Con un'immagine in attesa c'è sempre qualcosa da mandare, anche con il campo vuoto.
@@ -299,10 +306,34 @@ private fun Composer(
             }
         }
         val send = {
-            if (images.isNotEmpty()) images.forEachIndexed { i, uri -> actions.attach(uri, if (i == 0) draft.trim() else "") }
-            else PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
-            images = emptyList()
-            onSent()
+            // Contratto 1.25: un testo che comincia con un comando consentito parte come comando, senza domanda aperta.
+            val cmd = it.pixelbox.cmwatch.rules.Slash.parse(draft, slash)?.takeIf { images.isEmpty() && s.question == null }
+            when {
+                cmd != null && it.pixelbox.cmwatch.rules.Slash.confirm(cmd.cmd) -> confirm = cmd
+                cmd != null -> { actions.slash(cmd.cmd, cmd.args); onSent() }
+                else -> {
+                    if (images.isNotEmpty()) images.forEachIndexed { i, uri -> actions.attach(uri, if (i == 0) draft.trim() else "") }
+                    else PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
+                    images = emptyList()
+                    onSent()
+                }
+            }
+        }
+        // Scrivendo «/»: i comandi consentiti che cominciano così; il tocco li mette nel campo, pronti per gli argomenti.
+        val slashHints = it.pixelbox.cmwatch.rules.Slash.suggest(draft, slash).takeIf { s.question == null }.orEmpty()
+        if (slashHints.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            slashHints.forEach { c ->
+                AssistChip(onClick = { onDraft("/$c ") }, label = { Text("/$c", fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) })
+            }
+        }
+        confirm?.let { c ->
+            AlertDialog(
+                onDismissRequest = { confirm = null }, containerColor = CmColors.surface,
+                title = { Text(stringResource(R.string.slash_confirm_title, c.cmd, s.name)) },
+                text = { Text(stringResource(if (c.cmd == "exit") R.string.slash_confirm_exit else R.string.slash_confirm_clear)) },
+                confirmButton = { TextButton(onClick = { confirm = null; actions.slash(c.cmd, c.args); onSent() }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
+                dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
+            )
         }
         // Allegato e invio dentro il campo, centrati sulla sua altezza (Franz, 30/09 22:13).
         OutlinedTextField(

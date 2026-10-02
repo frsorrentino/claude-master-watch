@@ -454,6 +454,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
+                            // Contratto 1.25: il comando resta nella chat come un messaggio, con l'esito del PC.
+                            slash = { c, a -> scope.launch {
+                                runCatching { app.repo.command(CmdOp.SLASH, session.name, c, a) }.getOrNull()?.let { id ->
+                                    app.chatLog.add(Sent(id, session.name, "/$c" + (a?.let { t -> " $t" } ?: ""), System.currentTimeMillis() / 1000))
+                                }
+                            } },
                             attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
                             // Avviso quota (piano 30/09, Task 4): il testo resta nella chat come «parte alle …».
                             sendAtReset = { text -> quotaWarn?.let { w ->
@@ -486,6 +492,7 @@ class MainActivity : ComponentActivity() {
                             // Niente frasi rapide (Franz, 01/10 23:34: «via» fisso, generico e fuori luogo): i consigli in più
                             // li scriverà la sessione stessa a fine turno.
                             choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
+                            slash = state?.slash?.takeIf { state?.ops?.contains("slash") == true },
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && ChatFeed.loading(pageEntries, answered = session.name in feedCache),
                             more = more && session.name == chatName,
