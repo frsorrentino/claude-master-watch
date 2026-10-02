@@ -81,7 +81,14 @@ class ContractTest {
         // Contratto 1.22: due transcript, la prima pagina e una pagina `after`, e un prompt con `device`.
         // Contratto 1.24: due file, uno aperto e uno rifiutato perché non è nella trascrizione.
         // Contratto 1.25: due slash, /compact con testo e un comando non consentito.
-        assertEquals(26, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.26: un projects riuscito, tutti i progetti dal più recente.
+        assertEquals(27, results.size); assertEquals(7, results.count { !it.ok })
+        val projects = cmds.single { it.op == CmdOp.PROJECTS }
+        assertNull(projects.session); assertNull(projects.arg)
+        val page = ContractJson.decodeProjects(results.first { it.id == projects.id }.text)
+        assertEquals(listOf("atlas-shop", "ledger-api", "orbit-docs", "field-notes", "sketchbook"), page.projects.map { it.name })
+        assertNull(page.projects.last().lastUsed); assertFalse(page.more)
+        assertTrue("projects" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
         val slash = cmds.filter { it.op == CmdOp.SLASH }
         assertEquals(listOf("compact" to "sent /compact to field-notes", "model" to "not allowed: model"), slash.map { c -> c.arg to results.first { it.id == c.id }.text })
         assertNotNull(slash[0].text)

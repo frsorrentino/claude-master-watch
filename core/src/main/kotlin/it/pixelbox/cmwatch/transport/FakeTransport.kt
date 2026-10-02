@@ -272,6 +272,10 @@ class FakeTransport(
             // La Demo non ha file del PC da servire.
             CmdOp.FILE -> ko("missing or unreadable")
             CmdOp.SLASH -> ok("sent /${cmd.arg} to ${cmd.session}")
+            // Contratto 1.26: i progetti della Demo, dal più recente, come li ordina il relay.
+            CmdOp.PROJECTS -> ok(ContractJson.json.encodeToString(ProjectsPage.serializer(), ProjectsPage(
+                s.projects.sortedWith(compareBy<Project> { it.lastUsed == null }.thenByDescending { it.lastUsed ?: 0 }.thenBy { it.name }),
+            )))
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")

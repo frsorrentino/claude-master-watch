@@ -52,6 +52,11 @@ enum class CmdOp {
      * `text` = gli argomenti o null. Mai a metà turno («<name> is busy»).
      */
     @SerialName("slash") SLASH,
+    /**
+     * Contratto 1.26: tutti i progetti di tutti gli account per «Lancia», fuori da /state (che li taglia a 5 per stare in
+     * 8 KB). `session` e `arg` null; il testo è un `ProjectsPage`. Una lettura: nessuna push dopo.
+     */
+    @SerialName("projects") PROJECTS,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -201,5 +206,8 @@ enum class CmdOp {
 @Serializable data class TranscriptTurn(val started: Long? = null, val ended: Long? = null, @SerialName("in") val input: Long? = null, val out: Long? = null)
 
 @Serializable data class TranscriptFile(val path: String, val mime: String? = null, val size: Long? = null)
+
+/** Contratto 1.26: il risultato di `projects`, dal più recente (`last_used` null in fondo); `more` oltre i 60 KB. */
+@Serializable data class ProjectsPage(val projects: List<Project> = emptyList(), val more: Boolean = false)
 
 @Serializable data class TranscriptPage(val entries: List<TranscriptEntry> = emptyList(), val more: Boolean = false)
