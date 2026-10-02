@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.mobile.ui.art.PairedScene
 import it.pixelbox.cmwatch.rules.AppLanguage
+import it.pixelbox.cmwatch.rules.SpeechRate
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** Impostazioni (design 29/09, schermata 7): accoppiamento, lingua (restyling 30/09), Demo, notifiche, privacy, versione. */
@@ -29,9 +30,12 @@ fun SettingsScreen(
     language: AppLanguage.Choice = AppLanguage.Choice.SYSTEM, onLanguage: (AppLanguage.Choice) -> Unit = {},
     /** La voce che legge (Franz, 02/10 00:01): le voci italiane del motore, quella scelta (null = predefinita), la prova. */
     voices: List<String> = emptyList(), voice: String? = null, onVoice: (String?) -> Unit = {}, onTryVoice: () -> Unit = {},
+    /** La velocità della voce (Franz, 02/10 15:49: «un po' troppo rapida»), una delle `SpeechRate.choices`. */
+    rate: Float = SpeechRate.NORMAL, onRate: (Float) -> Unit = {},
 ) {
     var choosing by remember { mutableStateOf(false) }
     var choosingVoice by remember { mutableStateOf(false) }
+    var choosingRate by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
@@ -77,8 +81,14 @@ fun SettingsScreen(
                         colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
                     )
                     ListItem(
+                        headlineContent = { Text(stringResource(R.string.speech_rate)) },
+                        supportingContent = { Text(rateLabel(rate)) },
+                        modifier = Modifier.clickable { choosingRate = true },
+                        colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
+                    )
+                    ListItem(
                         headlineContent = { Text(stringResource(R.string.demo_mode)) }, supportingContent = { Text(stringResource(R.string.demo_mode_sub)) },
-                        trailingContent = { Switch(checked = demo, onCheckedChange = onDemo) },
+                        trailingContent = { Switch(checked = demo, onCheckedChange = onDemo, colors = cmSwitchColors()) },
                         colors = ListItemDefaults.colors(containerColor = CmColors.briefCard),
                     )
                 }
@@ -109,6 +119,28 @@ fun SettingsScreen(
             },
         )
     }
+    // Come la voce: la scelta vale subito e il dialogo resta aperto per provarla.
+    if (choosingRate) {
+        AlertDialog(
+            onDismissRequest = { choosingRate = false },
+            confirmButton = { TextButton(onClick = onTryVoice) { Text(stringResource(R.string.voice_try), color = CmColors.actionIcon) } },
+            dismissButton = { TextButton(onClick = { choosingRate = false }) { Text(stringResource(R.string.close), color = CmColors.actionIcon) } },
+            title = { Text(stringResource(R.string.speech_rate)) },
+            text = {
+                Column {
+                    SpeechRate.choices.forEach { r ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onRate(r) }.padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            RadioButton(selected = r == rate, onClick = null)
+                            Text(rateLabel(r), color = CmColors.text)
+                        }
+                    }
+                }
+            },
+        )
+    }
     if (choosing) {
         AlertDialog(
             onDismissRequest = { choosing = false }, confirmButton = {},
@@ -129,6 +161,14 @@ fun SettingsScreen(
             containerColor = CmColors.surface,
         )
     }
+}
+
+/** «0,9×» con la virgola della lingua dell'app; la velocità del motore si dice «normale». */
+@Composable
+private fun rateLabel(r: Float): String {
+    val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+        .apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(r)
+    return stringResource(if (r == SpeechRate.NORMAL) R.string.speech_rate_normal else R.string.speech_rate_value, n)
 }
 
 @Composable

@@ -26,6 +26,7 @@ import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.mobile.PhoneApp
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.mobile.ui.CmPhoneTheme
+import it.pixelbox.cmwatch.mobile.ui.cmSwitchColors
 import it.pixelbox.cmwatch.rules.WidgetModel
 import it.pixelbox.cmwatch.rules.WidgetModel.Metric
 import it.pixelbox.cmwatch.rules.WidgetModel.Mode
@@ -112,7 +113,7 @@ fun WidgetConfigScreen(state: State?, initial: WidgetModel.Config, onSave: (Widg
             Slider(corners, { corners = it }, valueRange = 0f..32f)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.wcfg_mono), color = CmColors.text, modifier = Modifier.weight(1f))
-                Switch(mono, { mono = it })
+                Switch(mono, { mono = it }, colors = cmSwitchColors())
             }
         }
         Button(

@@ -8,6 +8,7 @@ import it.pixelbox.cmwatch.rules.AnswerText
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.NextSteps
 import it.pixelbox.cmwatch.rules.OutcomeLine
+import it.pixelbox.cmwatch.rules.SpeechRate
 import it.pixelbox.cmwatch.rules.SpeechText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,9 @@ class Speech(ctx: Context) {
     private val _voice = MutableStateFlow(prefs.getString("voice", null))
     /** La voce scelta; null = la predefinita del telefono. */
     val voice: StateFlow<String?> = _voice
+    private val _rate = MutableStateFlow(SpeechRate.of(if (prefs.contains("rate")) prefs.getFloat("rate", SpeechRate.NORMAL) else null))
+    /** La velocità scelta nelle impostazioni (Franz, 02/10 15:49), in multipli di quella del motore. */
+    val rate: StateFlow<Float> = _rate
     private var current: String? = null
     @Volatile private var prefix = "-"
     private lateinit var tts: TextToSpeech
@@ -67,6 +71,7 @@ class Speech(ctx: Context) {
         // Letta a ogni lettura: la lingua si cambia nelle impostazioni mentre l'app è aperta.
         tts.language = AppLanguage.voiceLocale(AppLanguage.fromTags(locales.applicationLocales.toLanguageTags()), Locale.getDefault())
         applyVoice()
+        tts.setSpeechRate(_rate.value)
         current = text
         _speaking.value = text
         prefix = "cm-" + text.hashCode() + "-"
@@ -92,6 +97,12 @@ class Speech(ctx: Context) {
         _voice.value = name
         prefs.edit().putString("voice", name).apply()
         if (ready) applyVoice()
+    }
+
+    /** La velocità scelta, ricordata; vale dalla prossima lettura. */
+    fun setRate(r: Float) {
+        _rate.value = SpeechRate.of(r)
+        prefs.edit().putFloat("rate", _rate.value).apply()
     }
 
     private fun finished() { _speaking.value = null; _block.value = null }

@@ -201,6 +201,7 @@ class MainActivity : ComponentActivity() {
                 onLanguage = { localeManager.applicationLocales = android.os.LocaleList.forLanguageTags(it.tag) },
                 voices = speech.voices.collectAsStateWithLifecycle().value, voice = speech.voice.collectAsStateWithLifecycle().value,
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
+                rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
             )
             return
         }

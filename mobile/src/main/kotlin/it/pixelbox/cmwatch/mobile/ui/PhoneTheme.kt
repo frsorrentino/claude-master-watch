@@ -10,6 +10,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -60,6 +61,15 @@ fun CmPhoneTheme(still: Boolean = false, content: @Composable () -> Unit) =
             content = content,
         )
     }
+
+/**
+ * Lo switch spento visibile sulle card (Franz, 02/10 15:49: «i tasti switch sono poco visibili»): Material lo disegna con
+ * `outline`, che qui è il colore delle linee, quasi uguale al fondo della card.
+ */
+@Composable
+fun cmSwitchColors() = SwitchDefaults.colors(
+    uncheckedThumbColor = CmColors.text2, uncheckedBorderColor = CmColors.text2, uncheckedTrackColor = CmColors.surfaceLow,
+)
 
 /** Tempi e curva del movimento: 250 ms e l'easing del sito; con le animazioni spente, subito lo stato finale. */
 object CmMotion {
