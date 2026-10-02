@@ -166,4 +166,11 @@ class ChatFeedTest {
         val steps = ChatFeed.group(listOf(tool("t1", "mcp__chrome-bridge__click", ""), tool("t2", "mcp__chrome-bridge__click", ""))).single() as ChatFeed.Item.Steps
         assertEquals(listOf("click" to 2), steps.counts)
     }
+
+    // Segnalazione 02/10: una sessione appena rilanciata pulita ha la conversazione vuota; la rotella finiva mai.
+    @Test fun spinnerOnlyUntilTheFirstAnswer() {
+        assertTrue(ChatFeed.loading(emptyList(), answered = false))
+        assertFalse(ChatFeed.loading(emptyList(), answered = true))
+        assertFalse(ChatFeed.loading(first.entries, answered = false))
+    }
 }

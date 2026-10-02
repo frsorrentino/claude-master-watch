@@ -69,6 +69,9 @@ object ChatFeed {
      * Da dove ripartire con `after`: prima della prima voce ancora in coda, così la si vede cambiare; senza code dalla
      * penultima, così l'ultima si rilegge quando le arriva il costo del turno. Null = prima lettura.
      */
+    /** La rotella solo fino alla prima risposta del relay: una conversazione vuota (sessione appena rilanciata) è una risposta. */
+    fun loading(entries: List<TranscriptEntry>, answered: Boolean): Boolean = entries.isEmpty() && !answered
+
     fun anchor(entries: List<TranscriptEntry>): String? {
         if (entries.isEmpty()) return null
         val q = entries.indexOfFirst { it.queued }

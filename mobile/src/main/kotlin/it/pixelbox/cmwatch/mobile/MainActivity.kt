@@ -289,6 +289,8 @@ class MainActivity : ComponentActivity() {
                             // Relay aggiornato ma servizio ancora vecchio: resta la chat dei messaggi mandati.
                             r.text.contains("not allowed") -> unsupported = true
                         }
+                        // Anche una risposta vuota o un errore chiudono la rotella (segnalazione 02/10).
+                        feedCache[name] = entries
                         pendingId = null
                     }
                     val answered = pendingId == null
@@ -456,7 +458,7 @@ class MainActivity : ComponentActivity() {
                             // li scriverà la sessione stessa a fine turno.
                             choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
-                            loadingFeed = transcriptOk && !unsupported && pageEntries.isEmpty(),
+                            loadingFeed = transcriptOk && !unsupported && ChatFeed.loading(pageEntries, answered = session.name in feedCache),
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
