@@ -42,6 +42,11 @@ enum class CmdOp {
     @SerialName("interrupt") INTERRUPT,
     /** Contratto 1.22: la conversazione della sessione a pagine; `arg` = "n", "n:before=<id>" o "n:after=<id>". */
     @SerialName("transcript") TRANSCRIPT,
+    /**
+     * Contratto 1.24: un file della conversazione; `arg` = il `path` di `transcript.entries[].files[]`. Il relay scrive
+     * `/file/<id del comando>` (busta come `/share`, in chiaro `{mime, data}`), il dispositivo lo legge e lo cancella.
+     */
+    @SerialName("file") FILE,
 }
 
 @Serializable data class Option(val n: Int, val label: String)

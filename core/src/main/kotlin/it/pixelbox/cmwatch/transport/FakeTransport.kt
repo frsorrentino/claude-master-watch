@@ -269,6 +269,8 @@ class FakeTransport(
             CmdOp.MODEL, CmdOp.EFFORT -> ko("${cmd.session}: not available in demo")
             // Contratto 1.22: la demo non ha una trascrizione; la chat resta quella dei messaggi mandati.
             CmdOp.TRANSCRIPT -> ko("${cmd.session}: no transcript")
+            // La Demo non ha file del PC da servire.
+            CmdOp.FILE -> ko("missing or unreadable")
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")
