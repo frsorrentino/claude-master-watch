@@ -145,9 +145,10 @@ private fun QuotaRingCard(r: PhoneOverview.Ring, scheduled: Pair<Int, Long>? = n
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val narrow = maxWidth < 280.dp
             val ring: @Composable () -> Unit = {
-                Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                // Più basse (Franz, 02/10 15:45: «compattiamo un po' in altezza queste 2 schede»): anello 92 dp, numeri più stretti.
+                Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) {
                     Canvas(Modifier.fillMaxSize()) {
-                        val w = 10.dp.toPx()
+                        val w = 9.dp.toPx()
                         fun arc(inset: Float, color: Color, sweep: Float) = drawArc(
                             color, -90f, sweep, false, topLeft = Offset(inset, inset),
                             size = Size(size.width - 2 * inset, size.height - 2 * inset), style = Stroke(w, cap = StrokeCap.Round),
@@ -162,7 +163,7 @@ private fun QuotaRingCard(r: PhoneOverview.Ring, scheduled: Pair<Int, Long>? = n
                 }
             }
             val numbers: @Composable (Modifier) -> Unit = { m ->
-                Column(m, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(m, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     BigNumber(r.h5?.let { "$it%" } ?: "–", stringResource(R.string.ov_five_hours))
                     r.w7?.let { w ->
                         Text(
@@ -196,7 +197,8 @@ private fun QuotaRingCard(r: PhoneOverview.Ring, scheduled: Pair<Int, Long>? = n
 private fun PaceLine(p: QuotaHistory.Pace, resetAt: Long) {
     val start = resetAt - QuotaHistory.WINDOW_S
     val reveal = fillOnEntry(1f)
-    Canvas(Modifier.fillMaxWidth().height(40.dp).padding(top = 6.dp)) {
+    // 22 dp: con la scala 0-100 la linea sta quasi sempre in basso, e 40 dp lasciavano un vuoto (Franz, 02/10 15:45).
+    Canvas(Modifier.fillMaxWidth().height(22.dp)) {
         fun at(ts: Long, pct: Int) = Offset(size.width * (ts - start) / QuotaHistory.WINDOW_S.toFloat(), size.height * (1 - pct / 100f))
         drawLine(CmColors.briefTrack, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
         val pts = p.points.map { at(it.ts, it.pct) }
