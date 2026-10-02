@@ -112,7 +112,12 @@ class MainActivity : ComponentActivity() {
                         onInstallOnWatch = { scope.launch { app.pairing.installOnWatch() } },
                         onDone = { app.pairing.reset() },
                     )
-                    s.paired || s.demoMode -> key(launchId) { Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan) }
+                    s.paired || s.demoMode -> key(launchId) {
+                        Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+                            Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan)
+                            RefusalBanner(app.repo.userResults, androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
+                        }
+                    }
                     else -> NotPairedScreen(onPair = ::scan, onPaste = { paste = true }, onDemo = { app.setDemo(true) })
                 }
                 if (paste) PasteDialog(onPair = { t -> paste = false; scope.launch { app.pairing.run(t) } }, onDismiss = { paste = false })
@@ -133,10 +138,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         val events by app.repo.events.collectAsStateWithLifecycle()
-        // Un comando rifiutato dal PC si dice in chiaro, con il motivo del relay (spec 29/09, «Errori»).
-        LaunchedEffect(Unit) {
-            app.repo.userResults.collect { r -> if (!r.ok && r.text.isNotBlank()) android.widget.Toast.makeText(this@MainActivity, r.text, android.widget.Toast.LENGTH_LONG).show() }
-        }
+        // Un comando rifiutato dal PC si dice in chiaro, con il motivo intero del relay (spec 29/09, «Errori»): `RefusalBanner`.
         val results by app.repo.resultsById.collectAsStateWithLifecycle()
         // Modello ed effort scelti dal telefono, per sessione: «nome/model», «nome/effort» (`Tune`).
         val tunePicks = remember { androidx.compose.runtime.mutableStateMapOf<String, Tune.Pick>() }
