@@ -22,6 +22,14 @@ class SessionSheetTest {
     }
     @Test fun sheetBusyWithGoal() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.goal != null }, st.ts, emptyList(), 120, none) } }
 
+    // L'avviso delle altre sessioni sotto la barra (Franz, 02/10 20:47, variante A): chi ti aspetta e chi ha finito.
+    @Test fun sheetElsewhereWaiting() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.state == SessionState.IDLE }, st.ts, emptyList(), 120, none, elsewhere = it.pixelbox.cmwatch.rules.Elsewhere.Waiting(listOf("ledger-api"))) }
+    }
+    @Test fun sheetElsewhereFinished() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.state == SessionState.IDLE }, st.ts, emptyList(), 120, none, elsewhere = it.pixelbox.cmwatch.rules.Elsewhere.Finished("atlas-shop", st.ts - 30)) }
+    }
+
     // La chat dei messaggi mandati nei sei stati (design 30/09, parte 3), con l'esito del turno elaborato.
     @Test fun sheetChat() = paparazzi.snapshot {
         val s = st.sessions.first { it.state == SessionState.IDLE }

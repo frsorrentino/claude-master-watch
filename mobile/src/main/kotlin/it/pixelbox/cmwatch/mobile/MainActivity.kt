@@ -158,6 +158,8 @@ class MainActivity : ComponentActivity() {
         // La Panoramica in un foglio dal basso sopra la scheda (Franz, 01/10 12:34): si guarda la quota e si torna.
         var overviewSheet by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
+        // Gli avvisi delle altre sessioni già visti o chiusi (`Elsewhere`): un turno finito si dice una volta sola.
+        val elsewhereSeen = remember { mutableStateListOf<String>() }
         LaunchedEffect(sessionAsked) {
             val n = sessionAsked ?: return@LaunchedEffect
             settingsOpen = false; terminal = null; queueOpen = false; searchOpen = false
@@ -395,6 +397,11 @@ class MainActivity : ComponentActivity() {
         val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?) -> Unit = { session, pageEntries, home ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
+                        // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
+                        val elsewhere = state?.let { st -> it.pixelbox.cmwatch.rules.Elsewhere.alert(st, session.name, now, chatLog.map { m -> m.session }.toSet(), elsewhereSeen.toSet()) }
+                        LaunchedEffect(elsewhere?.key) {
+                            if (elsewhere is it.pixelbox.cmwatch.rules.Elsewhere.Finished) { delay(6_000); elsewhereSeen += elsewhere.key }
+                        }
                         // I messaggi mandati restano nella chat con il loro stato (design 30/09, parte 3).
                         run {
                         fun sendAndLog(target: PhonePrimary.Target, text: String) = scope.launch {
@@ -507,6 +514,15 @@ class MainActivity : ComponentActivity() {
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null,
+                            elsewhere = elsewhere,
+                            onElsewhere = {
+                                when (val a = elsewhere) {
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { tab = StartRoute.Tab.SESSIONS; open = a.sessions[0] }
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Finished -> { elsewhereSeen += a.key; tab = StartRoute.Tab.SESSIONS; open = a.session }
+                                    null -> {}
+                                }
+                            },
+                            onElsewhereDismiss = { elsewhere?.let { a -> elsewhereSeen += a.key } },
                             onOlder = {
                                 val first = entries.firstOrNull()?.id
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }

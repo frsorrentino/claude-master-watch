@@ -141,6 +141,8 @@ fun SessionSheet(
      * testo nel campo e come mandarlo subito.
      */
     home: (@Composable ColumnScope.(onDraft: (String) -> Unit, onSend: (String) -> Unit) -> Unit)? = null,
+    /** L'avviso delle altre sessioni sotto la barra (`Elsewhere`, variante A, Franz 02/10 20:47); null = niente da dire. */
+    elsewhere: it.pixelbox.cmwatch.rules.Elsewhere.Alert? = null, onElsewhere: () -> Unit = {}, onElsewhereDismiss: () -> Unit = {},
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -173,6 +175,7 @@ fun SessionSheet(
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
         SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
+        elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
         // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
         // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
