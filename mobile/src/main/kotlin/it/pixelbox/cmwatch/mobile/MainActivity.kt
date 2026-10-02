@@ -475,7 +475,8 @@ class MainActivity : ComponentActivity() {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
-            current = open, onPick = { n -> tab = StartRoute.Tab.SESSIONS; open = n },
+            // La master dal menu porta alla sua scheda, non a una scheda sessione (Franz, 02/10 07:03).
+            current = open, onPick = { n -> if (n != null && n == masterName) { open = null; tab = StartRoute.Tab.OVERVIEW } else { tab = StartRoute.Tab.SESSIONS; open = n } },
             home = masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }, onQuadro = { overviewSheet = true },
             onSearch = { searchOpen = true }, swipeTabs = open == null,
             // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.

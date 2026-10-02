@@ -170,11 +170,21 @@ private fun SessionMenu(
             Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CmColors.surface) {
+            // La master staccata in testa, con l'icona della sua scheda (Franz, 02/10 07:03).
+            val master = sessions.firstOrNull { s -> s.name == it.pixelbox.cmwatch.rules.ContextActions.MASTER && s.state != SessionState.GONE }
+            master?.let { m ->
+                DropdownMenuItem(
+                    text = { Text(m.name, fontWeight = FontWeight.SemiBold) },
+                    leadingIcon = { Icon(Icons.Rounded.Person, null, tint = CmColors.actionIcon) },
+                    trailingIcon = { SessionBadge(m, size = 16.dp) }, onClick = { open = false; onPick(m.name) },
+                )
+                HorizontalDivider(color = CmColors.line)
+            }
             if (current != null) DropdownMenuItem(
                 text = { Text(stringResource(R.string.all_sessions)) }, onClick = { open = false; onPick(null) },
                 leadingIcon = { Icon(Icons.AutoMirrored.Rounded.List, null, tint = CmColors.text2) },
             )
-            sessions.filter { it.state != SessionState.GONE }.forEach { s ->
+            sessions.filter { it.state != SessionState.GONE && it != master }.forEach { s ->
                 DropdownMenuItem(
                     text = { Text(s.name, fontWeight = if (s.name == current) FontWeight.SemiBold else FontWeight.Normal) },
                     leadingIcon = { SessionBadge(s, size = 20.dp) }, onClick = { open = false; onPick(s.name) },
