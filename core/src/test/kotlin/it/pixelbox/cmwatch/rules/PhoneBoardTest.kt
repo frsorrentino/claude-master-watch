@@ -45,14 +45,18 @@ class PhoneBoardTest {
         assertEquals(PhoneBoard.QuotaRow("personale", true, 62, 400, false), q[0])
     }
 
-    @Test fun staleOrMissingResetInventsNoTime() {
+    // Franz, 02/10 16:51: l'ora del reset va mantenuta. Resta vera finché non passa, anche con una lettura vecchia.
+    @Test fun staleReadingKeepsAFutureReset() {
         val q = PhoneBoard.quotaRows(now = 100, state = state.copy(quota = mapOf("personale" to QuotaAccount(h5 = 40, resetH5 = 400, stale = true))))
-        assertNull(q[0].resetAt); assertTrue(q[0].stale)
+        assertEquals(400L, q[0].resetAt); assertTrue(q[0].stale)
     }
+
+    @Test fun missingResetInventsNoTime() =
+        assertNull(PhoneBoard.quotaRows(now = 100, state = state.copy(quota = mapOf("personale" to QuotaAccount(h5 = 40)))).single().resetAt)
 
     @Test fun passedResetShowsNoTime() =
         assertNull(PhoneBoard.quotaRows(state, now = 450).first { it.account == "personale" }.resetAt)
 
-    @Test fun oldSnapshotShowsNoTime() =
-        assertNull(PhoneBoard.quotaRows(state, now = 100, dataStale = true).first { it.account == "personale" }.resetAt)
+    @Test fun oldSnapshotKeepsAFutureReset() =
+        assertEquals(400L, PhoneBoard.quotaRows(state, now = 100, dataStale = true).first { it.account == "personale" }.resetAt)
 }

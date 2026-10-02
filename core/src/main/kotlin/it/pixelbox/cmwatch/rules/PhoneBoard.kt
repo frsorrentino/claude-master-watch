@@ -22,12 +22,12 @@ object PhoneBoard {
     }
 
     /**
-     * Personale prima, poi alfabetico. Nessuna ora inventata: un dato vecchio (del relay o dell'intero stato) o un
-     * azzeramento già passato non mostrano l'ora (revisione 29/09).
+     * Personale prima, poi alfabetico. L'ora dell'azzeramento resta finché non è passata, anche con un dato vecchio (del
+     * relay o dell'intero stato): non invecchia (Franz, 02/10 16:51: «andrebbe mantenuta»). Passata, non si mostra.
      */
     fun quotaRows(state: State, now: Long, dataStale: Boolean = false): List<QuotaRow> =
         state.quota.map { (name, q) ->
-            val reset = q.resetH5?.takeIf { !q.stale && !dataStale && it > now }
+            val reset = q.resetH5?.takeIf { it > now }
             QuotaRow(name, Accounts.isPersonalQuota(name, q), q.h5, reset, q.stale)
         }.sortedWith(compareBy<QuotaRow> { !it.personal }.thenBy { it.account })
 }

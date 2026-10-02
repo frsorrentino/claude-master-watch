@@ -27,9 +27,13 @@ class PhoneOverviewTest {
         assertEquals(11, ring.h5)
     }
 
-    @Test fun staleHidesResetTime() {
-        assertNotNull(build().rings.first().resetAt)
-        assertTrue(build(stale = true).rings.all { it.resetAt == null })
+    // Franz, 02/10 16:51 («dati di 4 min fa», senza ore): il reset resta, il ritmo no (si proietterebbe da dati vecchi).
+    @Test fun staleKeepsResetTimeButNotThePace() {
+        val samples = mapOf("personal" to listOf(QuotaHistory.Sample(now - 1_800, 5), QuotaHistory.Sample(now - 60, 11)))
+        assertNotNull(build(samples).rings.first().pace)
+        val ring = build(samples, stale = true).rings.first()
+        assertNotNull(ring.resetAt)
+        assertNull(ring.pace)
     }
 
     @Test fun nowCountsMatchTheBoard() {
@@ -53,7 +57,7 @@ class PhoneOverviewTest {
 
     @Test fun weekPillCarriesItsReset() {
         assertEquals(1789610400L, build().rings.first().weekResetAt)
-        assertTrue(build(stale = true).rings.all { it.weekResetAt == null })
+        assertEquals(1789610400L, build(stale = true).rings.first().weekResetAt)
     }
 
     @Test fun staleAccountIsFlagged() {

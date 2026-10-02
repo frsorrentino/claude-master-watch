@@ -10,8 +10,9 @@ import java.time.ZoneId
  */
 object PhoneOverview {
     /**
-     * `pace` null senza almeno due campioni o senza l'ora della ripartenza: l'anello resta, il ritmo no. `weekResetAt`:
-     * quando si azzera la settimana, per la pillola come sul polso; `stale`: la lettura del conto è vecchia.
+     * `pace` null senza almeno due campioni, senza l'ora della ripartenza o con un dato vecchio (si proietterebbe dal
+     * passato): l'anello resta, il ritmo no. `weekResetAt`: quando si azzera la settimana, per la pillola come sul polso,
+     * finché non è passata anche con un dato vecchio (Franz, 02/10 16:51); `stale`: la lettura del conto è vecchia.
      */
     data class Ring(
         val account: String, val personal: Boolean, val h5: Int?, val w7: Int?, val resetAt: Long?, val pace: QuotaHistory.Pace?,
@@ -32,9 +33,9 @@ object PhoneOverview {
     ): Model {
         val rings = PhoneBoard.quotaRows(state, now, dataStale = stale).map { row ->
             val q = state.quota.getValue(row.account)
-            val pace = samples[row.account]?.takeIf { it.size >= 2 && row.resetAt != null }
+            val pace = samples[row.account]?.takeIf { it.size >= 2 && row.resetAt != null && !stale && !row.stale }
                 ?.let { QuotaHistory.pace(it, row.resetAt!!, now) }
-            val weekReset = q.resetW7?.takeIf { !q.stale && !stale && it > now }
+            val weekReset = q.resetW7?.takeIf { it > now }
             Ring(row.account, row.personal, q.h5, q.w7, row.resetAt, pace, weekReset, row.stale)
         }
         val contexts = WorkPanel.contexts(state).map { c ->
