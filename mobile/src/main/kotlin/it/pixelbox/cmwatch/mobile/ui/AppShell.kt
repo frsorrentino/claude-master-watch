@@ -33,8 +33,6 @@ import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.StartRoute
 import it.pixelbox.cmwatch.rules.StartRoute.Tab
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
@@ -57,7 +55,8 @@ fun AppShell(
     onQuadro: () -> Unit = {},
     /** Tirare giù aggiorna lo stato dal PC (segnalazione 01/10 21:08); null = niente gesto, come con una scheda aperta. */
     onRefresh: (() -> Unit)? = null, refreshing: Boolean = false,
-    content: @Composable () -> Unit,
+    /** Il contenuto di una scheda: con lo scorrimento si vedono due schede insieme, ognuna disegnata per la sua. */
+    content: @Composable (Tab) -> Unit,
 ) {
     Scaffold(
         containerColor = CmColors.bg,
@@ -97,23 +96,22 @@ fun AppShell(
             }
         },
     ) { pad ->
-        // Scorrere a sinistra o a destra passa fra Panoramica, Sessioni e Diario (segnalazione 01/10 20:12). Il gesto
-        // conta solo se nessun figlio l'ha già preso (liste orizzontali), e oltre una soglia, per non scattare
-        // mentre si scorre in verticale.
-        val swipe = if (!swipeTabs) Modifier else Modifier.pointerInput(tab) {
-            var dx = 0f
-            val min = 80.dp.toPx()
-            detectHorizontalDragGestures(
-                onDragStart = { dx = 0f },
-                onDragEnd = { if (kotlin.math.abs(dx) > min) StartRoute.swipe(tab, toNext = dx < 0).takeIf { it != tab }?.let(onTab) },
-            ) { _, d -> dx += d }
-        }
-        Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize().then(swipe)) {
+        // Scorrere a sinistra o a destra passa fra Master, Sessioni e Diario seguendo il dito, come fra le sessioni
+        // (segnalazione 02/10 06:54: prima la scheda scattava solo al rilascio). Con una scheda aperta il pager resta
+        // fermo e lo scorrimento è quello fra le sessioni.
+        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = tab.ordinal) { Tab.entries.size }
+        androidx.compose.runtime.LaunchedEffect(pager.settledPage) { Tab.entries[pager.settledPage].takeIf { it != tab }?.let(onTab) }
+        androidx.compose.runtime.LaunchedEffect(tab) { if (pager.targetPage != tab.ordinal) pager.animateScrollToPage(tab.ordinal) }
+        Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize()) {
             // Sempre lo stesso contenitore, spento con una scheda aperta: cambiarlo ricreava il contenuto a metà del gesto
             // indietro e la scheda si riapriva al rilascio (segnalazioni 01/10 21:50 e 23:04).
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(
                 refreshing, onRefresh ?: {}, Modifier.fillMaxSize(), enabled = onRefresh != null,
-            ) { content() }
+            ) {
+                androidx.compose.foundation.pager.HorizontalPager(
+                    pager, Modifier.fillMaxSize(), userScrollEnabled = swipeTabs, beyondViewportPageCount = 0, key = { Tab.entries[it] },
+                ) { page -> content(Tab.entries[page]) }
+            }
         }
     }
 }

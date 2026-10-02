@@ -481,8 +481,8 @@ class MainActivity : ComponentActivity() {
             // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
             refreshing = refreshing,
-        ) {
-            if (tab == StartRoute.Tab.OVERVIEW && open == null) {
+        ) { page ->
+            if (page == StartRoute.Tab.OVERVIEW && open == null) {
                 // Prima del primo stato la rotella, come in Sessioni: mai una casa vuota (revisione finale 02/10).
                 if (state == null) Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                     androidx.compose.material3.CircularProgressIndicator(color = it.pixelbox.cmwatch.ui.tokens.CmColors.actionIcon)
@@ -502,7 +502,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     val master = st.sessions.firstOrNull { it.name == masterName }
-                    if (master != null) sessionPage(master, entries, top)
+                    // Durante lo scorrimento da un'altra scheda la conversazione viva è un'altra: si mostra quella salvata.
+                    if (master != null) sessionPage(master, if (chatName == master.name) entries else feedCache[master.name].orEmpty(), top)
                     else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState())) {
                         top()
                         Box(Modifier.padding(horizontal = 16.dp)) { MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } } }
@@ -510,7 +511,7 @@ class MainActivity : ComponentActivity() {
                 }
                 return@AppShell
             }
-            if (tab == StartRoute.Tab.DIARY && open == null) {
+            if (page == StartRoute.Tab.DIARY && open == null) {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
                         onAdd = { nightAdding = true },
