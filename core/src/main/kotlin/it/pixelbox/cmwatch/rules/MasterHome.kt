@@ -3,7 +3,9 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.contract.Event
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.contract.SessionState
+import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.State
+import it.pixelbox.cmwatch.contract.TranscriptEntry
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -74,4 +76,41 @@ object MasterHome {
         }
         return ForYou(all.take(limit), (all.size - limit).coerceAtLeast(0))
     }
+
+    /** L'ultima risposta della master in testa alla casa (casa A, 02/10): titolo, resto del testo, consigli, ora. */
+    data class Hero(val headline: String, val body: String, val steps: List<String>, val at: Long?)
+
+    /** Una sessione in corso, una riga: la domanda, lo strumento al lavoro o l'ultimo esito. */
+    data class Running(val session: Session, val detail: String?)
+
+    private const val OUTCOME = "Esito:"
+    private const val WATCH = "Watch:"
+
+    /**
+     * Dalla conversazione l'ultima risposta di Claude; senza conversazione l'esito che il relay riporta. Il titolo è la
+     * riga «Esito:», se c'è, se no la prima riga; la riga per l'orologio non si vede.
+     */
+    fun hero(entries: List<TranscriptEntry>, master: Session): Hero? {
+        val last = entries.lastOrNull { it.role != "user" && it.role != "tool" && !it.text.isNullOrBlank() }
+        val raw = last?.text ?: master.outcome?.full ?: return null
+        val parsed = NextSteps.parse(raw)
+        val lines = parsed.text.split('\n').filterNot { it.trimStart().startsWith(WATCH) }
+        val outcome = lines.indexOfFirst { it.trimStart().startsWith(OUTCOME) }
+        val head = if (outcome >= 0) outcome else lines.indexOfFirst { it.isNotBlank() }
+        if (head < 0) return null
+        val headline = lines[head].trim().removePrefix(OUTCOME).trim()
+        val body = lines.filterIndexed { i, _ -> i != head }.joinToString("\n").trim()
+        return Hero(headline, body, parsed.steps, last?.at ?: master.outcome?.at)
+    }
+
+    /** Le sessioni vive senza la master, nell'ordine della regia (in attesa, al lavoro, ferme). */
+    fun running(state: State): List<Running> =
+        PhoneBoard.sections(state, withMaster = false).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.map { s ->
+            val detail = when (s.state) {
+                SessionState.WAITING -> s.question?.text
+                SessionState.BUSY, SessionState.AWAITING -> listOfNotNull(s.tool, s.toolNote).joinToString(" · ").ifEmpty { null }
+                else -> s.outcome?.short
+            }
+            Running(s, detail)
+        }
 }

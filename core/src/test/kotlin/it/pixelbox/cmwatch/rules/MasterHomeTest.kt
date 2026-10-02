@@ -87,4 +87,36 @@ class MasterHomeTest {
         val sent = listOf(Sent("1", "kb", "distillare la nota", sentAt = at(14)))
         assertTrue(MasterHome.forYou(state, emptyList(), sent, at(15), zone).rows.isEmpty())
     }
+
+    // Casa A (mockup approvato da Franz, 02/10 07:38): l'esito della master in grande, i consigli, le sessioni in corso.
+    private fun claude(id: String, text: String, at: Long) = TranscriptEntry(id = id, role = "assistant", text = text, at = at)
+
+    @Test fun heroTakesTheOutcomeLineAsHeadline() {
+        val h = MasterHome.hero(listOf(claude("a", "vecchia", at(5)), claude("b", "Lanciata la sessione.\n\nEsito: Fase 2.2 avviata\nProssimi: distilla nella kb · prova la casa\nWatch: avviata", at(6))), s("master"))!!
+        assertEquals("Fase 2.2 avviata", h.headline)
+        assertEquals("Lanciata la sessione.", h.body)
+        assertEquals(listOf("distilla nella kb", "prova la casa"), h.steps)
+        assertEquals(at(6), h.at)
+    }
+
+    @Test fun heroWithoutOutcomeLineUsesTheFirstLine() {
+        val h = MasterHome.hero(listOf(claude("a", "Fatto il push.\nCI verde.", at(6))), s("master"))!!
+        assertEquals("Fatto il push.", h.headline)
+        assertEquals("CI verde.", h.body)
+    }
+
+    @Test fun heroFallsBackToTheRelayOutcome() {
+        val m = s("master").copy(outcome = Outcome("corto", "Esito: dal relay", at(7)))
+        assertEquals("dal relay", MasterHome.hero(emptyList(), m)!!.headline)
+        assertEquals(null, MasterHome.hero(emptyList(), s("master")))
+    }
+
+    @Test fun runningLeavesOutMasterAndClosedWithOneLineEach() {
+        val busy = s("kb", SessionState.BUSY).copy(tool = "Bash", toolNote = "Lancia la suite")
+        val idle = s("docs").copy(outcome = Outcome("Resa fatta", "Resa fatta e controllata", at(6)))
+        val waiting = s("ledger", SessionState.WAITING, q = q("1", at(5)))
+        val rows = MasterHome.running(st(s("master"), busy, idle, waiting, s("old", SessionState.GONE)))
+        assertEquals(listOf("ledger", "kb", "docs"), rows.map { it.session.name })
+        assertEquals(listOf("Pubblico?", "Bash · Lancia la suite", "Resa fatta"), rows.map { it.detail })
+    }
 }
