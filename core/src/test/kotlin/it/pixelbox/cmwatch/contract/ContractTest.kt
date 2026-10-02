@@ -80,7 +80,12 @@ class ContractTest {
         // Contratto 1.19: tre report, uno rifiutato. Contratto 1.21: due interrupt, «stopped» e «nothing to stop».
         // Contratto 1.22: due transcript, la prima pagina e una pagina `after`, e un prompt con `device`.
         // Contratto 1.24: due file, uno aperto e uno rifiutato perché non è nella trascrizione.
-        assertEquals(24, results.size); assertEquals(6, results.count { !it.ok })
+        // Contratto 1.25: due slash, /compact con testo e un comando non consentito.
+        assertEquals(26, results.size); assertEquals(7, results.count { !it.ok })
+        val slash = cmds.filter { it.op == CmdOp.SLASH }
+        assertEquals(listOf("compact" to "sent /compact to field-notes", "model" to "not allowed: model"), slash.map { c -> c.arg to results.first { it.id == c.id }.text })
+        assertNotNull(slash[0].text)
+        assertEquals(listOf("compact", "clear", "exit", "context", "cost"), ContractJson.decodeState(Fixtures.stateIdle).slash)
         assertEquals(listOf("file ready (image/png, 69 bytes)", "not in the transcript"), cmds.indices.filter { cmds[it].op == CmdOp.FILE }.map { i -> results.first { it.id == cmds[i].id }.text })
         val enc = ContractJson.encode(cmds[0])
         assertTrue(enc.contains("\"op\":\"answer\"")); assertTrue(enc.contains("\"arg\":\"1\""))

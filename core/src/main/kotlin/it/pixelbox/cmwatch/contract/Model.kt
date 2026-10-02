@@ -47,6 +47,11 @@ enum class CmdOp {
      * `/file/<id del comando>` (busta come `/share`, in chiaro `{mime, data}`), il dispositivo lo legge e lo cancella.
      */
     @SerialName("file") FILE,
+    /**
+     * Contratto 1.25: un comando slash digitato nel pannello della sessione senza prefisso; `arg` = il comando senza «/»,
+     * `text` = gli argomenti o null. Mai a metà turno («<name> is busy»).
+     */
+    @SerialName("slash") SLASH,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -139,6 +144,8 @@ enum class CmdOp {
     val choices: Choices? = null,
     /** Contratto 1.21: le op di /cmd che questo relay esegue; null con un relay precedente (vale la lista del contratto). */
     val ops: List<String>? = null,
+    /** Contratto 1.25: i comandi slash che il relay consente (senza «/»); null con un relay precedente. */
+    val slash: List<String>? = null,
 )
 
 /** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */
