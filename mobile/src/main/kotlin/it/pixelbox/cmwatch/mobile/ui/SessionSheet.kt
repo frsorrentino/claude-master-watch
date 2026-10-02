@@ -71,6 +71,13 @@ import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ * Contratto 1.24: aprire i file della chat. `local` = dove sta sul telefono un file già scaricato (per percorso sul PC),
+ * `loading` = quelli in arrivo. Senza un fornitore i chip restano come prima.
+ */
+data class FileOpener(val open: (TranscriptFile) -> Unit = {}, val loading: Set<String> = emptySet(), val local: Map<String, String> = emptyMap())
+val LocalFileOpener = compositionLocalOf { FileOpener() }
+
 data class SheetActions(
     val answer: (Int) -> Unit, val allowAll: () -> Unit, val send: (PhonePrimary.Target, String) -> Unit,
     val follow: (Boolean) -> Unit, val reopen: () -> Unit, val terminal: () -> Unit, val openInClaude: () -> Unit,
@@ -586,14 +593,21 @@ private fun FileChip(f: TranscriptFile) {
         f.mime?.startsWith("audio/") == true -> Icons.Rounded.AudioFile
         else -> Icons.AutoMirrored.Rounded.InsertDriveFile
     }
-    Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium) {
-        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
-            // Il nome va a capo nello spazio che resta; il peso sta sempre su una riga (segnalazione 01/10 18:16: con un
-            // nome lungo il peso finiva in colonna, una lettera per riga).
-            Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.weight(1f, fill = false))
-            f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, softWrap = false) }
+    // Contratto 1.24: il tocco chiede il file al PC; un'immagine arrivata si vede sotto il chip, a tutto schermo al tocco.
+    val opener = LocalFileOpener.current
+    val local = opener.local[f.path]
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium, onClick = { opener.open(f) }) {
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (f.path in opener.loading) CircularProgressIndicator(Modifier.size(18.dp), color = CmColors.actionIcon, strokeWidth = 2.dp)
+                else Icon(icon, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
+                // Il nome va a capo nello spazio che resta; il peso sta sempre su una riga (segnalazione 01/10 18:16: con un
+                // nome lungo il peso finiva in colonna, una lettera per riga).
+                Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.weight(1f, fill = false))
+                f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, softWrap = false) }
+            }
         }
+        if (local != null && f.mime?.startsWith("image/") == true) AttachmentThumb(local)
     }
 }
 
@@ -756,7 +770,7 @@ private fun StatusMark(st: ChatRules.Status, scheduledFor: Long? = null) {
 }
 
 /** Le letture che le schermate fanno da sole: non sono comandi dell'utente e non diventano righe «non consegnato». */
-private val PASSIVE_OPS = setOf(it.pixelbox.cmwatch.contract.CmdOp.SCREEN, it.pixelbox.cmwatch.contract.CmdOp.LAST, it.pixelbox.cmwatch.contract.CmdOp.TRANSCRIPT)
+private val PASSIVE_OPS = setOf(it.pixelbox.cmwatch.contract.CmdOp.SCREEN, it.pixelbox.cmwatch.contract.CmdOp.LAST, it.pixelbox.cmwatch.contract.CmdOp.TRANSCRIPT, it.pixelbox.cmwatch.contract.CmdOp.FILE)
 
 @Composable
 private fun SmallAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) =

@@ -361,6 +361,33 @@ class MainActivity : ComponentActivity() {
         }
         // La pagina di una sessione (scheda e chat), usata dallo scorrimento fra le sessioni e dalla casa della master,
         // che le aggiunge «Per te» e il Quadro in cima (`top`).
+        // Contratto 1.24: i file della chat si aprono dal telefono. Scaricati restano nella cache dell'app: un'immagine
+        // compare come miniatura sotto il suo chip, gli altri file vanno all'app di sistema (Franz, 02/10 10:48).
+        val fileLocal = remember { mutableStateMapOf<String, String>() }
+        val fileLoading = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+        val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
+            val known = fileLocal[f.path]
+            if (known != null) { if (f.mime?.startsWith("image/") != true) viewFile(java.io.File(known), f.mime) }
+            else if (f.path !in fileLoading) {
+                fileLoading.add(f.path)
+                scope.launch {
+                    val r = app.repo.openFile(name, f.path)
+                    fileLoading.remove(f.path)
+                    when (r) {
+                        is it.pixelbox.cmwatch.data.Repo.Opened.Ok -> {
+                            val out = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                val dir = java.io.File(cacheDir, "files").apply { mkdirs() }
+                                java.io.File(dir, Integer.toHexString(f.path.hashCode()) + "-" + f.path.substringAfterLast('/')).apply { writeBytes(r.file.bytes) }
+                            }
+                            fileLocal[f.path] = out.path
+                            if (!r.file.mime.startsWith("image/")) viewFile(out, r.file.mime)
+                        }
+                        is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_refused, r.reason), android.widget.Toast.LENGTH_LONG).show()
+                        it.pixelbox.cmwatch.data.Repo.Opened.Failed -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_failed), android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
         val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?) -> Unit = { session, pageEntries, home ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
@@ -390,6 +417,7 @@ class MainActivity : ComponentActivity() {
                                 app.chatLog.markFailed(r.sent.id, r.reason!!)
                             }
                         }
+                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap())) {
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
                             allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
@@ -469,6 +497,7 @@ class MainActivity : ComponentActivity() {
                                 if (first != null && olderId == null) scope.launch { olderId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, session.name, ChatFeed.olderArg(first)) }.getOrNull() }
                             },
                         )
+                        }
                         }
         }
         val speakingBlock by speech.block.collectAsStateWithLifecycle()
@@ -596,6 +625,15 @@ class MainActivity : ComponentActivity() {
      * Un'immagine dalla barra di scrittura: ridotta come in «Condividi» (contratto 1.19), mandata con `report`, e una copia
      * locale per l'anteprima nel fumetto della chat.
      */
+    /** Un file scaricato dalla chat all'app di sistema che lo apre; senza un'app adatta, lo si dice. */
+    private fun viewFile(file: java.io.File, mime: String?) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
+        val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime ?: "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        runCatching { startActivity(view) }.onFailure {
+            android.widget.Toast.makeText(this, getString(R.string.file_no_app), android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {
         app.scope.launch {
             val bytes = it.pixelbox.cmwatch.mobile.share.ImageShrink.jpeg(this@MainActivity, uri) ?: return@launch

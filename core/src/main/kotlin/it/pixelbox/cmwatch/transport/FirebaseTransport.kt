@@ -121,6 +121,14 @@ class FirebaseTransport(
         rtdb.put("share/$id", doc)
     }
 
+    /** Busta come /share, in chiaro {mime, data}; letto, si cancella (il relay toglie dopo 10 minuti quelli non letti). */
+    override suspend fun fetchFile(id: String): FileBlob? {
+        val body = rtdb.get("file/$id") ?: return null
+        val plain = Json.parseToJsonElement(open(Json.parseToJsonElement(body))).jsonObject
+        runCatching { rtdb.delete("file/$id") }
+        return FileBlob(plain.getValue("mime").jsonPrimitive.content, java.util.Base64.getDecoder().decode(plain.getValue("data").jsonPrimitive.content))
+    }
+
     override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult {
         k()
         rtdb.put("cmd/${cmd.id}", seal(ContractJson.encode(cmd)))

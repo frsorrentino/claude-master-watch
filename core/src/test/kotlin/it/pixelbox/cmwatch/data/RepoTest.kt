@@ -63,6 +63,14 @@ class RepoTest {
         assertTrue(store.loadEvents().isEmpty())
     }
 
+    // Contratto 1.24: aprire un file della chat; un rifiuto del PC torna con il suo testo (la Demo non ha file).
+    @Test fun openFileRefusedCarriesTheReason() = runTest {
+        val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.loadFromStore(); repo.start(); idle()
+        val r = repo.openFile("field-notes", "/w/field-notes/docs/cover.png")
+        assertEquals(Repo.Opened.Refused("missing or unreadable"), r)
+    }
+
     @Test fun freshRefreshIsNotOverwrittenByTheStoreLoad() = runTest {
         val mem = MemoryStore()
         mem.saveState(ContractJson.decodeState(Fixtures.stateIdle), clock - 3600)

@@ -17,6 +17,9 @@ sealed class TransportException(msg: String) : Exception(msg) {
     class TooLarge(size: Int, max: Int) : TransportException("share $size > $max")
 }
 
+/** Contratto 1.24: un file della conversazione, già decifrato. */
+class FileBlob(val mime: String, val bytes: ByteArray)
+
 /** Il bus con il PC. Due implementazioni: FakeTransport (fixture del contratto) e FirebaseTransport (RTDB). */
 interface Transport {
     /** Ogni cambiamento di /state, già decifrato. */
@@ -33,6 +36,8 @@ interface Transport {
     suspend fun pair(code: String, deviceName: String): PairingInfo
     /** Contratto 1.19: scrive l'immagine cifrata in /share/<id> prima del comando `report`. */
     suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int)
+    /** Contratto 1.24: legge e cancella /file/<id> dopo il comando `file` riuscito; null se non c'è (la Demo non ha file). */
+    suspend fun fetchFile(id: String): FileBlob? = null
 
     companion object { const val RESULT_TIMEOUT_MS = 20_000L }
 }

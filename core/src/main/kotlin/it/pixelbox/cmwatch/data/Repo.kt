@@ -200,6 +200,25 @@ class Repo(
         return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() }, id = id)
     }
 
+    /** Contratto 1.24: l'esito di aprire un file della chat. */
+    sealed interface Opened {
+        class Ok(val file: it.pixelbox.cmwatch.transport.FileBlob) : Opened
+        /** Il PC ha detto di no: «not in the transcript», «too large: <byte>», «missing or unreadable»… */
+        data class Refused(val reason: String) : Opened
+        /** Nessuna risposta, nessuna rete, o il file non c'era più sul bus. */
+        data object Failed : Opened
+    }
+
+    /** Chiede al PC un file della conversazione (`file`) e lo legge da /file/<id del comando>. */
+    suspend fun openFile(session: String, path: String): Opened {
+        val id = UUID.randomUUID().toString()
+        return when (val d = deliver(CmdOp.FILE, session, path, id)) {
+            is Delivery.Done -> if (!d.result.ok) Opened.Refused(d.result.text)
+                else runCatching { transport.fetchFile(id) }.getOrNull()?.let { Opened.Ok(it) } ?: Opened.Failed
+            Delivery.NotSent -> Opened.Failed
+        }
+    }
+
     /** L'esito di `deliver`: il risultato del PC, oppure niente (senza rete, o nessuna risposta entro il limite). */
     sealed interface Delivery {
         data class Done(val result: CmdResult) : Delivery

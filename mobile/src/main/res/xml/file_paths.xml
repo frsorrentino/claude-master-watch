@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contratto 1.24: i file della chat scaricati dal PC, passati all'app di sistema che li apre. -->
+<paths>
+    <cache-path name="files" path="files/" />
+</paths>

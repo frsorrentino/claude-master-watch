@@ -44,6 +44,7 @@ class FirebaseTransportTest {
                 return when (request.method) {
                     "GET" -> MockResponse().setBody(store[path] ?: "null")
                     "PUT" -> { store[path] = request.body.readUtf8(); MockResponse().setBody(store[path]!!) }
+                    "DELETE" -> { store.remove(path); MockResponse().setBody("null") }
                     else -> MockResponse().setResponseCode(405)
                 }
             }
@@ -152,6 +153,16 @@ class FirebaseTransportTest {
         val plain = Json.parseToJsonElement(Blob.open(store.getValue("share/s1"), key)).jsonObject
         assertEquals("image/jpeg", plain.getValue("mime").jsonPrimitive.content)
         assertArrayEquals(bytes, java.util.Base64.getDecoder().decode(plain.getValue("data").jsonPrimitive.content))
+    }
+
+    // Contratto 1.24: il file chiesto con `file` si legge da /file/<id del comando>, si decifra e si cancella.
+    @Test fun fetchFileReadsOpensAndDeletes() = runBlocking {
+        store["file/c1"] = blobOf("""{"mime":"image/png","data":"AQID"}""")
+        val f = transport().fetchFile("c1")!!
+        assertEquals("image/png", f.mime)
+        assertArrayEquals(byteArrayOf(1, 2, 3), f.bytes)
+        assertFalse(store.containsKey("file/c1"))
+        assertNull(transport().fetchFile("c2"))
     }
 
     @Test fun shareTooLargeIsRefusedBeforeWriting() = runBlocking {
