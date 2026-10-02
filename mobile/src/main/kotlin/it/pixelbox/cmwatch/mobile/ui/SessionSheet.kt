@@ -604,9 +604,9 @@ private fun feedKey(i: ChatFeed.Item): String = when (i) {
 
 /**
  * Un gruppo di passaggi (Franz, 01/10 15:59), sempre apribile. Chiuso sta in due righe (Franz, 02/10 00:01): il conteggio
- * con lo strumento più usato, e l'ultimo passaggio in chiaro; aperto, tutte le righe. Contenitore leggero al posto del
- * riquadro grigio: fondo trasparente, filo di bordo e una barretta a sinistra, rossa se un passaggio è fallito. I file
- * prodotti restano sempre in vista sotto.
+ * con lo strumento più usato, e l'ultimo passaggio in chiaro; aperto, tutte le righe. Fondo appena tinto, senza bordo
+ * né barretta (Franz, 02/10 07:38: la barretta a sinistra sapeva di IA standard), e un punto grigio per passaggio, rosso
+ * se è fallito. I file prodotti restano sempre in vista sotto.
  */
 @Composable
 private fun StepsCard(g: ChatFeed.Item.Steps) {
@@ -615,10 +615,9 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
     val last = g.entries.last()
     val shape = RoundedCornerShape(14.dp)
     Row(
-        Modifier.fillMaxWidth().clip(shape).border(1.dp, CmColors.line, shape).height(IntrinsicSize.Min),
+        Modifier.fillMaxWidth().clip(shape).background(if (failed > 0) CmColors.stepsFailBg else CmColors.stepsBg),
     ) {
-        Box(Modifier.width(3.dp).fillMaxHeight().background(if (failed > 0) CmColors.gone else CmColors.briefRing))
-        Column(Modifier.weight(1f).padding(start = 10.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
                 val total = androidx.compose.ui.res.pluralStringResource(R.plurals.steps_count, g.entries.size, g.entries.size)
                 val errors = if (failed > 0) androidx.compose.ui.res.pluralStringResource(R.plurals.steps_failed, failed, failed) else null
@@ -629,6 +628,7 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
                     listOfNotNull(total, top, others, errors).joinToString(" · "), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
                     style = MaterialTheme.typography.labelLarge, color = CmColors.text2, modifier = Modifier.weight(1f),
                 )
+                StepDots(g.entries.map { it.error == true })
                 Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2)
             }
             if (open) g.entries.forEach { ToolLine(it, files = false) } else {
@@ -648,6 +648,19 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
         }
     }
 }
+
+/** Un punto per passaggio, i primi 12, poi «+N»: quanti e com'è andata, a colpo d'occhio. */
+@Composable
+private fun StepDots(failed: List<Boolean>) {
+    Row(Modifier.padding(start = 8.dp, end = 4.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+        failed.take(MAX_DOTS).forEach { bad ->
+            Box(Modifier.size(5.dp).clip(CircleShape).background(if (bad) CmColors.briefAlertRing else CmColors.stepsDot))
+        }
+        if (failed.size > MAX_DOTS) Text("+${failed.size - MAX_DOTS}", style = MaterialTheme.typography.labelSmall, color = CmColors.text2, modifier = Modifier.padding(start = 2.dp))
+    }
+}
+
+private const val MAX_DOTS = 12
 
 /** L'esito di un turno come fumetto di Claude, con Copia e Ascolta sotto (come nell'app nativa, senza fissa e dirama). */
 @Composable

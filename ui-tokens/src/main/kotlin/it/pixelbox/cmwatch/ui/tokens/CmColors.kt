@@ -31,6 +31,10 @@ object CmColors {
     val idle = Color(0xFF34C759)
     val gone = Color(0xFFFF453A)
     val goneDim = Color(0xFFC2554D)   // rosso desaturato: una sessione chiusa non deve urlare
+    // Il gruppo di passaggi (Franz, 02/10 07:38, variante c): fondo appena tinto, rossastro se un passaggio è fallito.
+    val stepsBg = Color(0xFF141A24)
+    val stepsFailBg = Color(0xFF24161A)
+    val stepsDot = Color(0xFF5B6578)
     // 5:1 sulla superficie: il grigio di prima stava a 3:1 e al sole spariva (review UX, 13/09).
     val stale = Color(0xFF98A2B3)
     val accountAgenzia = Color(0xFFE53935)
