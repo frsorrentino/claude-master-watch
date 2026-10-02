@@ -111,8 +111,7 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) {
             SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ ->
                 HeroCard(hero, m, {}, {}, {}, {})
-                ForYouCard(rows, onAction = {}, now = st.ts)
-                RunningList(it.pixelbox.cmwatch.rules.MasterHome.running(st.copy(sessions = st.sessions + m))) {}
+                ForYouCard(rows, onAction = {}, now = st.ts, working = it.pixelbox.cmwatch.rules.MasterHome.working(st.copy(sessions = st.sessions + m)))
                 QuotaBars(rings, onOpen = {})
             })
         }

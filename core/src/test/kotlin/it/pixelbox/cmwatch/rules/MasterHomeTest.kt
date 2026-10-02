@@ -114,6 +114,12 @@ class MasterHomeTest {
         assertTrue(MasterHome.forYou(st(b), emptyList(), emptyList(), at(14, 30) + MasterHome.FINISHED_S + 1, zone).rows.isEmpty())
     }
 
+    // Franz, 02/10 21:29: «In corso» entra in «Per te» come gruppo «al lavoro», solo chi lavora (gli altri sono già sopra).
+    @Test fun workingOnlyBusySessionsWithoutTheMaster() {
+        val state = st(s("a", SessionState.BUSY), s("b", SessionState.AWAITING), s("c", SessionState.WAITING, q = q("1", at(14))), s("d"), s("master", SessionState.BUSY))
+        assertEquals(setOf("a", "b"), MasterHome.working(state).map { it.session.name }.toSet())
+    }
+
     @Test fun theMasterIsNeverInItsOwnList() =
         assertTrue(MasterHome.forYou(st(done("master", at(14, 30))), emptyList(), emptyList(), at(15), zone).rows.isEmpty())
 

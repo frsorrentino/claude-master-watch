@@ -561,7 +561,8 @@ class MainActivity : ComponentActivity() {
                     val master = st.sessions.firstOrNull { it.name == masterName }
                     // Durante lo scorrimento da un'altra scheda la conversazione viva è un'altra: si mostra quella salvata.
                     val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
-                    val running = remember(st) { it.pixelbox.cmwatch.rules.MasterHome.running(st) }
+                    // «In corso» è dentro «Per te» come gruppo «al lavoro» (Franz, 02/10 21:29).
+                    val working = remember(st) { it.pixelbox.cmwatch.rules.MasterHome.working(st) }
                     val toSession: (String) -> Unit = { n -> tab = StartRoute.Tab.SESSIONS; open = n }
                     // Variante 3 di «Per te»: le opzioni della domanda di una sessione rispondono da qui.
                     val forYouQuestion: (String) -> it.pixelbox.cmwatch.contract.Question? = { n -> st.sessions.firstOrNull { s -> s.name == n }?.question }
@@ -573,15 +574,13 @@ class MainActivity : ComponentActivity() {
                             HeroCard(hero, m, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
                                 onConversation = { toSession(m.name) }, onStep = onDraft, onSendStep = onSend)
                         }
-                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt)
-                        RunningList(running, onSession = toSession)
+                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
                         QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }
                     if (master != null) sessionPage(master, masterEntries, home)
                     else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
-                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt)
-                        RunningList(running, onSession = toSession)
+                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
                         QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }
                 }

@@ -71,8 +71,10 @@ fun ForYouCard(
     /** La domanda aperta di una sessione, per le opzioni della riga aperta. */
     question: (String) -> it.pixelbox.cmwatch.contract.Question? = { null },
     onAnswer: (session: String, n: Int) -> Unit = { _, _ -> }, onStep: (session: String, text: String) -> Unit = { _, _ -> },
+    /** Chi lavora adesso (`MasterHome.working`), il gruppo «al lavoro» che ha preso il posto di «In corso» (02/10 21:29). */
+    working: List<MasterHome.Running> = emptyList(), onSession: (String) -> Unit = {},
 ) {
-    if (all.isEmpty()) return
+    if (all.isEmpty() && working.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
     // Una riga aperta alla volta (variante 3, Franz 02/10 21:11).
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -86,7 +88,12 @@ fun ForYouCard(
     }
     GlassCard(tint = CmColors.waiting) {
         RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
-        all.take(MasterHome.MAX).forEach { row -> item(row, onAction) }
+        // Prima chi ti aspetta e chi ha finito, poi chi lavora (non toglie posto alle prime), in fondo le righe di servizio.
+        val shown = all.take(MasterHome.MAX)
+        val (attention, service) = shown.partition { it.kind == MasterHome.Kind.QUESTION || it.kind == MasterHome.Kind.FINISHED }
+        attention.forEach { row -> item(row, onAction) }
+        if (working.isNotEmpty()) WorkingGroup(working, onSession)
+        service.forEach { row -> item(row, onAction) }
         val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
     }
@@ -94,6 +101,36 @@ fun ForYouCard(
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
             all.forEach { row -> item(row) { open = false; onAction(it) } }
+        }
+    }
+}
+
+/** «Al lavoro · N» dentro «Per te»: fulmine, nome, da quanto lavora, cosa sta facendo, contesto; il tocco apre la sessione. */
+@Composable
+private fun WorkingGroup(rows: List<MasterHome.Running>, onSession: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(stringResource(R.string.fy_working, rows.size).uppercase(), style = MonoSmall.copy(color = CmColors.briefRing))
+        Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefRing.copy(alpha = 0.25f)))
+    }
+    rows.forEach { r ->
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onSession(r.session.name) }.padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_w_working), null, tint = CmColors.briefRing, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)); append(r.session.name); pop()
+                        (r.session.turnStarted ?: r.session.since).takeIf { it > 0 }?.let { from ->
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.text2)); append(" · " + it.pixelbox.cmwatch.contract.Durations.since(from, System.currentTimeMillis() / 1000)); pop()
+                        }
+                    },
+                    style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
+                )
+                r.detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip) }
+            }
+            r.session.context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.briefRing)) }
         }
     }
 }
@@ -302,33 +339,6 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
                     modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
                         .combinedClickable(onClick = { onStep(step) }, onLongClick = { onSendStep(step) }).padding(vertical = 4.dp),
                 )
-            }
-        }
-    }
-}
-
-/** Le sessioni in corso, una riga ciascuna: stato, nome, che cosa fa, contesto. Tocco = la sua scheda. */
-@Composable
-fun RunningList(rows: List<MasterHome.Running>, onSession: (String) -> Unit) {
-    if (rows.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        RuledLabel(stringResource(R.string.home_running), CmColors.idle, rule = false) {
-            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-            Text(rows.size.toString(), style = MonoSmall)
-        }
-        val shape = RoundedCornerShape(16.dp)
-        Column(Modifier.fillMaxWidth().clip(shape).border(1.dp, CmColors.line, shape)) {
-            rows.forEachIndexed { i, r ->
-                if (i > 0) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-                Row(
-                    Modifier.fillMaxWidth().clickable { onSession(r.session.name) }.padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(r.session.state)))
-                    Text(r.session.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, maxLines = 1)
-                    Text(r.detail.orEmpty(), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
-                    r.session.context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.text2)) }
-                }
             }
         }
     }
