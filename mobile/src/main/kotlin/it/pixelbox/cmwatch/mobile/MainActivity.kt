@@ -605,9 +605,19 @@ class MainActivity : ComponentActivity() {
             }
         }
         }
+        // Contratto 1.26 (dal vivo 02/10 17:10: /state porta 5 progetti su 98): all'apertura di Lancia o della notte si chiede
+        // al PC l'elenco completo; finché non arriva, o con un relay senza l'op, restano quelli di /state.
+        var projectsId by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(launching || nightAdding) {
+            if ((launching || nightAdding) && state?.ops?.contains("projects") == true) {
+                projectsId = runCatching { app.repo.command(CmdOp.PROJECTS, null, null) }.getOrNull()
+            }
+        }
+        val allProjects = projectsId?.let { results[it] }?.takeIf { it.ok }
+            ?.let { r -> runCatching { it.pixelbox.cmwatch.contract.ContractJson.decodeProjects(r.text).projects }.getOrNull() }
         if (nightAdding && state != null) {
             ModalBottomSheet(onDismissRequest = { nightAdding = false }) {
-                LaunchSheet(state, action = R.string.night_add) { project, prompt ->
+                LaunchSheet(state, action = R.string.night_add, projects = allProjects ?: state.projects) { project, prompt ->
                     nightAdding = false
                     if (prompt.isNotBlank()) scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, project.path, prompt) }
                 }
@@ -625,7 +635,7 @@ class MainActivity : ComponentActivity() {
         }
         if (launching && state != null) {
             ModalBottomSheet(onDismissRequest = { launching = false }) {
-                LaunchSheet(state, onSession = { name, reopen ->
+                LaunchSheet(state, projects = allProjects ?: state.projects, onSession = { name, reopen ->
                     launching = false
                     if (reopen) scope.launch { app.repo.command(CmdOp.REOPEN, name, null) } else { tab = StartRoute.Tab.SESSIONS; open = name }
                 }) { project, first ->

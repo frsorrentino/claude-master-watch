@@ -56,4 +56,13 @@ class LaunchSuggestTest {
         assertEquals(listOf("master", "claude-master"), LaunchSuggest.sessions(s, "master").map { it.name })
         assertEquals(emptyList<String>(), LaunchSuggest.sessions(s, "").map { it.name })
     }
+
+    // Contratto 1.26 (dal vivo 02/10 17:10: /state porta 5 progetti su 98): con l'elenco completo chiesto al PC si cerca
+    // anche fra i progetti che lo stato ha tagliato, e i recenti vengono da lì.
+    @Test fun searchAndRecentUseTheFullListWhenThereIsOne() {
+        val full = many.projects + Project("/w/zeta-site", "zeta-site", "work", lastUsed = 5)
+        assertEquals(listOf("zeta-site"), LaunchSuggest.ranked(many, "zeta", pool = full).map { it.name })
+        assertEquals("zeta-site", LaunchSuggest.recent(many, null, pool = full).last().name)
+        assertEquals(emptyList<String>(), LaunchSuggest.ranked(many, "zeta").map { it.name })
+    }
 }

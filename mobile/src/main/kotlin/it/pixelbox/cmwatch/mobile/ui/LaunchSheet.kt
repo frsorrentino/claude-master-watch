@@ -31,10 +31,12 @@ fun LaunchSheet(
     state: State, action: Int = R.string.launch,
     /** Una sessione trovata per nome: aperta = la sua scheda, chiusa = «Riapri». Null = solo progetti (la notte). */
     onSession: ((name: String, reopen: Boolean) -> Unit)? = null,
+    /** Contratto 1.26: tutti i progetti chiesti al PC all'apertura; finché non arrivano, quelli di /state. */
+    projects: List<Project> = state.projects,
     onLaunch: (project: Project, firstMessage: String) -> Unit,
 ) {
-    val accounts = remember(state) {
-        (state.quota.keys + state.projects.map { it.account }).distinct()
+    val accounts = remember(state, projects) {
+        (state.quota.keys + projects.map { it.account }).distinct()
             .sortedWith(compareBy<String> { a -> !(state.quota[a]?.let { Accounts.isPersonalQuota(a, it) } ?: Accounts.personal(a, null)) }.thenBy { it })
     }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
@@ -42,7 +44,7 @@ fun LaunchSheet(
     var chosen by remember { mutableStateOf<Project?>(null) }
     var first by rememberSaveable { mutableStateOf("") }
     // A campo vuoto i recenti; scrivendo, prima le sessioni con quel nome e poi i progetti (segnalazione 01/10 23:20).
-    val found = if (typed.isBlank()) LaunchSuggest.recent(state, filter) else LaunchSuggest.ranked(state, typed, filter)
+    val found = if (typed.isBlank()) LaunchSuggest.recent(state, filter, pool = projects) else LaunchSuggest.ranked(state, typed, filter, pool = projects)
     val sessions = if (onSession == null || chosen != null) emptyList() else LaunchSuggest.sessions(state, typed)
     Column(
         Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),

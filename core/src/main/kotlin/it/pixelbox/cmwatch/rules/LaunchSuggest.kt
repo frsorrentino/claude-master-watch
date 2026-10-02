@@ -17,8 +17,9 @@ object LaunchSuggest {
     /**
      * La ricerca con completamento di «Lancia» (Franz, 30/09): prima i nomi che iniziano con il testo, poi quelli che lo
      * contengono, poi quelli che lo hanno nella cartella; a pari merito il più recente. `account` null = tutti e due.
+     * `pool`: l'elenco completo chiesto al PC (contratto 1.26), altrimenti i progetti di /state, tagliati a 5.
      */
-    fun ranked(state: State, typed: String, account: String? = null, limit: Int = 6): List<Project> {
+    fun ranked(state: State, typed: String, account: String? = null, limit: Int = 6, pool: List<Project> = state.projects): List<Project> {
         val t = typed.trim().lowercase()
         fun rank(p: Project): Int? = when {
             t.isEmpty() -> 0
@@ -27,7 +28,7 @@ object LaunchSuggest {
             t in p.path.lowercase() -> 2
             else -> null
         }
-        return state.projects.filter { account == null || it.account == account }
+        return pool.filter { account == null || it.account == account }
             .mapNotNull { p -> rank(p)?.let { it to p } }
             .sortedWith(compareBy<Pair<Int, Project>> { it.first }.thenByDescending { it.second.lastUsed ?: Long.MIN_VALUE })
             .map { it.second }
@@ -36,10 +37,10 @@ object LaunchSuggest {
 
     /**
      * I recenti del foglio a campo vuoto: solo i progetti con una data d'uso, i più recenti prima (segnalazione 01/10
-     * 23:20: senza data l'ordine sembrava casuale). `account` null = tutti e due.
+     * 23:20: senza data l'ordine sembrava casuale). `account` null = tutti e due; `pool` come in `ranked`.
      */
-    fun recent(state: State, account: String?, limit: Int = 6): List<Project> =
-        state.projects.filter { (account == null || it.account == account) && it.lastUsed != null }
+    fun recent(state: State, account: String?, limit: Int = 6, pool: List<Project> = state.projects): List<Project> =
+        pool.filter { (account == null || it.account == account) && it.lastUsed != null }
             .sortedByDescending { it.lastUsed }.take(limit)
 
     /**
