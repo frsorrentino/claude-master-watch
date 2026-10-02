@@ -525,7 +525,7 @@ class MainActivity : ComponentActivity() {
                         // Swipe laterale fra le sessioni, nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
                         // sessioni»); la sessione della pagina corrente è quella aperta, e il menu in alto la segue.
                         val names = remember(state?.sessions, opened?.name) {
-                            val live = state?.let { st -> PhoneBoard.sections(st).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
+                            val live = state?.let { st -> PhoneBoard.sections(st, withMaster = false).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
                             if (opened != null && opened.name !in live) live + opened.name else live
                         }
                         if (opened != null && names.isNotEmpty()) {

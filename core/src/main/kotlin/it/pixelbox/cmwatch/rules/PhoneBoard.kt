@@ -15,8 +15,9 @@ object PhoneBoard {
         SessionState.GONE -> Group.CLOSED
     }
 
-    fun sections(state: State): List<Section> {
-        val byGroup = Order.sessions(state.sessions).groupBy { group(it.state) }
+    /** `withMaster = false` per la lista Sessioni: la master ha la sua scheda (Franz, 02/10). */
+    fun sections(state: State, withMaster: Boolean = true): List<Section> {
+        val byGroup = Order.sessions(state.sessions.filter { withMaster || it.name != ContextActions.MASTER }).groupBy { group(it.state) }
         return Group.entries.mapNotNull { g -> byGroup[g]?.let { Section(g, it) } }
     }
 

@@ -32,7 +32,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (sessionId: String) ->
         return
     }
     var closedOpen by rememberSaveable { mutableStateOf(false) }
-    val sections = PhoneBoard.sections(state)
+    val sections = PhoneBoard.sections(state, withMaster = false)
     Column(Modifier.fillMaxSize().background(CmColors.bg)) {
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),

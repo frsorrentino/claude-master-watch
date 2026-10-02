@@ -32,6 +32,13 @@ class PhoneBoardTest {
         assertEquals(listOf(PhoneBoard.Group.IDLE), PhoneBoard.sections(only).map { it.group })
     }
 
+    // Franz, 02/10 06:39: la master ha la sua scheda, in Sessioni non si ripete.
+    @Test fun masterLeftOutOfTheList() {
+        val withMaster = state.copy(sessions = state.sessions + s("7", ContextActions.MASTER, SessionState.IDLE))
+        assertTrue(PhoneBoard.sections(withMaster, withMaster = false).flatMap { it.sessions }.none { it.name == ContextActions.MASTER })
+        assertEquals(1, PhoneBoard.sections(withMaster).flatMap { it.sessions }.count { it.name == ContextActions.MASTER })
+    }
+
     @Test fun quotaPersonalFirst() {
         val q = PhoneBoard.quotaRows(state, now = 100)
         assertEquals(listOf("personale", "lavoro"), q.map { it.account })
