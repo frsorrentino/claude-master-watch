@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -129,7 +133,7 @@ private fun NightCard(n: Event, onSpeak: (String) -> Unit) {
     RegCard(Modifier.clickable { open = !open }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { RegLabel(n.title) }
-            IconButton(onClick = { onSpeak(n.body) }) { Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon) }
+            IconButton(onClick = { onSpeak(n.body) }) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon) }
         }
         if (jobs.isEmpty() || open) Text(n.body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
         else jobs.forEachIndexed { i, j ->
@@ -158,7 +162,7 @@ private fun DayCard(title: String, lines: List<Registro.Line>, raw: String?, sta
         Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
             if (lines.isNotEmpty()) Text(pluralStringResource(R.plurals.reg_projects, lines.size, lines.size), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
-            Icon(if (open) androidx.compose.material.icons.Icons.Rounded.ExpandLess else androidx.compose.material.icons.Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
+            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
         }
         if (open) {
             if (lines.isEmpty()) raw?.let { Speakable(it, speak = it.length > ttsMinChars, onSpeak) }
