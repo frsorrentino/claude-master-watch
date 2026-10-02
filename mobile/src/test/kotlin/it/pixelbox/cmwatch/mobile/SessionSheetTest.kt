@@ -98,7 +98,7 @@ class SessionSheetTest {
                 HeroCard(hero, m, {}, {}, {}, {})
                 ForYouCard(rows) {}
                 RunningList(it.pixelbox.cmwatch.rules.MasterHome.running(st.copy(sessions = st.sessions + m))) {}
-                QuotaBars(rings) {}
+                QuotaBars(rings, onOpen = {})
             })
         }
     }
