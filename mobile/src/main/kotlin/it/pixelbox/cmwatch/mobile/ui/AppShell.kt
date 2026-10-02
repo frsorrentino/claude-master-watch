@@ -110,6 +110,7 @@ fun AppShell(
             ) {
                 androidx.compose.foundation.pager.HorizontalPager(
                     pager, Modifier.fillMaxSize(), userScrollEnabled = swipeTabs, beyondViewportPageCount = 0, key = { Tab.entries[it] },
+                    verticalAlignment = Alignment.Top,
                 ) { page -> content(Tab.entries[page]) }
             }
         }
