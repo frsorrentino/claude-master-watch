@@ -758,7 +758,18 @@ private fun ClaudeBubble(
                 // Fuori dalla lettura il testo si seleziona a pezzi con la pressione lunga (Franz, 02/10 20:31); durante la lettura
                 // il tocco sui paragrafi resta per ripartire da lì.
                 } else SelectionContainer {
-                    Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                    val shown = it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))
+                    val blocks = remember(shown) { it.pixelbox.cmwatch.rules.MarkdownTable.blocks(shown) }
+                    if (blocks.none { b -> b is it.pixelbox.cmwatch.rules.MarkdownTable.Table }) Text(linked(shown), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                    // Le tabelle (Franz, 02/10 21:11): griglia se stretta, una scheda per riga se larga.
+                    else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        blocks.forEach { b ->
+                            when (b) {
+                                is it.pixelbox.cmwatch.rules.MarkdownTable.Text -> Text(linked(b.text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                                is it.pixelbox.cmwatch.rules.MarkdownTable.Table -> TableBlock(b)
+                            }
+                        }
+                    }
                 }
                 // Variante C: «Prossimi» e i consigli in colonna; tocco = nel campo, pressione lunga = invio.
                 if (withSteps && parsed.steps.isNotEmpty()) Column(Modifier.padding(top = 2.dp)) {
@@ -991,6 +1002,43 @@ private fun OptionButton(label: String, filled: Boolean, onClick: () -> Unit, on
     ) {
         Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
             Text(label, style = MaterialTheme.typography.labelLarge.copy(fontSize = MaterialTheme.typography.bodyLarge.fontSize))
+        }
+    }
+}
+
+/**
+ * Una tabella del testo (Franz, 02/10 21:11): stretta (`MarkdownTable.compact`) resta una griglia con l'intestazione in
+ * grassetto; larga diventa una scheda per riga, titolo dalla prima colonna e «intestazione: valore» per le altre.
+ */
+@Composable
+private fun TableBlock(t: it.pixelbox.cmwatch.rules.MarkdownTable.Table) {
+    if (it.pixelbox.cmwatch.rules.MarkdownTable.compact(t)) Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            t.header.forEach { h -> Text(linked(h), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text2, modifier = Modifier.weight(1f)) }
+        }
+        t.rows.forEach { r ->
+            HorizontalDivider(color = CmColors.line)
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                r.forEach { c -> Text(linked(c), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.weight(1f)) }
+            }
+        }
+    } else Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        it.pixelbox.cmwatch.rules.MarkdownTable.cards(t).forEach { c ->
+            Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    if (c.title.isNotBlank()) Text(linked(c.title), style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+                    c.lines.forEach { line ->
+                        val head = line.substringBefore(": ")
+                        Text(
+                            androidx.compose.ui.text.buildAnnotatedString {
+                                pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.text2)); append("$head: "); pop()
+                                append(linked(line.substringAfter(": ")))
+                            },
+                            style = MaterialTheme.typography.bodyMedium, color = CmColors.text,
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -85,7 +85,8 @@ class Speech(ctx: Context) {
 
     /** I paragrafi di un testo, gli stessi che la chat mostra durante la lettura. */
     fun blocksOf(text: String): List<AnswerText.Block> =
-        AnswerText.blocks(OutcomeLine.forPhone(NextSteps.parse(text).text, app.getString(R.string.outcome_label)))
+        // Le tabelle a voce come le schede della chat, senza barre né trattini (Franz, 02/10 21:11).
+        AnswerText.blocks(it.pixelbox.cmwatch.rules.MarkdownTable.spoken(OutcomeLine.forPhone(NextSteps.parse(text).text, app.getString(R.string.outcome_label))))
 
     /** Lo stesso tasto: legge, o ferma se sta già leggendo quel testo. */
     fun toggle(text: String) { if (_speaking.value == text) stop() else speak(text) }

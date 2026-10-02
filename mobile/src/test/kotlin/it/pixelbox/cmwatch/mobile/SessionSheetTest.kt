@@ -118,6 +118,16 @@ class SessionSheetTest {
         }
     }
 
+    // Le tabelle nel testo (Franz, 02/10 21:11): una stretta resta griglia, una larga diventa una scheda per riga.
+    @Test fun sheetTables() = paparazzi.snapshot {
+        val s = st.sessions.first { it.state == SessionState.IDLE }
+        val t = st.ts - 600
+        val reply = "I file toccati:\n\n| file | righe |\n|---|---|\n| Repo.kt | 336 |\n| Slash.kt | 47 |\n\nI numeri\n\n" +
+            "| cosa | ora | a mezzogiorno |\n|---|---|---|\n| post del film (01/10) | 223 visualizzazioni, 4 repost | 121 visualizzazioni, 1 repost |\n| nuovi follower | 1 | — |"
+        val rows = listOf(ChatRow(it.pixelbox.cmwatch.rules.Sent("1", s.name, "Dammi i numeri", t, startedAt = t + 5, doneAt = t + 60, outcomeFull = reply), it.pixelbox.cmwatch.rules.ChatRules.Status.DONE))
+        CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, chat = rows) }
+    }
+
     // Le righe aperte: la domanda con le opzioni (la prima piena) e il turno finito con i consigli.
     @Test fun forYouOpenRows() = paparazzi.snapshot {
         val q = st.sessions.first { it.question != null }
