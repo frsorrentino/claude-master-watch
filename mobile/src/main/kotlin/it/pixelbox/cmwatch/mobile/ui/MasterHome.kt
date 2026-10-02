@@ -256,12 +256,12 @@ fun RunningList(rows: List<MasterHome.Running>, onSession: (String) -> Unit) {
 
 /** La quota in due barre (le 5 ore), con la settimana nel testo; tocco = il Quadro completo. */
 @Composable
-fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
+fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit, stacked: Boolean = false) {
     if (rings.isEmpty()) return
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        rings.forEach { r ->
+    // `stacked`: una barra per riga, a tutta larghezza (nel Registro, dentro un blocco che ha già il fondo).
+    val cell: @Composable (PhoneOverview.Ring, Modifier) -> Unit = { r, mod ->
             Column(
-                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(CmColors.surfaceLow).clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp),
+                mod.clip(RoundedCornerShape(12.dp)).background(if (stacked) CmColors.bg else CmColors.surfaceLow).clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
@@ -272,7 +272,8 @@ fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
                     Box(Modifier.fillMaxWidth(((r.h5 ?: 0).coerceIn(0, 100)) / 100f).fillMaxHeight().background(if (r.stale) CmColors.text2 else CmColors.briefRing))
                 }
             }
-        }
     }
+    if (stacked) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { rings.forEach { cell(it, Modifier.fillMaxWidth()) } }
+    else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { rings.forEach { cell(it, Modifier.weight(1f)) } }
 }
 

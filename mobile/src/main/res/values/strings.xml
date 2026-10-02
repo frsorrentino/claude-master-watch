@@ -89,6 +89,11 @@
     <string name="diary_previous">Giorni precedenti</string>
     <string name="reg_tonight">Stanotte</string>
     <string name="reg_add">Aggiungi</string>
+    <string name="reg_queue_empty">Nessun lavoro in coda</string>
+    <plurals name="reg_queued">
+        <item quantity="one">%1$d lavoro in coda</item>
+        <item quantity="other">%1$d lavori in coda</item>
+    </plurals>
     <string name="reg_today">Oggi</string>
     <string name="reg_yesterday">Ieri</string>
     <string name="reg_quota">Quota</string>

@@ -87,6 +87,11 @@
     <string name="diary_previous">Previous days</string>
     <string name="reg_tonight">Tonight</string>
     <string name="reg_add">Add</string>
+    <string name="reg_queue_empty">Nothing queued</string>
+    <plurals name="reg_queued">
+        <item quantity="one">%1$d job queued</item>
+        <item quantity="other">%1$d jobs queued</item>
+    </plurals>
     <string name="reg_today">Today</string>
     <string name="reg_yesterday">Yesterday</string>
     <string name="reg_quota">Quota</string>

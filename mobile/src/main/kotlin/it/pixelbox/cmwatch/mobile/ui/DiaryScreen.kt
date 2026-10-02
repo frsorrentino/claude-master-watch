@@ -79,7 +79,7 @@ fun DiaryScreen(
         if (rings.isNotEmpty() || quotaEvents.isNotEmpty()) item(key = "quota") {
             RegCard {
                 RegLabel(stringResource(R.string.reg_quota))
-                QuotaBars(rings, onQuadro)
+                QuotaBars(rings, onQuadro, stacked = true)
                 quotaEvents.take(5).forEach { e ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(e.title, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Clip)
@@ -100,7 +100,7 @@ private fun Tonight(state: State, onAdd: () -> Unit, onRemove: (String) -> Unit)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 RegLabel(stringResource(R.string.reg_tonight))
                 Text(
-                    if (state.night.queued > 0) stringResource(R.string.night_queued, state.night.queued) else stringResource(R.string.night_empty),
+                    if (state.night.queued > 0) pluralStringResource(R.plurals.reg_queued, state.night.queued, state.night.queued) else stringResource(R.string.reg_queue_empty),
                     style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
                 )
             }
