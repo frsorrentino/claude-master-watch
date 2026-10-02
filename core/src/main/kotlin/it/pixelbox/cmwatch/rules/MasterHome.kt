@@ -12,12 +12,12 @@ import java.time.ZoneId
 
 /**
  * «Per te» nella casa della master (design 01/10, approvato da Franz alle 23:02): le cose che chiedono Franz, una riga e
- * un tasto ciascuna, al massimo [MAX] più il conto delle altre. Ordine per urgenza: domande, contesto dall'80 %, resoconto
- * della notte (al mattino, finché non è letto), notte (dalle 20), prossimi passi del recap, invii programmati. Le righe
- * sono dati: le frasi le compone l'app dalle sue stringhe.
+ * un tasto ciascuna, al massimo [MAX] più il conto delle altre. Ordine per urgenza: domande, turni finiti (variante 3,
+ * 02/10 21:11), contesto dall'80 %, resoconto della notte (al mattino, finché non è letto), notte (dalle 20), prossimi passi
+ * del recap dei progetti senza sessione, invii programmati. Le righe sono dati: le frasi le compone l'app dalle sue stringhe.
  */
 object MasterHome {
-    enum class Kind { QUESTION, CONTEXT, NIGHT_REPORT, NIGHT, NEXT_STEP, SCHEDULED }
+    enum class Kind { QUESTION, FINISHED, CONTEXT, NIGHT_REPORT, NIGHT, NEXT_STEP, SCHEDULED }
 
     /**
      * `title`/`detail`: nome e testo (sessione e domanda, progetto e passo, titolo e corpo del resoconto); `number`: la
@@ -35,6 +35,13 @@ object MasterHome {
 
     /** La chiave di un prossimo passo avviato dal telefono: ricordata, il passo non torna (revisione finale 02/10). */
     fun nextKey(project: String, next: String) = "next:$project:$next"
+
+    /**
+     * Variante 3 dei mockup (Franz, 02/10 21:11): chi ha finito il turno resta in «Per te» finché non lo apri, non gli
+     * scrivi o non passano [FINISHED_S]; come l'avviso nella chat, solo le sessioni seguite o a cui hai scritto dal telefono.
+     */
+    fun finishedKey(session: String, at: Long) = "finished:$session@$at"
+    const val FINISHED_S = 12 * 3600L
     /** Il resoconto della notte resta fino a mezzogiorno; la notte si propone dalle 20. */
     const val MORNING_END = 12
     const val EVENING = 20
@@ -49,7 +56,15 @@ object MasterHome {
         val live = state.sessions.filter { it.state != SessionState.GONE }
         val all = buildList {
             live.mapNotNull { s -> s.question?.let { q -> Triple(s, q, q.askedAt) } }.sortedBy { it.third }
-                .forEach { (s, q, _) -> add(Row(Kind.QUESTION, s.name, q.text, s.name)) }
+                .forEach { (s, q, _) -> add(Row(Kind.QUESTION, s.name, q.text, s.name, at = q.askedAt)) }
+            live.filter { it.name != ContextActions.MASTER && it.state == SessionState.IDLE }
+                .mapNotNull { s -> s.outcome?.let { o -> s to o } }
+                .filter { (s, o) ->
+                    now - o.at <= FINISHED_S && finishedKey(s.name, o.at) !in read &&
+                        (s.followed || sent.any { it.session == s.name }) && sent.none { it.session == s.name && it.sentAt > o.at }
+                }
+                .sortedByDescending { it.second.at }
+                .forEach { (s, o) -> add(Row(Kind.FINISHED, s.name, o.full, s.name, key = finishedKey(s.name, o.at), at = o.at)) }
             live.filter { ContextActions.urgent(it.context) }.sortedByDescending { it.context }
                 .forEach { s -> add(Row(Kind.CONTEXT, s.name, session = s.name, number = s.context)) }
             if (local.hour < MORNING_END) events.filter { it.kind == EventKind.NIGHT_REPORT }.maxByOrNull { it.ts }
@@ -60,14 +75,11 @@ object MasterHome {
             val recapDay = runCatching { LocalDate.parse(state.recap.date) }.getOrNull()
             if (recapDay != null && !recapDay.isBefore(today.minusDays(1))) state.recap.items.forEach { item ->
                 val next = item.next?.trim()?.takeIf { it.isNotEmpty() } ?: return@forEach
-                val s = live.firstOrNull { it.project == item.project }
-                // Già avviato: ricordato dall'app, o già mandato a quella sessione come prompt.
+                // Mai a una sessione già aperta (Franz, 02/10 20:49: «Avvia» sembrava riaprirla): quella sta fra chi ha finito.
+                if (live.any { it.project == item.project }) return@forEach
+                // Già avviato: ricordato dall'app.
                 if (nextKey(item.project, next) in read) return@forEach
-                if (s != null && sent.any { it.session == s.name && it.text.trim() == next }) return@forEach
-                when {
-                    s == null -> add(Row(Kind.NEXT_STEP, item.project, next, project = state.projects.firstOrNull { it.name == item.project }?.path))
-                    s.state == SessionState.IDLE -> add(Row(Kind.NEXT_STEP, item.project, next, session = s.name))
-                }
+                add(Row(Kind.NEXT_STEP, item.project, next, project = state.projects.firstOrNull { it.name == item.project }?.path))
             }
             val waiting = sent.filter(ChatRules::waiting)
             waiting.minByOrNull { it.scheduledFor!! }?.let { first ->

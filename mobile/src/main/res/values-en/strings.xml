@@ -157,6 +157,7 @@
     <string name="elsewhere_reply">Reply</string>
     <string name="elsewhere_finished">%1$s has finished</string>
     <string name="elsewhere_open">Open</string>
+    <string name="fy_open_conversation">Open the conversation</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

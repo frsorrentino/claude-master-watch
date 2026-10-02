@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -63,19 +66,94 @@ private fun hm(epoch: Long) = HM.format(Instant.ofEpochSecond(epoch).atZone(Zone
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun ForYouCard(all: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit) {
+fun ForYouCard(
+    all: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit, now: Long = 0L,
+    /** La domanda aperta di una sessione, per le opzioni della riga aperta. */
+    question: (String) -> it.pixelbox.cmwatch.contract.Question? = { null },
+    onAnswer: (session: String, n: Int) -> Unit = { _, _ -> }, onStep: (session: String, text: String) -> Unit = { _, _ -> },
+) {
     if (all.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
+    // Una riga aperta alla volta (variante 3, Franz 02/10 21:11).
+    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    val item: @Composable (MasterHome.Row, (MasterHome.Row) -> Unit) -> Unit = { row, act ->
+        val s = row.session
+        if (s != null && (row.kind == MasterHome.Kind.QUESTION || row.kind == MasterHome.Kind.FINISHED)) {
+            val id = row.kind.name + ":" + s
+            AttentionRow(row, now, expanded == id, onToggle = { expanded = if (expanded == id) null else id }, question = question(s),
+                onAnswer = { n -> onAnswer(s, n) }, onStep = { t -> onStep(s, t) }, onOpen = { act(row) })
+        } else ForYouRow(row, act)
+    }
     GlassCard(tint = CmColors.waiting) {
         RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
-        all.take(MasterHome.MAX).forEach { row -> ForYouRow(row, onAction) }
+        all.take(MasterHome.MAX).forEach { row -> item(row, onAction) }
         val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
     }
     if (open) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { open = false }, containerColor = CmColors.surface) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
-            all.forEach { row -> ForYouRow(row) { open = false; onAction(it) } }
+            all.forEach { row -> item(row) { open = false; onAction(it) } }
+        }
+    }
+}
+
+/**
+ * Variante 3 dei mockup di «Per te» (Franz, 02/10 21:11): chi ti aspetta (mano) e chi ha finito (bandierina), una riga per
+ * sessione con l'inizio della domanda o dell'esito; il tocco la apre sul posto. Aperta: la domanda intera e le opzioni,
+ * che rispondono subito (la prima piena, come nella chat), oppure l'esito e i consigli `Prossimi:`, che vanno a quella
+ * sessione; sotto, la conversazione.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+internal fun AttentionRow(
+    row: MasterHome.Row, now: Long, open: Boolean, onToggle: () -> Unit, question: it.pixelbox.cmwatch.contract.Question?,
+    onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
+) {
+    val waiting = row.kind == MasterHome.Kind.QUESTION
+    val tone = if (waiting) CmColors.briefWarn else CmColors.briefGood
+    val parsed = androidx.compose.runtime.remember(row.detail) { it.pixelbox.cmwatch.rules.NextSteps.parse(row.detail.orEmpty()) }
+    val body = it.pixelbox.cmwatch.rules.Markdown.parse(parsed.text).text.trim()
+    val age = row.at?.let { t -> if (waiting) it.pixelbox.cmwatch.contract.Durations.since(t, now) else hm(t) }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(if (waiting) R.drawable.ic_hand else R.drawable.ic_flag), null, tint = tone, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)); append(row.title); pop()
+                        age?.let { pushStyle(androidx.compose.ui.text.SpanStyle(color = tone)); append(" · $it"); pop() }
+                    },
+                    style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
+                )
+                if (!open) Text(body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+            }
+            androidx.compose.material3.Icon(
+                if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2,
+            )
+        }
+        if (open) Column(Modifier.padding(start = 40.dp, end = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
+            if (waiting) question?.options?.forEachIndexed { i, o ->
+                val label = "${o.n} · ${o.label}"
+                if (i == 0) Button(
+                    onClick = { onAnswer(o.n) }, modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = tone, contentColor = CmColors.briefWarnInk),
+                ) { Text(label, modifier = Modifier.fillMaxWidth()) }
+                else FilledTonalButton(onClick = { onAnswer(o.n) }, modifier = Modifier.fillMaxWidth()) { Text(label, modifier = Modifier.fillMaxWidth()) }
+            }
+            if (!waiting && parsed.steps.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                parsed.steps.forEach { step ->
+                    androidx.compose.material3.OutlinedButton(onClick = { onStep(step) }, border = androidx.compose.foundation.BorderStroke(1.dp, tone.copy(alpha = 0.5f))) {
+                        Text(step, color = CmColors.text)
+                    }
+                }
+            }
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.fy_open_conversation), color = CmColors.actionIcon) }
         }
     }
 }
@@ -84,6 +162,8 @@ fun ForYouCard(all: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit) {
 private fun ForYouRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) {
     val (title, detail, action) = when (row.kind) {
         MasterHome.Kind.QUESTION -> Triple(stringResource(R.string.fy_question, row.title), row.detail, R.string.fy_btn_answer)
+        // Di solito sta in `AttentionRow`; qui solo una riga senza sessione.
+        MasterHome.Kind.FINISHED -> Triple(stringResource(R.string.elsewhere_finished, row.title), row.detail?.lineSequence()?.firstOrNull { it.isNotBlank() }, R.string.elsewhere_open)
         MasterHome.Kind.CONTEXT -> Triple(stringResource(R.string.fy_context, row.title, row.number ?: 0), stringResource(R.string.fy_context_detail), R.string.fy_btn_handoff)
         MasterHome.Kind.NIGHT_REPORT -> Triple(row.title, row.detail?.lineSequence()?.firstOrNull { it.isNotBlank() }, R.string.fy_btn_listen)
         MasterHome.Kind.NIGHT -> Triple(

@@ -3,6 +3,9 @@ package it.pixelbox.cmwatch.mobile
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import org.junit.Test
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.mobile.ui.*
@@ -96,7 +99,11 @@ class SessionSheetTest {
         val reply = TranscriptEntry("a1", "assistant", "Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb · prova la casa dal vivo", st.ts - 600)
         val hero = it.pixelbox.cmwatch.rules.MasterHome.hero(listOf(reply), m)
         val q = st.sessions.first { it.question != null }
-        val rows = listOf(it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION, q.name, q.question!!.text, session = q.name))
+        // Variante 3 di «Per te» (Franz, 02/10 21:11): chi ti aspetta e chi ha finito, righe chiuse.
+        val rows = listOf(
+            it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION, q.name, q.question!!.text, session = q.name, at = q.question!!.askedAt),
+            it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.FINISHED, "atlas-shop", FINISHED_TEXT, session = "atlas-shop", at = st.ts - 900),
+        )
         val rings = listOf(
             it.pixelbox.cmwatch.rules.PhoneOverview.Ring("personale", true, 3, 11, null, null),
             it.pixelbox.cmwatch.rules.PhoneOverview.Ring("professionale", false, 0, 63, null, null, stale = true),
@@ -104,10 +111,30 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) {
             SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ ->
                 HeroCard(hero, m, {}, {}, {}, {})
-                ForYouCard(rows) {}
+                ForYouCard(rows, onAction = {}, now = st.ts)
                 RunningList(it.pixelbox.cmwatch.rules.MasterHome.running(st.copy(sessions = st.sessions + m))) {}
                 QuotaBars(rings, onOpen = {})
             })
         }
+    }
+
+    // Le righe aperte: la domanda con le opzioni (la prima piena) e il turno finito con i consigli.
+    @Test fun forYouOpenRows() = paparazzi.snapshot {
+        val q = st.sessions.first { it.question != null }
+        CmPhoneTheme(still = true) {
+            androidx.compose.foundation.layout.Column(
+                androidx.compose.ui.Modifier.background(it.pixelbox.cmwatch.ui.tokens.CmColors.bg).padding(16.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            ) {
+                AttentionRow(it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION, q.name, q.question!!.text, session = q.name, at = q.question!!.askedAt),
+                    st.ts, open = true, onToggle = {}, question = q.question, onAnswer = {}, onStep = {}, onOpen = {})
+                AttentionRow(it.pixelbox.cmwatch.rules.MasterHome.Row(it.pixelbox.cmwatch.rules.MasterHome.Kind.FINISHED, "atlas-shop", FINISHED_TEXT, session = "atlas-shop", at = st.ts - 900),
+                    st.ts, open = true, onToggle = {}, question = null, onAnswer = {}, onStep = {}, onOpen = {})
+            }
+        }
+    }
+
+    private companion object {
+        const val FINISHED_TEXT = "Test verdi, 40 su 40. Changelog aggiornato.\nProssimi: tagga la v2.8.0 · apri la PR"
     }
 }

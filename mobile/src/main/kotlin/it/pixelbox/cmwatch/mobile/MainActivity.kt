@@ -351,7 +351,9 @@ class MainActivity : ComponentActivity() {
         }
         val forYouAction: (it.pixelbox.cmwatch.rules.MasterHome.Row) -> Unit = { row ->
             when (row.kind) {
-                it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> queueOpen = true
+                // Variante 3 (02/10 21:11): la riga si apre sul posto; «Apri la conversazione» porta alla sessione.
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> { tab = StartRoute.Tab.SESSIONS; open = row.session }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.FINISHED -> { row.key?.let(markRead); tab = StartRoute.Tab.SESSIONS; open = row.session }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.CONTEXT -> row.session?.let { n -> sendPrompt(n, getString(R.string.ctx_handoff_prompt)) }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT_REPORT -> { row.detail?.let { speech.toggle(it) }; row.key?.let(markRead) }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT -> nightAdding = true
@@ -561,6 +563,9 @@ class MainActivity : ComponentActivity() {
                     val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
                     val running = remember(st) { it.pixelbox.cmwatch.rules.MasterHome.running(st) }
                     val toSession: (String) -> Unit = { n -> tab = StartRoute.Tab.SESSIONS; open = n }
+                    // Variante 3 di «Per te»: le opzioni della domanda di una sessione rispondono da qui.
+                    val forYouQuestion: (String) -> it.pixelbox.cmwatch.contract.Question? = { n -> st.sessions.firstOrNull { s -> s.name == n }?.question }
+                    val forYouAnswer: (String, Int) -> Unit = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } }
                     // Casa A (mockup approvato da Franz, 02/10 07:38): esito della master, Per te, In corso, quota.
                     val home: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { onDraft, onSend ->
                         master?.let { m ->
@@ -568,14 +573,14 @@ class MainActivity : ComponentActivity() {
                             HeroCard(hero, m, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
                                 onConversation = { toSession(m.name) }, onStep = onDraft, onSendStep = onSend)
                         }
-                        ForYouCard(forYou.rows, onAction = forYouAction)
+                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt)
                         RunningList(running, onSession = toSession)
                         QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }
                     if (master != null) sessionPage(master, masterEntries, home)
                     else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
-                        ForYouCard(forYou.rows, onAction = forYouAction)
+                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt)
                         RunningList(running, onSession = toSession)
                         QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }

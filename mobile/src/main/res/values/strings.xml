@@ -159,6 +159,7 @@
     <string name="elsewhere_reply">Rispondi</string>
     <string name="elsewhere_finished">%1$s ha finito</string>
     <string name="elsewhere_open">Apri</string>
+    <string name="fy_open_conversation">Apri la conversazione</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>

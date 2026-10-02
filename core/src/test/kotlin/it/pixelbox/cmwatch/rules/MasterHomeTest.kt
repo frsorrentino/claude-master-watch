@@ -56,13 +56,15 @@ class MasterHomeTest {
         assertTrue(MasterHome.forYou(st(s("kb"), night = Night(items = null)), emptyList(), emptyList(), at(21), zone).rows.isEmpty())
     }
 
-    @Test fun nextStepOnlyForIdleOrClosedProjects() {
+    // Franz, 02/10 20:49: un prossimo passo non si propone a una sessione già aperta («Avvia» sembrava riaprirla); resta
+    // solo per i progetti senza sessione, da lanciare.
+    @Test fun nextStepOnlyForProjectsWithoutASession() {
         val recap = Recap("2026-10-02", listOf(RecapItem("kb", "nota scritta", "distillare la nota"), RecapItem("atlas", "test", "pubblicare")))
         val projects = listOf(Project("/w/kb", "kb", "personale"), Project("/w/atlas", "atlas", "personale"))
-        val f = MasterHome.forYou(st(s("kb"), s("atlas", SessionState.BUSY), recap = recap, projects = projects), emptyList(), emptyList(), at(15), zone)
-        assertEquals(listOf(Kind.NEXT_STEP), kinds(f))
-        assertEquals("kb", f.rows[0].title); assertEquals("distillare la nota", f.rows[0].detail); assertEquals("kb", f.rows[0].session)
+        assertTrue(MasterHome.forYou(st(s("kb"), s("atlas", SessionState.BUSY), recap = recap, projects = projects), emptyList(), emptyList(), at(15), zone).rows.isEmpty())
         val closed = MasterHome.forYou(st(recap = recap, projects = projects), emptyList(), emptyList(), at(15), zone)
+        assertEquals(listOf(Kind.NEXT_STEP, Kind.NEXT_STEP), kinds(closed))
+        assertEquals("kb", closed.rows[0].title); assertEquals("distillare la nota", closed.rows[0].detail)
         assertEquals(listOf(null, null), closed.rows.map { it.session }); assertEquals("/w/kb", closed.rows[0].project)
     }
 
@@ -81,12 +83,39 @@ class MasterHomeTest {
     // mandato a quella sessione.
     @Test fun startedNextStepDoesNotComeBack() {
         val recap = Recap("2026-10-02", listOf(RecapItem("kb", "nota scritta", "distillare la nota")))
-        val state = st(s("kb"), recap = recap)
         val key = MasterHome.nextKey("kb", "distillare la nota")
-        assertTrue(MasterHome.forYou(state, emptyList(), emptyList(), at(15), zone, read = setOf(key)).rows.isEmpty())
-        val sent = listOf(Sent("1", "kb", "distillare la nota", sentAt = at(14)))
-        assertTrue(MasterHome.forYou(state, emptyList(), sent, at(15), zone).rows.isEmpty())
+        assertTrue(MasterHome.forYou(st(recap = recap), emptyList(), emptyList(), at(15), zone, read = setOf(key)).rows.isEmpty())
     }
+
+    // Franz, 02/10 20:49 (variante 3 dei mockup): dopo le domande, chi ha finito il turno, con la logica dell'avviso nella chat.
+    private fun done(name: String, at: Long, followed: Boolean = true) =
+        s(name).copy(outcome = Outcome("Fatto", "Test verdi.\nProssimi: tagga · apri la PR", at), followed = followed)
+
+    @Test fun finishedTurnsAfterQuestionsNewestFirst() {
+        val f = MasterHome.forYou(st(s("a", SessionState.WAITING, q = q("1", at(14))), done("b", at(14, 30)), done("c", at(14, 50))), emptyList(), emptyList(), at(15), zone)
+        assertEquals(listOf(Kind.QUESTION, Kind.FINISHED, Kind.FINISHED), kinds(f))
+        assertEquals(at(14), f.rows[0].at)
+        assertEquals(listOf("c", "b"), f.rows.drop(1).map { it.session })
+        assertEquals(at(14, 50), f.rows[1].at); assertEquals("Test verdi.\nProssimi: tagga · apri la PR", f.rows[1].detail)
+    }
+
+    @Test fun finishedOnlyFromFollowedOrWrittenSessions() {
+        val other = done("b", at(14, 30), followed = false)
+        assertTrue(MasterHome.forYou(st(other), emptyList(), emptyList(), at(15), zone).rows.isEmpty())
+        val sent = listOf(Sent("1", "b", "fai i test", sentAt = at(14)))
+        assertEquals(listOf(Kind.FINISHED), kinds(MasterHome.forYou(st(other), emptyList(), sent, at(15), zone)))
+    }
+
+    @Test fun finishedLeavesOnceAnsweredReadOrOld() {
+        val b = done("b", at(14, 30))
+        val replied = listOf(Sent("1", "b", "tagga", sentAt = at(14, 40)))
+        assertTrue(MasterHome.forYou(st(b), emptyList(), replied, at(15), zone).rows.isEmpty())
+        assertTrue(MasterHome.forYou(st(b), emptyList(), emptyList(), at(15), zone, read = setOf(MasterHome.finishedKey("b", at(14, 30)))).rows.isEmpty())
+        assertTrue(MasterHome.forYou(st(b), emptyList(), emptyList(), at(14, 30) + MasterHome.FINISHED_S + 1, zone).rows.isEmpty())
+    }
+
+    @Test fun theMasterIsNeverInItsOwnList() =
+        assertTrue(MasterHome.forYou(st(done("master", at(14, 30))), emptyList(), emptyList(), at(15), zone).rows.isEmpty())
 
     // Casa A (mockup approvato da Franz, 02/10 07:38): l'esito della master in grande, i consigli, le sessioni in corso.
     private fun claude(id: String, text: String, at: Long) = TranscriptEntry(id = id, role = "assistant", text = text, at = at)
