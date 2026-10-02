@@ -11,6 +11,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -530,7 +531,8 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 m.attachment?.let { AttachmentThumb(it) }
-                if (m.text.isNotBlank()) Text(linked(m.text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                // Pressione lunga = selezione di una parte del testo, con la barra di sistema per copiarla (Franz, 02/10 20:31).
+                if (m.text.isNotBlank()) SelectionContainer { Text(linked(m.text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text) }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -560,7 +562,7 @@ private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (
     val text = e.text.orEmpty()
     Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
         Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)) {
-            Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            SelectionContainer { Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             val from = when (e.origin) {
@@ -750,7 +752,11 @@ private fun ClaudeBubble(
                                 .clickable { onSpeakFrom(text, i) }.padding(horizontal = 6.dp, vertical = 4.dp),
                         )
                     }
-                } else Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                // Fuori dalla lettura il testo si seleziona a pezzi con la pressione lunga (Franz, 02/10 20:31); durante la lettura
+                // il tocco sui paragrafi resta per ripartire da lì.
+                } else SelectionContainer {
+                    Text(linked(it.pixelbox.cmwatch.rules.OutcomeLine.forPhone(text, stringResource(R.string.outcome_label))), style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                }
                 // Variante C: «Prossimi» e i consigli in colonna; tocco = nel campo, pressione lunga = invio.
                 if (withSteps && parsed.steps.isNotEmpty()) Column(Modifier.padding(top = 2.dp)) {
                     Text(stringResource(R.string.next_steps), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
