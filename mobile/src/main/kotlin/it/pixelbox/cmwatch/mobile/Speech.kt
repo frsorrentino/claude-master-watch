@@ -27,6 +27,9 @@ class Speech(ctx: Context) {
     private val locales = ctx.getSystemService(LocaleManager::class.java)
     private val _speaking = MutableStateFlow<String?>(null)
     val speaking: StateFlow<String?> = _speaking
+    /** Da dove arriva il testo che legge: il nome della sessione (anche la master), null se non viene da una sessione. */
+    private val _source = MutableStateFlow<String?>(null)
+    val source: StateFlow<String?> = _source
     private val _block = MutableStateFlow<Int?>(null)
     val block: StateFlow<Int?> = _block
     private val _voices = MutableStateFlow<List<String>>(emptyList())
@@ -68,14 +71,15 @@ class Speech(ctx: Context) {
         })
     }
 
-    fun speak(text: String) = speakBlocks(text, 0)
+    fun speak(text: String, source: String? = null) = speakBlocks(text, 0, source)
 
     /**
      * Legge `text` dal paragrafo `from` in poi: senza le righe di servizio («Prossimi:», «Watch:» letta come esito), ogni
      * paragrafo pulito dal markdown (Franz, 02/10 00:01: leggeva «asterisco asterisco») e a pezzi.
      */
-    fun speakBlocks(text: String, from: Int) {
+    fun speakBlocks(text: String, from: Int, source: String? = null) {
         if (!ready) return
+        _source.value = source
         // Letta a ogni lettura: la lingua si cambia nelle impostazioni mentre l'app è aperta.
         tts.language = AppLanguage.voiceLocale(AppLanguage.fromTags(locales.applicationLocales.toLanguageTags()), Locale.getDefault())
         applyVoice()
@@ -105,7 +109,7 @@ class Speech(ctx: Context) {
         AnswerText.blocks(it.pixelbox.cmwatch.rules.MarkdownTable.spoken(OutcomeLine.forPhone(NextSteps.parse(text).text, app.getString(R.string.outcome_label))))
 
     /** Lo stesso tasto: legge, o ferma se sta già leggendo quel testo. */
-    fun toggle(text: String) { if (_speaking.value == text) stop() else speak(text) }
+    fun toggle(text: String, source: String? = null) { if (_speaking.value == text) stop() else speak(text, source) }
     fun stop() { tts.stop(); finished() }
     fun shutdown() { tts.shutdown() }
 
@@ -131,7 +135,7 @@ class Speech(ctx: Context) {
         if (ready && _speaking.value != null && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex))
     }
 
-    private fun finished() { _speaking.value = null; _block.value = null }
+    private fun finished() { _speaking.value = null; _block.value = null; _source.value = null }
 
     private fun applyVoice() {
         val v = _voice.value?.let { n -> runCatching { tts.voices }.getOrNull()?.firstOrNull { it.name == n } }

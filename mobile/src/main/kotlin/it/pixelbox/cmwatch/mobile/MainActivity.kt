@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -133,6 +134,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Main(demo: Boolean, ttsMinChars: Int, host: String?, pairingJson: String?, onRepair: () -> Unit) {
         val snap by app.repo.snapshot.collectAsStateWithLifecycle()
+        // Il mini-controller della lettura (Franz, 03/10 23:00): cosa legge e da dove; su ogni schermata finché legge.
+        val readingNow by speech.speaking.collectAsStateWithLifecycle()
+        val readingSource by speech.source.collectAsStateWithLifecycle()
         // Il permesso delle notifiche si chiede solo accoppiati, mai in Demo.
         val askNotifications = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
         LaunchedEffect(demo) {
@@ -168,6 +172,21 @@ class MainActivity : ComponentActivity() {
         // La Panoramica in un foglio dal basso sopra la scheda (Franz, 01/10 12:34): si guarda la quota e si torna.
         var overviewSheet by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
+        // Il tocco sul testo del mini-controller riporta alla sessione da cui legge; la master si apre nella home.
+        val readingBar: (@Composable () -> Unit)? = readingNow?.let { text ->
+            {
+                val src = readingSource
+                val live = src != null && snap.state?.sessions?.any { x -> x.name == src && x.state != it.pixelbox.cmwatch.contract.SessionState.GONE } == true
+                ReadingPill(
+                    src, text,
+                    onOpen = if (!live) null else ({
+                        settingsOpen = false; searchOpen = false; queueOpen = false; tab = StartRoute.Tab.OVERVIEW
+                        if (src == it.pixelbox.cmwatch.rules.ContextActions.MASTER) { open = null; masterChat = true } else open = src
+                    }),
+                    onStop = { speech.stop() },
+                )
+            }
+        }
         // Gli avvisi delle altre sessioni già visti o chiusi (`Elsewhere`): un turno finito si dice una volta sola.
         val elsewhereSeen = remember { mutableStateListOf<String>() }
         LaunchedEffect(sessionAsked) {
@@ -216,6 +235,7 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = open != null && flyTarget == null && !settingsOpen && terminal == null) { open = null }
         val flight = rememberTransition(seek, label = "fly")
         if (settingsOpen) {
+            WithReadingBar(readingBar) {
             val r = PairingRecord.fromJson(pairingJson)
             val version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() }
             // Per lo schema dei dispositivi (mockup A): l'orologio raggiungibile adesso lo dice il Data Layer, le notifiche il sistema.
@@ -241,6 +261,7 @@ class MainActivity : ComponentActivity() {
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
             )
+            }
             return
         }
         terminal?.let { name ->
@@ -274,6 +295,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (searchOpen) {
+            WithReadingBar(readingBar) {
             // Contratto 1.27: con un relay che cerca, la ricerca va nelle conversazioni di tutte le sessioni; una richiesta per
             // volta, la precedente dimenticata.
             var searchId by remember { mutableStateOf<String?>(null) }
@@ -290,19 +312,22 @@ class MainActivity : ComponentActivity() {
                     }
                 },
             )
+            }
             return
         }
         if (queueOpen && state != null) {
             // La coda usa solo la card della domanda: risposta, «Parliamone», «Consenti tutto» e la lettura a voce.
+            WithReadingBar(readingBar) {
             QueueScreen(state, now, actionsFor = { s ->
                 SheetActions(
                     answer = { n -> scope.launch { app.repo.answer(s.name, n) } },
                     allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, s.name, null) } },
                     send = { _, _ -> }, follow = {}, reopen = {}, terminal = {}, openInClaude = {},
-                    speak = speech::toggle, retry = {},
+                    speak = { t -> speech.toggle(t, s.name) }, retry = {},
                     chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; open = s.name },
                 )
             }, onSession = { n -> queueOpen = false; open = n })
+            }
             return
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
@@ -491,7 +516,7 @@ class MainActivity : ComponentActivity() {
                             reopen = { scope.launch { app.repo.command(CmdOp.REOPEN, session.name, null) } },
                             terminal = { terminal = session.name; screenId = null },
                             openInClaude = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.link))) },
-                            speak = speech::toggle,
+                            speak = { t -> speech.toggle(t, session.name) },
                             // Un comando perso si riprova con lo stesso id; uno rifiutato dal PC si rimanda come nuovo.
                             retry = { id ->
                                 scope.launch {
@@ -543,7 +568,7 @@ class MainActivity : ComponentActivity() {
                             } ?: false },
                             overview = { overviewSheet = true },
                             // Proposta approvata (01/10 21:19): la master legge la sessione e risponde nella sua chat.
-                            speakFrom = { t, i -> speech.speakBlocks(t, i) },
+                            speakFrom = { t, i -> speech.speakBlocks(t, i, session.name) },
                             askMaster = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.takeIf { m -> m.name != session.name }?.let { m -> {
                                 scope.launch {
                                     val text = getString(R.string.ask_master_prompt, session.name)
@@ -660,8 +685,8 @@ class MainActivity : ComponentActivity() {
                 // Una pagina sola: si anima la parte sopra il campo, il campo resta fermo (`SessionSheet` con `homeOpen`).
                 sessionPage(
                     master, masterEntries, homeList, true,
-                    { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = true }) },
-                    { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = false }, expanded = true) },
+                    { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = true }) },
+                    { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = false }, expanded = true) },
                     !masterChat,
                 ) { pageHeader(null) }
             } else Column(Modifier.fillMaxSize()) {
@@ -682,6 +707,7 @@ class MainActivity : ComponentActivity() {
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
+            LocalReadingBar provides readingBar,
         ) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
@@ -705,6 +731,7 @@ class MainActivity : ComponentActivity() {
             refreshing = refreshing,
         ) { page ->
             if (page == StartRoute.Tab.DIARY && open == null) {
+                WithReadingBar(readingBar) {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
                         onAdd = { nightAdding = true },
@@ -713,6 +740,7 @@ class MainActivity : ComponentActivity() {
                         onQuadro = { overviewSheet = true },
                         // Una riga del Registro apre la sessione del progetto, se è viva.
                         onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n } })
+                }
                 }
                 return@AppShell
             }
@@ -944,5 +972,22 @@ private class OpenRoute(
         if (StartRoute.masterAtHome(value)) {
             open.value = null; tab.value = StartRoute.Tab.OVERVIEW; masterChat.value = true
         } else open.value = value
+    }
+}
+
+/**
+ * Le schermate senza campo di scrittura (Impostazioni, Cerca, Coda, Registro): il mini-controller della lettura in fondo,
+ * sopra il contenuto (Franz, 03/10 23:00). Nella home e nelle sessioni sta invece sopra il campo (`SessionSheet`).
+ */
+@androidx.compose.runtime.Composable
+private fun WithReadingBar(bar: (@androidx.compose.runtime.Composable () -> Unit)?, content: @androidx.compose.runtime.Composable () -> Unit) {
+    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+        content()
+        bar?.let {
+            androidx.compose.foundation.layout.Box(
+                androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter).navigationBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+            ) { it() }
+        }
     }
 }
