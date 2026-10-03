@@ -410,11 +410,13 @@ private fun PanelTitle(label: String, account: String, value: String?) {
         },
         modifier = Modifier.fillMaxWidth(),
     ) { m, c ->
+        // Si decide sulle larghezze intrinseche, poi ogni pezzo si misura una volta sola.
         val gap = 8.dp.roundToPx()
         val free = Constraints()
-        val labelP = m[0].measure(free); val dot = m[1].measure(free); val acc = m[2].measure(free); val v = m[3].measure(free)
-        val one = labelP.width + gap + dot.width + gap + acc.width + gap + v.width <= c.maxWidth
-        if (one) {
+        val w = { i: Int -> m[i].maxIntrinsicWidth(Constraints.Infinity) }
+        val v = m[3].measure(free)
+        if (w(0) + gap + w(1) + gap + w(2) + gap + v.width <= c.maxWidth) {
+            val labelP = m[0].measure(free); val dot = m[1].measure(free); val acc = m[2].measure(free)
             val h = maxOf(labelP.height, v.height)
             layout(c.maxWidth, h) {
                 labelP.placeRelative(0, 0); dot.placeRelative(labelP.width + gap, 0); acc.placeRelative(labelP.width + 2 * gap + dot.width, 0)
