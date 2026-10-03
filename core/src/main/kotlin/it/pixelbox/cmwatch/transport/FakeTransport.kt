@@ -291,6 +291,13 @@ class FakeTransport(
                     ok(ContractJson.json.encodeToString(SearchPage.serializer(), SearchPage(hits.sortedByDescending { it.at ?: 0 })))
                 }
             }
+            // Contratto 1.29: la demo racconta l'ultimo esito di ogni sessione di esempio, dalla più recente.
+            CmdOp.TIMELINE -> ok(ContractJson.json.encodeToString(TimelinePage.serializer(), TimelinePage(
+                since = now() - 6 * 3600,
+                sessions = s.sessions.filter { cmd.session == null || it.name == cmd.session }.mapNotNull { x ->
+                    x.outcome?.let { o -> TimelineSession(x.name, x.state != SessionState.GONE, x.project, listOf(TimelineEvent(o.at, "outcome", o.short.take(160)))) }
+                }.sortedByDescending { it.events.last().at },
+            )))
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")

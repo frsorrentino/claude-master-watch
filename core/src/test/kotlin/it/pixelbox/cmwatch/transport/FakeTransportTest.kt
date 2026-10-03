@@ -214,4 +214,13 @@ class FakeTransportTest {
         val bad = tr.send(Cmd("s2", CmdOp.SEARCH, null, "  ", clock, "test"))
         assertFalse(bad.ok); assertTrue(bad.text.startsWith("bad query"))
     }
+
+    // Contratto 1.29: la demo ha una cronologia con l'ultimo esito delle sessioni di esempio, anche per una sola.
+    @Test fun timelineTellsTheDemoOutcomes() = runTest {
+        val tr = t()
+        val all = ContractJson.decodeTimeline(tr.send(Cmd("t1", CmdOp.TIMELINE, null, null, clock, "test")).text)
+        assertTrue(all.sessions.isNotEmpty()); assertTrue(all.sessions.all { s -> s.events.single().kind == "outcome" })
+        val one = ContractJson.decodeTimeline(tr.send(Cmd("t2", CmdOp.TIMELINE, all.sessions[0].session, "6h", clock, "test")).text)
+        assertEquals(listOf(all.sessions[0].session), one.sessions.map { it.session })
+    }
 }
