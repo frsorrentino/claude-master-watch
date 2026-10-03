@@ -14,3 +14,6 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Gesto indietro da una chat: la chat si restringe verso la sua riga del riepilogo; annullato, torna intera.
 - [ ] «Ha finito» sparisce anche aprendo la sessione dal menu in alto o scorrendo fra le chat.
 - [ ] Menu ≡: lo scrim copre anche la barra di stato e il pannello sta sotto la barra.
+- [ ] Dal riepilogo, scorrendo a sinistra, la prima sessione; dalla prima sessione, scorrendo a destra, il riepilogo.
+- [ ] Toccando una card la sessione si apre con il volo; ← e il gesto indietro la riportano nella sua card.
+- [ ] Menu ⋮ della sessione: «Chiudi la sessione» chiede conferma e manda /exit.
