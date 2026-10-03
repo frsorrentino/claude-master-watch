@@ -47,6 +47,10 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -222,7 +226,7 @@ fun SessionSheet(
             ) { waiting ->
             if (waiting) Box(Modifier.fillMaxSize().padding(vertical = 32.dp), contentAlignment = Alignment.TopCenter) {
                 CircularWavyProgressIndicator(color = CmColors.actionIcon)
-            } else LazyColumn(
+            } else ZoomedText { LazyColumn(
                 Modifier.fillMaxSize(), state = list,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -292,7 +296,7 @@ fun SessionSheet(
                             }
                         }
                     }
-            }
+            } }
             }
             // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
             // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
@@ -1354,6 +1358,39 @@ private const val MAX_IMAGES = 5
 
 /** Il testo che la voce sta leggendo: il suo tasto diventa Stop. Fornito da `MainActivity` da `Speech.speaking`. */
 val LocalSpeaking = androidx.compose.runtime.staticCompositionLocalOf<String?> { null }
+
+/** Lo zoom del testo della conversazione (`ChatZoom`) e come cambiarlo, da `MainActivity`. */
+val LocalChatZoom = androidx.compose.runtime.staticCompositionLocalOf { 1f }
+val LocalSetChatZoom = androidx.compose.runtime.staticCompositionLocalOf<(Float) -> Unit> { {} }
+
+/**
+ * La conversazione si ingrandisce con due dita (Franz, 03/10 21:16): cambia la grandezza dei caratteri, che vanno a capo da
+ * soli. Con un dito solo lo scorrimento resta della lista; con due il gesto è dello zoom.
+ */
+@Composable
+private fun ZoomedText(content: @Composable () -> Unit) {
+    val zoom = LocalChatZoom.current
+    val current by androidx.compose.runtime.rememberUpdatedState(zoom)
+    val setZoom by androidx.compose.runtime.rememberUpdatedState(LocalSetChatZoom.current)
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    Box(Modifier.fillMaxSize().pointerInput(Unit) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+            do {
+                val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                if (event.changes.count { it.pressed } >= 2) {
+                    val z = event.calculateZoom()
+                    if (z != 1f) setZoom(it.pixelbox.cmwatch.rules.ChatZoom.clamp(current * z))
+                    event.changes.forEach { c -> c.consume() }
+                }
+            } while (event.changes.any { it.pressed })
+        }
+    }) {
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, d.fontScale * zoom),
+        ) { content() }
+    }
+}
 
 /** La velocità della voce e come cambiarla mentre legge (`Speech.rate`, `Speech.setRateNow`), da `MainActivity`. */
 val LocalSpeechRate = androidx.compose.runtime.staticCompositionLocalOf { it.pixelbox.cmwatch.rules.SpeechRate.NORMAL }

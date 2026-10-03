@@ -663,9 +663,14 @@ class MainActivity : ComponentActivity() {
         }
         val speakingBlock by speech.block.collectAsStateWithLifecycle()
         val speechRate by speech.rate.collectAsStateWithLifecycle()
+        // Lo zoom del testo della conversazione, uno per tutte le sessioni, salvato quando le dita si fermano.
+        val uiPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
+        var chatZoom by remember { mutableStateOf(it.pixelbox.cmwatch.rules.ChatZoom.of(uiPrefs.getFloat("chat_zoom", 1f))) }
+        LaunchedEffect(chatZoom) { delay(400); uiPrefs.edit().putFloat("chat_zoom", chatZoom).apply() }
         CompositionLocalProvider(
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
+            LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
         ) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
