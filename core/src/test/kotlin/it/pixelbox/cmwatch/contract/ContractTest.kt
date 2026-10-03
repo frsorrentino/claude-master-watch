@@ -83,7 +83,12 @@ class ContractTest {
         // Contratto 1.25: due slash, /compact con testo e un comando non consentito.
         // Contratto 1.26: un projects riuscito, tutti i progetti dal più recente.
         // Contratto 1.27: un search riuscito, «tuesday» in una sessione viva e in una chiusa.
-        assertEquals(28, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.28: un report con un PDF, il nome ripulito dal relay.
+        assertEquals(29, results.size); assertEquals(7, results.count { !it.ok })
+        val pdf = cmds.single { it.id == "6f1c2d3e-0180-4000-8000-000000000180" }
+        assertEquals(CmdOp.REPORT, pdf.op); assertEquals("phone", pdf.device)
+        assertEquals("sent Preventivo cliente.pdf to atlas-shop", results.first { it.id == pdf.id }.text)
+        assertTrue(ContractJson.decodeState(Fixtures.stateIdle).share!!.any)
         val search = cmds.single { it.op == CmdOp.SEARCH }
         assertNull(search.session); assertEquals("tuesday", search.arg)
         val hits = ContractJson.decodeSearch(results.first { it.id == search.id }.text)
@@ -233,7 +238,8 @@ class ContractTest {
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         val reports = cmds.filter { it.op == CmdOp.REPORT }
-        assertEquals(3, reports.size)
+        // Contratto 1.28: il quarto è un file, un PDF.
+        assertEquals(4, reports.size)
         assertNotNull(reports[0].arg); assertNull(reports[1].arg)
         assertEquals("sent to field-notes", res.single { it.id == reports[1].id }.text)
         assertFalse(res.single { it.id == reports[2].id }.ok)
