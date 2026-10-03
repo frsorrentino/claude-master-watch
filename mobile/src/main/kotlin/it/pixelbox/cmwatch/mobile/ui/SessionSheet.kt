@@ -1001,26 +1001,40 @@ internal fun QuestionOptions(
         stringResource(if (holdHint) R.string.question_hold else R.string.question_high_risk),
         style = MaterialTheme.typography.labelLarge, color = if (holdHint) CmColors.waiting else CmColors.briefAlert,
     )
-    q.options.forEachIndexed { i, o ->
+    // Righe B (Franz, 03/10 15:18: tasti sproporzionati): 44 dp; due o tre opzioni brevi in parti uguali su una riga.
+    val inline = QuestionRules.inline(q.options)
+    val button: @Composable (Int, it.pixelbox.cmwatch.contract.Option, Modifier, androidx.compose.ui.graphics.Shape) -> Unit = { i, o, m, shape ->
         OptionButton(
             QuestionRules.optionLabel(o), filled = i == 0 && firstFilled,
             onClick = { if (long) onHold() else onAnswer(o.n) },
             onLongClick = if (long) ({ onAnswer(o.n) }) else null,
+            modifier = m, shape = shape, center = inline,
         )
     }
+    if (inline) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        val last = q.options.lastIndex
+        q.options.forEachIndexed { i, o ->
+            val start = if (i == 0) 22.dp else 6.dp
+            val end = if (i == last) 22.dp else 6.dp
+            button(i, o, Modifier.weight(1f), RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end))
+        }
+    } else q.options.forEachIndexed { i, o -> button(i, o, Modifier.fillMaxWidth(), CircleShape) }
 }
 
 /** Un'opzione della domanda: piena la prima, tonali le altre; con il rischio alto risponde solo la pressione lunga. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun OptionButton(label: String, filled: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)?) {
+private fun OptionButton(
+    label: String, filled: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)?,
+    modifier: Modifier = Modifier.fillMaxWidth(), shape: androidx.compose.ui.graphics.Shape = CircleShape, center: Boolean = false,
+) {
     Surface(
         color = if (filled) CmColors.primary else CmColors.surface, contentColor = if (filled) CmColors.onPrimary else CmColors.text,
-        shape = CircleShape,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(CircleShape).combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        shape = shape,
+        modifier = modifier.heightIn(min = 44.dp).clip(shape).combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
-        Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
-            Text(label, style = MaterialTheme.typography.labelLarge.copy(fontSize = MaterialTheme.typography.bodyLarge.fontSize))
+        Box(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), contentAlignment = if (center) Alignment.Center else Alignment.CenterStart) {
+            Text(label, style = MaterialTheme.typography.labelLarge.copy(fontSize = MaterialTheme.typography.bodyLarge.fontSize), maxLines = if (center) 1 else Int.MAX_VALUE, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
         }
     }
 }

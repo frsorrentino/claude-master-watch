@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -46,20 +47,15 @@ fun SummaryList(
     onService: (MasterHome.Row) -> Unit, onClosed: () -> Unit, initiallyOpen: String? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         model.rows.groupBy { it.group }.forEach { (group, rows) ->
             GroupHeader(stringResource(groupLabel(group), rows.size), groupTone(group))
             rows.forEach { r ->
                 val s = r.session
                 val id = group.name + ":" + s.name
-                val kind = if (group == Summary.Group.WAITING) MasterHome.Kind.QUESTION else MasterHome.Kind.FINISHED
-                AttentionRow(
-                    MasterHome.Row(kind, s.name, r.text, s.name, key = r.key, at = r.at?.takeIf { it > 0 }),
-                    now, expanded == id, onToggle = { expanded = if (expanded == id) null else id }, question = s.question,
+                SummaryCard(
+                    r, now, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
                     onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
-                    variant = group, context = s.context.takeIf { group == Summary.Group.WORKING }, details = details(s),
-                    // La chat si restringe verso la sua riga durante il gesto indietro, come prima verso la card di Sessioni.
-                    modifier = Modifier.fly("card-${s.id}"),
                 )
             }
         }
@@ -87,13 +83,90 @@ private fun groupTone(g: Summary.Group): Color = when (g) {
     Summary.Group.STILL -> CmColors.text2
 }
 
-/** Obiettivo, priorità e «modello · effort · contesto · account», come nelle card di Sessioni. */
+/** Obiettivo, priorità e «modello · effort · account» (il contesto sta in testa alla card). */
 @Composable
 private fun details(s: Session): List<String> = listOfNotNull(
     SessionsText.goalLine(s, stringResource(R.string.goal)),
     SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
-    listOfNotNull(ModelText.short(s.model), s.effort, s.context?.let { "$it%" }, s.account).joinToString(" · ").ifEmpty { null },
+    listOfNotNull(ModelText.short(s.model), s.effort, s.account).joinToString(" · ").ifEmpty { null },
 )
+
+private val CARD_HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
+/**
+ * Una sessione del riepilogo (Franz, 03/10 15:18, variante B): una card con il badge (colore della sessione, cerchio o
+ * quadrato dell'account, glifo dello stato), nome, contesto ed età; sotto l'ultimo esito o la domanda su due righe e la
+ * barretta del contesto. Aperta: il testo intero, i dettagli, le opzioni o i consigli e la conversazione.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun SummaryCard(
+    r: Summary.Row, now: Long, open: Boolean, onToggle: () -> Unit,
+    onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
+) {
+    val s = r.session
+    val tone = groupTone(r.group)
+    val waiting = r.group == Summary.Group.WAITING
+    val parsed = androidx.compose.runtime.remember(r.text) { it.pixelbox.cmwatch.rules.NextSteps.parse(r.text.orEmpty()) }
+    val body = it.pixelbox.cmwatch.rules.Markdown.parse(parsed.text).text.trim()
+    val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
+    val age = r.at?.takeIf { it > 0 }?.let { t ->
+        when (r.group) {
+            Summary.Group.WAITING, Summary.Group.WORKING -> since(t)
+            Summary.Group.FINISHED -> CARD_HM.format(java.time.Instant.ofEpochSecond(t).atZone(java.time.ZoneId.systemDefault()))
+            Summary.Group.STILL -> stringResource(R.string.summary_since, since(t))
+        }
+    }
+    val fill = if (waiting) androidx.compose.ui.graphics.lerp(CmColors.surfaceLow, CmColors.briefWarn, 0.06f) else CmColors.surfaceLow
+    Column(
+        // La chat si restringe verso la sua card durante il gesto indietro.
+        Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(fill)
+            .clickable(onClick = onToggle).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SessionBadge(s, 24.dp)
+            Text(
+                s.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+                color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
+            )
+            s.context?.let { Text("$it%", style = MonoSmall) }
+            age?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = tone, maxLines = 1) }
+        }
+        if (body.isNotBlank()) Text(
+            body, style = MaterialTheme.typography.bodyMedium, color = if (waiting || open) CmColors.text else CmColors.text2,
+            maxLines = if (open) Int.MAX_VALUE else 2, overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+        )
+        if (open) {
+            details(s).forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip) }
+        }
+        // Le opzioni della domanda subito, anche a card chiusa: rispondere è il motivo per cui la card è in cima.
+        if (waiting) s.question?.let { q ->
+            var holdHint by rememberSaveable(q.id) { mutableStateOf(false) }
+            QuestionOptions(q, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer)
+        }
+        if (open && !waiting && parsed.steps.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            parsed.steps.forEach { step ->
+                androidx.compose.material3.OutlinedButton(onClick = { onStep(step) }, border = androidx.compose.foundation.BorderStroke(1.dp, tone.copy(alpha = 0.5f))) {
+                    Text(step, color = CmColors.text)
+                }
+            }
+        }
+        if (open) androidx.compose.material3.TextButton(onClick = onOpen) { Text(stringResource(R.string.fy_open_conversation), color = CmColors.actionIcon) }
+        s.context?.let { pct ->
+            val bar = when (it.pixelbox.cmwatch.rules.SessionMeters.contextTone(pct)) {
+                it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
+                it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
+                else -> CmColors.briefRing
+            }
+            Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
+                Box(Modifier.fillMaxWidth(it.pixelbox.cmwatch.rules.SessionMeters.contextFraction(pct) ?: 0f).fillMaxHeight().background(bar))
+            }
+        }
+    }
+}
 
 /** «Chiuse · N»: una riga sola, anche con molte sessioni chiuse; apre l'elenco con «Riapri». */
 @Composable
