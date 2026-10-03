@@ -69,37 +69,31 @@ fun AppShell(
     now: Long = 0, onClosed: () -> Unit = {},
     /** Solo per i provini: il menu già aperto, o quello delle sessioni. */
     menuStartOpen: Boolean = false, sessionMenuStartOpen: Boolean = false,
+    /**
+     * Ogni pagina della home e delle sessioni disegna la sua testata (`PageHeader`), che scorre con lei (Franz, 03/10
+     * 19:19: con la testata unica, allo scorrimento si vedeva uno scatto). Qui restano la barra di stato e la fascia Demo.
+     */
+    pagedHeaders: Boolean = false,
     content: @Composable (Tab) -> Unit,
 ) {
     val summary = current == null && tab == Tab.OVERVIEW
+    val menu = MenuActions(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch, onSettings)
     Scaffold(
         containerColor = CmColors.bg,
         topBar = {
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
-                Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    when {
-                        // Dalla pagina di una sessione un tocco riporta al riepilogo, dove sta la master (Franz, 03/10 15:25).
-                        current != null -> {
-                            IconButton(onClick = { onPick(null) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back_to_summary), tint = CmColors.text) }
-                            SessionMenu(sessions, current, now, onPick, onClosed, Modifier.weight(1f), startOpen = sessionMenuStartOpen)
-                        }
-                        tab == Tab.DIARY -> {
-                            IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
-                            Text(stringResource(R.string.menu_register), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))
-                        }
-                        else -> Row(Modifier.weight(1f).padding(start = 12.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
-                            Text(
-                                stringResource(R.string.summary_open, openCount), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
-                                maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(bottom = 2.dp),
-                            )
-                        }
+                when {
+                    pagedHeaders && tab == Tab.OVERVIEW -> {}
+                    tab == Tab.DIARY && current == null -> Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
+                        Text(stringResource(R.string.menu_register), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+                        AppMenu(menu, menuStartOpen)
                     }
-                    // La lente solo nella home: la ricerca è di tutte le sessioni, e in una sessione la testa ha già abbastanza comandi.
-                    onSearch?.takeIf { current == null }?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
-                    AppMenu(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch ?: {}, onSettings, menuStartOpen)
+                    else -> PageHeader(
+                        current, sessions, openCount, now, onPick, onClosed, menu, quota = quota, showQuota = summary && !masterChat,
+                        menuStartOpen = menuStartOpen, sessionMenuStartOpen = sessionMenuStartOpen,
+                    )
                 }
-                if (summary && !masterChat) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
                 if (demo) {
                     Text(
                         stringResource(R.string.demo_banner), color = CmColors.briefWarnInk, style = MaterialTheme.typography.labelLarge,
@@ -219,13 +213,49 @@ private fun SessionMenuRow(s: Session, group: it.pixelbox.cmwatch.rules.Summary.
     }
 }
 
+/** Le voci del menu ≡ e del collegamento in testa, le stesse in ogni testata. */
+data class MenuActions(
+    val host: String?, val updated: String, val stale: Boolean, val onLaunch: () -> Unit, val onRegister: () -> Unit,
+    val onQuadro: () -> Unit, val onSearch: (() -> Unit)?, val onSettings: () -> Unit,
+)
+
+/**
+ * La testata di una pagina (Franz, 03/10 19:19): della home («Master · N aperte», lente, ≡ e sotto la quota) o di una
+ * sessione (←, il menu delle sessioni con il suo nome, ≡). Ogni pagina la porta con sé, così scorre e vola insieme a lei.
+ */
+@Composable
+fun PageHeader(
+    page: String?, sessions: List<Session>, openCount: Int, now: Long, onPick: (String?) -> Unit, onClosed: () -> Unit,
+    menu: MenuActions, quota: (@Composable () -> Unit)? = null, showQuota: Boolean = false,
+    menuStartOpen: Boolean = false, sessionMenuStartOpen: Boolean = false,
+) {
+    Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (page != null) {
+                // Dalla pagina di una sessione un tocco riporta al riepilogo, dove sta la master (Franz, 03/10 15:25).
+                IconButton(onClick = { onPick(null) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back_to_summary), tint = CmColors.text) }
+                SessionMenu(sessions, page, now, onPick, onClosed, Modifier.weight(1f), startOpen = sessionMenuStartOpen)
+            } else {
+                Row(Modifier.weight(1f).padding(start = 12.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
+                    Text(
+                        stringResource(R.string.summary_open, openCount), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                        maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(bottom = 2.dp),
+                    )
+                }
+                // La lente solo nella home: la ricerca è di tutte le sessioni, e in una sessione la testa ha già abbastanza comandi.
+                menu.onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
+            }
+            AppMenu(menu, menuStartOpen)
+        }
+        if (page == null && showQuota) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
+    }
+}
+
 /** Il menu ≡ dell'app: apre il pannello (`AppMenuPanel`) al posto della vecchia tendina. */
 @Composable
-private fun AppMenu(
-    host: String?, updated: String, stale: Boolean, onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit,
-    onSearch: () -> Unit, onSettings: () -> Unit, startOpen: Boolean,
-) {
+private fun AppMenu(menu: MenuActions, startOpen: Boolean) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
     IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
-    if (open) AppMenuPanel(host, updated, stale, onLaunch, onRegister, onQuadro, onSearch, onSettings, onDismiss = { open = false })
+    if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false })
 }

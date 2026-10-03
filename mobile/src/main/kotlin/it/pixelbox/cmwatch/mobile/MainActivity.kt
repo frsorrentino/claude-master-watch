@@ -417,7 +417,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?, Boolean) -> Unit = { session, pageEntries, home, header, dock, bar, homeOpen ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?, Boolean, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock, bar, homeOpen, appBar ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
@@ -539,7 +539,7 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen,
+                            home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { home == null || !homeOpen },
                             onElsewhere = {
@@ -565,6 +565,25 @@ class MainActivity : ComponentActivity() {
             }
         }
         var closedOpen by rememberSaveable { mutableStateOf(false) }
+        // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
+        val menuActions = MenuActions(
+            host, if (snap.freshness is Freshness.Stale) getString(R.string.menu_updated_ago, (snap.freshness as Freshness.Stale).minutes) else getString(R.string.menu_updated_now),
+            snap.freshness is Freshness.Stale, onLaunch = { launching = true }, onRegister = { tab = StartRoute.Tab.DIARY; open = null },
+            onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
+        )
+        val pageHeader: @Composable (String?) -> Unit = { page ->
+            PageHeader(
+                page, state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(), summary?.open ?: 0, now,
+                onPick = { n -> open = n; if (n == null) tab = StartRoute.Tab.OVERVIEW }, onClosed = { closedOpen = true }, menu = menuActions,
+                quota = state?.let { st -> {
+                    val rings = remember(st, events, samples, now, snap.freshness) {
+                        PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
+                    }
+                    QuotaLine(rings, onOpen = { overviewSheet = true })
+                } },
+                showQuota = !(masterChat && summary?.master != null),
+            )
+        }
         // «Ha finito» sparisce quando apri la sessione, da qualunque strada: riga, menu in alto, scorrimento, avviso, ricerca.
         LaunchedEffect(open) {
             val n = open ?: return@LaunchedEffect
@@ -607,8 +626,9 @@ class MainActivity : ComponentActivity() {
                     { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = true }) },
                     { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = false }, expanded = true) },
                     !masterChat,
-                )
+                ) { pageHeader(null) }
             } else Column(Modifier.fillMaxSize()) {
+                pageHeader(null)
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) { list() }
                 Box(Modifier.padding(16.dp)) {
                     MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
@@ -627,7 +647,7 @@ class MainActivity : ComponentActivity() {
             updated = when (val f = snap.freshness) { is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes); else -> getString(R.string.menu_updated_now) },
             openCount = summary?.open ?: 0,
             // Con la master espansa la quota sotto la barra lascia spazio alla sua conversazione.
-            masterChat = masterChat && masterName != null, now = now, onClosed = { closedOpen = true },
+            masterChat = masterChat && masterName != null, now = now, onClosed = { closedOpen = true }, pagedHeaders = true,
             quota = state?.let { st -> {
                 val rings = remember(st, events, samples, now, snap.freshness) {
                     PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
@@ -693,7 +713,7 @@ class MainActivity : ComponentActivity() {
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                             val pageEntries = ChatFeed.pageEntries(session.name, open, entriesOwner, entries, feedCache)
-                            sessionPage(session, pageEntries, null, true, null, null, true)
+                            sessionPage(session, pageEntries, null, true, null, null, true) { pageHeader(session.name) }
                         }
                     }
                 }

@@ -154,6 +154,8 @@ fun SessionSheet(
     bar: (@Composable () -> Unit)? = null,
     /** Con `home`: true la lista della home con `dock` in basso, false la conversazione con `bar` e l'intestazione. */
     homeOpen: Boolean = true,
+    /** La testata della pagina (`PageHeader`), in cima e dentro la parte che vola: scorre e vola con la sessione. */
+    appBar: (@Composable () -> Unit)? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -184,6 +186,7 @@ fun SessionSheet(
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
+        appBar?.invoke()
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
         val chatArea: @Composable ColumnScope.() -> Unit = {
@@ -435,7 +438,9 @@ private fun Composer(
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
-                val size = Modifier.padding(end = 4.dp).size(44.dp)
+                // Il cerchio concentrico all'estremità della barra (segnalazione 03/10 19:18, come ChatGPT): 40 dp nella barra da 56,
+                // quindi 8 dp sopra, sotto e a destra.
+                val size = Modifier.padding(end = 8.dp).size(40.dp)
                 when (mode) {
                     PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
                         Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
