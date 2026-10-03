@@ -22,4 +22,15 @@ class StartRouteTest {
         assertFalse(StartRoute.masterAtHome("atlas-shop"))
         assertFalse(StartRoute.masterAtHome(null))
     }
+
+    // Dal vivo 03/10 19:57: chiusa una sessione, la sua pagina restava nera. Si torna alla home se la sessione aperta non
+    // c'è più, o se è chiusa dopo un «Chiudi la sessione» dato dal telefono; una chiusa per conto suo resta, con «Riapri».
+    @Test fun aClosedOrVanishedSessionGoesBackHome() {
+        fun s(n: String, st: it.pixelbox.cmwatch.contract.SessionState) = it.pixelbox.cmwatch.contract.Session(id = n, name = n, account = "personale", project = n, state = st, since = 0)
+        val live = listOf(s("a", it.pixelbox.cmwatch.contract.SessionState.IDLE), s("x", it.pixelbox.cmwatch.contract.SessionState.GONE))
+        assertTrue(StartRoute.stillOpen("a", live, leaving = null))
+        assertFalse(StartRoute.stillOpen("b", live, leaving = null))
+        assertTrue(StartRoute.stillOpen("x", live, leaving = null))
+        assertFalse(StartRoute.stillOpen("x", live, leaving = "x"))
+    }
 }

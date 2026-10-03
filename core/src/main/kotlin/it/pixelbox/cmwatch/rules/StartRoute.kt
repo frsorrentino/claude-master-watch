@@ -16,6 +16,15 @@ object StartRoute {
      */
     fun masterAtHome(name: String?): Boolean = name == ContextActions.MASTER
 
+    /**
+     * La pagina aperta resta finché la sua sessione c'è (dal vivo 03/10 19:57: chiusa, la pagina restava nera). Chiusa dopo
+     * un «Chiudi la sessione» dato dal telefono ([leaving]) si torna alla home; chiusa per conto suo resta, con «Riapri».
+     */
+    fun stillOpen(open: String, sessions: List<it.pixelbox.cmwatch.contract.Session>, leaving: String?): Boolean {
+        val s = sessions.firstOrNull { it.name == open } ?: return false
+        return !(s.state == it.pixelbox.cmwatch.contract.SessionState.GONE && leaving == open)
+    }
+
     fun openSheet(freshLaunch: Boolean, restored: String?): String? = if (freshLaunch) null else restored
 
     /**
