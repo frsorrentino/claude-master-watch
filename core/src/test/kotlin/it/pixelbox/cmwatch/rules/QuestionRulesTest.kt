@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.ContractJson
+import it.pixelbox.cmwatch.contract.Option
 import it.pixelbox.cmwatch.contract.QuestionKind
 import it.pixelbox.cmwatch.contract.Tier
 import org.junit.Assert.*
@@ -37,4 +38,13 @@ class QuestionRulesTest {
     @Test fun firstOptionIsTheOnlyPrimary() {
         assertTrue(QuestionRules.isPrimary(0)); assertFalse(QuestionRules.isPrimary(1))
     }
+
+    // Righe B del riepilogo (Franz, 03/10 15:18): opzioni brevi su una riga in parti uguali, le lunghe una sotto l'altra.
+    @Test fun shortOptionsShareOneRow() =
+        assertTrue(QuestionRules.inline(listOf(Option(1, "yes"), Option(2, "no"))))
+    @Test fun longOptionsStack() =
+        assertFalse(QuestionRules.inline(listOf(Option(1, "Yes, and don't ask again for this command"), Option(2, "No"))))
+    @Test fun fourOptionsStack() =
+        assertFalse(QuestionRules.inline((1..4).map { Option(it, "o$it") }))
+    @Test fun oneOptionStacks() = assertFalse(QuestionRules.inline(listOf(Option(1, "ok"))))
 }

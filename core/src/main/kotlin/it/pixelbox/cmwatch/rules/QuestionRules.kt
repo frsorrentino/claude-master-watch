@@ -16,6 +16,13 @@ object QuestionRules {
      */
     fun optionLabel(o: Option): String = "${o.n} · ${optionText(o.label)}"
 
+    /** Più corta di così un'opzione sta in un tasto diviso in parti uguali (Franz, 03/10 15:18: tasti sproporzionati). */
+    const val INLINE_CHARS = 14
+
+    /** Due o tre opzioni brevi su una riga, in parti uguali; altrimenti una sotto l'altra. */
+    fun inline(options: List<Option>): Boolean =
+        options.size in 2..3 && options.all { optionText(it.label).length <= INLINE_CHARS }
+
     /** L'etichetta senza il riquadro: la stessa per tasto, notifica e voce. */
     fun optionText(label: String): String = label.lines()
         .map { it.replace(DISEGNO, " ").replace(SPAZI, " ").trim() }
