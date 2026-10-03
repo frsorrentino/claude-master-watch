@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.QuestionMark
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Terminal
@@ -161,7 +160,8 @@ internal fun colourSecond(tone: BriefCards.Tone): Color = when (tone) {
 private fun vector(glyph: BriefCards.Glyph): ImageVector = when (glyph) {
     BriefCards.Glyph.TIME -> Icons.Rounded.Schedule
     BriefCards.Glyph.SESSIONS -> Icons.Rounded.Terminal
-    BriefCards.Glyph.QUESTION -> Icons.Rounded.QuestionMark
+    // Icone uniche (Franz, 03/10 09:01): chi ti aspetta è la mano anche nelle schede del polso.
+    BriefCards.Glyph.QUESTION -> glyphVector(it.pixelbox.cmwatch.rules.Badge.Glyph.HAND)
     BriefCards.Glyph.NIGHT -> Icons.Rounded.Bedtime
     BriefCards.Glyph.SYNC -> Icons.Rounded.Sync
 }

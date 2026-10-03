@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -81,32 +82,31 @@ fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float = 1f, outline: 
         Badge.Shape.SQUARE -> if (outline) drawRoundRect(fill, size = Size(d * 0.92f, d * 0.92f), topLeft = Offset(d * 0.04f, d * 0.04f), cornerRadius = CornerRadius(d * 0.23f), style = stroke)
             else drawRoundRect(fill, size = Size(d, d), cornerRadius = CornerRadius(d * 0.23f))
     }
-    // Glifo a 0,44 del diametro invece di 0,52 più cappuccio: prima toccava il bordo del cerchio e del quadrato
-    // (Franz, 13/09 21:11). Le stesse proporzioni in `BadgeBitmap`, così lista e notifiche restano identiche.
-    val c = Offset(d / 2f, d / 2f); val r = d * 0.22f; val w = d * 0.095f
-    glyph(spec.glyph, c, r, w, ink)
+    // Lo stesso glifo e le stesse proporzioni in `BadgeBitmap` e sul telefono, così lista e notifiche restano identiche.
+    glyph(spec.glyph, d, ink)
 }
 
-/** I quattro glifi di stato, con lo stesso disegno dovunque vadano: badge, riga della lista, notifica. */
-private fun DrawScope.glyph(g: Badge.Glyph, c: Offset, r: Float, w: Float, ink: Color) {
-    when (g) {
-        Badge.Glyph.PLAY -> drawPath(Path().apply {
-            moveTo(c.x - r * 0.8f, c.y - r); lineTo(c.x + r, c.y); lineTo(c.x - r * 0.8f, c.y + r); close()
-        }, ink)
-        Badge.Glyph.CHECK -> drawPath(Path().apply {
-            moveTo(c.x - r, c.y); lineTo(c.x - r * 0.25f, c.y + r * 0.75f); lineTo(c.x + r, c.y - r * 0.8f)
-        }, ink, style = Stroke(width = w, cap = StrokeCap.Round))
-        Badge.Glyph.CROSS -> {
-            drawLine(ink, Offset(c.x - r, c.y - r), Offset(c.x + r, c.y + r), strokeWidth = w, cap = StrokeCap.Round)
-            drawLine(ink, Offset(c.x + r, c.y - r), Offset(c.x - r, c.y + r), strokeWidth = w, cap = StrokeCap.Round)
-        }
-        Badge.Glyph.QUESTION -> {
-            drawPath(Path().apply {
-                moveTo(c.x - r * 0.7f, c.y - r * 0.45f)
-                cubicTo(c.x - r * 0.7f, c.y - r * 1.4f, c.x + r * 0.75f, c.y - r * 1.4f, c.x + r * 0.75f, c.y - r * 0.45f)
-                cubicTo(c.x + r * 0.75f, c.y + r * 0.1f, c.x, c.y + r * 0.05f, c.x, c.y + r * 0.55f)
-            }, ink, style = Stroke(width = w, cap = StrokeCap.Round))
-            drawCircle(ink, radius = w * 0.75f, center = Offset(c.x, c.y + r * 1.05f))
+/**
+ * Il glifo di stato dal tracciato di `Badge.paths` (Franz, 03/10 09:01: icone uniche; mano, fulmine, pausa, croce), a
+ * tratto in un riquadro di 0,6 del diametro: lo stesso disegno del telefono e di `BadgeBitmap`.
+ */
+private fun DrawScope.glyph(g: Badge.Glyph, d: Float, ink: Color) {
+    val box = d * 0.6f; val o = (d - box) / 2f
+    withTransform({ translate(o, o); scale(box / 24f, box / 24f, pivot = Offset.Zero) }) {
+        Badge.paths(g).forEach { p ->
+            drawPath(androidx.compose.ui.graphics.vector.PathParser().parsePathString(p).toPath(), ink,
+                style = Stroke(width = 3f, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
         }
     }
 }
+
+/** Il glifo come icona (schede, righe): il tracciato di `Badge.paths` a tratto 2,5 in 24×24, colorato dal `tint`. */
+internal fun glyphVector(g: Badge.Glyph): androidx.compose.ui.graphics.vector.ImageVector =
+    androidx.compose.ui.graphics.vector.ImageVector.Builder(g.name, 24.dp, 24.dp, 24f, 24f).apply {
+        Badge.paths(g).forEach { d ->
+            addPath(
+                androidx.compose.ui.graphics.vector.addPathNodes(d), stroke = androidx.compose.ui.graphics.SolidColor(Color.White),
+                strokeLineWidth = 2.5f, strokeLineCap = StrokeCap.Round, strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round,
+            )
+        }
+    }.build()

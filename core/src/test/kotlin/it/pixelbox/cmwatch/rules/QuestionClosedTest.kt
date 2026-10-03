@@ -31,7 +31,7 @@ class QuestionClosedTest {
     }
 
     @Test fun ilBadgeTornaAlloStatoDiLavoro() =
-        assertEquals(Badge.Glyph.PLAY, Badge.of(ledger.account, ledger.color, ledger.state, ledger.icon).glyph)
+        assertEquals(Badge.Glyph.ZAP, Badge.of(ledger.account, ledger.color, ledger.state, ledger.icon).glyph)
 
     @Test fun laSessioneNonStaPiuInCimaComeInAttesa() {
         assertEquals("ledger-api", Order.sessions(q.sessions).first().name)

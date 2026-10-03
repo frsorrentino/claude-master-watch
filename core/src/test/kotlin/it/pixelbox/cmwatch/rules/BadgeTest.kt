@@ -32,12 +32,22 @@ class BadgeTest {
         assertEquals(Badge.Shape.SQUARE, Badge.of(s.sessions[0].account, s.sessions[0].color, s.sessions[0].state).shape)   // agenzia
     }
 
+    // Franz, 03/10 09:01 (consulenza del 02/10): icone uniche ovunque. Mano = ti aspetta, fulmine = al lavoro, pausa =
+    // ferma, croce = chiusa; il ▶ resta solo alla lettura vocale.
     @Test fun glyphPerState() {
-        assertEquals(Badge.Glyph.PLAY, Badge.of("personale", null, SessionState.BUSY).glyph)
-        assertEquals(Badge.Glyph.PLAY, Badge.of("personale", null, SessionState.AWAITING).glyph)
-        assertEquals(Badge.Glyph.CHECK, Badge.of("personale", null, SessionState.IDLE).glyph)
-        assertEquals(Badge.Glyph.QUESTION, Badge.of("personale", null, SessionState.WAITING).glyph)
+        assertEquals(Badge.Glyph.ZAP, Badge.of("personale", null, SessionState.BUSY).glyph)
+        assertEquals(Badge.Glyph.ZAP, Badge.of("personale", null, SessionState.AWAITING).glyph)
+        assertEquals(Badge.Glyph.PAUSE, Badge.of("personale", null, SessionState.IDLE).glyph)
+        assertEquals(Badge.Glyph.HAND, Badge.of("personale", null, SessionState.WAITING).glyph)
         assertEquals(Badge.Glyph.CROSS, Badge.of("personale", null, SessionState.GONE).glyph)
+    }
+
+    // Una sola sorgente per telefono, orologio e notifiche: i tracciati a tratto in un riquadro 24×24.
+    @Test fun everyGlyphHasItsStrokePaths() {
+        Badge.Glyph.entries.forEach { g ->
+            val paths = Badge.paths(g)
+            assertTrue(g.name, paths.isNotEmpty() && paths.all { it.trimStart().first() in "Mm" })
+        }
     }
 
     // Contratto 1.8: la forma la decide il tipo dell'account, non il nome (tondo = personal).

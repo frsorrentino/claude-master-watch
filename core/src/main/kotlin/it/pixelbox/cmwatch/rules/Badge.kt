@@ -9,7 +9,11 @@ import it.pixelbox.cmwatch.contract.SessionState
  */
 object Badge {
     enum class Shape { CIRCLE, SQUARE }
-    enum class Glyph { PLAY, CHECK, QUESTION, CROSS }
+    /**
+     * Icone uniche ovunque (Franz, 03/10 09:01, dalla consulenza del 02/10): mano = ti aspetta, fulmine = al lavoro, pausa =
+     * ferma, croce = chiusa. Il ▶ resta solo alla lettura vocale.
+     */
+    enum class Glyph { HAND, ZAP, PAUSE, CROSS }
     data class Spec(val shape: Shape, val fill: Int, val glyph: Glyph, val glyphColor: Int)
 
     const val GREY = 0xFF9B9B9B.toInt()
@@ -29,15 +33,32 @@ object Badge {
         val emoji = icon?.trim()?.takeIf { it.isNotEmpty() }
         val fill = parse(color) ?: parse(EMOJI_COLOR[emoji]) ?: GREY
         val glyph = when (state) {
-            SessionState.BUSY, SessionState.AWAITING -> Glyph.PLAY
-            SessionState.IDLE -> Glyph.CHECK
-            SessionState.WAITING -> Glyph.QUESTION
+            SessionState.BUSY, SessionState.AWAITING -> Glyph.ZAP
+            SessionState.IDLE -> Glyph.PAUSE
+            SessionState.WAITING -> Glyph.HAND
             SessionState.GONE -> Glyph.CROSS
         }
         val glyphColor = if (contrast(BLACK, fill) >= 4.5) BLACK else WHITE
         // Forma dall'account: tondo = personale, quadrato = lavoro. Dal contratto 1.8 lo dice il tipo, non il nome.
         val square = !Accounts.personal(account, kind)
         return Spec(if (square) Shape.SQUARE else Shape.CIRCLE, fill, glyph, glyphColor)
+    }
+
+    /**
+     * Il tracciato di ogni glifo, a tratto in un riquadro 24×24 (Lucide, ISC: «hand», «zap», «x»; la pausa sono due
+     * barre più lunghe di quelle di Lucide, leggibili dentro il badge). Una sola sorgente per il badge del telefono e
+     * dell'orologio, le notifiche e le icone di stato.
+     */
+    fun paths(g: Glyph): List<String> = when (g) {
+        Glyph.HAND -> listOf(
+            "M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2",
+            "M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2",
+            "M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8",
+            "M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15",
+        )
+        Glyph.ZAP -> listOf("M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z")
+        Glyph.PAUSE -> listOf("M9 6v12", "M15 6v12")
+        Glyph.CROSS -> listOf("M18 6 6 18", "M6 6l12 12")
     }
 
     data class Labels(

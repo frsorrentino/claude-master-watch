@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -70,25 +71,19 @@ private fun DrawScope.drawBadge(spec: Badge.Spec, d: Float, alpha: Float) {
         Badge.Shape.CIRCLE -> drawCircle(fill, radius = d / 2f, center = Offset(d / 2f, d / 2f))
         Badge.Shape.SQUARE -> drawRoundRect(fill, size = Size(d, d), cornerRadius = CornerRadius(d * 0.23f))
     }
-    val c = Offset(d / 2f, d / 2f); val r = d * 0.22f; val w = d * 0.095f
-    when (spec.glyph) {
-        Badge.Glyph.PLAY -> drawPath(Path().apply {
-            moveTo(c.x - r * 0.8f, c.y - r); lineTo(c.x + r, c.y); lineTo(c.x - r * 0.8f, c.y + r); close()
-        }, ink)
-        Badge.Glyph.CHECK -> drawPath(Path().apply {
-            moveTo(c.x - r, c.y); lineTo(c.x - r * 0.25f, c.y + r * 0.75f); lineTo(c.x + r, c.y - r * 0.8f)
-        }, ink, style = Stroke(width = w, cap = StrokeCap.Round))
-        Badge.Glyph.CROSS -> {
-            drawLine(ink, Offset(c.x - r, c.y - r), Offset(c.x + r, c.y + r), strokeWidth = w, cap = StrokeCap.Round)
-            drawLine(ink, Offset(c.x + r, c.y - r), Offset(c.x - r, c.y + r), strokeWidth = w, cap = StrokeCap.Round)
-        }
-        Badge.Glyph.QUESTION -> {
-            drawPath(Path().apply {
-                moveTo(c.x - r * 0.7f, c.y - r * 0.45f)
-                cubicTo(c.x - r * 0.7f, c.y - r * 1.4f, c.x + r * 0.75f, c.y - r * 1.4f, c.x + r * 0.75f, c.y - r * 0.45f)
-                cubicTo(c.x + r * 0.75f, c.y + r * 0.1f, c.x, c.y + r * 0.05f, c.x, c.y + r * 0.55f)
-            }, ink, style = Stroke(width = w, cap = StrokeCap.Round))
-            drawCircle(ink, radius = w * 0.75f, center = Offset(c.x, c.y + r * 1.05f))
+    glyph(spec.glyph, d, ink)
+}
+
+/**
+ * Il glifo di stato dal tracciato di `Badge.paths` (Franz, 03/10 09:01: icone uniche; mano, fulmine, pausa, croce), a
+ * tratto in un riquadro di 0,6 del diametro: lo stesso disegno del badge dell'orologio e delle sue notifiche.
+ */
+private fun DrawScope.glyph(g: Badge.Glyph, d: Float, ink: Color) {
+    val box = d * 0.6f; val o = (d - box) / 2f
+    withTransform({ translate(o, o); scale(box / 24f, box / 24f, pivot = Offset.Zero) }) {
+        Badge.paths(g).forEach { p ->
+            drawPath(androidx.compose.ui.graphics.vector.PathParser().parsePathString(p).toPath(), ink,
+                style = Stroke(width = 3f, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
         }
     }
 }

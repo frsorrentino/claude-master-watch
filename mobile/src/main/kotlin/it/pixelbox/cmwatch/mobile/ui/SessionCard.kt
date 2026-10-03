@@ -126,14 +126,6 @@ fun StatePill(state: SessionState, age: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Le icone di stato con gli stessi significati di Telegram: ❓ aspetta, ▶ lavora, ✓ ferma, ✗ chiusa. */
-fun stateIcon(s: SessionState): ImageVector = when (s) {
-    SessionState.WAITING -> Icons.AutoMirrored.Rounded.HelpOutline
-    SessionState.BUSY, SessionState.AWAITING -> Icons.Rounded.PlayArrow
-    SessionState.IDLE -> Icons.Rounded.Check
-    SessionState.GONE -> Icons.Rounded.Close
-}
-
 /** La barretta del contesto nel colore delle soglie (`SessionMeters`), con percentuale e modello accanto. */
 @Composable
 fun ContextBar(pct: Int, model: String?) {
