@@ -472,18 +472,7 @@ internal fun QuestionCard(
     Surface(color = CmColors.surfaceHigh, shape = MaterialTheme.shapes.extraLarge, border = BorderStroke(2.dp, if (q.tier == Tier.HIGH) CmColors.gone else CmColors.waiting)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Speakable(q.text, speak = true, actions.speak)
-            val long = QuestionRules.needsLongPress(q.tier)
-            if (long) Text(
-                stringResource(if (holdHint) R.string.question_hold else R.string.question_high_risk),
-                style = MaterialTheme.typography.labelLarge, color = if (holdHint) CmColors.waiting else CmColors.briefAlert,
-            )
-            q.options.forEachIndexed { i, o ->
-                OptionButton(
-                    QuestionRules.optionLabel(o), filled = i == 0 && firstFilled,
-                    onClick = { if (long) onHold() else actions.answer(o.n) },
-                    onLongClick = if (long) ({ actions.answer(o.n) }) else null,
-                )
-            }
+            QuestionOptions(q, firstFilled, holdHint, onHold, actions.answer)
             val allowAll = QuestionRules.allowAllVisible(q)
             ButtonGroup(overflowIndicator = { ButtonGroupDefaults.OverflowIndicator(it) }, modifier = Modifier.fillMaxWidth()) {
                 customItem(
@@ -988,6 +977,29 @@ private fun ContextSheet(pct: Int, wider: it.pixelbox.cmwatch.contract.Model?, a
             FilledTonalButton(onClick = { actions.send(PhonePrimary.Target.PROMPT, "/compact"); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_compact)) }
             wider?.let { m -> FilledTonalButton(onClick = { actions.setModel(m.id); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_wider)) } }
         }
+    }
+}
+
+/**
+ * Le opzioni di una domanda, uguali dovunque (chat, fila «Ti aspettano», «Per te»; consulenza del 02/10): la prima piena
+ * se è l'azione della schermata, le altre tonali; con il rischio alto la risposta vuole la pressione lunga
+ * (`QuestionRules.needsLongPress`), e il tocco breve lo ricorda.
+ */
+@Composable
+internal fun QuestionOptions(
+    q: it.pixelbox.cmwatch.contract.Question, firstFilled: Boolean, holdHint: Boolean, onHold: () -> Unit, onAnswer: (Int) -> Unit,
+) {
+    val long = QuestionRules.needsLongPress(q.tier)
+    if (long) Text(
+        stringResource(if (holdHint) R.string.question_hold else R.string.question_high_risk),
+        style = MaterialTheme.typography.labelLarge, color = if (holdHint) CmColors.waiting else CmColors.briefAlert,
+    )
+    q.options.forEachIndexed { i, o ->
+        OptionButton(
+            QuestionRules.optionLabel(o), filled = i == 0 && firstFilled,
+            onClick = { if (long) onHold() else onAnswer(o.n) },
+            onLongClick = if (long) ({ onAnswer(o.n) }) else null,
+        )
     }
 }
 

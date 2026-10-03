@@ -175,13 +175,10 @@ internal fun AttentionRow(
         }
         if (open) Column(Modifier.padding(start = 40.dp, end = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (body.isNotBlank()) Text(body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
-            if (waiting) question?.options?.forEachIndexed { i, o ->
-                val label = "${o.n} · ${o.label}"
-                if (i == 0) Button(
-                    onClick = { onAnswer(o.n) }, modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = tone, contentColor = CmColors.briefWarnInk),
-                ) { Text(label, modifier = Modifier.fillMaxWidth()) }
-                else FilledTonalButton(onClick = { onAnswer(o.n) }, modifier = Modifier.fillMaxWidth()) { Text(label, modifier = Modifier.fillMaxWidth()) }
+            // Le stesse opzioni della chat (consulenza del 02/10): colori, etichette e pressione lunga per il rischio alto.
+            if (waiting && question != null) {
+                var holdHint by rememberSaveable(question.id) { mutableStateOf(false) }
+                QuestionOptions(question, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer)
             }
             if (!waiting && parsed.steps.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 parsed.steps.forEach { step ->
