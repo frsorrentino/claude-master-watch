@@ -11,10 +11,10 @@ class TabletTest {
     private val zone = ZoneId.of("Europe/Rome")
     private fun at(h: Int, m: Int = 0) = LocalDate.of(2026, 10, 3).atTime(h, m).atZone(zone).toEpochSecond()
     private fun s(name: String, st: SessionState = SessionState.IDLE, since: Long = at(9)) =
-        Session(id = name, name = name, account = "personale", project = "personali/$name", state = st, since = since)
+        Session(id = name, name = name, account = "personale", project = "personal/$name", state = st, since = since)
     private fun q(id: String, asked: Long) = Question(id, QuestionKind.ASK, "Pubblico?", emptyList(), Tier.LOW, asked)
     private fun st(vararg ss: Session, quota: Map<String, QuotaAccount> = emptyMap(), night: Night = Night()) =
-        State(v = 1, ts = at(15), host = "penguin", sessions = ss.toList(), quota = quota, night = night)
+        State(v = 1, ts = at(15), host = "crostini-demo", sessions = ss.toList(), quota = quota, night = night)
     private fun summary(state: State) = Summary.build(state, emptyList(), emptyList(), at(15), zone, emptySet())
 
     // Pezzo 1: la plancia solo da 840 dp (tablet orizzontale, finestra larga del Chromebook); sotto, l'app del telefono.
@@ -50,7 +50,7 @@ class TabletTest {
         assertEquals(2, s.night)
         assertEquals(listOf("personale", "work"), s.accounts.map { it.account })
         assertEquals(at(16, 40), s.accounts[0].resetAt)
-        assertEquals("penguin", s.host)
+        assertEquals("crostini-demo", s.host)
     }
 
     // La colonna delle sessioni: i gruppi del riepilogo, con la master al suo posto come le altre.
