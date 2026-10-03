@@ -16,4 +16,10 @@ class StartRouteTest {
     @Test fun longAbsenceReopensOnOverview() = assertTrue(StartRoute.resetOnReturn(awayMs = StartRoute.AWAY_RESET_MS))
     // Design 03/10: il riepilogo unico prende il posto di Master e Sessioni; resta il Registro, aperto dal menu.
     @Test fun onlyTheSummaryAndTheRegister() = assertEquals(listOf(StartRoute.Tab.OVERVIEW, StartRoute.Tab.DIARY), StartRoute.Tab.entries.toList())
+    // Franz, 03/10 16:30: la master non è una pagina come le altre; aprirla porta la home sulla sua chat.
+    @Test fun theMasterOpensAtHome() {
+        assertTrue(StartRoute.masterAtHome("master"))
+        assertFalse(StartRoute.masterAtHome("atlas-shop"))
+        assertFalse(StartRoute.masterAtHome(null))
+    }
 }

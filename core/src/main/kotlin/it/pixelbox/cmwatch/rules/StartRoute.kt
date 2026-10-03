@@ -10,6 +10,12 @@ object StartRoute {
 
     fun tab(restored: Tab?): Tab = restored ?: Tab.OVERVIEW
 
+    /**
+     * La master non è una pagina come le altre sessioni (Franz, 03/10 16:30: «l'apertura della master dovrebbe rimanere su
+     * home, con una specie di toggle»): chiunque la apra porta la home sulla sua chat.
+     */
+    fun masterAtHome(name: String?): Boolean = name == ContextActions.MASTER
+
     fun openSheet(freshLaunch: Boolean, restored: String?): String? = if (freshLaunch) null else restored
 
     /**
