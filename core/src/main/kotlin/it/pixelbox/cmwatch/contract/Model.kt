@@ -161,7 +161,11 @@ enum class CmdOp {
 /** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */
 @Serializable data class Choices(val models: List<Model> = emptyList(), val efforts: List<String> = emptyList())
 
-@Serializable data class Share(@SerialName("max_bytes") val maxBytes: Int)
+/**
+ * Contratto 1.19 «Condividi»; 1.28: `any` = il relay accetta file di qualunque formato (non solo JPEG e PNG), con `name`
+ * nel blob di /share; false con un relay precedente.
+ */
+@Serializable data class Share(@SerialName("max_bytes") val maxBytes: Int, val any: Boolean = false)
 
 @Serializable data class Event(
     val key: String, val kind: EventKind, val session: String? = null, val account: String? = null,
