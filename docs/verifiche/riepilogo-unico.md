@@ -29,3 +29,4 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Impostazioni (mockup A): testata con ←, sezioni Collegamento, Lettura ad alta voce, App, Informazioni; ← e Indietro tornano dove eri.
 - [ ] Schema dei dispositivi: il tocco su telefono, PC o orologio apre la sua scheda; fili verdi col punto che scorre; arancio con lo stato vecchio o l'orologio senza chiave o lontano; non abbinato: PC e orologio tratteggiati e «Accoppia».
 - [ ] Velocità in pillole nelle impostazioni, la stessa della pillola accanto a ■ durante la lettura.
+- [ ] Home, sotto le sessioni: titolo «Fuori dalle sessioni», poi le categorie con icona e conteggio, dalla più urgente (Da sistemare, Programmati, Da riprendere, Stanotte, Chiuse); ogni riga col suo tasto, le chiuse in una riga che apre l'elenco.

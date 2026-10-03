@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.Icon
@@ -39,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.MasterHome
+import it.pixelbox.cmwatch.rules.OutsideSessions
 import it.pixelbox.cmwatch.rules.ModelText
 import it.pixelbox.cmwatch.rules.SessionsText
 import it.pixelbox.cmwatch.rules.Summary
@@ -84,11 +88,16 @@ fun SummaryList(
                 }
             }
         }
-        if (model.closed.isNotEmpty()) item(key = "closed") { Box(moving()) { ClosedRow(model.closed.size, onClosed) } }
-        if (model.service.isNotEmpty()) {
-            item(key = "svc-line") { Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(CmColors.line)) }
-            itemsIndexed(model.service, key = { i, r -> "svc-${r.kind}-${r.session}-${r.project}-${r.title}-$i" }) { _, row ->
-                Box(moving().padding(horizontal = 8.dp, vertical = 6.dp)) { ForYouRow(row, onService) }
+        // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): un titolo vero che separa le sessioni dal resto, poi le
+        // categorie con icona e conteggio, dalla più urgente; ognuna nella sua card.
+        val outside = OutsideSessions.groups(model.service, model.closed)
+        if (outside.isNotEmpty()) {
+            item(key = "out-head") { Box(moving()) { OutsideHeader() } }
+            outside.forEach { g ->
+                item(key = "out-${g.category}") { Box(moving()) { CategoryHeader(g) } }
+                item(key = "out-${g.category}-card") {
+                    Box(moving()) { if (g.category == OutsideSessions.Category.CLOSED) ClosedCard(g.closed, onClosed) else OutsideCard(g.rows, onService) }
+                }
             }
         }
     }
@@ -202,14 +211,97 @@ private fun SummaryCard(
 }
 
 /** «Chiuse · N»: una riga sola, anche con molte sessioni chiuse; apre l'elenco con «Riapri». */
+
+/** Il titolo della parte sotto le sessioni: più forte delle etichette dei gruppi, con il filo e una riga che spiega. */
 @Composable
-private fun ClosedRow(n: Int, onClick: () -> Unit) {
+private fun OutsideHeader() {
+    Column(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.outside_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
+            Box(Modifier.weight(1f).height(1.dp).background(CmColors.line))
+        }
+        Text(stringResource(R.string.outside_sub), style = MaterialTheme.typography.bodySmall, color = CmColors.stale)
+    }
+}
+
+/**
+ * L'etichetta di una categoria: icona, nome e conteggio in maiuscoletto, neutri (le etichette colorate sono gli stati delle
+ * sessioni, sopra); solo «Da sistemare» nel colore dell'attesa.
+ */
+@Composable
+private fun CategoryHeader(g: OutsideSessions.Group) {
+    val (icon, label) = when (g.category) {
+        OutsideSessions.Category.FIX -> Icons.Rounded.WarningAmber to R.string.cat_fix
+        OutsideSessions.Category.SCHEDULED -> Icons.Rounded.Schedule to R.string.cat_scheduled
+        OutsideSessions.Category.RESUME -> Icons.Rounded.Replay to R.string.cat_resume
+        OutsideSessions.Category.NIGHT -> Icons.Rounded.Bedtime to R.string.cat_night
+        OutsideSessions.Category.CLOSED -> Icons.Rounded.Inventory2 to R.string.cat_closed
+    }
+    val tone = if (g.category == OutsideSessions.Category.FIX) CmColors.waiting else CmColors.text2
+    val name = stringResource(label)
+    val text = if (g.category == OutsideSessions.Category.NIGHT) name else stringResource(R.string.cat_count, name, g.count)
+    Row(Modifier.padding(start = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(icon, null, tint = tone, modifier = Modifier.size(16.dp))
+        Text(text.uppercase(), style = MonoSmall.copy(color = tone))
+        if (g.category == OutsideSessions.Category.RESUME) Text(stringResource(R.string.cat_resume_note), style = MaterialTheme.typography.labelSmall, color = CmColors.stale)
+    }
+}
+
+/** Le righe di una categoria in una card, divise da un filo; ognuna con il suo tasto a destra. */
+@Composable
+private fun OutsideCard(rows: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow)) {
+        rows.forEachIndexed { i, row ->
+            if (i > 0) Box(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(1.dp).background(CmColors.line))
+            OutsideRow(row, onAction)
+        }
+    }
+}
+
+@Composable
+private fun OutsideRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) {
+    val n = row.number ?: 0
+    val (title, detail, action) = when (row.kind) {
+        MasterHome.Kind.CONTEXT -> Triple(stringResource(R.string.fy_context, row.title, n), stringResource(R.string.fy_context_detail), R.string.fy_btn_handoff)
+        MasterHome.Kind.SCHEDULED -> Triple(
+            androidx.compose.ui.res.pluralStringResource(R.plurals.fy_scheduled, n.coerceAtLeast(1), n.coerceAtLeast(1)),
+            row.at?.let { stringResource(R.string.fy_scheduled_detail, OUT_HM.format(java.time.Instant.ofEpochSecond(it).atZone(java.time.ZoneId.systemDefault()))) },
+            R.string.fy_btn_see,
+        )
+        // Il nome del progetto basta: «prossimo passo» lo dice già l'etichetta della categoria.
+        MasterHome.Kind.NEXT_STEP -> Triple(row.title, row.detail, R.string.fy_btn_start)
+        MasterHome.Kind.NIGHT_REPORT -> Triple(row.title, row.detail?.lineSequence()?.firstOrNull { it.isNotBlank() }, R.string.fy_btn_listen)
+        MasterHome.Kind.NIGHT -> Triple(
+            if (n > 0) stringResource(R.string.fy_night_queued, n) else stringResource(R.string.fy_night_empty_short),
+            stringResource(R.string.fy_night_detail), R.string.fy_btn_add,
+        )
+        MasterHome.Kind.QUESTION, MasterHome.Kind.FINISHED -> Triple(row.title, row.detail, R.string.fy_btn_see)
+    }
+    Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (row.kind == MasterHome.Kind.NEXT_STEP) Box(Modifier.size(34.dp).clip(CircleShape).background(CmColors.surface), contentAlignment = Alignment.Center) {
+            Text(row.title.take(1).uppercase(), style = MaterialTheme.typography.titleSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.actionIcon)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
+            detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Clip) }
+        }
+        androidx.compose.material3.Surface(onClick = { onAction(row) }, shape = CircleShape, color = CmColors.surface, contentColor = CmColors.primary) {
+            Text(stringResource(action), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
+        }
+    }
+}
+
+private val OUT_HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
+/** Le sessioni chiuse in una riga: i primi tre nomi e quante altre; il tocco apre l'elenco. */
+@Composable
+private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
+    val names = closed.take(3).joinToString(", ") { it.name } + if (closed.size > 3) " " + stringResource(R.string.closed_more, closed.size - 3) else ""
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).clickable(onClick = onClick).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(Icons.Rounded.Close, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
-        Text(stringResource(R.string.summary_closed, n), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.text2)
+        Text(names, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, stringResource(R.string.summary_closed, closed.size), tint = CmColors.text2)
     }
 }

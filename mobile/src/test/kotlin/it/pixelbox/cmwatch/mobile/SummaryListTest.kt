@@ -10,6 +10,7 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.mobile.ui.*
+import it.pixelbox.cmwatch.rules.MasterHome
 import it.pixelbox.cmwatch.rules.Summary
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import org.junit.Rule
@@ -40,6 +41,21 @@ class SummaryListTest {
     }
 
     // La master agganciata sopra il campo (design 03/10), e «Riapri la master» quando non c'è.
+    // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): tutte le categorie, dalla più urgente, sotto una sola sessione.
+    @Test fun summaryOutside() = paparazzi.snapshot {
+        val one = st.copy(sessions = st.sessions.filter { it.state == SessionState.IDLE }.take(1))
+        val row = { k: MasterHome.Kind, t: String, d: String?, n: Int? -> MasterHome.Row(k, t, d, number = n, at = st.ts + 3600) }
+        val m = model(one).copy(
+            service = listOf(
+                row(MasterHome.Kind.NIGHT, "", null, 0), row(MasterHome.Kind.NEXT_STEP, "atlas-shop", "Tag the release and open the PR", null),
+                row(MasterHome.Kind.CONTEXT, "field-notes", null, 86), row(MasterHome.Kind.SCHEDULED, "", null, 1),
+                row(MasterHome.Kind.NEXT_STEP, "orbit-docs", "Review the onboarding chapter", null), row(MasterHome.Kind.NIGHT_REPORT, "Notte: 3 lavori, 2 riusciti", "Import, backup e report fatti", null),
+            ),
+            closed = st.sessions.map { it.copy(state = SessionState.GONE) },
+        )
+        CmPhoneTheme(still = true) { Column(Modifier.background(CmColors.bg)) { SummaryList(m, {}, { _, _ -> }, { _, _ -> }, {}, {}) } }
+    }
+
     @Test fun dockMaster() = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null)
         val reply = TranscriptEntry("a1", "assistant", "Lanciata claude-master sulla fase 2.2.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb", st.ts - 600)

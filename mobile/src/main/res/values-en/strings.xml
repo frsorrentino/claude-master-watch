@@ -193,6 +193,17 @@
     <string name="menu_exit_sub">Sends /exit, after a confirmation</string>
     <string name="ctx_short">ctx %1$d%%</string>
     <string name="quota_h5_short">5h %1$d%%</string>
+    <string name="outside_title">Outside the sessions</string>
+    <string name="outside_sub">What is not in an open session</string>
+    <string name="cat_count">%1$s · %2$d</string>
+    <string name="cat_fix">To fix</string>
+    <string name="cat_scheduled">Scheduled</string>
+    <string name="cat_resume">To pick up</string>
+    <string name="cat_resume_note">from the diary</string>
+    <string name="cat_night">Tonight</string>
+    <string name="cat_closed">Closed</string>
+    <string name="closed_more">and %1$d more</string>
+    <string name="fy_night_empty_short">Nothing queued</string>
     <string name="settings_back">Back</string>
     <string name="sec_link">Connection</string>
     <string name="sec_reading">Reading aloud</string>
