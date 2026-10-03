@@ -156,6 +156,8 @@ fun SessionSheet(
     homeOpen: Boolean = true,
     /** La testata della pagina (`PageHeader`), in cima e dentro la parte che vola: scorre e vola con la sessione. */
     appBar: (@Composable () -> Unit)? = null,
+    /** Contratto 1.28: nel «+» anche «File», di qualunque formato. */
+    canAttachFiles: Boolean = false,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -340,7 +342,7 @@ fun SessionSheet(
                 }
             }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles)
     }
 }
 
@@ -356,6 +358,8 @@ private fun Composer(
     slash: List<String>? = null,
     /** Il campo del riepilogo, che scrive alla master: «Scrivi alla master». */
     toMaster: Boolean = false,
+    /** Contratto 1.28: il relay accetta file di qualunque formato. */
+    canAttachFiles: Boolean = false,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
@@ -434,7 +438,7 @@ private fun Composer(
                 else Text(stringResource(when { s.question != null -> R.string.answer_free; toMaster -> R.string.master_placeholder; else -> R.string.write_prompt }))
             },
             shape = MaterialTheme.shapes.extraLarge,
-            leadingIcon = if (canAttach) ({ AttachButton { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
+            leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
@@ -555,7 +559,18 @@ private fun UriThumb(uri: Uri, modifier: Modifier) {
             ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, o) }?.asImageBitmap()
         }.getOrNull()
     }
-    if (bmp == null) Box(modifier.background(CmColors.surface)) else
+    // Un file che non è un'immagine: l'icona e il suo nome (contratto 1.28).
+    if (bmp == null) {
+        val name = remember(uri) {
+            runCatching {
+                ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+            }.getOrNull() ?: uri.lastPathSegment.orEmpty()
+        }
+        Column(modifier.background(CmColors.surface).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(Icons.Rounded.Description, null, tint = CmColors.actionIcon, modifier = Modifier.size(22.dp))
+            Text(name, style = MaterialTheme.typography.labelSmall, color = CmColors.text2, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+    } else
         androidx.compose.foundation.Image(bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop, modifier = modifier)
 }
 
@@ -564,7 +579,7 @@ private fun UriThumb(uri: Uri, modifier: Modifier) {
  * (Paparazzi) non c'è, e il tasto resta disegnato senza selettore.
  */
 @Composable
-private fun AttachButton(onPicked: (List<Uri>) -> Unit) {
+private fun AttachButton(files: Boolean = false, onPicked: (List<Uri>) -> Unit) {
     val icon: @Composable () -> Unit = { Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon) }
     if (androidx.activity.compose.LocalActivityResultRegistryOwner.current == null) { IconButton(onClick = {}, content = icon); return }
     val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -573,6 +588,8 @@ private fun AttachButton(onPicked: (List<Uri>) -> Unit) {
     // Franz, 03/10 17:34: anche una foto scattata ora. La fotocamera di sistema la scrive nella cache dell'app, dietro il
     // FileProvider; poi segue la strada delle immagini (ridotta, caricata, `report`).
     var shot by rememberSaveable { mutableStateOf<String?>(null) }
+    // Contratto 1.28: un file di qualunque formato, solo con un relay che li accetta (`share.any`).
+    val document = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { onPicked(listOf(it)) } }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> shot?.let { u -> if (ok) onPicked(listOf(Uri.parse(u))) }; shot = null }
     Box {
         IconButton(onClick = { menu = true }, content = icon)
@@ -590,6 +607,10 @@ private fun AttachButton(onPicked: (List<Uri>) -> Unit) {
                     shot = uri.toString()
                     runCatching { camera.launch(uri) }.onFailure { shot = null }
                 },
+            )
+            if (files) DropdownMenuItem(
+                text = { Text(stringResource(R.string.attach_file)) }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null, tint = CmColors.actionIcon) },
+                onClick = { menu = false; runCatching { document.launch(arrayOf("*/*")) } },
             )
         }
     }

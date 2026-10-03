@@ -211,6 +211,9 @@
     <string name="attach_image">Attach an image</string>
     <string name="attach_gallery">Photo from the gallery</string>
     <string name="attach_camera">Take a photo</string>
+    <string name="attach_file">File</string>
+    <string name="attached_file">File: %1$s</string>
+    <string name="file_too_big">The file is too large: the limit is %1$s</string>
     <string name="stop">Stop</string>
     <string name="copy">Copy</string>
     <string name="edit">Edit</string>

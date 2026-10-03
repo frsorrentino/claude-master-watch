@@ -498,7 +498,7 @@ class MainActivity : ComponentActivity() {
                                     app.chatLog.add(Sent(id, session.name, "/$c" + (a?.let { t -> " $t" } ?: ""), System.currentTimeMillis() / 1000))
                                 }
                             } },
-                            attach = { uri, text -> attachImage(session.name, uri, text, state?.share?.maxBytes ?: 0) },
+                            attach = { uri, text -> attachAny(session.name, uri, text, state?.share) },
                             // Avviso quota (piano 30/09, Task 4): il testo resta nella chat come «parte alle …».
                             sendAtReset = { text -> quotaWarn?.let { w ->
                                 val t = System.currentTimeMillis() / 1000
@@ -540,6 +540,7 @@ class MainActivity : ComponentActivity() {
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
+                            canAttachFiles = state?.share?.any == true,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { home == null || !homeOpen },
                             onElsewhere = {
@@ -786,6 +787,34 @@ class MainActivity : ComponentActivity() {
         val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime ?: "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         runCatching { startActivity(view) }.onFailure {
             android.widget.Toast.makeText(this, getString(R.string.file_no_app), android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Un allegato dalla barra di scrittura: le immagini ridotte come sempre; con un relay 1.28 (`share.any`) ogni altro
+     * file così com'è, con il suo nome. Oltre il limite si dice subito, senza leggerlo in memoria.
+     */
+    private fun attachAny(session: String, uri: Uri, text: String, share: it.pixelbox.cmwatch.contract.Share?) {
+        val maxBytes = share?.maxBytes ?: 0
+        val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+        if (mime.startsWith("image/") || share?.any != true) { attachImage(session, uri, text, maxBytes); return }
+        val (name, size) = runCatching {
+            contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE), null, null, null)?.use { c ->
+                if (c.moveToFirst()) (c.getString(0) ?: "file") to (if (c.isNull(1)) -1L else c.getLong(1)) else null
+            }
+        }.getOrNull() ?: ("file" to -1L)
+        // La busta cifrata pesa circa 4/3 del file (base64): il file deve stare sotto i 3/4 del limite.
+        val limit = maxBytes.toLong() * 3 / 4 - 2048
+        if (size > limit) {
+            android.widget.Toast.makeText(this, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this, limit)), android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        app.scope.launch {
+            val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() ?: return@launch
+            val id = java.util.UUID.randomUUID().toString()
+            val shown = listOfNotNull(getString(R.string.attached_file, name), text.takeIf { it.isNotBlank() }).joinToString("\n")
+            app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000))
+            runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name) }
         }
     }
 
