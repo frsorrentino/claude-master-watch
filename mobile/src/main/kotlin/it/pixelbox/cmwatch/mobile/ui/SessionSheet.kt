@@ -202,11 +202,6 @@ fun SessionSheet(
                 }
                 // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
                 val grouped = ChatFeed.group(feed)
-                // I consigli della sessione (design 01/10, variante C) solo sotto l'ultima risposta, se dopo non c'è un tuo
-                // messaggio, a sessione ferma e con il campo vuoto: spariscono appena scrivi o mandi.
-                val lastReply = grouped.lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps }
-                    ?.takeIf { it is ChatFeed.Item.Claude }?.let { feedKey(it) }
-                val stepsOn = draft.isBlank() && s.state == SessionState.IDLE && s.question == null
                 items(grouped, key = { feedKey(it) }) { it ->
                     when (it) {
                         // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
@@ -218,8 +213,6 @@ fun SessionSheet(
                         is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                         is ChatFeed.Item.Claude -> ClaudeBubble(
                             it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
-                            withSteps = stepsOn && feedKey(it) == lastReply,
-                            onStep = { t -> draft = t }, onSendStep = { t -> actions.send(PhonePrimary.Target.PROMPT, t) },
                             onSpeakFrom = actions.speakFrom,
                         )
                         is ChatFeed.Item.Tool -> ToolLine(it.entry)
@@ -262,6 +255,15 @@ fun SessionSheet(
                     }
                 }
         }
+        }
+        // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
+        // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
+        if (home == null && draft.isBlank() && s.state == SessionState.IDLE && s.question == null) {
+            val steps = remember(feed) {
+                feed?.let { f -> ChatFeed.group(f).lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
+                    ?.let { c -> it.pixelbox.cmwatch.rules.NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
+            }
+            if (steps.isNotEmpty()) StepsList(steps, onEdit = { t -> draft = t }, onSend = { t -> actions.send(PhonePrimary.Target.PROMPT, t); follow = true })
         }
         dock?.invoke()
         Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null)
@@ -414,6 +416,29 @@ private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
         modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+    }
+}
+
+/** «Prossimi» sopra la barra (variante A): un riquadro a tutta larghezza, una riga per consiglio, ↗ per mandarlo subito. */
+@Composable
+private fun StepsList(steps: List<String>, onEdit: (String) -> Unit, onSend: (String) -> Unit) {
+    Column(
+        Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surfaceLow)
+            .border(1.dp, CmColors.line, RoundedCornerShape(18.dp)),
+    ) {
+        Text(
+            stringResource(R.string.next_steps).uppercase(), style = MonoSmall,
+            modifier = Modifier.padding(start = 14.dp, top = 10.dp, bottom = 4.dp),
+        )
+        steps.forEachIndexed { i, step ->
+            if (i > 0) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+            Row(Modifier.fillMaxWidth().clickable { onEdit(step) }.padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(step, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
+                IconButton(onClick = { onSend(step) }) {
+                    Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
     }
 }
 
