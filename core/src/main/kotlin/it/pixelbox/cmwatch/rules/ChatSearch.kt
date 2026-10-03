@@ -9,10 +9,29 @@ import java.text.Normalizer
  * grassetto, dalla più recente.
  */
 object ChatSearch {
-    enum class Kind { SENT, OUTCOME, EVENT }
+    enum class Kind { SENT, OUTCOME, EVENT, CONVERSATION }
 
-    /** `start`/`end`: la parte trovata dentro `line`, nel testo originale. `ref`: unico per risultato, per le liste. */
-    data class Hit(val session: String?, val at: Long, val line: String, val start: Int, val end: Int, val kind: Kind, val ref: String = "")
+    /**
+     * `start`/`end`: la parte trovata dentro `line`, nel testo originale. `ref`: unico per risultato, per le liste.
+     * `live`: solo per i risultati del relay, se la sessione è ancora aperta.
+     */
+    data class Hit(
+        val session: String?, val at: Long, val line: String, val start: Int, val end: Int, val kind: Kind, val ref: String = "",
+        val live: Boolean? = null,
+    )
+
+    /**
+     * Contratto 1.27: i risultati del relay, cercati nelle conversazioni di tutte le sessioni. Contengono già i messaggi
+     * mandati e gli esiti, quindi del telefono restano solo le voci del registro senza sessione. Dal più recente.
+     */
+    fun withConversations(local: List<Hit>, page: it.pixelbox.cmwatch.contract.SearchPage): List<Hit> {
+        val remote = page.hits.mapIndexed { i, h ->
+            val start = (h.match.getOrNull(0) ?: 0).coerceIn(0, h.snippet.length)
+            val end = (h.match.getOrNull(1) ?: start).coerceIn(start, h.snippet.length)
+            Hit(h.session, h.at ?: 0, h.snippet, start, end, Kind.CONVERSATION, "CONV-${h.session}-${h.entry ?: i}-$i", h.live)
+        }
+        return (remote + local.filter { it.kind == Kind.EVENT && it.session == null }).sortedByDescending { it.at }
+    }
 
     fun find(query: String, sent: List<Sent>, events: List<Event>): List<Hit> {
         val q = fold(query.trim())

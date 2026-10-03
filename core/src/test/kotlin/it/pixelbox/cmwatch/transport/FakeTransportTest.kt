@@ -204,5 +204,14 @@ class FakeTransportTest {
         assertEquals(2, tr.state.first().night.items!!.size)
         assertFalse(tr.send(Cmd("n5", CmdOp.NIGHT_REMOVE, null, "ffffffff", clock, "test")).ok)
     }
-}
 
+    // Contratto 1.27: la demo cerca negli esiti e nelle domande, senza maiuscole né accenti; il testo vuoto si rifiuta.
+    @Test fun searchFindsTheDemoSessionsAndRefusesAnEmptyQuery() = runTest {
+        val tr = t()
+        val page = ContractJson.decodeSearch(tr.send(Cmd("s1", CmdOp.SEARCH, null, "DEPLOY", clock, "test")).text)
+        assertTrue(page.hits.any { it.session == "ledger-api" })
+        page.hits.forEach { h -> assertEquals("deploy", h.snippet.substring(h.match[0], h.match[1]).lowercase()) }
+        val bad = tr.send(Cmd("s2", CmdOp.SEARCH, null, "  ", clock, "test"))
+        assertFalse(bad.ok); assertTrue(bad.text.startsWith("bad query"))
+    }
+}
