@@ -45,4 +45,12 @@ class OutcomeTextTest {
         assertTrue(OutcomeText.bigTitle("tile rifatta, quota su una riga."))
         assertFalse(OutcomeText.bigTitle("lavoro del relay chiuso e attivo, in attesa della prova dal vivo di Franz al polso."))
     }
+
+    // Card del riepilogo (provini 03/10 15:36): l'esito per primo senza l'etichetta, poi il resto, senza «Prossimi».
+    @Test fun summaryPutsTheOutcomeFirstWithoutItsLabel() = assertEquals(
+        "migrations 008-011 applied, tests green.\nThe test seeds are still to review.",
+        OutcomeText.summary(Outcome("migrations", "Esito: migrations 008-011 applied, tests green.\nThe test seeds are still to review.\nProssimi: seeds · admin", 0)),
+    )
+    @Test fun summaryWithoutAnOutcomeLineKeepsTheText() =
+        assertEquals("Test verdi, 40 su 40.", OutcomeText.summary(Outcome("Test verdi", "Test verdi, 40 su 40.\nProssimi: tagga", 0)))
 }

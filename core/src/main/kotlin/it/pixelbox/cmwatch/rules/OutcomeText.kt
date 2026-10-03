@@ -31,6 +31,15 @@ object OutcomeText {
         return o.short
     }
 
+    /**
+     * Il testo di una card del riepilogo (provini 03/10 15:36: «Esito:» in testa era rumore): prima l'esito senza
+     * l'etichetta, poi il resto; la riga «Prossimi:» no, i consigli hanno i loro tasti.
+     */
+    fun summary(o: Outcome): String {
+        val clean = o.copy(full = NextSteps.parse(o.full).text)
+        return listOfNotNull(headline(clean), body(clean)).joinToString("\n")
+    }
+
     /** Il testo sotto il titolo, senza ripeterlo; null se non resta niente. */
     fun body(o: Outcome): String? {
         val titolo = headline(o)
