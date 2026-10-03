@@ -174,6 +174,15 @@ class FirebaseTransportTest {
         assertArrayEquals(bytes, java.util.Base64.getDecoder().decode(plain.getValue("data").jsonPrimitive.content))
     }
 
+    // Contratto 1.28: un file di qualunque formato porta il suo nome nel blob; senza nome la chiave non c'è.
+    @Test fun shareCarriesTheFileName() = runBlocking {
+        transport().share("s3", "application/pdf", byteArrayOf(9), maxBytes = 1_500_000, name = "Preventivo.pdf")
+        val plain = Json.parseToJsonElement(Blob.open(store.getValue("share/s3"), key)).jsonObject
+        assertEquals("Preventivo.pdf", plain.getValue("name").jsonPrimitive.content)
+        transport().share("s4", "image/jpeg", byteArrayOf(9), maxBytes = 1_500_000)
+        assertFalse(Json.parseToJsonElement(Blob.open(store.getValue("share/s4"), key)).jsonObject.containsKey("name"))
+    }
+
     // Contratto 1.24: il file chiesto con `file` si legge da /file/<id del comando>, si decifra e si cancella.
     @Test fun fetchFileReadsOpensAndDeletes() = runBlocking {
         store["file/c1"] = blobOf("""{"mime":"image/png","data":"AQID"}""")

@@ -22,6 +22,6 @@ class SwitchableTransport(initial: Transport) : Transport {
     override suspend fun fetchState(): State = current.value.fetchState()
     override suspend fun send(cmd: Cmd, onWritten: () -> Unit): CmdResult = current.value.send(cmd, onWritten)
     override suspend fun pair(code: String, deviceName: String): PairingInfo = current.value.pair(code, deviceName)
-    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int) = current.value.share(id, mime, data, maxBytes)
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String?) = current.value.share(id, mime, data, maxBytes, name)
     override suspend fun fetchFile(id: String): FileBlob? = current.value.fetchFile(id)
 }
