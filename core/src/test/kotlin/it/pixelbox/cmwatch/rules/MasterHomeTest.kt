@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.rules.MasterHome.Kind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -118,6 +119,13 @@ class MasterHomeTest {
     @Test fun workingOnlyBusySessionsWithoutTheMaster() {
         val state = st(s("a", SessionState.BUSY), s("b", SessionState.AWAITING), s("c", SessionState.WAITING, q = q("1", at(14))), s("d"), s("master", SessionState.BUSY))
         assertEquals(setOf("a", "b"), MasterHome.working(state).map { it.session.name }.toSet())
+    }
+
+    // Franz, 03/10 09:15: in «al lavoro» l'ultimo esito e le risposte rapide pronte all'invio, non il comando che gira.
+    @Test fun workingCarriesTheLastOutcomeNotTheTool() {
+        val busy = s("a", SessionState.BUSY).copy(tool = "Bash", toolNote = "cat /tmp/x", outcome = Outcome("Fatto", "Test verdi.\nProssimi: tagga · apri la PR", at(14)))
+        assertEquals("Test verdi.\nProssimi: tagga · apri la PR", MasterHome.working(st(busy)).single().detail)
+        assertNull(MasterHome.working(st(s("a", SessionState.BUSY).copy(tool = "Bash", toolNote = "cat /tmp/x"))).single().detail)
     }
 
     @Test fun theMasterIsNeverInItsOwnList() =

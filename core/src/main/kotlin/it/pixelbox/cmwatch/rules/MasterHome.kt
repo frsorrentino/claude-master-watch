@@ -118,10 +118,12 @@ object MasterHome {
     /** Le sessioni vive senza la master, nell'ordine della regia (in attesa, al lavoro, ferme). */
     /**
      * Il gruppo «al lavoro» dentro «Per te» (Franz, 02/10 21:29: «In corso» integrato): solo chi lavora adesso; chi aspetta
-     * o ha finito sta già nelle righe sopra, la master ha la sua casa.
+     * o ha finito sta già nelle righe sopra, la master ha la sua casa. `detail` è l'ultimo esito intero, con la riga
+     * `Prossimi:` per le risposte rapide, non il comando che gira (Franz, 03/10 09:15).
      */
     fun working(state: State): List<Running> =
         running(state).filter { it.session.state == SessionState.BUSY || it.session.state == SessionState.AWAITING }
+            .map { it.copy(detail = it.session.outcome?.full) }
 
     fun running(state: State): List<Running> =
         PhoneBoard.sections(state, withMaster = false).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.map { s ->

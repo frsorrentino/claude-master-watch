@@ -94,7 +94,20 @@ fun ForYouCard(
         val shown = all.take(MasterHome.MAX)
         val (attention, service) = shown.partition { it.kind == MasterHome.Kind.QUESTION || it.kind == MasterHome.Kind.FINISHED }
         attention.forEach { row -> item(row, onAction) }
-        if (working.isNotEmpty()) WorkingGroup(working, now, onSession)
+        // «Al lavoro» con l'ultimo esito e le risposte rapide pronte all'invio (Franz, 03/10 09:15): partono subito e la
+        // sessione le prende quando finisce il turno.
+        if (working.isNotEmpty()) {
+            WorkingHeader(working.size)
+            working.forEach { r ->
+                val s = r.session
+                val id = "WORK:" + s.name
+                AttentionRow(
+                    MasterHome.Row(MasterHome.Kind.FINISHED, s.name, r.detail, s.name, at = (s.turnStarted ?: s.since).takeIf { it > 0 }),
+                    now, expanded == id, onToggle = { expanded = if (expanded == id) null else id }, question = null,
+                    onAnswer = {}, onStep = { t -> onStep(s.name, t) }, onOpen = { onSession(s.name) }, working = true, context = s.context,
+                )
+            }
+        }
         service.forEach { row -> item(row, onAction) }
         val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
@@ -107,33 +120,12 @@ fun ForYouCard(
     }
 }
 
-/** «Al lavoro · N» dentro «Per te»: fulmine, nome, da quanto lavora, cosa sta facendo, contesto; il tocco apre la sessione. */
+/** «Al lavoro · N» dentro «Per te»: l'intestazione del gruppo; le righe sono `AttentionRow` con il fulmine. */
 @Composable
-private fun WorkingGroup(rows: List<MasterHome.Running>, now: Long, onSession: (String) -> Unit) {
+private fun WorkingHeader(n: Int) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.fy_working, rows.size).uppercase(), style = MonoSmall.copy(color = CmColors.briefRing))
+        Text(stringResource(R.string.fy_working, n).uppercase(), style = MonoSmall.copy(color = CmColors.briefRing))
         Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefRing.copy(alpha = 0.25f)))
-    }
-    rows.forEach { r ->
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onSession(r.session.name) }.padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_w_working), null, tint = CmColors.briefRing, modifier = Modifier.size(20.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    androidx.compose.ui.text.buildAnnotatedString {
-                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)); append(r.session.name); pop()
-                        (r.session.turnStarted ?: r.session.since).takeIf { it > 0 }?.let { from ->
-                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.text2)); append(" · " + it.pixelbox.cmwatch.contract.Durations.since(from, now)); pop()
-                        }
-                    },
-                    style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
-                )
-                r.detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip) }
-            }
-            r.session.context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.briefRing)) }
-        }
     }
 }
 
@@ -148,18 +140,23 @@ private fun WorkingGroup(rows: List<MasterHome.Running>, now: Long, onSession: (
 internal fun AttentionRow(
     row: MasterHome.Row, now: Long, open: Boolean, onToggle: () -> Unit, question: it.pixelbox.cmwatch.contract.Question?,
     onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
+    /** Una sessione al lavoro (03/10 09:15): fulmine, da quanto lavora, l'ultimo esito e le sue risposte rapide. */
+    working: Boolean = false, context: Int? = null,
 ) {
     val waiting = row.kind == MasterHome.Kind.QUESTION
-    val tone = if (waiting) CmColors.briefWarn else CmColors.briefGood
+    val tone = when { waiting -> CmColors.briefWarn; working -> CmColors.briefRing; else -> CmColors.briefGood }
     val parsed = androidx.compose.runtime.remember(row.detail) { it.pixelbox.cmwatch.rules.NextSteps.parse(row.detail.orEmpty()) }
     val body = it.pixelbox.cmwatch.rules.Markdown.parse(parsed.text).text.trim()
-    val age = row.at?.let { t -> if (waiting) it.pixelbox.cmwatch.contract.Durations.since(t, now) else hm(t) }
+    val age = row.at?.let { t -> if (waiting || working) it.pixelbox.cmwatch.contract.Durations.since(t, now) else hm(t) }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(if (waiting) R.drawable.ic_hand else R.drawable.ic_flag), null, tint = tone, modifier = Modifier.size(20.dp))
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(when { waiting -> R.drawable.ic_hand; working -> R.drawable.ic_w_working; else -> R.drawable.ic_flag }),
+                null, tint = tone, modifier = Modifier.size(20.dp),
+            )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     androidx.compose.ui.text.buildAnnotatedString {
@@ -168,15 +165,16 @@ internal fun AttentionRow(
                     },
                     style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
                 )
-                if (!open) Text(body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+                if (!open && body.isNotBlank()) Text(body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
             }
+            context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.briefRing)) }
             androidx.compose.material3.Icon(
                 if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                 stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2,
             )
         }
         if (open) Column(Modifier.padding(start = 40.dp, end = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
+            if (body.isNotBlank()) Text(body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
             if (waiting) question?.options?.forEachIndexed { i, o ->
                 val label = "${o.n} · ${o.label}"
                 if (i == 0) Button(
