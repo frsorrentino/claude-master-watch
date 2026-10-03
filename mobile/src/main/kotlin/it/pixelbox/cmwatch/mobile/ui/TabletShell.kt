@@ -444,19 +444,41 @@ private fun ForecastChart(f: Tablet.Forecast, nowPct: Int, modifier: Modifier) {
     }
 }
 
-/** La testata della conversazione al centro: il puntino, il nome, lo stato con da quanto. */
+/**
+ * La testata della conversazione al centro: il puntino, il nome, lo stato con da quanto. Quando manca posto (carattere
+ * grande) esce lo stato prima che il nome si tagli: il nome dice di chi è la conversazione.
+ */
 @Composable
 fun RowScope.TabletConversationLead(r: Summary.Row?, s: Session, now: Long) {
     val g = r?.group ?: Summary.Group.STILL
-    Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(g)))
-    Spacer(Modifier.width(10.dp))
-    Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f, fill = false))
-    Spacer(Modifier.width(10.dp))
     val chip = stringResource(groupWord(g)).uppercase() + " · " + (r?.let { rowAge(it, now) } ?: Durations.since(s.since, now)).uppercase()
-    Text(
-        chip, style = MonoLabel.copy(color = groupTone(g)), maxLines = 1,
-        modifier = Modifier.border(1.dp, groupTone(g).copy(alpha = 0.7f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp),
-    )
+    Layout(
+        content = {
+            Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(g)))
+            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
+            Text(
+                chip, style = MonoLabel.copy(color = groupTone(g)), maxLines = 1, softWrap = false,
+                modifier = Modifier.border(1.dp, groupTone(g).copy(alpha = 0.7f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        },
+        modifier = Modifier.weight(1f),
+    ) { m, c ->
+        val gap = 10.dp.roundToPx()
+        val loose = c.copy(minWidth = 0, minHeight = 0)
+        val dot = m[0].measure(loose)
+        val chipP = m[2].measure(loose.copy(maxWidth = Constraints.Infinity))
+        val nameFull = m[1].maxIntrinsicWidth(Constraints.Infinity)
+        val withChip = dot.width + gap + nameFull + gap + chipP.width <= c.maxWidth
+        val nameMax = (c.maxWidth - dot.width - gap - if (withChip) gap + chipP.width else 0).coerceAtLeast(0)
+        val name = m[1].measure(loose.copy(maxWidth = nameMax))
+        val h = maxOf(dot.height, name.height, if (withChip) chipP.height else 0)
+        layout(c.maxWidth, h) {
+            var x = 0
+            dot.placeRelative(x, (h - dot.height) / 2); x += dot.width + gap
+            name.placeRelative(x, (h - name.height) / 2); x += name.width + gap
+            if (withChip) chipP.placeRelative(x, (h - chipP.height) / 2)
+        }
+    }
 }
 
 private fun groupWord(g: Summary.Group) = when (g) {
@@ -514,7 +536,11 @@ private fun StatBox(value: String, label: String, modifier: Modifier) {
     val shape = RoundedCornerShape(12.dp)
     Column(modifier.clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.10f), shape).padding(horizontal = 12.dp, vertical = 10.dp)) {
         Text(value, style = Mono.copy(fontSize = 22.sp, color = CmColors.text, fontWeight = FontWeight.Medium))
-        Text(label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp))
+        // Una riga sola che si stringe col carattere grande: «CONTESTO» non si spezza a metà parola.
+        androidx.compose.foundation.text.BasicText(
+            label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp), maxLines = 1, softWrap = false,
+            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 6.sp, maxFontSize = 10.sp, stepSize = 0.5.sp),
+        )
     }
 }
 
@@ -564,12 +590,14 @@ private fun dayTime(epoch: Long): String =
 @Composable
 fun TabletColumns(
     status: Tablet.Status, ring: PhoneOverview.Ring?, now: Long, groups: List<Pair<Summary.Group, List<Summary.Row>>>, open: Int,
-    columns: List<String>, onToggle: (String) -> Unit, onBoard: () -> Unit,
+    columns: List<String>, onToggle: (String) -> Unit, onBoard: () -> Unit, onSearch: () -> Unit = {},
     barFixed: Boolean, barOpen: Boolean, onBar: () -> Unit, onBarFixed: (Boolean) -> Unit,
     column: @Composable (Summary.Row) -> Unit,
 ) {
     val rows = groups.flatMap { it.second }
-    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
+    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding().onPreviewKeyEvent { e ->
+        if (e.isCtrlPressed && e.key == Key.K && e.type == KeyEventType.KeyDown) { onSearch(); true } else false
+    }) {
         ColumnsBar(status, ring, now, rows.filter { it.session.name in columns }.sortedBy { columns.indexOf(it.session.name) }, barOpen, onBar, onBoard)
         HorizontalDivider(color = CmColors.line)
         Row(Modifier.weight(1f).fillMaxWidth()) {

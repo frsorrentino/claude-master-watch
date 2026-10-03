@@ -740,7 +740,8 @@ class MainActivity : ComponentActivity() {
         // minuto, solo con l'app in primo piano; cambiando sessione si riparte da capo.
         var timeline by remember { mutableStateOf<it.pixelbox.cmwatch.contract.TimelinePage?>(null) }
         val timelineOk = demo || state?.ops?.contains("timeline") == true
-        val inspectorOn = wide && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
+        // Solo con l'ispettore in vista: nelle colonne e col Registro la cronologia non si chiede.
+        val inspectorOn = wide && !columnsOn && tab != StartRoute.Tab.DIARY && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
         LaunchedEffect(inspectorOn, chatName, timelineOk) {
             timeline = null
             val name = chatName ?: return@LaunchedEffect
@@ -827,7 +828,7 @@ class MainActivity : ComponentActivity() {
             }
             if (columnsOn) TabletColumns(
                 it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), ring, now, groups, liveNames.size,
-                columns = tabletCols, onToggle = toggleColumn, onBoard = { tabletView = TabletView.BOARD },
+                columns = tabletCols, onToggle = toggleColumn, onBoard = { tabletView = TabletView.BOARD }, onSearch = { searchOpen = true },
                 barFixed = barFixed, barOpen = barOpen, onBar = { barOpen = !barOpen },
                 onBarFixed = { v -> barFixed = v; barOpen = true; tabletPrefs.edit().putBoolean("tablet_bar_fixed", v).apply() },
             ) { r ->
