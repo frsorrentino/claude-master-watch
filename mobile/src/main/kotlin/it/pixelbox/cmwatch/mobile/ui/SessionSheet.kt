@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -817,7 +816,13 @@ private fun ClaudeBubble(
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
             // Esiti sempre leggibili a voce (regola del ▶: esiti, risposte e domande, oltre alla soglia dei 120 caratteri).
             val reading = LocalSpeaking.current == text
-            SmallAction(if (reading) Icons.Rounded.Stop else Icons.AutoMirrored.Rounded.VolumeUp, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud)) { onSpeak(text) }
+            // Il ▶ tondo come nel riepilogo e nel riquadro della master (Franz, 03/10 16:13), non l'altoparlante.
+            androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(text) }, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud),
+                    tint = CmColors.actionIcon, modifier = Modifier.size(20.dp),
+                )
+            }
             at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(start = 4.dp)) }
         }
     }
