@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.rules.MasterHome.Kind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -126,6 +127,13 @@ class MasterHomeTest {
         val busy = s("a", SessionState.BUSY).copy(tool = "Bash", toolNote = "cat /tmp/x", outcome = Outcome("Fatto", "Test verdi.\nProssimi: tagga · apri la PR", at(14)))
         assertEquals("Test verdi.\nProssimi: tagga · apri la PR", MasterHome.working(st(busy)).single().detail)
         assertNull(MasterHome.working(st(s("a", SessionState.BUSY).copy(tool = "Bash", toolNote = "cat /tmp/x"))).single().detail)
+    }
+
+    // Consulenza del 02/10 (Codex e Antigravity, approvata da Franz il 03/10): con una domanda aperta «Per te» va prima
+    // dell'ultimo esito; senza, l'esito resta in testa.
+    @Test fun aQuestionPutsForYouFirst() {
+        assertTrue(MasterHome.forYouFirst(MasterHome.forYou(st(s("a", SessionState.WAITING, q = q("1", at(14)))), emptyList(), emptyList(), at(15), zone)))
+        assertFalse(MasterHome.forYouFirst(MasterHome.forYou(st(s("a", ctx = 85)), emptyList(), emptyList(), at(15), zone)))
     }
 
     @Test fun theMasterIsNeverInItsOwnList() =

@@ -33,6 +33,12 @@ object MasterHome {
 
     const val MAX = 3
 
+    /**
+     * Con una domanda aperta «Per te» va prima dell'ultimo esito (consulenza del 02/10, approvata da Franz il 03/10): il
+     * lavoro bloccato in vista senza scorrere.
+     */
+    fun forYouFirst(f: ForYou): Boolean = f.rows.any { it.kind == Kind.QUESTION }
+
     /** La chiave di un prossimo passo avviato dal telefono: ricordata, il passo non torna (revisione finale 02/10). */
     fun nextKey(project: String, next: String) = "next:$project:$next"
 

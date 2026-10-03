@@ -569,12 +569,18 @@ class MainActivity : ComponentActivity() {
                     val forYouAnswer: (String, Int) -> Unit = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } }
                     // Casa A (mockup approvato da Franz, 02/10 07:38): esito della master, Per te, In corso, quota.
                     val home: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { onDraft, onSend ->
+                        // Con una domanda aperta «Per te» prima dell'ultimo esito (consulenza del 02/10).
+                        val first = it.pixelbox.cmwatch.rules.MasterHome.forYouFirst(forYou)
+                        val forYouCard: @Composable () -> Unit = {
+                            ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
+                        }
+                        if (first) forYouCard()
                         master?.let { m ->
                             val hero = remember(masterEntries, m.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, m) }
                             HeroCard(hero, m, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
                                 onConversation = { toSession(m.name) }, onStep = onDraft, onSendStep = onSend)
                         }
-                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
+                        if (!first) forYouCard()
                         QuotaBars(model.rings, onOpen = { overviewSheet = true })
                     }
                     if (master != null) sessionPage(master, masterEntries, home)
