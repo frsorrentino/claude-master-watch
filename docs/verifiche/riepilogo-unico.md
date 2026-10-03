@@ -23,3 +23,4 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Toccando una card la scheda cresce dalla card in circa 1/3 di secondo, anche con ← all'indietro (registrazione del 03/10: un fotogramma).
 - [ ] Le righe «prossimo passo · Avvia» sotto la lista solo per i progetti senza una sessione aperta (master compresa).
 - [ ] Card del riepilogo e testata della sessione: «5h N%» dell'account della sessione al posto di «da N m»; dato vecchio in arancio.
+- [ ] Matita solo sui messaggi non arrivati (rosso o incerto); su quelli elaborati e su quelli scritti al PC o dall'orologio solo Copia.

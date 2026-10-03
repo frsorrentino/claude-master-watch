@@ -238,7 +238,7 @@ fun SessionSheet(
                                 // Il pannello che un comando slash ha aperto sul PC (/cost) risponde sotto il comando.
                                 it.sent.panel?.let { p -> ClaudeBubble(p, it.sent.sentAt, ttsMinChars, actions.speak) }
                             }
-                            is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                            is ChatFeed.Item.User -> UserBubble(it.entry, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                             is ChatFeed.Item.Claude -> ClaudeBubble(
                                 it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
                                 onSpeakFrom = actions.speakFrom,
@@ -686,7 +686,7 @@ private fun ChatTurn(row: ChatRow, ttsMinChars: Int, actions: SheetActions, onEd
     }
 }
 
-/** Un messaggio mandato dal telefono: a destra, con l'anteprima dell'allegato, lo stato, l'ora e Copia, Modifica, Reinvia. */
+/** Un messaggio mandato dal telefono: a destra, con l'anteprima dell'allegato, lo stato, l'ora, Copia e, se non è arrivato, Modifica. */
 @Composable
 private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actions: SheetActions, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
     val clip = LocalClipboardManager.current
@@ -707,7 +707,9 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
             // Un programmato dice solo quando parte: l'ora in cui è stato scritto accanto confondeva (provini 01/10).
             if (status != ChatRules.Status.SCHEDULED) Text(hhmm(m.sentAt), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(m.text)) }
-            SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
+            // La matita solo su un messaggio non arrivato, per correggerlo e rimandarlo (Franz, 03/10 21:11): su uno già
+            // elaborato non modificava niente, rimetteva solo il testo nel campo come Copia.
+            if (status == ChatRules.Status.FAILED || status == ChatRules.Status.UNCERTAIN) SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(m.text) }
         }
         // Il ↻ sembrava «Aggiorna» e ogni tocco mandava un doppione (dal vivo 30/09 23:00): ora solo «Riprova», a parole,
         // e solo dove serve.
@@ -724,7 +726,7 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
 
 /** Un messaggio scritto altrove (al PC, dall'orologio): a destra come i propri, su una superficie più bassa, con da dove. */
 @Composable
-private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (String) -> Unit) {
+private fun UserBubble(e: TranscriptEntry, onResend: (String) -> Unit) {
     val clip = LocalClipboardManager.current
     val text = e.text.orEmpty()
     Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
@@ -742,7 +744,6 @@ private fun UserBubble(e: TranscriptEntry, onEdit: (String) -> Unit, onResend: (
             if (e.queued) Text(" · " + stringResource(R.string.chat_queued), style = MaterialTheme.typography.labelMedium, color = CmColors.stale)
             e.at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(horizontal = 4.dp)) }
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
-            SmallAction(Icons.Rounded.Edit, stringResource(R.string.edit)) { onEdit(text) }
         }
     }
 }
