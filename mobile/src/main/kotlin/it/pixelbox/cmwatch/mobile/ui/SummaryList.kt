@@ -7,10 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,23 +54,41 @@ fun SummaryList(
     onService: (MasterHome.Row) -> Unit, onClosed: () -> Unit, initiallyOpen: String? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
+    // «Ha finito») la sua card scivola al posto nuovo e le altre si spostano (osservazioni del 03/10, transizione 4).
+    val off = animationsOff()
+    val moving: @Composable androidx.compose.foundation.lazy.LazyItemScope.() -> Modifier = {
+        if (off) Modifier.animateItem(fadeInSpec = null, placementSpec = null, fadeOutSpec = null)
+        else Modifier.animateItem(
+            fadeInSpec = androidx.compose.animation.core.tween(150), fadeOutSpec = androidx.compose.animation.core.tween(150),
+            placementSpec = androidx.compose.animation.core.spring(
+                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+                visibilityThreshold = androidx.compose.ui.unit.IntOffset.VisibilityThreshold,
+            ),
+        )
+    }
+    androidx.compose.foundation.lazy.LazyColumn(
+        Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         model.rows.groupBy { it.group }.forEach { (group, rows) ->
-            GroupHeader(stringResource(groupLabel(group), rows.size), groupTone(group))
-            rows.forEach { r ->
+            item(key = "h-${group.name}") { Box(moving()) { GroupHeader(stringResource(groupLabel(group), rows.size), groupTone(group)) } }
+            items(rows, key = { "s-" + it.session.name }) { r ->
                 val s = r.session
                 val id = group.name + ":" + s.name
-                SummaryCard(
-                    r, now, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
-                    onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
-                )
+                Box(moving()) {
+                    SummaryCard(
+                        r, now, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
+                        onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
+                    )
+                }
             }
         }
-        if (model.closed.isNotEmpty()) ClosedRow(model.closed.size, onClosed)
+        if (model.closed.isNotEmpty()) item(key = "closed") { Box(moving()) { ClosedRow(model.closed.size, onClosed) } }
         if (model.service.isNotEmpty()) {
-            Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(CmColors.line))
-            Column(Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                model.service.forEach { ForYouRow(it, onService) }
+            item(key = "svc-line") { Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(CmColors.line)) }
+            itemsIndexed(model.service, key = { i, r -> "svc-${r.kind}-${r.session}-${r.project}-${r.title}-$i" }) { _, row ->
+                Box(moving().padding(horizontal = 8.dp, vertical = 6.dp)) { ForYouRow(row, onService) }
             }
         }
     }
@@ -125,7 +147,7 @@ private fun SummaryCard(
     val fill = if (waiting) androidx.compose.ui.graphics.lerp(CmColors.surfaceLow, CmColors.briefWarn, 0.06f) else CmColors.surfaceLow
     Column(
         // La chat si restringe verso la sua card durante il gesto indietro.
-        Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(fill)
+        Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(fill).smoothSize()
             // Franz, 03/10 17:05: il tocco sulla card porta dritto alla sessione; il tasto ▼ la apre sul posto.
             .clickable(onClick = onOpen).padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),

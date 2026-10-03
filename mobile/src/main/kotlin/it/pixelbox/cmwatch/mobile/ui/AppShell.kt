@@ -143,10 +143,11 @@ private fun SessionMenu(
     }
     if (open) {
         val model = androidx.compose.runtime.remember(sessions) { it.pixelbox.cmwatch.rules.SessionsMenu.of(sessions) }
-        val pick: (String?) -> Unit = { n -> open = false; onPick(n) }
+        // Il pannello nasce dal nome della sessione, in alto a sinistra.
         PanelShell(onDismiss = { open = false }, header = {
             Text(stringResource(R.string.menu_goto), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
-        }) {
+        }, origin = androidx.compose.ui.graphics.TransformOrigin(0.2f, 0f)) { close ->
+            val pick: (String?) -> Unit = { n -> close(); onPick(n) }
             // La home in testa: il riepilogo con la master.
             Row(
                 Modifier.fillMaxWidth().clickable { pick(null) }.padding(horizontal = 20.dp, vertical = 10.dp),
@@ -179,7 +180,7 @@ private fun SessionMenu(
             if (model.closed > 0) {
                 HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
                 Row(
-                    Modifier.fillMaxWidth().clickable { open = false; onClosed() }.padding(horizontal = 20.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().clickable { close(); onClosed() }.padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Icon(Icons.Rounded.Close, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))

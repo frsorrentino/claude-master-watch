@@ -30,7 +30,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,13 +62,14 @@ data class MenuEntry(
 @Composable
 fun MenuPanel(
     onDismiss: () -> Unit, entries: List<MenuEntry>, footer: MenuEntry? = null,
+    origin: androidx.compose.ui.graphics.TransformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f),
     header: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
-) = PanelShell(onDismiss, header) {
-    entries.forEach { e -> MenuItem(e.icon, e.title, e.sub, if (e.accent) CmColors.accent.copy(alpha = 0.25f) else CmColors.surfaceHigh) { onDismiss(); e.onClick() } }
+) = PanelShell(onDismiss, header, origin) { close ->
+    entries.forEach { e -> MenuItem(e.icon, e.title, e.sub, if (e.accent) CmColors.accent.copy(alpha = 0.25f) else CmColors.surfaceHigh) { close(); e.onClick() } }
     footer?.let { f ->
         HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
         Row(
-            Modifier.fillMaxWidth().clickable { onDismiss(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().clickable { close(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             val tone = if (f.destructive) CmColors.briefAlertRing else CmColors.text2
@@ -79,29 +82,54 @@ fun MenuPanel(
 /**
  * Il guscio dei pannelli: sfondo oscurato a tutto schermo (tocco = chiudi), pannello largo sotto la barra con angoli da
  * 28 dp, in testa una riga con ✕; il contenuto scorre se è più alto dello schermo. Indietro chiude.
+ *
+ * Il pannello nasce dal punto toccato ([origin]: ≡ in alto a destra, il nome della sessione in alto a sinistra) e ci torna
+ * (osservazioni del 03/10, transizione 1): sfondo in dissolvenza in 150 ms, pannello da 0,96 a 1 con dissolvenza in 200 ms
+ * con la curva dell'app, uscita per la stessa strada in 150 ms; [onDismiss] arriva a uscita finita. Con le animazioni
+ * spente compare e sparisce subito. Il contenuto riceve `close`, che chiude con l'uscita animata.
  */
 @Composable
 fun PanelShell(
     onDismiss: () -> Unit, header: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
-    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+    origin: androidx.compose.ui.graphics.TransformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f),
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.(close: () -> Unit) -> Unit,
 ) {
-    Popup(onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
-        Box(
-            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f))
-                .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-        ) {
-            Surface(
-                shape = RoundedCornerShape(28.dp), color = CmColors.surface, shadowElevation = 8.dp,
-                modifier = Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).fillMaxWidth()
-                    // Il tocco dentro il pannello non lo chiude.
-                    .clickable(remember { MutableInteractionSource() }, indication = null) {},
+    val off = animationsOff()
+    val shown = remember { androidx.compose.animation.core.MutableTransitionState(off) }.apply { targetState = true }
+    var closing by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val close: () -> Unit = { if (off) onDismiss() else { closing = true; shown.targetState = false } }
+    androidx.compose.runtime.LaunchedEffect(shown.isIdle, shown.currentState, closing) { if (closing && shown.isIdle && !shown.currentState) onDismiss() }
+    val enter = androidx.compose.animation.core.tween<Float>(200, easing = CmMotion.easing)
+    val exit = androidx.compose.animation.core.tween<Float>(150, easing = CmMotion.easing)
+    Popup(onDismissRequest = close, properties = PopupProperties(focusable = true)) {
+        Box(Modifier.fillMaxSize()) {
+            androidx.compose.animation.AnimatedVisibility(
+                shown, enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
+                exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150)),
             ) {
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        header()
-                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text2) }
+                Box(
+                    Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f))
+                        .clickable(remember { MutableInteractionSource() }, indication = null, onClick = close),
+                )
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                shown,
+                enter = androidx.compose.animation.fadeIn(enter) + androidx.compose.animation.scaleIn(enter, initialScale = 0.96f, transformOrigin = origin),
+                exit = androidx.compose.animation.fadeOut(exit) + androidx.compose.animation.scaleOut(exit, targetScale = 0.96f, transformOrigin = origin),
+                modifier = Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).fillMaxWidth(),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(28.dp), color = CmColors.surface, shadowElevation = 8.dp,
+                    // Il tocco dentro il pannello non lo chiude.
+                    modifier = Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, indication = null) {},
+                ) {
+                    Column(Modifier.padding(vertical = 8.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            header()
+                            IconButton(onClick = close) { Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text2) }
+                        }
+                        Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { content(close) }
                     }
-                    Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()), content = content)
                 }
             }
         }

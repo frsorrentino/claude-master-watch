@@ -206,8 +206,20 @@ fun SessionSheet(
                     Box(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) { block() }
                 }
             }
-            LazyColumn(
-                Modifier.weight(1f).fillMaxWidth(), state = list,
+            // La conversazione arriva in dissolvenza (osservazioni del 03/10, transizione 5): mentre si carica la rotella, poi la
+            // lista entra in 150 ms invece di comparire a pezzi. Con le animazioni spente, subito.
+            val feedOff = animationsOff()
+            androidx.compose.animation.AnimatedContent(
+                feed == null && loadingFeed, Modifier.weight(1f).fillMaxWidth(), label = "feed",
+                transitionSpec = {
+                    androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(if (feedOff) 0 else 150)) togetherWith
+                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(if (feedOff) 0 else 100))
+                },
+            ) { waiting ->
+            if (waiting) Box(Modifier.fillMaxSize().padding(vertical = 32.dp), contentAlignment = Alignment.TopCenter) {
+                CircularWavyProgressIndicator(color = CmColors.actionIcon)
+            } else LazyColumn(
+                Modifier.fillMaxSize(), state = list,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (feed != null) {
@@ -277,6 +289,7 @@ fun SessionSheet(
                         }
                     }
             }
+            }
             // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
             // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
             if (draft.isBlank() && s.state == SessionState.IDLE && s.question == null) {
@@ -322,10 +335,10 @@ fun SessionSheet(
                         ),
                     ) {
                         if (showList) {
-                            Column(
-                                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                            ) { h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) }) }
+                            // Il contenuto della home scorre da sé: il riepilogo è una lista «pigra» (transizione 4).
+                            Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                            }
                             // Una barra sola che sale e scende (dal vivo 03/10 17:51: alla riduzione se ne vedevano due, quella del
                             // pannello che scendeva sopra questa). Salendo sparisce subito: la sostituisce quella del pannello, che parte
                             // da qui. Scendendo ricompare solo quando il pannello è arrivato in fondo.
@@ -829,7 +842,7 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
     val last = g.entries.last()
     val shape = RoundedCornerShape(14.dp)
     Row(
-        Modifier.fillMaxWidth().clip(shape).background(if (failed > 0) CmColors.stepsFailBg else CmColors.stepsBg),
+        Modifier.fillMaxWidth().clip(shape).background(if (failed > 0) CmColors.stepsFailBg else CmColors.stepsBg).smoothSize(),
     ) {
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {

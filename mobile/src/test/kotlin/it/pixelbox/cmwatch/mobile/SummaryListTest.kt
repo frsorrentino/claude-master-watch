@@ -24,7 +24,7 @@ class SummaryListTest {
     private fun model(state: State) = Summary.build(state, emptyList(), emptyList(), state.ts, ZoneId.of("Europe/Rome"), emptySet())
 
     @Composable private fun page(state: State, open: String? = null) = CmPhoneTheme(still = true) {
-        Column(Modifier.background(CmColors.bg).padding(16.dp)) {
+        Column(Modifier.background(CmColors.bg)) {
             SummaryList(model(state), state.ts, {}, { _, _ -> }, { _, _ -> }, {}, {}, initiallyOpen = open)
         }
     }

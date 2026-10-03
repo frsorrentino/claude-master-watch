@@ -1,6 +1,8 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import android.provider.Settings
+import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.Modifier
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.snap
@@ -87,6 +89,14 @@ object CmMotion {
         visibilityThreshold = androidx.compose.ui.unit.IntOffset.VisibilityThreshold,
     )
 }
+
+/**
+ * Le aperture sul posto (▼ delle card, giorni del Registro, gruppi di passaggi; osservazioni del 03/10, transizione 3):
+ * l'altezza segue il contenuto in 200 ms con la curva dell'app, quasi impercettibile; con le animazioni spente, subito.
+ */
+@Composable
+fun Modifier.smoothSize(): Modifier =
+    this.animateContentSize(if (animationsOff()) snap() else tween(200, easing = CmMotion.easing))
 
 /** «Riduci animazioni» o animazioni di sistema a zero; negli snapshot (LocalStill) sempre «spente»: stato finale. */
 @Composable

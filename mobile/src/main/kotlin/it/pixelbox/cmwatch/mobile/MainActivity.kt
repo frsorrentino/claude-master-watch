@@ -650,7 +650,7 @@ class MainActivity : ComponentActivity() {
                 ) { pageHeader(null) }
             } else Column(Modifier.fillMaxSize()) {
                 pageHeader(null)
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) { list() }
+                Box(Modifier.weight(1f)) { list() }
                 Box(Modifier.padding(16.dp)) {
                     MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
                 }

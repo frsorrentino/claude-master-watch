@@ -268,7 +268,7 @@ private fun RecapEntry(
 @Composable
 private fun RegCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) =
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).then(modifier).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).smoothSize().then(modifier).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp), content = content,
     )
 
