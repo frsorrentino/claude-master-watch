@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -36,39 +37,56 @@ import it.pixelbox.cmwatch.rules.StartRoute.Tab
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /**
- * Tre schede in basso, Panoramica, Sessioni e Diario (restyling 30/09), la fascia «Demo» fissa quando la Demo è accesa
- * (design 29/09). In alto, al posto del titolo, il menu delle sessioni (Franz, 30/09 20:38: più spazio): mostra la
- * sessione aperta o «Tutte le sessioni», e sceglierne una apre la sua scheda; ⚙ a destra. Con una scheda aperta le
- * schede in basso spariscono, così la barra di scrittura sta sopra la tastiera. `fab`: il bottone mobile di «Lancia».
+ * Il guscio del riepilogo unico (design 03/10): niente schede in basso. Senza scheda aperta, in alto «Sessioni · N
+ * aperte», la lente e il menu ≡, sotto la quota in una riga; con una scheda aperta il menu delle sessioni al posto del
+ * titolo. Il Registro (`Tab.DIARY`) si apre dal menu a tutto schermo, con la freccia indietro. La fascia «Demo» resta.
  */
 @Composable
 fun AppShell(
-    tab: Tab, demo: Boolean, onTab: (Tab) -> Unit, onSettings: () -> Unit, fab: @Composable () -> Unit = {},
+    tab: Tab, demo: Boolean, onTab: (Tab) -> Unit, onSettings: () -> Unit,
     sessions: List<Session> = emptyList(), current: String? = null, onPick: (String?) -> Unit = {},
-    /** La ricerca (piano 30/09, Task 5): la lente accanto al menu; null = niente lente. */
+    /** La lente accanto al menu; null = niente lente. */
     onSearch: (() -> Unit)? = null,
-    /** Lo scorrimento laterale cambia scheda; spento con una scheda sessione aperta, dove scorre fra le sessioni. */
-    swipeTabs: Boolean = false,
-    /** La casa della master (design 01/10): il nome della master nel menu in alto quando nessuna scheda è aperta. */
-    home: String? = null,
-    /** «Quadro» nel menu ≡: il foglio della Panoramica (la Panoramica non è più una scheda). */
+    /** «Quadro e quota» nel menu: il foglio della Panoramica. */
     onQuadro: () -> Unit = {},
     /** Tirare giù aggiorna lo stato dal PC (segnalazione 01/10 21:08); null = niente gesto, come con una scheda aperta. */
     onRefresh: (() -> Unit)? = null, refreshing: Boolean = false,
-    /** Il contenuto di una scheda: con lo scorrimento si vedono due schede insieme, ognuna disegnata per la sua. */
+    /** «Lancia una sessione» nel menu (il bottone mobile non c'è più). */
+    onLaunch: () -> Unit = {},
+    /** Il collegamento in testa al menu: il PC, «aggiornato ora» o «… min fa», ambra se fermo. */
+    host: String? = null, updated: String = "", stale: Boolean = false,
+    /** Le sessioni aperte, per «N aperte» accanto al titolo. */
+    openCount: Int = 0,
+    /** La quota in una riga sotto la barra, solo sul riepilogo. */
+    quota: (@Composable () -> Unit)? = null,
+    /** Solo per i provini: il menu già aperto. */
+    menuStartOpen: Boolean = false,
     content: @Composable (Tab) -> Unit,
 ) {
+    val summary = current == null && tab == Tab.OVERVIEW
     Scaffold(
         containerColor = CmColors.bg,
-        floatingActionButton = fab,
         topBar = {
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SessionMenu(sessions, current ?: home, onPick, Modifier.weight(1f))
-                    // Al posto di ⚙ il menu dell'app (Franz, 30/09 23:04): con una scheda aperta le schede in basso non ci sono.
+                    when {
+                        current != null -> SessionMenu(sessions, current, onPick, Modifier.weight(1f))
+                        tab == Tab.DIARY -> {
+                            IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
+                            Text(stringResource(R.string.menu_register), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+                        }
+                        else -> Row(Modifier.weight(1f).padding(start = 12.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
+                            Text(
+                                stringResource(R.string.summary_open, openCount), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                                maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(bottom = 2.dp),
+                            )
+                        }
+                    }
                     onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
-                    AppMenu(onTab, onSettings, onQuadro)
+                    AppMenu(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch ?: {}, onSettings, menuStartOpen)
                 }
+                if (summary) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
                 if (demo) {
                     Text(
                         stringResource(R.string.demo_banner), color = CmColors.briefWarnInk, style = MaterialTheme.typography.labelLarge,
@@ -78,76 +96,14 @@ fun AppShell(
                 }
             }
         },
-        bottomBar = {
-            if (current == null) NavigationBar(containerColor = CmColors.surfaceLow) {
-                NavigationBarItem(
-                    selected = tab == Tab.OVERVIEW, onClick = { onTab(Tab.OVERVIEW) },
-                    // La prima scheda è la casa della master (design 01/10): il valore resta `Tab.OVERVIEW` per non cambiare lo stato salvato.
-                    icon = { Icon(Icons.Rounded.Person, null) }, label = { Text(stringResource(R.string.tab_master)) },
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.SESSIONS, onClick = { onTab(Tab.SESSIONS) },
-                    icon = { Icon(Icons.AutoMirrored.Rounded.List, null) }, label = { Text(stringResource(R.string.tab_sessions)) },
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.DIARY, onClick = { onTab(Tab.DIARY) },
-                    icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, null) }, label = { Text(stringResource(R.string.tab_diary)) },
-                )
-            }
-        },
     ) { pad ->
-        // Scorrere a sinistra o a destra passa fra Master, Sessioni e Diario seguendo il dito, come fra le sessioni
-        // (segnalazione 02/10 06:54: prima la scheda scattava solo al rilascio). Con una scheda aperta il pager resta
-        // fermo e lo scorrimento è quello fra le sessioni.
-        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = tab.ordinal) { Tab.entries.size }
-        androidx.compose.runtime.LaunchedEffect(pager.settledPage) { Tab.entries[pager.settledPage].takeIf { it != tab }?.let(onTab) }
-        androidx.compose.runtime.LaunchedEffect(tab) { if (pager.targetPage != tab.ordinal) pager.animateScrollToPage(tab.ordinal) }
         Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize()) {
             // Sempre lo stesso contenitore, spento con una scheda aperta: cambiarlo ricreava il contenuto a metà del gesto
             // indietro e la scheda si riapriva al rilascio (segnalazioni 01/10 21:50 e 23:04).
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(
                 refreshing, onRefresh ?: {}, Modifier.fillMaxSize(), enabled = onRefresh != null,
-            ) {
-                androidx.compose.foundation.pager.HorizontalPager(
-                    pager, Modifier.fillMaxSize(), userScrollEnabled = swipeTabs, beyondViewportPageCount = 0, key = { Tab.entries[it] },
-                    verticalAlignment = Alignment.Top,
-                ) { page -> content(Tab.entries[page]) }
-            }
+            ) { content(tab) }
         }
-    }
-}
-
-/**
- * Il bottone mobile di Panoramica e Sessioni (restyling 30/09): si apre in un menu con «Lancia» e «Aggiungi alla notte»,
- * al posto del bottone pieno in fondo alla regia. `startOpen` per gli snapshot.
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun LaunchFab(onLaunch: () -> Unit, onNight: (() -> Unit)?, startOpen: Boolean = false) {
-    var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(startOpen) }
-    androidx.activity.compose.BackHandler(enabled = open) { open = false }
-    FloatingActionButtonMenu(
-        expanded = open,
-        button = {
-            ToggleFloatingActionButton(
-                checked = open, onCheckedChange = { open = it },
-                containerColor = ToggleFloatingActionButtonDefaults.containerColor(CmColors.primary, CmColors.primary),
-            ) {
-                val icon = if (checkedProgress > 0.5f) Icons.Rounded.Close else Icons.Rounded.Add
-                Icon(icon, stringResource(R.string.launch), tint = CmColors.onPrimary)
-            }
-        },
-    ) {
-        FloatingActionButtonMenuItem(
-            onClick = { open = false; onLaunch() }, text = { Text(stringResource(R.string.launch)) },
-            icon = { Icon(Icons.Rounded.RocketLaunch, null) },
-            containerColor = CmColors.primary, contentColor = CmColors.onPrimary,
-        )
-        if (onNight != null) FloatingActionButtonMenuItem(
-            onClick = { open = false; onNight() }, text = { Text(stringResource(R.string.night_add)) },
-            icon = { Icon(Icons.Rounded.Bedtime, null) },
-            containerColor = CmColors.primary, contentColor = CmColors.onPrimary,
-        )
     }
 }
 
@@ -195,19 +151,13 @@ private fun SessionMenu(
     }
 }
 
-/** Il menu dell'app in alto a destra: Panoramica, Sessioni, Diario, Impostazioni (poi la Scrivania). */
+/** Il menu ≡ dell'app: apre il pannello (`AppMenuPanel`) al posto della vecchia tendina. */
 @Composable
-private fun AppMenu(onTab: (Tab) -> Unit, onSettings: () -> Unit, onQuadro: () -> Unit) {
-    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CmColors.surface) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.tab_master)) }, leadingIcon = { Icon(Icons.Rounded.Person, null) }, onClick = { open = false; onTab(Tab.OVERVIEW) })
-            DropdownMenuItem(text = { Text(stringResource(R.string.quadro_title)) }, leadingIcon = { Icon(Icons.Rounded.Dashboard, null) }, onClick = { open = false; onQuadro() })
-            DropdownMenuItem(text = { Text(stringResource(R.string.tab_sessions)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.List, null) }, onClick = { open = false; onTab(Tab.SESSIONS) })
-            DropdownMenuItem(text = { Text(stringResource(R.string.tab_diary)) }, leadingIcon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, null) }, onClick = { open = false; onTab(Tab.DIARY) })
-            HorizontalDivider(color = CmColors.line)
-            DropdownMenuItem(text = { Text(stringResource(R.string.settings)) }, leadingIcon = { Icon(Icons.Rounded.Settings, null) }, onClick = { open = false; onSettings() })
-        }
-    }
+private fun AppMenu(
+    host: String?, updated: String, stale: Boolean, onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit,
+    onSearch: () -> Unit, onSettings: () -> Unit, startOpen: Boolean,
+) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
+    IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
+    if (open) AppMenuPanel(host, updated, stale, onLaunch, onRegister, onQuadro, onSearch, onSettings, onDismiss = { open = false })
 }

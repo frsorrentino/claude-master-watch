@@ -57,64 +57,6 @@ fun stateLabel(s: SessionState): String = stringResource(when (s) {
     SessionState.GONE -> R.string.state_closed
 })
 
-/**
- * Card della regia come la cella dell'orologio (restyling 30/09): account, nome, stato ed età in testa; sotto cosa sta
- * facendo e cosa segue (`SessionsText.cell`), l'obiettivo, la bassa priorità e la barretta del contesto. La forma segue lo
- * stato: chi aspetta te è più morbida, in rilievo e con il bordo ambra; la chiusa è piatta.
- */
-@Composable
-fun SessionCard(s: Session, now: Long, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val working = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
-    val breath = if (working && !animationsOff()) {
-        val t = rememberInfiniteTransition(label = "breath")
-        val a by t.animateFloat(0.55f, 1f, infiniteRepeatable(tween(2400, easing = CmMotion.easing), RepeatMode.Reverse), label = "a")
-        a
-    } else 1f
-    val since = when (s.state) {
-        SessionState.WAITING -> s.question?.askedAt ?: s.since
-        SessionState.BUSY, SessionState.AWAITING -> s.turnStarted ?: s.since
-        else -> s.since
-    }
-    val cell = SessionsText.cell(s, now, stringResource(R.string.turn_running), stringResource(R.string.state_idle))
-    val goal = SessionsText.goalLine(s, stringResource(R.string.goal))
-    val priority = SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered))
-    val window = SessionsText.window(s, stringResource(R.string.no_window))
-    val waiting = s.state == SessionState.WAITING || s.question != null
-    val closed = s.state == SessionState.GONE
-    Surface(
-        onClick = onClick,
-        color = when { waiting -> CmColors.surfaceHigh; closed -> CmColors.surfaceLow; else -> CmColors.surface },
-        shape = if (waiting) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.large,
-        border = when {
-            waiting -> BorderStroke(2.dp, CmColors.waiting)
-            s.followed -> BorderStroke(1.5.dp, CmColors.followed)
-            else -> null
-        },
-        shadowElevation = if (waiting) 6.dp else 0.dp,
-        modifier = modifier.fly("card-${s.id}").fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SessionBadge(s)
-                Text(
-                    s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (closed) CmColors.text2 else CmColors.text, modifier = Modifier.weight(1f),
-                )
-                StatePill(s.state, Durations.since(since, now), Modifier.alpha(breath))
-            }
-            cell.title?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodyLarge, color = if (closed) CmColors.text2 else CmColors.text)
-            }
-            cell.detail?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2) }
-            goal?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.briefLabel) }
-            priority?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.waiting) }
-            // Finestra chiusa ma sessione viva (dal vivo 02/10 14:51): riceve ancora i messaggi.
-            window?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = CmColors.text2) }
-            if (!closed) s.context?.let { ContextBar(it, ModelText.short(s.model)) }
-        }
-    }
-}
-
 /** Lo stato come pillola colorata con l'icona e l'età, come il badge dell'orologio. */
 @Composable
 fun StatePill(state: SessionState, age: String, modifier: Modifier = Modifier) {

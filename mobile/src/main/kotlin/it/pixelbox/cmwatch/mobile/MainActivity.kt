@@ -24,6 +24,9 @@ import it.pixelbox.cmwatch.mobile.ui.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -163,7 +166,7 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(sessionAsked) {
             val n = sessionAsked ?: return@LaunchedEffect
             settingsOpen = false; terminal = null; queueOpen = false; searchOpen = false
-            if (n.isEmpty()) { open = null; tab = StartRoute.Tab.OVERVIEW } else { tab = StartRoute.Tab.SESSIONS; open = n }
+            if (n.isEmpty()) { open = null; tab = StartRoute.Tab.OVERVIEW } else { open = n }
             sessionAsked = null
         }
         LaunchedEffect(queueAsked) { if (queueAsked) { queueOpen = true; searchOpen = false; settingsOpen = false; terminal = null; queueAsked = false } }
@@ -240,7 +243,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (searchOpen) {
-            SearchScreen(chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { tab = StartRoute.Tab.SESSIONS; open = n } else { open = null; tab = StartRoute.Tab.DIARY } })
+            SearchScreen(chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { open = n } else { open = null; tab = StartRoute.Tab.DIARY } })
             return
         }
         if (queueOpen && state != null) {
@@ -251,9 +254,9 @@ class MainActivity : ComponentActivity() {
                     allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, s.name, null) } },
                     send = { _, _ -> }, follow = {}, reopen = {}, terminal = {}, openInClaude = {},
                     speak = speech::toggle, retry = {},
-                    chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; tab = StartRoute.Tab.SESSIONS; open = s.name },
+                    chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; open = s.name },
                 )
-            }, onSession = { n -> queueOpen = false; tab = StartRoute.Tab.SESSIONS; open = n })
+            }, onSession = { n -> queueOpen = false; open = n })
             return
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
@@ -336,12 +339,6 @@ class MainActivity : ComponentActivity() {
             app.repo.forget(id)
             olderId = null
         }
-        val fab: @Composable () -> Unit = {
-            // «Aggiungi alla notte» solo con un relay 1.17, come nel Diario: prima il PC la rifiuterebbe.
-            if (open == null && tab == StartRoute.Tab.SESSIONS && state != null) LaunchFab(
-                onLaunch = { launching = true }, onNight = if (state.night.items != null) ({ nightAdding = true }) else null,
-            )
-        }
         val speaking by speech.speaking.collectAsStateWithLifecycle()
         // Un prompt a una sessione, registrato nella sua chat come quelli scritti a mano.
         val sendPrompt: (String, String) -> Unit = { name, text ->
@@ -352,8 +349,8 @@ class MainActivity : ComponentActivity() {
         val forYouAction: (it.pixelbox.cmwatch.rules.MasterHome.Row) -> Unit = { row ->
             when (row.kind) {
                 // Variante 3 (02/10 21:11): la riga si apre sul posto; «Apri la conversazione» porta alla sessione.
-                it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> { tab = StartRoute.Tab.SESSIONS; open = row.session }
-                it.pixelbox.cmwatch.rules.MasterHome.Kind.FINISHED -> { row.key?.let(markRead); tab = StartRoute.Tab.SESSIONS; open = row.session }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.QUESTION -> { open = row.session }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.FINISHED -> { row.key?.let(markRead); open = row.session }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.CONTEXT -> row.session?.let { n -> sendPrompt(n, getString(R.string.ctx_handoff_prompt)) }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT_REPORT -> { row.detail?.let { speech.toggle(it) }; row.key?.let(markRead) }
                 it.pixelbox.cmwatch.rules.MasterHome.Kind.NIGHT -> nightAdding = true
@@ -364,7 +361,7 @@ class MainActivity : ComponentActivity() {
                     // Con la coda senza rete piena il comando si rifiuta: niente chiusura dell'app (revisione finale 02/10).
                     if (n != null) sendPrompt(n, text) else row.project?.let { p -> scope.launch { runCatching { app.repo.command(CmdOp.LAUNCH, null, p, text.ifBlank { null }) } } }
                 }
-                it.pixelbox.cmwatch.rules.MasterHome.Kind.SCHEDULED -> { tab = StartRoute.Tab.SESSIONS; open = row.session }
+                it.pixelbox.cmwatch.rules.MasterHome.Kind.SCHEDULED -> { open = row.session }
             }
         }
         // La pagina di una sessione (scheda e chat), usata dallo scorrimento fra le sessioni e dalla casa della master,
@@ -396,7 +393,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?) -> Unit = { session, pageEntries, home ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
@@ -515,12 +512,12 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            home = home, grid = home != null,
+                            home = home, grid = home != null, header = header, dock = dock,
                             elsewhere = elsewhere,
                             onElsewhere = {
                                 when (val a = elsewhere) {
-                                    is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { tab = StartRoute.Tab.SESSIONS; open = a.sessions[0] }
-                                    is it.pixelbox.cmwatch.rules.Elsewhere.Finished -> { elsewhereSeen += a.key; tab = StartRoute.Tab.SESSIONS; open = a.session }
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { open = a.sessions[0] }
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Finished -> { elsewhereSeen += a.key; open = a.session }
                                     null -> {}
                                 }
                             },
@@ -533,63 +530,72 @@ class MainActivity : ComponentActivity() {
                         }
                         }
         }
+        // Il riepilogo unico (design 03/10): ogni sessione una volta, nell'ordine del bisogno.
+        val summary = state?.let { st ->
+            remember(st, events, chatLog, now, readReports.toList()) {
+                it.pixelbox.cmwatch.rules.Summary.build(st, events, chatLog, now, java.time.ZoneId.systemDefault(), readReports.toSet())
+            }
+        }
+        var closedOpen by rememberSaveable { mutableStateOf(false) }
+        // Il Registro si apre dal menu a tutto schermo; Indietro torna al riepilogo.
+        BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
+        // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.
+        val summaryPage: @Composable () -> Unit = summaryPage@{
+            val st = state
+            if (st == null || summary == null) {
+                // Prima del primo stato la rotella: mai un riepilogo vuoto (revisione finale 02/10).
+                Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator(color = it.pixelbox.cmwatch.ui.tokens.CmColors.actionIcon)
+                }
+                return@summaryPage
+            }
+            val master = summary.master
+            val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
+            val list: @Composable () -> Unit = {
+                SummaryList(
+                    summary, now,
+                    // Aprire una sessione che ha finito la toglie da «Ha finito», come in «Per te».
+                    onOpen = { n -> summary.rows.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead); open = n },
+                    onAnswer = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } },
+                    onStep = sendPrompt, onService = forYouAction, onClosed = { closedOpen = true },
+                )
+            }
+            if (master != null) {
+                val hero = remember(masterEntries, master.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, master) }
+                sessionPage(master, masterEntries, { _, _ -> list() }, false) {
+                    MasterDock(master, hero, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
+                        onConversation = { open = master.name })
+                }
+            } else Column(Modifier.fillMaxSize()) {
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) { list() }
+                Box(Modifier.padding(16.dp)) {
+                    MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
+                }
+            }
+        }
         val speakingBlock by speech.block.collectAsStateWithLifecycle()
         CompositionLocalProvider(LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf) {
         AppShell(
-            tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true }, fab = fab,
+            tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
-            // La master dal menu porta alla sua scheda, non a una scheda sessione (Franz, 02/10 07:03).
-            current = open, onPick = { n -> if (n != null && n == masterName) { open = null; tab = StartRoute.Tab.OVERVIEW } else { tab = StartRoute.Tab.SESSIONS; open = n } },
-            home = masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }, onQuadro = { overviewSheet = true },
-            onSearch = { searchOpen = true }, swipeTabs = open == null,
+            // La master dal menu in alto apre la sua chat come le altre (design 03/10); «Tutte le sessioni» torna al riepilogo.
+            current = open, onPick = { n -> open = n; if (n == null) tab = StartRoute.Tab.OVERVIEW },
+            onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
+            host = host, stale = snap.freshness is Freshness.Stale,
+            updated = when (val f = snap.freshness) { is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes); else -> getString(R.string.menu_updated_now) },
+            openCount = summary?.open ?: 0,
+            quota = state?.let { st -> {
+                val rings = remember(st, events, samples, now, snap.freshness) {
+                    PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
+                }
+                QuotaBars(rings, onOpen = { overviewSheet = true })
+            } },
             // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
             refreshing = refreshing,
         ) { page ->
             if (page == StartRoute.Tab.OVERVIEW && open == null) {
-                // Prima del primo stato la rotella, come in Sessioni: mai una casa vuota (revisione finale 02/10).
-                if (state == null) Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    androidx.compose.material3.CircularProgressIndicator(color = it.pixelbox.cmwatch.ui.tokens.CmColors.actionIcon)
-                }
-                state?.let { st ->
-                    val model = remember(st, events, samples, now, snap.freshness) {
-                        PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
-                    }
-                    val forYou = remember(st, events, chatLog, now, readReports.toList()) {
-                        it.pixelbox.cmwatch.rules.MasterHome.forYou(st, events, chatLog, now, java.time.ZoneId.systemDefault(), readReports.toSet(), limit = Int.MAX_VALUE)
-                    }
-                    val master = st.sessions.firstOrNull { it.name == masterName }
-                    // Durante lo scorrimento da un'altra scheda la conversazione viva è un'altra: si mostra quella salvata.
-                    val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
-                    // «In corso» è dentro «Per te» come gruppo «al lavoro» (Franz, 02/10 21:29).
-                    val working = remember(st) { it.pixelbox.cmwatch.rules.MasterHome.working(st) }
-                    val toSession: (String) -> Unit = { n -> tab = StartRoute.Tab.SESSIONS; open = n }
-                    // Variante 3 di «Per te»: le opzioni della domanda di una sessione rispondono da qui.
-                    val forYouQuestion: (String) -> it.pixelbox.cmwatch.contract.Question? = { n -> st.sessions.firstOrNull { s -> s.name == n }?.question }
-                    val forYouAnswer: (String, Int) -> Unit = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } }
-                    // Casa A (mockup approvato da Franz, 02/10 07:38): esito della master, Per te, In corso, quota.
-                    val home: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { onDraft, onSend ->
-                        // Con una domanda aperta «Per te» prima dell'ultimo esito (consulenza del 02/10).
-                        val first = it.pixelbox.cmwatch.rules.MasterHome.forYouFirst(forYou)
-                        val forYouCard: @Composable () -> Unit = {
-                            ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
-                        }
-                        if (first) forYouCard()
-                        master?.let { m ->
-                            val hero = remember(masterEntries, m.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, m) }
-                            HeroCard(hero, m, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
-                                onConversation = { toSession(m.name) }, onStep = onDraft, onSendStep = onSend)
-                        }
-                        if (!first) forYouCard()
-                        QuotaBars(model.rings, onOpen = { overviewSheet = true })
-                    }
-                    if (master != null) sessionPage(master, masterEntries, home)
-                    else Column(Modifier.fillMaxSize().dotGrid().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        MasterAbsent { scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, it.pixelbox.cmwatch.rules.ContextActions.MASTER, null) } } }
-                        ForYouCard(forYou.rows, onAction = forYouAction, now = now, question = forYouQuestion, onAnswer = forYouAnswer, onStep = sendPrompt, working = working, onSession = toSession)
-                        QuotaBars(model.rings, onOpen = { overviewSheet = true })
-                    }
-                }
+                summaryPage()
                 return@AppShell
             }
             if (page == StartRoute.Tab.DIARY && open == null) {
@@ -600,7 +606,7 @@ class MainActivity : ComponentActivity() {
                         rings = PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings,
                         onQuadro = { overviewSheet = true },
                         // Una riga del Registro apre la sessione del progetto, se è viva.
-                        onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { tab = StartRoute.Tab.SESSIONS; open = n } })
+                        onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n } })
                 }
                 return@AppShell
             }
@@ -623,9 +629,10 @@ class MainActivity : ComponentActivity() {
                         val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
                         // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                         val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
-                        sessionPage(session, pageEntries, null)
+                        sessionPage(session, pageEntries, null, true, null)
                         }
-                        } else SessionsScreen(snap, now, onOpen = { id -> open = state?.sessions?.firstOrNull { it.id == id }?.name }, onQuota = { overviewSheet = true })
+                        // Durante il gesto indietro, sotto la scheda, il riepilogo.
+                        } else summaryPage()
                     }
                 }
             }
@@ -649,6 +656,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        // «Chiuse · N» del riepilogo: l'elenco delle chiuse con «Riapri».
+        if (closedOpen && summary != null) {
+            ModalBottomSheet(onDismissRequest = { closedOpen = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.surface) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(getString(R.string.summary_closed, summary.closed.size), style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text)
+                    summary.closed.forEach { s ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            SessionBadge(s, 20.dp)
+                            Text(s.name, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                            androidx.compose.material3.FilledTonalButton(onClick = { closedOpen = false; scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, s.name, null) } } }) { Text(getString(R.string.reopen)) }
+                        }
+                    }
+                }
+            }
+        }
         if (overviewSheet && state != null) {
             ModalBottomSheet(onDismissRequest = { overviewSheet = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.bg) {
                 val model = remember(state, events, samples, now, snap.freshness) {
@@ -656,14 +678,14 @@ class MainActivity : ComponentActivity() {
                 }
                 OverviewScreen(model, snap.freshness,
                     onQuestion = { overviewSheet = false; queueOpen = true },
-                    onSession = { n -> overviewSheet = false; tab = StartRoute.Tab.SESSIONS; open = n })
+                    onSession = { n -> overviewSheet = false; open = n })
             }
         }
         if (launching && state != null) {
             ModalBottomSheet(onDismissRequest = { launching = false }) {
                 LaunchSheet(state, projects = allProjects ?: state.projects, onSession = { name, reopen ->
                     launching = false
-                    if (reopen) scope.launch { app.repo.command(CmdOp.REOPEN, name, null) } else { tab = StartRoute.Tab.SESSIONS; open = name }
+                    if (reopen) scope.launch { app.repo.command(CmdOp.REOPEN, name, null) } else { open = name }
                 }) { project, first ->
                     launching = false
                     scope.launch { app.repo.command(CmdOp.LAUNCH, null, project.path, first.ifBlank { null }) }
