@@ -454,26 +454,23 @@
     <!-- Il tablet (piano 04/10): plancia e colonne sugli schermi da 840 dp. -->
     <string name="tablet_brand" translatable="false">CLAUDE-MASTER</string>
     <string name="tablet_updated_now">ora</string>
-    <string name="tablet_updated_ago">%1$d min fa</string>
+    <string name="tablet_updated_ago">%1$d\u00A0min fa</string>
     <string name="tablet_quota_stale">dato vecchio</string>
-    <string name="tablet_quota_w7">7g %1$d%%</string>
-    <plurals name="tablet_open"><item quantity="one">%1$d aperta</item><item quantity="other">%1$d aperte</item></plurals>
-    <plurals name="tablet_working"><item quantity="one">%1$d lavora</item><item quantity="other">%1$d lavorano</item></plurals>
-    <plurals name="tablet_finished"><item quantity="one">%1$d finita</item><item quantity="other">%1$d finite</item></plurals>
-    <string name="tablet_waiting">%1$d in attesa</string>
-    <string name="tablet_night">notte %1$d</string>
+    <string name="tablet_quota_w7">7g\u00A0%1$d%%</string>
+    <plurals name="tablet_open"><item quantity="one">%1$d\u00A0aperta</item><item quantity="other">%1$d\u00A0aperte</item></plurals>
+    <plurals name="tablet_working"><item quantity="one">%1$d\u00A0lavora</item><item quantity="other">%1$d\u00A0lavorano</item></plurals>
+    <plurals name="tablet_finished"><item quantity="one">%1$d\u00A0finita</item><item quantity="other">%1$d\u00A0finite</item></plurals>
+    <string name="tablet_waiting">%1$d\u00A0in\u00A0attesa</string>
+    <string name="tablet_night">notte\u00A0%1$d</string>
     <string name="tablet_watch">orologio</string>
     <string name="tablet_view_board">Plancia</string>
     <string name="tablet_view_columns">Colonne</string>
-    <string name="tablet_sessions_counts">%1$d aperte · %2$d chiuse</string>
-    <string name="tablet_quota_title">Quota 5h · %1$s</string>
-    <string name="tablet_forecast">Al ritmo di adesso arrivi al %1$d%% quando riparte, alle %2$s</string>
-    <string name="tablet_forecast_flat">Ferma da un po\': riparte alle %1$s</string>
-    <string name="tablet_forecast_none">Il ritmo si vede dalla seconda lettura; riparte alle %1$s</string>
-    <string name="tablet_now_pct">ora %1$d%%</string>
-    <string name="tablet_week_title">Settimana · %1$s</string>
-    <string name="tablet_week_forecast">Allo stesso ritmo: %1$d%% al rinnovo di %2$s</string>
-    <string name="tablet_week_reset">Rinnovo %1$s</string>
+    <string name="tablet_forecast">Al ritmo di adesso arrivi al\u00A0%1$d%% quando riparte, alle\u00A0%2$s</string>
+    <string name="tablet_forecast_flat">Ferma da un po\': riparte alle\u00A0%1$s</string>
+    <string name="tablet_forecast_none">Il ritmo si vede dalla seconda lettura; riparte alle\u00A0%1$s</string>
+    <string name="tablet_now_pct">ora\u00A0%1$d%%</string>
+    <string name="tablet_week_forecast">Allo stesso ritmo: %1$d%% al rinnovo di\u00A0%2$s</string>
+    <string name="tablet_week_reset">Rinnovo\u00A0%1$s</string>
     <string name="tablet_state_waiting">ti aspetta</string>
     <string name="tablet_state_finished">ha finito</string>
     <string name="tablet_state_working">al lavoro</string>
@@ -497,7 +494,7 @@
     <string name="tablet_kind_test">test</string>
     <string name="tablet_kind_outcome">esito</string>
     <string name="tablet_kind_task">compito</string>
-    <string name="tablet_projected_at">%1$d%% alle %2$s</string>
+    <string name="tablet_projected_at">%1$d%% alle\u00A0%2$s</string>
     <string name="tablet_columns_empty">Scegli fino a quattro sessioni dalla barra</string>
     <string name="tablet_in_column">in colonna</string>
     <string name="tablet_add_column">+ colonna</string>
@@ -509,4 +506,8 @@
     <string name="tablet_bar_open">Apri la barra delle sessioni</string>
     <string name="tablet_bar_close">Chiudi la barra delle sessioni</string>
     <string name="enter_sends">Invio manda</string>
+    <plurals name="tablet_closed"><item quantity="one">%1$d\u00A0chiusa</item><item quantity="other">%1$d\u00A0chiuse</item></plurals>
+    <string name="tablet_quota_label">Quota 5h</string>
+    <string name="tablet_week_label">Settimana</string>
+    <string name="tablet_not_in_column">non in colonna</string>
 </resources>

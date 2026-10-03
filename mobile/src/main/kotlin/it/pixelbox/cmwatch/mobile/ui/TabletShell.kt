@@ -21,7 +21,12 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.ViewColumn
 import androidx.compose.material.icons.rounded.ViewSidebar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +39,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -53,6 +59,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -272,9 +280,25 @@ fun TabletSessions(
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.tab_sessions), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
-            Text(stringResource(R.string.tablet_sessions_counts, open, closed), style = Mono, modifier = Modifier.weight(1f).padding(bottom = 3.dp))
+            Text(
+                pluralStringResource(R.plurals.tablet_open, open, open) + " · " + pluralStringResource(R.plurals.tablet_closed, closed, closed),
+                style = Mono, modifier = Modifier.weight(1f).padding(bottom = 3.dp),
+            )
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+        val list = androidx.compose.foundation.lazy.rememberLazyListState()
+        // Quando la lista continua sotto, l'ultima riga sfuma invece di finire tagliata contro il pannello delle quote.
+        LazyColumn(
+            Modifier.weight(1f).fillMaxWidth()
+                .graphicsLayer(compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    if (list.canScrollForward) drawRect(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Black, Color.Transparent), startY = size.height - 36.dp.toPx(), endY = size.height),
+                        blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+                    )
+                },
+            state = list, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+        ) {
             groups.forEach { (g, rows) ->
                 item(key = "g-${g.name}") {
                     Box(Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 6.dp)) {
@@ -300,7 +324,7 @@ private fun TabletSessionRow(r: Summary.Row, selected: Boolean, now: Long, onCli
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(r.group)))
-            Text(s.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+            Text(s.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
             Text(rowAge(r, now), style = Mono)
         }
         s.context?.let { c ->
@@ -309,7 +333,7 @@ private fun TabletSessionRow(r: Summary.Row, selected: Boolean, now: Long, onCli
                 Text(stringResource(R.string.ctx_short, c), style = Mono)
             }
         }
-        Tablet.line(r)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip) }
+        Tablet.line(r)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2) }
     }
 }
 
@@ -339,7 +363,7 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
         Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.12f), shape).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PanelTitle(stringResource(R.string.tablet_quota_title, ring.account.uppercase()), ring.h5?.let { "$it%" })
+        PanelTitle(stringResource(R.string.tablet_quota_label), ring.account, ring.h5?.let { "$it%" })
         val reset = ring.resetAt
         val pace = ring.pace
         if (reset != null && pace != null) {
@@ -357,7 +381,7 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
             )
         }
         HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 2.dp))
-        PanelTitle(stringResource(R.string.tablet_week_title, ring.account.uppercase()), ring.w7?.let { "$it%" })
+        PanelTitle(stringResource(R.string.tablet_week_label), ring.account, ring.w7?.let { "$it%" })
         ring.w7?.let { w ->
             val projected = Tablet.weekProjected(w, ring.weekResetAt, now)
             WeekBar(w, projected)
@@ -371,11 +395,39 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
     }
 }
 
+/**
+ * Il titolo di un pannello: «QUOTA 5H · PERSONAL» e la cifra a destra su una riga; quando non ci sta (carattere grande)
+ * l'account va su una riga sua, senza «·», invece di spezzarsi a frammenti.
+ */
 @Composable
-private fun PanelTitle(text: String, value: String?) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MonoLabel, modifier = Modifier.weight(1f))
-        value?.let { Text(it, style = Mono.copy(color = CmColors.text)) }
+private fun PanelTitle(label: String, account: String, value: String?) {
+    Layout(
+        content = {
+            Text(label.uppercase(), style = MonoLabel)
+            Text("·", style = MonoLabel)
+            Text(account.uppercase(), style = MonoLabel)
+            Text(value.orEmpty(), style = Mono.copy(color = CmColors.text))
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { m, c ->
+        val gap = 8.dp.roundToPx()
+        val free = Constraints()
+        val labelP = m[0].measure(free); val dot = m[1].measure(free); val acc = m[2].measure(free); val v = m[3].measure(free)
+        val one = labelP.width + gap + dot.width + gap + acc.width + gap + v.width <= c.maxWidth
+        if (one) {
+            val h = maxOf(labelP.height, v.height)
+            layout(c.maxWidth, h) {
+                labelP.placeRelative(0, 0); dot.placeRelative(labelP.width + gap, 0); acc.placeRelative(labelP.width + 2 * gap + dot.width, 0)
+                v.placeRelative(c.maxWidth - v.width, (h - v.height) / 2)
+            }
+        } else {
+            val labelW = m[0].measure(Constraints(maxWidth = (c.maxWidth - v.width - gap).coerceAtLeast(0)))
+            val accW = m[2].measure(Constraints(maxWidth = c.maxWidth))
+            val top = maxOf(labelW.height, v.height)
+            layout(c.maxWidth, top + accW.height) {
+                labelW.placeRelative(0, 0); v.placeRelative(c.maxWidth - v.width, (top - v.height) / 2); accW.placeRelative(0, top)
+            }
+        }
     }
 }
 
@@ -455,7 +507,7 @@ fun RowScope.TabletConversationLead(r: Summary.Row?, s: Session, now: Long) {
     Layout(
         content = {
             Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(g)))
-            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
+            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
             Text(
                 chip, style = MonoLabel.copy(color = groupTone(g)), maxLines = 1, softWrap = false,
                 modifier = Modifier.border(1.dp, groupTone(g).copy(alpha = 0.7f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp),
@@ -492,6 +544,7 @@ private fun groupWord(g: Summary.Group) = when (g) {
  * L'ispettore a destra: la sessione (progetto, account, aperta da, turno), tre numeri (contesto, prompt e commit di oggi),
  * l'obiettivo e la cronologia di oggi dal contratto 1.29. `loading` finché la prima cronologia non arriva.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TabletInspector(i: Tablet.Inspector, quotaH5: Int?, loading: Boolean) {
     val s = i.session
@@ -505,10 +558,15 @@ fun TabletInspector(i: Tablet.Inspector, quotaH5: Int?, loading: Boolean) {
             i.turn?.let { t -> listOfNotNull(Durations.since(0, t), s.tool).joinToString(" · ") } ?: stringResource(R.string.tablet_insp_turn_none),
         )
         ModelText.short(s.model)?.let { m -> KeyValue(stringResource(R.string.tablet_insp_model), listOfNotNull(m, s.effort).joinToString(" · ")) }
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatBox(s.context?.let { "$it%" } ?: "–", stringResource(R.string.tablet_insp_context), Modifier.weight(1f))
-            StatBox(i.prompts?.toString() ?: "–", stringResource(R.string.tablet_insp_prompts), Modifier.weight(1f))
-            StatBox(i.commits?.toString() ?: "–", stringResource(R.string.tablet_insp_commits), Modifier.weight(1f))
+        // Col carattere grande due per riga: le etichette restano grandi e vanno a capo fra le parole, mai dentro.
+        val perRow = if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.25f) 2 else 3
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = perRow,
+        ) {
+            StatBox(s.context?.let { "$it%" } ?: "–", stringResource(R.string.tablet_insp_context), Modifier.weight(1f).fillMaxRowHeight())
+            StatBox(i.prompts?.toString() ?: "–", stringResource(R.string.tablet_insp_prompts), Modifier.weight(1f).fillMaxRowHeight())
+            StatBox(i.commits?.toString() ?: "–", stringResource(R.string.tablet_insp_commits), Modifier.weight(1f).fillMaxRowHeight())
         }
         s.goal?.let { gl ->
             Text(stringResource(R.string.goal).uppercase(), style = MonoLabel, modifier = Modifier.padding(top = 6.dp))
@@ -536,11 +594,7 @@ private fun StatBox(value: String, label: String, modifier: Modifier) {
     val shape = RoundedCornerShape(12.dp)
     Column(modifier.clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.10f), shape).padding(horizontal = 12.dp, vertical = 10.dp)) {
         Text(value, style = Mono.copy(fontSize = 22.sp, color = CmColors.text, fontWeight = FontWeight.Medium))
-        // Una riga sola che si stringe col carattere grande: «CONTESTO» non si spezza a metà parola.
-        androidx.compose.foundation.text.BasicText(
-            label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp), maxLines = 1, softWrap = false,
-            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 6.sp, maxFontSize = 10.sp, stepSize = 0.5.sp),
-        )
+        Text(label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp, lineBreak = androidx.compose.ui.text.style.LineBreak.Heading))
     }
 }
 
@@ -580,13 +634,14 @@ private fun hhmm(epoch: Long): String =
 
 @Composable
 private fun dayTime(epoch: Long): String =
-    DateTimeFormatter.ofPattern("EEEE HH:mm", LocalConfiguration.current.locales[0]).format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
+    DateTimeFormatter.ofPattern("EEEE'\u00A0'HH:mm", LocalConfiguration.current.locales[0]).format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
 
 /**
  * La vista a colonne (mockup 4-7): in alto la riga delle colonne, a sinistra la barra delle sessioni, fissa o richiudibile
  * (chiusa resta una striscia di puntini), poi da una a quattro colonne affiancate con conversazione e campo ciascuna.
  * `column` disegna la colonna di una sessione (la `SessionSheet` compatta); «Colonne» in alto e Indietro tornano alla plancia.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabletColumns(
     status: Tablet.Status, ring: PhoneOverview.Ring?, now: Long, groups: List<Pair<Summary.Group, List<Summary.Row>>>, open: Int,
@@ -616,11 +671,22 @@ fun TabletColumns(
                 // La barra chiusa: un puntino per sessione, nel colore del suo stato; il tocco la mette o la toglie dalle colonne.
                 Column(Modifier.width(52.dp).fillMaxHeight().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     rows.forEach { r ->
-                        Box(
-                            Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = r.session.name) { onToggle(r.session.name) }
-                                .then(if (r.session.name in columns) Modifier.background(CmColors.surface) else Modifier),
-                            contentAlignment = Alignment.Center,
-                        ) { Box(Modifier.size(14.dp).clip(CircleShape).background(groupTone(r.group))) }
+                        // Il puntino da solo dice lo stato col colore: a voce, e col mouse sopra, nome, stato e se è in colonna.
+                        val said = listOf(
+                            r.session.name, stringResource(groupWord(r.group)),
+                            stringResource(if (r.session.name in columns) R.string.tablet_in_column else R.string.tablet_not_in_column),
+                        ).joinToString(", ")
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            tooltip = { PlainTooltip { Text(said) } }, state = rememberTooltipState(),
+                        ) {
+                            Box(
+                                Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = said) { onToggle(r.session.name) }
+                                    .semantics { contentDescription = said }
+                                    .then(if (r.session.name in columns) Modifier.background(CmColors.surface) else Modifier),
+                                contentAlignment = Alignment.Center,
+                            ) { Box(Modifier.size(14.dp).clip(CircleShape).background(groupTone(r.group))) }
+                        }
                     }
                 }
             }
@@ -702,7 +768,7 @@ private fun ColumnsBarRow(r: Summary.Row, inColumn: Boolean, now: Long, onClick:
     ) {
         Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(r.group)))
         Column(Modifier.weight(1f)) {
-            Text(s.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(s.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
             Text(stateLine(r, now), style = MonoLabel)
         }
         Text(
@@ -750,13 +816,13 @@ fun TabletColumnHeader(r: Summary.Row, now: Long, onClose: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(r.group)))
-            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
             IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.tablet_close_column, s.name), tint = CmColors.text2) }
         }
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 listOfNotNull(stringResource(groupWord(r.group)), rowAge(r, now).takeIf { r.group == Summary.Group.WORKING || r.group == Summary.Group.WAITING }).joinToString(" · ").uppercase(),
-                style = MonoLabel.copy(color = groupTone(r.group)), maxLines = 1,
+                style = MonoLabel.copy(color = groupTone(r.group)),
             )
             s.context?.let { c ->
                 MiniBar(c / 100f, Modifier.weight(1f), contextColor(c))

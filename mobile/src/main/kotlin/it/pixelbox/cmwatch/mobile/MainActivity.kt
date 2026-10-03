@@ -353,6 +353,8 @@ class MainActivity : ComponentActivity() {
             wide -> if (tab == StartRoute.Tab.DIARY) null else open ?: masterName ?: liveNames.firstOrNull()
             else -> open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
         }
+        // L'ispettore del tablet in vista: plancia larga, non le colonne, non il Registro.
+        val inspectorOn = wide && !columnsOn && tab != StartRoute.Tab.DIARY && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
         // Le bozze del campo sopra l'interruttore dei 840 dp (standard della master, 04/10): restano quando la finestra del
         // Chromebook cambia larghezza, in tutte e due le direzioni.
         val drafts = rememberSaveable(saver = DraftStore.Saver) { DraftStore() }
@@ -614,6 +616,8 @@ class MainActivity : ComponentActivity() {
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
                             headerLead = lead, draftState = drafts.state(session),
+                            // Con l'ispettore l'obiettivo sta lì: in testata non si ripete (revisione della master, 04/10).
+                            showGoal = lead == null || !inspectorOn,
                             canAttachFiles = state?.share?.any == true,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { home == null || !homeOpen },
@@ -740,8 +744,6 @@ class MainActivity : ComponentActivity() {
         // minuto, solo con l'app in primo piano; cambiando sessione si riparte da capo.
         var timeline by remember { mutableStateOf<it.pixelbox.cmwatch.contract.TimelinePage?>(null) }
         val timelineOk = demo || state?.ops?.contains("timeline") == true
-        // Solo con l'ispettore in vista: nelle colonne e col Registro la cronologia non si chiede.
-        val inspectorOn = wide && !columnsOn && tab != StartRoute.Tab.DIARY && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
         LaunchedEffect(inspectorOn, chatName, timelineOk) {
             timeline = null
             val name = chatName ?: return@LaunchedEffect

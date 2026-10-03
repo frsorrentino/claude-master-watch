@@ -446,26 +446,23 @@
     <string name="speech_rate_normal">%1$s× (normal)</string>
     <!-- The tablet (plan 04/10): board and columns on screens from 840 dp. -->
     <string name="tablet_updated_now">now</string>
-    <string name="tablet_updated_ago">%1$d min ago</string>
+    <string name="tablet_updated_ago">%1$d\u00A0min ago</string>
     <string name="tablet_quota_stale">old reading</string>
-    <string name="tablet_quota_w7">7d %1$d%%</string>
-    <plurals name="tablet_open"><item quantity="one">%1$d open</item><item quantity="other">%1$d open</item></plurals>
-    <plurals name="tablet_working"><item quantity="one">%1$d working</item><item quantity="other">%1$d working</item></plurals>
-    <plurals name="tablet_finished"><item quantity="one">%1$d finished</item><item quantity="other">%1$d finished</item></plurals>
-    <string name="tablet_waiting">%1$d waiting</string>
-    <string name="tablet_night">night %1$d</string>
+    <string name="tablet_quota_w7">7d\u00A0%1$d%%</string>
+    <plurals name="tablet_open"><item quantity="one">%1$d\u00A0open</item><item quantity="other">%1$d\u00A0open</item></plurals>
+    <plurals name="tablet_working"><item quantity="one">%1$d\u00A0working</item><item quantity="other">%1$d\u00A0working</item></plurals>
+    <plurals name="tablet_finished"><item quantity="one">%1$d\u00A0finished</item><item quantity="other">%1$d\u00A0finished</item></plurals>
+    <string name="tablet_waiting">%1$d\u00A0waiting</string>
+    <string name="tablet_night">night\u00A0%1$d</string>
     <string name="tablet_watch">watch</string>
     <string name="tablet_view_board">Board</string>
     <string name="tablet_view_columns">Columns</string>
-    <string name="tablet_sessions_counts">%1$d open · %2$d closed</string>
-    <string name="tablet_quota_title">5h quota · %1$s</string>
-    <string name="tablet_forecast">At this pace you reach %1$d%% when it resets, at %2$s</string>
-    <string name="tablet_forecast_flat">Still for a while: resets at %1$s</string>
-    <string name="tablet_forecast_none">The pace shows from the second reading; resets at %1$s</string>
-    <string name="tablet_now_pct">now %1$d%%</string>
-    <string name="tablet_week_title">Week · %1$s</string>
-    <string name="tablet_week_forecast">At the same pace: %1$d%% at the renewal on %2$s</string>
-    <string name="tablet_week_reset">Renews %1$s</string>
+    <string name="tablet_forecast">At this pace you reach\u00A0%1$d%% when it resets, at\u00A0%2$s</string>
+    <string name="tablet_forecast_flat">Still for a while: resets at\u00A0%1$s</string>
+    <string name="tablet_forecast_none">The pace shows from the second reading; resets at\u00A0%1$s</string>
+    <string name="tablet_now_pct">now\u00A0%1$d%%</string>
+    <string name="tablet_week_forecast">At the same pace: %1$d%% at the renewal on\u00A0%2$s</string>
+    <string name="tablet_week_reset">Renews\u00A0%1$s</string>
     <string name="tablet_state_waiting">waiting for you</string>
     <string name="tablet_state_finished">finished</string>
     <string name="tablet_state_working">working</string>
@@ -489,7 +486,7 @@
     <string name="tablet_kind_test">test</string>
     <string name="tablet_kind_outcome">outcome</string>
     <string name="tablet_kind_task">task</string>
-    <string name="tablet_projected_at">%1$d%% at %2$s</string>
+    <string name="tablet_projected_at">%1$d%% at\u00A0%2$s</string>
     <string name="tablet_columns_empty">Pick up to four sessions from the bar</string>
     <string name="tablet_in_column">in a column</string>
     <string name="tablet_add_column">+ column</string>
@@ -501,4 +498,8 @@
     <string name="tablet_bar_open">Open the sessions bar</string>
     <string name="tablet_bar_close">Close the sessions bar</string>
     <string name="enter_sends">Enter sends</string>
+    <plurals name="tablet_closed"><item quantity="one">%1$d\u00A0closed</item><item quantity="other">%1$d\u00A0closed</item></plurals>
+    <string name="tablet_quota_label">5h quota</string>
+    <string name="tablet_week_label">Week</string>
+    <string name="tablet_not_in_column">not in a column</string>
 </resources>

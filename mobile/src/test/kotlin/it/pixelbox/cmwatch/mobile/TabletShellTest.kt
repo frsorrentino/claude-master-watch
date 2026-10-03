@@ -91,7 +91,7 @@ class TabletShellTest {
             center = {
                 SessionSheet(
                     selected, ts, emptyList(), 120, none, choices = st.choices, ops = st.ops, canAttach = true, feed = feed,
-                    accountQuota = st.quota[selected.account], headerLead = { TabletConversationLead(row, selected, ts) },
+                    accountQuota = st.quota[selected.account], headerLead = { TabletConversationLead(row, selected, ts) }, showGoal = !inspector,
                 )
             },
             inspector = if (inspector) ({ TabletInspector(Tablet.inspect(selected, timeline, ts, zone), st.quota[selected.account]?.h5, loading = false) }) else null,

@@ -176,6 +176,8 @@ fun SessionSheet(
     headerLead: (@Composable RowScope.() -> Unit)? = null,
     /** La bozza tenuta sopra l'interruttore dei 840 dp: resta quando la finestra passa da telefono a tablet e indietro. */
     draftState: androidx.compose.runtime.MutableState<String>? = null,
+    /** Il tablet con l'ispettore: l'obiettivo sta già lì, in testata non si ripete. */
+    showGoal: Boolean = true,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -215,7 +217,7 @@ fun SessionSheet(
             bar?.invoke()
             if (header) SheetHeader(
                 s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
-                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead,
+                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, showGoal = showGoal,
             )
             elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
             // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
@@ -483,7 +485,7 @@ private fun Composer(
                     true
                 },
             placeholder = {
-                if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
+                if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 5)
                 // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(R.string.write_to, s.name) }, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
             },
@@ -1110,6 +1112,7 @@ private fun SheetHeader(
     canExit: Boolean = false,
     quota: it.pixelbox.cmwatch.contract.QuotaAccount? = null,
     lead: (@Composable RowScope.() -> Unit)? = null,
+    showGoal: Boolean = true,
 ) {
     var picker by remember { mutableStateOf<String?>(null) }   // "tune": il foglio di modello ed effort
     var menu by remember { mutableStateOf(false) }
@@ -1163,7 +1166,7 @@ private fun SheetHeader(
             }
         }
         val notes = listOfNotNull(
-            SessionsText.goalLine(s, stringResource(R.string.goal)),
+            SessionsText.goalLine(s, stringResource(R.string.goal)).takeIf { showGoal },
             SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
             SessionsText.window(s, stringResource(R.string.no_window)),
         )
