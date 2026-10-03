@@ -44,6 +44,9 @@ import it.pixelbox.cmwatch.rules.SettingsDevices
 import it.pixelbox.cmwatch.rules.SettingsDevices.Tone
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
+/** La fascia dei cerchi: i nomi sotto stanno allineati anche se il PC è più grande. */
+private val NODE_BAND = 72.dp
+
 /** Il dispositivo scelto nello schema: la sua scheda si apre sotto. */
 enum class DeviceNode { PHONE, PC, WATCH }
 
@@ -70,7 +73,7 @@ fun DeviceScheme(m: SettingsDevices.Model, selected: DeviceNode, onSelect: (Devi
                 Icons.Rounded.PhoneAndroid, 72.dp, m.phone.tone, m.paired && selected == DeviceNode.PHONE, dashed = false,
                 stringResource(R.string.dev_phone), stringResource(R.string.dev_this), enabled = m.paired,
             ) { onSelect(DeviceNode.PHONE) }
-            Wire(m.pcLink, reverse = false, Modifier.weight(1f).padding(top = 35.dp))
+            Wire(m.pcLink, reverse = false, Modifier.weight(1f).padding(top = 32.dp))
             Node(
                 Icons.Rounded.Computer, 84.dp, m.pc.tone, m.paired && selected == DeviceNode.PC, dashed = !m.paired,
                 m.pc.host ?: stringResource(R.string.dev_pc),
@@ -79,9 +82,9 @@ fun DeviceScheme(m: SettingsDevices.Model, selected: DeviceNode, onSelect: (Devi
                     m.pc.ageMinutes == null -> stringResource(R.string.dev_updated_now)
                     else -> stringResource(R.string.dev_updated_ago, m.pc.ageMinutes!!)
                 },
-                enabled = m.paired, lift = 6.dp,
+                enabled = m.paired,
             ) { onSelect(DeviceNode.PC) }
-            Wire(m.watchLink, reverse = true, Modifier.weight(1f).padding(top = 35.dp))
+            Wire(m.watchLink, reverse = true, Modifier.weight(1f).padding(top = 32.dp))
             Node(
                 Icons.Rounded.Watch, 72.dp, m.watch.tone, m.paired && selected == DeviceNode.WATCH, dashed = m.watch.name == null,
                 stringResource(R.string.dev_watch), watchShort(m.watch), enabled = m.paired,
@@ -111,11 +114,13 @@ private fun watchShort(w: SettingsDevices.Watch): String = stringResource(
 @Composable
 private fun Node(
     icon: ImageVector, size: Dp, tone: Tone, selected: Boolean, dashed: Boolean, name: String, status: String,
-    enabled: Boolean, lift: Dp = 0.dp, onClick: () -> Unit,
+    enabled: Boolean, onClick: () -> Unit,
 ) {
     val desc = stringResource(R.string.dev_details, name)
+    // Tutti i cerchi stanno in una fascia alta 72 dp: quello più grande del PC la sborda sopra e sotto, così i nomi restano
+    // sulla stessa riga e i fili arrivano al centro di ogni cerchio.
     Column(Modifier.width(size + 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.offset(y = -lift).size(size)) {
+        Box(Modifier.height(NODE_BAND), contentAlignment = Alignment.Center) { Box(Modifier.requiredSize(size)) {
             val ring = if (selected) CmColors.actionIcon else CmColors.line
             Box(
                 Modifier.fillMaxSize().clip(CircleShape)
@@ -135,7 +140,7 @@ private fun Node(
                 Modifier.align(Alignment.TopEnd).offset(x = (-3).dp, y = 3.dp).size(14.dp).clip(CircleShape)
                     .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(toneColor(tone)),
             )
-        }
+        } }
         Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
         if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
     }
@@ -191,8 +196,12 @@ private fun DeviceCard(m: SettingsDevices.Model, selected: DeviceNode) {
             add(stringResource(R.string.fact_updated) to (m.pc.ageMinutes?.let { stringResource(R.string.dev_updated_ago, it) } ?: stringResource(R.string.fact_updated_now)))
             add(stringResource(R.string.fact_open) to m.pc.open.toString())
             m.pc.accounts.forEach { a ->
-                val q = a.pct?.let { stringResource(R.string.quota_h5_short, it) } ?: "–"
-                add(a.account to if (a.stale) stringResource(R.string.fact_quota_stale, q) else q)
+                val q = a.pct?.let { stringResource(R.string.quota_h5_short, it) }
+                add(a.account to when {
+                    q == null -> stringResource(if (a.stale) R.string.chip_stale else R.string.fact_quota_none)
+                    a.stale -> stringResource(R.string.fact_quota_stale, q)
+                    else -> q
+                })
             }
             add(stringResource(R.string.fact_channel) to stringResource(R.string.fact_channel_value))
         }

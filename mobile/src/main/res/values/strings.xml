@@ -225,6 +225,7 @@
     <string name="fact_updated_now">ora</string>
     <string name="fact_open">Sessioni aperte</string>
     <string name="fact_quota_stale">%1$s · dato vecchio</string>
+    <string name="fact_quota_none">nessun dato</string>
     <string name="fact_channel">Canale</string>
     <string name="fact_channel_value">cifrato, attraverso Firebase</string>
     <string name="fact_app">App</string>
