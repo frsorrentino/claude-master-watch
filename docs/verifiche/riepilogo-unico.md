@@ -17,3 +17,5 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Dal riepilogo, scorrendo a sinistra, la prima sessione; dalla prima sessione, scorrendo a destra, il riepilogo.
 - [ ] Toccando una card la sessione si apre con il volo; ← e il gesto indietro la riportano nella sua card.
 - [ ] Menu ⋮ della sessione: «Chiudi la sessione» chiede conferma e manda /exit.
+- [ ] Tocco su una card del riepilogo: si apre la sessione; il tasto ▼ apre la card sul posto (dettagli, consigli).
+- [ ] Barra della master: trascinata in su si espande, trascinata in giù da espansa si riduce; il tocco fa lo stesso.

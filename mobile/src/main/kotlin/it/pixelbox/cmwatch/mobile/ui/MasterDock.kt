@@ -2,6 +2,8 @@ package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +43,7 @@ private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 /**
  * La master nella home (design 03/10, tavola 4; Franz 16:30-16:44): ridotta è la barra agganciata sopra «Scrivi alla
  * master» (badge, «MASTER · ora · modello · contesto», il titolo dell'ultimo esito, ▶ e ▲); il tocco la espande a tutta
- * pagina, dove la stessa barra sta in cima con ▼, e un altro tocco la riduce.
+ * pagina, dove la stessa barra sta in cima con ▼, e un altro tocco la riduce; lo stesso col trascinamento in su e in giù.
  */
 @Composable
 fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
@@ -50,8 +52,19 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onT
     val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
         if (!expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
+        // Franz, 03/10 17:05: anche col gesto. Trascinare in su la barra ridotta la espande, trascinarla in giù da espansa la
+        // riduce. Sulla barra e non dal bordo dello schermo, dove Android tiene il gesto per la schermata Home.
+        val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
+        val drag = Modifier.pointerInput(expanded) {
+            var total = 0f
+            detectVerticalDragGestures(
+                onDragStart = { total = 0f },
+                onDragEnd = { if ((!expanded && total < -threshold) || (expanded && total > threshold)) onToggle() },
+                onVerticalDrag = { change, dy -> total += dy; change.consume() },
+            )
+        }
         Row(
-            Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow)
+            Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).then(drag)
                 .clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

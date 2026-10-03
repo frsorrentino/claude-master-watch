@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -123,7 +125,8 @@ private fun SummaryCard(
     Column(
         // La chat si restringe verso la sua card durante il gesto indietro.
         Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(fill)
-            .clickable(onClick = onToggle).padding(horizontal = 14.dp, vertical = 12.dp),
+            // Franz, 03/10 17:05: il tocco sulla card porta dritto alla sessione; il tasto ▼ la apre sul posto.
+            .clickable(onClick = onOpen).padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -134,6 +137,12 @@ private fun SummaryCard(
             )
             s.context?.let { Text("$it%", style = MonoSmall) }
             age?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = tone, maxLines = 1) }
+            androidx.compose.material3.IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
+                androidx.compose.material3.Icon(
+                    if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2,
+                )
+            }
         }
         if (body.isNotBlank()) Text(
             body, style = MaterialTheme.typography.bodyMedium, color = if (waiting || open) CmColors.text else CmColors.text2,
@@ -157,14 +166,13 @@ private fun SummaryCard(
                 }
             }
         }
-        if (open) androidx.compose.material3.TextButton(onClick = onOpen) { Text(stringResource(R.string.fy_open_conversation), color = CmColors.actionIcon) }
         s.context?.let { pct ->
             val bar = when (it.pixelbox.cmwatch.rules.SessionMeters.contextTone(pct)) {
                 it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
                 it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
                 else -> CmColors.briefRing
             }
-            Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
+            Box(Modifier.padding(end = 4.dp).fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
                 Box(Modifier.fillMaxWidth(it.pixelbox.cmwatch.rules.SessionMeters.contextFraction(pct) ?: 0f).fillMaxHeight().background(bar))
             }
         }
