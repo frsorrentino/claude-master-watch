@@ -11,3 +11,6 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Menu ≡: Registro, Lancia, Quadro e quota, Cerca, Impostazioni si aprono; tocco fuori e Indietro chiudono.
 - [ ] Indietro da una chat torna al riepilogo; Indietro dal Registro torna al riepilogo.
 - [ ] Master chiusa: «Riapri la master» in basso, la lista resta utile.
+- [ ] Gesto indietro da una chat: la chat si restringe verso la sua riga del riepilogo; annullato, torna intera.
+- [ ] «Ha finito» sparisce anche aprendo la sessione dal menu in alto o scorrendo fra le chat.
+- [ ] Menu ≡: lo scrim copre anche la barra di stato e il pannello sta sotto la barra.

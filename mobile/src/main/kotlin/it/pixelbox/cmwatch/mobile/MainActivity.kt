@@ -513,7 +513,8 @@ class MainActivity : ComponentActivity() {
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null, header = header, dock = dock,
-                            elsewhere = elsewhere,
+                            // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
+                            elsewhere = elsewhere.takeIf { dock == null },
                             onElsewhere = {
                                 when (val a = elsewhere) {
                                     is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { open = a.sessions[0] }
@@ -537,6 +538,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         var closedOpen by rememberSaveable { mutableStateOf(false) }
+        // «Ha finito» sparisce quando apri la sessione, da qualunque strada: riga, menu in alto, scorrimento, avviso, ricerca.
+        LaunchedEffect(open) {
+            val n = open ?: return@LaunchedEffect
+            summary?.rows?.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead)
+        }
         // Il Registro si apre dal menu a tutto schermo; Indietro torna al riepilogo.
         BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
         // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.

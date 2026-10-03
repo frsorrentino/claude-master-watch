@@ -58,6 +58,8 @@ fun SummaryList(
                     now, expanded == id, onToggle = { expanded = if (expanded == id) null else id }, question = s.question,
                     onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
                     variant = group, context = s.context.takeIf { group == Summary.Group.WORKING }, details = details(s),
+                    // La chat si restringe verso la sua riga durante il gesto indietro, come prima verso la card di Sessioni.
+                    modifier = Modifier.fly("card-${s.id}"),
                 )
             }
         }

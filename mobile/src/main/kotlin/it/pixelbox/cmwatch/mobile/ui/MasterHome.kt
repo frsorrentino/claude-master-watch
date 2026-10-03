@@ -149,6 +149,7 @@ internal fun AttentionRow(
     context: Int? = null,
     /** Da aperta, sotto il testo: i dettagli che stavano nelle card di Sessioni (obiettivo, priorità, modello…). */
     details: List<String> = emptyList(),
+    modifier: Modifier = Modifier,
 ) {
     val waiting = variant == Summary.Group.WAITING
     val tone = when (variant) {
@@ -167,7 +168,7 @@ internal fun AttentionRow(
             Summary.Group.STILL -> stringResource(R.string.summary_since, since(t))
         }
     }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
