@@ -67,6 +67,17 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, choices = st.choices, ops = st.ops, canAttach = true, feed = feed, more = true) }
     }
 
+    // Consigli A (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, dall'ultima risposta di una sessione ferma.
+    @Test fun sheetNextSteps() = paparazzi.snapshot {
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Rewrite the README with the three sections", at = t, origin = "pc"),
+            TranscriptEntry("a1.0", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2", at = t + 40),
+        )
+        val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = null)
+        CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList())) }
+    }
+
     // Stop al posto di Invia mentre la sessione lavora e il campo è vuoto (contratto 1.21).
     @Test fun sheetBusyStop() = paparazzi.snapshot {
         val s = st.sessions.first { it.state == SessionState.BUSY }

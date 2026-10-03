@@ -1016,6 +1016,8 @@ private fun ContextSheet(pct: Int, wider: it.pixelbox.cmwatch.contract.Model?, a
 @Composable
 internal fun QuestionOptions(
     q: it.pixelbox.cmwatch.contract.Question, firstFilled: Boolean, holdHint: Boolean, onHold: () -> Unit, onAnswer: (Int) -> Unit,
+    /** Il fondo delle opzioni non piene; sulle card del riepilogo un velo del primario, che resta visibile. */
+    tonal: androidx.compose.ui.graphics.Color = CmColors.surface,
 ) {
     val long = QuestionRules.needsLongPress(q.tier)
     if (long) Text(
@@ -1029,7 +1031,7 @@ internal fun QuestionOptions(
             QuestionRules.optionLabel(o), filled = i == 0 && firstFilled,
             onClick = { if (long) onHold() else onAnswer(o.n) },
             onLongClick = if (long) ({ onAnswer(o.n) }) else null,
-            modifier = m, shape = shape, center = inline,
+            modifier = m, shape = shape, center = inline, tonal = tonal,
         )
     }
     if (inline) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1048,9 +1050,10 @@ internal fun QuestionOptions(
 private fun OptionButton(
     label: String, filled: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier.fillMaxWidth(), shape: androidx.compose.ui.graphics.Shape = CircleShape, center: Boolean = false,
+    tonal: androidx.compose.ui.graphics.Color = CmColors.surface,
 ) {
     Surface(
-        color = if (filled) CmColors.primary else CmColors.surface, contentColor = if (filled) CmColors.onPrimary else CmColors.text,
+        color = if (filled) CmColors.primary else tonal, contentColor = if (filled) CmColors.onPrimary else CmColors.text,
         shape = shape,
         modifier = modifier.heightIn(min = 44.dp).clip(shape).combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {

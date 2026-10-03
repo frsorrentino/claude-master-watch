@@ -108,7 +108,9 @@ private fun SummaryCard(
     val tone = groupTone(r.group)
     val waiting = r.group == Summary.Group.WAITING
     val parsed = androidx.compose.runtime.remember(r.text) { it.pixelbox.cmwatch.rules.NextSteps.parse(r.text.orEmpty()) }
-    val body = it.pixelbox.cmwatch.rules.Markdown.parse(parsed.text).text.trim()
+    // L'esito per primo e senza l'etichetta «Esito:»; la domanda così com'è.
+    val shown = if (waiting) parsed.text else s.outcome?.let { o -> it.pixelbox.cmwatch.rules.OutcomeText.summary(o) } ?: parsed.text
+    val body = it.pixelbox.cmwatch.rules.Markdown.parse(shown).text.trim()
     val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
     val age = r.at?.takeIf { it > 0 }?.let { t ->
         when (r.group) {
@@ -143,7 +145,8 @@ private fun SummaryCard(
         // Le opzioni della domanda subito, anche a card chiusa: rispondere è il motivo per cui la card è in cima.
         if (waiting) s.question?.let { q ->
             var holdHint by rememberSaveable(q.id) { mutableStateOf(false) }
-            QuestionOptions(q, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer)
+            // Sul fondo della card il tonale di sempre quasi spariva (provini 03/10): un velo del colore primario.
+            QuestionOptions(q, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer, tonal = CmColors.primary.copy(alpha = 0.12f))
         }
         if (open && !waiting && parsed.steps.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
