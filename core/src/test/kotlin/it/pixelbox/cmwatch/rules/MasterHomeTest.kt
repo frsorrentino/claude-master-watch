@@ -150,6 +150,14 @@ class MasterHomeTest {
         assertEquals(at(6), h.at)
     }
 
+    // Osservazioni del 03/10: senza «Esito:» la barra della master mostrava la prima riga tagliata («Ha senso in parte.
+    // Conviene»). La riga «Watch:» è già la sintesi di 60 caratteri: viene prima della prima riga.
+    @Test fun heroWithoutOutcomeLineUsesTheWatchLine() {
+        val h = MasterHome.hero(listOf(claude("a", "Ha senso in parte. Conviene tenere il riepilogo e togliere il resto.\n\nWatch: Riepilogo sì, il resto no", at(6))), s("master"))!!
+        assertEquals("Riepilogo sì, il resto no", h.headline)
+        assertEquals("Ha senso in parte. Conviene tenere il riepilogo e togliere il resto.", h.body)
+    }
+
     @Test fun heroWithoutOutcomeLineUsesTheFirstLine() {
         val h = MasterHome.hero(listOf(claude("a", "Fatto il push.\nCI verde.", at(6))), s("master"))!!
         assertEquals("Fatto il push.", h.headline)

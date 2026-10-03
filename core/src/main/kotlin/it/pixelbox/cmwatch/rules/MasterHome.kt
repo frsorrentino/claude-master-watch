@@ -112,8 +112,13 @@ object MasterHome {
         val last = entries.lastOrNull { it.role != "user" && it.role != "tool" && !it.text.isNullOrBlank() }
         val raw = last?.text ?: master.outcome?.full ?: return null
         val parsed = NextSteps.parse(raw)
-        val lines = parsed.text.split('\n').filterNot { it.trimStart().startsWith(WATCH) }
+        val all = parsed.text.split('\n')
+        // Senza «Esito:» la riga «Watch:» (la sintesi di 60 caratteri per l'orologio) fa da titolo, prima della prima riga
+        // (osservazioni del 03/10: la barra della master mostrava una prima riga tagliata).
+        val watch = all.firstOrNull { it.trimStart().startsWith(WATCH) }?.trim()?.removePrefix(WATCH)?.trim()?.takeIf { it.isNotEmpty() }
+        val lines = all.filterNot { it.trimStart().startsWith(WATCH) }
         val outcome = lines.indexOfFirst { it.trimStart().startsWith(OUTCOME) }
+        if (outcome < 0 && watch != null) return Hero(watch, lines.joinToString("\n").trim(), parsed.steps, last?.at ?: master.outcome?.at)
         val head = if (outcome >= 0) outcome else lines.indexOfFirst { it.isNotBlank() }
         if (head < 0) return null
         val headline = lines[head].trim().removePrefix(OUTCOME).trim()
