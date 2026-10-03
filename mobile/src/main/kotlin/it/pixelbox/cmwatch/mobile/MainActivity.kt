@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val app get() = application as PhoneApp
     private val speech by lazy { Speech(this) }
+    private val readingOverlay = it.pixelbox.cmwatch.mobile.ui.ReadingOverlay()
     private val localeManager by lazy { getSystemService(android.app.LocaleManager::class.java) }
     /**
      * Un avvio nuovo cambia l'id, una rotazione lo tiene (restyling 30/09): sotto `key(launchId)` lo stato salvato di
@@ -118,7 +119,10 @@ class MainActivity : ComponentActivity() {
                     )
                     s.paired || s.demoMode -> key(launchId) {
                         Box(androidx.compose.ui.Modifier.fillMaxSize()) {
-                            Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan)
+                            androidx.compose.runtime.CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalReadingOverlay provides readingOverlay) {
+                                Main(s.demoMode, s.ttsMinChars, s.host, s.pairingJson, ::scan)
+                            }
+                            it.pixelbox.cmwatch.mobile.ui.ReadingOverlayHost(readingOverlay)
                             RefusalBanner(app.repo.userResults, androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
                         }
                     }
@@ -187,6 +191,8 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        // Nel terminale no, come prima: lì il fondo è del testo dal vivo.
+        androidx.compose.runtime.SideEffect { readingOverlay.bar = if (terminal == null) readingBar else null }
         // Gli avvisi delle altre sessioni già visti o chiusi (`Elsewhere`): un turno finito si dice una volta sola.
         val elsewhereSeen = remember { mutableStateListOf<String>() }
         LaunchedEffect(sessionAsked) {
@@ -235,7 +241,6 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = open != null && flyTarget == null && !settingsOpen && terminal == null) { open = null }
         val flight = rememberTransition(seek, label = "fly")
         if (settingsOpen) {
-            WithReadingBar(readingBar) {
             val r = PairingRecord.fromJson(pairingJson)
             val version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() }
             // Per lo schema dei dispositivi (mockup A): l'orologio raggiungibile adesso lo dice il Data Layer, le notifiche il sistema.
@@ -261,7 +266,6 @@ class MainActivity : ComponentActivity() {
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
             )
-            }
             return
         }
         terminal?.let { name ->
@@ -295,7 +299,6 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (searchOpen) {
-            WithReadingBar(readingBar) {
             // Contratto 1.27: con un relay che cerca, la ricerca va nelle conversazioni di tutte le sessioni; una richiesta per
             // volta, la precedente dimenticata.
             var searchId by remember { mutableStateOf<String?>(null) }
@@ -312,12 +315,10 @@ class MainActivity : ComponentActivity() {
                     }
                 },
             )
-            }
             return
         }
         if (queueOpen && state != null) {
             // La coda usa solo la card della domanda: risposta, «Parliamone», «Consenti tutto» e la lettura a voce.
-            WithReadingBar(readingBar) {
             QueueScreen(state, now, actionsFor = { s ->
                 SheetActions(
                     answer = { n -> scope.launch { app.repo.answer(s.name, n) } },
@@ -327,7 +328,6 @@ class MainActivity : ComponentActivity() {
                     chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; open = s.name },
                 )
             }, onSession = { n -> queueOpen = false; open = n })
-            }
             return
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
@@ -707,7 +707,6 @@ class MainActivity : ComponentActivity() {
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
-            LocalReadingBar provides readingBar,
         ) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
@@ -731,7 +730,6 @@ class MainActivity : ComponentActivity() {
             refreshing = refreshing,
         ) { page ->
             if (page == StartRoute.Tab.DIARY && open == null) {
-                WithReadingBar(readingBar) {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
                         onAdd = { nightAdding = true },
@@ -740,7 +738,6 @@ class MainActivity : ComponentActivity() {
                         onQuadro = { overviewSheet = true },
                         // Una riga del Registro apre la sessione del progetto, se è viva.
                         onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n } })
-                }
                 }
                 return@AppShell
             }
@@ -975,19 +972,3 @@ private class OpenRoute(
     }
 }
 
-/**
- * Le schermate senza campo di scrittura (Impostazioni, Cerca, Coda, Registro): il mini-controller della lettura in fondo,
- * sopra il contenuto (Franz, 03/10 23:00). Nella home e nelle sessioni sta invece sopra il campo (`SessionSheet`).
- */
-@androidx.compose.runtime.Composable
-private fun WithReadingBar(bar: (@androidx.compose.runtime.Composable () -> Unit)?, content: @androidx.compose.runtime.Composable () -> Unit) {
-    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
-        content()
-        bar?.let {
-            androidx.compose.foundation.layout.Box(
-                androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter).navigationBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-            ) { it() }
-        }
-    }
-}

@@ -363,10 +363,10 @@ fun SessionSheet(
                 }
             }
         }
-        // Il mini-controller della lettura sopra il campo, come il mini-player delle app di musica (Franz, 03/10 23:00);
-        // con la tastiera aperta no: il campo ha la precedenza.
+        // Il posto del mini-controller sopra il campo, come il mini-player delle app di musica (Franz, 03/10 23:00); il
+        // controller lo disegna `ReadingOverlayHost` sopra tutte le pagine. Con la tastiera aperta no: il campo ha la precedenza.
         val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
-        if (!imeOpen) LocalReadingBar.current?.let { bar -> Box(Modifier.padding(horizontal = 12.dp).padding(top = 6.dp)) { bar() } }
+        if (!imeOpen) ReadingSlot(Modifier.padding(top = 6.dp))
         Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles)
     }
 }
