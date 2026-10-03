@@ -83,7 +83,9 @@ fun AppShell(
         topBar = {
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 when {
-                    pagedHeaders && tab == Tab.OVERVIEW -> {}
+                    // Ogni pagina della home e delle sessioni ha la sua testata, anche una sessione aperta dal Registro (dal vivo
+                    // 03/10 20:01: due testate uguali).
+                    pagedHeaders && (tab == Tab.OVERVIEW || current != null) -> {}
                     tab == Tab.DIARY && current == null -> Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
                         Text(stringResource(R.string.menu_register), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))

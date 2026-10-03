@@ -179,7 +179,7 @@
     <string name="menu_launch_sub">A project, with the first message</string>
     <string name="menu_register">Register</string>
     <string name="menu_register_sub">Tonight, the days, the night queue</string>
-    <string name="menu_quadro">Board and quota</string>
+    <string name="menu_quadro">Usage and limits</string>
     <string name="menu_quadro_sub">5-hour windows and week, pace</string>
     <string name="menu_search">Search the conversations</string>
     <string name="menu_search_sub">Messages, outcomes and register</string>
@@ -212,6 +212,7 @@
     <string name="attach_gallery">Photo from the gallery</string>
     <string name="attach_camera">Take a photo</string>
     <string name="attach_file">File</string>
+    <string name="write_to">Write to %1$s</string>
     <string name="attached_file">File: %1$s</string>
     <string name="file_too_big">The file is too large: the limit is %1$s</string>
     <string name="stop">Stop</string>

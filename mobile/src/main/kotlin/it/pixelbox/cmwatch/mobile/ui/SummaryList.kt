@@ -86,10 +86,9 @@ private fun groupTone(g: Summary.Group): Color = when (g) {
     Summary.Group.STILL -> CmColors.text2
 }
 
-/** Obiettivo, priorità e «modello · effort · account» (il contesto sta in testa alla card). */
+/** Priorità e «modello · effort · account» (il contesto sta in testa alla card, l'obiettivo sopra il testo). */
 @Composable
 private fun details(s: Session): List<String> = listOfNotNull(
-    SessionsText.goalLine(s, stringResource(R.string.goal)),
     SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
     listOfNotNull(ModelText.short(s.model), s.effort, s.account).joinToString(" · ").ifEmpty { null },
 )
@@ -117,7 +116,8 @@ private fun SummaryCard(
     val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
     val age = r.at?.takeIf { it > 0 }?.let { t ->
         when (r.group) {
-            Summary.Group.WAITING, Summary.Group.WORKING -> since(t)
+            // «da 16 m»: da quanto aspetta o lavora, non un tempo che resta (osservazioni del 03/10).
+            Summary.Group.WAITING, Summary.Group.WORKING -> stringResource(R.string.summary_since, since(t))
             Summary.Group.FINISHED -> CARD_HM.format(java.time.Instant.ofEpochSecond(t).atZone(java.time.ZoneId.systemDefault()))
             Summary.Group.STILL -> stringResource(R.string.summary_since, since(t))
         }
@@ -145,6 +145,10 @@ private fun SummaryCard(
                     stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2,
                 )
             }
+        }
+        // L'obiettivo della sessione, stabile, sopra l'attività del momento (osservazioni del 03/10): si legge anche dopo ore.
+        SessionsText.goalLine(s, stringResource(R.string.goal))?.let { g ->
+            Text(g, style = MaterialTheme.typography.bodySmall, color = CmColors.briefLabel, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
         }
         if (body.isNotBlank()) Text(
             body, style = MaterialTheme.typography.bodyMedium, color = if (waiting || open) CmColors.text else CmColors.text2,

@@ -190,17 +190,25 @@ class MainActivity : ComponentActivity() {
             }
         }
         // Il gesto indietro dalla scheda mostra la regia mentre lo si trascina: la scheda si restringe verso la card.
-        val seek = remember { SeekableTransitionState(open) }
+        // Il volo card ↔ sessione segue la sessione aperta solo quando cambia per un tocco, un menu o Indietro, non per lo
+        // scorrimento (dal vivo 03/10 20:00: scorrendo dalla home alla prima sessione il cambio di contenuto rifaceva la
+        // pagina appena vista, con un lampo). `swipeSet`: l'ultimo cambio di `open` viene dallo scorrimento.
+        var flyTarget by rememberSaveable { mutableStateOf(open) }
+        var swipeSet by remember { mutableStateOf(false) }
+        LaunchedEffect(open) { if (swipeSet) swipeSet = false else flyTarget = open }
+        val seek = remember { SeekableTransitionState(flyTarget) }
         // Sempre fino in fondo: dopo un gesto completato seekTo ha già messo il bersaglio a null (revisione 29/09).
-        LaunchedEffect(open) { seek.animateTo(open) }
-        PredictiveBackHandler(enabled = open != null && !settingsOpen && terminal == null) { progress ->
+        LaunchedEffect(flyTarget) { seek.animateTo(flyTarget) }
+        PredictiveBackHandler(enabled = open != null && flyTarget != null && !settingsOpen && terminal == null) { progress ->
             try {
                 progress.collect { seek.seekTo(it.progress, targetState = null) }
                 open = null
             } catch (e: CancellationException) {
-                withContext(NonCancellable) { seek.animateTo(open) }
+                withContext(NonCancellable) { seek.animateTo(flyTarget) }
             }
         }
+        // Arrivati a una sessione scorrendo dalla home non c'è un volo da ripercorrere: Indietro riporta la pagina alla home.
+        BackHandler(enabled = open != null && flyTarget == null && !settingsOpen && terminal == null) { open = null }
         val flight = rememberTransition(seek, label = "fly")
         if (settingsOpen) {
             val r = PairingRecord.fromJson(pairingJson)
@@ -294,6 +302,9 @@ class MainActivity : ComponentActivity() {
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
         // Di quale sessione sono le voci dal vivo: senza, la pagina appena raggiunta mostrava un attimo quelle di prima.
         var entriesOwner by remember { mutableStateOf<String?>(null) }
+        // La sessione chiusa dal telefono con «Chiudi la sessione»: appena è chiusa si torna alla home (dal vivo 03/10 19:57:
+        // la sua pagina restava nera).
+        var leaving by remember { mutableStateOf<String?>(null) }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
         val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
         var more by remember { mutableStateOf(false) }
@@ -493,7 +504,7 @@ class MainActivity : ComponentActivity() {
                             } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             // Contratto 1.25: il comando resta nella chat come un messaggio, con l'esito del PC.
-                            slash = { c, a -> scope.launch {
+                            slash = { c, a -> if (c == "exit") leaving = session.name; scope.launch {
                                 runCatching { app.repo.command(CmdOp.SLASH, session.name, c, a) }.getOrNull()?.let { id ->
                                     app.chatLog.add(Sent(id, session.name, "/$c" + (a?.let { t -> " $t" } ?: ""), System.currentTimeMillis() / 1000))
                                 }
@@ -566,6 +577,15 @@ class MainActivity : ComponentActivity() {
             }
         }
         var closedOpen by rememberSaveable { mutableStateOf(false) }
+        // Lo stesso se la sessione aperta sparisce dallo stato.
+        LaunchedEffect(open, state?.sessions, leaving) {
+            val o = open ?: return@LaunchedEffect
+            val st = state ?: return@LaunchedEffect
+            if (!StartRoute.stillOpen(o, st.sessions, leaving)) {
+                if (leaving == o) leaving = null
+                open = null; tab = StartRoute.Tab.OVERVIEW
+            }
+        }
         // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
         val menuActions = MenuActions(
             host, if (snap.freshness is Freshness.Stale) getString(R.string.menu_updated_ago, (snap.freshness as Freshness.Stale).minutes) else getString(R.string.menu_updated_now),
@@ -680,7 +700,7 @@ class MainActivity : ComponentActivity() {
                         // Solo il contenuto di destinazione segue la pagina: durante l'uscita (gesto indietro, volo verso la
                         // card) quello che se ne va non deve riaprire né spostarsi. Attivo = la sua chiave (sessione aperta sì/no)
                         // è quella di adesso; il nome della sessione può cambiare restando nello stesso contenuto (menu in alto).
-                        val active = (name != null) == (open != null)
+                        val active = (name != null) == (flyTarget != null)
                         val target = if (active) open else name
                         val pages = remember(state?.sessions, target) { it.pixelbox.cmwatch.rules.SwipePages.of(state, target) }
                         val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(target).coerceAtLeast(0)) { pages.size }
@@ -694,6 +714,7 @@ class MainActivity : ComponentActivity() {
                                 val move = it.pixelbox.cmwatch.rules.SwipePages.afterSettle(currentPages, p, open, initial)
                                 initial = false
                                 if (move is it.pixelbox.cmwatch.rules.SwipePages.Move.Open) {
+                                    swipeSet = true
                                     open = move.name
                                     // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
                                     if (move.name == null) tab = StartRoute.Tab.OVERVIEW
@@ -702,7 +723,10 @@ class MainActivity : ComponentActivity() {
                         }
                         LaunchedEffect(open, pages, active) {
                             val i = pages.indexOf(open)
-                            if (active && i >= 0 && i != pager.currentPage && !pager.isScrollInProgress) pager.scrollToPage(i)
+                            // Una pagina accanto si raggiunge scorrendo, come col dito; una lontana subito, senza attraversare le altre.
+                            if (active && i >= 0 && i != pager.currentPage && !pager.isScrollInProgress) {
+                                if (kotlin.math.abs(i - pager.currentPage) == 1) pager.animateScrollToPage(i) else pager.scrollToPage(i)
+                            }
                         }
                         androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
                             val n = pages[page]

@@ -71,8 +71,12 @@ fun DiaryScreen(
     LazyColumn(Modifier.fillMaxSize().background(CmColors.bg), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item(key = "tonight") { Tonight(state, onAdd, onRemove) }
         nightReport?.let { n -> item(key = "night") { NightCard(n, onSpeak) } }
+        // Oggi a blocchi per sessione, come i giorni passati e la home (segnalazione 03/10 20:01).
         if (recap.items.isNotEmpty()) item(key = "today") {
-            DayCard(stringResource(R.string.reg_today), recap.items.map { Registro.Line(it.project, it.done) }, null, startOpen = true, onSession, onSpeak, ttsMinChars)
+            val today = remember(recap) {
+                RecapSessions.View("", listOf(RecapSessions.Section(RecapSessions.Kind.OPEN, "", recap.items.map { RecapSessions.Entry(icon = "", name = it.project, text = it.done, next = it.next) }, emptyList())))
+            }
+            RecapDayCard(stringResource(R.string.reg_today), today, recap.items.joinToString("\n") { "${it.project}: ${it.done}" }, state.sessions, onSession, onSpeak, startOpen = true)
         }
         items(history.filter { it.ref != recap.date }, key = { "h-" + it.key }) { e ->
             val day = runCatching { LocalDate.parse(e.ref) }.getOrNull()
@@ -208,6 +212,7 @@ private fun RecapDayCard(
         if (open) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(view.title, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
+                // Oggi non ha il titolo del recap: resta solo il ▶.
                 val reading = LocalSpeaking.current == raw
                 androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(raw) }, modifier = Modifier.size(36.dp)) {
                     Icon(if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))

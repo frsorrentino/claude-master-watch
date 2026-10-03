@@ -431,11 +431,17 @@ private fun Composer(
             )
         }
         // Allegato e invio dentro il campo, centrati sulla sua altezza (Franz, 30/09 22:13).
+        // Il margine destro del tasto si misura sull'altezza della barra a una riga (dal vivo 03/10 20:00: con il testo di
+        // sistema più grande la barra cresce, e un margine fisso non era più uguale a quelli sopra e sotto).
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        var lineH by remember { mutableIntStateOf(0) }
         OutlinedTextField(
-            value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.fillMaxWidth(),
+            value = draft, onValueChange = onDraft, maxLines = 5,
+            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height },
             placeholder = {
                 if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
-                else Text(stringResource(when { s.question != null -> R.string.answer_free; toMaster -> R.string.master_placeholder; else -> R.string.write_prompt }))
+                // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
+                else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(R.string.write_to, s.name) }, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
             },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
@@ -444,7 +450,8 @@ private fun Composer(
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
                 // Il cerchio concentrico all'estremità della barra (segnalazione 03/10 19:18, come ChatGPT): 40 dp nella barra da 56,
                 // quindi 8 dp sopra, sotto e a destra.
-                val size = Modifier.padding(end = 8.dp).size(40.dp)
+                val endPad = with(density) { ((lineH.toDp() - 40.dp) / 2).coerceAtLeast(6.dp) }
+                val size = Modifier.padding(end = if (lineH > 0) endPad else 8.dp).size(40.dp)
                 when (mode) {
                     PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
                         Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
