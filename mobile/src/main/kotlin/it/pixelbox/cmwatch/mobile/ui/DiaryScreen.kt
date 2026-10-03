@@ -12,8 +12,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
+import it.pixelbox.cmwatch.contract.Session
+import it.pixelbox.cmwatch.contract.SessionState
+import it.pixelbox.cmwatch.rules.RecapSessions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +53,8 @@ fun DiaryScreen(
     onAdd: () -> Unit, onRemove: (jobId: String) -> Unit,
     rings: List<PhoneOverview.Ring> = emptyList(), onQuadro: () -> Unit = {}, onSession: (String) -> Unit = {},
     today: LocalDate = LocalDate.now(),
+    /** Solo per i provini: i giorni (`ref`) già aperti. */
+    openDays: Set<String> = emptySet(),
 ) {
     val recap = state.recap
     val items = state.night.items
@@ -74,7 +81,10 @@ fun DiaryScreen(
                 day == today.minusDays(1) -> stringResource(R.string.reg_yesterday)
                 else -> dateLabel(e.ref.orEmpty(), locale)
             }
-            DayCard(title, Registro.recap(e.body), e.body, startOpen = false, onSession, onSpeak, ttsMinChars)
+            // Segnalazione 03/10 17:52: il recap del plugin diviso per sessione, come nella home; se non si legge, il testo.
+            val view = remember(e.body) { RecapSessions.parse(e.body) }
+            if (view.sections.any { s -> s.entries.isNotEmpty() }) RecapDayCard(title, view, e.body, state.sessions, onSession, onSpeak, startOpen = e.ref in openDays)
+            else DayCard(title, Registro.recap(e.body), e.body, startOpen = false, onSession, onSpeak, ttsMinChars)
         }
         if (rings.isNotEmpty() || quotaEvents.isNotEmpty()) item(key = "quota") {
             RegCard {
@@ -173,6 +183,79 @@ private fun DayCard(title: String, lines: List<Registro.Line>, raw: String?, sta
                 }
             }
         }
+    }
+}
+
+/**
+ * Un giorno dello storico letto per sessione (segnalazione 03/10 17:52): il titolo del recap con ▶, poi le sezioni con
+ * l'intestazione nel colore del gruppo, come nella home, e un blocco per sessione: badge (della sessione se è ancora viva,
+ * se no dall'emoji del recap: tondo personale, quadrato lavoro), nome, strumento, riassunto, domanda, prossimo passo.
+ * Tocco su una sessione viva = la sua scheda.
+ */
+@Composable
+private fun RecapDayCard(
+    title: String, view: RecapSessions.View, raw: String, live: List<Session>,
+    onSession: (String) -> Unit, onSpeak: (String) -> Unit, startOpen: Boolean = false,
+) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(startOpen) }
+    val count = view.sections.sumOf { it.entries.size }
+    RegCard {
+        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
+            Text(pluralStringResource(R.plurals.reg_projects, count, count), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
+        }
+        if (open) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(view.title, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
+                val reading = LocalSpeaking.current == raw
+                androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(raw) }, modifier = Modifier.size(36.dp)) {
+                    Icon(if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+                }
+            }
+            view.sections.forEach { sec ->
+                val tone = when (sec.kind) {
+                    RecapSessions.Kind.WAITING -> CmColors.briefWarn
+                    RecapSessions.Kind.OPEN -> CmColors.briefRing
+                    else -> CmColors.text2
+                }
+                if (sec.title.isNotBlank()) GroupHeader(sec.title, tone)
+                sec.entries.forEach { e -> RecapEntry(e, sec.kind, live.firstOrNull { x -> x.name == e.name && x.state != SessionState.GONE }, onSession) }
+                sec.lines.forEach { l -> Text(l, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.padding(horizontal = 4.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecapEntry(
+    e: RecapSessions.Entry, kind: RecapSessions.Kind,
+    live: Session?, onSession: (String) -> Unit,
+) {
+    val personal = RecapSessions.personal(e.icon)
+    // Senza la sessione viva il badge si ricava dal recap: colore dall'emoji, forma dall'account, glifo dalla sezione.
+    val badge = live ?: Session(
+        id = e.name, name = e.name, account = if (personal) "personale" else "lavoro", project = e.name, since = 0,
+        state = when (kind) {
+            RecapSessions.Kind.WAITING -> SessionState.WAITING
+            RecapSessions.Kind.CLOSED -> SessionState.GONE
+            else -> SessionState.IDLE
+        },
+        icon = e.icon, accountKind = if (personal) "personal" else "work",
+    )
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surface)
+            .then(if (live != null) Modifier.clickable { onSession(e.name) } else Modifier).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SessionBadge(badge, 22.dp)
+            Text(e.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+            e.tool?.let { Text(it, style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip) }
+        }
+        e.text?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2) }
+        e.detail?.let { d -> Text(d, style = MaterialTheme.typography.bodyMedium, color = if (kind == RecapSessions.Kind.WAITING) CmColors.text else CmColors.text2) }
+        e.next?.let { Text("↳ $it", style = MaterialTheme.typography.bodyMedium, color = CmColors.actionIcon) }
     }
 }
 

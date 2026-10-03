@@ -31,6 +31,12 @@ class DiaryScreenTest {
     @Test fun diaryFull() = paparazzi.snapshot {
         CmPhoneTheme(still = true) { DiaryScreen(st, quota, history, night, 120, {}, onAdd = {}, onRemove = {}, rings = rings, today = java.time.LocalDate.of(2026, 9, 29)) }
     }
+    // Segnalazione 03/10 17:52: il recap del plugin diviso per sessione, come le card della home.
+    @Test fun diaryRecapSessions() = paparazzi.snapshot {
+        val body = "Recap 28/09/2026 · 4 progetti · 1 ferme su domanda\n\nFERME SU UNA DOMANDA\n\n🟧 ledger-api (https://claude.ai/code/session_01A) · AskUserQuestion\n     Deploy ready, waiting for the client's ok.\n\nAPERTE\n\n⚪ master (https://claude.ai/code/session_01B): La sessione rino è avviata, nuova e senza la conversazione di stamattina.\n     ↳ prossimo: prova la casa dal vivo\n\n🟢 claude-master (https://claude.ai/code/session_01C): La richiesta B è fatta e in locale funziona (contratto 1.26).\n\nCHIUSE OGGI\n\n✓ field-notes: README riscritto con le tre sezioni.\n\naltro: kb, bozze\n\nProgetti: master 12, claude-master 9, ledger-api 4"
+        val day = Event("r2", EventKind.RECAP, ts = st.ts - 86400, title = "Diario del 28/09", body = body, ref = "2026-09-28")
+        CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap()), emptyList(), listOf(day), null, 120, {}, onAdd = {}, onRemove = {}, today = java.time.LocalDate.of(2026, 9, 29), openDays = setOf("2026-09-28")) }
+    }
     @Test fun diaryEmpty() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(recap = Recap(), night = Night(items = emptyList())), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
     @Test fun diaryOldRelay() = paparazzi.snapshot { CmPhoneTheme(still = true) { DiaryScreen(st.copy(night = Night(queued = 1)), emptyList(), emptyList(), null, 120, {}, onAdd = {}, onRemove = {}) } }
 }
