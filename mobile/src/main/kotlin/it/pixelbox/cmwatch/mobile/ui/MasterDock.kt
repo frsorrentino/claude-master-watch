@@ -83,6 +83,7 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             // Durante la lettura il ▶ diventa ■ e la ferma (Franz, 03/10 17:25), come sotto le risposte della chat.
             val spoken = hero?.let { h -> listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n") }
             val reading = spoken != null && LocalSpeaking.current == spoken
+            if (reading) RatePill()
             if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp)) {
                 Icon(
                     if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,

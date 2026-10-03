@@ -24,3 +24,4 @@ Design: `docs/plans/2026-10-03-riepilogo-unico-design.md`. Una riga per prova; e
 - [ ] Le righe «prossimo passo · Avvia» sotto la lista solo per i progetti senza una sessione aperta (master compresa).
 - [ ] Card del riepilogo e testata della sessione: «5h N%» dell'account della sessione al posto di «da N m»; dato vecchio in arancio.
 - [ ] Matita solo sui messaggi non arrivati (rosso o incerto); su quelli elaborati e su quelli scritti al PC o dall'orologio solo Copia.
+- [ ] Durante la lettura, accanto a ■, la pillola della velocità: ogni tocco 1× → 1,25× → 1,5× → 2× → 1×, la voce riparte dal pezzo in corso; la scelta resta per le letture dopo e nelle impostazioni.

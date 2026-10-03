@@ -193,6 +193,8 @@
     <string name="menu_exit_sub">Sends /exit, after a confirmation</string>
     <string name="ctx_short">ctx %1$d%%</string>
     <string name="quota_h5_short">5h %1$d%%</string>
+    <string name="speech_rate_short">%1$s×</string>
+    <string name="speech_rate_change">Reading speed %1$s: tap to change it</string>
     <string name="quota_line_stale">not updated</string>
     <string name="chat_empty">New conversation: no messages yet. Write below to start.</string>
     <string name="menu_goto">Go to</string>

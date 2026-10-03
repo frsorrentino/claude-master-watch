@@ -214,6 +214,7 @@ private fun RecapDayCard(
                 Text(view.title, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
                 // Oggi non ha il titolo del recap: resta solo il ▶.
                 val reading = LocalSpeaking.current == raw
+                if (reading) RatePill()
                 androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(raw) }, modifier = Modifier.size(36.dp)) {
                     Icon(if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
                 }

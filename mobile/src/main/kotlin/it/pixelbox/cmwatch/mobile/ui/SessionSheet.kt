@@ -45,6 +45,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -966,6 +968,7 @@ private fun ClaudeBubble(
             SmallAction(Icons.Rounded.ContentCopy, stringResource(R.string.copy)) { clip.setText(AnnotatedString(text)) }
             // Esiti sempre leggibili a voce (regola del ▶: esiti, risposte e domande, oltre alla soglia dei 120 caratteri).
             val reading = LocalSpeaking.current == text
+            if (reading) RatePill()
             // Il ▶ tondo come nel riepilogo e nel riquadro della master (Franz, 03/10 16:13), non l'altoparlante.
             androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(text) }, modifier = Modifier.size(36.dp)) {
                 Icon(
@@ -1307,6 +1310,7 @@ fun Speakable(text: String, speak: Boolean, onSpeak: (String) -> Unit) {
     Row(verticalAlignment = Alignment.Top) {
         Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
         val reading = LocalSpeaking.current == text
+        if (speak && reading) RatePill()
         if (speak) IconButton(onClick = { onSpeak(text) }) {
             Icon(if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon)
         }
@@ -1350,6 +1354,30 @@ private const val MAX_IMAGES = 5
 
 /** Il testo che la voce sta leggendo: il suo tasto diventa Stop. Fornito da `MainActivity` da `Speech.speaking`. */
 val LocalSpeaking = androidx.compose.runtime.staticCompositionLocalOf<String?> { null }
+
+/** La velocità della voce e come cambiarla mentre legge (`Speech.rate`, `Speech.setRateNow`), da `MainActivity`. */
+val LocalSpeechRate = androidx.compose.runtime.staticCompositionLocalOf { it.pixelbox.cmwatch.rules.SpeechRate.NORMAL }
+val LocalSetSpeechRate = androidx.compose.runtime.staticCompositionLocalOf<(Float) -> Unit> { {} }
+
+/**
+ * La pillola «1,25×» accanto a ■ durante la lettura (Franz, 03/10 21:16): ogni tocco passa alla velocità dopo
+ * (`SpeechRate.next`) e la voce riparte dal pezzo che stava dicendo.
+ */
+@Composable
+fun RatePill() {
+    val rate = LocalSpeechRate.current
+    val set = LocalSetSpeechRate.current
+    val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+        .apply { maximumFractionDigits = 2 }.format(rate)
+    val label = stringResource(R.string.speech_rate_short, n)
+    val desc = stringResource(R.string.speech_rate_change, label)
+    Surface(
+        onClick = { set(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }, color = CmColors.surface, shape = CircleShape,
+        modifier = Modifier.semantics { contentDescription = desc },
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+    }
+}
 
 /** Il paragrafo che la voce sta leggendo (`Speech.block`) e come dividere un testo in paragrafi (`Speech.blocksOf`). */
 val LocalSpeakingBlock = androidx.compose.runtime.staticCompositionLocalOf<Int?> { null }

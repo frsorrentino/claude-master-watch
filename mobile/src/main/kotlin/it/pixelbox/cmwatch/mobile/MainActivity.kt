@@ -662,7 +662,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         val speakingBlock by speech.block.collectAsStateWithLifecycle()
-        CompositionLocalProvider(LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf) {
+        val speechRate by speech.rate.collectAsStateWithLifecycle()
+        CompositionLocalProvider(
+            LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
+            LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
+        ) {
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),

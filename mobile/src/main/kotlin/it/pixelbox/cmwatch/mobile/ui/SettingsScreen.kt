@@ -167,7 +167,7 @@ fun SettingsScreen(
 @Composable
 private fun rateLabel(r: Float): String {
     val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
-        .apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(r)
+        .apply { minimumFractionDigits = 1; maximumFractionDigits = 2 }.format(r)
     return stringResource(if (r == SpeechRate.NORMAL) R.string.speech_rate_normal else R.string.speech_rate_value, n)
 }
 

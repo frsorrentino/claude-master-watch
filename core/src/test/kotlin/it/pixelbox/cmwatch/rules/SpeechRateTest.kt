@@ -18,4 +18,15 @@ class SpeechRateTest {
     }
 
     @Test fun slowerChoicesThanTheEngine() = assertTrue(SpeechRate.choices.count { it < 1.0f } >= 2 && 1.0f in SpeechRate.choices)
+
+    // Franz, 03/10 21:16: la pillola accanto a ■ cambia velocità mentre legge, 1× → 1,25× → 1,5× → 2× → 1×; da una
+    // velocità lenta delle impostazioni il primo tocco porta a 1×.
+    @Test fun theReadingPillGoesFasterThenBackToNormal() {
+        assertEquals(listOf(1.25f, 1.5f, 2.0f, 1.0f), listOf(1.0f, 1.25f, 1.5f, 2.0f).map { SpeechRate.next(it) })
+        assertEquals(1.0f, SpeechRate.next(0.8f))
+        assertTrue(SpeechRate.pill.all { it in SpeechRate.choices })
+    }
+
+    // La vecchia scelta 1,2× salvata va alla più vicina delle nuove.
+    @Test fun theOldFastChoiceMovesToTheNearest() = assertEquals(1.25f, SpeechRate.of(1.2f))
 }

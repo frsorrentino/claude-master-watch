@@ -40,6 +40,11 @@ class Speech(ctx: Context) {
     val rate: StateFlow<Float> = _rate
     private var current: String? = null
     @Volatile private var prefix = "-"
+    /** I pezzi della lettura in corso (paragrafo, testo) e quello che il motore sta dicendo, per ripartire da lì. */
+    private var items: List<Pair<Int, String>> = emptyList()
+    @Volatile private var chunk = 0
+    /** Ogni partenza ha il suo prefisso: lo stop tardivo dei pezzi vecchi non spegne la lettura ripartita. */
+    private var generation = 0
     private lateinit var tts: TextToSpeech
 
     init {
@@ -49,11 +54,14 @@ class Speech(ctx: Context) {
         }
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
+                if (utteranceId?.startsWith(prefix) != true) return
                 _speaking.value = current
-                _block.value = BLOCK.find(utteranceId.orEmpty())?.groupValues?.get(1)?.toInt()
+                val m = BLOCK.find(utteranceId)
+                _block.value = m?.groupValues?.get(1)?.toInt()
+                m?.groupValues?.get(2)?.toInt()?.let { chunk = it }
             }
             // Solo l'ultimo pezzo chiude la lettura: il tasto resta ■ per tutto il testo.
-            override fun onDone(utteranceId: String?) { if (utteranceId?.endsWith("-end") == true) finished() }
+            override fun onDone(utteranceId: String?) { if (utteranceId?.startsWith(prefix) == true && utteranceId.endsWith("-end")) finished() }
             @Deprecated("Deprecated in Java") override fun onError(utteranceId: String?) { finished() }
             // Un testo nuovo interrompe il vecchio: si spegne solo se è stato fermato il testo che sta leggendo adesso.
             override fun onStop(utteranceId: String?, interrupted: Boolean) { if (utteranceId?.startsWith(prefix) == true) finished() }
@@ -71,15 +79,23 @@ class Speech(ctx: Context) {
         // Letta a ogni lettura: la lingua si cambia nelle impostazioni mentre l'app è aperta.
         tts.language = AppLanguage.voiceLocale(AppLanguage.fromTags(locales.applicationLocales.toLanguageTags()), Locale.getDefault())
         applyVoice()
-        tts.setSpeechRate(_rate.value)
         current = text
         _speaking.value = text
-        prefix = "cm-" + text.hashCode() + "-"
         val code = app.getString(R.string.tts_code)
-        val items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.forBlock(b.kind, b.text, code)).map { i to it } }
+        items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.forBlock(b.kind, b.text, code)).map { i to it } }
         if (items.isEmpty()) { finished(); return }
-        items.forEachIndexed { k, (i, p) ->
-            tts.speak(p, if (k == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, prefix + "b" + i + "-" + k + if (k == items.lastIndex) "-end" else "")
+        startAt(0)
+    }
+
+    /** Mette in coda i pezzi da `k0` con la velocità di adesso; il primo interrompe quello che il motore sta dicendo. */
+    private fun startAt(k0: Int) {
+        tts.setSpeechRate(_rate.value)
+        generation++
+        prefix = "cm-" + current.hashCode() + "-" + generation + "-"
+        chunk = k0
+        items.withIndex().drop(k0).forEach { (k, item) ->
+            val (i, p) = item
+            tts.speak(p, if (k == k0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, prefix + "b" + i + "-" + k + if (k == items.lastIndex) "-end" else "")
         }
     }
 
@@ -106,6 +122,15 @@ class Speech(ctx: Context) {
         prefs.edit().putFloat("rate", _rate.value).apply()
     }
 
+    /**
+     * La velocità cambiata durante la lettura (Franz, 03/10 21:16): il motore la applica solo ai pezzi nuovi, quindi la
+     * lettura riparte dal pezzo che sta dicendo, con la velocità nuova. Ricordata come quella delle impostazioni.
+     */
+    fun setRateNow(r: Float) {
+        setRate(r)
+        if (ready && _speaking.value != null && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex))
+    }
+
     private fun finished() { _speaking.value = null; _block.value = null }
 
     private fun applyVoice() {
@@ -120,5 +145,6 @@ class Speech(ctx: Context) {
             .map { it.name }
     }.getOrDefault(emptyList())
 
-    private companion object { val BLOCK = Regex("-b(\\d+)-") }
+    /** Gli id dei pezzi: prefisso, «b» col paragrafo, il numero del pezzo e «-end» sull'ultimo. */
+    private companion object { val BLOCK = Regex("-b(\\d+)-(\\d+)") }
 }
