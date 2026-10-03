@@ -15,10 +15,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.ViewColumn
+import androidx.compose.material.icons.rounded.ViewSidebar
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,6 +34,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -40,6 +43,12 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalConfiguration
@@ -95,7 +104,10 @@ fun TabletShell(
     status: Tablet.Status, watch: Boolean?, view: TabletView, onView: (TabletView) -> Unit, registerOpen: Boolean, rail: RailActions,
     now: Long, sessions: @Composable () -> Unit, center: @Composable () -> Unit, inspector: (@Composable () -> Unit)?,
 ) {
-    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
+    // Ctrl+K cerca, mentre si scrive in un campo (pezzo 6).
+    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding().onPreviewKeyEvent { e ->
+        if (e.isCtrlPressed && e.key == Key.K && e.type == KeyEventType.KeyDown) { rail.onSearch(); true } else false
+    }) {
         TabletStatusBar(status, watch, now)
         HorizontalDivider(color = CmColors.line)
         Row(Modifier.weight(1f).fillMaxWidth()) {
@@ -125,52 +137,58 @@ private data class Slot(val priority: Int, val end: Boolean = false)
 @Composable
 fun TabletStatusBar(status: Tablet.Status, watch: Boolean?, now: Long) {
     val sep = @Composable { Text("·", style = Mono, color = CmColors.text2.copy(alpha = 0.6f)) }
-    Layout(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-        content = {
-            Text(stringResource(R.string.tablet_brand), style = Mono.copy(color = CmColors.text, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp), modifier = Modifier.layoutId(Slot(80)))
-            Row(Modifier.layoutId(Slot(10)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Led(status.stale, dot = 6.dp)
-                Text(status.host, style = Mono)
-                sep()
-                Text(if (status.minutes == 0) stringResource(R.string.tablet_updated_now) else stringResource(R.string.tablet_updated_ago, status.minutes), style = Mono, color = if (status.stale) CmColors.waiting else CmColors.text2)
-            }
-            status.accounts.forEachIndexed { i, a ->
-                // Il primo account (il personale) resta fino all'ultimo; gli altri escono prima della settimana.
-                Row(Modifier.layoutId(Slot(if (i == 0) 95 else 30)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(a.account.uppercase(), style = MonoLabel)
-                    val h5 = a.h5
-                    if (a.stale || h5 == null) Text(stringResource(R.string.tablet_quota_stale), style = Mono, color = CmColors.waiting)
-                    else {
-                        MiniBar(h5 / 100f, Modifier.width(44.dp))
-                        Text(stringResource(R.string.quota_h5_short, h5) + (a.resetAt?.let { " → " + hhmm(it) } ?: ""), style = Mono, color = CmColors.text)
-                    }
-                }
-                a.w7?.takeIf { !a.stale }?.let { w ->
-                    Text(stringResource(R.string.tablet_quota_w7, w), style = Mono, modifier = Modifier.layoutId(Slot(if (i == 0) 40 else 25)))
+    PriorityRow(Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(stringResource(R.string.tablet_brand), style = Mono.copy(color = CmColors.text, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp), modifier = Modifier.layoutId(Slot(80)))
+        Row(Modifier.layoutId(Slot(10)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Led(status.stale, dot = 6.dp)
+            Text(status.host, style = Mono)
+            sep()
+            Text(if (status.minutes == 0) stringResource(R.string.tablet_updated_now) else stringResource(R.string.tablet_updated_ago, status.minutes), style = Mono, color = if (status.stale) CmColors.waiting else CmColors.text2)
+        }
+        status.accounts.forEachIndexed { i, a ->
+            // Il primo account (il personale) resta fino all'ultimo; gli altri escono prima della settimana.
+            Row(Modifier.layoutId(Slot(if (i == 0) 95 else 30)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(a.account.uppercase(), style = MonoLabel)
+                val h5 = a.h5
+                if (a.stale || h5 == null) Text(stringResource(R.string.tablet_quota_stale), style = Mono, color = CmColors.waiting)
+                else {
+                    MiniBar(h5 / 100f, Modifier.width(44.dp))
+                    Text(stringResource(R.string.quota_h5_short, h5) + (a.resetAt?.let { " → " + hhmm(it) } ?: ""), style = Mono, color = CmColors.text)
                 }
             }
-            Text(
-                listOf(
-                    pluralStringResource(R.plurals.tablet_open, status.open, status.open),
-                    pluralStringResource(R.plurals.tablet_working, status.working, status.working),
-                    pluralStringResource(R.plurals.tablet_finished, status.finished, status.finished),
-                ).joinToString(" · ").uppercase(),
-                style = MonoLabel, modifier = Modifier.layoutId(Slot(50)),
-            )
-            Text(
-                stringResource(R.string.tablet_waiting, status.waiting).uppercase(),
-                style = MonoLabel.copy(color = if (status.waiting > 0) CmColors.waiting else CmColors.text2, fontWeight = if (status.waiting > 0) FontWeight.Bold else null),
-                modifier = Modifier.layoutId(Slot(90)),
-            )
-            Text(stringResource(R.string.tablet_night, status.night).uppercase(), style = MonoLabel, modifier = Modifier.layoutId(Slot(20)))
-            if (watch != null) Row(Modifier.layoutId(Slot(15)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(Modifier.size(7.dp).clip(CircleShape).background(if (watch) CmColors.idle else CmColors.stale))
-                Text(stringResource(R.string.tablet_watch).uppercase(), style = MonoLabel)
+            a.w7?.takeIf { !a.stale }?.let { w ->
+                Text(stringResource(R.string.tablet_quota_w7, w), style = Mono, modifier = Modifier.layoutId(Slot(if (i == 0) 40 else 25)))
             }
-            Box(Modifier.layoutId(Slot(100, end = true))) { TabletClock(now) }
-        },
-    ) { measurables, constraints ->
+        }
+        Text(
+            listOf(
+                pluralStringResource(R.plurals.tablet_open, status.open, status.open),
+                pluralStringResource(R.plurals.tablet_working, status.working, status.working),
+                pluralStringResource(R.plurals.tablet_finished, status.finished, status.finished),
+            ).joinToString(" · ").uppercase(),
+            style = MonoLabel, modifier = Modifier.layoutId(Slot(50)),
+        )
+        Text(
+            stringResource(R.string.tablet_waiting, status.waiting).uppercase(),
+            style = MonoLabel.copy(color = if (status.waiting > 0) CmColors.waiting else CmColors.text2, fontWeight = if (status.waiting > 0) FontWeight.Bold else null),
+            modifier = Modifier.layoutId(Slot(90)),
+        )
+        Text(stringResource(R.string.tablet_night, status.night).uppercase(), style = MonoLabel, modifier = Modifier.layoutId(Slot(20)))
+        if (watch != null) Row(Modifier.layoutId(Slot(15)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(if (watch) CmColors.idle else CmColors.stale))
+            Text(stringResource(R.string.tablet_watch).uppercase(), style = MonoLabel)
+        }
+        Box(Modifier.layoutId(Slot(100, end = true))) { TabletClock(now) }
+    }
+}
+
+/**
+ * Una riga sola di pezzi con priorità (`Slot` come `layoutId`): si tengono dal più importante finché ci stanno, nell'ordine
+ * scritto; quelli con `end` vanno a destra.
+ */
+@Composable
+private fun PriorityRow(modifier: Modifier, content: @Composable () -> Unit) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
         val gap = 18.dp.roundToPx()
         val loose = Constraints(maxHeight = constraints.maxHeight)
         val placeables = measurables.map { it.measure(loose) }
@@ -254,7 +272,7 @@ fun TabletSessions(
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.tab_sessions), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
-            Text(stringResource(R.string.tablet_sessions_counts, open, closed), style = Mono, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(bottom = 3.dp))
+            Text(stringResource(R.string.tablet_sessions_counts, open, closed), style = Mono, modifier = Modifier.weight(1f).padding(bottom = 3.dp))
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
             groups.forEach { (g, rows) ->
@@ -356,7 +374,7 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
 @Composable
 private fun PanelTitle(text: String, value: String?) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MonoLabel, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Clip)
+        Text(text, style = MonoLabel, modifier = Modifier.weight(1f))
         value?.let { Text(it, style = Mono.copy(color = CmColors.text)) }
     }
 }
@@ -428,11 +446,11 @@ private fun ForecastChart(f: Tablet.Forecast, nowPct: Int, modifier: Modifier) {
 
 /** La testata della conversazione al centro: il puntino, il nome, lo stato con da quanto. */
 @Composable
-fun TabletConversationLead(r: Summary.Row?, s: Session, now: Long) {
+fun RowScope.TabletConversationLead(r: Summary.Row?, s: Session, now: Long) {
     val g = r?.group ?: Summary.Group.STILL
     Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(g)))
     Spacer(Modifier.width(10.dp))
-    Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+    Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f, fill = false))
     Spacer(Modifier.width(10.dp))
     val chip = stringResource(groupWord(g)).uppercase() + " · " + (r?.let { rowAge(it, now) } ?: Durations.since(s.since, now)).uppercase()
     Text(
@@ -496,7 +514,7 @@ private fun StatBox(value: String, label: String, modifier: Modifier) {
     val shape = RoundedCornerShape(12.dp)
     Column(modifier.clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.10f), shape).padding(horizontal = 12.dp, vertical = 10.dp)) {
         Text(value, style = Mono.copy(fontSize = 22.sp, color = CmColors.text, fontWeight = FontWeight.Medium))
-        Text(label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp), maxLines = 1, overflow = TextOverflow.Clip)
+        Text(label.uppercase(), style = MonoLabel.copy(fontSize = 10.sp, letterSpacing = 1.sp))
     }
 }
 
@@ -537,6 +555,189 @@ private fun hhmm(epoch: Long): String =
 @Composable
 private fun dayTime(epoch: Long): String =
     DateTimeFormatter.ofPattern("EEEE HH:mm", LocalConfiguration.current.locales[0]).format(Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()))
+
+/**
+ * La vista a colonne (mockup 4-7): in alto la riga delle colonne, a sinistra la barra delle sessioni, fissa o richiudibile
+ * (chiusa resta una striscia di puntini), poi da una a quattro colonne affiancate con conversazione e campo ciascuna.
+ * `column` disegna la colonna di una sessione (la `SessionSheet` compatta); «Colonne» in alto e Indietro tornano alla plancia.
+ */
+@Composable
+fun TabletColumns(
+    status: Tablet.Status, ring: PhoneOverview.Ring?, now: Long, groups: List<Pair<Summary.Group, List<Summary.Row>>>, open: Int,
+    columns: List<String>, onToggle: (String) -> Unit, onBoard: () -> Unit,
+    barFixed: Boolean, barOpen: Boolean, onBar: () -> Unit, onBarFixed: (Boolean) -> Unit,
+    column: @Composable (Summary.Row) -> Unit,
+) {
+    val rows = groups.flatMap { it.second }
+    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
+        ColumnsBar(status, ring, now, rows.filter { it.session.name in columns }.sortedBy { columns.indexOf(it.session.name) }, barOpen, onBar, onBoard)
+        HorizontalDivider(color = CmColors.line)
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            if (barOpen) {
+                Column(Modifier.width(300.dp).fillMaxHeight()) {
+                    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(stringResource(R.string.tab_sessions), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+                        Text(pluralStringResource(R.plurals.tablet_open, open, open), style = Mono, modifier = Modifier.padding(bottom = 3.dp))
+                    }
+                    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(rows, key = { "c-" + it.session.id }) { r -> ColumnsBarRow(r, r.session.name in columns, now) { onToggle(r.session.name) } }
+                    }
+                    BarModePanel(barFixed, onBarFixed)
+                }
+            } else {
+                // La barra chiusa: un puntino per sessione, nel colore del suo stato; il tocco la mette o la toglie dalle colonne.
+                Column(Modifier.width(52.dp).fillMaxHeight().padding(top = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    rows.forEach { r ->
+                        Box(
+                            Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = r.session.name) { onToggle(r.session.name) }
+                                .then(if (r.session.name in columns) Modifier.background(CmColors.surface) else Modifier),
+                            contentAlignment = Alignment.Center,
+                        ) { Box(Modifier.size(14.dp).clip(CircleShape).background(groupTone(r.group))) }
+                    }
+                }
+            }
+            VerticalDivider(color = CmColors.line)
+            if (columns.isEmpty()) Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.tablet_columns_empty), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+            } else Row(Modifier.weight(1f).fillMaxHeight().dotGrid().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                columns.forEach { name ->
+                    val r = rows.firstOrNull { it.session.name == name } ?: return@forEach
+                    // Chi ti aspetta ha il bordo arancio, come nel mockup.
+                    val shape = RoundedCornerShape(18.dp)
+                    val border = if (r.group == Summary.Group.WAITING) CmColors.waiting else Color.White.copy(alpha = 0.12f)
+                    androidx.compose.runtime.key(name) {
+                        Box(Modifier.weight(1f).fillMaxHeight().clip(shape).border(1.dp, border, shape)) { column(r) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** La riga in alto delle colonne: il tasto della barra, il marchio, PC, quota 5h con la previsione, «Colonne», le pillole. */
+@Composable
+private fun ColumnsBar(status: Tablet.Status, ring: PhoneOverview.Ring?, now: Long, pinned: List<Summary.Row>, barOpen: Boolean, onBar: () -> Unit, onBoard: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(if (barOpen) CmColors.surface else Color.Transparent), contentAlignment = Alignment.Center) {
+            IconButton(onClick = onBar) {
+                Icon(
+                    Icons.Rounded.ViewSidebar, stringResource(if (barOpen) R.string.tablet_bar_close else R.string.tablet_bar_open), tint = CmColors.text,
+                    modifier = Modifier.graphicsLayer(scaleX = -1f),
+                )
+            }
+        }
+        PriorityRow(Modifier.weight(1f).heightIn(min = 52.dp).padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(stringResource(R.string.tablet_brand), style = Mono.copy(color = CmColors.text, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp), modifier = Modifier.layoutId(Slot(80)))
+            Row(Modifier.layoutId(Slot(10)), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Led(status.stale, dot = 6.dp)
+                Text(status.host, style = Mono)
+                Text("·", style = Mono)
+                Text(if (status.minutes == 0) stringResource(R.string.tablet_updated_now) else stringResource(R.string.tablet_updated_ago, status.minutes), style = Mono)
+            }
+            ring?.h5?.let { h5 ->
+                val projected = ring.pace?.projected
+                val reset = ring.resetAt
+                Text(
+                    stringResource(R.string.quota_h5_short, h5) + if (projected != null && reset != null) " → " + stringResource(R.string.tablet_projected_at, projected, hhmm(reset)) else "",
+                    style = Mono.copy(color = CmColors.text), modifier = Modifier.layoutId(Slot(95)),
+                )
+            }
+            ring?.w7?.let { Text(stringResource(R.string.tablet_quota_w7, it), style = Mono, modifier = Modifier.layoutId(Slot(40))) }
+            Text(
+                stringResource(R.string.tablet_view_columns).uppercase(), style = MonoLabel,
+                modifier = Modifier.layoutId(Slot(60)).clip(RoundedCornerShape(6.dp)).clickable(onClickLabel = stringResource(R.string.tablet_view_board), onClick = onBoard).padding(horizontal = 6.dp, vertical = 4.dp),
+            )
+            pinned.forEachIndexed { i, r ->
+                Row(
+                    Modifier.layoutId(Slot(70 - i)).border(1.dp, CmColors.primary.copy(alpha = 0.6f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(groupTone(r.group)))
+                    Text(r.session.name, style = MaterialTheme.typography.labelLarge, color = CmColors.text, maxLines = 1)
+                }
+            }
+            Box(Modifier.layoutId(Slot(100, end = true))) { TabletClock(now) }
+        }
+    }
+}
+
+/** Una sessione nella barra delle colonne: stato, contesto, e «in colonna» o «+ colonna» a destra. */
+@Composable
+private fun ColumnsBarRow(r: Summary.Row, inColumn: Boolean, now: Long, onClick: () -> Unit) {
+    val s = r.session
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier.fillMaxWidth().clip(shape)
+            .then(if (inColumn) Modifier.background(CmColors.surfaceLow).border(1.dp, CmColors.primary.copy(alpha = 0.7f), shape) else Modifier)
+            .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(r.group)))
+        Column(Modifier.weight(1f)) {
+            Text(s.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(stateLine(r, now), style = MonoLabel)
+        }
+        Text(
+            stringResource(if (inColumn) R.string.tablet_in_column else R.string.tablet_add_column).uppercase(),
+            style = MonoLabel.copy(color = if (inColumn) CmColors.actionIcon else CmColors.text2),
+        )
+    }
+}
+
+/** «AL LAVORO · 6 MIN · CTX 61%»: lo stato a parole, da quanto (non per chi ha finito, che dice l'ora), il contesto. */
+@Composable
+private fun stateLine(r: Summary.Row, now: Long): String = listOfNotNull(
+    stringResource(groupWord(r.group)),
+    rowAge(r, now).takeIf { r.group == Summary.Group.WORKING || r.group == Summary.Group.WAITING },
+    r.session.context?.let { stringResource(R.string.ctx_short, it) },
+).joinToString(" · ").uppercase()
+
+/** Barra fissa o richiudibile, ricordata nelle preferenze. */
+@Composable
+private fun BarModePanel(fixed: Boolean, onFixed: (Boolean) -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(10.dp).clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.10f), shape).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(stringResource(R.string.tablet_bar).uppercase(), style = MonoLabel)
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(CmColors.bg).padding(3.dp)) {
+            listOf(true to R.string.tablet_bar_fixed, false to R.string.tablet_bar_collapsible).forEach { (v, label) ->
+                val on = fixed == v
+                Box(
+                    Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) CmColors.primary else Color.Transparent)
+                        .clickable(onClick = { onFixed(v) }).padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) { Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = if (on) CmColors.onPrimary else CmColors.text) }
+            }
+        }
+        Text(stringResource(R.string.tablet_bar_hint), style = MaterialTheme.typography.bodySmall, color = CmColors.text2)
+    }
+}
+
+/** La testata di una colonna: puntino, nome, × per toglierla; sotto lo stato, la barra e la cifra del contesto. */
+@Composable
+fun TabletColumnHeader(r: Summary.Row, now: Long, onClose: () -> Unit) {
+    val s = r.session
+    Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(9.dp).clip(CircleShape).background(groupTone(r.group)))
+            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
+            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.tablet_close_column, s.name), tint = CmColors.text2) }
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                listOfNotNull(stringResource(groupWord(r.group)), rowAge(r, now).takeIf { r.group == Summary.Group.WORKING || r.group == Summary.Group.WAITING }).joinToString(" · ").uppercase(),
+                style = MonoLabel.copy(color = groupTone(r.group)), maxLines = 1,
+            )
+            s.context?.let { c ->
+                MiniBar(c / 100f, Modifier.weight(1f), contextColor(c))
+                Text(stringResource(R.string.ctx_short, c), style = Mono)
+            }
+        }
+        HorizontalDivider(color = CmColors.line)
+    }
+}
 
 /**
  * Le bozze del campo, una per sessione e domanda come la `rememberSaveable` della scheda, tenute sopra l'interruttore dei

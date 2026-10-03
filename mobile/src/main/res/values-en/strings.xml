@@ -489,4 +489,16 @@
     <string name="tablet_kind_test">test</string>
     <string name="tablet_kind_outcome">outcome</string>
     <string name="tablet_kind_task">task</string>
+    <string name="tablet_projected_at">%1$d%% at %2$s</string>
+    <string name="tablet_columns_empty">Pick up to four sessions from the bar</string>
+    <string name="tablet_in_column">in a column</string>
+    <string name="tablet_add_column">+ column</string>
+    <string name="tablet_close_column">Remove %1$s from the columns</string>
+    <string name="tablet_bar">Bar</string>
+    <string name="tablet_bar_fixed">Fixed</string>
+    <string name="tablet_bar_collapsible">Collapsible</string>
+    <string name="tablet_bar_hint">Collapsible: it closes when you open a column, it comes back with the button at the top</string>
+    <string name="tablet_bar_open">Open the sessions bar</string>
+    <string name="tablet_bar_close">Close the sessions bar</string>
+    <string name="enter_sends">Enter sends</string>
 </resources>

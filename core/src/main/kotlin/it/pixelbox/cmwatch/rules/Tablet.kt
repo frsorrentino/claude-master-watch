@@ -118,5 +118,25 @@ object Tablet {
         return (w7 + w7.toDouble() / elapsed * (resetAt - now)).toInt().coerceIn(0, 100)
     }
 
+    /** Pezzo 5: le colonne affiancate, al massimo quattro. */
+    const val MAX_COLUMNS = 4
+
+    /**
+     * Le sessioni in colonna: quelle scelte ancora vive, nel loro ordine, fino a quattro. Senza una scelta salvata (null) le
+     * prime tre di `live`; una scelta vuota resta vuota (tolte tutte a mano).
+     */
+    fun columns(pinned: List<String>?, live: List<String>): List<String> =
+        pinned?.filter { it in live }?.distinct()?.take(MAX_COLUMNS) ?: live.take(3)
+
+    /** Tocco su una sessione della barra: entra in fondo o esce; con quattro colonne prende il posto dell'ultima. */
+    fun toggle(columns: List<String>, name: String): List<String> = when {
+        name in columns -> columns - name
+        columns.size < MAX_COLUMNS -> columns + name
+        else -> columns.dropLast(1) + name
+    }
+
+    fun columnsPref(columns: List<String>): String = columns.joinToString("\n")
+    fun columnsFromPref(raw: String?): List<String>? = raw?.split('\n')?.filter { it.isNotBlank() }
+
     private const val WEEK_S = 7L * 86400
 }

@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,41 +57,46 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  */
 class ReadingOverlay {
     var bar by mutableStateOf<(@Composable () -> Unit)?>(null)
+    /** La sessione da cui legge: sul tablet, con più campi in vista, il controller va sopra il suo. */
+    var source by mutableStateOf<String?>(null)
     internal var heightPx by mutableIntStateOf(0)
-    internal val slots = mutableStateMapOf<Any, Rect>()
+    internal val slots = mutableStateMapOf<Any, Pair<String?, Rect>>()
 }
 
 val LocalReadingOverlay = staticCompositionLocalOf<ReadingOverlay?> { null }
 
-/** Lo spazio sopra il campo (`SessionSheet`) dove il mini-controller si posa; vuoto, il controller è disegnato dall'host. */
+/** Lo spazio sopra il campo della sessione `name` (`SessionSheet`) dove il mini-controller si posa; lo disegna l'host. */
 @Composable
-fun ReadingSlot(modifier: Modifier = Modifier) {
+fun ReadingSlot(name: String?, modifier: Modifier = Modifier) {
     val o = LocalReadingOverlay.current ?: return
     if (o.bar == null) return
     val key = remember { Any() }
     DisposableEffect(key) { onDispose { o.slots.remove(key) } }
     val h = with(LocalDensity.current) { if (o.heightPx > 0) o.heightPx.toDp() else 60.dp }
     Spacer(modifier.fillMaxWidth().height(h).onGloballyPositioned { c ->
-        val r = c.boundsInWindow()
+        val r = name to c.boundsInWindow()
         if (o.slots[key] != r) o.slots[key] = r
     })
 }
 
 /**
- * Il controller sopra tutto. Fra più posti (le pagine vicine dello scorrimento) vale quello della pagina in vista; il salto
- * fra un posto e l'altro, o verso il fondo, scivola invece di riapparire. Con la tastiera aperta si fa da parte.
+ * Il controller sopra tutto. Fra più posti vale uno in vista per almeno metà della sua larghezza: quello della sessione che
+ * legge, se c'è (le colonne del tablet), se no il più in vista e poi il più a sinistra (le pagine vicine dello scorrimento).
+ * Il salto fra un posto e l'altro, o verso il fondo, scivola invece di riapparire. Con la tastiera aperta si fa da parte.
  */
 @Composable
 fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val imeOpen = WindowInsets.ime.getBottom(density) > 0
     val bottomPx = WindowInsets.navigationBars.getBottom(density) + with(density) { 12.dp.roundToPx() }
-    var rootBottom by remember { mutableFloatStateOf(0f) }
+    var root by remember { mutableStateOf(Rect.Zero) }
     var last by remember { mutableStateOf(o.bar) }
     o.bar?.let { last = it }
-    Box(modifier.fillMaxSize().onGloballyPositioned { rootBottom = it.boundsInWindow().bottom }) {
-        val slot = o.slots.values.filter { abs(it.left) < it.width / 2 }.minByOrNull { abs(it.left) }
-        val lift = slot?.let { (rootBottom - it.bottom).roundToInt() } ?: bottomPx
+    Box(modifier.fillMaxSize().onGloballyPositioned { root = it.boundsInWindow() }) {
+        val seen = { r: Rect -> if (r.width <= 0f) 0f else ((minOf(r.right, root.right) - maxOf(r.left, root.left)) / r.width).coerceAtLeast(0f) }
+        val visible = o.slots.values.filter { (_, r) -> seen(r) >= 0.5f }
+        val slot = (visible.firstOrNull { (n, _) -> n != null && n == o.source } ?: visible.sortedWith(compareByDescending<Pair<String?, Rect>> { seen(it.second) }.thenBy { it.second.left }).firstOrNull())?.second
+        val lift = slot?.let { (root.bottom - it.bottom).roundToInt() } ?: bottomPx
         val shown by animateIntAsState(lift, tween(220, easing = FastOutSlowInEasing), label = "readingLift")
         AnimatedVisibility(
             o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
@@ -101,7 +105,7 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
             // Largo quanto il suo posto (sul tablet la colonna della conversazione); senza posto in fondo, al centro e mai più
             // largo di 640 dp (sul telefono vale tutta la larghezza, come prima).
             Box(Modifier.fillMaxWidth()) {
-                val place = slot?.let { s -> Modifier.align(Alignment.BottomStart).offset { IntOffset(s.left.roundToInt(), -shown) }.width(with(density) { s.width.toDp() }) }
+                val place = slot?.let { s -> Modifier.align(Alignment.BottomStart).offset { IntOffset((s.left - root.left).roundToInt(), -shown) }.width(with(density) { s.width.toDp() }) }
                     ?: Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, -shown) }.widthIn(max = 640.dp)
                 Box(place.padding(horizontal = 12.dp).onSizeChanged { o.heightPx = it.height }) { last?.invoke() }
             }

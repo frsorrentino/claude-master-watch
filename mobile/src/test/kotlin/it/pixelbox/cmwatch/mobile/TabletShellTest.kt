@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.android.resources.Density
+import com.android.resources.Keyboard
+import com.android.resources.KeyboardState
 import com.android.resources.ScreenOrientation
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.mobile.ui.*
@@ -111,11 +113,54 @@ class TabletShellTest {
         paparazzi.snapshot { board(inspector = false) }
     }
 
+    private fun shortFeed(name: String) = ChatFeed.merge(
+        when (name) {
+            "master" -> listOf(
+                TranscriptEntry("m1", "user", text = "I'd like to see the tablet version of the app", at = ts - 40 * 60, origin = "phone"),
+                TranscriptEntry("m2", "assistant", text = "Tablet plan written and handed to atlas-shop: board first, then the columns.", at = ts - 18 * 60),
+            )
+            "field-notes" -> listOf(
+                TranscriptEntry("f1", "user", text = "Rewrite the README with the three sections", at = ts - 3 * 3600, origin = "pc"),
+                TranscriptEntry("f2", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten", at = ts - 3 * 3600 + 300),
+            )
+            else -> listOf(
+                TranscriptEntry("l1", "user", text = "Prepare the deploy of 2.4 and wait for my ok", at = ts - 20 * 60, origin = "pc"),
+                TranscriptEntry("l2", "assistant", text = "The build is ready and the migration notes are checked. I'm waiting for the client's ok before the deploy.", at = ts - 6 * 60),
+            )
+        },
+        emptyList(),
+    )
+
+    @Composable
+    private fun columns(cols: List<String>, barOpen: Boolean, fixed: Boolean) = CmPhoneTheme(still = true) {
+        val summary = Summary.build(st, emptyList(), emptyList(), ts, zone, emptySet())
+        val groups = Tablet.groups(summary)
+        val ring = PhoneOverview.build(st, emptyList(), samples, ts, zone, stale = false).rings.first { it.account == selected.account }
+        TabletColumns(
+            Tablet.status(st, summary, ts, stale = false), ring, ts, groups, st.sessions.count { it.state != SessionState.GONE },
+            columns = cols, onToggle = {}, onBoard = {}, barFixed = fixed, barOpen = barOpen, onBar = {}, onBarFixed = {},
+        ) { r ->
+            SessionSheet(
+                r.session, ts, emptyList(), 120, none, ops = st.ops, canAttach = true, header = false,
+                feed = if (r.session.name == selected.name) feed else shortFeed(r.session.name),
+                appBar = { TabletColumnHeader(r, ts, onClose = {}) },
+            )
+        }
+    }
+
+    // Le colonne con la barra fissa (mockup 4-5): tre sessioni, chi ti aspetta col bordo arancio.
+    @Test fun tabletColumnsBarFixed() = paparazzi.snapshot { columns(listOf("atlas-shop", "ledger-api", "master"), barOpen = true, fixed = true) }
+
+    // Barra richiudibile e chiusa (mockup 6-7): la striscia di puntini, quattro colonne.
+    @Test fun tabletColumnsBarClosed() = paparazzi.snapshot { columns(listOf("atlas-shop", "ledger-api", "master", "field-notes"), barOpen = false, fixed = false) }
+
     companion object {
         /** Tablet in orizzontale, 1440×900 dp. */
         val TABLET = DeviceConfig.PIXEL_5.copy(
             screenWidth = 2880, screenHeight = 1800, xdpi = 320, ydpi = 320, density = Density.XHIGH,
             orientation = ScreenOrientation.LANDSCAPE, locale = "it",
+            // Con la tastiera fisica, come il Chromebook: il campo dice «Invio manda».
+            keyboard = Keyboard.QWERTY, keyboardState = KeyboardState.EXPOSED,
         )
     }
 }

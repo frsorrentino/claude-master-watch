@@ -193,7 +193,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         // Nel terminale no, come prima: lì il fondo è del testo dal vivo.
-        androidx.compose.runtime.SideEffect { readingOverlay.bar = if (terminal == null) readingBar else null }
+        androidx.compose.runtime.SideEffect { readingOverlay.bar = if (terminal == null) readingBar else null; readingOverlay.source = readingSource }
         // Gli avvisi delle altre sessioni già visti o chiusi (`Elsewhere`): un turno finito si dice una volta sola.
         val elsewhereSeen = remember { mutableStateListOf<String>() }
         LaunchedEffect(sessionAsked) {
@@ -339,10 +339,20 @@ class MainActivity : ComponentActivity() {
         // viva; col Registro aperto nessuna conversazione si legge.
         val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
         val wide = it.pixelbox.cmwatch.rules.Tablet.wide(widthDp)
-        val chatName = if (wide) {
-            if (tab == StartRoute.Tab.DIARY) null
-            else open ?: masterName ?: state?.sessions?.firstOrNull { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.name
-        } else open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // La vista del tablet e le colonne (pezzo 5): sessioni in colonna e barra fissa o richiudibile nelle preferenze.
+        var tabletView by rememberSaveable { mutableStateOf(TabletView.BOARD) }
+        val tabletPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
+        var pinned by remember { mutableStateOf(it.pixelbox.cmwatch.rules.Tablet.columnsFromPref(tabletPrefs.getString("tablet_columns", null))) }
+        var barFixed by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_bar_fixed", true)) }
+        var barOpen by rememberSaveable { mutableStateOf(barFixed) }
+        val liveNames = state?.sessions?.filter { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { x -> x.name }.orEmpty()
+        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, liveNames)
+        val columnsOn = wide && tabletView == TabletView.COLUMNS && tab != StartRoute.Tab.DIARY
+        val chatName = when {
+            columnsOn -> open?.takeIf { n -> n in tabletCols } ?: tabletCols.firstOrNull()
+            wide -> if (tab == StartRoute.Tab.DIARY) null else open ?: masterName ?: liveNames.firstOrNull()
+            else -> open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        }
         // Le bozze del campo sopra l'interruttore dei 840 dp (standard della master, 04/10): restano quando la finestra del
         // Chromebook cambia larghezza, in tutte e due le direzioni.
         val drafts = rememberSaveable(saver = DraftStore.Saver) { DraftStore() }
@@ -755,7 +765,45 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        var tabletView by rememberSaveable { mutableStateOf(TabletView.BOARD) }
+        // Le altre colonne: ognuna legge la sua conversazione con la cadenza della sessione aperta, nella cache delle
+        // conversazioni; quella di `chatName` ha già il giro qui sopra.
+        if (columnsOn && transcriptOk && !unsupported) tabletCols.filter { n -> n != chatName }.forEach { name ->
+            androidx.compose.runtime.key(name) {
+                LaunchedEffect(name) {
+                    lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                        var askedAt: Long? = null
+                        var pendingId: String? = null
+                        var mode = ChatFeed.Page.FRESH
+                        var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { x -> x.name == name }
+                        while (true) {
+                            val cur = app.repo.snapshot.value.state?.sessions?.firstOrNull { x -> x.name == name }
+                            pendingId?.let { id -> app.repo.resultsById.value[id] }?.let { r ->
+                                val have = feedCache[name].orEmpty()
+                                feedCache[name] = when {
+                                    r.ok -> runCatching { ContractJson.decodeTranscript(r.text) }.map { page -> ChatFeed.append(have, page, mode) }.getOrDefault(have)
+                                    r.text.contains("no entry") -> emptyList()
+                                    else -> have
+                                }
+                                pendingId = null
+                            }
+                            val answered = pendingId == null
+                            val moved = answered && TerminalLive.next(prev, cur) != null
+                            prev = cur
+                            val t = System.currentTimeMillis()
+                            if (moved || PhoneTerminal.shouldAskChat(cur, askedAt, answered, t)) {
+                                askedAt = t
+                                val have = feedCache[name].orEmpty()
+                                mode = if (have.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
+                                pendingId?.let { id -> app.repo.forget(id) }
+                                pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(ChatFeed.anchor(have))) }.getOrNull()
+                            }
+                            delay(1_000)
+                        }
+                    }
+                }
+            }
+        }
+        BackHandler(enabled = columnsOn && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { tabletView = TabletView.BOARD }
         // Sul tablet il Registro sta al posto della conversazione; Indietro torna alla plancia.
         BackHandler(enabled = wide && tab == StartRoute.Tab.DIARY && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { tab = StartRoute.Tab.OVERVIEW }
         val watchName = remember(pairingJson) { PairingRecord.fromJson(pairingJson)?.watchName }
@@ -770,7 +818,24 @@ class MainActivity : ComponentActivity() {
             val rings = remember(st, events, samples, now, snap.freshness) { PhoneOverview.build(st, events, samples, now, zone, stale = stale).rings }
             val ring = rings.firstOrNull { r -> r.account == selected?.account } ?: rings.firstOrNull()
             val registerOpen = tab == StartRoute.Tab.DIARY
-            TabletShell(
+            val toggleColumn: (String) -> Unit = { n ->
+                val next = it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, n)
+                pinned = next
+                tabletPrefs.edit().putString("tablet_columns", it.pixelbox.cmwatch.rules.Tablet.columnsPref(next)).apply()
+                // Richiudibile: la barra si chiude quando apri una colonna (mockup 6-7).
+                if (!barFixed && n in next) barOpen = false
+            }
+            if (columnsOn) TabletColumns(
+                it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), ring, now, groups, liveNames.size,
+                columns = tabletCols, onToggle = toggleColumn, onBoard = { tabletView = TabletView.BOARD },
+                barFixed = barFixed, barOpen = barOpen, onBar = { barOpen = !barOpen },
+                onBarFixed = { v -> barFixed = v; barOpen = true; tabletPrefs.edit().putBoolean("tablet_bar_fixed", v).apply() },
+            ) { r ->
+                sessionPage(
+                    r.session, ChatFeed.pageEntries(r.session.name, chatName, entriesOwner, entries, feedCache), null, false, null, null, true,
+                    { TabletColumnHeader(r, now, onClose = { toggleColumn(r.session.name) }) }, null,
+                )
+            } else TabletShell(
                 it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), watchNear,
                 view = tabletView, onView = { v -> tabletView = v; tab = StartRoute.Tab.OVERVIEW }, registerOpen = registerOpen,
                 rail = RailActions(

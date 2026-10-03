@@ -38,6 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.gestures.transformable
@@ -371,7 +377,7 @@ fun SessionSheet(
         // Il posto del mini-controller sopra il campo, come il mini-player delle app di musica (Franz, 03/10 23:00); il
         // controller lo disegna `ReadingOverlayHost` sopra tutte le pagine. Con la tastiera aperta no: il campo ha la precedenza.
         val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
-        if (!imeOpen) ReadingSlot(Modifier.padding(top = 6.dp))
+        if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
         Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles)
     }
 }
@@ -467,7 +473,15 @@ private fun Composer(
         var lineH by remember { mutableIntStateOf(0) }
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5,
-            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height },
+            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height }
+                // Il tablet (pezzo 6): con la tastiera fisica Invio manda e Maiusc+Invio va a capo; la tastiera dello schermo
+                // resta com'è (il suo Invio arriva da un dispositivo virtuale, o come testo).
+                .onPreviewKeyEvent { e ->
+                    val enter = e.key == androidx.compose.ui.input.key.Key.Enter || e.key == androidx.compose.ui.input.key.Key.NumPadEnter
+                    if (!enter || e.nativeKeyEvent.device?.isVirtual != false || e.isShiftPressed || e.isCtrlPressed || e.isAltPressed) return@onPreviewKeyEvent false
+                    if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && (mode == PhonePrimary.Composer.SEND || mode == PhonePrimary.Composer.SEND_TONAL)) send()
+                    true
+                },
             placeholder = {
                 if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
                 // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
@@ -477,6 +491,8 @@ private fun Composer(
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
+                // Con una tastiera fisica collegata il campo lo dice, come nel mockup del tablet.
+                else if (hardKeyboard() && mode != PhonePrimary.Composer.STOP) Text(stringResource(R.string.enter_sends), style = MonoSmall, modifier = Modifier.padding(end = 10.dp))
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
                 // Il cerchio concentrico all'estremità della barra (segnalazione 03/10 19:18, come ChatGPT): 40 dp nella barra da 56,
                 // quindi 8 dp sopra, sotto e a destra.
@@ -499,6 +515,13 @@ private fun Composer(
             } },
         )
     }
+}
+
+/** Una tastiera fisica collegata e aperta (Chromebook, tablet con tastiera). */
+@Composable
+private fun hardKeyboard(): Boolean {
+    val c = androidx.compose.ui.platform.LocalConfiguration.current
+    return c.keyboard == android.content.res.Configuration.KEYBOARD_QWERTY && c.hardKeyboardHidden == android.content.res.Configuration.HARDKEYBOARDHIDDEN_NO
 }
 
 /**
@@ -1100,9 +1123,12 @@ private fun SheetHeader(
             // Modello ed effort in una pillola sola, «Opus 5.5 · medium», che apre un foglio con le due scelte (osservazioni del 03/10:
             // troppi comandi in testa).
             val tune = listOfNotNull(ModelText.short(model) ?: stringResource(R.string.model_title), effort).joinToString(" · ")
-            // Sul tablet il nome e lo stato a sinistra, la pillola a destra (mockup della plancia).
-            if (lead != null) lead() else TunePill(tune, tunable) { picker = "tune" }
-            Spacer(Modifier.weight(1f))
+            // Sul tablet il nome e lo stato a sinistra, nel posto che resta; la pillola a destra (mockup della plancia).
+            if (lead != null) Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { lead() }
+            else {
+                TunePill(tune, tunable) { picker = "tune" }
+                Spacer(Modifier.weight(1f))
+            }
             if (lead != null) TunePill(tune, tunable) { picker = "tune" }
             // La quota delle 5 ore dell'account, come sulla card del riepilogo; il dato vecchio nel colore dell'attesa.
             quota?.h5?.let { Text(stringResource(R.string.quota_h5_short, it), style = MonoSmall, color = if (quota.stale) CmColors.waiting else CmColors.text2, maxLines = 1) }

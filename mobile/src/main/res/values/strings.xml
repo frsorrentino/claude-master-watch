@@ -497,4 +497,16 @@
     <string name="tablet_kind_test">test</string>
     <string name="tablet_kind_outcome">esito</string>
     <string name="tablet_kind_task">compito</string>
+    <string name="tablet_projected_at">%1$d%% alle %2$s</string>
+    <string name="tablet_columns_empty">Scegli fino a quattro sessioni dalla barra</string>
+    <string name="tablet_in_column">in colonna</string>
+    <string name="tablet_add_column">+ colonna</string>
+    <string name="tablet_close_column">Togli %1$s dalle colonne</string>
+    <string name="tablet_bar">Barra</string>
+    <string name="tablet_bar_fixed">Fissa</string>
+    <string name="tablet_bar_collapsible">Richiudibile</string>
+    <string name="tablet_bar_hint">Richiudibile: si chiude quando apri una colonna, torna con il tasto in alto</string>
+    <string name="tablet_bar_open">Apri la barra delle sessioni</string>
+    <string name="tablet_bar_close">Chiudi la barra delle sessioni</string>
+    <string name="enter_sends">Invio manda</string>
 </resources>

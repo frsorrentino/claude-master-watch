@@ -122,4 +122,32 @@ class TabletTest {
         // Appena ripartita (meno di un'ora): il ritmo non si può dire.
         assertNull(Tablet.weekProjected(1, at(15) + 7 * 86400 - 600, at(15)))
     }
+
+    // Pezzo 5, le colonne: al massimo 4, solo sessioni vive, nell'ordine in cui le hai messe.
+    @Test fun columnsKeepTheLiveOnesInOrder() {
+        val live = listOf("a", "b", "c", "d", "e")
+        assertEquals(listOf("c", "a"), Tablet.columns(listOf("c", "gone", "a"), live))
+        assertEquals(listOf("a", "b", "c", "d"), Tablet.columns(listOf("a", "b", "c", "d", "e"), live))
+    }
+
+    // Senza scelta salvata: le prime tre della colonna delle sessioni. Tolte tutte a mano, restano nessuna.
+    @Test fun columnsDefaultToTheFirstThree() {
+        assertEquals(listOf("x", "y", "z"), Tablet.columns(null, listOf("x", "y", "z", "w")))
+        assertEquals(emptyList<String>(), Tablet.columns(emptyList(), listOf("x", "y")))
+    }
+
+    // «+ colonna» aggiunge in fondo; «in colonna» (o ×) toglie; con 4 colonne la nuova prende il posto dell'ultima.
+    @Test fun toggleAddsRemovesAndReplacesTheLast() {
+        assertEquals(listOf("a", "b"), Tablet.toggle(listOf("a"), "b"))
+        assertEquals(listOf("b"), Tablet.toggle(listOf("a", "b"), "a"))
+        assertEquals(listOf("a", "b", "c", "e"), Tablet.toggle(listOf("a", "b", "c", "d"), "e"))
+    }
+
+    // Le preferenze salvano la lista su una riga; un nome vuoto non diventa una colonna.
+    @Test fun columnsPrefRoundTrip() {
+        assertEquals("a\nb", Tablet.columnsPref(listOf("a", "b")))
+        assertEquals(listOf("a", "b"), Tablet.columnsFromPref("a\nb\n"))
+        assertNull(Tablet.columnsFromPref(null))
+        assertEquals(emptyList<String>(), Tablet.columnsFromPref(""))
+    }
 }
