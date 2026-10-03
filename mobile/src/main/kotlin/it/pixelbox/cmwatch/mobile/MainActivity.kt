@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -334,7 +335,17 @@ class MainActivity : ComponentActivity() {
         val transcriptOk = !demo && state?.ops?.contains("transcript") == true
         // La casa della master (design 01/10): sulla prima scheda, senza schede aperte, la chat è quella della master.
         val masterName = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.name
-        val chatName = open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // Il tablet (piano 04/10): da 840 dp la plancia. La sessione al centro è quella aperta, se no la master, se no la prima
+        // viva; col Registro aperto nessuna conversazione si legge.
+        val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+        val wide = it.pixelbox.cmwatch.rules.Tablet.wide(widthDp)
+        val chatName = if (wide) {
+            if (tab == StartRoute.Tab.DIARY) null
+            else open ?: masterName ?: state?.sessions?.firstOrNull { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.name
+        } else open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // Le bozze del campo sopra l'interruttore dei 840 dp (standard della master, 04/10): restano quando la finestra del
+        // Chromebook cambia larghezza, in tutte e due le direzioni.
+        val drafts = rememberSaveable(saver = DraftStore.Saver) { DraftStore() }
         // I resoconti della notte già ascoltati e i prossimi passi già avviati: spariscono da «Per te» e non tornano,
         // nemmeno dopo la coda, una rotazione o un riavvio (revisione finale 02/10: in memoria si perdevano).
         val forYouPrefs = remember { getSharedPreferences("for-you", MODE_PRIVATE) }
@@ -469,7 +480,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?, Boolean, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock, bar, homeOpen, appBar ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable RowScope.() -> Unit)?) -> Unit = { session, pageEntries, home, header, dock, bar, homeOpen, appBar, lead ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
@@ -592,6 +603,7 @@ class MainActivity : ComponentActivity() {
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
+                            headerLead = lead, draftState = drafts.state(session),
                             canAttachFiles = state?.share?.any == true,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { home == null || !homeOpen },
@@ -687,8 +699,8 @@ class MainActivity : ComponentActivity() {
                     master, masterEntries, homeList, true,
                     { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = true }) },
                     { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = false }, expanded = true) },
-                    !masterChat,
-                ) { pageHeader(null) }
+                    !masterChat, { pageHeader(null) }, null,
+                )
             } else Column(Modifier.fillMaxSize()) {
                 pageHeader(null)
                 Box(Modifier.weight(1f)) { list() }
@@ -703,11 +715,102 @@ class MainActivity : ComponentActivity() {
         val uiPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
         var chatZoom by remember { mutableStateOf(it.pixelbox.cmwatch.rules.ChatZoom.of(uiPrefs.getFloat("chat_zoom", 1f))) }
         LaunchedEffect(chatZoom) { delay(400); uiPrefs.edit().putFloat("chat_zoom", chatZoom).apply() }
+        val diaryPage: @Composable () -> Unit = {
+            state?.let { st ->
+                DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
+                    onAdd = { nightAdding = true },
+                    onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } },
+                    rings = PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings,
+                    onQuadro = { overviewSheet = true },
+                    // Una riga del Registro apre la sessione del progetto, se è viva.
+                    onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n; tab = StartRoute.Tab.OVERVIEW } })
+            }
+        }
+        // Contratto 1.29: la cronologia di oggi della sessione al centro, per l'ispettore del tablet. Una lettura passiva al
+        // minuto, solo con l'app in primo piano; cambiando sessione si riparte da capo.
+        var timeline by remember { mutableStateOf<it.pixelbox.cmwatch.contract.TimelinePage?>(null) }
+        val timelineOk = demo || state?.ops?.contains("timeline") == true
+        val inspectorOn = wide && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
+        LaunchedEffect(inspectorOn, chatName, timelineOk) {
+            timeline = null
+            val name = chatName ?: return@LaunchedEffect
+            if (!inspectorOn || !timelineOk) return@LaunchedEffect
+            lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) {
+                    val zone = java.time.ZoneId.systemDefault()
+                    val id = runCatching { app.repo.command(CmdOp.TIMELINE, name, it.pixelbox.cmwatch.rules.Tablet.timelineArg(System.currentTimeMillis() / 1000, zone)) }.getOrNull()
+                    if (id != null) {
+                        val until = System.currentTimeMillis() + PhoneTerminal.LOST_MS
+                        while (System.currentTimeMillis() < until) {
+                            val r = app.repo.resultsById.value[id]
+                            if (r != null) {
+                                if (r.ok) runCatching { ContractJson.decodeTimeline(r.text) }.onSuccess { page -> timeline = page }
+                                break
+                            }
+                            delay(500)
+                        }
+                        app.repo.forget(id)
+                    }
+                    delay(60_000)
+                }
+            }
+        }
+        var tabletView by rememberSaveable { mutableStateOf(TabletView.BOARD) }
+        // Sul tablet il Registro sta al posto della conversazione; Indietro torna alla plancia.
+        BackHandler(enabled = wide && tab == StartRoute.Tab.DIARY && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { tab = StartRoute.Tab.OVERVIEW }
+        val watchName = remember(pairingJson) { PairingRecord.fromJson(pairingJson)?.watchName }
+        val watchNear by androidx.compose.runtime.produceState<Boolean?>(null, watchName, wide) {
+            value = if (watchName == null || !wide) null else it.pixelbox.cmwatch.mobile.pair.WearWatchLink(this@MainActivity).anyConnected() != null
+        }
+        val tabletBoard: @Composable (it.pixelbox.cmwatch.contract.State, it.pixelbox.cmwatch.rules.Summary.Model) -> Unit = { st, sm ->
+            val zone = java.time.ZoneId.systemDefault()
+            val stale = snap.freshness is Freshness.Stale
+            val groups = remember(sm) { it.pixelbox.cmwatch.rules.Tablet.groups(sm) }
+            val selected = chatName?.let { n -> st.sessions.firstOrNull { it.name == n } }
+            val rings = remember(st, events, samples, now, snap.freshness) { PhoneOverview.build(st, events, samples, now, zone, stale = stale).rings }
+            val ring = rings.firstOrNull { r -> r.account == selected?.account } ?: rings.firstOrNull()
+            val registerOpen = tab == StartRoute.Tab.DIARY
+            TabletShell(
+                it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), watchNear,
+                view = tabletView, onView = { v -> tabletView = v; tab = StartRoute.Tab.OVERVIEW }, registerOpen = registerOpen,
+                rail = RailActions(
+                    onQuadro = { overviewSheet = true }, onRegister = { tab = StartRoute.Tab.DIARY },
+                    onSearch = { searchOpen = true }, onLaunch = { launching = true }, onSettings = { settingsOpen = true },
+                ),
+                now = now,
+                sessions = {
+                    TabletSessions(
+                        groups, st.sessions.count { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }, sm.closed.size, selected?.name, now,
+                        onPick = { n -> open = n; tab = StartRoute.Tab.OVERVIEW },
+                        bottom = ring?.let { r -> { TabletQuotaPanel(r, now) } },
+                    )
+                },
+                center = {
+                    when {
+                        registerOpen -> diaryPage()
+                        selected != null -> {
+                            val row = groups.flatMap { g -> g.second }.firstOrNull { r -> r.session.name == selected.name }
+                            sessionPage(
+                                selected, ChatFeed.pageEntries(selected.name, chatName, entriesOwner, entries, feedCache), null, true, null, null, true, null,
+                                { TabletConversationLead(row, selected, now) },
+                            )
+                        }
+                        else -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text(getString(R.string.ov_none_live), color = it.pixelbox.cmwatch.ui.tokens.CmColors.text2)
+                        }
+                    }
+                },
+                inspector = if (inspectorOn && selected != null) ({
+                    TabletInspector(it.pixelbox.cmwatch.rules.Tablet.inspect(selected, timeline, now, zone), st.quota[selected.account]?.h5, loading = timelineOk && timeline == null)
+                }) else null,
+            )
+        }
         CompositionLocalProvider(
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
         ) {
+        if (wide && state != null && summary != null) tabletBoard(state, summary) else
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
@@ -730,15 +833,7 @@ class MainActivity : ComponentActivity() {
             refreshing = refreshing,
         ) { page ->
             if (page == StartRoute.Tab.DIARY && open == null) {
-                state?.let { st ->
-                    DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
-                        onAdd = { nightAdding = true },
-                        onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } },
-                        rings = PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings,
-                        onQuadro = { overviewSheet = true },
-                        // Una riga del Registro apre la sessione del progetto, se è viva.
-                        onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n } })
-                }
+                diaryPage()
                 return@AppShell
             }
             SharedTransitionLayout {
@@ -788,7 +883,7 @@ class MainActivity : ComponentActivity() {
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                             val pageEntries = ChatFeed.pageEntries(session.name, open, entriesOwner, entries, feedCache)
-                            sessionPage(session, pageEntries, null, true, null, null, true) { pageHeader(session.name) }
+                            sessionPage(session, pageEntries, null, true, null, null, true, { pageHeader(session.name) }, null)
                         }
                     }
                 }

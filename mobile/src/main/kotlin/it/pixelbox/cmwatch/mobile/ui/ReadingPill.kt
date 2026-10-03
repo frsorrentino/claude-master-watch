@@ -95,10 +95,16 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
         val lift = slot?.let { (rootBottom - it.bottom).roundToInt() } ?: bottomPx
         val shown by animateIntAsState(lift, tween(220, easing = FastOutSlowInEasing), label = "readingLift")
         AnimatedVisibility(
-            o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter),
+            o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 },
         ) {
-            Box(Modifier.offset { IntOffset(0, -shown) }.padding(horizontal = 12.dp).onSizeChanged { o.heightPx = it.height }) { last?.invoke() }
+            // Largo quanto il suo posto (sul tablet la colonna della conversazione); senza posto in fondo, al centro e mai più
+            // largo di 640 dp (sul telefono vale tutta la larghezza, come prima).
+            Box(Modifier.fillMaxWidth()) {
+                val place = slot?.let { s -> Modifier.align(Alignment.BottomStart).offset { IntOffset(s.left.roundToInt(), -shown) }.width(with(density) { s.width.toDp() }) }
+                    ?: Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, -shown) }.widthIn(max = 640.dp)
+                Box(place.padding(horizontal = 12.dp).onSizeChanged { o.heightPx = it.height }) { last?.invoke() }
+            }
         }
     }
 }

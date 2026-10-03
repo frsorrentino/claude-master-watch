@@ -444,4 +444,49 @@
     <string name="speech_rate">Reading speed</string>
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normal)</string>
+    <!-- The tablet (plan 04/10): board and columns on screens from 840 dp. -->
+    <string name="tablet_updated_now">now</string>
+    <string name="tablet_updated_ago">%1$d min ago</string>
+    <string name="tablet_quota_stale">old reading</string>
+    <string name="tablet_quota_w7">7d %1$d%%</string>
+    <plurals name="tablet_open"><item quantity="one">%1$d open</item><item quantity="other">%1$d open</item></plurals>
+    <plurals name="tablet_working"><item quantity="one">%1$d working</item><item quantity="other">%1$d working</item></plurals>
+    <plurals name="tablet_finished"><item quantity="one">%1$d finished</item><item quantity="other">%1$d finished</item></plurals>
+    <string name="tablet_waiting">%1$d waiting</string>
+    <string name="tablet_night">night %1$d</string>
+    <string name="tablet_watch">watch</string>
+    <string name="tablet_view_board">Board</string>
+    <string name="tablet_view_columns">Columns</string>
+    <string name="tablet_sessions_counts">%1$d open · %2$d closed</string>
+    <string name="tablet_quota_title">5h quota · %1$s</string>
+    <string name="tablet_forecast">At this pace you reach %1$d%% when it resets, at %2$s</string>
+    <string name="tablet_forecast_flat">Still for a while: resets at %1$s</string>
+    <string name="tablet_forecast_none">The pace shows from the second reading; resets at %1$s</string>
+    <string name="tablet_now_pct">now %1$d%%</string>
+    <string name="tablet_week_title">Week · %1$s</string>
+    <string name="tablet_week_forecast">At the same pace: %1$d%% at the renewal on %2$s</string>
+    <string name="tablet_week_reset">Renews %1$s</string>
+    <string name="tablet_state_waiting">waiting for you</string>
+    <string name="tablet_state_finished">finished</string>
+    <string name="tablet_state_working">working</string>
+    <string name="tablet_state_still">idle</string>
+    <string name="tablet_insp_title">Session</string>
+    <string name="tablet_insp_project">project</string>
+    <string name="tablet_insp_account">account</string>
+    <string name="tablet_insp_opened">opened at</string>
+    <string name="tablet_insp_opened_value">%1$s (%2$s)</string>
+    <string name="tablet_insp_turn">turn</string>
+    <string name="tablet_insp_turn_none">idle</string>
+    <string name="tablet_insp_model">model</string>
+    <string name="tablet_insp_context">context</string>
+    <string name="tablet_insp_prompts">prompts today</string>
+    <string name="tablet_insp_commits">commits today</string>
+    <string name="tablet_insp_today">Today\'s timeline</string>
+    <string name="tablet_insp_today_loading">Asking the PC for the timeline</string>
+    <string name="tablet_insp_today_none">Nothing yet today</string>
+    <string name="tablet_kind_commit">commit</string>
+    <string name="tablet_kind_prompt">prompt</string>
+    <string name="tablet_kind_test">test</string>
+    <string name="tablet_kind_outcome">outcome</string>
+    <string name="tablet_kind_task">task</string>
 </resources>

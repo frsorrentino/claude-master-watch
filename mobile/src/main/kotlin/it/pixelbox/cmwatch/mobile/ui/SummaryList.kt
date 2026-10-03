@@ -103,14 +103,14 @@ fun SummaryList(
     }
 }
 
-private fun groupLabel(g: Summary.Group) = when (g) {
+internal fun groupLabel(g: Summary.Group) = when (g) {
     Summary.Group.WAITING -> R.string.summary_waiting
     Summary.Group.FINISHED -> R.string.summary_finished
     Summary.Group.WORKING -> R.string.summary_working
     Summary.Group.STILL -> R.string.summary_still
 }
 
-private fun groupTone(g: Summary.Group): Color = when (g) {
+internal fun groupTone(g: Summary.Group): Color = when (g) {
     Summary.Group.WAITING -> CmColors.briefWarn
     Summary.Group.FINISHED -> CmColors.briefGood
     Summary.Group.WORKING -> CmColors.briefRing

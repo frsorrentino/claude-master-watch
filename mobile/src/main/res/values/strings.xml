@@ -451,4 +451,50 @@
     <string name="speech_rate">Velocità di lettura</string>
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normale)</string>
+    <!-- Il tablet (piano 04/10): plancia e colonne sugli schermi da 840 dp. -->
+    <string name="tablet_brand" translatable="false">CLAUDE-MASTER</string>
+    <string name="tablet_updated_now">ora</string>
+    <string name="tablet_updated_ago">%1$d min fa</string>
+    <string name="tablet_quota_stale">dato vecchio</string>
+    <string name="tablet_quota_w7">7g %1$d%%</string>
+    <plurals name="tablet_open"><item quantity="one">%1$d aperta</item><item quantity="other">%1$d aperte</item></plurals>
+    <plurals name="tablet_working"><item quantity="one">%1$d lavora</item><item quantity="other">%1$d lavorano</item></plurals>
+    <plurals name="tablet_finished"><item quantity="one">%1$d finita</item><item quantity="other">%1$d finite</item></plurals>
+    <string name="tablet_waiting">%1$d in attesa</string>
+    <string name="tablet_night">notte %1$d</string>
+    <string name="tablet_watch">orologio</string>
+    <string name="tablet_view_board">Plancia</string>
+    <string name="tablet_view_columns">Colonne</string>
+    <string name="tablet_sessions_counts">%1$d aperte · %2$d chiuse</string>
+    <string name="tablet_quota_title">Quota 5h · %1$s</string>
+    <string name="tablet_forecast">Al ritmo di adesso arrivi al %1$d%% quando riparte, alle %2$s</string>
+    <string name="tablet_forecast_flat">Ferma da un po\': riparte alle %1$s</string>
+    <string name="tablet_forecast_none">Il ritmo si vede dalla seconda lettura; riparte alle %1$s</string>
+    <string name="tablet_now_pct">ora %1$d%%</string>
+    <string name="tablet_week_title">Settimana · %1$s</string>
+    <string name="tablet_week_forecast">Allo stesso ritmo: %1$d%% al rinnovo di %2$s</string>
+    <string name="tablet_week_reset">Rinnovo %1$s</string>
+    <string name="tablet_state_waiting">ti aspetta</string>
+    <string name="tablet_state_finished">ha finito</string>
+    <string name="tablet_state_working">al lavoro</string>
+    <string name="tablet_state_still">ferma</string>
+    <string name="tablet_insp_title">Sessione</string>
+    <string name="tablet_insp_project">progetto</string>
+    <string name="tablet_insp_account">account</string>
+    <string name="tablet_insp_opened">aperta da</string>
+    <string name="tablet_insp_opened_value">%1$s (%2$s)</string>
+    <string name="tablet_insp_turn">turno</string>
+    <string name="tablet_insp_turn_none">fermo</string>
+    <string name="tablet_insp_model">modello</string>
+    <string name="tablet_insp_context">contesto</string>
+    <string name="tablet_insp_prompts">prompt oggi</string>
+    <string name="tablet_insp_commits">commit oggi</string>
+    <string name="tablet_insp_today">Cronologia di oggi</string>
+    <string name="tablet_insp_today_loading">Chiedo la cronologia al PC</string>
+    <string name="tablet_insp_today_none">Niente ancora oggi</string>
+    <string name="tablet_kind_commit">commit</string>
+    <string name="tablet_kind_prompt">prompt</string>
+    <string name="tablet_kind_test">test</string>
+    <string name="tablet_kind_outcome">esito</string>
+    <string name="tablet_kind_task">compito</string>
 </resources>

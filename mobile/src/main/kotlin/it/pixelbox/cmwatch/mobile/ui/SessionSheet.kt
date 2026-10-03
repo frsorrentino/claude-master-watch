@@ -166,9 +166,14 @@ fun SessionSheet(
     canAttachFiles: Boolean = false,
     /** La quota dell'account della sessione: in testata la finestra delle 5 ore (Franz, 03/10 20:31). */
     accountQuota: it.pixelbox.cmwatch.contract.QuotaAccount? = null,
+    /** Il tablet (piano 04/10): nome e stato in testa alla riga di modello ed effort, come nel mockup della plancia. */
+    headerLead: (@Composable RowScope.() -> Unit)? = null,
+    /** La bozza tenuta sopra l'interruttore dei 840 dp: resta quando la finestra passa da telefono a tablet e indietro. */
+    draftState: androidx.compose.runtime.MutableState<String>? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
-    var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
+    val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
+    var draft by (draftState ?: ownDraft)
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
     val primary = PhonePrimary.button(s, draft)
     val list = rememberLazyListState()
@@ -204,7 +209,7 @@ fun SessionSheet(
             bar?.invoke()
             if (header) SheetHeader(
                 s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
-                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota,
+                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead,
             )
             elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
             // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
@@ -1081,6 +1086,7 @@ private fun SheetHeader(
     /** Contratto 1.25: il PC accetta /exit per questa sessione; il menu offre di chiuderla, dopo una conferma. */
     canExit: Boolean = false,
     quota: it.pixelbox.cmwatch.contract.QuotaAccount? = null,
+    lead: (@Composable RowScope.() -> Unit)? = null,
 ) {
     var picker by remember { mutableStateOf<String?>(null) }   // "tune": il foglio di modello ed effort
     var menu by remember { mutableStateOf(false) }
@@ -1093,8 +1099,11 @@ private fun SheetHeader(
             // (Franz, 30/09 23:01: «disordinata», «lavora 5 h potrebbe essere rimosso»).
             // Modello ed effort in una pillola sola, «Opus 5.5 · medium», che apre un foglio con le due scelte (osservazioni del 03/10:
             // troppi comandi in testa).
-            TunePill(listOfNotNull(ModelText.short(model) ?: stringResource(R.string.model_title), effort).joinToString(" · "), tunable) { picker = "tune" }
+            val tune = listOfNotNull(ModelText.short(model) ?: stringResource(R.string.model_title), effort).joinToString(" · ")
+            // Sul tablet il nome e lo stato a sinistra, la pillola a destra (mockup della plancia).
+            if (lead != null) lead() else TunePill(tune, tunable) { picker = "tune" }
             Spacer(Modifier.weight(1f))
+            if (lead != null) TunePill(tune, tunable) { picker = "tune" }
             // La quota delle 5 ore dell'account, come sulla card del riepilogo; il dato vecchio nel colore dell'attesa.
             quota?.h5?.let { Text(stringResource(R.string.quota_h5_short, it), style = MonoSmall, color = if (quota.stale) CmColors.waiting else CmColors.text2, maxLines = 1) }
             // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
