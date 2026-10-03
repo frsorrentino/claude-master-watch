@@ -925,29 +925,25 @@ private fun SheetHeader(
             s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(if (s.followed) R.string.unfollow else R.string.follow)) },
-                        leadingIcon = { Icon(if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive, null, tint = CmColors.actionIcon) },
-                        onClick = { menu = false; actions.follow(!s.followed) },
-                    )
-                    if (s.link.isNotBlank()) DropdownMenuItem(
-                        text = { Text(stringResource(R.string.open_in_claude)) },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, tint = CmColors.actionIcon) },
-                        onClick = { menu = false; actions.openInClaude() },
-                    )
-                    actions.askMaster?.let { ask ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.ask_master)) },
-                            leadingIcon = { Icon(Icons.Rounded.SupervisorAccount, null, tint = CmColors.actionIcon) },
-                            onClick = { menu = false; ask() },
-                        )
-                    }
-                    // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
-                    if (showTerminal) DropdownMenuItem(
-                        text = { Text(stringResource(R.string.terminal)) },
-                        leadingIcon = { Icon(Icons.Rounded.Terminal, null, tint = CmColors.actionIcon) },
-                        onClick = { menu = false; actions.terminal() },
+                // Il menu della sessione come quello dell'app (Franz, 03/10 15:26): pannello, voci spiegate.
+                if (menu) MenuPanel(
+                    onDismiss = { menu = false },
+                    entries = listOfNotNull(
+                        MenuEntry(
+                            if (s.followed) Icons.Rounded.NotificationsOff else Icons.Rounded.NotificationsActive,
+                            stringResource(if (s.followed) R.string.unfollow else R.string.follow),
+                            stringResource(if (s.followed) R.string.unfollow_sub else R.string.follow_sub),
+                        ) { actions.follow(!s.followed) },
+                        actions.askMaster?.let { ask -> MenuEntry(Icons.Rounded.SupervisorAccount, stringResource(R.string.ask_master), stringResource(R.string.ask_master_sub), onClick = ask) },
+                        s.link.takeIf { it.isNotBlank() }?.let { MenuEntry(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.open_in_claude), stringResource(R.string.open_in_claude_sub), onClick = actions.openInClaude) },
+                        // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
+                        if (showTerminal) MenuEntry(Icons.Rounded.Terminal, stringResource(R.string.terminal), stringResource(R.string.terminal_sub), onClick = actions.terminal) else null,
+                    ),
+                ) {
+                    SessionBadge(s, 20.dp)
+                    Text(
+                        s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
                     )
                 }
             }

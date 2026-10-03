@@ -186,6 +186,12 @@
     <string name="menu_quadro_sub">Finestre di 5 ore e settimana, ritmo</string>
     <string name="menu_search">Cerca nelle conversazioni</string>
     <string name="menu_search_sub">Messaggi, esiti e registro</string>
+    <string name="follow_sub">Una notifica quando finisce un turno</string>
+    <string name="unfollow_sub">Niente più notifiche a fine turno</string>
+    <string name="ask_master_sub">La legge e ti risponde nella sua chat</string>
+    <string name="open_in_claude_sub">Continua nell\'app Claude</string>
+    <string name="terminal_sub">Lo schermo del PC, dal vivo</string>
+    <string name="back_to_summary">Torna al riepilogo</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>

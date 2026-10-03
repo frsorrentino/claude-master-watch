@@ -499,6 +499,9 @@ class MainActivity : ComponentActivity() {
                                     runCatching { app.repo.prompt(m.name, text) }.getOrNull()?.let { id ->
                                         app.chatLog.add(Sent(id, m.name, text, System.currentTimeMillis() / 1000))
                                         android.widget.Toast.makeText(this@MainActivity, getString(R.string.ask_master_done), android.widget.Toast.LENGTH_SHORT).show()
+                                        // La risposta arriva nella chat della master: ci si va subito (Franz, 03/10 15:25: «non funziona»,
+                                        // la master rispondeva ma la risposta restava fuori vista).
+                                        open = m.name
                                     }
                                 }
                             } },

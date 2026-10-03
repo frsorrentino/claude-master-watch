@@ -70,7 +70,11 @@ fun AppShell(
             Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     when {
-                        current != null -> SessionMenu(sessions, current, onPick, Modifier.weight(1f))
+                        // Dalla pagina di una sessione un tocco riporta al riepilogo, dove sta la master (Franz, 03/10 15:25).
+                        current != null -> {
+                            IconButton(onClick = { onPick(null) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back_to_summary), tint = CmColors.text) }
+                            SessionMenu(sessions, current, onPick, Modifier.weight(1f))
+                        }
                         tab == Tab.DIARY -> {
                             IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
                             Text(stringResource(R.string.menu_register), style = MaterialTheme.typography.titleLarge, color = CmColors.text, modifier = Modifier.weight(1f))

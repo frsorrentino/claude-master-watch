@@ -183,6 +183,12 @@
     <string name="menu_quadro_sub">5-hour windows and week, pace</string>
     <string name="menu_search">Search the conversations</string>
     <string name="menu_search_sub">Messages, outcomes and register</string>
+    <string name="follow_sub">A notification when a turn ends</string>
+    <string name="unfollow_sub">No more notifications at the end of a turn</string>
+    <string name="ask_master_sub">It reads it and answers in its own chat</string>
+    <string name="open_in_claude_sub">Continue in the Claude app</string>
+    <string name="terminal_sub">The PC screen, live</string>
+    <string name="back_to_summary">Back to the summary</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

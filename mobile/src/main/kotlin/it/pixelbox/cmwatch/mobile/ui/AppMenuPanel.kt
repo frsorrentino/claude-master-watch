@@ -43,16 +43,18 @@ import androidx.compose.ui.window.PopupProperties
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
+/** Una voce dei menu a pannello: icona su fondo tonale, titolo e una riga che spiega cosa fa. */
+data class MenuEntry(val icon: ImageVector, val title: String, val sub: String, val accent: Boolean = false, val onClick: () -> Unit)
+
 /**
- * Il menu dell'app (design 03/10, tavola 5): un pannello largo sotto la barra sopra lo sfondo oscurato. In testa lo stato
- * del collegamento; quattro voci grandi con icona su fondo tonale e una riga di spiegazione; in fondo Impostazioni.
- * Tocco fuori, ✕ o Indietro lo chiudono.
+ * Il menu a pannello (design 03/10, tavola 5), condiviso dal menu dell'app e da quello della sessione: un pannello largo
+ * sotto la barra sopra lo sfondo oscurato; in testa una riga con ✕; voci grandi; in fondo, separata, una voce di servizio.
+ * Tocco fuori, ✕ o Indietro lo chiudono; ogni voce lo chiude prima di agire.
  */
 @Composable
-fun AppMenuPanel(
-    host: String?, updated: String, stale: Boolean,
-    onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit,
-    onDismiss: () -> Unit,
+fun MenuPanel(
+    onDismiss: () -> Unit, entries: List<MenuEntry>, footer: MenuEntry? = null,
+    header: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
 ) {
     Popup(onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Box(
@@ -67,24 +69,19 @@ fun AppMenuPanel(
             ) {
                 Column(Modifier.padding(vertical = 8.dp)) {
                     Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(if (stale) CmColors.waiting else CmColors.idle))
-                        Text(
-                            stringResource(R.string.menu_connected, host ?: stringResource(R.string.menu_pc), updated), style = MaterialTheme.typography.bodyMedium,
-                            color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f),
-                        )
+                        header()
                         IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text2) }
                     }
-                    MenuItem(Icons.Rounded.RocketLaunch, R.string.menu_launch, R.string.menu_launch_sub, CmColors.accent.copy(alpha = 0.25f)) { onDismiss(); onLaunch() }
-                    MenuItem(Icons.AutoMirrored.Rounded.MenuBook, R.string.menu_register, R.string.menu_register_sub) { onDismiss(); onRegister() }
-                    MenuItem(Icons.Rounded.Dashboard, R.string.menu_quadro, R.string.menu_quadro_sub) { onDismiss(); onQuadro() }
-                    MenuItem(Icons.Rounded.Search, R.string.menu_search, R.string.menu_search_sub) { onDismiss(); onSearch() }
-                    HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
-                    Row(
-                        Modifier.fillMaxWidth().clickable { onDismiss(); onSettings() }.padding(horizontal = 28.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    ) {
-                        Icon(Icons.Rounded.Settings, null, tint = CmColors.text2)
-                        Text(stringResource(R.string.settings), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
+                    entries.forEach { e -> MenuItem(e.icon, e.title, e.sub, if (e.accent) CmColors.accent.copy(alpha = 0.25f) else CmColors.surfaceHigh) { onDismiss(); e.onClick() } }
+                    footer?.let { f ->
+                        HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onDismiss(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        ) {
+                            Icon(f.icon, null, tint = CmColors.text2)
+                            Text(f.title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
+                        }
                     }
                 }
             }
@@ -92,8 +89,33 @@ fun AppMenuPanel(
     }
 }
 
+/** Il menu dell'app: in testa lo stato del collegamento; Lancia, Registro, Quadro, Cerca; in fondo Impostazioni. */
 @Composable
-private fun MenuItem(icon: ImageVector, title: Int, sub: Int, tone: Color = CmColors.surfaceHigh, onClick: () -> Unit) {
+fun AppMenuPanel(
+    host: String?, updated: String, stale: Boolean,
+    onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    MenuPanel(
+        onDismiss,
+        entries = listOf(
+            MenuEntry(Icons.Rounded.RocketLaunch, stringResource(R.string.menu_launch), stringResource(R.string.menu_launch_sub), accent = true, onClick = onLaunch),
+            MenuEntry(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.menu_register), stringResource(R.string.menu_register_sub), onClick = onRegister),
+            MenuEntry(Icons.Rounded.Dashboard, stringResource(R.string.menu_quadro), stringResource(R.string.menu_quadro_sub), onClick = onQuadro),
+            MenuEntry(Icons.Rounded.Search, stringResource(R.string.menu_search), stringResource(R.string.menu_search_sub), onClick = onSearch),
+        ),
+        footer = MenuEntry(Icons.Rounded.Settings, stringResource(R.string.settings), "", onClick = onSettings),
+    ) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(if (stale) CmColors.waiting else CmColors.idle))
+        Text(
+            stringResource(R.string.menu_connected, host ?: stringResource(R.string.menu_pc), updated), style = MaterialTheme.typography.bodyMedium,
+            color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun MenuItem(icon: ImageVector, title: String, sub: String, tone: Color, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -102,8 +124,8 @@ private fun MenuItem(icon: ImageVector, title: Int, sub: Int, tone: Color = CmCo
             Icon(icon, null, tint = CmColors.actionIcon, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
-            Text(stringResource(sub), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
         }
     }
 }
