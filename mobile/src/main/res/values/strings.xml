@@ -210,6 +210,8 @@
     <string name="badge_personal">account personale</string>
     <string name="badge_work">account di lavoro</string>
     <string name="attach_image">Allega un\'immagine</string>
+    <string name="attach_gallery">Foto dalla galleria</string>
+    <string name="attach_camera">Scatta una foto</string>
     <string name="stop">Ferma</string>
     <string name="copy">Copia</string>
     <string name="edit">Modifica</string>

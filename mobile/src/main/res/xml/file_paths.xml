@@ -2,4 +2,6 @@
 <!-- Contratto 1.24: i file della chat scaricati dal PC, passati all'app di sistema che li apre. -->
 <paths>
     <cache-path name="files" path="files/" />
+    <!-- Le foto scattate dalla barra di scrittura (Franz, 03/10 17:34), prima di ridurle e mandarle. -->
+    <cache-path name="camera" path="camera/" />
 </paths>

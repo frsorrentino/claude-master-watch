@@ -546,8 +546,32 @@ private fun UriThumb(uri: Uri, modifier: Modifier) {
 private fun AttachButton(onPicked: (List<Uri>) -> Unit) {
     val icon: @Composable () -> Unit = { Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon) }
     if (androidx.activity.compose.LocalActivityResultRegistryOwner.current == null) { IconButton(onClick = {}, content = icon); return }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var menu by remember { mutableStateOf(false) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(MAX_IMAGES)) { uris -> if (uris.isNotEmpty()) onPicked(uris) }
-    IconButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, content = icon)
+    // Franz, 03/10 17:34: anche una foto scattata ora. La fotocamera di sistema la scrive nella cache dell'app, dietro il
+    // FileProvider; poi segue la strada delle immagini (ridotta, caricata, `report`).
+    var shot by rememberSaveable { mutableStateOf<String?>(null) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> shot?.let { u -> if (ok) onPicked(listOf(Uri.parse(u))) }; shot = null }
+    Box {
+        IconButton(onClick = { menu = true }, content = icon)
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.attach_gallery)) }, leadingIcon = { Icon(Icons.Rounded.Image, null, tint = CmColors.actionIcon) },
+                onClick = { menu = false; pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.attach_camera)) }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null, tint = CmColors.actionIcon) },
+                onClick = {
+                    menu = false
+                    val file = java.io.File(java.io.File(ctx.cacheDir, "camera").apply { mkdirs() }, java.util.UUID.randomUUID().toString() + ".jpg")
+                    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", file)
+                    shot = uri.toString()
+                    runCatching { camera.launch(uri) }.onFailure { shot = null }
+                },
+            )
+        }
+    }
 }
 
 /** La domanda come sull'orologio: prima opzione piena, pressione lunga per il rischio alto, «Parliamone», «Consenti tutto». */
