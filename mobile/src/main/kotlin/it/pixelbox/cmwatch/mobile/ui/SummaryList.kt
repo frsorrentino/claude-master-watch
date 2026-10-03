@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -157,12 +158,16 @@ private fun SummaryCard(
             // Sul fondo della card il tonale di sempre quasi spariva (provini 03/10): un velo del colore primario.
             QuestionOptions(q, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer, tonal = CmColors.primary.copy(alpha = 0.12f))
         }
-        if (open && !waiting && parsed.steps.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
+        // I consigli come tasti, sempre visibili (Franz, 03/10 17:27): il tocco li manda subito a quella sessione, che li
+        // prende a fine turno se sta lavorando.
+        if (!waiting && parsed.steps.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             parsed.steps.forEach { step ->
-                androidx.compose.material3.OutlinedButton(onClick = { onStep(step) }, border = androidx.compose.foundation.BorderStroke(1.dp, tone.copy(alpha = 0.5f))) {
-                    Text(step, color = CmColors.text)
+                androidx.compose.material3.Surface(
+                    onClick = { onStep(step) }, shape = CircleShape, color = CmColors.primary.copy(alpha = 0.12f), contentColor = CmColors.text,
+                ) {
+                    Text(step, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                 }
             }
         }

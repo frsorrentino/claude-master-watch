@@ -19,4 +19,14 @@ class SearchScreenTest {
     private val events = listOf(Event("e", EventKind.RECAP, ts = t - 600, title = "Diario", body = "Oggi: deploy di atlas-shop e test di ledger-api"))
 
     @Test fun searchResults() = paparazzi.snapshot { CmPhoneTheme(still = true) { SearchScreen(sent, events, {}, initial = "deploy") } }
+
+    // Contratto 1.27: i risultati del relay nelle conversazioni di tutte le sessioni, con una sessione chiusa.
+    @Test fun searchConversations() = paparazzi.snapshot {
+        val page = it.pixelbox.cmwatch.contract.SearchPage(listOf(
+            it.pixelbox.cmwatch.contract.SearchHit("atlas-shop", true, entry = "a1.0", role = "assistant", at = t - 300, snippet = "The review of the migration scripts moved to Tuesday after the client asked for one more pass.", match = listOf(45, 52)),
+            it.pixelbox.cmwatch.contract.SearchHit("orbit-docs", false, entry = "c5.0", role = "user", at = t - 5400, snippet = "move the review to tuesday", match = listOf(19, 26)),
+            it.pixelbox.cmwatch.contract.SearchHit("orbit-docs", false, entry = "c1.0", role = "user", at = t - 7200, snippet = "Perché la riunione di Tuesday è saltata?", match = listOf(22, 29)),
+        ), more = true)
+        CmPhoneTheme(still = true) { SearchScreen(emptyList(), events, {}, initial = "tuesday", remote = true, page = page, known = setOf("atlas-shop")) }
+    }
 }

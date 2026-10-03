@@ -250,7 +250,22 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (searchOpen) {
-            SearchScreen(chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { open = n } else { open = null; tab = StartRoute.Tab.DIARY } })
+            // Contratto 1.27: con un relay che cerca, la ricerca va nelle conversazioni di tutte le sessioni; una richiesta per
+            // volta, la precedente dimenticata.
+            var searchId by remember { mutableStateOf<String?>(null) }
+            val searchResult = searchId?.let { results[it] }
+            val searchPage = searchResult?.takeIf { it.ok }?.let { r -> runCatching { ContractJson.decodeSearch(r.text) }.getOrNull() }
+            SearchScreen(
+                chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { open = n } else { open = null; tab = StartRoute.Tab.DIARY } },
+                remote = state?.ops?.contains("search") == true, page = searchPage, loading = searchId != null && searchResult == null,
+                known = state?.sessions?.map { it.name }?.toSet().orEmpty(),
+                onQuery = { q ->
+                    scope.launch {
+                        searchId?.let { app.repo.forget(it) }
+                        searchId = runCatching { app.repo.command(CmdOp.SEARCH, null, q) }.getOrNull()
+                    }
+                },
+            )
             return
         }
         if (queueOpen && state != null) {
@@ -581,15 +596,14 @@ class MainActivity : ComponentActivity() {
             if (master != null) {
                 val hero = remember(masterEntries, master.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, master) }
                 val homeList: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { _, _ -> list() }
-                val speakHero = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } }
                 // Franz, 03/10 16:44: la master si espande dal basso a tutta pagina (la sua conversazione, con modello ed effort)
                 // e torna ridotta toccando la sua barra, ora in cima. Ridotta: la lista con la barra sopra il campo. Il campo
                 // scrive alla master in tutte e due.
                 // Una pagina sola: si anima la parte sopra il campo, il campo resta fermo (`SessionSheet` con `homeOpen`).
                 sessionPage(
                     master, masterEntries, homeList, true,
-                    { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = true }) },
-                    { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = false }, expanded = true) },
+                    { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = true }) },
+                    { MasterDock(master, hero, onSpeak = speech::toggle, onToggle = { masterChat = false }, expanded = true) },
                     !masterChat,
                 )
             } else Column(Modifier.fillMaxSize()) {

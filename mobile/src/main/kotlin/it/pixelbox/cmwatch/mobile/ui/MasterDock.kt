@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +47,7 @@ private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
  * pagina, dove la stessa barra sta in cima con ▼, e un altro tocco la riduce; lo stesso col trascinamento in su e in giù.
  */
 @Composable
-fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
+fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
     val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), master.context?.let { "$it%" }).joinToString(" · ")
     val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
@@ -78,8 +79,14 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onT
                     )
                 }
             }
-            if (hero != null) FilledTonalIconButton(onClick = onSpeak, modifier = Modifier.size(44.dp)) {
-                Icon(Icons.Rounded.PlayArrow, stringResource(R.string.dock_listen), tint = CmColors.actionIcon)
+            // Durante la lettura il ▶ diventa ■ e la ferma (Franz, 03/10 17:25), come sotto le risposte della chat.
+            val spoken = hero?.let { h -> listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n") }
+            val reading = spoken != null && LocalSpeaking.current == spoken
+            if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                    stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.actionIcon,
+                )
             }
             FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp)) {
                 Icon(

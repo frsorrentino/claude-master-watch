@@ -263,6 +263,9 @@
     </plurals>
     <string name="search">Search</string>
     <string name="search_hint">Search sent messages, outcomes and the register</string>
+    <string name="search_hint_all">Search every session\'s conversation</string>
+    <string name="search_more">There are more results: add a word to narrow them down.</string>
+    <string name="search_closed">closed</string>
     <string name="search_none">No results</string>
     <string name="widget_desc">Quota, sessions and questions on the home screen</string>
     <string name="widget_waiting">waiting for the PC</string>
