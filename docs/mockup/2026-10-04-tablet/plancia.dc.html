@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Tablet, plancia</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#A8C7FA}a:hover{color:#D3E3FD}
+button{font:inherit;color:inherit}
+.grid{background-image:radial-gradient(#1D2128 1px,transparent 1px);background-size:14px 14px}
+.mono{font-family:'Roboto Mono',monospace}
+.strip span{white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #000000; color: #F2F4F7; font-family: 'Roboto Flex', system-ui, sans-serif; display: flex; flex-direction: column">
+
+<div class="mono strip" style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #2A2E35; font-size: 12px; color: #B0B8C4; background: #0B0D10">
+<span style="color: #F2F4F7; font-weight: 600; letter-spacing: 0.08em">CLAUDE-MASTER</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #65C581; box-shadow: 0 0 6px #65C581"></span>penguin · ora · relay 0.6.2</span>
+<span style="width: 1px; height: 20px; background: #2A2E35"></span>
+<span style="display: flex; align-items: center; gap: 8px">PERSONALE <span style="width: 64px; height: 6px; border-radius: 3px; background: #455165; position: relative; display: inline-block"><span style="position: absolute; left: 0; top: 0; height: 6px; width: 9%; border-radius: 3px; background: #8BB4F7"></span></span><span style="color: #F2F4F7">5h 9%</span> → 01:40 · <span style="color: #F2F4F7">7g 24%</span></span>
+<span style="display: flex; align-items: center; gap: 8px">PROFESSIONALE <span style="color: #FFB020">vecchio 2 h</span></span>
+<span style="flex: 1"></span>
+<span>4 APERTE · <span style="color: #8BB4F7">1 LAVORA</span> · <span style="color: #65C581">1 FINITA</span> · 0 IN ATTESA</span>
+<span>NOTTE 0</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #65C581"></span>OROLOGIO</span>
+<span style="color: #F2F4F7">23:14</span>
+</div>
+
+<div style="flex: 1; display: flex; min-height: 0">
+
+<nav style="width: 64px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 0; border-right: 1px solid #2A2E35; background: #0B0D10">
+<button aria-label="Plancia" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: #23272E; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D3E3FD" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="3" width="8" height="8" rx="1.5"></rect><rect x="3" y="13" width="8" height="8" rx="1.5"></rect><rect x="13" y="13" width="8" height="8" rx="1.5"></rect></svg></button>
+<button aria-label="Finestre" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" stroke-width="2"><rect x="3" y="4" width="8" height="16" rx="1.5"></rect><rect x="13" y="4" width="8" height="7" rx="1.5"></rect><rect x="13" y="13" width="8" height="7" rx="1.5"></rect></svg></button>
+<button aria-label="Panoramica" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" stroke-width="2" stroke-linecap="round"><path d="M4 20V10"></path><path d="M10 20V4"></path><path d="M16 20v-7"></path><path d="M22 20H2"></path></svg></button>
+<button aria-label="Registro" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" stroke-width="2" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path></svg></button>
+<button aria-label="Cerca" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button>
+<span style="flex: 1"></span>
+<button aria-label="Lancia una sessione" style="width: 44px; height: 44px; border: 0; border-radius: 14px; background: #D3E3FD; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A2050" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
+<button aria-label="Impostazioni" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg></button>
+</nav>
+
+<div style="width: 300px; flex: none; display: flex; flex-direction: column; border-right: 1px solid #2A2E35; background: #050607">
+<div style="padding: 12px 14px 8px; display: flex; align-items: baseline; gap: 8px"><span style="font-size: 18px; font-weight: 600">Sessioni</span><span class="mono" style="font-size: 12px; color: #8A93A1">4 aperte · 3 chiuse oggi</span></div>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<div class="mono" style="display: flex; align-items: center; gap: 8px; padding: 10px 14px 4px; font-size: 11px; letter-spacing: 0.1em; color: {{g.tone}}">{{g.label}}<span style="flex: 1; height: 1px; background: #2A2E35"></span></div>
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="1">
+<button onClick="{{r.pick}}" style="margin: 2px 8px; padding: 8px 10px; border-radius: 12px; border: 1px solid {{r.border}}; background: {{r.bg}}; display: flex; flex-direction: column; gap: 5px; text-align: left; cursor: pointer">
+<span style="display: flex; align-items: center; gap: 8px; width: 100%"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{r.led}}; flex: none"></span><span style="font-size: 14px; font-weight: 600; flex: 1">{{r.name}}</span><span class="mono" style="font-size: 11px; color: #B0B8C4">{{r.age}}</span></span>
+<span style="display: flex; align-items: center; gap: 8px; width: 100%"><span style="flex: 1; height: 4px; border-radius: 2px; background: #2A2E35; position: relative"><span style="position: absolute; left: 0; top: 0; height: 4px; border-radius: 2px; width: {{r.ctxw}}; background: {{r.ctxc}}"></span></span><span class="mono" style="font-size: 11px; color: #B0B8C4">ctx {{r.ctx}}</span></span>
+<span style="font-size: 12px; color: #8A93A1">{{r.line}}</span>
+</button>
+</sc-for>
+</sc-for>
+<span style="flex: 1"></span>
+<div style="margin: 8px; padding: 12px; border: 1px solid #2A2E35; border-radius: 14px; background: #0B0D10; display: flex; flex-direction: column; gap: 6px">
+<div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.1em; color: #8A93A1"><span>QUOTA 5H · PERSONALE</span><span style="color: #F2F4F7">9%</span></div>
+<svg width="268" height="108" viewBox="0 0 268 108" role="img" aria-label="Quota 5 ore del conto personale: 9% ora, 16% previsto alle 01:40">
+<line x1="30" y1="10.0" x2="262" y2="10.0" stroke="#455165" stroke-width="1"></line>
+<line x1="30" y1="26.0" x2="262" y2="26.0" stroke="#FFB020" stroke-width="1" stroke-dasharray="3 4" opacity="0.7"></line>
+<line x1="30" y1="50.0" x2="262" y2="50.0" stroke="#22262D" stroke-width="1"></line>
+<line x1="30" y1="90.0" x2="262" y2="90.0" stroke="#2A2E35" stroke-width="1"></line>
+<text x="26" y="13.0" text-anchor="end" font-family="Roboto Mono" font-size="9" fill="#8A93A1">100</text>
+<text x="26" y="29.0" text-anchor="end" font-family="Roboto Mono" font-size="9" fill="#FFB020">80</text>
+<text x="26" y="53.0" text-anchor="end" font-family="Roboto Mono" font-size="9" fill="#8A93A1">50</text>
+<polygon points="30.0,90.0 30.0,90.0 53.2,89.2 76.4,87.6 99.6,86.8 122.8,85.2 146.0,83.6 161.5,82.8 161.5,90.0" fill="#8BB4F7" opacity="0.18"></polygon>
+<polyline points="30.0,90.0 53.2,89.2 76.4,87.6 99.6,86.8 122.8,85.2 146.0,83.6 161.5,82.8" fill="none" stroke="#8BB4F7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<line x1="161.5" y1="82.8" x2="262.0" y2="77.2" stroke="#8BB4F7" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"></line>
+<line x1="161.5" y1="10.0" x2="161.5" y2="90.0" stroke="#455165" stroke-width="1" stroke-dasharray="2 3"></line>
+<circle cx="161.5" cy="82.8" r="4" fill="#8BB4F7" stroke="#0B0D10" stroke-width="2"></circle>
+<circle cx="262.0" cy="77.2" r="4" fill="#0B0D10" stroke="#8BB4F7" stroke-width="2"></circle>
+<text x="262.0" y="69.2" text-anchor="end" font-family="Roboto Mono" font-size="10" fill="#F2F4F7">16%</text>
+<text x="30" y="104" font-family="Roboto Mono" font-size="9" fill="#8A93A1">20:40</text>
+<text x="161.5" y="104" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#F2F4F7">ora 9%</text>
+<text x="262" y="104" text-anchor="end" font-family="Roboto Mono" font-size="9" fill="#8A93A1">01:40</text>
+</svg>
+<div style="font-size: 12px; color: #B0B8C4">Al ritmo di adesso arrivi al <span style="color: #F2F4F7">16%</span> quando riparte, alle 01:40</div>
+<div style="height: 1px; background: #2A2E35; margin: 4px 0"></div>
+<div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.1em; color: #8A93A1"><span>SETTIMANA · PERSONALE</span><span style="color: #F2F4F7">24%</span></div>
+<svg width="268" height="74" viewBox="0 0 268 74" role="img" aria-label="Consumo settimanale per giorno: 24% in 7 giorni"><line x1="30" y1="56" x2="262" y2="56" stroke="#2A2E35" stroke-width="1"></line><rect x="30" y="40" width="24" height="16" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="42" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">D</text><rect x="63" y="24" width="24" height="32" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="75" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">L</text><rect x="96" y="16" width="24" height="40" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="108" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">M</text><rect x="129" y="32" width="24" height="24" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="141" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">M</text><rect x="162" y="24" width="24" height="32" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="174" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">G</text><rect x="195" y="32" width="24" height="24" rx="3" fill="#8BB4F7" opacity="0.55"></rect><text x="207" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#8A93A1">V</text><rect x="228" y="32" width="24" height="24" rx="3" fill="#8BB4F7" opacity="1"></rect><text x="240" y="70" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#F2F4F7">S</text><text x="240" y="28" text-anchor="middle" font-family="Roboto Mono" font-size="9" fill="#F2F4F7">3%</text></svg>
+<div style="font-size: 12px; color: #B0B8C4">Allo stesso ritmo: <span style="color: #F2F4F7">31%</span> al rinnovo di martedì 09:00</div>
+</div>
+</div>
+
+<div class="grid" style="flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: #000">
+<div style="height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 20px; border-bottom: 1px solid #2A2E35; background: #000">
+<span style="width: 10px; height: 10px; border-radius: 5px; background: {{s.led}}"></span>
+<span style="font-size: 19px; font-weight: 600">{{s.name}}</span>
+<span class="mono" style="font-size: 11px; letter-spacing: 0.08em; color: {{s.led}}; border: 1px solid {{s.led}}; border-radius: 6px; padding: 3px 7px">{{s.state}}</span>
+<span style="flex: 1"></span>
+<span style="font-size: 13px; color: #B0B8C4; background: #1B1F26; padding: 6px 12px; border-radius: 14px">{{s.model}}</span>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 20px 28px; min-height: 0; overflow: hidden">
+<sc-for list="{{s.chat}}" as="m" hint-placeholder-count="4">
+<sc-if value="{{m.mine}}" hint-placeholder-val="{{ false }}"><div style="align-self: flex-end; max-width: 460px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px"><span style="background: #292F3A; border-radius: 18px 18px 6px 18px; padding: 10px 14px; font-size: 15px">{{m.text}}</span><span class="mono" style="font-size: 11px; color: #8A93A1">{{m.when}}</span></div></sc-if>
+<sc-if value="{{m.steps}}" hint-placeholder-val="{{ false }}"><div class="mono" style="background: #11141A; border: 1px solid #2A2E35; border-radius: 12px; padding: 8px 12px; font-size: 12px; color: #B0B8C4; max-width: 520px">{{m.text}}</div></sc-if>
+<sc-if value="{{m.claude}}" hint-placeholder-val="{{ true }}"><div style="font-size: 15px; line-height: 1.5; max-width: 600px">{{m.text}}</div></sc-if>
+</sc-for>
+<div class="mono" style="font-size: 12px; color: #D97757">{{s.live}}</div>
+</div>
+<div style="padding: 10px 24px 16px"><div style="height: 52px; border-radius: 26px; border: 1.5px solid #D3E3FD; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 18px; color: #B0B8C4; font-size: 15px; background: #000"><span style="flex: 1">Scrivi a {{s.name}}</span><span class="mono" style="font-size: 11px; color: #8A93A1">Invio manda</span><span style="width: 38px; height: 38px; border-radius: 19px; background: #D3E3FD; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0A2050"><path d="M3 20l18-8L3 4v6l12 2-12 2z"></path></svg></span></div></div>
+</div>
+
+<aside style="width: 360px; flex: none; border-left: 1px solid #2A2E35; background: #050607; display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; overflow: hidden">
+<div class="mono" style="font-size: 11px; letter-spacing: 0.1em; color: #8A93A1">SESSIONE</div>
+<div class="mono" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 12px">
+<span style="color: #8A93A1">progetto</span><span style="text-align: right">{{s.project}}</span>
+<span style="color: #8A93A1">account</span><span style="text-align: right">{{s.account}}</span>
+<span style="color: #8A93A1">aperta da</span><span style="text-align: right">{{s.since}}</span>
+<span style="color: #8A93A1">turno</span><span style="text-align: right">{{s.turn}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="background: #11141A; border: 1px solid #2A2E35; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span class="mono" style="font-size: 22px; font-weight: 500; color: {{s.ctxc}}">{{s.ctx}}</span><span class="mono" style="font-size: 10px; color: #8A93A1">CONTESTO</span></div>
+<div style="background: #11141A; border: 1px solid #2A2E35; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span class="mono" style="font-size: 22px; font-weight: 500">{{s.steps}}</span><span class="mono" style="font-size: 10px; color: #8A93A1">PASSAGGI OGGI</span></div>
+<div style="background: #11141A; border: 1px solid #2A2E35; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span class="mono" style="font-size: 22px; font-weight: 500">{{s.commits}}</span><span class="mono" style="font-size: 10px; color: #8A93A1">COMMIT OGGI</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 11px; letter-spacing: 0.1em; color: #8A93A1">CONTESTO NELLA GIORNATA</span>
+<svg width="328" height="62" viewBox="0 0 328 62" role="img" aria-label="Contesto della sessione cresciuto fino al 61%, handoff consigliato all'80%">
+<line x1="28" y1="15.2" x2="300" y2="15.2" stroke="#FFB020" stroke-width="1" stroke-dasharray="3 4" opacity="0.7"></line>
+<text x="304" y="18.2" font-family="Roboto Mono" font-size="9" fill="#FFB020">80</text>
+<line x1="28" y1="52.0" x2="300" y2="52.0" stroke="#2A2E35" stroke-width="1"></line>
+<polyline points="28.0,52.0 61.2,47.9 94.3,44.6 135.8,41.9 169.0,38.2 193.9,36.8 227.0,33.1 251.9,30.4 276.8,26.7 300.0,23.9" fill="none" stroke="#BCE4C7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<circle cx="300.0" cy="23.9" r="4" fill="#BCE4C7" stroke="#050607" stroke-width="2"></circle>
+<text x="292.0" y="40.9" text-anchor="end" font-family="Roboto Mono" font-size="10" fill="#F2F4F7">61%</text>
+<text x="28" y="61" font-family="Roboto Mono" font-size="9" fill="#8A93A1">18:02</text>
+<text x="300" y="61" text-anchor="end" font-family="Roboto Mono" font-size="9" fill="#8A93A1">ora</text>
+</svg></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 11px; letter-spacing: 0.1em; color: #8A93A1">OBIETTIVO</span><span style="font-size: 13px; color: #BCE4C7">{{s.goal}}</span></div>
+<div class="mono" style="font-size: 11px; letter-spacing: 0.1em; color: #8A93A1; display: flex; gap: 8px; align-items: center">CRONOLOGIA DI OGGI<span style="flex: 1; height: 1px; background: #2A2E35"></span></div>
+<div style="display: flex; flex-direction: column; gap: 0">
+<sc-for list="{{s.timeline}}" as="e" hint-placeholder-count="6">
+<div style="display: flex; gap: 10px; align-items: flex-start; padding: 5px 0">
+<span class="mono" style="font-size: 11px; color: #8A93A1; width: 38px; flex: none; padding-top: 1px">{{e.at}}</span>
+<span class="mono" style="font-size: 10px; letter-spacing: 0.06em; color: {{e.color}}; border: 1px solid {{e.color}}; border-radius: 5px; padding: 1px 5px; flex: none">{{e.kind}}</span>
+<span style="font-size: 12px; color: #D5DAE1; flex: 1">{{e.text}}</span>
+</div>
+</sc-for>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'phone' };
+  }
+  renderVals() {
+    const sel = this.state.sel;
+    const ev = (at, kind, text) => {
+      const colors = { PROMPT: '#8BB4F7', TEST: '#65C581', 'TEST ✗': '#FF6B5E', COMMIT: '#A8C7FA', ESITO: '#BCE4C7', COMPITO: '#FFC46B' };
+      return { at, kind, text, color: colors[kind] || '#B0B8C4' };
+    };
+    const S = {
+      phone: { name: 'claude-master-phone', led: '#8BB4F7', state: 'AL LAVORO · 6 MIN', model: 'Opus 5.5 · max · personale', project: 'personali/claude-master-phone', account: 'personale · 5h 9%', since: '18:02 (5 h 12)', turn: '6 min · Bash', ctx: '61%', ctxc: '#F2F4F7', steps: '214', commits: '11', goal: 'Chiudere il ramo del telefono: checklist dal vivo e merge',
+        live: '✳ 6 min 12 s · Bash · Compila il mini-controller',
+        chat: [
+          { mine: true, text: 'sì, mini-controller', when: 'dal telefono · 23:00' },
+          { steps: true, text: '5 passaggi · 4 Bash · 1 Write  ✓ ReadingBarTest 3/3' },
+          { claude: true, text: 'Mini-controller: pillola sopra il campo nella home e nelle sessioni, in fondo nelle altre schermate; il tocco riporta alla sessione.' },
+        ],
+        timeline: [ev('21:09', 'COMMIT', '7fe65be menus close again'), ev('21:37', 'COMMIT', 'd28bcfc contract 1.29 (master)'), ev('22:34', 'PROMPT', 'ok A'), ev('22:47', 'COMMIT', '2703acf outside the sessions'), ev('22:52', 'TEST', 'CI verify Paparazzi'), ev('22:56', 'ESITO', 'home A installata'), ev('23:00', 'PROMPT', 'sì, mini-controller')] },
+      cm: { name: 'claude-master', led: '#65C581', state: 'HA FINITO · 21:55', model: 'Opus 5.5 · medium · personale', project: 'personali/claude-master', account: 'personale · 5h 9%', since: '09:10 (14 h)', turn: 'fermo da 1 h 19', ctx: '42%', ctxc: '#F2F4F7', steps: '388', commits: '19', goal: 'Release 0.6.2 col contratto 1.29',
+        live: '',
+        chat: [
+          { mine: true, text: 'importate, parti pure', when: 'dal telefono · 21:40' },
+          { steps: true, text: '12 passaggi · 9 Bash · 3 Edit  ✓ relay-verify 202/202' },
+          { claude: true, text: 'Esito: 0.6.2 uscita su GitHub e marketplace, guardia accesa, tutto verde.' },
+        ],
+        timeline: [ev('18:32', 'PROMPT', 'cronologia degli agenti, voce a'), ev('21:03', 'COMMIT', '1f03895 timeline'), ev('21:12', 'COMMIT', '92be2ee project relativo'), ev('21:20', 'TEST', 'relay-verify 198/202'), ev('21:41', 'TEST', 'relay-verify 202/202'), ev('21:52', 'COMPITO', 'cm-1-29-release ✓'), ev('21:55', 'ESITO', '4 release oggi, tutto verde')] },
+      master: { name: 'master', led: '#B0B8C4', state: 'FERMA', model: 'Opus 5.5 · max · personale', project: 'workspaces', account: 'personale · 5h 9%', since: '07:40 (15 h)', turn: 'fermo da 18 min', ctx: '31%', ctxc: '#F2F4F7', steps: '96', commits: '0', goal: 'Regia della giornata',
+        live: '',
+        chat: [
+          { mine: true, text: 'riguardo il piano tablet vorrei vedere i mockup', when: 'dal telefono · 22:59' },
+          { claude: true, text: 'Girato a claude-master-phone: i mockup li prepara lei, il piano resta suo.' },
+        ],
+        timeline: [ev('21:08', 'PROMPT', 'versione tablet/desktop'), ev('21:41', 'ESITO', 'consiglio KMP + Compose'), ev('22:32', 'ESITO', 'permessi notturni provati')] },
+    };
+    const row = (id, name, led, age, ctx, line) => ({
+      name, led, age, ctx: ctx + '%', ctxw: ctx + '%', ctxc: ctx >= 80 ? '#FFB020' : '#8BB4F7', line,
+      bg: sel === id ? '#1B1F26' : 'transparent', border: sel === id ? '#A8C7FA' : 'transparent',
+      pick: () => this.setState({ sel: id }),
+    });
+    const groups = [
+      { label: 'AL LAVORO · 1', tone: '#8BB4F7', rows: [row('phone', 'claude-master-phone', '#8BB4F7', '6m', 61, 'Bash · compila il mini-controller')] },
+      { label: 'HA FINITO · 1', tone: '#65C581', rows: [row('cm', 'claude-master', '#65C581', '21:55', 42, '0.6.2 uscita, tutto verde')] },
+      { label: 'FERME · 1', tone: '#B0B8C4', rows: [row('master', 'master', '#B0B8C4', '18m', 31, 'girato il piano tablet')] },
+    ];
+    return { groups, s: S[sel] };
+  }
+}
+</script>
+</body>
+</html>

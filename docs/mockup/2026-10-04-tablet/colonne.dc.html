@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Tablet, colonne affiancate</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#A8C7FA}a:hover{color:#D3E3FD}
+button{font:inherit;color:inherit}
+.mono{font-family:'Roboto Mono',monospace}
+.strip span{white-space:nowrap}
+.grid{background-image:radial-gradient(#1D2128 1px,transparent 1px);background-size:14px 14px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #000000; color: #F2F4F7; font-family: 'Roboto Flex', system-ui, sans-serif; display: flex; flex-direction: column">
+
+<div class="mono strip" style="height: 52px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 12px; border-bottom: 1px solid #2A2E35; font-size: 12px; color: #B0B8C4; background: #0B0D10">
+<button onClick="{{toggleSide}}" aria-label="Barra delle sessioni" style="width: 40px; height: 40px; border: 0; border-radius: 10px; background: #1B1F26; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D3E3FD" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
+<span style="color: #F2F4F7; font-weight: 600; letter-spacing: 0.08em">CLAUDE-MASTER</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #65C581; box-shadow: 0 0 6px #65C581"></span>penguin · ora</span>
+<span>5h <span style="color: #F2F4F7">9%</span> → 16% alle 01:40</span>
+<span>7g <span style="color: #F2F4F7">24%</span></span>
+<span style="width: 1px; height: 22px; background: #2A2E35"></span>
+<span style="color: #8A93A1; letter-spacing: 0.1em">COLONNE</span>
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
+<button onClick="{{c.toggle}}" aria-pressed="{{c.pressed}}" style="height: 34px; padding: 0 10px; border-radius: 9px; border: 1px solid {{c.border}}; background: {{c.bg}}; display: flex; align-items: center; gap: 7px; cursor: pointer; font-family: 'Roboto Flex', sans-serif">
+<span style="width: 7px; height: 7px; border-radius: 4px; background: {{c.led}}"></span><span style="font-size: 13px; font-weight: 500; color: #F2F4F7">{{c.name}}</span>
+</button>
+</sc-for>
+<span style="flex: 1"></span>
+<span style="color: #F2F4F7">23:31</span>
+</div>
+
+<div style="flex: 1; min-height: 0; display: flex">
+<sc-if value="{{sideOpen}}" hint-placeholder-val="{{ true }}">
+<aside style="width: 260px; flex: none; border-right: 1px solid #2A2E35; background: #050607; display: flex; flex-direction: column">
+<div style="padding: 12px 14px 6px; display: flex; align-items: baseline; gap: 8px"><span style="font-size: 16px; font-weight: 600">Sessioni</span><span class="mono" style="font-size: 11px; color: #8A93A1">4 aperte</span></div>
+<sc-for list="{{list}}" as="r" hint-placeholder-count="4">
+<button onClick="{{r.toggle}}" style="margin: 2px 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid {{r.border}}; background: {{r.bg}}; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer">
+<span style="width: 8px; height: 8px; border-radius: 4px; background: {{r.led}}; flex: none"></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">{{r.name}}</span><span class="mono" style="font-size: 10px; color: #8A93A1">{{r.state}} · ctx {{r.ctx}}</span></span>
+<span class="mono" style="font-size: 10px; color: {{r.markColor}}">{{r.mark}}</span>
+</button>
+</sc-for>
+<span style="flex: 1"></span>
+<div style="margin: 10px; padding: 10px; border: 1px solid #2A2E35; border-radius: 12px; display: flex; flex-direction: column; gap: 8px">
+<span class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #8A93A1">BARRA</span>
+<div style="display: flex; background: #11141A; border-radius: 10px; padding: 3px; gap: 3px">
+<button onClick="{{setFixed}}" style="flex: 1; height: 32px; border: 0; border-radius: 8px; background: {{fixedBg}}; color: {{fixedFg}}; font-size: 12px; cursor: pointer">Fissa</button>
+<button onClick="{{setAuto}}" style="flex: 1; height: 32px; border: 0; border-radius: 8px; background: {{autoBg}}; color: {{autoFg}}; font-size: 12px; cursor: pointer">Richiudibile</button>
+</div>
+<span style="font-size: 11px; color: #8A93A1">Richiudibile: si chiude quando apri una colonna, torna con il tasto in alto</span>
+</div>
+</aside>
+</sc-if>
+<sc-if value="{{sideClosed}}" hint-placeholder-val="{{ false }}">
+<aside style="width: 52px; flex: none; border-right: 1px solid #2A2E35; background: #050607; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 14px">
+<sc-for list="{{list}}" as="r" hint-placeholder-count="4"><span style="width: 10px; height: 10px; border-radius: 5px; background: {{r.led}}; box-shadow: 0 0 0 4px {{r.ring}}"></span></sc-for>
+</aside>
+</sc-if>
+
+<div class="grid" style="flex: 1; min-width: 0; display: flex; gap: 10px; padding: 10px; background-color: #000">
+<sc-for list="{{panes}}" as="p" hint-placeholder-count="3">
+<section style="flex: 1 1 0; min-width: 0; background: #0B0D10; border: 1px solid {{p.border}}; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden">
+<div style="flex: none; padding: 10px 12px; border-bottom: 1px solid #2A2E35; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{p.led}}"></span><span style="font-size: 14px; font-weight: 600; flex: 1">{{p.name}}</span>
+<button onClick="{{p.unpin}}" aria-label="Togli la colonna" style="width: 28px; height: 28px; border: 0; background: transparent; border-radius: 7px; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A93A1" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div>
+<div class="mono" style="display: flex; align-items: center; gap: 8px; font-size: 10px; color: #B0B8C4"><span style="color: {{p.led}}; letter-spacing: 0.08em">{{p.state}}</span><span style="flex: 1; height: 3px; border-radius: 2px; background: #2A2E35; position: relative"><span style="position: absolute; left: 0; top: 0; height: 3px; border-radius: 2px; width: {{p.ctx}}; background: #8BB4F7"></span></span><span>ctx {{p.ctx}}</span></div>
+</div>
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 12px; overflow: hidden">
+<sc-for list="{{p.chat}}" as="m" hint-placeholder-count="3">
+<sc-if value="{{m.mine}}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-end; background: #292F3A; border-radius: 14px 14px 4px 14px; padding: 8px 11px; font-size: 13px; max-width: 88%">{{m.text}}</span></sc-if>
+<sc-if value="{{m.steps}}" hint-placeholder-val="{{ false }}"><span class="mono" style="background: #11141A; border: 1px solid #2A2E35; border-radius: 10px; padding: 6px 9px; font-size: 11px; color: #B0B8C4">{{m.text}}</span></sc-if>
+<sc-if value="{{m.claude}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; line-height: 1.45; color: #D5DAE1">{{m.text}}</span></sc-if>
+</sc-for>
+<sc-if value="{{p.live}}" hint-placeholder-val="{{ false }}"><span class="mono" style="font-size: 11px; color: #D97757">{{p.live}}</span></sc-if>
+</div>
+<div style="padding: 8px 9px 9px"><div style="height: 38px; border-radius: 19px; border: 1px solid #455165; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #8A93A1">Scrivi a {{p.name}}</div></div>
+</section>
+</sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pinned: ['phone', 'cm', 'master'], side: 'fissa', open: true };
+  }
+  renderVals() {
+    const all = {
+      phone: { name: 'claude-master-phone', led: '#8BB4F7', state: 'AL LAVORO · 6 MIN', ctx: '61%', live: '✳ 6 min · Bash · Compila il mini-controller', chat: [
+        { mine: true, text: 'ok A' },
+        { steps: true, text: '9 passaggi · 7 Bash · 2 Edit  ✓ 3/3 · 11/11' },
+        { claude: true, text: 'Home A scritta: sotto le sessioni il titolo «Fuori dalle sessioni», poi le categorie dalla più urgente. Provini guardati, uguali al mockup.' },
+        { claude: true, text: 'Esito: home A installata alle 22:56; tutto il lavoro di stasera è sul telefono.' },
+        { mine: true, text: 'sì, mini-controller' },
+        { steps: true, text: '5 passaggi · 4 Bash · 1 Write  ✓ 3/3' },
+        { claude: true, text: 'Pillola sopra il campo nella home e nelle sessioni, in fondo nelle altre schermate; il tocco riporta alla sessione.' },
+      ] },
+      cm: { name: 'claude-master', led: '#65C581', state: 'HA FINITO', ctx: '42%', live: '', chat: [
+        { mine: true, text: 'contratto 1.29: va bene la forma?' },
+        { steps: true, text: '4 passaggi · 3 Bash · 1 Edit' },
+        { claude: true, text: 'Corretto con le due modifiche dell\u2019app: project relativo come nello stato, tutti i kind nella fixture. Relay riavviato.' },
+        { mine: true, text: 'importate, parti pure' },
+        { steps: true, text: '12 passaggi · 9 Bash · 3 Edit  ✓ 202/202' },
+        { claude: true, text: 'Esito: 0.6.2 uscita su GitHub e marketplace, guardia accesa, tutto verde.' },
+      ] },
+      master: { name: 'master', led: '#B0B8C4', state: 'FERMA', ctx: '31%', live: '', chat: [
+        { mine: true, text: 'sto pensando a una versione tablet/desktop dell\u2019app' },
+        { steps: true, text: '6 passaggi · 4 Bash · 2 WebSearch' },
+        { claude: true, text: 'Consiglio Kotlin Multiplatform con Compose Multiplatform: prima il tablet adattivo, poi il desktop. iOS dopo, con il Mac.' },
+        { mine: true, text: 'riguardo il piano tablet vorrei vedere i mockup' },
+        { claude: true, text: 'Girato a claude-master-phone: i mockup li prepara lei, il piano resta suo.' },
+      ] },
+      fd: { name: 'fable-director', led: '#FFC46B', state: 'TI ASPETTA', ctx: '23%', live: '', chat: [
+        { mine: true, text: 'rileggi i gate_deny della settimana' },
+        { claude: true, text: 'Sette gate_deny da lunedì, tutti su deleghe senza controllo che possa fallire.' },
+        { steps: true, text: '3 passaggi · 2 Read · 1 Bash' },
+        { claude: true, text: 'Rileggo i gate_deny della settimana: li tengo come sono o allargo la soglia a 3?' },
+      ] },
+    };
+    const order = ['phone', 'cm', 'master', 'fd'];
+    const pinned = this.state.pinned;
+    const toggle = (id) => {
+      const has = pinned.includes(id);
+      if (has && pinned.length === 1) return;
+      const next = has ? pinned.filter((x) => x !== id) : (pinned.length >= 4 ? pinned : [...pinned, id]);
+      this.setState({ pinned: next, open: this.state.side === 'fissa' ? this.state.open : false });
+    };
+    const chips = pinned.map((id) => ({ name: all[id].name, led: all[id].led, pressed: 'true', bg: '#1B1F26', border: '#A8C7FA', toggle: () => toggle(id) }));
+    const list = order.map((id) => {
+      const on = pinned.includes(id);
+      return { name: all[id].name, led: all[id].led, state: all[id].state, ctx: all[id].ctx, bg: on ? '#1B1F26' : 'transparent', border: on ? '#A8C7FA' : 'transparent', mark: on ? 'IN COLONNA' : '+ COLONNA', markColor: on ? '#A8C7FA' : '#8A93A1', ring: on ? 'rgba(168,199,250,0.25)' : 'transparent', toggle: () => toggle(id) };
+    });
+    const panes = pinned.map((id) => ({ ...all[id], border: all[id].state.indexOf('ASPETTA') >= 0 ? '#FFC46B' : '#2A2E35', unpin: () => toggle(id) }));
+    const open = this.state.open;
+    const fixed = this.state.side === 'fissa';
+    return {
+      chips, list, panes, sideOpen: open, sideClosed: !open,
+      toggleSide: () => this.setState({ open: !open }),
+      setFixed: () => this.setState({ side: 'fissa', open: true }),
+      setAuto: () => this.setState({ side: 'richiudibile' }),
+      fixedBg: fixed ? '#D3E3FD' : 'transparent', fixedFg: fixed ? '#0A2050' : '#B0B8C4',
+      autoBg: fixed ? 'transparent' : '#D3E3FD', autoFg: fixed ? '#B0B8C4' : '#0A2050',
+    };
+  }
+}
+</script>
+</body>
+</html>
