@@ -217,9 +217,20 @@ class MainActivity : ComponentActivity() {
         val flight = rememberTransition(seek, label = "fly")
         if (settingsOpen) {
             val r = PairingRecord.fromJson(pairingJson)
+            val version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() }
+            // Per lo schema dei dispositivi (mockup A): l'orologio raggiungibile adesso lo dice il Data Layer, le notifiche il sistema.
+            var watchNear by remember { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(r?.watchName) {
+                watchNear = if (r?.watchName == null) null else it.pixelbox.cmwatch.mobile.pair.WearWatchLink(this@MainActivity).anyConnected() != null
+            }
+            val notificationsOn = remember { getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled() }
             SettingsScreen(
                 host = host, phoneName = app.phoneName, watchName = r?.watchName, watchPending = r?.watchPending == true, demo = demo,
-                version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() },
+                version = version,
+                devices = it.pixelbox.cmwatch.rules.SettingsDevices.build(
+                    host, state, snap.freshness, now, app.phoneName, version, notificationsOn, r?.watchName, r?.watchPending == true, watchNear,
+                ),
+                onBack = { settingsOpen = false },
                 onRepair = onRepair, onDemo = { app.setDemo(it) },
                 onNotifications = { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)) },
                 onPrivacy = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_url)))) },
