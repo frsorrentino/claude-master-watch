@@ -62,6 +62,11 @@ enum class CmdOp {
      * null, `arg` il testo (1-200 caratteri); il testo del risultato è un `SearchPage`; rifiuto «bad query: …».
      */
     @SerialName("search") SEARCH,
+    /**
+     * Contratto 1.29: cosa hanno fatto le sessioni, in ordine di tempo. `session` = un nome o null per tutte, `arg` =
+     * «90m», «6h», «2d» (al massimo 7 giorni) o un epoch, null = 6h; il testo del risultato è un `TimelinePage`.
+     */
+    @SerialName("timeline") TIMELINE,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -229,5 +234,19 @@ enum class CmdOp {
 )
 
 @Serializable data class SearchPage(val hits: List<SearchHit> = emptyList(), val more: Boolean = false)
+
+/**
+ * Contratto 1.29: un evento della cronologia, sempre con tutte le chiavi. `kind`: prompt (`ref` = phone o watch se arriva
+ * dal relay, null se scritto al PC), test (`text` = la suite, `ok` verde o rosso, `ref` = la riga di riepilogo), commit
+ * (`ref` = hash corto), outcome (la riga «Esito:»), task (`ok` dal controllo rieseguito, `ref` = id del compito). `text`
+ * al massimo 160 caratteri su una riga. Stringa, non enum: un kind nuovo del relay non rompe la lettura.
+ */
+@Serializable data class TimelineEvent(val at: Long, val kind: String, val text: String, val ok: Boolean? = null, val ref: String? = null)
+
+/** Una sessione della cronologia: `project` relativo come `state.sessions[].project`; `live` distingue la stessa cartella viva e chiusa. */
+@Serializable data class TimelineSession(val session: String, val live: Boolean, val project: String? = null, val events: List<TimelineEvent> = emptyList())
+
+/** Contratto 1.29: le sessioni dalla più recente, al massimo 40 eventi ciascuna; `more` = tagliata oltre 60 KB. */
+@Serializable data class TimelinePage(val since: Long, val sessions: List<TimelineSession> = emptyList(), val more: Boolean = false)
 
 @Serializable data class TranscriptPage(val entries: List<TranscriptEntry> = emptyList(), val more: Boolean = false)

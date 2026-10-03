@@ -13,4 +13,5 @@ object ContractJson {
     fun decodeTranscript(raw: String): TranscriptPage = json.decodeFromString(TranscriptPage.serializer(), raw)
     fun decodeProjects(raw: String): ProjectsPage = json.decodeFromString(ProjectsPage.serializer(), raw)
     fun decodeSearch(raw: String): SearchPage = json.decodeFromString(SearchPage.serializer(), raw)
+    fun decodeTimeline(raw: String): TimelinePage = json.decodeFromString(TimelinePage.serializer(), raw)
 }

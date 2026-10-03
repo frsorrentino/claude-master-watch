@@ -84,7 +84,23 @@ class ContractTest {
         // Contratto 1.26: un projects riuscito, tutti i progetti dal più recente.
         // Contratto 1.27: un search riuscito, «tuesday» in una sessione viva e in una chiusa.
         // Contratto 1.28: un report con un PDF, il nome ripulito dal relay.
-        assertEquals(29, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.29: un timeline di tutte le sessioni da un epoch, con ogni kind di evento.
+        assertEquals(30, results.size); assertEquals(7, results.count { !it.ok })
+        val timeline = cmds.single { it.op == CmdOp.TIMELINE }
+        assertNull(timeline.session); assertEquals("1789200000", timeline.arg)
+        val tl = ContractJson.decodeTimeline(results.first { it.id == timeline.id }.text)
+        assertEquals(1789200000L, tl.since); assertFalse(tl.more)
+        assertEquals(listOf("ledger-api", "field-notes"), tl.sessions.map { it.session })
+        // Il progetto nella stessa forma di state.sessions[].project, relativo alla radice dei progetti.
+        assertEquals("work/clients/ledger-api", tl.sessions[0].project); assertFalse(tl.sessions[0].live)
+        assertEquals(setOf("prompt", "test", "commit", "outcome", "task"), tl.sessions.flatMap { it.events }.map { it.kind }.toSet())
+        val tests = tl.sessions[0].events.filter { it.kind == "test" }
+        assertEquals(listOf(false, true), tests.map { it.ok }); assertEquals("3/4 OK, FAIL: A2 invoices", tests[0].ref)
+        assertEquals("0f20786", tl.sessions[0].events.single { it.kind == "commit" }.ref)
+        assertEquals(listOf("phone"), tl.sessions[1].events.mapNotNull { it.ref })
+        // Mai eventi dopo la richiesta, mai prima di `since`.
+        tl.sessions.flatMap { it.events }.forEach { e -> assertTrue(e.at in tl.since..timeline.issued) }
+        assertTrue("timeline" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
         val pdf = cmds.single { it.id == "6f1c2d3e-0180-4000-8000-000000000180" }
         assertEquals(CmdOp.REPORT, pdf.op); assertEquals("phone", pdf.device)
         assertEquals("sent Preventivo cliente.pdf to atlas-shop", results.first { it.id == pdf.id }.text)
