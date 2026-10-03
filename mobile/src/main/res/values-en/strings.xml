@@ -191,6 +191,8 @@
     <string name="back_to_summary">Back to the summary</string>
     <string name="menu_exit">Close the session</string>
     <string name="menu_exit_sub">Sends /exit, after a confirmation</string>
+    <string name="ctx_short">ctx %1$d%%</string>
+    <string name="quota_line_stale">not updated</string>
     <string name="chat_empty">New conversation: no messages yet. Write below to start.</string>
     <string name="menu_goto">Go to</string>
     <string name="menu_home_sub">Home: sessions and the master\'s chat</string>

@@ -194,6 +194,8 @@
     <string name="back_to_summary">Torna al riepilogo</string>
     <string name="menu_exit">Chiudi la sessione</string>
     <string name="menu_exit_sub">Manda /exit, dopo una conferma</string>
+    <string name="ctx_short">ctx %1$d%%</string>
+    <string name="quota_line_stale">non aggiornata</string>
     <string name="chat_empty">Conversazione nuova: ancora nessun messaggio. Scrivi qui sotto per cominciare.</string>
     <string name="menu_goto">Vai a</string>
     <string name="menu_home_sub">La home: sessioni e chat della master</string>
@@ -348,7 +350,7 @@
     <string name="home_last">Ultimo esito · %1$s</string>
     <string name="home_last_bare">Ultimo esito</string>
     <string name="home_quota">%1$s %2$d%% · sett. %3$d%%</string>
-    <string name="home_quota_old">%1$s · vecchio</string>
+    <string name="home_quota_old">%1$s · non aggiornata</string>
     <string name="quadro_all">Tutto ›</string>
     <string name="quadro_week">%1$s · sett. %2$d%%</string>
     <string name="quadro_resets">si azzera alle %1$s</string>

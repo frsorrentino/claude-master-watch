@@ -49,7 +49,8 @@ private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 @Composable
 fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
-    val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), master.context?.let { "$it%" }).joinToString(" · ")
+    val ctx = master.context?.let { stringResource(R.string.ctx_short, it) }
+    val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), ctx).joinToString(" · ")
     val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
         if (!expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))

@@ -805,8 +805,16 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
                 // Una riga sola: il totale, lo strumento più usato e quanti altri tipi ci sono.
                 val top = g.counts.firstOrNull()?.let { (tool, n) -> "$n $tool" }
                 val others = (g.counts.size - 1).takeIf { it > 0 }?.let { "+$it" }
+                // «1 fallito» in rosso, non affogato nel grigio del riepilogo (osservazioni del 03/10).
                 Text(
-                    listOfNotNull(total, top, others, errors).joinToString(" · "), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        append(listOfNotNull(total, top, others).joinToString(" · "))
+                        errors?.let { e ->
+                            append(" · ")
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.briefAlertRing, fontWeight = FontWeight.SemiBold)); append(e); pop()
+                        }
+                    },
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
                     style = MaterialTheme.typography.labelLarge, color = CmColors.text2, modifier = Modifier.weight(1f),
                 )
                 StepDots(g.entries.map { it.error == true })
@@ -1013,7 +1021,7 @@ private fun SheetHeader(
     /** Contratto 1.25: il PC accetta /exit per questa sessione; il menu offre di chiuderla, dopo una conferma. */
     canExit: Boolean = false,
 ) {
-    var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
+    var picker by remember { mutableStateOf<String?>(null) }   // "tune": il foglio di modello ed effort
     var menu by remember { mutableStateOf(false) }
     var exitAsk by remember { mutableStateOf(false) }
     var ctxSheet by remember { mutableStateOf(false) }
@@ -1022,8 +1030,9 @@ private fun SheetHeader(
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Una riga sola: modello, effort, contesto e menu. Lo stato e il tempo vanno nella riga dal vivo in fondo alla chat
             // (Franz, 30/09 23:01: «disordinata», «lavora 5 h potrebbe essere rimosso»).
-            TunePill(ModelText.short(model) ?: stringResource(R.string.model_title), tunable) { picker = "model" }
-            EffortPill(effort, tunable) { picker = "effort" }
+            // Modello ed effort in una pillola sola, «Opus 5.5 · medium», che apre un foglio con le due scelte (osservazioni del 03/10:
+            // troppi comandi in testa).
+            TunePill(listOfNotNull(ModelText.short(model) ?: stringResource(R.string.model_title), effort).joinToString(" · "), tunable) { picker = "tune" }
             Spacer(Modifier.weight(1f))
             // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
             s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
@@ -1042,9 +1051,10 @@ private fun SheetHeader(
                         s.link.takeIf { it.isNotBlank() }?.let { MenuEntry(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.open_in_claude), stringResource(R.string.open_in_claude_sub), onClick = actions.openInClaude) },
                         // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
                         if (showTerminal) MenuEntry(Icons.Rounded.Terminal, stringResource(R.string.terminal), stringResource(R.string.terminal_sub), onClick = actions.terminal) else null,
-                        // Franz, 03/10 16:02: chiudere la sessione dal menu; la stessa conferma di /exit scritto nel campo.
-                        if (canExit) MenuEntry(Icons.Rounded.PowerSettingsNew, stringResource(R.string.menu_exit), stringResource(R.string.menu_exit_sub)) { exitAsk = true } else null,
                     ),
+                    // Franz, 03/10 16:02: chiudere la sessione dal menu, con la stessa conferma di /exit scritto nel campo; in fondo,
+                    // separata e in rosso (osservazioni del 03/10).
+                    footer = if (canExit) MenuEntry(Icons.Rounded.PowerSettingsNew, stringResource(R.string.menu_exit), stringResource(R.string.menu_exit_sub), destructive = true) { exitAsk = true } else null,
                 ) {
                     SessionBadge(s, 20.dp)
                     Text(
@@ -1073,27 +1083,30 @@ private fun SheetHeader(
     if (ctxSheet) s.context?.let { pct -> ContextSheet(pct, it.pixelbox.cmwatch.rules.ContextActions.wider(s.copy(model = model), choices), actions) { ctxSheet = false } }
     if (picker != null && choices != null) {
         ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    stringResource(if (picker == "model") R.string.model_title else R.string.effort_title),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text,
-                )
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.choice_this_session), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
-                Spacer(Modifier.height(8.dp))
-                val rows: List<Pair<String, String>> = if (picker == "model") choices.models.map { it.id to (it.label ?: ModelText.short(it) ?: it.id) }
-                    else choices.efforts.map { it to it }
-                // La lista porta «claude-opus-5-5[1m]», la sessione «claude-opus-5-5»: stesso modello (segnalazione 01/10 20:22).
-                fun selected(value: String) = if (picker == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
-                rows.forEach { (value, label) ->
-                    Row(
-                        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable {
-                            if (picker == "model") actions.setModel(value) else actions.setEffort(value)
-                            picker = null
-                        }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        RadioButton(selected = selected(value), onClick = null)
-                        Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                // Le due scelte nello stesso foglio: prima il modello, poi l'effort.
+                listOf("model", "effort").forEach { kind ->
+                    Text(
+                        stringResource(if (kind == "model") R.string.model_title else R.string.effort_title),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    )
+                    val rows: List<Pair<String, String>> = if (kind == "model") choices.models.map { it.id to (it.label ?: ModelText.short(it) ?: it.id) }
+                        else choices.efforts.map { it to it }
+                    // La lista porta «claude-opus-5-5[1m]», la sessione «claude-opus-5-5»: stesso modello (segnalazione 01/10 20:22).
+                    fun selected(value: String) = if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
+                    rows.forEach { (value, label) ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable {
+                                if (kind == "model") actions.setModel(value) else actions.setEffort(value)
+                                picker = null
+                            }.padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            RadioButton(selected = selected(value), onClick = null)
+                            Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                        }
                     }
                 }
             }
@@ -1254,25 +1267,6 @@ private fun TunePill(label: String, enabled: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
         Row(Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text)
-            if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
-        }
-    }
-}
-
-/** L'effort come parola e tacche: xhigh e max accendono tutte le tacche (dal vivo 30/09 21:57). */
-@Composable
-private fun EffortPill(effort: String?, enabled: Boolean, onClick: () -> Unit) {
-    val step = SessionMeters.effortStep(effort)
-    Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
-        Row(
-            Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            Text(effort?.trim()?.lowercase() ?: stringResource(R.string.effort), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
-            Spacer(Modifier.width(2.dp))
-            repeat(SessionMeters.EFFORT_STEPS) { i ->
-                Box(Modifier.size(width = 8.dp, height = 5.dp).background(if (step != null && i < step) CmColors.briefRing else CmColors.briefTrack, CircleShape))
-            }
             if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
         }
     }

@@ -95,7 +95,8 @@ fun AppShell(
                             )
                         }
                     }
-                    onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
+                    // La lente solo nella home: la ricerca è di tutte le sessioni, e in una sessione la testa ha già abbastanza comandi.
+                    onSearch?.takeIf { current == null }?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
                     AppMenu(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch ?: {}, onSettings, menuStartOpen)
                 }
                 if (summary && !masterChat) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
@@ -213,7 +214,7 @@ private fun SessionMenuRow(s: Session, group: it.pixelbox.cmwatch.rules.Summary.
             Text(s.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
             if (now > 0) Text(status, style = MaterialTheme.typography.bodySmall, color = if (group == it.pixelbox.cmwatch.rules.Summary.Group.WAITING) CmColors.briefWarn else CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
         }
-        s.context?.let { Text("$it%", style = MonoSmall) }
+        s.context?.let { Text(stringResource(R.string.ctx_short, it), style = MonoSmall) }
         if (current) Icon(Icons.Rounded.Check, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
     }
 }

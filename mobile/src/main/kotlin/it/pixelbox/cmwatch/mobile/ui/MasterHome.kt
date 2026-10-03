@@ -374,6 +374,40 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
     }
 }
 
+/**
+ * La quota in una riga sottile sotto il titolo della home (osservazioni del 03/10: le due caselle occupavano troppo per un
+ * dato che si guarda di rado): per ogni account la sua forma (tondo personale, quadrato lavoro), una barra fina delle 5 ore
+ * e la percentuale; ambra da 75 %, rossa da 90 %, «non aggiornata» se il dato è vecchio. Tocco = Quadro e quota.
+ */
+@Composable
+fun QuotaLine(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
+    if (rings.isEmpty()) return
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        rings.forEach { r ->
+            val pct = (r.h5 ?: 0).coerceIn(0, 100)
+            val tone = when {
+                r.stale -> CmColors.text2
+                pct >= 90 -> CmColors.briefAlertRing
+                pct >= 75 -> CmColors.briefWarn
+                else -> CmColors.briefRing
+            }
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AccountMark(r.personal, size = 12.dp, color = if (r.stale) CmColors.text2 else CmColors.text2)
+                Box(Modifier.weight(1f).height(3.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
+                    if (!r.stale) Box(Modifier.fillMaxWidth(pct / 100f).fillMaxHeight().background(tone))
+                }
+                Text(
+                    if (r.stale) stringResource(R.string.quota_line_stale) else "$pct%", style = MonoSmall.copy(color = if (pct >= 75 && !r.stale) tone else CmColors.text2),
+                    maxLines = 1, overflow = TextOverflow.Clip,
+                )
+            }
+        }
+    }
+}
+
 /** La quota in due barre (le 5 ore), con la settimana nel testo; tocco = il Quadro completo. */
 @Composable
 fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit, stacked: Boolean = false) {

@@ -136,7 +136,8 @@ private fun SummaryCard(
                 s.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
             )
-            s.context?.let { Text("$it%", style = MonoSmall) }
+            // «ctx 17%»: il contesto occupato, non un avanzamento del lavoro (osservazioni del 03/10).
+            s.context?.let { Text(stringResource(R.string.ctx_short, it), style = MonoSmall) }
             age?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = tone, maxLines = 1) }
             androidx.compose.material3.IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
                 androidx.compose.material3.Icon(

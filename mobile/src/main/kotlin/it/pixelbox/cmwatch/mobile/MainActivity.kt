@@ -632,7 +632,7 @@ class MainActivity : ComponentActivity() {
                 val rings = remember(st, events, samples, now, snap.freshness) {
                     PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
                 }
-                QuotaBars(rings, onOpen = { overviewSheet = true })
+                QuotaLine(rings, onOpen = { overviewSheet = true })
             } },
             // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,

@@ -45,7 +45,12 @@ import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 
 /** Una voce dei menu a pannello: icona su fondo tonale, titolo e una riga che spiega cosa fa. */
-data class MenuEntry(val icon: ImageVector, val title: String, val sub: String, val accent: Boolean = false, val onClick: () -> Unit)
+data class MenuEntry(
+    val icon: ImageVector, val title: String, val sub: String, val accent: Boolean = false,
+    /** Un'azione che chiude o cancella: in fondo, separata, in rosso (osservazioni del 03/10). */
+    val destructive: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 /**
  * Il menu a pannello (design 03/10, tavola 5), condiviso dal menu dell'app e da quello della sessione: un pannello largo
@@ -64,8 +69,9 @@ fun MenuPanel(
             Modifier.fillMaxWidth().clickable { onDismiss(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Icon(f.icon, null, tint = CmColors.text2)
-            Text(f.title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
+            val tone = if (f.destructive) CmColors.briefAlertRing else CmColors.text2
+            Icon(f.icon, null, tint = tone)
+            Text(f.title, style = MaterialTheme.typography.bodyLarge, color = tone)
         }
     }
 }
