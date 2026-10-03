@@ -315,7 +315,17 @@ fun SessionSheet(
                                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) { h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) }) }
-                            dock?.invoke()
+                            // Una barra sola che sale e scende (dal vivo 03/10 17:51: alla riduzione se ne vedevano due, quella del
+                            // pannello che scendeva sopra questa). Salendo sparisce subito: la sostituisce quella del pannello, che parte
+                            // da qui. Scendendo ricompare solo quando il pannello è arrivato in fondo.
+                            val dockAlpha by transition.animateFloat(
+                                transitionSpec = {
+                                    if (targetState == androidx.compose.animation.EnterExitState.Visible) androidx.compose.animation.core.tween(120, delayMillis = if (off) 0 else 300, easing = CmMotion.easing)
+                                    else androidx.compose.animation.core.snap()
+                                },
+                                label = "dock",
+                            ) { if (it == androidx.compose.animation.EnterExitState.Visible) 1f else 0f }
+                            Box(Modifier.graphicsLayer { alpha = dockAlpha }) { dock?.invoke() }
                         } else chatArea()
                     }
                 }

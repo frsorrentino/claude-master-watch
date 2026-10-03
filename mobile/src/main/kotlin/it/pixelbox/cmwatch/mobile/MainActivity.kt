@@ -292,6 +292,8 @@ class MainActivity : ComponentActivity() {
         val readReports = remember { androidx.compose.runtime.mutableStateListOf<String>().apply { addAll(forYouPrefs.getStringSet("read", emptySet()).orEmpty()) } }
         val markRead: (String) -> Unit = { k -> if (k !in readReports) { readReports.add(k); forYouPrefs.edit().putStringSet("read", readReports.toSet()).apply() } }
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
+        // Di quale sessione sono le voci dal vivo: senza, la pagina appena raggiunta mostrava un attimo quelle di prima.
+        var entriesOwner by remember { mutableStateOf<String?>(null) }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
         val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
         var more by remember { mutableStateOf(false) }
@@ -299,7 +301,7 @@ class MainActivity : ComponentActivity() {
         var unsupported by remember { mutableStateOf(false) }
         val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
         LaunchedEffect(chatName, transcriptOk, unsupported) {
-            entries = chatName?.let { feedCache[it] }.orEmpty(); more = false
+            entries = chatName?.let { feedCache[it] }.orEmpty(); entriesOwner = chatName; more = false
             val name = chatName ?: return@LaunchedEffect
             if (!transcriptOk || unsupported) return@LaunchedEffect
             lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
@@ -583,7 +585,7 @@ class MainActivity : ComponentActivity() {
                 return@summaryPage
             }
             val master = summary.master
-            val masterEntries = master?.let { m -> if (chatName == m.name) entries else feedCache[m.name].orEmpty() }.orEmpty()
+            val masterEntries = master?.let { m -> ChatFeed.pageEntries(m.name, chatName, entriesOwner, entries, feedCache) }.orEmpty()
             val list: @Composable () -> Unit = {
                 SummaryList(
                     summary, now,
@@ -690,7 +692,7 @@ class MainActivity : ComponentActivity() {
                                 return@HorizontalPager
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
-                            val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+                            val pageEntries = ChatFeed.pageEntries(session.name, open, entriesOwner, entries, feedCache)
                             sessionPage(session, pageEntries, null, true, null, null, true)
                         }
                     }
