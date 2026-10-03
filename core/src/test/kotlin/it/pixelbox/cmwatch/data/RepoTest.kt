@@ -315,6 +315,8 @@ class RepoTest {
         val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
         repo.start(); idle(); online = false
         try { repo.command(CmdOp.TRANSCRIPT, "atlas-shop", "50"); fail("expected Network") } catch (e: TransportException.Network) { }
+        // Contratto 1.27: anche la ricerca è una lettura.
+        try { repo.command(CmdOp.SEARCH, null, "deploy"); fail("expected Network") } catch (e: TransportException.Network) { }
         assertTrue(repo.snapshot.value.pending.isEmpty())
         online = true
     }
