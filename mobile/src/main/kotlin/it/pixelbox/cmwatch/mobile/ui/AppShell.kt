@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -14,6 +15,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Person
@@ -59,8 +63,12 @@ fun AppShell(
     openCount: Int = 0,
     /** La quota in una riga sotto la barra, solo sul riepilogo. */
     quota: (@Composable () -> Unit)? = null,
-    /** Solo per i provini: il menu già aperto. */
-    menuStartOpen: Boolean = false,
+    /** La master espansa a tutta pagina nella home (Franz, 03/10 16:44): la quota sotto la barra si toglie per farle spazio. */
+    masterChat: Boolean = false,
+    /** Per l'età delle sessioni nel menu in alto; «Chiuse · N» del menu apre l'elenco delle chiuse. */
+    now: Long = 0, onClosed: () -> Unit = {},
+    /** Solo per i provini: il menu già aperto, o quello delle sessioni. */
+    menuStartOpen: Boolean = false, sessionMenuStartOpen: Boolean = false,
     content: @Composable (Tab) -> Unit,
 ) {
     val summary = current == null && tab == Tab.OVERVIEW
@@ -73,7 +81,7 @@ fun AppShell(
                         // Dalla pagina di una sessione un tocco riporta al riepilogo, dove sta la master (Franz, 03/10 15:25).
                         current != null -> {
                             IconButton(onClick = { onPick(null) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back_to_summary), tint = CmColors.text) }
-                            SessionMenu(sessions, current, onPick, Modifier.weight(1f))
+                            SessionMenu(sessions, current, now, onPick, onClosed, Modifier.weight(1f), startOpen = sessionMenuStartOpen)
                         }
                         tab == Tab.DIARY -> {
                             IconButton(onClick = { onTab(Tab.OVERVIEW) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
@@ -90,7 +98,7 @@ fun AppShell(
                     onSearch?.let { IconButton(onClick = it) { Icon(Icons.Rounded.Search, stringResource(R.string.search), tint = CmColors.text2) } }
                     AppMenu(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch ?: {}, onSettings, menuStartOpen)
                 }
-                if (summary) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
+                if (summary && !masterChat) quota?.let { Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { it() } }
                 if (demo) {
                     Text(
                         stringResource(R.string.demo_banner), color = CmColors.briefWarnInk, style = MaterialTheme.typography.labelLarge,
@@ -111,12 +119,17 @@ fun AppShell(
     }
 }
 
-/** Il menu delle sessioni in alto: la sessione aperta o «Tutte le sessioni»; le voci con il badge, nell'ordine della regia. */
+/**
+ * Il menu delle sessioni in alto (Franz, 03/10 16:44, variante A): il nome della sessione aperta apre un pannello come il
+ * menu ≡. In testa la home («Master»), poi le sessioni nei gruppi del riepilogo con stato, età e contesto, la sessione
+ * aperta evidenziata con ✓; in fondo «Chiuse · N». La master non c'è: sta nella home.
+ */
 @Composable
 private fun SessionMenu(
-    sessions: List<Session>, current: String?, onPick: (String?) -> Unit, modifier: Modifier = Modifier,
+    sessions: List<Session>, current: String?, now: Long, onPick: (String?) -> Unit, onClosed: () -> Unit, modifier: Modifier = Modifier,
+    startOpen: Boolean = false,
 ) {
-    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
     val cur = sessions.firstOrNull { it.name == current }
     Box(modifier) {
         Row(
@@ -126,32 +139,82 @@ private fun SessionMenu(
             cur?.let { SessionBadge(it, size = 18.dp) }
             Text(
                 cur?.name ?: stringResource(R.string.all_sessions), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = CmColors.text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f, fill = false),
             )
             Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2)
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CmColors.surface) {
-            // La master staccata in testa, con l'icona della sua scheda (Franz, 02/10 07:03).
-            val master = sessions.firstOrNull { s -> s.name == it.pixelbox.cmwatch.rules.ContextActions.MASTER && s.state != SessionState.GONE }
-            master?.let { m ->
-                DropdownMenuItem(
-                    text = { Text(m.name, fontWeight = FontWeight.SemiBold) },
-                    leadingIcon = { Icon(Icons.Rounded.Person, null, tint = CmColors.actionIcon) },
-                    trailingIcon = { SessionBadge(m, size = 16.dp) }, onClick = { open = false; onPick(m.name) },
-                )
-                HorizontalDivider(color = CmColors.line)
+    }
+    if (open) {
+        val model = androidx.compose.runtime.remember(sessions) { it.pixelbox.cmwatch.rules.SessionsMenu.of(sessions) }
+        val pick: (String?) -> Unit = { n -> open = false; onPick(n) }
+        PanelShell(onDismiss = { open = false }, header = {
+            Text(stringResource(R.string.menu_goto), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
+        }) {
+            // La home in testa: il riepilogo con la master.
+            Row(
+                Modifier.fillMaxWidth().clickable { pick(null) }.padding(horizontal = 20.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(Modifier.size(36.dp).clip(CircleShape).background(CmColors.accent.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Home, null, tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleMedium, color = CmColors.text)
+                    Text(stringResource(R.string.menu_home_sub), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+                }
             }
-            if (current != null) DropdownMenuItem(
-                text = { Text(stringResource(R.string.all_sessions)) }, onClick = { open = false; onPick(null) },
-                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.List, null, tint = CmColors.text2) },
-            )
-            sessions.filter { it.state != SessionState.GONE && it != master }.forEach { s ->
-                DropdownMenuItem(
-                    text = { Text(s.name, fontWeight = if (s.name == current) FontWeight.SemiBold else FontWeight.Normal) },
-                    leadingIcon = { SessionBadge(s, size = 20.dp) }, onClick = { open = false; onPick(s.name) },
+            model.groups.forEach { (group, list) ->
+                val tone = when (group) {
+                    it.pixelbox.cmwatch.rules.Summary.Group.WAITING -> CmColors.briefWarn
+                    it.pixelbox.cmwatch.rules.Summary.Group.WORKING -> CmColors.briefRing
+                    else -> CmColors.text2
+                }
+                Text(
+                    stringResource(when (group) {
+                        it.pixelbox.cmwatch.rules.Summary.Group.WAITING -> R.string.summary_waiting
+                        it.pixelbox.cmwatch.rules.Summary.Group.WORKING -> R.string.summary_working
+                        else -> R.string.summary_still
+                    }, list.size).uppercase(),
+                    style = MonoSmall.copy(color = tone), modifier = Modifier.padding(start = 20.dp, top = 10.dp, bottom = 2.dp),
                 )
+                list.forEach { s -> SessionMenuRow(s, group, now, s.name == current) { pick(s.name) } }
+            }
+            if (model.closed > 0) {
+                HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
+                Row(
+                    Modifier.fillMaxWidth().clickable { open = false; onClosed() }.padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Icon(Icons.Rounded.Close, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
+                    Text(stringResource(R.string.summary_closed, model.closed), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.text2)
+                }
             }
         }
+    }
+}
+
+/** Una sessione nel menu: badge, nome, «domanda · 5 m» / «al lavoro · 1 m» / «ferma da 1 g», contesto; ✓ sulla aperta. */
+@Composable
+private fun SessionMenuRow(s: Session, group: it.pixelbox.cmwatch.rules.Summary.Group, now: Long, current: Boolean, onClick: () -> Unit) {
+    val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
+    val status = when (group) {
+        it.pixelbox.cmwatch.rules.Summary.Group.WAITING -> stringResource(R.string.menu_row_waiting, since(s.question?.askedAt ?: s.since))
+        it.pixelbox.cmwatch.rules.Summary.Group.WORKING -> stringResource(R.string.menu_row_working, since(s.turnStarted ?: s.since))
+        else -> stringResource(R.string.menu_row_still, since(s.since))
+    }
+    Row(
+        Modifier.fillMaxWidth().background(if (current) CmColors.primary.copy(alpha = 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        SessionBadge(s, size = 24.dp)
+        Column(Modifier.weight(1f)) {
+            Text(s.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+            if (now > 0) Text(status, style = MaterialTheme.typography.bodySmall, color = if (group == it.pixelbox.cmwatch.rules.Summary.Group.WAITING) CmColors.briefWarn else CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+        }
+        s.context?.let { Text("$it%", style = MonoSmall) }
+        if (current) Icon(Icons.Rounded.Check, null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp))
     }
 }
 

@@ -150,8 +150,15 @@ class MainActivity : ComponentActivity() {
         val samples by app.repo.quotaSamples.collectAsStateWithLifecycle()
         val chatLog by app.chatLog.messages.collectAsStateWithLifecycle()
         val uploads by app.repo.uploads.collectAsStateWithLifecycle()
-        var tab by rememberSaveable { mutableStateOf(StartRoute.tab(restored = null)) }
-        var open by rememberSaveable { mutableStateOf<String?>(null) }       // nome della sessione aperta
+        val tabState = rememberSaveable { mutableStateOf(StartRoute.tab(restored = null)) }
+        var tab by tabState
+        // La master espansa nella home (Franz, 03/10 16:30-16:44): dal basso a tutta pagina, ridotta con un tocco sulla sua barra.
+        val masterChatState = rememberSaveable { mutableStateOf(false) }
+        var masterChat by masterChatState
+        // Nome della sessione aperta; la master non è mai una pagina: aprirla, da qualunque strada, porta la home sulla sua chat.
+        val openState = rememberSaveable { mutableStateOf<String?>(null) }
+        val route = remember { OpenRoute(openState, tabState, masterChatState) }
+        var open by route
         var terminal by rememberSaveable { mutableStateOf<String?>(null) }   // nome della sessione del terminale
         var screenId by rememberSaveable { mutableStateOf<String?>(null) }
         var settingsOpen by rememberSaveable { mutableStateOf(false) }
@@ -393,7 +400,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock, bar ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
@@ -515,7 +522,7 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            home = home, grid = home != null, header = header, dock = dock,
+                            home = home, grid = home != null, header = header, dock = dock, bar = bar,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { dock == null },
                             onElsewhere = {
@@ -548,6 +555,8 @@ class MainActivity : ComponentActivity() {
         }
         // Il Registro si apre dal menu a tutto schermo; Indietro torna al riepilogo.
         BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
+        // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home.
+        BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false }
         // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.
         val summaryPage: @Composable () -> Unit = summaryPage@{
             val st = state
@@ -571,9 +580,20 @@ class MainActivity : ComponentActivity() {
             }
             if (master != null) {
                 val hero = remember(masterEntries, master.outcome) { it.pixelbox.cmwatch.rules.MasterHome.hero(masterEntries, master) }
-                sessionPage(master, masterEntries, { _, _ -> list() }, false) {
-                    MasterDock(master, hero, onSpeak = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } },
-                        onConversation = { open = master.name })
+                val homeList: @Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit = { _, _ -> list() }
+                val speakHero = { hero?.let { h -> speech.toggle(listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n")) } }
+                // Franz, 03/10 16:44: la master si espande dal basso a tutta pagina (la sua conversazione, con modello ed effort)
+                // e torna ridotta toccando la sua barra, ora in cima. Ridotta: la lista con la barra sopra il campo. Il campo
+                // scrive alla master in tutte e due.
+                androidx.compose.animation.AnimatedContent(
+                    masterChat, label = "master",
+                    transitionSpec = {
+                        if (targetState) androidx.compose.animation.slideInVertically { it } togetherWith androidx.compose.animation.fadeOut()
+                        else androidx.compose.animation.fadeIn() togetherWith androidx.compose.animation.slideOutVertically { it }
+                    },
+                ) { expanded ->
+                    if (expanded) sessionPage(master, masterEntries, null, true, null) { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = false }, expanded = true) }
+                    else sessionPage(master, masterEntries, homeList, false, { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = true }) }, null)
                 }
             } else Column(Modifier.fillMaxSize()) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) { list() }
@@ -593,6 +613,8 @@ class MainActivity : ComponentActivity() {
             host = host, stale = snap.freshness is Freshness.Stale,
             updated = when (val f = snap.freshness) { is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes); else -> getString(R.string.menu_updated_now) },
             openCount = summary?.open ?: 0,
+            // Con la master espansa la quota sotto la barra lascia spazio alla sua conversazione.
+            masterChat = masterChat && masterName != null, now = now, onClosed = { closedOpen = true },
             quota = state?.let { st -> {
                 val rings = remember(st, events, samples, now, snap.freshness) {
                     PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
@@ -621,19 +643,28 @@ class MainActivity : ComponentActivity() {
                         // Scorrimento laterale fra riepilogo e sessioni (Franz, 03/10 15:59): il riepilogo è sempre la prima
                         // pagina (`null`), poi le sessioni nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
                         // sessioni»). La pagina ferma decide la sessione aperta, e il menu in alto la segue.
-                        val pages = remember(state?.sessions, name) { it.pixelbox.cmwatch.rules.SwipePages.of(state, name) }
-                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(name).coerceAtLeast(0)) { pages.size }
                         // Solo il contenuto di destinazione segue la pagina: durante l'uscita (gesto indietro, volo verso la
-                        // card) quello che se ne va non deve riaprire né spostarsi.
-                        val active = name == open
-                        LaunchedEffect(pager.settledPage, active) {
+                        // card) quello che se ne va non deve riaprire né spostarsi. Attivo = la sua chiave (sessione aperta sì/no)
+                        // è quella di adesso; il nome della sessione può cambiare restando nello stesso contenuto (menu in alto).
+                        val active = (name != null) == (open != null)
+                        val target = if (active) open else name
+                        val pages = remember(state?.sessions, target) { it.pixelbox.cmwatch.rules.SwipePages.of(state, target) }
+                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(target).coerceAtLeast(0)) { pages.size }
+                        val currentPages by rememberUpdatedState(pages)
+                        // Solo uno scorrimento cambia la sessione aperta (`SwipePages.afterSettle`): la pagina vista quando il
+                        // contenuto si riattiva è quella vecchia e non deve annullare la scelta del menu in alto (dal vivo 03/10 16:40).
+                        LaunchedEffect(pager, active) {
                             if (!active) return@LaunchedEffect
-                            val n = pages.getOrNull(pager.settledPage) ?: run {
-                                // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
-                                if (open != null) { open = null; tab = StartRoute.Tab.OVERVIEW }
-                                return@LaunchedEffect
+                            var initial = true
+                            androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { p ->
+                                val move = it.pixelbox.cmwatch.rules.SwipePages.afterSettle(currentPages, p, open, initial)
+                                initial = false
+                                if (move is it.pixelbox.cmwatch.rules.SwipePages.Move.Open) {
+                                    open = move.name
+                                    // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
+                                    if (move.name == null) tab = StartRoute.Tab.OVERVIEW
+                                }
                             }
-                            if (n != open) open = n
                         }
                         LaunchedEffect(open, pages, active) {
                             val i = pages.indexOf(open)
@@ -649,7 +680,7 @@ class MainActivity : ComponentActivity() {
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                             val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
-                            sessionPage(session, pageEntries, null, true, null)
+                            sessionPage(session, pageEntries, null, true, null, null)
                         }
                     }
                 }
@@ -786,5 +817,21 @@ class MainActivity : ComponentActivity() {
         /** Extra del widget: la sessione da aprire, o la Panoramica. */
         const val EXTRA_SESSION = "cm.session"
         const val EXTRA_OVERVIEW = "cm.overview"
+    }
+}
+
+/**
+ * La sessione aperta, con una regola sola per tutte le strade che la cambiano (card, menu in alto, notifiche, ricerca,
+ * avvisi, «Fai controllare»): la master non diventa una pagina, apre la home sulla sua chat (`StartRoute.masterAtHome`).
+ */
+private class OpenRoute(
+    private val open: MutableState<String?>, private val tab: MutableState<StartRoute.Tab>, private val masterChat: MutableState<Boolean>,
+) {
+    operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String? = open.value?.takeIf { !StartRoute.masterAtHome(it) }
+
+    operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, value: String?) {
+        if (StartRoute.masterAtHome(value)) {
+            open.value = null; tab.value = StartRoute.Tab.OVERVIEW; masterChat.value = true
+        } else open.value = value
     }
 }

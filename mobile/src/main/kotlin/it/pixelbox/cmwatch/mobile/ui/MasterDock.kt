@@ -12,7 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -38,18 +39,20 @@ import java.time.format.DateTimeFormatter
 private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
- * La master agganciata sopra «Scrivi alla master» (design 03/10, tavola 4): badge, «MASTER · ora · modello · contesto»,
- * il titolo dell'ultimo esito su una riga, ▶ per ascoltarlo e il tondo della conversazione. Non scorre con la lista.
+ * La master nella home (design 03/10, tavola 4; Franz 16:30-16:44): ridotta è la barra agganciata sopra «Scrivi alla
+ * master» (badge, «MASTER · ora · modello · contesto», il titolo dell'ultimo esito, ▶ e ▲); il tocco la espande a tutta
+ * pagina, dove la stessa barra sta in cima con ▼, e un altro tocco la riduce.
  */
 @Composable
-fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onConversation: () -> Unit) {
+fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
     val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), master.context?.let { "$it%" }).joinToString(" · ")
+    val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
+        if (!expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
         Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(CmColors.surfaceLow)
-                .clickable(onClick = onConversation).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+            Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow)
+                .clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SessionBadge(master, 20.dp)
@@ -65,9 +68,13 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: () -> Unit, onC
             if (hero != null) FilledTonalIconButton(onClick = onSpeak, modifier = Modifier.size(44.dp)) {
                 Icon(Icons.Rounded.PlayArrow, stringResource(R.string.dock_listen), tint = CmColors.actionIcon)
             }
-            FilledTonalIconButton(onClick = onConversation, modifier = Modifier.size(44.dp)) {
-                Icon(Icons.Rounded.Forum, stringResource(R.string.dock_conversation), tint = CmColors.actionIcon)
+            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
+                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = CmColors.actionIcon,
+                )
             }
         }
+        if (expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
     }
 }

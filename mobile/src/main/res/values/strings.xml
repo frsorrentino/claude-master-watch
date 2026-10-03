@@ -162,7 +162,7 @@
     <string name="fy_open_conversation">Apri la conversazione</string>
     <string name="fy_working">Al lavoro · %1$d</string>
     <!-- Riepilogo unico (design 03/10): Sessioni e casa della master in una schermata. -->
-    <string name="summary_title">Sessioni</string>
+    <string name="summary_title">Master</string>
     <string name="summary_open">%1$d aperte</string>
     <string name="summary_waiting">Ti aspetta · %1$d</string>
     <string name="summary_finished">Ha finito · %1$d</string>
@@ -194,6 +194,13 @@
     <string name="back_to_summary">Torna al riepilogo</string>
     <string name="menu_exit">Chiudi la sessione</string>
     <string name="menu_exit_sub">Manda /exit, dopo una conferma</string>
+    <string name="chat_empty">Conversazione nuova: ancora nessun messaggio. Scrivi qui sotto per cominciare.</string>
+    <string name="menu_goto">Vai a</string>
+    <string name="menu_home_sub">La home: sessioni e chat della master</string>
+    <string name="menu_row_waiting">domanda · %1$s</string>
+    <string name="menu_row_working">al lavoro · %1$s</string>
+    <string name="menu_row_still">ferma da %1$s</string>
+    <string name="dock_collapse">Riduci la master</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>

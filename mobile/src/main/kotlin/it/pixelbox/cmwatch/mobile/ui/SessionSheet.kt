@@ -146,6 +146,8 @@ fun SessionSheet(
     header: Boolean = true,
     /** Riepilogo unico: il riquadro della master, fermo fra il contenuto e la barra di scrittura. */
     dock: (@Composable () -> Unit)? = null,
+    /** La master espansa (Franz, 03/10 16:44): la sua barra in cima, sopra l'intestazione, per ridurla con un tocco. */
+    bar: (@Composable () -> Unit)? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -177,6 +179,7 @@ fun SessionSheet(
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
+        bar?.invoke()
         if (header) SheetHeader(
             s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
             canExit = slash?.contains("exit") == true && s.state != SessionState.GONE,
@@ -228,6 +231,14 @@ fun SessionSheet(
                     }
                 }
             } else {
+                // Una conversazione appena nata (dal vivo 03/10 16:37: claude-master ripartita con «Sessione nuova»): senza una
+                // riga la pagina sembrava rotta.
+                if (chat.isEmpty() && s.outcome == null && s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING) item(key = "empty") {
+                    Text(
+                        stringResource(R.string.chat_empty), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
                 items(chat, key = { "c-" + it.sent.id }) { row ->
                     ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
                 }

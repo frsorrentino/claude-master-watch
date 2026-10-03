@@ -159,7 +159,7 @@
     <string name="elsewhere_open">Open</string>
     <string name="fy_open_conversation">Open the conversation</string>
     <string name="fy_working">Working · %1$d</string>
-    <string name="summary_title">Sessions</string>
+    <string name="summary_title">Master</string>
     <string name="summary_open">%1$d open</string>
     <string name="summary_waiting">Waiting for you · %1$d</string>
     <string name="summary_finished">Finished · %1$d</string>
@@ -191,6 +191,13 @@
     <string name="back_to_summary">Back to the summary</string>
     <string name="menu_exit">Close the session</string>
     <string name="menu_exit_sub">Sends /exit, after a confirmation</string>
+    <string name="chat_empty">New conversation: no messages yet. Write below to start.</string>
+    <string name="menu_goto">Go to</string>
+    <string name="menu_home_sub">Home: sessions and the master\'s chat</string>
+    <string name="menu_row_waiting">question · %1$s</string>
+    <string name="menu_row_working">working · %1$s</string>
+    <string name="menu_row_still">idle for %1$s</string>
+    <string name="dock_collapse">Collapse the master</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

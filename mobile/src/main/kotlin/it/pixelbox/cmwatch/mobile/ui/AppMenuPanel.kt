@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,6 +56,28 @@ data class MenuEntry(val icon: ImageVector, val title: String, val sub: String, 
 fun MenuPanel(
     onDismiss: () -> Unit, entries: List<MenuEntry>, footer: MenuEntry? = null,
     header: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
+) = PanelShell(onDismiss, header) {
+    entries.forEach { e -> MenuItem(e.icon, e.title, e.sub, if (e.accent) CmColors.accent.copy(alpha = 0.25f) else CmColors.surfaceHigh) { onDismiss(); e.onClick() } }
+    footer?.let { f ->
+        HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
+        Row(
+            Modifier.fillMaxWidth().clickable { onDismiss(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Icon(f.icon, null, tint = CmColors.text2)
+            Text(f.title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
+        }
+    }
+}
+
+/**
+ * Il guscio dei pannelli: sfondo oscurato a tutto schermo (tocco = chiudi), pannello largo sotto la barra con angoli da
+ * 28 dp, in testa una riga con ✕; il contenuto scorre se è più alto dello schermo. Indietro chiude.
+ */
+@Composable
+fun PanelShell(
+    onDismiss: () -> Unit, header: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     Popup(onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Box(
@@ -63,7 +86,7 @@ fun MenuPanel(
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp), color = CmColors.surface, shadowElevation = 8.dp,
-                modifier = Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp).fillMaxWidth()
+                modifier = Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).fillMaxWidth()
                     // Il tocco dentro il pannello non lo chiude.
                     .clickable(remember { MutableInteractionSource() }, indication = null) {},
             ) {
@@ -72,17 +95,7 @@ fun MenuPanel(
                         header()
                         IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text2) }
                     }
-                    entries.forEach { e -> MenuItem(e.icon, e.title, e.sub, if (e.accent) CmColors.accent.copy(alpha = 0.25f) else CmColors.surfaceHigh) { onDismiss(); e.onClick() } }
-                    footer?.let { f ->
-                        HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
-                        Row(
-                            Modifier.fillMaxWidth().clickable { onDismiss(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        ) {
-                            Icon(f.icon, null, tint = CmColors.text2)
-                            Text(f.title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
-                        }
-                    }
+                    Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()), content = content)
                 }
             }
         }
