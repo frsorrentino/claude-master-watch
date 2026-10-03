@@ -38,4 +38,12 @@ class SummaryListTest {
         val many = (1..10).map { i -> idle.copy(id = "idle-$i", name = "progetto-$i", since = st.ts - i * 1800L) }
         page(st.copy(sessions = st.sessions + many))
     }
+
+    // La master agganciata sopra il campo (design 03/10), e «Riapri la master» quando non c'è.
+    @Test fun dockMaster() = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null)
+        val reply = TranscriptEntry("a1", "assistant", "Lanciata claude-master sulla fase 2.2.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb", st.ts - 600)
+        CmPhoneTheme(still = true) { Column(Modifier.background(CmColors.bg)) { MasterDock(m, it.pixelbox.cmwatch.rules.MasterHome.hero(listOf(reply), m), {}, {}) } }
+    }
+    @Test fun dockAbsent() = paparazzi.snapshot { CmPhoneTheme(still = true) { Column(Modifier.background(CmColors.bg).padding(16.dp)) { MasterAbsent {} } } }
 }

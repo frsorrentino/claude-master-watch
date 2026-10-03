@@ -143,6 +143,10 @@ fun SessionSheet(
     home: (@Composable ColumnScope.(onDraft: (String) -> Unit, onSend: (String) -> Unit) -> Unit)? = null,
     /** L'avviso delle altre sessioni sotto la barra (`Elsewhere`, variante A, Franz 02/10 20:47); null = niente da dire. */
     elsewhere: it.pixelbox.cmwatch.rules.Elsewhere.Alert? = null, onElsewhere: () -> Unit = {}, onElsewhereDismiss: () -> Unit = {},
+    /** Riepilogo unico (design 03/10): false = niente intestazione con le pillole di modello ed effort. */
+    header: Boolean = true,
+    /** Riepilogo unico: il riquadro della master, fermo fra il contenuto e la barra di scrittura. */
+    dock: (@Composable () -> Unit)? = null,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -174,7 +178,7 @@ fun SessionSheet(
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
-        SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
+        if (header) SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
         elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
         // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
         // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
@@ -259,7 +263,8 @@ fun SessionSheet(
                 }
         }
         }
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash)
+        dock?.invoke()
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null)
     }
 }
 
@@ -273,6 +278,8 @@ private fun Composer(
     s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
     quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(), canTonight: Boolean = false,
     slash: List<String>? = null,
+    /** Il campo del riepilogo, che scrive alla master: «Scrivi alla master». */
+    toMaster: Boolean = false,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
@@ -348,7 +355,7 @@ private fun Composer(
             value = draft, onValueChange = onDraft, maxLines = 5, modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
-                else Text(stringResource(if (s.question != null) R.string.answer_free else R.string.write_prompt))
+                else Text(stringResource(when { s.question != null -> R.string.answer_free; toMaster -> R.string.master_placeholder; else -> R.string.write_prompt }))
             },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,

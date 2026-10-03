@@ -170,6 +170,10 @@
     <string name="summary_still">Ferme · %1$d</string>
     <string name="summary_closed">Chiuse · %1$d</string>
     <string name="summary_since">da %1$s</string>
+    <string name="dock_master">MASTER</string>
+    <string name="dock_listen">Ascolta l\'ultimo esito della master</string>
+    <string name="dock_conversation">Apri la conversazione della master</string>
+    <string name="master_placeholder">Scrivi alla master</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>
