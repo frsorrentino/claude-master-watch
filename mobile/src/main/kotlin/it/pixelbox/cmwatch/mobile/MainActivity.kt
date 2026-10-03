@@ -400,7 +400,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?) -> Unit = { session, pageEntries, home, header, dock, bar ->
+        val sessionPage: @Composable (it.pixelbox.cmwatch.contract.Session, List<it.pixelbox.cmwatch.contract.TranscriptEntry>, (@Composable ColumnScope.((String) -> Unit, (String) -> Unit) -> Unit)?, Boolean, (@Composable () -> Unit)?, (@Composable () -> Unit)?, Boolean) -> Unit = { session, pageEntries, home, header, dock, bar, homeOpen ->
                         val nightDir = state?.takeIf { it.night.items != null }?.let { st -> ChatRules.nightDir(st, session) }
                         val quotaWarn = state?.let { st -> it.pixelbox.cmwatch.rules.QuotaWarning.of(st, session, samples[session.account].orEmpty(), now) }
                         // Variante A (Franz, 02/10 20:47): chi ti aspetta altrove, poi un turno finito; questo si chiude da sé in 6 s.
@@ -522,9 +522,9 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            home = home, grid = home != null, header = header, dock = dock, bar = bar,
+                            home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
-                            elsewhere = elsewhere.takeIf { dock == null },
+                            elsewhere = elsewhere.takeIf { home == null || !homeOpen },
                             onElsewhere = {
                                 when (val a = elsewhere) {
                                     is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { open = a.sessions[0] }
@@ -585,16 +585,13 @@ class MainActivity : ComponentActivity() {
                 // Franz, 03/10 16:44: la master si espande dal basso a tutta pagina (la sua conversazione, con modello ed effort)
                 // e torna ridotta toccando la sua barra, ora in cima. Ridotta: la lista con la barra sopra il campo. Il campo
                 // scrive alla master in tutte e due.
-                androidx.compose.animation.AnimatedContent(
-                    masterChat, label = "master",
-                    transitionSpec = {
-                        if (targetState) androidx.compose.animation.slideInVertically { it } togetherWith androidx.compose.animation.fadeOut()
-                        else androidx.compose.animation.fadeIn() togetherWith androidx.compose.animation.slideOutVertically { it }
-                    },
-                ) { expanded ->
-                    if (expanded) sessionPage(master, masterEntries, null, true, null) { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = false }, expanded = true) }
-                    else sessionPage(master, masterEntries, homeList, false, { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = true }) }, null)
-                }
+                // Una pagina sola: si anima la parte sopra il campo, il campo resta fermo (`SessionSheet` con `homeOpen`).
+                sessionPage(
+                    master, masterEntries, homeList, true,
+                    { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = true }) },
+                    { MasterDock(master, hero, onSpeak = { speakHero() }, onToggle = { masterChat = false }, expanded = true) },
+                    !masterChat,
+                )
             } else Column(Modifier.fillMaxSize()) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) { list() }
                 Box(Modifier.padding(16.dp)) {
@@ -680,7 +677,7 @@ class MainActivity : ComponentActivity() {
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                             val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
-                            sessionPage(session, pageEntries, null, true, null, null)
+                            sessionPage(session, pageEntries, null, true, null, null, true)
                         }
                     }
                 }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
@@ -148,6 +149,8 @@ fun SessionSheet(
     dock: (@Composable () -> Unit)? = null,
     /** La master espansa (Franz, 03/10 16:44): la sua barra in cima, sopra l'intestazione, per ridurla con un tocco. */
     bar: (@Composable () -> Unit)? = null,
+    /** Con `home`: true la lista della home con `dock` in basso, false la conversazione con `bar` e l'intestazione. */
+    homeOpen: Boolean = true,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     var draft by rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -178,107 +181,146 @@ fun SessionSheet(
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
-        // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
-        bar?.invoke()
-        if (header) SheetHeader(
-            s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
-            canExit = slash?.contains("exit") == true && s.state != SessionState.GONE,
-        )
-        elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
-        // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
-        // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
-        if (home != null) Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) { home({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) }) } else {
-        top?.let { block ->
-            androidx.compose.animation.AnimatedVisibility(visible = follow && !ime) {
-                Box(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) { block() }
-            }
-        }
-        LazyColumn(
-            Modifier.weight(1f).fillMaxWidth(), state = list,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (feed != null) {
-                if (more) item(key = "older") {
-                    TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
+        // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
+        val chatArea: @Composable ColumnScope.() -> Unit = {
+            // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
+            bar?.invoke()
+            if (header) SheetHeader(
+                s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
+                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE,
+            )
+            elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
+            // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
+            // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
+            top?.let { block ->
+                androidx.compose.animation.AnimatedVisibility(visible = follow && !ime) {
+                    Box(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) { block() }
                 }
-                // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
-                val grouped = ChatFeed.group(feed)
-                items(grouped, key = { feedKey(it) }) { it ->
-                    when (it) {
-                        // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
-                        is ChatFeed.Item.Mine -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
-                            // Il pannello che un comando slash ha aperto sul PC (/cost) risponde sotto il comando.
-                            it.sent.panel?.let { p -> ClaudeBubble(p, it.sent.sentAt, ttsMinChars, actions.speak) }
+            }
+            LazyColumn(
+                Modifier.weight(1f).fillMaxWidth(), state = list,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (feed != null) {
+                    if (more) item(key = "older") {
+                        TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
+                    }
+                    // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
+                    val grouped = ChatFeed.group(feed)
+                    items(grouped, key = { feedKey(it) }) { it ->
+                        when (it) {
+                            // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
+                            is ChatFeed.Item.Mine -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                MineBubble(it.sent, if (it.entry?.queued == true && it.status != ChatRules.Status.FAILED) ChatRules.Status.QUEUED else it.status, reasons[it.sent.id], actions, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                                // Il pannello che un comando slash ha aperto sul PC (/cost) risponde sotto il comando.
+                                it.sent.panel?.let { p -> ClaudeBubble(p, it.sent.sentAt, ttsMinChars, actions.speak) }
+                            }
+                            is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                            is ChatFeed.Item.Claude -> ClaudeBubble(
+                                it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
+                                onSpeakFrom = actions.speakFrom,
+                            )
+                            is ChatFeed.Item.Tool -> ToolLine(it.entry)
+                            is ChatFeed.Item.Steps -> StepsCard(it)
                         }
-                        is ChatFeed.Item.User -> UserBubble(it.entry, onEdit = { t -> draft = t }, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
-                        is ChatFeed.Item.Claude -> ClaudeBubble(
-                            it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
-                            onSpeakFrom = actions.speakFrom,
+                    }
+                } else if (loadingFeed) {
+                    item(key = "loading") {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                            CircularWavyProgressIndicator(color = CmColors.actionIcon)
+                        }
+                    }
+                } else {
+                    // Una conversazione appena nata (dal vivo 03/10 16:37: claude-master ripartita con «Sessione nuova»): senza una
+                    // riga la pagina sembrava rotta.
+                    if (chat.isEmpty() && s.outcome == null && s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING) item(key = "empty") {
+                        Text(
+                            stringResource(R.string.chat_empty), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
-                        is ChatFeed.Item.Tool -> ToolLine(it.entry)
-                        is ChatFeed.Item.Steps -> StepsCard(it)
+                    }
+                    items(chat, key = { "c-" + it.sent.id }) { row ->
+                        ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
+                    }
+                    // L'esito di un turno partito dal PC, che nessun messaggio del telefono ha agganciato.
+                    s.outcome?.takeIf { o -> chat.none { it.sent.outcomeFull == o.full } }?.let { o ->
+                        item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
                     }
                 }
-            } else if (loadingFeed) {
-                item(key = "loading") {
-                    Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
-                        CircularWavyProgressIndicator(color = CmColors.actionIcon)
+                // Che cosa sta facendo, come la riga dell'app nativa: asterisco, tempo del turno, strumento o pensiero.
+                if (s.state == SessionState.BUSY || s.state == SessionState.AWAITING) item(key = "live") { ActivityLine(s, now) }
+                // La domanda dopo la chat, sopra la barra: il suo bottone pieno resta in vista (revisione 30/09).
+                s.question?.let { q ->
+                    item(key = "q-" + q.id) {
+                        QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
                     }
                 }
-            } else {
-                // Una conversazione appena nata (dal vivo 03/10 16:37: claude-master ripartita con «Sessione nuova»): senza una
-                // riga la pagina sembrava rotta.
-                if (chat.isEmpty() && s.outcome == null && s.question == null && s.state != SessionState.BUSY && s.state != SessionState.AWAITING) item(key = "empty") {
-                    Text(
-                        stringResource(R.string.chat_empty), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    )
-                }
-                items(chat, key = { "c-" + it.sent.id }) { row ->
-                    ChatTurn(row, ttsMinChars, actions, onEdit = { draft = it }, onResend = { actions.send(PhonePrimary.Target.PROMPT, it) })
-                }
-                // L'esito di un turno partito dal PC, che nessun messaggio del telefono ha agganciato.
-                s.outcome?.takeIf { o -> chat.none { it.sent.outcomeFull == o.full } }?.let { o ->
-                    item(key = "outcome") { ClaudeBubble(o.full, o.at, ttsMinChars, actions.speak) }
-                }
-            }
-            // Che cosa sta facendo, come la riga dell'app nativa: asterisco, tempo del turno, strumento o pensiero.
-            if (s.state == SessionState.BUSY || s.state == SessionState.AWAITING) item(key = "live") { ActivityLine(s, now) }
-            // La domanda dopo la chat, sopra la barra: il suo bottone pieno resta in vista (revisione 30/09).
-            s.question?.let { q ->
-                item(key = "q-" + q.id) {
-                    QuestionCard(q, primary == PhonePrimary.Button.OPTION, holdHint, onHold = { holdHint = true }, actions)
-                }
-            }
-            // Solo i comandi dell'utente: le letture delle schermate non diventano righe «non consegnato».
-            pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }
-                .filter { it.cmd.op !in PASSIVE_OPS }
-                .filter { it.status == PendingStatus.FAILED && chat.none { c -> c.sent.id == it.cmd.id } }
-                .forEach { p ->
-                    item(key = "p-" + p.cmd.id) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.not_delivered), color = CmColors.goneDim, modifier = Modifier.weight(1f))
-                            TextButton(onClick = { actions.retry(p.cmd.id) }) { Text(stringResource(R.string.retry), color = CmColors.actionIcon) }
+                // Solo i comandi dell'utente: le letture delle schermate non diventano righe «non consegnato».
+                pending.filter { it.cmd.session == s.id || it.cmd.session == s.name }
+                    .filter { it.cmd.op !in PASSIVE_OPS }
+                    .filter { it.status == PendingStatus.FAILED && chat.none { c -> c.sent.id == it.cmd.id } }
+                    .forEach { p ->
+                        item(key = "p-" + p.cmd.id) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.not_delivered), color = CmColors.goneDim, modifier = Modifier.weight(1f))
+                                TextButton(onClick = { actions.retry(p.cmd.id) }) { Text(stringResource(R.string.retry), color = CmColors.actionIcon) }
+                            }
                         }
                     }
-                }
-        }
-        }
-        // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
-        // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
-        if (home == null && draft.isBlank() && s.state == SessionState.IDLE && s.question == null) {
-            val steps = remember(feed) {
-                feed?.let { f -> ChatFeed.group(f).lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
-                    ?.let { c -> it.pixelbox.cmwatch.rules.NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
             }
-            if (steps.isNotEmpty()) StepsList(steps, onEdit = { t -> draft = t }, onSend = { t -> actions.send(PhonePrimary.Target.PROMPT, t); follow = true })
+            // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
+            // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
+            if (draft.isBlank() && s.state == SessionState.IDLE && s.question == null) {
+                val steps = remember(feed) {
+                    feed?.let { f -> ChatFeed.group(f).lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
+                        ?.let { c -> it.pixelbox.cmwatch.rules.NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
+                }
+                if (steps.isNotEmpty()) StepsList(steps, onEdit = { t -> draft = t }, onSend = { t -> actions.send(PhonePrimary.Target.PROMPT, t); follow = true })
+            }
         }
-        dock?.invoke()
+        if (home == null) { chatArea(); dock?.invoke() } else {
+            // Nella home della master (Franz, 03/10 17:10) si anima solo la parte sopra il campo: la lista con la barra in
+            // basso lascia il posto, salendo dal basso, a barra in cima, intestazione e conversazione. Il campo resta fermo,
+            // con la bozza.
+            val h = home
+            val off = animationsOff()
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                androidx.compose.animation.AnimatedContent(
+                    homeOpen, label = "home",
+                    transitionSpec = {
+                        // Il pannello sale opaco dalla barra in basso e la lista dietro arretra (dissolvenza e scala 0,96); alla
+                        // chiusura scende per la stessa strada e resta sopra la lista che torna. Animazioni ridotte: solo
+                        // dissolvenza.
+                        val recede = androidx.compose.animation.core.tween<Float>(250, easing = CmMotion.easing)
+                        when {
+                            off -> androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)) togetherWith
+                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150))
+                            !targetState -> androidx.compose.animation.slideInVertically(CmMotion.panel) { it } togetherWith
+                                (androidx.compose.animation.fadeOut(recede) + androidx.compose.animation.scaleOut(recede, targetScale = 0.96f))
+                            else -> ((androidx.compose.animation.fadeIn(recede) + androidx.compose.animation.scaleIn(recede, initialScale = 0.96f)) togetherWith
+                                androidx.compose.animation.slideOutVertically(CmMotion.panel) { it }).apply { targetContentZIndex = -1f }
+                        }
+                    },
+                ) { showList ->
+                    // Il pannello della conversazione è opaco e ha gli angoli in alto, come un foglio: copre la lista mentre sale.
+                    Column(
+                        Modifier.fillMaxSize().then(
+                            if (showList) Modifier
+                            else Modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(CmColors.bg)
+                        ),
+                    ) {
+                        if (showList) {
+                            Column(
+                                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) { h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) }) }
+                            dock?.invoke()
+                        } else chatArea()
+                    }
+                }
+            }
+        }
         Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null)
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -75,6 +76,16 @@ fun cmSwitchColors() = SwitchDefaults.colors(
 object CmMotion {
     val easing = CubicBezierEasing(0.3f, 0f, 0.2f, 1f)
     fun <T> spec(off: Boolean): FiniteAnimationSpec<T> = if (off) snap() else tween(250, easing = easing)
+
+    /**
+     * Il pannello della master che sale dalla sua barra e ci torna (Franz, 03/10 17:12): una molla senza rimbalzo, che
+     * riparte dal punto in cui si trova se il gesto cambia idea a metà.
+     */
+    val panel = androidx.compose.animation.core.spring<androidx.compose.ui.unit.IntOffset>(
+        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+        visibilityThreshold = androidx.compose.ui.unit.IntOffset.VisibilityThreshold,
+    )
 }
 
 /** «Riduci animazioni» o animazioni di sistema a zero; negli snapshot (LocalStill) sempre «spente»: stato finale. */
