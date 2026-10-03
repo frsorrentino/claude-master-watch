@@ -48,4 +48,29 @@ class ChatSearchTest {
         val hits = ChatSearch.find("continua", twice, emptyList())
         assertEquals(2, hits.map { it.ref }.toSet().size)
     }
+
+    // Contratto 1.27: con la ricerca del relay i messaggi e gli esiti sono già nelle conversazioni; del telefono restano
+    // solo le voci del registro senza sessione. Tutto dal più recente.
+    @Test fun conversationsTakeThePlaceOfTheLocalMessages() {
+        val local = listOf(
+            ChatSearch.Hit("kb", 300, "deploy di kb", 0, 6, ChatSearch.Kind.SENT, "SENT-1"),
+            ChatSearch.Hit("kb", 200, "deploy finito", 0, 6, ChatSearch.Kind.EVENT, "EVENT-e1"),
+            ChatSearch.Hit(null, 400, "Oggi: deploy di atlas", 6, 12, ChatSearch.Kind.EVENT, "EVENT-e2"),
+        )
+        val page = it.pixelbox.cmwatch.contract.SearchPage(listOf(
+            it.pixelbox.cmwatch.contract.SearchHit("atlas", true, entry = "a1.0", at = 500, snippet = "il deploy è partito", match = listOf(3, 9)),
+            it.pixelbox.cmwatch.contract.SearchHit("old", false, entry = "o1.0", at = 100, snippet = "deploy", match = listOf(0, 6)),
+        ))
+        val hits = ChatSearch.withConversations(local, page)
+        assertEquals(listOf("atlas", null, "old"), hits.map { it.session })
+        assertEquals(listOf(ChatSearch.Kind.CONVERSATION, ChatSearch.Kind.EVENT, ChatSearch.Kind.CONVERSATION), hits.map { it.kind })
+        assertEquals(listOf(true, null, false), hits.map { it.live })
+        assertEquals("deploy", hits[0].line.substring(hits[0].start, hits[0].end))
+    }
+
+    @Test fun aMatchOutsideTheSnippetIsClamped() {
+        val page = it.pixelbox.cmwatch.contract.SearchPage(listOf(it.pixelbox.cmwatch.contract.SearchHit("a", true, at = 1, snippet = "abc", match = listOf(2, 9))))
+        val h = ChatSearch.withConversations(emptyList(), page).single()
+        assertEquals(2, h.start); assertEquals(3, h.end)
+    }
 }

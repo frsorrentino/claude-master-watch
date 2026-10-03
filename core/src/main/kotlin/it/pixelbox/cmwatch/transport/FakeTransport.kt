@@ -276,6 +276,21 @@ class FakeTransport(
             CmdOp.PROJECTS -> ok(ContractJson.json.encodeToString(ProjectsPage.serializer(), ProjectsPage(
                 s.projects.sortedWith(compareBy<Project> { it.lastUsed == null }.thenByDescending { it.lastUsed ?: 0 }.thenBy { it.name }),
             )))
+            // Contratto 1.27: la demo cerca negli esiti e nelle domande delle sessioni di esempio, con le regole del relay.
+            CmdOp.SEARCH -> {
+                val q = cmd.arg?.trim()?.replace(Regex("\\s+"), " ").orEmpty()
+                if (q.isEmpty() || q.length > 200) ko("bad query: from 1 to 200 characters") else {
+                    fun fold(t: String) = java.text.Normalizer.normalize(t.lowercase(), java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "")
+                    val hits = s.sessions.mapNotNull { x ->
+                        val text = (x.outcome?.full ?: x.question?.text ?: return@mapNotNull null).replace('\n', ' ')
+                        val at = fold(text).indexOf(fold(q)).takeIf { it >= 0 } ?: return@mapNotNull null
+                        val from = (at - 60).coerceAtLeast(0)
+                        val snippet = text.substring(from, (from + 160).coerceAtMost(text.length))
+                        SearchHit(x.name, x.state != SessionState.GONE, x.project, null, "assistant", x.outcome?.at ?: x.since, snippet, listOf(at - from, at - from + q.length))
+                    }
+                    ok(ContractJson.json.encodeToString(SearchPage.serializer(), SearchPage(hits.sortedByDescending { it.at ?: 0 })))
+                }
+            }
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")

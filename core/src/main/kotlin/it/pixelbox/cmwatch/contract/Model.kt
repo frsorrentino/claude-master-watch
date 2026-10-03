@@ -57,6 +57,11 @@ enum class CmdOp {
      * 8 KB). `session` e `arg` null; il testo è un `ProjectsPage`. Una lettura: nessuna push dopo.
      */
     @SerialName("projects") PROJECTS,
+    /**
+     * Contratto 1.27: cerca nelle conversazioni di tutte le sessioni (vive e chiuse degli ultimi 7 giorni). `session`
+     * null, `arg` il testo (1-200 caratteri); il testo del risultato è un `SearchPage`; rifiuto «bad query: …».
+     */
+    @SerialName("search") SEARCH,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -209,5 +214,16 @@ enum class CmdOp {
 
 /** Contratto 1.26: il risultato di `projects`, dal più recente (`last_used` null in fondo); `more` oltre i 60 KB. */
 @Serializable data class ProjectsPage(val projects: List<Project> = emptyList(), val more: Boolean = false)
+
+/**
+ * Contratto 1.27: un punto trovato. `session` è il nome nel contratto se viva, se no quello della cartella; `entry` l'id
+ * di `transcript`; `match` = [inizio, fine) della parola trovata dentro `snippet` (fino a 160 caratteri, senza «…»).
+ */
+@Serializable data class SearchHit(
+    val session: String, val live: Boolean, val project: String? = null, val entry: String? = null,
+    val role: String? = null, val at: Long? = null, val snippet: String, val match: List<Int> = emptyList(),
+)
+
+@Serializable data class SearchPage(val hits: List<SearchHit> = emptyList(), val more: Boolean = false)
 
 @Serializable data class TranscriptPage(val entries: List<TranscriptEntry> = emptyList(), val more: Boolean = false)

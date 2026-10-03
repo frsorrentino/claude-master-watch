@@ -82,7 +82,15 @@ class ContractTest {
         // Contratto 1.24: due file, uno aperto e uno rifiutato perché non è nella trascrizione.
         // Contratto 1.25: due slash, /compact con testo e un comando non consentito.
         // Contratto 1.26: un projects riuscito, tutti i progetti dal più recente.
-        assertEquals(27, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.27: un search riuscito, «tuesday» in una sessione viva e in una chiusa.
+        assertEquals(28, results.size); assertEquals(7, results.count { !it.ok })
+        val search = cmds.single { it.op == CmdOp.SEARCH }
+        assertNull(search.session); assertEquals("tuesday", search.arg)
+        val hits = ContractJson.decodeSearch(results.first { it.id == search.id }.text)
+        assertEquals(5, hits.hits.size)
+        assertEquals(setOf(true, false), hits.hits.map { it.live }.toSet())
+        hits.hits.forEach { h -> assertEquals("tuesday", h.snippet.substring(h.match[0], h.match[1]).lowercase()) }
+        assertTrue("search" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
         val projects = cmds.single { it.op == CmdOp.PROJECTS }
         assertNull(projects.session); assertNull(projects.arg)
         val page = ContractJson.decodeProjects(results.first { it.id == projects.id }.text)
