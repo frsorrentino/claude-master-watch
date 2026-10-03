@@ -192,6 +192,8 @@
     <string name="open_in_claude_sub">Continua nell\'app Claude</string>
     <string name="terminal_sub">Lo schermo del PC, dal vivo</string>
     <string name="back_to_summary">Torna al riepilogo</string>
+    <string name="menu_exit">Chiudi la sessione</string>
+    <string name="menu_exit_sub">Manda /exit, dopo una conferma</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>

@@ -189,6 +189,8 @@
     <string name="open_in_claude_sub">Continue in the Claude app</string>
     <string name="terminal_sub">The PC screen, live</string>
     <string name="back_to_summary">Back to the summary</string>
+    <string name="menu_exit">Close the session</string>
+    <string name="menu_exit_sub">Sends /exit, after a confirmation</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

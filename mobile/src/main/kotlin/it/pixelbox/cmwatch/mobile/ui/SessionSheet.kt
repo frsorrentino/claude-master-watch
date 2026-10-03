@@ -178,7 +178,10 @@ fun SessionSheet(
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
         // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
-        if (header) SheetHeader(s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort)
+        if (header) SheetHeader(
+            s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
+            canExit = slash?.contains("exit") == true && s.state != SessionState.GONE,
+        )
         elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
         // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
         // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
@@ -909,9 +912,12 @@ private fun ImageViewer(path: String, onClose: () -> Unit) {
 private fun SheetHeader(
     s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean,
     model: it.pixelbox.cmwatch.contract.Model? = s.model, effort: String? = s.effort,
+    /** Contratto 1.25: il PC accetta /exit per questa sessione; il menu offre di chiuderla, dopo una conferma. */
+    canExit: Boolean = false,
 ) {
     var picker by remember { mutableStateOf<String?>(null) }   // "model" | "effort"
     var menu by remember { mutableStateOf(false) }
+    var exitAsk by remember { mutableStateOf(false) }
     var ctxSheet by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
@@ -938,6 +944,8 @@ private fun SheetHeader(
                         s.link.takeIf { it.isNotBlank() }?.let { MenuEntry(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.open_in_claude), stringResource(R.string.open_in_claude_sub), onClick = actions.openInClaude) },
                         // Con la conversazione vera il terminale non serve più dal telefono (Franz, 30/09 20:39).
                         if (showTerminal) MenuEntry(Icons.Rounded.Terminal, stringResource(R.string.terminal), stringResource(R.string.terminal_sub), onClick = actions.terminal) else null,
+                        // Franz, 03/10 16:02: chiudere la sessione dal menu; la stessa conferma di /exit scritto nel campo.
+                        if (canExit) MenuEntry(Icons.Rounded.PowerSettingsNew, stringResource(R.string.menu_exit), stringResource(R.string.menu_exit_sub)) { exitAsk = true } else null,
                     ),
                 ) {
                     SessionBadge(s, 20.dp)
@@ -957,6 +965,13 @@ private fun SheetHeader(
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(color = CmColors.line)
     }
+    if (exitAsk) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { exitAsk = false }, containerColor = CmColors.surface,
+        title = { Text(stringResource(R.string.slash_confirm_title, "exit", s.name)) },
+        text = { Text(stringResource(R.string.slash_confirm_exit)) },
+        confirmButton = { TextButton(onClick = { exitAsk = false; actions.slash("exit", null) }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
+        dismissButton = { TextButton(onClick = { exitAsk = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
+    )
     if (ctxSheet) s.context?.let { pct -> ContextSheet(pct, it.pixelbox.cmwatch.rules.ContextActions.wider(s.copy(model = model), choices), actions) { ctxSheet = false } }
     if (picker != null && choices != null) {
         ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
