@@ -59,4 +59,13 @@ class SummaryTest {
         val m = Summary.build(state, emptyList(), emptyList(), at(21), zone, emptySet())
         assertEquals(listOf(MasterHome.Kind.NIGHT), m.service.map { it.kind })
     }
+
+    // Revisione finale: uno stato di passaggio del relay non nasconde e non raddoppia una sessione.
+    @Test fun waitingWithoutQuestionIsStillListed() =
+        assertEquals(listOf("w"), build(st(s("w", SessionState.WAITING))).rows.map { it.session.name })
+
+    @Test fun busyWithAQuestionAppearsOnce() {
+        val m = build(st(s("b", SessionState.BUSY).copy(question = q("1", at(14)))))
+        assertEquals(listOf(Group.WAITING), m.rows.map { it.group })
+    }
 }

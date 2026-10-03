@@ -27,9 +27,12 @@ object Summary {
             .map { Row(Group.WAITING, it, it.question!!.text, it.question!!.askedAt) }
         val finished = forYou.filter { it.kind == MasterHome.Kind.FINISHED }
             .mapNotNull { r -> others.firstOrNull { it.name == r.session }?.let { Row(Group.FINISHED, it, r.detail, r.at, r.key) } }
-        val working = MasterHome.working(state).map { Row(Group.WORKING, it.session, it.detail, it.session.turnStarted ?: it.session.since) }
+        val asking = waiting.map { it.session.name }.toSet()
+        val working = MasterHome.working(state).filter { it.session.name !in asking }
+            .map { Row(Group.WORKING, it.session, it.detail, it.session.turnStarted ?: it.session.since) }
         val taken = (waiting + finished + working).map { it.session.name }.toSet()
-        val still = others.filter { it.state == SessionState.IDLE && it.name !in taken }.sortedByDescending { it.since }
+        // Ogni sessione viva resta nella lista anche in uno stato di passaggio del relay (in attesa senza domanda).
+        val still = others.filter { it.name !in taken }.sortedByDescending { it.since }
             .map { Row(Group.STILL, it, it.outcome?.full, it.since) }
         return Model(
             rows = waiting + finished + working + still,
