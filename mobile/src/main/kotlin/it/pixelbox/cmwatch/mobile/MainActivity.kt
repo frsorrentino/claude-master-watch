@@ -603,10 +603,6 @@ class MainActivity : ComponentActivity() {
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
             refreshing = refreshing,
         ) { page ->
-            if (page == StartRoute.Tab.OVERVIEW && open == null) {
-                summaryPage()
-                return@AppShell
-            }
             if (page == StartRoute.Tab.DIARY && open == null) {
                 state?.let { st ->
                     DiaryScreen(st, events.filter { it.kind == EventKind.QUOTA }, PhoneDiary.recaps(events), PhoneDiary.lastNightReport(events), ttsMinChars, speech::toggle,
@@ -622,26 +618,39 @@ class MainActivity : ComponentActivity() {
             SharedTransitionLayout {
                 flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }, contentKey = { it != null }) { name ->
                     CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
-                        val opened = name?.let { n -> state?.sessions?.firstOrNull { it.name == n } }
-                        // Swipe laterale fra le sessioni, nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
-                        // sessioni»); la sessione della pagina corrente è quella aperta, e il menu in alto la segue.
-                        val names = remember(state?.sessions, opened?.name) {
-                            val live = state?.let { st -> PhoneBoard.sections(st, withMaster = false).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions } }.orEmpty().map { it.name }
-                            if (opened != null && opened.name !in live) live + opened.name else live
+                        // Scorrimento laterale fra riepilogo e sessioni (Franz, 03/10 15:59): il riepilogo è sempre la prima
+                        // pagina (`null`), poi le sessioni nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
+                        // sessioni»). La pagina ferma decide la sessione aperta, e il menu in alto la segue.
+                        val pages = remember(state?.sessions, name) { it.pixelbox.cmwatch.rules.SwipePages.of(state, name) }
+                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(name).coerceAtLeast(0)) { pages.size }
+                        // Solo il contenuto di destinazione segue la pagina: durante l'uscita (gesto indietro, volo verso la
+                        // card) quello che se ne va non deve riaprire né spostarsi.
+                        val active = name == open
+                        LaunchedEffect(pager.settledPage, active) {
+                            if (!active) return@LaunchedEffect
+                            val n = pages.getOrNull(pager.settledPage) ?: run {
+                                // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
+                                if (open != null) { open = null; tab = StartRoute.Tab.OVERVIEW }
+                                return@LaunchedEffect
+                            }
+                            if (n != open) open = n
                         }
-                        if (opened != null && names.isNotEmpty()) {
-                        val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = names.indexOf(opened.name).coerceAtLeast(0)) { names.size }
-                        // Solo con una scheda aperta: durante l'uscita (open già null) la pagina non deve riaprirla.
-                        LaunchedEffect(pager.settledPage) { names.getOrNull(pager.settledPage)?.let { if (open != null && it != open) open = it } }
-                        LaunchedEffect(open) { val i = names.indexOf(open); if (i >= 0 && i != pager.currentPage) pager.scrollToPage(i) }
-                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { names[it] }, beyondViewportPageCount = 0) { page ->
-                        val session = state?.sessions?.firstOrNull { it.name == names[page] } ?: return@HorizontalPager
-                        // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
-                        val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
-                        sessionPage(session, pageEntries, null, true, null)
+                        LaunchedEffect(open, pages, active) {
+                            val i = pages.indexOf(open)
+                            if (active && i >= 0 && i != pager.currentPage && !pager.isScrollInProgress) pager.scrollToPage(i)
                         }
-                        // Durante il gesto indietro, sotto la scheda, il riepilogo.
-                        } else summaryPage()
+                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
+                            val n = pages[page]
+                            val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } }
+                            if (session == null) {
+                                // Il riepilogo; sotto la scheda, durante il gesto indietro, è questa pagina.
+                                if (n == null) summaryPage()
+                                return@HorizontalPager
+                            }
+                            // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
+                            val pageEntries = if (session.name == open) entries else feedCache[session.name].orEmpty()
+                            sessionPage(session, pageEntries, null, true, null)
+                        }
                     }
                 }
             }
@@ -769,6 +778,8 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val KEY_ROTATING = "cm.rotating"
+        /** La chiave della prima pagina dello scorrimento, il riepilogo: nessun nome di sessione la può avere. */
+        private const val SUMMARY_PAGE = "\u0000summary"
         private const val KEY_LAUNCH = "cm.launch"
         /** Extra dell'intent delle notifiche con domanda: apre la coda «Ti aspettano». */
         const val EXTRA_QUEUE = "cm.queue"
