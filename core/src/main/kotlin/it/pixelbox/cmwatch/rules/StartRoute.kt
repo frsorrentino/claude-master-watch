@@ -5,13 +5,10 @@ package it.pixelbox.cmwatch.rules
  * schede aperte; solo una rotazione (stato salvato) tiene la scheda e la sessione aperta.
  */
 object StartRoute {
-    enum class Tab { OVERVIEW, SESSIONS, DIARY }
+    /** OVERVIEW è il riepilogo unico (design 03/10): il nome resta per lo stato salvato. */
+    enum class Tab { OVERVIEW, DIARY }
 
     fun tab(restored: Tab?): Tab = restored ?: Tab.OVERVIEW
-
-    /** La scheda dopo uno scorrimento laterale (segnalazione 01/10 20:12), nell'ordine della barra; ai bordi si resta. */
-    fun swipe(from: Tab, toNext: Boolean): Tab =
-        Tab.entries.getOrNull(from.ordinal + if (toNext) 1 else -1) ?: from
 
     fun openSheet(freshLaunch: Boolean, restored: String?): String? = if (freshLaunch) null else restored
 
