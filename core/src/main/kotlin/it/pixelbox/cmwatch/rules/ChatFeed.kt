@@ -72,6 +72,15 @@ object ChatFeed {
     /** La rotella solo fino alla prima risposta del relay: una conversazione vuota (sessione appena rilanciata) è una risposta. */
     fun loading(entries: List<TranscriptEntry>, answered: Boolean): Boolean = entries.isEmpty() && !answered
 
+    /**
+     * La conversazione di una pagina dello scorrimento: quella dal vivo solo se è la sessione aperta e le voci sono sue
+     * ([owner]); se no l'ultima copia letta. Dal vivo 03/10 17:49: appena fermata la pagina, le voci dal vivo erano ancora
+     * quelle della sessione di prima e la pagina nuova le mostrava per un attimo.
+     */
+    fun pageEntries(
+        name: String, open: String?, owner: String?, live: List<TranscriptEntry>, cache: Map<String, List<TranscriptEntry>>,
+    ): List<TranscriptEntry> = if (name == open && owner == name) live else cache[name].orEmpty()
+
     fun anchor(entries: List<TranscriptEntry>): String? {
         if (entries.isEmpty()) return null
         val q = entries.indexOfFirst { it.queued }

@@ -173,4 +173,16 @@ class ChatFeedTest {
         assertFalse(ChatFeed.loading(emptyList(), answered = true))
         assertFalse(ChatFeed.loading(first.entries, answered = false))
     }
+
+    // Dal vivo 03/10 17:49: scorrendo da A a B, la pagina di B mostrava per un attimo la conversazione di A. Le voci dal vivo
+    // valgono solo per la sessione a cui appartengono; per le altre l'ultima copia letta.
+    @Test fun livePageEntriesOnlyForTheirOwnSession() {
+        val a = listOf(it.pixelbox.cmwatch.contract.TranscriptEntry("a1", "assistant", "di A"))
+        val b = listOf(it.pixelbox.cmwatch.contract.TranscriptEntry("b1", "assistant", "di B"))
+        val cache = mapOf("B" to b)
+        assertEquals(b, ChatFeed.pageEntries("B", open = "B", owner = "A", live = a, cache = cache))
+        assertEquals(a, ChatFeed.pageEntries("A", open = "A", owner = "A", live = a, cache = cache))
+        assertEquals(b, ChatFeed.pageEntries("B", open = "A", owner = "A", live = a, cache = cache))
+        assertEquals(emptyList<it.pixelbox.cmwatch.contract.TranscriptEntry>(), ChatFeed.pageEntries("C", open = "C", owner = "A", live = a, cache = cache))
+    }
 }
