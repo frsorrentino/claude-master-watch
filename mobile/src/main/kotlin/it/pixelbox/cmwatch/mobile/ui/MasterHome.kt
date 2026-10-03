@@ -50,6 +50,7 @@ import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.MasterHome
 import it.pixelbox.cmwatch.rules.PhoneOverview
+import it.pixelbox.cmwatch.rules.Summary
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import java.time.Instant
 import java.time.ZoneId
@@ -97,14 +98,14 @@ fun ForYouCard(
         // «Al lavoro» con l'ultimo esito e le risposte rapide pronte all'invio (Franz, 03/10 09:15): partono subito e la
         // sessione le prende quando finisce il turno.
         if (working.isNotEmpty()) {
-            WorkingHeader(working.size)
+            GroupHeader(stringResource(R.string.fy_working, working.size), CmColors.briefRing)
             working.forEach { r ->
                 val s = r.session
                 val id = "WORK:" + s.name
                 AttentionRow(
                     MasterHome.Row(MasterHome.Kind.FINISHED, s.name, r.detail, s.name, at = (s.turnStarted ?: s.since).takeIf { it > 0 }),
                     now, expanded == id, onToggle = { expanded = if (expanded == id) null else id }, question = null,
-                    onAnswer = {}, onStep = { t -> onStep(s.name, t) }, onOpen = { onSession(s.name) }, working = true, context = s.context,
+                    onAnswer = {}, onStep = { t -> onStep(s.name, t) }, onOpen = { onSession(s.name) }, variant = Summary.Group.WORKING, context = s.context,
                 )
             }
         }
@@ -120,12 +121,12 @@ fun ForYouCard(
     }
 }
 
-/** «Al lavoro · N» dentro «Per te»: l'intestazione del gruppo; le righe sono `AttentionRow` con il fulmine. */
+/** L'intestazione di un gruppo («Al lavoro · N» in «Per te», i gruppi del riepilogo): testo nel colore del gruppo e filo. */
 @Composable
-private fun WorkingHeader(n: Int) {
+internal fun GroupHeader(text: String, tone: Color) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.fy_working, n).uppercase(), style = MonoSmall.copy(color = CmColors.briefRing))
-        Box(Modifier.weight(1f).height(1.dp).background(CmColors.briefRing.copy(alpha = 0.25f)))
+        Text(text.uppercase(), style = MonoSmall.copy(color = tone))
+        Box(Modifier.weight(1f).height(1.dp).background(tone.copy(alpha = 0.25f)))
     }
 }
 
@@ -140,21 +141,44 @@ private fun WorkingHeader(n: Int) {
 internal fun AttentionRow(
     row: MasterHome.Row, now: Long, open: Boolean, onToggle: () -> Unit, question: it.pixelbox.cmwatch.contract.Question?,
     onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
-    /** Una sessione al lavoro (03/10 09:15): fulmine, da quanto lavora, l'ultimo esito e le sue risposte rapide. */
-    working: Boolean = false, context: Int? = null,
+    /**
+     * Il gruppo del riepilogo unico (design 03/10): mano ambra chi ti aspetta, bandierina verde chi ha finito, fulmine
+     * azzurro chi lavora (03/10 09:15, con l'ultimo esito e le risposte rapide), pausa grigia chi è fermo («da 2 h»).
+     */
+    variant: Summary.Group = if (row.kind == MasterHome.Kind.QUESTION) Summary.Group.WAITING else Summary.Group.FINISHED,
+    context: Int? = null,
+    /** Da aperta, sotto il testo: i dettagli che stavano nelle card di Sessioni (obiettivo, priorità, modello…). */
+    details: List<String> = emptyList(),
 ) {
-    val waiting = row.kind == MasterHome.Kind.QUESTION
-    val tone = when { waiting -> CmColors.briefWarn; working -> CmColors.briefRing; else -> CmColors.briefGood }
+    val waiting = variant == Summary.Group.WAITING
+    val tone = when (variant) {
+        Summary.Group.WAITING -> CmColors.briefWarn
+        Summary.Group.WORKING -> CmColors.briefRing
+        Summary.Group.FINISHED -> CmColors.briefGood
+        Summary.Group.STILL -> CmColors.text2
+    }
     val parsed = androidx.compose.runtime.remember(row.detail) { it.pixelbox.cmwatch.rules.NextSteps.parse(row.detail.orEmpty()) }
     val body = it.pixelbox.cmwatch.rules.Markdown.parse(parsed.text).text.trim()
-    val age = row.at?.let { t -> if (waiting || working) it.pixelbox.cmwatch.contract.Durations.since(t, now) else hm(t) }
+    val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
+    val age = row.at?.let { t ->
+        when (variant) {
+            Summary.Group.WAITING, Summary.Group.WORKING -> since(t)
+            Summary.Group.FINISHED -> hm(t)
+            Summary.Group.STILL -> stringResource(R.string.summary_since, since(t))
+        }
+    }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             androidx.compose.material3.Icon(
-                androidx.compose.ui.res.painterResource(when { waiting -> R.drawable.ic_hand; working -> R.drawable.ic_w_working; else -> R.drawable.ic_flag }),
+                androidx.compose.ui.res.painterResource(when (variant) {
+                    Summary.Group.WAITING -> R.drawable.ic_hand
+                    Summary.Group.WORKING -> R.drawable.ic_w_working
+                    Summary.Group.FINISHED -> R.drawable.ic_flag
+                    Summary.Group.STILL -> R.drawable.ic_w_idle
+                }),
                 null, tint = tone, modifier = Modifier.size(20.dp),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -165,7 +189,8 @@ internal fun AttentionRow(
                     },
                     style = MaterialTheme.typography.bodyLarge, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
                 )
-                if (!open && body.isNotBlank()) Text(body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
+                // Ferme: una riga breve, nome e «da 2 h» (design 03/10).
+                if (!open && variant != Summary.Group.STILL && body.isNotBlank()) Text(body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip)
             }
             context?.let { Text("$it%", style = MonoSmall.copy(color = if (it >= 75) CmColors.waiting else CmColors.briefRing)) }
             androidx.compose.material3.Icon(
@@ -175,6 +200,7 @@ internal fun AttentionRow(
         }
         if (open) Column(Modifier.padding(start = 40.dp, end = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (body.isNotBlank()) Text(body, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
+            details.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip) }
             // Le stesse opzioni della chat (consulenza del 02/10): colori, etichette e pressione lunga per il rischio alto.
             if (waiting && question != null) {
                 var holdHint by rememberSaveable(question.id) { mutableStateOf(false) }
@@ -193,7 +219,7 @@ internal fun AttentionRow(
 }
 
 @Composable
-private fun ForYouRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) {
+internal fun ForYouRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) {
     val (title, detail, action) = when (row.kind) {
         MasterHome.Kind.QUESTION -> Triple(stringResource(R.string.fy_question, row.title), row.detail, R.string.fy_btn_answer)
         // Di solito sta in `AttentionRow`; qui solo una riga senza sessione.
