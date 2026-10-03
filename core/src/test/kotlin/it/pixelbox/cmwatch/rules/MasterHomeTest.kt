@@ -70,6 +70,22 @@ class MasterHomeTest {
         assertEquals(listOf(null, null), closed.rows.map { it.session }); assertEquals("/w/kb", closed.rows[0].project)
     }
 
+    // Segnalazione del 03/10 20:24: il relay dà il progetto della sessione come percorso relativo («personali/x») e il recap
+    // come nome della cartella; la master ha il recap col suo nome. Cinque «Avvia» per sessioni già aperte.
+    @Test fun nextStepMatchesTheFolderNameAndTheMaster() {
+        val recap = Recap("2026-10-03", listOf(
+            RecapItem("claude-master-phone", "x", "merge"), RecapItem("master", "x", "Store"),
+            RecapItem("chrome-bridge", "x", "Store"), RecapItem("fable-director", "x", "rilettura"),
+        ))
+        val f = MasterHome.forYou(st(
+            s("claude-master-phone", SessionState.BUSY, project = "personali/claude-master-phone"),
+            s("master", project = "workspaces"),
+            s("chrome-bridge", SessionState.GONE, project = "personali/chrome-bridge"),
+            recap = recap,
+        ), emptyList(), emptyList(), at(15), zone)
+        assertEquals(listOf("chrome-bridge", "fable-director"), f.rows.map { it.title })
+    }
+
     @Test fun oldRecapIsIgnored() {
         val recap = Recap("2026-09-29", listOf(RecapItem("kb", "x", "y")))
         assertTrue(MasterHome.forYou(st(recap = recap), emptyList(), emptyList(), at(15), zone).rows.isEmpty())

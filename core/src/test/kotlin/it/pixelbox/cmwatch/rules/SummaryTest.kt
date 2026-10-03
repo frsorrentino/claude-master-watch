@@ -28,6 +28,16 @@ class SummaryTest {
         assertEquals(listOf("asks", "fin", "busy", "idle"), m.rows.map { it.session.name })
     }
 
+    // Franz, 03/10 20:31: sulla card la quota delle 5 ore dell'account al posto del «da N m».
+    @Test fun eachRowCarriesItsAccountQuota() {
+        val work = s("cli", SessionState.BUSY).copy(account = "professionale")
+        val quota = mapOf("personale" to QuotaAccount(h5 = 4), "professionale" to QuotaAccount(h5 = 62, stale = true))
+        val m = build(st(s("idle"), work).copy(quota = quota))
+        assertEquals(listOf(62, 4), m.rows.map { it.quota?.h5 })
+        assertEquals(listOf(true, false), m.rows.map { it.quota?.stale })
+        assertNull(build(st(s("idle"))).rows.single().quota)
+    }
+
     @Test fun aFinishedSessionIsNotAlsoStill() {
         val m = build(st(s("fin").copy(outcome = done(at(14, 50)), followed = true)))
         assertEquals(listOf(Group.FINISHED), m.rows.map { it.group })

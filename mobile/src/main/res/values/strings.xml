@@ -195,6 +195,7 @@
     <string name="menu_exit">Chiudi la sessione</string>
     <string name="menu_exit_sub">Manda /exit, dopo una conferma</string>
     <string name="ctx_short">ctx %1$d%%</string>
+    <string name="quota_h5_short">5h %1$d%%</string>
     <string name="quota_line_stale">non aggiornata</string>
     <string name="chat_empty">Conversazione nuova: ancora nessun messaggio. Scrivi qui sotto per cominciare.</string>
     <string name="menu_goto">Vai a</string>

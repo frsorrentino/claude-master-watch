@@ -25,7 +25,7 @@ class SummaryListTest {
 
     @Composable private fun page(state: State, open: String? = null) = CmPhoneTheme(still = true) {
         Column(Modifier.background(CmColors.bg)) {
-            SummaryList(model(state), state.ts, {}, { _, _ -> }, { _, _ -> }, {}, {}, initiallyOpen = open)
+            SummaryList(model(state), {}, { _, _ -> }, { _, _ -> }, {}, {}, initiallyOpen = open)
         }
     }
 

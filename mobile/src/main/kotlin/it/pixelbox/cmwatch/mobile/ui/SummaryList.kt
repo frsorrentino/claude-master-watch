@@ -50,7 +50,7 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  */
 @Composable
 fun SummaryList(
-    model: Summary.Model, now: Long, onOpen: (String) -> Unit, onAnswer: (String, Int) -> Unit, onStep: (String, String) -> Unit,
+    model: Summary.Model, onOpen: (String) -> Unit, onAnswer: (String, Int) -> Unit, onStep: (String, String) -> Unit,
     onService: (MasterHome.Row) -> Unit, onClosed: () -> Unit, initiallyOpen: String? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
@@ -78,7 +78,7 @@ fun SummaryList(
                 val id = group.name + ":" + s.name
                 Box(moving()) {
                     SummaryCard(
-                        r, now, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
+                        r, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
                         onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
                     )
                 }
@@ -115,35 +115,23 @@ private fun details(s: Session): List<String> = listOfNotNull(
     listOfNotNull(ModelText.short(s.model), s.effort, s.account).joinToString(" · ").ifEmpty { null },
 )
 
-private val CARD_HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-
 /**
  * Una sessione del riepilogo (Franz, 03/10 15:18, variante B): una card con il badge (colore della sessione, cerchio o
- * quadrato dell'account, glifo dello stato), nome, contesto ed età; sotto l'ultimo esito o la domanda su due righe e la
+ * quadrato dell'account, glifo dello stato), nome, contesto e quota delle 5 ore; sotto l'ultimo esito o la domanda su due righe e la
  * barretta del contesto. Aperta: il testo intero, i dettagli, le opzioni o i consigli e la conversazione.
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun SummaryCard(
-    r: Summary.Row, now: Long, open: Boolean, onToggle: () -> Unit,
+    r: Summary.Row, open: Boolean, onToggle: () -> Unit,
     onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
 ) {
     val s = r.session
-    val tone = groupTone(r.group)
     val waiting = r.group == Summary.Group.WAITING
     val parsed = androidx.compose.runtime.remember(r.text) { it.pixelbox.cmwatch.rules.NextSteps.parse(r.text.orEmpty()) }
     // L'esito per primo e senza l'etichetta «Esito:»; la domanda così com'è.
     val shown = if (waiting) parsed.text else s.outcome?.let { o -> it.pixelbox.cmwatch.rules.OutcomeText.summary(o) } ?: parsed.text
     val body = it.pixelbox.cmwatch.rules.Markdown.parse(shown).text.trim()
-    val since: (Long) -> String = { t -> it.pixelbox.cmwatch.contract.Durations.since(t, now) }
-    val age = r.at?.takeIf { it > 0 }?.let { t ->
-        when (r.group) {
-            // «da 16 m»: da quanto aspetta o lavora, non un tempo che resta (osservazioni del 03/10).
-            Summary.Group.WAITING, Summary.Group.WORKING -> stringResource(R.string.summary_since, since(t))
-            Summary.Group.FINISHED -> CARD_HM.format(java.time.Instant.ofEpochSecond(t).atZone(java.time.ZoneId.systemDefault()))
-            Summary.Group.STILL -> stringResource(R.string.summary_since, since(t))
-        }
-    }
     val fill = if (waiting) androidx.compose.ui.graphics.lerp(CmColors.surfaceLow, CmColors.briefWarn, 0.06f) else CmColors.surfaceLow
     Column(
         // La chat si restringe verso la sua card durante il gesto indietro.
@@ -160,7 +148,9 @@ private fun SummaryCard(
             )
             // «ctx 17%»: il contesto occupato, non un avanzamento del lavoro (osservazioni del 03/10).
             s.context?.let { Text(stringResource(R.string.ctx_short, it), style = MonoSmall) }
-            age?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = tone, maxLines = 1) }
+            // La quota delle 5 ore dell'account al posto dell'età della sessione (Franz, 03/10 20:31: «non è un'informazione
+            // rilevante»); il dato vecchio nel colore dell'attesa, come nel Quadro.
+            r.quota?.let { q -> q.h5?.let { Text(stringResource(R.string.quota_h5_short, it), style = MonoSmall, color = if (q.stale) CmColors.waiting else CmColors.text2, maxLines = 1) } }
             androidx.compose.material3.IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
                 androidx.compose.material3.Icon(
                     if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,

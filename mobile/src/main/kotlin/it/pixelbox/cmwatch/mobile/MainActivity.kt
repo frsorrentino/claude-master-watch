@@ -198,7 +198,12 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(open) { if (swipeSet) swipeSet = false else flyTarget = open }
         val seek = remember { SeekableTransitionState(flyTarget) }
         // Sempre fino in fondo: dopo un gesto completato seekTo ha già messo il bersaglio a null (revisione 29/09).
-        LaunchedEffect(flyTarget) { seek.animateTo(flyTarget) }
+        // Senza spec la durata è quella della transizione quando parte, ancora 0 perché il volo registra i bordi al layout:
+        // il tocco su una card apriva la sessione in un fotogramma (registrazione dal vivo del 03/10 20:57). Con lo spec la
+        // frazione avanza da sola; dopo un gesto indietro (frazione già avanzata) resta il tempo che manca, come prima.
+        LaunchedEffect(flyTarget) {
+            seek.animateTo(flyTarget, if (seek.fraction == 0f) androidx.compose.animation.core.tween(FLY_MS, easing = androidx.compose.animation.core.LinearEasing) else null)
+        }
         PredictiveBackHandler(enabled = open != null && flyTarget != null && !settingsOpen && terminal == null) { progress ->
             try {
                 progress.collect { seek.seekTo(it.progress, targetState = null) }
@@ -540,7 +545,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             } },
-                        ), chat = rows, quota = quotaWarn, canTonight = nightDir != null,
+                        ), chat = rows, quota = quotaWarn, accountQuota = state?.quota?.get(session.account), canTonight = nightDir != null,
                             // Niente frasi rapide (Franz, 01/10 23:34: «via» fisso, generico e fuori luogo): i consigli in più
                             // li scriverà la sessione stessa a fine turno.
                             choices = state?.choices, ops = state?.ops, canTune = !demo, canAttach = state?.share != null,
@@ -628,7 +633,7 @@ class MainActivity : ComponentActivity() {
             val masterEntries = master?.let { m -> ChatFeed.pageEntries(m.name, chatName, entriesOwner, entries, feedCache) }.orEmpty()
             val list: @Composable () -> Unit = {
                 SummaryList(
-                    summary, now,
+                    summary,
                     // Aprire una sessione che ha finito la toglie da «Ha finito», come in «Per te».
                     onOpen = { n -> summary.rows.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead); open = n },
                     onAnswer = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } },

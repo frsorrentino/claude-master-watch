@@ -13,6 +13,9 @@ class Fly(val shared: SharedTransitionScope, val anim: AnimatedVisibilityScope)
 
 val LocalFly = compositionLocalOf<Fly?> { null }
 
+/** La durata del volo card ↔ scheda. */
+const val FLY_MS = 320
+
 /** La card si allarga fino a diventare la scheda, senza dissolvenza finale; con le animazioni spente, subito. */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -23,7 +26,7 @@ fun Modifier.fly(key: String): Modifier {
         this@fly.sharedBounds(
             rememberSharedContentState(key), f.anim,
             enter = EnterTransition.None, exit = ExitTransition.None,
-            boundsTransform = { _, _ -> if (off) snap() else tween(320, easing = CmMotion.easing) },
+            boundsTransform = { _, _ -> if (off) snap() else tween(FLY_MS, easing = CmMotion.easing) },
             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
         )
     }

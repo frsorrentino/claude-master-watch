@@ -82,7 +82,9 @@ object MasterHome {
             if (recapDay != null && !recapDay.isBefore(today.minusDays(1))) state.recap.items.forEach { item ->
                 val next = item.next?.trim()?.takeIf { it.isNotEmpty() } ?: return@forEach
                 // Mai a una sessione già aperta (Franz, 02/10 20:49: «Avvia» sembrava riaprirla): quella sta fra chi ha finito.
-                if (live.any { it.project == item.project }) return@forEach
+                // Il progetto della sessione è un percorso relativo («personali/x»), quello del recap il nome della cartella;
+                // la master ha nel recap il suo nome (segnalazione del 03/10 20:24).
+                if (live.any { it.name == item.project || it.project.substringAfterLast('/') == item.project }) return@forEach
                 // Già avviato: ricordato dall'app.
                 if (nextKey(item.project, next) in read) return@forEach
                 add(Row(Kind.NEXT_STEP, item.project, next, project = state.projects.firstOrNull { it.name == item.project }?.path))

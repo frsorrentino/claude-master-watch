@@ -23,7 +23,11 @@ class SessionSheetTest {
         val s = st.sessions.first { it.question != null }
         CmPhoneTheme(still = true) { SessionSheet(s.copy(question = s.question!!.copy(tier = Tier.HIGH)), st.ts, emptyList(), 120, none) }
     }
-    @Test fun sheetBusyWithGoal() = paparazzi.snapshot { CmPhoneTheme(still = true) { SessionSheet(st.sessions.first { it.goal != null }, st.ts, emptyList(), 120, none) } }
+    // In testata anche la quota delle 5 ore dell'account (Franz, 03/10 20:31).
+    @Test fun sheetBusyWithGoal() = paparazzi.snapshot {
+        val s = st.sessions.first { it.goal != null }
+        CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, accountQuota = st.quota[s.account]) }
+    }
 
     // L'avviso delle altre sessioni sotto la barra (Franz, 02/10 20:47, variante A): chi ti aspetta e chi ha finito.
     @Test fun sheetElsewhereWaiting() = paparazzi.snapshot {

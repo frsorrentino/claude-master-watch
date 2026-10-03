@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Event
+import it.pixelbox.cmwatch.contract.QuotaAccount
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
@@ -13,7 +14,8 @@ import java.time.ZoneId
  */
 object Summary {
     enum class Group { WAITING, FINISHED, WORKING, STILL }
-    data class Row(val group: Group, val session: Session, val text: String?, val at: Long?, val key: String? = null)
+    /** `quota`: la quota dell'account della sessione; sulla card la finestra delle 5 ore (Franz, 03/10 20:31). */
+    data class Row(val group: Group, val session: Session, val text: String?, val at: Long?, val key: String? = null, val quota: QuotaAccount? = null)
     data class Model(val rows: List<Row>, val closed: List<Session>, val service: List<MasterHome.Row>, val open: Int, val master: Session?)
 
     private val SERVICE = setOf(MasterHome.Kind.CONTEXT, MasterHome.Kind.NIGHT_REPORT, MasterHome.Kind.NIGHT, MasterHome.Kind.NEXT_STEP, MasterHome.Kind.SCHEDULED)
@@ -35,7 +37,7 @@ object Summary {
         val still = others.filter { it.name !in taken }.sortedByDescending { it.since }
             .map { Row(Group.STILL, it, it.outcome?.full, it.since) }
         return Model(
-            rows = waiting + finished + working + still,
+            rows = (waiting + finished + working + still).map { it.copy(quota = state.quota[it.session.account]) },
             closed = state.sessions.filter { it.state == SessionState.GONE },
             service = forYou.filter { it.kind in SERVICE },
             open = others.size,

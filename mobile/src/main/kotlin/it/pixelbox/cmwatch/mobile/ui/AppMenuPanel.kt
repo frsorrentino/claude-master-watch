@@ -95,7 +95,9 @@ fun PanelShell(
     content: @Composable androidx.compose.foundation.layout.ColumnScope.(close: () -> Unit) -> Unit,
 ) {
     val off = animationsOff()
-    val shown = remember { androidx.compose.animation.core.MutableTransitionState(off) }.apply { targetState = true }
+    // L'apertura si chiede una volta sola: impostata a ogni ricomposizione rimetteva `true` subito dopo la chiusura e il
+    // pannello non si chiudeva più (segnalazione del 03/10 20:24).
+    val shown = remember { androidx.compose.animation.core.MutableTransitionState(off).apply { targetState = true } }
     var closing by remember { androidx.compose.runtime.mutableStateOf(false) }
     val close: () -> Unit = { if (off) onDismiss() else { closing = true; shown.targetState = false } }
     androidx.compose.runtime.LaunchedEffect(shown.isIdle, shown.currentState, closing) { if (closing && shown.isIdle && !shown.currentState) onDismiss() }
