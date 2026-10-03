@@ -37,6 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -285,7 +288,10 @@ fun SessionSheet(
             // con la bozza.
             val h = home
             val off = animationsOff()
-            Box(Modifier.weight(1f).fillMaxWidth()) {
+            // L'altezza della barra ridotta: il pannello si ferma lì, così la sua barra in cima parte e arriva esattamente
+            // al posto di quella in basso (dal vivo 03/10 19:01: scendeva sotto il campo di testo e poi «risaliva»).
+            var dockPx by remember { mutableIntStateOf(0) }
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
                 androidx.compose.animation.AnimatedContent(
                     homeOpen, label = "home",
                     transitionSpec = {
@@ -296,10 +302,10 @@ fun SessionSheet(
                         when {
                             off -> androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)) togetherWith
                                 androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150))
-                            !targetState -> androidx.compose.animation.slideInVertically(CmMotion.panel) { it } togetherWith
+                            !targetState -> androidx.compose.animation.slideInVertically(CmMotion.panel) { full -> (full - dockPx).coerceAtLeast(0) } togetherWith
                                 (androidx.compose.animation.fadeOut(recede) + androidx.compose.animation.scaleOut(recede, targetScale = 0.96f))
                             else -> ((androidx.compose.animation.fadeIn(recede) + androidx.compose.animation.scaleIn(recede, initialScale = 0.96f)) togetherWith
-                                androidx.compose.animation.slideOutVertically(CmMotion.panel) { it }).apply { targetContentZIndex = -1f }
+                                androidx.compose.animation.slideOutVertically(CmMotion.panel) { full -> (full - dockPx).coerceAtLeast(0) }).apply { targetContentZIndex = -1f }
                         }
                     },
                 ) { showList ->
@@ -320,12 +326,12 @@ fun SessionSheet(
                             // da qui. Scendendo ricompare solo quando il pannello è arrivato in fondo.
                             val dockAlpha by transition.animateFloat(
                                 transitionSpec = {
-                                    if (targetState == androidx.compose.animation.EnterExitState.Visible) androidx.compose.animation.core.tween(120, delayMillis = if (off) 0 else 300, easing = CmMotion.easing)
+                                    if (targetState == androidx.compose.animation.EnterExitState.Visible) androidx.compose.animation.core.tween(150, delayMillis = if (off) 0 else 200, easing = CmMotion.easing)
                                     else androidx.compose.animation.core.snap()
                                 },
                                 label = "dock",
                             ) { if (it == androidx.compose.animation.EnterExitState.Visible) 1f else 0f }
-                            Box(Modifier.graphicsLayer { alpha = dockAlpha }) { dock?.invoke() }
+                            Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = dockAlpha }) { dock?.invoke() }
                         } else chatArea()
                     }
                 }
