@@ -265,7 +265,7 @@
         <item quantity="other">%1$d messaggi partono alle %2$s</item>
     </plurals>
     <string name="search">Cerca</string>
-    <string name="search_hint">Cerca nelle chat e nel diario</string>
+    <string name="search_hint">Cerca nei messaggi mandati, negli esiti e nel registro</string>
     <string name="search_none">Nessun risultato</string>
     <string name="widget_desc">Quota, sessioni e domande sulla schermata home</string>
     <string name="widget_waiting">in attesa del PC</string>
