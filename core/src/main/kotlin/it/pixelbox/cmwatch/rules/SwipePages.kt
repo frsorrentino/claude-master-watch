@@ -14,4 +14,21 @@ object SwipePages {
         }.orEmpty()
         return listOf<String?>(null) + live + listOfNotNull(open?.takeIf { it !in live })
     }
+
+    /** Che cosa fa una pagina ferma: niente, o aprire una sessione (`null` = il riepilogo). */
+    sealed interface Move {
+        data object Stay : Move
+        data class Open(val name: String?) : Move
+    }
+
+    /**
+     * La pagina su cui lo scorrimento si è fermato decide la sessione aperta, ma solo dopo uno scorrimento: la prima pagina
+     * vista quando il contenuto si riattiva è quella di prima e non deve «correggere» una scelta fatta dal menu in alto, da
+     * un avviso o da «Fai controllare» (dal vivo 03/10 16:40: la sessione tornava subito quella vecchia).
+     */
+    fun afterSettle(pages: List<String?>, settled: Int, open: String?, initial: Boolean): Move {
+        if (initial || settled !in pages.indices) return Move.Stay
+        val n = pages[settled]
+        return if (n == open) Move.Stay else Move.Open(n)
+    }
 }

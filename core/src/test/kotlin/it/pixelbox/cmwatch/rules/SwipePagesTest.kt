@@ -28,4 +28,18 @@ class SwipePagesTest {
         assertEquals(listOf(null, "a"), SwipePages.of(st(s("a"), s("x", SessionState.GONE)), open = null))
         assertEquals(listOf(null, "a", "x"), SwipePages.of(st(s("a"), s("x", SessionState.GONE)), open = "x"))
     }
+
+    // Dal vivo 03/10 16:40: scelta dal menu in alto, la sessione tornava subito quella di prima. La pagina vista quando il
+    // contenuto si riattiva è quella vecchia: non è uno scorrimento e non deve cambiare la sessione aperta.
+    @Test fun theFirstSettledPageNeverChangesTheOpenSession() =
+        assertEquals(SwipePages.Move.Stay, SwipePages.afterSettle(listOf(null, "a", "b"), settled = 1, open = "b", initial = true))
+
+    @Test fun aSwipeToAnotherSessionOpensIt() =
+        assertEquals(SwipePages.Move.Open("b"), SwipePages.afterSettle(listOf(null, "a", "b"), settled = 2, open = "a", initial = false))
+
+    @Test fun aSwipeToTheFirstPageGoesBackToTheSummary() =
+        assertEquals(SwipePages.Move.Open(null), SwipePages.afterSettle(listOf(null, "a", "b"), settled = 0, open = "a", initial = false))
+
+    @Test fun settlingOnTheOpenSessionChangesNothing() =
+        assertEquals(SwipePages.Move.Stay, SwipePages.afterSettle(listOf(null, "a", "b"), settled = 2, open = "b", initial = false))
 }
