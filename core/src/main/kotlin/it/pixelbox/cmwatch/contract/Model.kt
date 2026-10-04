@@ -166,7 +166,15 @@ enum class CmdOp {
     val ops: List<String>? = null,
     /** Contratto 1.25: i comandi slash che il relay consente (senza «/»); null con un relay precedente. */
     val slash: List<String>? = null,
+    /** Contratto 1.32: i dispositivi accoppiati, nell'ordine di accoppiamento; null con un relay precedente. */
+    val devices: List<Device>? = null,
 )
+
+/**
+ * Contratto 1.32: un dispositivo accoppiato come lo vede il PC. `kind` = phone, watch, tablet, chromebook o null se non si
+ * sa; `seen` = epoch s dell'ultima lettura (`/seen`), null se non è mai arrivata.
+ */
+@Serializable data class Device(val uid: String, val name: String, val kind: String? = null, val seen: Long? = null)
 
 /** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */
 @Serializable data class Choices(val models: List<Model> = emptyList(), val efforts: List<String> = emptyList())

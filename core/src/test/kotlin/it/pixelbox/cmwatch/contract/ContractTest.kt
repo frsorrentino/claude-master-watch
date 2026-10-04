@@ -70,6 +70,14 @@ class ContractTest {
         assertNull(ev.first { it.kind == EventKind.QUOTA }.session)
     }
 
+    // Contratto 1.32: i dispositivi accoppiati, nell'ordine del PC; kind e seen null quando non si sanno.
+    @Test fun stateCarriesThePairedDevices() {
+        val d = ContractJson.decodeState(Fixtures.stateIdle).devices!!
+        assertEquals(listOf("phone", "watch", "tablet", "chromebook", null), d.map { it.kind })
+        assertEquals("Pixel 7", d.last().name); assertNull(d.last().seen)
+        assertNotNull(d.first().seen)
+    }
+
     @Test fun cmdAndResultDecodeAndEncode() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
