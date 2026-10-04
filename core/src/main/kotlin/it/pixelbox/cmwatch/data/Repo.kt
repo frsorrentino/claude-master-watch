@@ -212,7 +212,8 @@ class Repo(
     /** Chiede al PC un file della conversazione (`file`) e lo legge da /file/<id del comando>. */
     suspend fun openFile(session: String, path: String): Opened {
         val id = UUID.randomUUID().toString()
-        return when (val d = deliver(CmdOp.FILE, session, path, id)) {
+        // Contratto 1.34: a pezzi, fino a 25 MB; un relay vecchio ignora `parts` e scrive il nodo unico, letto come prima.
+        return when (val d = deliver(CmdOp.FILE, session, path, id, parts = true)) {
             is Delivery.Done -> if (!d.result.ok) Opened.Refused(d.result.text)
                 else runCatching { transport.fetchFile(id) }.getOrNull()?.let { Opened.Ok(it) } ?: Opened.Failed
             Delivery.NotSent -> Opened.Failed
@@ -230,10 +231,10 @@ class Repo(
      * rete non entra nella coda offline, che scarta dopo 10 minuti, e il chiamante può riprovare con lo stesso id (il PC
      * ignora i duplicati). Aspetta anche l'apertura da Room, così non sovrascrive i comandi in sospeso salvati.
      */
-    suspend fun deliver(op: CmdOp, session: String?, arg: String?, id: String): Delivery {
+    suspend fun deliver(op: CmdOp, session: String?, arg: String?, id: String, parts: Boolean = false): Delivery {
         loaded.await()
         if (!online()) return Delivery.NotSent
-        dispatch(Cmd(id, op, session, arg, now(), by, device = device))
+        dispatch(Cmd(id, op, session, arg, now(), by, device = device, parts = parts.takeIf { it }))
         snapshot.first { s -> s.pending.none { it.cmd.id == id && (it.status == PendingStatus.SENDING || it.status == PendingStatus.SENT) } }
         val r = _resultsById.value[id]
         if (r == null) forget(id)

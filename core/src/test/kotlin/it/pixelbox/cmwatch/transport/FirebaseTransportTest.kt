@@ -44,7 +44,7 @@ class FirebaseTransportTest {
                 return when (request.method) {
                     "GET" -> MockResponse().setBody(store[path] ?: "null")
                     "PUT" -> { store[path] = request.body.readUtf8(); MockResponse().setBody(store[path]!!) }
-                    "DELETE" -> { store.remove(path); MockResponse().setBody("null") }
+                    "DELETE" -> { store.keys.removeIf { k -> k == path || k.startsWith("$path/") }; MockResponse().setBody("null") }
                     else -> MockResponse().setResponseCode(405)
                 }
             }
@@ -191,6 +191,36 @@ class FirebaseTransportTest {
         assertArrayEquals(byteArrayOf(1, 2, 3), f.bytes)
         assertFalse(store.containsKey("file/c1"))
         assertNull(transport().fetchFile("c2"))
+    }
+
+    // Contratto 1.34: i pezzi in ordine, la misura e lo sha256 controllati, poi via tutto /file/<id>.
+    @Test fun fetchFileInPartsJoinsChecksAndDeletes() = runBlocking {
+        val file = "hello, parts!\n".toByteArray()
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(file).joinToString("") { "%02x".format(it) }
+        store["file/c3/parts/0"] = sealBytes(file.copyOfRange(0, 8))
+        store["file/c3/parts/1"] = sealBytes(file.copyOfRange(8, file.size))
+        store["file/c3/meta"] = blobOf("""{"n":2,"size":${file.size},"sha256":"$sha","mime":"text/plain","name":"hello.txt"}""")
+        val f = transport().fetchFile("c3")!!
+        assertEquals("text/plain", f.mime)
+        assertArrayEquals(file, f.bytes)
+        assertTrue(store.keys.none { it.startsWith("file/c3") })
+    }
+
+    @Test fun aPartThatDoesNotMatchTheHashIsRefused() = runBlocking {
+        store["file/c4/parts/0"] = sealBytes("altro".toByteArray())
+        store["file/c4/meta"] = blobOf("""{"n":1,"size":5,"sha256":"00","mime":"text/plain"}""")
+        try { transport().fetchFile("c4"); fail("expected a mismatch") } catch (e: TransportException.Network) { }
+        assertTrue(store.keys.none { it.startsWith("file/c4") })
+    }
+
+    /** Un pezzo come lo scrive il relay: la busta dei byte grezzi (nonce, AES-GCM con lo stesso AAD). */
+    private fun sealBytes(b: ByteArray): String {
+        val nonce = ByteArray(12).also { SecureRandom().nextBytes(it) }
+        val c = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(javax.crypto.Cipher.ENCRYPT_MODE, javax.crypto.spec.SecretKeySpec(key, "AES"), javax.crypto.spec.GCMParameterSpec(128, nonce))
+        c.updateAAD(Blob.AAD)
+        val enc = java.util.Base64.getEncoder().encodeToString(nonce + c.doFinal(b))
+        return """{"v":1,"enc":"$enc"}"""
     }
 
     @Test fun shareTooLargeIsRefusedBeforeWriting() = runBlocking {

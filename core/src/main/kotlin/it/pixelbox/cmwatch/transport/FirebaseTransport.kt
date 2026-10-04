@@ -43,6 +43,10 @@ class FirebaseTransport(
 
     private fun seal(plain: String): String = Blob.seal(plain, k())
 
+    private fun openBytes(doc: JsonElement): ByteArray = try { Blob.openBytes(doc.toString(), k()) } catch (e: BlobException) {
+        throw TransportException.Network("cannot decrypt: ${e.message}")
+    }
+
     /** `{"path":"/","data":{…}}` → path e data. */
     private fun putEvent(data: String): Pair<String, JsonElement>? {
         val o = runCatching { Json.parseToJsonElement(data).jsonObject }.getOrNull() ?: return null
@@ -124,8 +128,26 @@ class FirebaseTransport(
         rtdb.put("share/$id", doc)
     }
 
-    /** Busta come /share, in chiaro {mime, data}; letto, si cancella (il relay toglie dopo 10 minuti quelli non letti). */
+    /**
+     * Busta come /share, in chiaro {mime, data}; letto, si cancella (il relay toglie dopo 10 minuti quelli non letti).
+     * Contratto 1.34: un relay nuovo scrive il file a pezzi, /file/<id>/parts/<k> e per ultimo /file/<id>/meta; si leggono
+     * in ordine, si controllano misura e sha256 e si cancella tutto /file/<id> (Franz, 04/10 21:55: oltre 0,8 MB non arrivava).
+     */
     override suspend fun fetchFile(id: String): FileBlob? {
+        rtdb.get("file/$id/meta")?.let { m ->
+            val meta = ContractJson.json.decodeFromString(it.pixelbox.cmwatch.contract.FileMeta.serializer(), open(Json.parseToJsonElement(m)))
+            val out = java.io.ByteArrayOutputStream(meta.size.coerceIn(0, Int.MAX_VALUE.toLong()).toInt())
+            try {
+                for (k in 0 until meta.n) {
+                    val part = rtdb.get("file/$id/parts/$k") ?: throw TransportException.Network("file $id: part $k missing")
+                    out.write(openBytes(Json.parseToJsonElement(part)))
+                }
+            } finally { runCatching { rtdb.delete("file/$id") } }
+            val bytes = out.toByteArray()
+            val hex = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { b -> "%02x".format(b) }
+            if (bytes.size.toLong() != meta.size || hex != meta.sha256) throw TransportException.Network("file $id: size or sha256 mismatch")
+            return FileBlob(meta.mime, bytes)
+        }
         val body = rtdb.get("file/$id") ?: return null
         val plain = Json.parseToJsonElement(open(Json.parseToJsonElement(body))).jsonObject
         runCatching { rtdb.delete("file/$id") }
