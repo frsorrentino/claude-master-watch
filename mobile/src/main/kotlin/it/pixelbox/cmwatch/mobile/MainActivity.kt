@@ -986,7 +986,7 @@ class MainActivity : ComponentActivity() {
         if (closedOpen && summary != null) {
             ModalBottomSheet(onDismissRequest = { closedOpen = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.surface) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(getString(R.string.summary_closed, summary.closed.size), style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text)
+                    Text(resources.getQuantityString(R.plurals.summary_closed, summary.closed.size, summary.closed.size), style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text)
                     summary.closed.forEach { s ->
                         Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             SessionBadge(s, 20.dp)

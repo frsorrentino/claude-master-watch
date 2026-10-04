@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Session
@@ -76,7 +77,7 @@ fun SummaryList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         model.rows.groupBy { it.group }.forEach { (group, rows) ->
-            item(key = "h-${group.name}") { Box(moving()) { GroupHeader(stringResource(groupLabel(group), rows.size), groupTone(group)) } }
+            item(key = "h-${group.name}") { Box(moving()) { GroupHeader(pluralStringResource(groupLabel(group), rows.size, rows.size), groupTone(group)) } }
             items(rows, key = { "s-" + it.session.name }) { r ->
                 val s = r.session
                 val id = group.name + ":" + s.name
@@ -104,10 +105,10 @@ fun SummaryList(
 }
 
 internal fun groupLabel(g: Summary.Group) = when (g) {
-    Summary.Group.WAITING -> R.string.summary_waiting
-    Summary.Group.FINISHED -> R.string.summary_finished
-    Summary.Group.WORKING -> R.string.summary_working
-    Summary.Group.STILL -> R.string.summary_still
+    Summary.Group.WAITING -> R.plurals.summary_waiting
+    Summary.Group.FINISHED -> R.plurals.summary_finished
+    Summary.Group.WORKING -> R.plurals.summary_working
+    Summary.Group.STILL -> R.plurals.summary_still
 }
 
 internal fun groupTone(g: Summary.Group): Color = when (g) {
@@ -302,6 +303,6 @@ private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(names, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, stringResource(R.string.summary_closed, closed.size), tint = CmColors.text2)
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, pluralStringResource(R.plurals.summary_closed, closed.size, closed.size), tint = CmColors.text2)
     }
 }

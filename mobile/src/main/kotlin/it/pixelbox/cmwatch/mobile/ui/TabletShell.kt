@@ -302,7 +302,7 @@ fun TabletSessions(
             groups.forEach { (g, rows) ->
                 item(key = "g-${g.name}") {
                     Box(Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 6.dp)) {
-                        RuledLabel(stringResource(groupLabel(g), rows.size), groupTone(g))
+                        RuledLabel(pluralStringResource(groupLabel(g), rows.size, rows.size), groupTone(g))
                     }
                 }
                 items(rows, key = { "s-" + it.session.id }) { r -> TabletSessionRow(r, r.session.name == current, now) { onPick(r.session.name) } }
