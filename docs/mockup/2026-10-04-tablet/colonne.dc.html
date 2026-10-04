@@ -24,7 +24,7 @@ button{font:inherit;color:inherit}
 <div class="mono strip" style="height: 52px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 12px; border-bottom: 1px solid #2A2E35; font-size: 12px; color: #B0B8C4; background: #0B0D10">
 <button onClick="{{toggleSide}}" aria-label="Barra delle sessioni" style="width: 40px; height: 40px; border: 0; border-radius: 10px; background: #1B1F26; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D3E3FD" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
 <span style="color: #F2F4F7; font-weight: 600; letter-spacing: 0.08em">CLAUDE-MASTER</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #65C581; box-shadow: 0 0 6px #65C581"></span>penguin · ora</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #65C581; box-shadow: 0 0 6px #65C581"></span>crostini-demo · ora</span>
 <span>5h <span style="color: #F2F4F7">9%</span> → 16% alle 01:40</span>
 <span>7g <span style="color: #F2F4F7">24%</span></span>
 <span style="width: 1px; height: 22px; background: #2A2E35"></span>
@@ -82,7 +82,7 @@ button{font:inherit;color:inherit}
 </sc-for>
 <sc-if value="{{p.live}}" hint-placeholder-val="{{ false }}"><span class="mono" style="font-size: 11px; color: #D97757">{{p.live}}</span></sc-if>
 </div>
-<div style="padding: 8px 9px 9px"><div style="height: 38px; border-radius: 19px; border: 1px solid #455165; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #8A93A1">Scrivi a {{p.name}}</div></div>
+<div style="padding: 8px 9px 9px"><div style="height: 38px; border-radius: 19px; border: 1px solid #455165; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #8A93A1">{{p.to}}</div></div>
 </section>
 </sc-for>
 </div>
@@ -97,37 +97,39 @@ class Component extends DCLogic {
   }
   renderVals() {
     const all = {
-      phone: { name: 'claude-master-phone', led: '#8BB4F7', state: 'AL LAVORO · 6 MIN', ctx: '61%', live: '✳ 6 min · Bash · Compila il mini-controller', chat: [
-        { mine: true, text: 'ok A' },
-        { steps: true, text: '9 passaggi · 7 Bash · 2 Edit  ✓ 3/3 · 11/11' },
-        { claude: true, text: 'Home A scritta: sotto le sessioni il titolo «Fuori dalle sessioni», poi le categorie dalla più urgente. Provini guardati, uguali al mockup.' },
-        { claude: true, text: 'Esito: home A installata alle 22:56; tutto il lavoro di stasera è sul telefono.' },
-        { mine: true, text: 'sì, mini-controller' },
+      phone: { name: 'atlas-shop', led: '#8BB4F7', state: 'AL LAVORO · 6 MIN', ctx: '61%', live: '✳ 6 min · Bash · Run the checkout tests', chat: [
+        { mine: true, text: 'ok, run the checkout tests' },
+        { steps: true, text: '9 passaggi · 7 Bash · 2 Edit  ✓ 3/3 · 48/48' },
+        { claude: true, text: 'Checkout suite green: 48 passed. The release candidate is tagged as 2.4.0-rc1.' },
+        { claude: true, text: 'Esito: release candidate tagged; the payments are still to fix.' },
+        { mine: true, text: 'yes, fix the payments' },
         { steps: true, text: '5 passaggi · 4 Bash · 1 Write  ✓ 3/3' },
-        { claude: true, text: 'Pillola sopra il campo nella home e nelle sessioni, in fondo nelle altre schermate; il tocco riporta alla sessione.' },
+        { claude: true, text: 'Looking at the refund path now: partial refunds are rounded one cent off.' },
       ] },
-      cm: { name: 'claude-master', led: '#65C581', state: 'HA FINITO', ctx: '42%', live: '', chat: [
-        { mine: true, text: 'contratto 1.29: va bene la forma?' },
+      cm: { name: 'ledger-api', led: '#65C581', state: 'HA FINITO', ctx: '42%', live: '', chat: [
+        { mine: true, text: 'migration notes for 2.4: is the format ok?' },
         { steps: true, text: '4 passaggi · 3 Bash · 1 Edit' },
-        { claude: true, text: 'Corretto con le due modifiche dell\u2019app: project relativo come nello stato, tutti i kind nella fixture. Relay riavviato.' },
-        { mine: true, text: 'importate, parti pure' },
+        { claude: true, text: 'Fixed with the two changes you asked for: relative paths, and every kind in the fixture. API restarted.' },
+        { mine: true, text: 'approved, go ahead' },
         { steps: true, text: '12 passaggi · 9 Bash · 3 Edit  ✓ 202/202' },
-        { claude: true, text: 'Esito: 0.6.2 uscita su GitHub e marketplace, guardia accesa, tutto verde.' },
+        { claude: true, text: 'Esito: 2.4 deployed to staging, all green.' },
       ] },
       master: { name: 'master', led: '#B0B8C4', state: 'FERMA', ctx: '31%', live: '', chat: [
-        { mine: true, text: 'sto pensando a una versione tablet/desktop dell\u2019app' },
+        { mine: true, text: 'thinking about a tablet and desktop version of the app' },
         { steps: true, text: '6 passaggi · 4 Bash · 2 WebSearch' },
-        { claude: true, text: 'Consiglio Kotlin Multiplatform con Compose Multiplatform: prima il tablet adattivo, poi il desktop. iOS dopo, con il Mac.' },
-        { mine: true, text: 'riguardo il piano tablet vorrei vedere i mockup' },
-        { claude: true, text: 'Girato a claude-master-phone: i mockup li prepara lei, il piano resta suo.' },
+        { claude: true, text: 'Start with a responsive tablet layout in the same app; the desktop comes later.' },
+        { mine: true, text: 'about the tablet plan, I would like to see the mockups' },
+        { claude: true, text: 'Handed to atlas-shop: it prepares the mockups, the plan stays with it.' },
       ] },
-      fd: { name: 'fable-director', led: '#FFC46B', state: 'TI ASPETTA', ctx: '23%', live: '', chat: [
-        { mine: true, text: 'rileggi i gate_deny della settimana' },
-        { claude: true, text: 'Sette gate_deny da lunedì, tutti su deleghe senza controllo che possa fallire.' },
+      fd: { name: 'field-notes', led: '#FFC46B', state: 'TI ASPETTA', ctx: '23%', live: '', chat: [
+        { mine: true, text: 'read this week’s notes again' },
+        { claude: true, text: 'Seven notes since Monday, all about the Tuesday meeting.' },
         { steps: true, text: '3 passaggi · 2 Read · 1 Bash' },
-        { claude: true, text: 'Rileggo i gate_deny della settimana: li tengo come sono o allargo la soglia a 3?' },
+        { claude: true, text: 'Should I merge them into one page, or keep one page per day?' },
       ] },
     };
+    // «Scrivi ad» davanti ad «a» (Franz, 04/10 09:14).
+    Object.values(all).forEach((x) => { x.to = (/^[aàá]/i.test(x.name) ? 'Scrivi ad ' : 'Scrivi a ') + x.name; });
     const order = ['phone', 'cm', 'master', 'fd'];
     const pinned = this.state.pinned;
     const toggle = (id) => {
