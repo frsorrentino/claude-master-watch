@@ -40,6 +40,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -102,11 +103,14 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
             o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 },
         ) {
-            // Largo quanto il suo posto (sul tablet la colonna della conversazione); senza posto in fondo, al centro e mai più
-            // largo di 640 dp (sul telefono vale tutta la larghezza, come prima).
+            // Largo quanto il suo posto quando il posto è una colonna (la conversazione del tablet, le colonne). Un posto largo
+            // quanto lo schermo è una pagina del telefono: lì il controller resta fermo a tutta larghezza e non segue la pagina
+            // che scorre (Franz, 04/10 15:09: seguendo la x del posto «si ricompone a ogni swipe»). Senza posto, in fondo al
+            // centro e mai più largo di 640 dp.
             Box(Modifier.fillMaxWidth()) {
-                val place = slot?.let { s -> Modifier.align(Alignment.BottomStart).offset { IntOffset((s.left - root.left).roundToInt(), -shown) }.width(with(density) { s.width.toDp() }) }
-                    ?: Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, -shown) }.widthIn(max = 640.dp)
+                val column = slot?.takeIf { s -> root.width > 0f && s.width < root.width * 0.9f }
+                val place = column?.let { s -> Modifier.align(Alignment.BottomStart).offset { IntOffset((s.left - root.left).roundToInt(), -shown) }.width(with(density) { s.width.toDp() }) }
+                    ?: Modifier.align(Alignment.BottomCenter).offset { IntOffset(0, -shown) }.widthIn(max = if (slot != null) Dp.Infinity else 640.dp)
                 Box(place.padding(horizontal = 12.dp).onSizeChanged { o.heightPx = it.height }) { last?.invoke() }
             }
         }
