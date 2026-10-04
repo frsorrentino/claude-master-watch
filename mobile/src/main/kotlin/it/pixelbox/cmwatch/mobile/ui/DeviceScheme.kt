@@ -13,11 +13,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.material.icons.rounded.TabletAndroid
+import androidx.compose.material.icons.rounded.LaptopChromebook
+import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.SettingsDevices
 import it.pixelbox.cmwatch.rules.SettingsDevices.Tone
@@ -127,11 +135,13 @@ private fun Node(
 @Composable
 internal fun SchemeNode(
     icon: ImageVector, size: Dp, dot: Color, ring: Color, dashed: Boolean, name: String, status: String,
-    desc: String?, onClick: (() -> Unit)?,
+    desc: String?, onClick: (() -> Unit)?, labelWidth: Dp? = null,
+    /** Con molti dispositivi in fila: nome e stato più piccoli, così non si tagliano. */
+    compact: Boolean = false,
 ) {
     // Tutti i cerchi stanno in una fascia alta 72 dp: quello più grande del PC la sborda sopra e sotto, così i nomi restano
     // sulla stessa riga e i fili arrivano al centro di ogni cerchio.
-    Column(Modifier.width(size + 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.width(labelWidth ?: (size + 14.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(Modifier.height(NODE_BAND), contentAlignment = Alignment.Center) { Box(Modifier.requiredSize(size)) {
             Box(
                 Modifier.fillMaxSize().clip(CircleShape)
@@ -152,8 +162,23 @@ internal fun SchemeNode(
                     .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(dot),
             )
         } }
-        Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
-        if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
+        val nameColor = if (dashed) CmColors.text2 else CmColors.text
+        if (compact) {
+            // In fila stretta un nome lungo («Chromebook») scende di corpo finché entra, invece di tagliarsi.
+            val nameStyle = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+            val statusStyle = MaterialTheme.typography.labelSmall
+            BasicText(
+                name, style = LocalTextStyle.current.merge(nameStyle).copy(color = nameColor), maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = nameStyle.fontSize, stepSize = 0.5.sp),
+            )
+            if (status.isNotEmpty()) BasicText(
+                status, style = LocalTextStyle.current.merge(statusStyle).copy(color = CmColors.text2), maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = statusStyle.fontSize, stepSize = 0.5.sp),
+            )
+        } else {
+            Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = nameColor, maxLines = 1)
+            if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
+        }
     }
 }
 
@@ -253,3 +278,134 @@ private fun DeviceCard(m: SettingsDevices.Model, selected: DeviceNode) {
         }
     }
 }
+
+/**
+ * Lo schema dei collegamenti con i dispositivi veri (contratto 1.32, variante B scelta da Franz il 04/10 alle 17:11): il PC
+ * sopra, i dispositivi accoppiati in fila sotto, ognuno appeso al PC con il filo nel colore della sua ultima lettura;
+ * quello che si sta usando ha il bordo azzurro e dice «questo». Toccato un dispositivo (o il PC), sotto la sua scheda.
+ */
+@Composable
+fun DeviceSchemeB(m: SettingsDevices.Model, linked: List<SettingsDevices.Linked>, now: Long, selected: String, onSelect: (String) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(CmColors.surfaceLow).dotGrid()
+            .padding(start = 10.dp, end = 10.dp, top = 20.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            SchemeNode(
+                Icons.Rounded.Computer, 84.dp, toneColor(m.pc.tone), if (selected == PC_KEY) CmColors.actionIcon else CmColors.line, dashed = false,
+                m.pc.host ?: stringResource(R.string.dev_pc),
+                listOf(
+                    m.pc.ageMinutes?.let { stringResource(R.string.dev_updated_ago, it) } ?: stringResource(R.string.dev_updated_now),
+                    pluralStringResource(R.plurals.dev_count, linked.size, linked.size),
+                ).joinToString(" · "),
+                stringResource(R.string.dev_details, m.pc.host ?: stringResource(R.string.dev_pc)), { onSelect(PC_KEY) }, labelWidth = 260.dp,
+            )
+        }
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val n = linked.size.coerceAtLeast(1)
+            val col = maxWidth / n
+            val node = minOf(60.dp, col - 18.dp)
+            // Il filo dal PC, la sbarra e le discese fino al bordo del cerchio: ognuna nel colore del suo dispositivo,
+            // tratteggiata se non ha mai letto. I cerchi, pieni, stanno sopra la fine del filo.
+            Canvas(Modifier.fillMaxWidth().height(26.dp + (NODE_BAND - node) / 2 + 2.dp)) {
+                val w = 2.dp.toPx()
+                val bar = 12.dp.toPx()
+                val c = col.toPx()
+                val any = linked.any { it.tone != Tone.OFF }
+                val trunk = if (any) toneColor(Tone.LIVE) else toneColor(Tone.OFF)
+                drawLine(trunk, Offset(size.width / 2, 0f), Offset(size.width / 2, bar), w)
+                if (linked.size > 1) drawLine(trunk, Offset(c / 2, bar), Offset(c * (linked.size - 0.5f), bar), w)
+                linked.forEachIndexed { i, d ->
+                    val x = c * (i + 0.5f)
+                    val dash = if (d.tone == Tone.OFF) PathEffect.dashPathEffect(floatArrayOf(8f, 6f)) else null
+                    drawLine(toneColor(d.tone), Offset(x, bar), Offset(x, size.height), w, pathEffect = dash)
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 26.dp)) {
+                linked.forEach { d ->
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
+                        SchemeNode(
+                            kindIcon(d.kind), node, toneColor(d.tone),
+                            if (d.self || selected == d.uid) CmColors.actionIcon else CmColors.line, dashed = d.tone == Tone.OFF,
+                            stringResource(kindLabel(d.kind)), if (d.self) stringResource(R.string.dev_this) else seenShort(d.seen, now),
+                            stringResource(R.string.dev_details, d.name), { onSelect(d.uid) }, labelWidth = col, compact = col < 84.dp,
+                        )
+                    }
+                }
+            }
+        }
+        val pick = linked.firstOrNull { it.uid == selected }
+        if (pick == null) DeviceCard(m, DeviceNode.PC) else LinkedCard(pick, m.pc.host, now)
+        Text(stringResource(R.string.dev_hint), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/** La chiave del PC nella scelta dello schema B (gli altri sono gli uid dei dispositivi). */
+const val PC_KEY = "pc"
+
+private fun kindIcon(kind: String?): ImageVector = when (kind) {
+    "phone" -> Icons.Rounded.PhoneAndroid
+    "watch" -> Icons.Rounded.Watch
+    "tablet" -> Icons.Rounded.TabletAndroid
+    "chromebook" -> Icons.Rounded.LaptopChromebook
+    else -> Icons.Rounded.Devices
+}
+
+private fun kindLabel(kind: String?): Int = when (kind) {
+    "phone" -> R.string.dev_phone
+    "watch" -> R.string.dev_watch
+    "tablet" -> R.string.dev_tablet
+    "chromebook" -> R.string.dev_chromebook
+    else -> R.string.dev_other
+}
+
+/** L'ultima lettura in breve sotto il cerchio: ora, minuti, ore, giorni; «mai» se non è mai arrivata. */
+@Composable
+private fun seenShort(seen: Long?, now: Long): String {
+    val s = seen?.let { (now - it).coerceAtLeast(0) } ?: return stringResource(R.string.dev_seen_never)
+    return when {
+        s < 120 -> stringResource(R.string.dev_seen_now)
+        s < 3600 -> stringResource(R.string.dev_seen_min, s / 60)
+        s < 86_400 -> stringResource(R.string.dev_seen_h, s / 3600)
+        else -> stringResource(R.string.dev_seen_d, s / 86_400)
+    }
+}
+
+/** La scheda di un dispositivo dello schema B: il nome vero, il tipo, l'ultima lettura, a quale PC. */
+@Composable
+private fun LinkedCard(d: SettingsDevices.Linked, host: String?, now: Long) {
+    val chip = when {
+        d.self -> stringResource(R.string.dev_this)
+        d.seen == null -> stringResource(R.string.dev_seen_never_long)
+        else -> stringResource(R.string.dev_seen_ago, seenShort(d.seen, now))
+    }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surface).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(d.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
+            Text(
+                chip, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium), color = toneColor(d.tone),
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(toneColor(d.tone).copy(alpha = 0.14f)).padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
+        listOf(
+            stringResource(R.string.fact_kind) to stringResource(kindLabel(d.kind)),
+            stringResource(R.string.fact_seen) to (d.seen?.let { hhmmDay(it) } ?: stringResource(R.string.dev_seen_never_long)),
+            stringResource(R.string.fact_paired_to) to (host ?: "–"),
+        ).forEach { (k, v) ->
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(k, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+                Text(v, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun hhmmDay(epoch: Long): String =
+    java.time.format.DateTimeFormatter.ofPattern("EEE d\u00A0HH:mm", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+        .format(java.time.Instant.ofEpochSecond(epoch).atZone(java.time.ZoneId.systemDefault()))
+

@@ -22,6 +22,24 @@ object SettingsDevices {
 
     data class Model(val paired: Boolean, val phone: Phone, val pc: Pc, val watch: Watch, val pcLink: Tone, val watchLink: Tone)
 
+    /** Contratto 1.32 (variante B, Franz 04/10 17:11): un dispositivo accoppiato; `self` = quello che si sta usando. */
+    data class Linked(val uid: String, val name: String, val kind: String?, val seen: Long?, val tone: Tone, val self: Boolean)
+
+    /** Una lettura nell'ultima mezz'ora è viva; più vecchia, arancio; mai arrivata, spenta. */
+    const val LIVE_S = 30L * 60
+
+    /** I dispositivi veri, nell'ordine del PC; null con un relay prima della 1.32 (lo schema resta quello di prima). */
+    fun linked(state: State?, ownUid: String?, now: Long): List<Linked>? = state?.devices?.map { d ->
+        val self = d.uid == ownUid
+        val tone = when {
+            self -> Tone.LIVE
+            d.seen == null -> Tone.OFF
+            now - d.seen <= LIVE_S -> Tone.LIVE
+            else -> Tone.STALE
+        }
+        Linked(d.uid, d.name, d.kind, d.seen, tone, self)
+    }
+
     fun build(
         host: String?, state: State?, freshness: Freshness?, now: Long,
         phoneModel: String, version: String, notifications: Boolean,

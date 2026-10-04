@@ -552,4 +552,16 @@
     <string name="tablet_desk_empty">Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.</string>
     <string name="tablet_details">Dettagli della sessione a destra</string>
     <string name="tablet_details_sub">Sul tablet: progetto, turno, contesto e cronologia di oggi della prima colonna</string>
+    <string name="dev_chromebook">Chromebook</string>
+    <string name="dev_other">Dispositivo</string>
+    <string name="dev_seen_now">ora</string>
+    <string name="dev_seen_min">%1$d\u00A0min</string>
+    <string name="dev_seen_h">%1$d\u00A0h</string>
+    <string name="dev_seen_d">%1$d\u00A0g</string>
+    <string name="dev_seen_never">mai</string>
+    <string name="dev_seen_never_long">mai letto</string>
+    <string name="dev_seen_ago">letto %1$s fa</string>
+    <string name="fact_kind">Tipo</string>
+    <string name="fact_seen">Ultima lettura</string>
+    <plurals name="dev_count"><item quantity="one">%1$d\u00A0dispositivo</item><item quantity="other">%1$d\u00A0dispositivi</item></plurals>
 </resources>

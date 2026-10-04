@@ -39,6 +39,8 @@ class PhonePairer(
     private val now: () -> Long = { System.currentTimeMillis() / 1000 },
     private val pollMs: Long = 1000,
     private val timeoutMs: Long = 30_000,
+    /** Contratto 1.32: phone, tablet o chromebook; l'orologio portato con sé è sempre «watch». */
+    private val kind: String = "phone",
 ) {
     suspend fun pair(qr: PairQr, phoneUid: String, phoneName: String, watch: WatchPeer?): PhonePairResult {
         if (qr.expired(now())) throw PairError.Expired()
@@ -46,7 +48,7 @@ class PhonePairer(
             rtdb.get("pair/${qr.i}") ?: throw PairError.Unknown()
             val kp = deviceKeyPair()
             val key = Pairing.sharedKey(kp.private, qr.c)
-            rtdb.put("pair/${qr.i}/watch", response(Pairing.publicB64(kp), phoneUid, phoneName, Pairing.checkCode(key, qr.i), watch).toString())
+            rtdb.put("pair/${qr.i}/watch", response(Pairing.publicB64(kp), phoneUid, phoneName, Pairing.checkCode(key, qr.i), watch, kind).toString())
             val ok = withTimeoutOrNull(timeoutMs) {
                 while (true) {
                     rtdb.get("pair/${qr.i}/ok")?.let { doc ->
@@ -81,13 +83,16 @@ class PhonePairer(
 
     companion object {
         /** Il nodo si chiama ancora `watch`, per compatibilità con il relay: lo scrive il telefono per tutti e due. */
-        fun response(pub: String, phoneUid: String, phoneName: String, check: String, watch: WatchPeer?): JsonObject = buildJsonObject {
+        fun response(pub: String, phoneUid: String, phoneName: String, check: String, watch: WatchPeer?, kind: String = "phone"): JsonObject = buildJsonObject {
             put("watch_pub", pub)
             put("uid", phoneUid)
             put("name", phoneName)
             put("check", check)
             putJsonArray("uids") { add(phoneUid); watch?.let { add(it.uid) } }
             putJsonObject("names") { put(phoneUid, phoneName); watch?.let { put(it.uid, it.name) } }
+            // Contratto 1.32: il tipo, per lo schema dei collegamenti di tutti i dispositivi.
+            put("kind", kind)
+            putJsonObject("kinds") { put(phoneUid, kind); watch?.let { put(it.uid, "watch") } }
         }
     }
 }

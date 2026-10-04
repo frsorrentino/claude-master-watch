@@ -544,4 +544,16 @@
     <string name="tablet_desk_empty">Tap a session in the home to open it here; up to four fit side by side.</string>
     <string name="tablet_details">Session details on the right</string>
     <string name="tablet_details_sub">On the tablet: project, turn, context and today\'s timeline of the first column</string>
+    <string name="dev_chromebook">Chromebook</string>
+    <string name="dev_other">Device</string>
+    <string name="dev_seen_now">now</string>
+    <string name="dev_seen_min">%1$d\u00A0min</string>
+    <string name="dev_seen_h">%1$d\u00A0h</string>
+    <string name="dev_seen_d">%1$d\u00A0d</string>
+    <string name="dev_seen_never">never</string>
+    <string name="dev_seen_never_long">never read</string>
+    <string name="dev_seen_ago">read %1$s ago</string>
+    <string name="fact_kind">Kind</string>
+    <string name="fact_seen">Last read</string>
+    <plurals name="dev_count"><item quantity="one">%1$d\u00A0device</item><item quantity="other">%1$d\u00A0devices</item></plurals>
 </resources>

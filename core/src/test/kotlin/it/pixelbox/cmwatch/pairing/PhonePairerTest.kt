@@ -59,7 +59,12 @@ class PhonePairerTest {
 
     @Test fun writesExactlyTheContractAnswerAndGetsTheKey() {
         val r = runBlocking { pairer().pair(qr, "phoneUid00000000000000000000", "Pixel 9", watch) }
-        assertEquals(exchange["watch"], Json.parseToJsonElement(store["pair/${qr.i}/watch"]!!))
+        // Contratto 1.32: in più kind e kinds; il resto è la risposta della 1.15, chiave per chiave.
+        val written = Json.parseToJsonElement(store["pair/${qr.i}/watch"]!!).jsonObject
+        exchange["watch"]!!.jsonObject.forEach { (k, v) -> assertEquals(k, v, written[k]) }
+        assertEquals("phone", written["kind"]!!.jsonPrimitive.content)
+        assertEquals(mapOf("phoneUid00000000000000000000" to "phone", "watchUid0000000000000000000" to "watch"),
+            written["kinds"]!!.jsonObject.mapValues { it.value.jsonPrimitive.content })
         assertEquals(exchange["ok"], Json.parseToJsonElement(store["pair/${qr.i}/ok"]!!))
         assertEquals("dd9f775d5fbdd918e727cb41c05452189759ccc0d87798791eff22474e278b5c", r.key.joinToString("") { "%02x".format(it) })
         assertEquals(listOf("phoneUid00000000000000000000", "watchUid0000000000000000000"), r.uids)

@@ -58,7 +58,7 @@ class PhonePairerAddTest {
     @After fun down() = server.shutdown()
 
     private fun pairer(timeout: Long = 2_000) = PhonePairer(
-        Rtdb(server.url("/").toString().removeSuffix("/"), token = { "t0k" }), { tabletKeys }, { qr.e - 60 }, pollMs = 10, timeoutMs = timeout,
+        Rtdb(server.url("/").toString().removeSuffix("/"), token = { "t0k" }), { tabletKeys }, { qr.e - 60 }, pollMs = 10, timeoutMs = timeout, kind = "tablet",
     )
 
     @Test fun theQrSaysItIsAnAddition() {
@@ -70,7 +70,8 @@ class PhonePairerAddTest {
     @Test fun keepsTheRelayKeyFromTheConfirmation() {
         val r = runBlocking { pairer().pair(qr, sent["uid"]!!.jsonPrimitive.content, sent["name"]!!.jsonPrimitive.content, null) }
         val written = Json.parseToJsonElement(store["pair/${qr.i}/watch"]!!).jsonObject
-        listOf("watch_pub", "uid", "name", "check").forEach { k -> assertEquals(k, sent[k], written[k]) }
+        // Contratto 1.32: anche il tipo del dispositivo, come nella fixture del relay.
+        listOf("watch_pub", "uid", "name", "check", "kind").forEach { k -> assertEquals(k, sent[k], written[k]) }
         assertEquals(fx["relay_key"]!!.jsonPrimitive.content, r.key.joinToString("") { "%02x".format(it) })
         assertEquals("penguin", r.host)
         assertEquals(listOf(sent["uid"]!!.jsonPrimitive.content), r.uids)

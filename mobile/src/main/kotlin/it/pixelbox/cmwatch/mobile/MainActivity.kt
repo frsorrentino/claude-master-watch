@@ -316,6 +316,8 @@ class MainActivity : ComponentActivity() {
                 onAddDevice = if (!demo && state?.ops?.contains("pair_add") == true) askInvite else null,
                 tabletDetails = tabletDetails.takeIf { wide },
                 onTabletDetails = { on -> tabletDetails = on; tabletPrefs.edit().putBoolean("tablet_details", on).apply() },
+                // Contratto 1.32: lo schema dei collegamenti con i dispositivi veri; «questo» è il primo uid dell'accoppiamento.
+                linked = it.pixelbox.cmwatch.rules.SettingsDevices.linked(state, r?.uids?.firstOrNull(), now),
             )
             return
         }
