@@ -30,29 +30,6 @@ class TabletTest {
         assertTrue(Tablet.inspector(1200))
     }
 
-    // La riga di stato: le sessioni per stato (la master compresa), la notte, le quote per account, personale prima.
-    @Test fun statusCountsSessionsByNeed() {
-        val state = st(
-            s("master"), s("busy", SessionState.BUSY), s("asks", SessionState.WAITING).copy(question = q("1", at(14))),
-            s("gone", SessionState.GONE),
-            quota = mapOf(
-                "work" to QuotaAccount(h5 = 40, w7 = 70, kind = "work", resetH5 = at(17)),
-                "personale" to QuotaAccount(h5 = 9, w7 = 24, kind = "personal", resetH5 = at(16, 40)),
-            ),
-            night = Night(queued = 2),
-        )
-        val s = Tablet.status(state, summary(state), at(15), stale = false)
-        assertEquals(3, s.open)
-        assertEquals(1, s.working)
-        assertEquals(1, s.waiting)
-        assertEquals(0, s.finished)
-        assertEquals(1, s.closed)
-        assertEquals(2, s.night)
-        assertEquals(listOf("personale", "work"), s.accounts.map { it.account })
-        assertEquals(at(16, 40), s.accounts[0].resetAt)
-        assertEquals("crostini-demo", s.host)
-    }
-
     // La colonna delle sessioni: i gruppi del riepilogo, con la master al suo posto come le altre.
     @Test fun columnPutsTheMasterInItsGroup() {
         val state = st(s("master"), s("busy", SessionState.BUSY), s("idle", since = at(10)))
@@ -149,5 +126,53 @@ class TabletTest {
         assertEquals(listOf("a", "b"), Tablet.columnsFromPref("a\nb\n"))
         assertNull(Tablet.columnsFromPref(null))
         assertEquals(emptyList<String>(), Tablet.columnsFromPref(""))
+    }
+
+    // v2 (Franz, 04/10 16:36): il tocco su una scheda della home aggiunge una colonna; già in colonna non cambia niente;
+    // con quattro colonne la nuova prende il posto dell'ultima.
+    @Test fun addPutsTheSessionInAColumn() {
+        assertEquals(listOf("a", "b"), Tablet.add(listOf("a"), "b"))
+        assertEquals(listOf("a", "b"), Tablet.add(listOf("a", "b"), "a"))
+        assertEquals(listOf("a", "b", "c", "e"), Tablet.add(listOf("a", "b", "c", "d"), "e"))
+    }
+
+    // Trascinata sopra un'altra, una colonna scambia il posto con lei; fuori dalle colonne non succede niente.
+    @Test fun swapExchangesTwoColumns() {
+        assertEquals(listOf("c", "b", "a"), Tablet.swap(listOf("a", "b", "c"), 0, 2))
+        assertEquals(listOf("a", "b", "c"), Tablet.swap(listOf("a", "b", "c"), 1, 1))
+        assertEquals(listOf("a", "b", "c"), Tablet.swap(listOf("a", "b", "c"), 0, 5))
+    }
+
+    // Le larghezze a scatti: 12 parti, all'inizio uguali.
+    @Test fun equalShares() {
+        assertEquals(listOf(12), Tablet.Shares.equal(1))
+        assertEquals(listOf(6, 6), Tablet.Shares.equal(2))
+        assertEquals(listOf(4, 4, 4), Tablet.Shares.equal(3))
+        assertEquals(listOf(3, 3, 3, 3), Tablet.Shares.equal(4))
+    }
+
+    // Il bordo fra due colonne sposta parti intere dall'una all'altra, e nessuna scende sotto le 2 parti (un sesto).
+    @Test fun aBorderMovesWholeParts() {
+        assertEquals(listOf(6, 2, 4), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 2))
+        assertEquals(listOf(6, 2, 4), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 5))
+        assertEquals(listOf(4, 2, 6), Tablet.Shares.drag(listOf(4, 4, 4), border = 1, parts = -3))
+        assertEquals(listOf(8, 4), Tablet.Shares.drag(listOf(6, 6), border = 0, parts = 2))
+        assertEquals(listOf(6, 6), Tablet.Shares.drag(listOf(6, 6), border = 3, parts = 2))
+    }
+
+    // Lo scatto: i pixel trascinati diventano parti intere della larghezza delle colonne.
+    @Test fun pixelsSnapToParts() {
+        assertEquals(2, Tablet.Shares.parts(dragPx = 190f, widthPx = 1200f))
+        assertEquals(-1, Tablet.Shares.parts(dragPx = -60f, widthPx = 1200f))
+        assertEquals(0, Tablet.Shares.parts(dragPx = 40f, widthPx = 1200f))
+    }
+
+    // Nelle preferenze su una riga; una scelta che non torna col numero di colonne riparte uguale.
+    @Test fun sharesPrefRoundTrip() {
+        assertEquals("6,2,4", Tablet.Shares.pref(listOf(6, 2, 4)))
+        assertEquals(listOf(6, 2, 4), Tablet.Shares.fromPref("6,2,4", 3))
+        assertEquals(listOf(4, 4, 4), Tablet.Shares.fromPref("6,6", 3))
+        assertEquals(listOf(6, 6), Tablet.Shares.fromPref("11,1", 2))
+        assertEquals(listOf(3, 3, 3, 3), Tablet.Shares.fromPref(null, 4))
     }
 }

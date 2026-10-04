@@ -57,6 +57,8 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
 fun SummaryList(
     model: Summary.Model, onOpen: (String) -> Unit, onAnswer: (String, Int) -> Unit, onStep: (String, String) -> Unit,
     onService: (MasterHome.Row) -> Unit, onClosed: () -> Unit, initiallyOpen: String? = null,
+    /** Il tablet (Franz, 04/10 14:31): nell'altezza in più, sotto, le schede di «Utilizzo e limiti». */
+    footer: (@Composable () -> Unit)? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
@@ -101,6 +103,7 @@ fun SummaryList(
                 }
             }
         }
+        footer?.let { f -> item(key = "footer") { f() } }
     }
 }
 

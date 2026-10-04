@@ -251,6 +251,16 @@ class MainActivity : ComponentActivity() {
         // Arrivati a una sessione scorrendo dalla home non c'è un volo da ripercorrere: Indietro riporta la pagina alla home.
         BackHandler(enabled = open != null && flyTarget == null && !settingsOpen && terminal == null) { open = null }
         val flight = rememberTransition(seek, label = "fly")
+        // Il tablet (Franz, 04/10 16:36): da 840 dp una vista sola, la home del telefono di lato e da una a quattro colonne di
+        // sessioni. Colonne, larghezze in dodicesimi, lato della home e dettagli a destra stanno nelle preferenze, così
+        // restano quando la finestra cambia larghezza.
+        val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+        val wide = it.pixelbox.cmwatch.rules.Tablet.wide(widthDp)
+        val tabletPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
+        var pinned by remember { mutableStateOf(it.pixelbox.cmwatch.rules.Tablet.columnsFromPref(tabletPrefs.getString("tablet_columns", null))) }
+        var sharesRaw by remember { mutableStateOf(tabletPrefs.getString("tablet_shares", null)) }
+        var homeRight by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_home_right", false)) }
+        var tabletDetails by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_details", false)) }
         if (settingsOpen) {
             val r = PairingRecord.fromJson(pairingJson)
             val version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() }
@@ -304,6 +314,8 @@ class MainActivity : ComponentActivity() {
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
                 onAddDevice = if (!demo && state?.ops?.contains("pair_add") == true) askInvite else null,
+                tabletDetails = tabletDetails.takeIf { wide },
+                onTabletDetails = { on -> tabletDetails = on; tabletPrefs.edit().putBoolean("tablet_details", on).apply() },
             )
             return
         }
@@ -373,26 +385,22 @@ class MainActivity : ComponentActivity() {
         val transcriptOk = !demo && state?.ops?.contains("transcript") == true
         // La casa della master (design 01/10): sulla prima scheda, senza schede aperte, la chat è quella della master.
         val masterName = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.name
-        // Il tablet (piano 04/10): da 840 dp la plancia. La sessione al centro è quella aperta, se no la master, se no la prima
-        // viva; col Registro aperto nessuna conversazione si legge.
-        val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
-        val wide = it.pixelbox.cmwatch.rules.Tablet.wide(widthDp)
-        // La vista del tablet e le colonne (pezzo 5): sessioni in colonna e barra fissa o richiudibile nelle preferenze.
-        var tabletView by rememberSaveable { mutableStateOf(TabletView.BOARD) }
-        val tabletPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
-        var pinned by remember { mutableStateOf(it.pixelbox.cmwatch.rules.Tablet.columnsFromPref(tabletPrefs.getString("tablet_columns", null))) }
-        var barFixed by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_bar_fixed", true)) }
-        var barOpen by rememberSaveable { mutableStateOf(barFixed) }
         val liveNames = state?.sessions?.filter { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { x -> x.name }.orEmpty()
-        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, liveNames)
-        val columnsOn = wide && tabletView == TabletView.COLUMNS && tab != StartRoute.Tab.DIARY
-        val chatName = when {
-            columnsOn -> open?.takeIf { n -> n in tabletCols } ?: tabletCols.firstOrNull()
-            wide -> if (tab == StartRoute.Tab.DIARY) null else open ?: masterName ?: liveNames.firstOrNull()
-            else -> open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // La master sta nella home: non diventa una colonna.
+        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, liveNames.filter { n -> n != it.pixelbox.cmwatch.rules.ContextActions.MASTER })
+        val tabletShares = it.pixelbox.cmwatch.rules.Tablet.Shares.fromPref(sharesRaw, tabletCols.size)
+        val columnsOn = wide
+        val saveCols: (List<String>) -> Unit = { next -> pinned = next; tabletPrefs.edit().putString("tablet_columns", it.pixelbox.cmwatch.rules.Tablet.columnsPref(next)).apply() }
+        val saveShares: (List<Int>) -> Unit = { s -> val raw = it.pixelbox.cmwatch.rules.Tablet.Shares.pref(s); sharesRaw = raw; tabletPrefs.edit().putString("tablet_shares", raw).apply() }
+        // Sul tablet la conversazione della home è quella della master; le colonne leggono la loro qui sotto.
+        val chatName = if (wide) masterName else open ?: masterName?.takeIf { tab == StartRoute.Tab.OVERVIEW }
+        // I dettagli a destra (spenti di default, si accendono dalle Impostazioni): della prima colonna, se c'è posto.
+        val inspectorOn = wide && tabletDetails && tab != StartRoute.Tab.DIARY && tabletCols.isNotEmpty() && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
+        // Sul tablet aprire una sessione, da qualunque strada (scheda della home, ricerca, notifica, menu), la mette in colonna.
+        LaunchedEffect(open, wide) {
+            val n = open ?: return@LaunchedEffect
+            if (wide) { saveCols(it.pixelbox.cmwatch.rules.Tablet.add(tabletCols, n)); open = null }
         }
-        // L'ispettore del tablet in vista: plancia larga, non le colonne, non il Registro.
-        val inspectorOn = wide && !columnsOn && tab != StartRoute.Tab.DIARY && it.pixelbox.cmwatch.rules.Tablet.inspector(widthDp)
         // Le bozze del campo sopra l'interruttore dei 840 dp (standard della master, 04/10): restano quando la finestra del
         // Chromebook cambia larghezza, in tutte e due le direzioni.
         val drafts = rememberSaveable(saver = DraftStore.Saver) { DraftStore() }
@@ -744,6 +752,14 @@ class MainActivity : ComponentActivity() {
                     onOpen = { n -> summary.rows.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead); open = n },
                     onAnswer = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } },
                     onStep = sendPrompt, onService = forYouAction, onClosed = { closedOpen = true },
+                    footer = if (wide) ({
+                        val rings = remember(st, events, samples, now, snap.freshness) {
+                            PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
+                        }
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            rings.forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
+                        }
+                    }) else null,
                 )
             }
             if (master != null) {
@@ -788,9 +804,10 @@ class MainActivity : ComponentActivity() {
         // minuto, solo con l'app in primo piano; cambiando sessione si riparte da capo.
         var timeline by remember { mutableStateOf<it.pixelbox.cmwatch.contract.TimelinePage?>(null) }
         val timelineOk = demo || state?.ops?.contains("timeline") == true
-        LaunchedEffect(inspectorOn, chatName, timelineOk) {
+        val inspected = tabletCols.firstOrNull()
+        LaunchedEffect(inspectorOn, inspected, timelineOk) {
             timeline = null
-            val name = chatName ?: return@LaunchedEffect
+            val name = inspected ?: return@LaunchedEffect
             if (!inspectorOn || !timelineOk) return@LaunchedEffect
             lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 while (true) {
@@ -850,70 +867,34 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        BackHandler(enabled = columnsOn && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { tabletView = TabletView.BOARD }
-        // Sul tablet il Registro sta al posto della conversazione; Indietro torna alla plancia.
+        // Sul tablet il Registro sta al posto delle colonne; Indietro le riporta.
         BackHandler(enabled = wide && tab == StartRoute.Tab.DIARY && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { tab = StartRoute.Tab.OVERVIEW }
-        val watchName = remember(pairingJson) { PairingRecord.fromJson(pairingJson)?.watchName }
-        val watchNear by androidx.compose.runtime.produceState<Boolean?>(null, watchName, wide) {
-            value = if (watchName == null || !wide) null else it.pixelbox.cmwatch.mobile.pair.WearWatchLink(this@MainActivity).anyConnected() != null
-        }
-        val tabletBoard: @Composable (it.pixelbox.cmwatch.contract.State, it.pixelbox.cmwatch.rules.Summary.Model) -> Unit = { st, sm ->
+        val tabletDesk: @Composable (it.pixelbox.cmwatch.contract.State, it.pixelbox.cmwatch.rules.Summary.Model) -> Unit = { st, sm ->
             val zone = java.time.ZoneId.systemDefault()
-            val stale = snap.freshness is Freshness.Stale
-            val groups = remember(sm) { it.pixelbox.cmwatch.rules.Tablet.groups(sm) }
-            val selected = chatName?.let { n -> st.sessions.firstOrNull { it.name == n } }
-            val rings = remember(st, events, samples, now, snap.freshness) { PhoneOverview.build(st, events, samples, now, zone, stale = stale).rings }
-            val ring = rings.firstOrNull { r -> r.account == selected?.account } ?: rings.firstOrNull()
-            val registerOpen = tab == StartRoute.Tab.DIARY
-            val toggleColumn: (String) -> Unit = { n ->
-                val next = it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, n)
-                pinned = next
-                tabletPrefs.edit().putString("tablet_columns", it.pixelbox.cmwatch.rules.Tablet.columnsPref(next)).apply()
-                // Richiudibile: la barra si chiude quando apri una colonna (mockup 6-7).
-                if (!barFixed && n in next) barOpen = false
-            }
-            if (columnsOn) TabletColumns(
-                it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), ring, now, groups, liveNames.size,
-                columns = tabletCols, onToggle = toggleColumn, onBoard = { tabletView = TabletView.BOARD }, onSearch = { searchOpen = true },
-                barFixed = barFixed, barOpen = barOpen, onBar = { barOpen = !barOpen },
-                onBarFixed = { v -> barFixed = v; barOpen = true; tabletPrefs.edit().putBoolean("tablet_bar_fixed", v).apply() },
-            ) { r ->
-                sessionPage(
-                    r.session, ChatFeed.pageEntries(r.session.name, chatName, entriesOwner, entries, feedCache), null, false, null, null, true,
-                    { TabletColumnHeader(r, now, onClose = { toggleColumn(r.session.name) }) }, null,
-                )
-            } else TabletShell(
-                it.pixelbox.cmwatch.rules.Tablet.status(st, sm, now, stale), watchNear,
-                view = tabletView, onView = { v -> tabletView = v; tab = StartRoute.Tab.OVERVIEW }, registerOpen = registerOpen,
-                rail = RailActions(
-                    onQuadro = { overviewSheet = true }, onRegister = { tab = StartRoute.Tab.DIARY },
-                    onSearch = { searchOpen = true }, onLaunch = { launching = true }, onSettings = { settingsOpen = true },
-                ),
-                now = now,
-                sessions = {
-                    TabletSessions(
-                        groups, st.sessions.count { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }, sm.closed.size, selected?.name, now,
-                        onPick = { n -> open = n; tab = StartRoute.Tab.OVERVIEW },
-                        bottom = ring?.let { r -> { TabletQuotaPanel(r, now, dataStale = stale) } },
-                    )
+            val rows = remember(sm) { it.pixelbox.cmwatch.rules.Tablet.groups(sm).flatMap { g -> g.second } }
+            val first = inspected?.let { n -> st.sessions.firstOrNull { x -> x.name == n } }
+            TabletDesk(
+                home = { summaryPage() }, homeRight = homeRight,
+                onHomeSide = { homeRight = !homeRight; tabletPrefs.edit().putBoolean("tablet_home_right", homeRight).apply() },
+                columns = tabletCols, shares = tabletShares,
+                // Lo scambio porta con sé la larghezza della colonna.
+                onSwap = { a, b ->
+                    saveCols(it.pixelbox.cmwatch.rules.Tablet.swap(tabletCols, a, b))
+                    saveShares(tabletShares.toMutableList().also { s -> val x = s[a]; s[a] = s[b]; s[b] = x })
                 },
-                center = {
-                    when {
-                        registerOpen -> diaryPage()
-                        selected != null -> {
-                            val row = groups.flatMap { g -> g.second }.firstOrNull { r -> r.session.name == selected.name }
-                            sessionPage(
-                                selected, ChatFeed.pageEntries(selected.name, chatName, entriesOwner, entries, feedCache), null, true, null, null, true, null,
-                                { TabletConversationLead(row, selected, now) },
-                            )
-                        }
-                        else -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            Text(getString(R.string.ov_none_live), color = it.pixelbox.cmwatch.ui.tokens.CmColors.text2)
-                        }
+                onShares = saveShares,
+                column = { name, drag ->
+                    rows.firstOrNull { r -> r.session.name == name }?.let { r ->
+                        sessionPage(
+                            r.session, ChatFeed.pageEntries(name, chatName, entriesOwner, entries, feedCache), null, false, null, null, true,
+                            { TabletColumnHeader(r, now, onClose = { saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, name)) }, drag) }, null,
+                        )
                     }
                 },
-                inspector = if (inspectorOn && selected != null) ({
-                    TabletInspector(it.pixelbox.cmwatch.rules.Tablet.inspect(selected, timeline, now, zone), st.quota[selected.account]?.h5, loading = timelineOk && timeline == null)
+                empty = { Text(getString(R.string.tablet_desk_empty), color = it.pixelbox.cmwatch.ui.tokens.CmColors.text2, modifier = Modifier.padding(32.dp)) },
+                override = if (tab == StartRoute.Tab.DIARY) ({ diaryPage() }) else null,
+                inspector = if (inspectorOn && first != null) ({
+                    TabletInspector(it.pixelbox.cmwatch.rules.Tablet.inspect(first, timeline, now, zone), st.quota[first.account]?.h5, loading = timelineOk && timeline == null)
                 }) else null,
             )
         }
@@ -922,7 +903,7 @@ class MainActivity : ComponentActivity() {
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
         ) {
-        if (wide && state != null && summary != null) tabletBoard(state, summary) else
+        if (wide && state != null && summary != null) tabletDesk(state, summary) else
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),

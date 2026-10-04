@@ -60,6 +60,8 @@ fun SettingsScreen(
     initialDevice: DeviceNode = DeviceNode.PC,
     /** Contratto 1.31: un dispositivo in più dal telefono, senza PC; null con un relay che non lo sa fare. */
     onAddDevice: (() -> Unit)? = null,
+    /** Il tablet (Franz, 04/10 14:40): i dettagli della sessione a destra, spenti di default; null fuori dal tablet. */
+    tabletDetails: Boolean? = null, onTabletDetails: (Boolean) -> Unit = {},
 ) {
     var choosing by remember { mutableStateOf(false) }
     var choosingVoice by remember { mutableStateOf(false) }
@@ -89,6 +91,13 @@ fun SettingsScreen(
             if (host != null) SectionCard {
                 SettingsRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.paired_repair), stringResource(R.string.repair_sub), onRepair)
                 onAddDevice?.let { SettingsRow(Icons.Rounded.AddLink, stringResource(R.string.add_device), stringResource(R.string.add_device_sub), it) }
+            }
+            tabletDetails?.let { on ->
+                SectionCard {
+                    SettingsRow(Icons.Rounded.Info, stringResource(R.string.tablet_details), stringResource(R.string.tablet_details_sub), onClick = { onTabletDetails(!on) }) {
+                        androidx.compose.material3.Switch(checked = on, onCheckedChange = onTabletDetails)
+                    }
+                }
             }
 
             GroupHeader(stringResource(R.string.sec_reading), CmColors.text2)

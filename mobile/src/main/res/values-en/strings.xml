@@ -539,4 +539,9 @@
     <string name="invite_title">Pair this device with %1$s?</string>
     <string name="invite_add">The PC %1$s adds it next to the other paired devices. Pair only if %1$s is your PC and you have just asked for the pairing.</string>
     <string name="invite_new">The PC %1$s pairs it from scratch: the devices paired before are unpaired. Pair only if %1$s is your PC and you have just asked for the pairing.</string>
+    <string name="tablet_home_left">Move the home to the left</string>
+    <string name="tablet_home_right">Move the home to the right</string>
+    <string name="tablet_desk_empty">Tap a session in the home to open it here; up to four fit side by side.</string>
+    <string name="tablet_details">Session details on the right</string>
+    <string name="tablet_details_sub">On the tablet: project, turn, context and today\'s timeline of the first column</string>
 </resources>

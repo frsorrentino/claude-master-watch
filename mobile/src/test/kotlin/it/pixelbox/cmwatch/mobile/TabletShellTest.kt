@@ -1,6 +1,8 @@
 package it.pixelbox.cmwatch.mobile
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.android.resources.Density
@@ -76,52 +78,11 @@ class TabletShellTest {
         emptyList(),
     )
 
-    @Composable
-    private fun board(inspector: Boolean = true) = CmPhoneTheme(still = true) {
-        val summary = Summary.build(st, emptyList(), emptyList(), ts, zone, emptySet())
-        val groups = Tablet.groups(summary)
-        val ring = PhoneOverview.build(st, emptyList(), samples, ts, zone, stale = false).rings.first { it.account == selected.account }
-        val row = groups.flatMap { it.second }.first { it.session.name == selected.name }
-        TabletShell(
-            Tablet.status(st, summary, ts, stale = false), watch = true, view = TabletView.BOARD, onView = {}, registerOpen = false,
-            rail = RailActions({}, {}, {}, {}, {}), now = ts,
-            sessions = {
-                TabletSessions(groups, st.sessions.count { it.state != SessionState.GONE }, summary.closed.size, selected.name, ts, onPick = {}, bottom = { TabletQuotaPanel(ring, ts) })
-            },
-            center = {
-                SessionSheet(
-                    selected, ts, emptyList(), 120, none, choices = st.choices, ops = st.ops, canAttach = true, feed = feed,
-                    accountQuota = st.quota[selected.account], headerLead = { TabletConversationLead(row, selected, ts) }, notesInHeader = !inspector,
-                )
-            },
-            inspector = if (inspector) ({ TabletInspector(Tablet.inspect(selected, timeline, ts, zone), st.quota[selected.account]?.h5, loading = false) }) else null,
-        )
-    }
-
-    // La plancia (mockup «0-panoramica», sezioni 1-3): riga di stato, barra, sessioni e quote, conversazione, ispettore.
-    @Test fun tabletBoard() = paparazzi.snapshot { board() }
-
-    // Carattere grande (standard della master, 04/10): la riga di stato resta una riga e lascia fuori i pezzi meno importanti.
-    @Test fun tabletBoardLargeFont() {
-        paparazzi.unsafeUpdateConfig(deviceConfig = TABLET.copy(fontScale = 1.5f))
-        paparazzi.snapshot { board() }
-    }
-
-    // Una finestra da 1000 dp (Chromebook): niente ispettore, la conversazione prende il posto.
-    @Test fun tabletBoardNarrow() {
-        paparazzi.unsafeUpdateConfig(deviceConfig = TABLET.copy(screenWidth = 2000, screenHeight = 1400))
-        paparazzi.snapshot { board(inspector = false) }
-    }
-
     private fun shortFeed(name: String) = ChatFeed.merge(
         when (name) {
             "master" -> listOf(
                 TranscriptEntry("m1", "user", text = "I'd like to see the tablet version of the app", at = ts - 40 * 60, origin = "phone"),
                 TranscriptEntry("m2", "assistant", text = "Tablet plan written and handed to atlas-shop: board first, then the columns.", at = ts - 18 * 60),
-            )
-            "field-notes" -> listOf(
-                TranscriptEntry("f1", "user", text = "Rewrite the README with the three sections", at = ts - 3 * 3600, origin = "pc"),
-                TranscriptEntry("f2", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten", at = ts - 3 * 3600 + 300),
             )
             else -> listOf(
                 TranscriptEntry("l1", "user", text = "Prepare the deploy of 2.4 and wait for my ok", at = ts - 20 * 60, origin = "pc"),
@@ -131,28 +92,49 @@ class TabletShellTest {
         emptyList(),
     )
 
+    /** La vista unica (Franz, 04/10 16:36): la home del telefono di lato, le colonne, i dettagli se accesi. */
     @Composable
-    private fun columns(cols: List<String>, barOpen: Boolean, fixed: Boolean) = CmPhoneTheme(still = true) {
+    private fun desk(cols: List<String>, shares: List<Int>, homeRight: Boolean = false, details: Boolean = false) = CmPhoneTheme(still = true) {
         val summary = Summary.build(st, emptyList(), emptyList(), ts, zone, emptySet())
-        val groups = Tablet.groups(summary)
-        val ring = PhoneOverview.build(st, emptyList(), samples, ts, zone, stale = false).rings.first { it.account == selected.account }
-        TabletColumns(
-            Tablet.status(st, summary, ts, stale = false), ring, ts, groups, st.sessions.count { it.state != SessionState.GONE },
-            columns = cols, onToggle = {}, onBoard = {}, barFixed = fixed, barOpen = barOpen, onBar = {}, onBarFixed = {},
-        ) { r ->
-            SessionSheet(
-                r.session, ts, emptyList(), 120, none, ops = st.ops, canAttach = true, header = false,
-                feed = if (r.session.name == selected.name) feed else shortFeed(r.session.name),
-                appBar = { TabletColumnHeader(r, ts, onClose = {}) },
-            )
-        }
+        val rows = Tablet.groups(summary).flatMap { it.second }
+        val rings = PhoneOverview.build(st, emptyList(), samples, ts, zone, stale = false).rings
+        TabletDesk(
+            home = {
+                SummaryList(summary, {}, { _, _ -> }, { _, _ -> }, {}, {}, footer = {
+                    androidx.compose.foundation.layout.Column(
+                        androidx.compose.ui.Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+                    ) { rings.forEach { TabletQuotaPanel(it, ts) } }
+                })
+            },
+            homeRight = homeRight, onHomeSide = {}, columns = cols, shares = shares, onSwap = { _, _ -> }, onShares = {},
+            column = { name, drag ->
+                val r = rows.first { it.session.name == name }
+                SessionSheet(
+                    r.session, ts, emptyList(), 120, none, ops = st.ops, canAttach = true, header = false,
+                    feed = if (name == selected.name) feed else shortFeed(name),
+                    appBar = { TabletColumnHeader(r, ts, onClose = {}, drag = drag) },
+                )
+            },
+            empty = { androidx.compose.material3.Text("Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.") },
+            inspector = if (details) ({ TabletInspector(Tablet.inspect(selected, timeline, ts, zone), st.quota[selected.account]?.h5, loading = false) }) else null,
+        )
     }
 
-    // Le colonne con la barra fissa (mockup 4-5): tre sessioni, chi ti aspetta col bordo arancio.
-    @Test fun tabletColumnsBarFixed() = paparazzi.snapshot { columns(listOf("atlas-shop", "ledger-api", "master"), barOpen = true, fixed = true) }
+    // La home a sinistra e due colonne, la prima larga due terzi (8 dodicesimi).
+    @Test fun tabletDesk() = paparazzi.snapshot { desk(listOf("atlas-shop", "ledger-api"), listOf(8, 4)) }
 
-    // Barra richiudibile e chiusa (mockup 6-7): la striscia di puntini, quattro colonne.
-    @Test fun tabletColumnsBarClosed() = paparazzi.snapshot { columns(listOf("atlas-shop", "ledger-api", "master", "field-notes"), barOpen = false, fixed = false) }
+    // La home a destra (un clic su ⇄), i dettagli dall'altro lato, due colonne uguali.
+    @Test fun tabletDeskHomeRightDetails() = paparazzi.snapshot { desk(listOf("atlas-shop", "ledger-api"), listOf(6, 6), homeRight = true, details = true) }
+
+    // Carattere grande, tre colonne uguali.
+    @Test fun tabletDeskLargeFont() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = TABLET.copy(fontScale = 1.5f))
+        paparazzi.snapshot { desk(listOf("atlas-shop", "ledger-api", "master"), listOf(4, 4, 4)) }
+    }
+
+    // Nessuna colonna ancora: l'invito a toccare una sessione nella home.
+    @Test fun tabletDeskEmpty() = paparazzi.snapshot { desk(emptyList(), emptyList()) }
 
     companion object {
         /** Tablet in orizzontale, 1440×900 dp. */

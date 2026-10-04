@@ -22,28 +22,6 @@ object Tablet {
     fun wide(widthDp: Int) = widthDp >= WIDE_DP
     fun inspector(widthDp: Int) = widthDp >= INSPECTOR_DP
 
-    /** La quota di un account nella riga di stato: 5h con la ripartenza, 7g. */
-    data class Account(val account: String, val personal: Boolean, val h5: Int?, val resetAt: Long?, val w7: Int?, val stale: Boolean)
-
-    /** La riga di stato in alto: PC, aggiornamento, quote, sessioni per stato (la master compresa), notte. */
-    data class Status(
-        val host: String, val minutes: Int, val stale: Boolean, val accounts: List<Account>,
-        val open: Int, val working: Int, val finished: Int, val waiting: Int, val closed: Int, val night: Int,
-    )
-
-    fun status(state: State, summary: Summary.Model, now: Long, stale: Boolean): Status {
-        val g = groups(summary).associate { it.first to it.second.size }
-        val accounts = PhoneBoard.quotaRows(state, now, stale).map { r ->
-            Account(r.account, r.personal, r.pct, r.resetAt, state.quota[r.account]?.w7, r.stale)
-        }
-        return Status(
-            state.host, ((now - state.ts) / 60).toInt().coerceAtLeast(0), stale, accounts,
-            open = state.sessions.count { it.state != SessionState.GONE },
-            working = g[Summary.Group.WORKING] ?: 0, finished = g[Summary.Group.FINISHED] ?: 0,
-            waiting = g[Summary.Group.WAITING] ?: 0, closed = summary.closed.size, night = state.night.queued,
-        )
-    }
-
     /**
      * La colonna delle sessioni: i gruppi del riepilogo nell'ordine del bisogno, con la master al suo posto come le altre
      * (sul telefono è la cornice della home, qui una sessione della lista). Fra le ferme vale l'ordine del riepilogo, la
@@ -60,14 +38,6 @@ object Tablet {
             inGroup.takeIf { it.isNotEmpty() }?.let { g to it }
         }
     }
-
-    /** La riga di attività sotto il nome: la domanda, lo strumento al lavoro, l'esito; null se non c'è niente da dire. */
-    fun line(row: Summary.Row): String? = when (row.group) {
-        Summary.Group.WAITING -> row.session.question?.text
-        Summary.Group.WORKING -> listOfNotNull(row.session.tool, row.session.toolNote).joinToString(" · ").ifEmpty { null }
-        Summary.Group.FINISHED -> row.text ?: row.session.outcome?.short
-        Summary.Group.STILL -> row.session.outcome?.short
-    }?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim()
 
     /**
      * L'ispettore a destra: aperta da, da quanto, il turno in corso, e la giornata dalla cronologia (contratto 1.29) della
@@ -133,6 +103,48 @@ object Tablet {
         name in columns -> columns - name
         columns.size < MAX_COLUMNS -> columns + name
         else -> columns.dropLast(1) + name
+    }
+
+    /** v2 (Franz, 04/10 16:36): il tocco su una scheda aggiunge; già in colonna niente; con quattro prende il posto dell'ultima. */
+    fun add(columns: List<String>, name: String): List<String> = when {
+        name in columns -> columns
+        columns.size < MAX_COLUMNS -> columns + name
+        else -> columns.dropLast(1) + name
+    }
+
+    /** Una colonna trascinata sopra un'altra: si scambiano di posto. */
+    fun swap(columns: List<String>, from: Int, to: Int): List<String> {
+        if (from == to || from !in columns.indices || to !in columns.indices) return columns
+        return columns.toMutableList().also { it[from] = columns[to]; it[to] = columns[from] }
+    }
+
+    /**
+     * Le larghezze delle colonne a scatti (Franz, 04/10 16:21 e 16:36): 12 parti in tutto, ogni colonna almeno 2 (un sesto).
+     * Un bordo trascinato sposta parti intere fra le due colonne che separa: così una o due possono prendere metà o due
+     * terzi dello spazio e le altre dividersi il resto.
+     */
+    object Shares {
+        const val TOTAL = 12
+        const val MIN = 2
+
+        fun equal(n: Int): List<Int> = if (n <= 0) emptyList() else List(n) { i -> TOTAL / n + if (i < TOTAL % n) 1 else 0 }
+
+        fun drag(shares: List<Int>, border: Int, parts: Int): List<Int> {
+            if (border !in 0 until shares.size - 1) return shares
+            val pair = shares[border] + shares[border + 1]
+            val left = (shares[border] + parts).coerceIn(MIN, pair - MIN)
+            return shares.toMutableList().also { it[border] = left; it[border + 1] = pair - left }
+        }
+
+        /** I pixel trascinati in parti intere della larghezza delle colonne (lo scatto). */
+        fun parts(dragPx: Float, widthPx: Float): Int = if (widthPx <= 0f) 0 else kotlin.math.round(dragPx / (widthPx / TOTAL)).toInt()
+
+        fun pref(shares: List<Int>): String = shares.joinToString(",")
+
+        fun fromPref(raw: String?, n: Int): List<Int> {
+            val s = raw?.split(',')?.mapNotNull { it.trim().toIntOrNull() }
+            return s?.takeIf { it.size == n && it.sum() == TOTAL && it.all { p -> p >= MIN } } ?: equal(n)
+        }
     }
 
     fun columnsPref(columns: List<String>): String = columns.joinToString("\n")
