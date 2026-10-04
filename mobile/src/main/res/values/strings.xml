@@ -453,4 +453,11 @@
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normale)</string>
     <string name="pair_err_full">Il PC ha già quattro dispositivi accoppiati: non ne accetta un altro.</string>
+    <string name="step_tablet">Tablet</string>
+    <string name="dev_tablet">Tablet</string>
+    <string name="pair_node_working">in corso</string>
+    <string name="pair_node_done">collegato</string>
+    <string name="pair_node_pending">in attesa</string>
+    <string name="pair_node_failed">non riuscito</string>
+    <string name="pair_node_skipped">senza</string>
 </resources>

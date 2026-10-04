@@ -24,6 +24,8 @@ data class PairUi(
     val restarting: Boolean = false,
     val host: String? = null,
     val watchName: String? = null,
+    /** Contratto 1.30: un dispositivo in più (`relay pair --add`), senza il passo dell'orologio. */
+    val add: Boolean = false,
 )
 
 /** Il flusso del telefono (design 24/09, «Flusso»): telefono, orologio, PC, poi K all'orologio. */
@@ -68,6 +70,7 @@ class PairingController(
         lastQr = text
         _ui.value = PairUi(phase = Phase.RUNNING)
         val qr = PairQr.parse(text) ?: return fail(PairFail.INVALID, Step.PHONE)
+        _ui.value = _ui.value.copy(add = qr.add)
         if (qr.expired(now())) return fail(PairFail.EXPIRED, Step.PHONE)
         val cfg = qr.f.config()
 
@@ -86,11 +89,13 @@ class PairingController(
         step(Step.PHONE, StepState.DONE)
 
         step(Step.WATCH, StepState.WORKING)
-        val node = link.find()
+        // Contratto 1.30 (Franz, 04/10 13:43): un'aggiunta, come il tablet accanto a telefono e orologio, non passa
+        // dall'orologio: ha già la chiave del relay, che arriva al dispositivo nuovo con la conferma del PC.
+        val node = if (qr.add) null else link.find()
         var hello: HelloResponse? = null
         if (node == null) {
             // Senza orologio, o con un orologio senza la nostra app, si può accoppiare il solo telefono (Franz, 25/09 06:58).
-            if (withoutWatch) step(Step.WATCH, StepState.SKIPPED)
+            if (withoutWatch || qr.add) step(Step.WATCH, StepState.SKIPPED)
             else return fail(if (link.anyConnected() != null) PairFail.WATCH_APP_MISSING else PairFail.NO_WATCH, Step.WATCH)
         } else {
             hello = hello(node, cfg) ?: return fail(PairFail.WATCH_FAILED, Step.WATCH)

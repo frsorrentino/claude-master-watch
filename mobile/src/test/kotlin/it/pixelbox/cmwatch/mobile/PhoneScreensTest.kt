@@ -28,6 +28,17 @@ class PhoneScreensTest {
     @Test fun pairingWatchAppMissing() = paparazzi.snapshot {
         CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.FAILED, steps(StepState.DONE, StepState.FAILED, StepState.WAIT), fail = PairFail.WATCH_APP_MISSING), {}, {}, {}, {}, {}) }
     }
+    // Il tablet in un'aggiunta (contratto 1.30, Franz 04/10 13:43-13:45): niente passo dell'orologio, lo schema delle
+    // Impostazioni con tablet e PC, la colonna larga al massimo 640 dp. Pixel Tablet in orizzontale, 1280×800 dp.
+    @Test fun pairingAddTablet() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_5.copy(
+            screenWidth = 2560, screenHeight = 1600, xdpi = 320, ydpi = 320, density = com.android.resources.Density.XHIGH,
+            orientation = com.android.resources.ScreenOrientation.LANDSCAPE, size = com.android.resources.ScreenSize.XLARGE, locale = "it",
+        ))
+        paparazzi.snapshot {
+            CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.RUNNING, steps(StepState.DONE, StepState.SKIPPED, StepState.WORKING), add = true), {}, {}, {}, {}, {}) }
+        }
+    }
     @Test fun pairingDone() = paparazzi.snapshot {
         CmPhoneTheme(still = true) { PairingScreen(PairUi(Phase.DONE, steps(StepState.DONE, StepState.DONE, StepState.DONE), host = "penguin", watchName = "Pixel Watch 5"), {}, {}, {}, {}, {}) }
     }

@@ -115,13 +115,24 @@ private fun watchShort(w: SettingsDevices.Watch): String = stringResource(
 private fun Node(
     icon: ImageVector, size: Dp, tone: Tone, selected: Boolean, dashed: Boolean, name: String, status: String,
     enabled: Boolean, onClick: () -> Unit,
+) = SchemeNode(
+    icon, size, toneColor(tone), if (selected) CmColors.actionIcon else CmColors.line, dashed, name, status,
+    stringResource(R.string.dev_details, name), if (enabled) onClick else null,
+)
+
+/**
+ * Un dispositivo dello schema, nelle Impostazioni e mentre si accoppia: il cerchio con l'icona, il puntino del suo stato
+ * (`dot`), il nome e lo stato sotto; tratteggiato quando non c'è ancora. Toccabile solo con `onClick`.
+ */
+@Composable
+internal fun SchemeNode(
+    icon: ImageVector, size: Dp, dot: Color, ring: Color, dashed: Boolean, name: String, status: String,
+    desc: String?, onClick: (() -> Unit)?,
 ) {
-    val desc = stringResource(R.string.dev_details, name)
     // Tutti i cerchi stanno in una fascia alta 72 dp: quello più grande del PC la sborda sopra e sotto, così i nomi restano
     // sulla stessa riga e i fili arrivano al centro di ogni cerchio.
     Column(Modifier.width(size + 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(Modifier.height(NODE_BAND), contentAlignment = Alignment.Center) { Box(Modifier.requiredSize(size)) {
-            val ring = if (selected) CmColors.actionIcon else CmColors.line
             Box(
                 Modifier.fillMaxSize().clip(CircleShape)
                     .background(if (dashed) Color.Transparent else CmColors.surface)
@@ -131,14 +142,14 @@ private fun Node(
                             drawCircle(CmColors.briefTrack, radius = this.size.minDimension / 2 - w / 2, style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
                         } else Modifier.border(2.dp, ring, CircleShape),
                     )
-                    .then(if (enabled) Modifier.clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = desc } else Modifier),
+                    .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick).semantics { desc?.let { contentDescription = it } } else Modifier),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = if (dashed) CmColors.stale else CmColors.actionIcon, modifier = Modifier.size(size * 0.42f))
             }
             if (!dashed) Box(
                 Modifier.align(Alignment.TopEnd).offset(x = (-3).dp, y = 3.dp).size(14.dp).clip(CircleShape)
-                    .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(toneColor(tone)),
+                    .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(dot),
             )
         } }
         Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
@@ -148,10 +159,14 @@ private fun Node(
 
 /** Il filo fra due dispositivi: pieno nel colore dello stato, tratteggiato se manca l'abbinamento; sul vivo scorre un punto. */
 @Composable
-private fun Wire(tone: Tone, reverse: Boolean, modifier: Modifier) {
-    val color = toneColor(tone)
-    val moving = tone == Tone.LIVE && !animationsOff()
-    val t = if (moving) {
+private fun Wire(tone: Tone, reverse: Boolean, modifier: Modifier) =
+    SchemeWire(toneColor(tone), dashed = tone == Tone.OFF, moving = tone == Tone.LIVE, reverse = reverse, modifier = modifier)
+
+/** Il filo dello schema: pieno o tratteggiato, con il punto che scorre se `moving` (fermo con le animazioni spente). */
+@Composable
+internal fun SchemeWire(color: Color, dashed: Boolean, moving: Boolean, reverse: Boolean, modifier: Modifier) {
+    val run = moving && !animationsOff()
+    val t = if (run) {
         val flow = rememberInfiniteTransition(label = "wire")
         val v by flow.animateFloat(0f, 1f, infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Restart), label = "dot")
         v
@@ -159,7 +174,7 @@ private fun Wire(tone: Tone, reverse: Boolean, modifier: Modifier) {
     Canvas(modifier.height(8.dp)) {
         val y = size.height / 2
         val w = 2.dp.toPx()
-        if (tone == Tone.OFF) drawLine(color, Offset(0f, y), Offset(size.width, y), w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)))
+        if (dashed) drawLine(color, Offset(0f, y), Offset(size.width, y), w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)))
         else drawLine(color, Offset(0f, y), Offset(size.width, y), w)
         t?.let { f ->
             val x = (if (reverse) 1f - f else f) * size.width

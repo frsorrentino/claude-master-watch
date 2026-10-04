@@ -116,6 +116,21 @@ class PairingControllerTest {
         assertEquals(listOf("phoneUid"), PairingRecord.fromJson(store.s.pairingJson)!!.uids)
     }
 
+    // Contratto 1.30 (Franz, 04/10 13:43, dal tablet): un'aggiunta non cerca l'orologio, che ha già la chiave, e va dritta al PC.
+    @Test fun anAdditionSkipsTheWatch() = runTest {
+        val add = qrText.trimEnd().removeSuffix("}") + ",\"m\":\"add\"}"
+        val c = controller()
+        c.run(add)
+        val ui = c.ui.value
+        assertEquals(Phase.DONE, ui.phase)
+        assertTrue(ui.add)
+        assertEquals(StepState.SKIPPED, ui.steps[Step.WATCH])
+        assertNull(ui.fail)
+        assertEquals(0, watch.requests)
+        assertNull(pcWatch)
+        assertEquals(listOf("phoneUid"), PairingRecord.fromJson(store.s.pairingJson)!!.uids)
+    }
+
     @Test fun watchWithoutTheApp() = runTest {
         watch.reachable = false; watch.connectedWithoutApp = true
         val c = controller()
