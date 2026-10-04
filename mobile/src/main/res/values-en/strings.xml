@@ -515,4 +515,22 @@
     <string name="pair_node_pending">waiting</string>
     <string name="pair_node_failed">failed</string>
     <string name="pair_node_skipped">skipped</string>
+    <string name="add_device">Add a device</string>
+    <string name="add_device_sub">A tablet next to the phone and the watch, with the QR on this phone</string>
+    <string name="add_device_asking">Asking the PC for an invitation</string>
+    <string name="add_device_how">On the new device open claude-master, tap Pair and scan this QR.</string>
+    <string name="add_device_how_code">The PC has no data for the QR: type this code on the new device.</string>
+    <string name="add_device_code">Code %1$s</string>
+    <string name="add_device_left">Expires in\u00A0%1$s</string>
+    <string name="add_device_expired">Invitation expired: do not scan it any more</string>
+    <string name="add_device_again">New invitation</string>
+    <string name="add_device_done">Done</string>
+    <string name="add_device_close">Close</string>
+    <string name="add_device_busy">A pairing is already open on the PC: wait for it to end, 5 minutes at most, and try again.</string>
+    <string name="add_device_no_key">The PC has no key yet: pair this phone first with relay pair.</string>
+    <string name="add_device_full">The PC already has four paired devices: there is no room for another.</string>
+    <string name="add_device_failed">The PC did not open the invitation: %1$s</string>
+    <string name="add_device_other">The PC answered: %1$s</string>
+    <string name="add_device_lost">The PC does not answer: try again shortly.</string>
+    <string name="add_device_qr">Invitation QR to scan with the new device</string>
 </resources>

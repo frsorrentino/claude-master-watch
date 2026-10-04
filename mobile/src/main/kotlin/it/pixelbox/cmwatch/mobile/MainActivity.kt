@@ -21,6 +21,7 @@ import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
+import it.pixelbox.cmwatch.rules.PairAddText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -250,6 +251,33 @@ class MainActivity : ComponentActivity() {
                 watchNear = if (r?.watchName == null) null else it.pixelbox.cmwatch.mobile.pair.WearWatchLink(this@MainActivity).anyConnected() != null
             }
             val notificationsOn = remember { getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled() }
+            // Contratto 1.31 (Franz, 04/10 13:47: «pairing dal telefono senza PC»): l'invito per un dispositivo in più lo apre
+            // il relay e vale 5 minuti; qui il QR da inquadrare col dispositivo nuovo. Chiuso il foglio, la risposta tardiva si ignora.
+            var addDevice by remember { mutableStateOf<AddDeviceUi?>(null) }
+            val askInvite: () -> Unit = {
+                addDevice = AddDeviceUi.Asking
+                scope.launch {
+                    val id = runCatching { app.repo.command(CmdOp.PAIR_ADD, null, null) }.getOrNull()
+                    var r: it.pixelbox.cmwatch.contract.CmdResult? = null
+                    if (id != null) {
+                        val until = System.currentTimeMillis() + PhoneTerminal.LOST_MS
+                        while (r == null && System.currentTimeMillis() < until) { r = app.repo.resultsById.value[id]; if (r == null) delay(500) }
+                        app.repo.forget(id)
+                    }
+                    val got = r
+                    if (addDevice != null) addDevice = when {
+                        got == null -> AddDeviceUi.Lost
+                        got.ok -> runCatching { ContractJson.decodePairAdd(got.text) }.map { o -> AddDeviceUi.Offer(o.qr, o.code, o.exp) }
+                            .getOrElse { AddDeviceUi.Refused(PairAddText.Refusal.OTHER, got.text) }
+                        else -> AddDeviceUi.Refused(PairAddText.refusal(got.text), PairAddText.reason(got.text))
+                    }
+                }
+            }
+            addDevice?.let { ui ->
+                ModalBottomSheet(onDismissRequest = { addDevice = null }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.surface) {
+                    AddDeviceSheet(ui, onRetry = askInvite, onDone = { addDevice = null })
+                }
+            }
             SettingsScreen(
                 host = host, phoneName = app.phoneName, watchName = r?.watchName, watchPending = r?.watchPending == true, demo = demo,
                 version = version,
@@ -266,6 +294,7 @@ class MainActivity : ComponentActivity() {
                 voices = speech.voices.collectAsStateWithLifecycle().value, voice = speech.voice.collectAsStateWithLifecycle().value,
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
+                onAddDevice = if (!demo && state?.ops?.contains("pair_add") == true) askInvite else null,
             )
             return
         }

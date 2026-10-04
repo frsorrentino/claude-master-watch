@@ -31,6 +31,8 @@ junit = "4.13.2"
 paparazzi = "2.0.0-alpha02"
 
 [libraries]
+# Contratto 1.31: il QR dell'invito disegnato sul telefono, con lo stesso generatore del relay (Project Nayuki, MIT).
+qrcodegen = { module = "io.nayuki:qrcodegen", version = "1.8.0" }
 play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "codeScanner" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-material3-expressive = { module = "androidx.compose.material3:material3", version.ref = "material3Expressive" }

@@ -523,4 +523,22 @@
     <string name="pair_node_pending">in attesa</string>
     <string name="pair_node_failed">non riuscito</string>
     <string name="pair_node_skipped">senza</string>
+    <string name="add_device">Aggiungi un dispositivo</string>
+    <string name="add_device_sub">Un tablet accanto a telefono e orologio, col QR su questo telefono</string>
+    <string name="add_device_asking">Chiedo un invito al PC</string>
+    <string name="add_device_how">Sul dispositivo nuovo apri claude-master, tocca Accoppia e inquadra questo QR.</string>
+    <string name="add_device_how_code">Il PC non ha i dati per il QR: sul dispositivo nuovo scrivi questo codice.</string>
+    <string name="add_device_code">Codice %1$s</string>
+    <string name="add_device_left">Scade fra\u00A0%1$s</string>
+    <string name="add_device_expired">Invito scaduto: non va più inquadrato</string>
+    <string name="add_device_again">Nuovo invito</string>
+    <string name="add_device_done">Fatto</string>
+    <string name="add_device_close">Chiudi</string>
+    <string name="add_device_busy">Sul PC c\'è già un accoppiamento aperto: aspetta che finisca, al massimo 5 minuti, e riprova.</string>
+    <string name="add_device_no_key">Il PC non ha ancora una chiave: accoppia prima questo telefono con relay pair.</string>
+    <string name="add_device_full">Il PC ha già quattro dispositivi accoppiati: non c\'è posto per un altro.</string>
+    <string name="add_device_failed">Il PC non ha aperto l\'invito: %1$s</string>
+    <string name="add_device_other">Il PC ha risposto: %1$s</string>
+    <string name="add_device_lost">Il PC non risponde: riprova fra poco.</string>
+    <string name="add_device_qr">QR dell\'invito da inquadrare col dispositivo nuovo</string>
 </resources>

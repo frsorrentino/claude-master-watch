@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3.expressive)
     implementation(libs.compose.material.icons)
+    implementation(libs.qrcodegen)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.coroutines.android)
