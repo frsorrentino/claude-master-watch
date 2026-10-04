@@ -4,10 +4,16 @@ import it.pixelbox.cmwatch.crypto.Pairing
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** Il contenuto del QR di `claude-master relay pair` (contratto 1.15, `contract/pair-qr.json`). */
+/**
+ * Il contenuto del QR di `claude-master relay pair` (contratto 1.15, `contract/pair-qr.json`). Contratto 1.30: `m` =
+ * «add» con `relay pair --add`, un dispositivo in più accanto a quelli accoppiati (`contract/pair-add.json`).
+ */
 @Serializable
-data class PairQr(val v: Int, val i: String, val c: String, val h: String, val e: Long, val f: QrFirebase) {
+data class PairQr(val v: Int, val i: String, val c: String, val h: String, val e: Long, val f: QrFirebase, val m: String? = null) {
     fun expired(nowSec: Long): Boolean = nowSec > e
+
+    /** Un'aggiunta: la chiave del relay arriva cifrata nella conferma invece di derivarla dal giro. */
+    val add: Boolean get() = m == "add"
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
