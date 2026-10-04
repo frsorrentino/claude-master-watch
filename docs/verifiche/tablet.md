@@ -5,10 +5,10 @@ accanto. Sul Chromebook la finestra dell'app si allarga e si stringe a mano: sot
 
 ## Plancia
 
-- [ ] Finestra larga (≥ 840 dp): la plancia, con riga di stato, barra a sinistra, sessioni, conversazione; da 1200 dp anche l'ispettore.
+- [x] Finestra larga (≥ 840 dp): la plancia, con riga di stato, barra a sinistra, sessioni, conversazione; da 1200 dp anche l'ispettore. — 04/10 02:19, Chromebook in Demo, 1536 dp (Claude)
 - [ ] Riga di stato: PC e aggiornamento, quote 5h e 7g per account, sessioni per stato, notte, orologio, ora; l'ora scatta al minuto.
 - [ ] Finestra stretta o carattere grande: la riga resta una riga; escono prima PC, orologio e notte, restano quota 5h, in attesa e ora.
-- [ ] Tocco su una sessione della colonna: la conversazione al centro cambia, l'ispettore la segue.
+- [x] Tocco su una sessione della colonna: la conversazione al centro cambia, l'ispettore la segue. — 04/10 02:21, Demo (Claude)
 - [ ] Ispettore: progetto, account, aperta da, turno; contesto, prompt e commit di oggi; la cronologia di oggi arriva dal PC (relay 1.29).
 - [ ] Pannello quote: la linea della finestra di 5 ore, la previsione tratteggiata fino alla ripartenza, la frase «Al ritmo di adesso…».
 - [ ] Settimana: la barra con la previsione al rinnovo e la frase «Allo stesso ritmo…».
@@ -16,7 +16,7 @@ accanto. Sul Chromebook la finestra dell'app si allarga e si stringe a mano: sot
 
 ## Colonne
 
-- [ ] La seconda icona della barra apre le colonne; «Colonne» in alto e Indietro tornano alla plancia.
+- [x] La seconda icona della barra apre le colonne; «Colonne» in alto e Indietro tornano alla plancia. — 04/10 03:03, Demo; provato Indietro (Claude)
 - [ ] «+ colonna» aggiunge in fondo (al massimo quattro; la quinta prende il posto dell'ultima); «in colonna» e × tolgono.
 - [ ] Ogni colonna mostra la sua conversazione aggiornata, e si scrive da ognuna.
 - [ ] Chi ti aspetta ha il bordo arancio, e la domanda si risponde dalla colonna.
@@ -25,8 +25,8 @@ accanto. Sul Chromebook la finestra dell'app si allarga e si stringe a mano: sot
 
 ## Passaggio dei 840 dp (standard della master, 04/10)
 
-- [ ] Con una bozza scritta nel campo, stringere la finestra sotto 840 dp: la stessa sessione aperta, la bozza ancora lì.
-- [ ] Riallargare: la stessa sessione al centro della plancia, la bozza ancora lì.
+- [x] Con una bozza scritta nel campo, stringere la finestra sotto 840 dp: la stessa sessione aperta, la bozza ancora lì. — 04/10 02:21, Demo, sessione scelta a mano (Claude). Se la sessione al centro è quella di partenza e la master non c'è, il telefono torna alla home: la bozza resta nella sessione.
+- [x] Riallargare: la stessa sessione al centro della plancia, la bozza ancora lì. — 04/10 02:20, Demo (Claude)
 
 ## Tastiera (Chromebook)
 
