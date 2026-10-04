@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colore della master</title>
+<style>
+:root{--bg:#000;--low:#1B1F26;--surf:#23272E;--high:#292F3A;--line:#2A2E35;--text:#F2F4F7;--text2:#B0B8C4;--icon:#A8C7FA;--wait:#FFB020;--good:#65C581;--blue:#4C7DFF;
+ --lilac:#CDB8FF;--lilacInk:#1E1238;--lilacLine:rgba(205,184,255,.45);--mtint:var(--low);--mtintHigh:var(--surf)}
+body.B{--mtint:#211C2E;--mtintHigh:#2A2340}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.35 Roboto,system-ui,sans-serif;width:412px;padding:14px 12px 20px}
+.cap{font:600 12px/1.2 "Roboto Mono",monospace;letter-spacing:.12em;color:var(--lilac);margin:4px 4px 10px}
+.cap2{font:12px/1.3 Roboto,sans-serif;color:var(--text2);margin:0 4px 14px}
+.mono{font:12px/1.2 "Roboto Mono",monospace;letter-spacing:.08em;color:var(--text2)}
+.bar{display:flex;align-items:center;gap:12px;height:52px;padding:0 6px;margin-bottom:12px}
+.badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.badge svg{width:15px;height:15px}
+.m-badge{background:var(--lilac)} .m-badge svg{fill:var(--lilacInk)}
+.name{font-weight:500;font-size:19px}
+.m-name{color:var(--lilac)}
+.sp{flex:1}
+.card{background:var(--low);border-radius:24px;padding:16px;margin-bottom:12px}
+.menu .row{display:flex;align-items:center;gap:14px;padding:10px 6px;border-radius:14px}
+.menu .m-row{background:var(--mtintHigh);box-shadow:inset 3px 0 0 var(--lilac)}
+.row .t{font-weight:500;font-size:17px}.row .s{font-size:13px;color:var(--text2)}
+.sec{margin:10px 6px 4px}.sec.w{color:var(--wait)}.sec.b{color:var(--icon)}
+.dock{display:flex;align-items:center;gap:12px;background:var(--mtint);border-radius:22px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--lilacLine)}
+.dock .lab{color:var(--lilac)}
+.round{width:44px;height:44px;border-radius:50%;background:var(--surf);display:flex;align-items:center;justify-content:center;flex:none}
+.round svg{width:18px;height:18px;fill:var(--icon)}
+.hero{background:var(--mtint);border:1px solid var(--lilacLine)}
+.hero .lab{color:var(--lilac)}
+.hero h3{font-size:18px;font-weight:600;margin:8px 0 6px}
+.hero p{color:var(--text2);font-size:15px}
+.btns{display:flex;gap:10px;margin-top:12px}
+.btn{flex:1;background:var(--surf);border-radius:22px;text-align:center;padding:11px;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--surf);border-radius:16px;padding:6px 12px;font-size:14px}
+.other .badge{background:transparent}
+</style></head>
+<body class="VARIANT">
+<div class="cap">TITOLO</div>
+<div class="cap2">SOTTOTITOLO</div>
+
+<div class="mono" style="margin:0 6px 6px">LA CHAT DELLA MASTER, IN ALTO</div>
+<div class="bar">
+ <svg width="22" height="22" viewBox="0 0 24 24" fill="#F2F4F7"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
+ <div class="badge m-badge"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+ <div class="name m-name">master</div>
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="#B0B8C4"><path d="M7 10l5 5 5-5z"/></svg>
+ <div class="sp"></div>
+ <div class="mono">ctx 41%</div>
+ <svg width="22" height="22" viewBox="0 0 24 24" fill="#B0B8C4"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+</div>
+
+<div class="mono" style="margin:0 6px 6px">IL MENU «VAI A»</div>
+<div class="card menu">
+ <div class="row m-row">
+  <div class="badge m-badge" style="width:40px;height:40px"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+  <div><div class="t m-name">Master</div><div class="s">La home: sessioni e chat della master</div></div>
+ </div>
+ <div class="mono sec w">TI ASPETTA · 1</div>
+ <div class="row other">
+  <div class="badge" style="background:var(--blue);border-radius:8px;width:28px;height:28px"><svg viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px"><path d="M12 2a2 2 0 0 1 2 2v7h1V5a2 2 0 1 1 4 0v9a8 8 0 0 1-16 0v-3a2 2 0 1 1 4 0v1h1V4a2 2 0 0 1 2-2z"/></svg></div>
+  <div style="flex:1"><div class="t">ledger-api</div><div class="s" style="color:var(--wait)">domanda · 5 m</div></div><div class="mono">ctx 62%</div>
+ </div>
+ <div class="mono sec b">AL LAVORO · 1</div>
+ <div class="row other">
+  <div class="badge" style="background:var(--good);width:28px;height:28px"><svg viewBox="0 0 24 24" fill="#0B2A14" style="width:16px;height:16px"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
+  <div style="flex:1"><div class="t">atlas-shop</div><div class="s">al lavoro · 1 m</div></div><div class="mono">ctx 18%</div>
+ </div>
+</div>
+
+<div class="mono" style="margin:0 6px 6px">LA BARRA DELLA MASTER IN FONDO ALLA HOME</div>
+<div class="dock">
+ <div class="badge m-badge" style="width:30px;height:30px"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+ <div style="flex:1;min-width:0"><div class="mono lab">MASTER · 10:50 · Sonnet 5</div><div style="font-weight:500;font-size:17px;margin-top:2px">Fase 2.2 avviata</div></div>
+ <div class="round"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+</div>
+
+<div class="mono" style="margin:0 6px 6px">L'ULTIMO ESITO NELLA HOME DELLA MASTER</div>
+<div class="card hero">
+ <div class="mono lab">ULTIMO ESITO · 10:50</div>
+ <h3>Fase 2.2 avviata su claude-master</h3>
+ <p>Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.</p>
+ <div class="btns"><div class="round"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><div class="btn">Apri la conversazione ›</div></div>
+</div>
+</body></html>
