@@ -17,8 +17,8 @@
     <string name="pair_finish">Finish</string>
     <string name="pair_without_watch">Continue without watch</string>
     <string name="pair_install_watch">Install on the watch</string>
-    <string name="pair_err_expired">Code expired: run relay pair again.</string>
-    <string name="pair_err_invalid">Invalid code: run relay pair again.</string>
+    <string name="pair_err_expired">Code expired: run the same command on the PC again. For one more device next to the others it is relay pair --add.</string>
+    <string name="pair_err_invalid">Invalid code: scan the QR, or paste the relay pair --text line that starts with {\"v\":1.</string>
     <string name="pair_err_no_watch">Watch not found: is it connected to the phone?</string>
     <string name="pair_err_watch_app">claude-master is missing on the watch.</string>
     <string name="pair_err_network">No network: retry.</string>
@@ -30,7 +30,7 @@
     <string name="paired_this_phone">This phone</string>
     <string name="paired_key_delivered">Key delivered</string>
     <string name="paired_repair">Pair again</string>
-    <string name="paste_title">Paste the relay pair code</string>
+    <string name="paste_title">Paste the relay pair --text line</string>
     <string name="cancel">Cancel</string>
     <string name="tab_sessions">Sessions</string>
     <string name="tab_diary">Log</string>
@@ -471,4 +471,7 @@
     <string name="add_device_other">The PC answered: %1$s</string>
     <string name="add_device_lost">The PC does not answer: try again shortly.</string>
     <string name="add_device_qr">Invitation QR to scan with the new device</string>
+    <string name="pair_err_expired_add">Code expired: ask for a new one with relay pair --add on the PC, or from the phone with Add a device.</string>
+    <string name="pair_err_watch_code">This is the code for the watch: here you need the QR, or the relay pair --text line that starts with {\"v\":1.</string>
+    <string name="paste_hint">The long line printed by relay pair --text, starting with {\"v\":1. Not the 6-digit number: that one is for the watch.</string>
 </resources>

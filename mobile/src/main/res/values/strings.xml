@@ -17,8 +17,8 @@
     <string name="pair_finish">Fine</string>
     <string name="pair_without_watch">Continua senza orologio</string>
     <string name="pair_install_watch">Installa sull\'orologio</string>
-    <string name="pair_err_expired">Codice scaduto: rilancia relay pair.</string>
-    <string name="pair_err_invalid">Codice non valido: rilancia relay pair.</string>
+    <string name="pair_err_expired">Codice scaduto: rilancia sul PC lo stesso comando. Per un dispositivo in più accanto agli altri è relay pair --add.</string>
+    <string name="pair_err_invalid">Codice non valido: serve il QR, o la riga di relay pair --text che comincia con {\"v\":1.</string>
     <string name="pair_err_no_watch">Orologio non trovato: è collegato al telefono?</string>
     <string name="pair_err_watch_app">Sull\'orologio manca claude-master.</string>
     <string name="pair_err_network">Nessuna rete: riprova.</string>
@@ -30,7 +30,7 @@
     <string name="paired_this_phone">Questo telefono</string>
     <string name="paired_key_delivered">Chiave consegnata</string>
     <string name="paired_repair">Rifai l\'accoppiamento</string>
-    <string name="paste_title">Incolla il codice di relay pair</string>
+    <string name="paste_title">Incolla la riga di relay pair --text</string>
     <string name="cancel">Annulla</string>
     <string name="tab_sessions">Sessioni</string>
     <string name="tab_diary">Registro</string>
@@ -478,4 +478,7 @@
     <string name="add_device_other">Il PC ha risposto: %1$s</string>
     <string name="add_device_lost">Il PC non risponde: riprova fra poco.</string>
     <string name="add_device_qr">QR dell\'invito da inquadrare col dispositivo nuovo</string>
+    <string name="pair_err_expired_add">Codice scaduto: chiedine uno nuovo con relay pair --add sul PC, o dal telefono con Aggiungi un dispositivo.</string>
+    <string name="pair_err_watch_code">Questo è il codice per l\'orologio: qui serve il QR, o la riga di relay pair --text che comincia con {\"v\":1.</string>
+    <string name="paste_hint">La riga lunga stampata da relay pair --text, che comincia con {\"v\":1. Non il numero a 6 cifre: quello è per l\'orologio.</string>
 </resources>
