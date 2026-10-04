@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.pairing
 
+import it.pixelbox.cmwatch.crypto.Blob
 import it.pixelbox.cmwatch.crypto.Pairing
 import it.pixelbox.cmwatch.transport.Rtdb
 import it.pixelbox.cmwatch.transport.TransportException
@@ -26,6 +27,8 @@ sealed class PairError(msg: String) : Exception(msg) {
     class Unknown : PairError("no such pairing")
     class NoConfirm : PairError("the PC did not confirm")
     class BadConfirm : PairError("PC check failed")
+    /** Contratto 1.30: il PC ha già quattro dispositivi, l'aggiunta è rifiutata. */
+    class Full : PairError("the PC already has four devices")
     class Network(msg: String) : PairError(msg)
 }
 
@@ -50,15 +53,30 @@ class PhonePairer(
                         // Un `/ok` che non è un oggetto è una conferma sbagliata, non un'eccezione (revisione finale, 2).
                         return@withTimeoutOrNull runCatching { Json.parseToJsonElement(doc).jsonObject }.getOrElse { throw PairError.BadConfirm() }
                     }
+                    // Contratto 1.30: con quattro dispositivi il PC risponde {"error": "full"} al posto della conferma.
+                    if (qr.add) rtdb.get("pair/${qr.i}/error")?.let { e ->
+                        if (runCatching { Json.parseToJsonElement(e).jsonPrimitive.content }.getOrNull() == "full") throw PairError.Full()
+                    }
                     delay(pollMs)
                 }
                 @Suppress("UNREACHABLE_CODE") null
             } ?: throw PairError.NoConfirm()
             if (ok["check"]?.jsonPrimitive?.content != Pairing.checkCode(key, "${qr.i}:pc")) throw PairError.BadConfirm()
-            return PhonePairResult(key, ok["host"]?.jsonPrimitive?.content ?: qr.h, listOfNotNull(phoneUid, watch?.uid))
+            // Contratto 1.30: in un'aggiunta la chiave è quella che il relay ha già, cifrata con la chiave del giro.
+            val relayKey = if (qr.add) relayKey(ok, key) else key
+            return PhonePairResult(relayKey, ok["host"]?.jsonPrimitive?.content ?: qr.h, listOfNotNull(phoneUid, watch?.uid))
         } catch (e: TransportException) {
             throw PairError.Network(e.message ?: "network")
         }
+    }
+
+    /** `ok.key` = la busta {v, enc} di /state con dentro {"key": "<64 cifre hex>"}; qualunque altra cosa non accoppia. */
+    private fun relayKey(ok: JsonObject, pairKey: ByteArray): ByteArray {
+        val env = (ok["key"] as? JsonObject) ?: throw PairError.BadConfirm()
+        val hex = runCatching { Json.parseToJsonElement(Blob.open(env.toString(), pairKey)).jsonObject["key"]!!.jsonPrimitive.content }
+            .getOrElse { throw PairError.BadConfirm() }
+        if (!hex.matches(Regex("[0-9a-fA-F]{64}"))) throw PairError.BadConfirm()
+        return ByteArray(32) { hex.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
     }
 
     companion object {

@@ -82,6 +82,7 @@ private fun failText(f: PairFail): Int = when (f) {
     PairFail.WATCH_APP_MISSING -> R.string.pair_err_watch_app
     PairFail.NETWORK -> R.string.pair_err_network
     PairFail.PC_NO_CONFIRM -> R.string.pair_err_pc
+    PairFail.FULL -> R.string.pair_err_full
     PairFail.WATCH_FAILED -> R.string.pair_err_watch
     PairFail.WATCH_UID_CHANGED -> R.string.pair_err_watch_uid
     PairFail.FAILED -> R.string.pair_err_unexpected
