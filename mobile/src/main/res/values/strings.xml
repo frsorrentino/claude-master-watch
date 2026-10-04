@@ -88,6 +88,8 @@
     <string name="night_update_pc">Aggiorna claude-master sul PC per gestire la coda da qui</string>
     <string name="diary_previous">Giorni precedenti</string>
     <string name="file_refused">Il PC non manda il file: %1$s</string>
+    <string name="file_refused_large">Il file è di %1$s: troppo grande per il trasferimento dal PC</string>
+    <string name="file_refused_large_max">Il file è di %1$s: il trasferimento dal PC arriva a %2$s</string>
     <string name="file_failed">File non arrivato: riprova</string>
     <string name="file_no_app">Nessuna app per aprire questo file</string>
     <string name="slash_confirm_title">Mandare /%1$s a %2$s?</string>

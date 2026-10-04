@@ -86,6 +86,8 @@
     <string name="night_update_pc">Update claude-master on the computer to manage the queue from here</string>
     <string name="diary_previous">Previous days</string>
     <string name="file_refused">The PC did not send the file: %1$s</string>
+    <string name="file_refused_large">The file is %1$s: too big to transfer from the PC</string>
+    <string name="file_refused_large_max">The file is %1$s: the transfer from the PC goes up to %2$s</string>
     <string name="file_failed">File did not arrive: try again</string>
     <string name="file_no_app">No app can open this file</string>
     <string name="slash_confirm_title">Send /%1$s to %2$s?</string>

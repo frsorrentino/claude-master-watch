@@ -548,7 +548,17 @@ class MainActivity : ComponentActivity() {
                             fileLocal[f.path] = out.path
                             if (!r.file.mime.startsWith("image/")) viewFile(out, r.file.mime)
                         }
-                        is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_refused, r.reason), android.widget.Toast.LENGTH_LONG).show()
+                        is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> {
+                            // «too large: <byte>» in chiaro (Franz, 04/10 21:55): la misura del file e, se il PC lo dice, il limite.
+                            val size = { b: Long -> android.text.format.Formatter.formatShortFileSize(this@MainActivity, b) }
+                            val big = it.pixelbox.cmwatch.rules.FileRefusal.tooLarge(r.reason)
+                            val msg = when {
+                                big?.max != null -> getString(R.string.file_refused_large_max, size(big.bytes), size(big.max))
+                                big != null -> getString(R.string.file_refused_large, size(big.bytes))
+                                else -> getString(R.string.file_refused, r.reason)
+                            }
+                            android.widget.Toast.makeText(this@MainActivity, msg, android.widget.Toast.LENGTH_LONG).show()
+                        }
                         it.pixelbox.cmwatch.data.Repo.Opened.Failed -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_failed), android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
