@@ -474,6 +474,17 @@ private fun Composer(
         val density = androidx.compose.ui.platform.LocalDensity.current
         var lineH by remember { mutableIntStateOf(0) }
         var fieldW by remember { mutableIntStateOf(0) }
+        // In un campo stretto (le colonne del tablet col carattere grande) il suggerimento accanto a «Usa» e all'invio andava
+        // in frammenti di una parola: lì sta su una riga sua sopra il campo, intero, e il tocco lo mette nel campo.
+        val narrow = fieldW > 0 && with(density) { fieldW.toDp() } < 320.dp
+        if (narrow && sug != null) Row(
+            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { onDraft(sug) }.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon, style = MaterialTheme.typography.labelLarge)
+        }
+        val inField = sug.takeIf { !narrow }
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5,
             modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
@@ -486,14 +497,14 @@ private fun Composer(
                     true
                 },
             placeholder = {
-                if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 5)
+                if (inField != null) Text(inField, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 5)
                 // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
-                if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
+                if (inField != null && draft.isBlank()) TextButton(onClick = { onDraft(inField) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 // Con una tastiera fisica collegata il campo lo dice, come nel mockup del tablet.
                 else if (hardKeyboard() && mode != PhonePrimary.Composer.STOP && with(density) { fieldW.toDp() } >= 420.dp) Text(stringResource(R.string.enter_sends), style = MonoSmall, modifier = Modifier.padding(end = 10.dp))
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
