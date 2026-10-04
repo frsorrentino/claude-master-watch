@@ -473,9 +473,10 @@ private fun Composer(
         // sistema più grande la barra cresce, e un margine fisso non era più uguale a quelli sopra e sotto).
         val density = androidx.compose.ui.platform.LocalDensity.current
         var lineH by remember { mutableIntStateOf(0) }
+        var fieldW by remember { mutableIntStateOf(0) }
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5,
-            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height }
+            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
                 // Il tablet (pezzo 6): con la tastiera fisica Invio manda e Maiusc+Invio va a capo; la tastiera dello schermo
                 // resta com'è (il suo Invio arriva da un dispositivo virtuale, o come testo).
                 .onPreviewKeyEvent { e ->
@@ -487,14 +488,14 @@ private fun Composer(
             placeholder = {
                 if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 5)
                 // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
-                else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(R.string.write_to, s.name) }, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (sug != null && draft.isBlank()) TextButton(onClick = { onDraft(sug) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 // Con una tastiera fisica collegata il campo lo dice, come nel mockup del tablet.
-                else if (hardKeyboard() && mode != PhonePrimary.Composer.STOP) Text(stringResource(R.string.enter_sends), style = MonoSmall, modifier = Modifier.padding(end = 10.dp))
+                else if (hardKeyboard() && mode != PhonePrimary.Composer.STOP && with(density) { fieldW.toDp() } >= 420.dp) Text(stringResource(R.string.enter_sends), style = MonoSmall, modifier = Modifier.padding(end = 10.dp))
                 val filled = IconButtonDefaults.filledIconButtonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)
                 // Il cerchio concentrico all'estremità della barra (segnalazione 03/10 19:18, come ChatGPT): 40 dp nella barra da 56,
                 // quindi 8 dp sopra, sotto e a destra.

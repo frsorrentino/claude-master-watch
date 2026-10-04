@@ -620,7 +620,13 @@ class MainActivity : ComponentActivity() {
                             notesInHeader = lead == null || !inspectorOn,
                             canAttachFiles = state?.share?.any == true,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
-                            elsewhere = elsewhere.takeIf { home == null || !homeOpen },
+                            // Nelle colonne del tablet non si avvisa di chi è già in colonna: lo si vede accanto.
+                            elsewhere = elsewhere.takeIf { home == null || !homeOpen }?.takeIf { a ->
+                                !columnsOn || when (a) {
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> a.sessions.any { n -> n !in tabletCols }
+                                    is it.pixelbox.cmwatch.rules.Elsewhere.Finished -> a.session !in tabletCols
+                                }
+                            },
                             onElsewhere = {
                                 when (val a = elsewhere) {
                                     is it.pixelbox.cmwatch.rules.Elsewhere.Waiting -> if (a.sessions.size > 1) queueOpen = true else { open = a.sessions[0] }
