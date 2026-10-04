@@ -7,7 +7,6 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import org.junit.Test
-import it.pixelbox.cmwatch.mobile.pair.StepState
 import it.pixelbox.cmwatch.mobile.ui.CmPhoneTheme
 import it.pixelbox.cmwatch.mobile.ui.art.*
 
@@ -16,7 +15,6 @@ class ScenesTest {
     private val m = Modifier.fillMaxWidth().height(320.dp)
 
     @Test fun scan() = paparazzi.snapshot { CmPhoneTheme(still = true) { ScanScene(m) } }
-    @Test fun linkWatchFailed() = paparazzi.snapshot { CmPhoneTheme(still = true) { LinkScene(StepState.DONE, StepState.FAILED, StepState.WAIT, m) } }
     @Test fun paired() = paparazzi.snapshot { CmPhoneTheme(still = true) { PairedScene(watch = true, m) } }
     @Test fun emptySessions() = paparazzi.snapshot { CmPhoneTheme(still = true) { EmptySessionsScene(m) } }
     @Test fun emptyDiary() = paparazzi.snapshot { CmPhoneTheme(still = true) { EmptyDiaryScene(m) } }

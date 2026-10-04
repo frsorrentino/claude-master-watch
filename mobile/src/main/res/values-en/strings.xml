@@ -508,4 +508,11 @@
     <string name="tablet_priority_offered">low, offered</string>
     <string name="tablet_forecast_stale">Old reading: the forecast comes back with the next update; resets at\u00A0%1$s</string>
     <string name="pair_err_full">The PC already has four paired devices: it does not accept another one.</string>
+    <string name="step_tablet">Tablet</string>
+    <string name="dev_tablet">Tablet</string>
+    <string name="pair_node_working">in progress</string>
+    <string name="pair_node_done">connected</string>
+    <string name="pair_node_pending">waiting</string>
+    <string name="pair_node_failed">failed</string>
+    <string name="pair_node_skipped">skipped</string>
 </resources>

@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalInspectionMode
-import it.pixelbox.cmwatch.mobile.pair.StepState
 import it.pixelbox.cmwatch.mobile.ui.CmMotion
 import it.pixelbox.cmwatch.mobile.ui.animationsOff
 import it.pixelbox.cmwatch.ui.tokens.CmColors
@@ -50,14 +49,6 @@ private fun DrawScope.qr(topLeft: Offset, cell: Float, alpha: Float) {
     }
 }
 
-private fun stepColor(s: StepState): Color = when (s) {
-    StepState.DONE -> CmColors.idle
-    StepState.FAILED -> CmColors.goneDim
-    StepState.WORKING -> CmColors.busy
-    StepState.PENDING -> CmColors.waiting
-    else -> CmColors.line
-}
-
 @Composable
 fun ScanScene(modifier: Modifier = Modifier) {
     val t = entrance()
@@ -68,21 +59,6 @@ fun ScanScene(modifier: Modifier = Modifier) {
         qr(Offset(c.x - cell * 3.5f, c.y - cell * 4.5f), cell, t)
         phone(Offset(size.width * 0.78f, size.height * 0.55f + (1 - t) * 24f), size.minDimension * 0.55f, CmColors.surface)
         drawLine(CmColors.primary.copy(alpha = t), Offset(size.width * 0.66f, size.height * 0.5f), Offset(c.x + cell * 4f, c.y - cell), strokeWidth = 4f)
-    }
-}
-
-@Composable
-fun LinkScene(phone: StepState, watch: StepState, pc: StepState, modifier: Modifier = Modifier) {
-    val t = entrance()
-    Canvas(modifier) {
-        val p = Offset(size.width * 0.2f, size.height * 0.55f)
-        val w = Offset(size.width * 0.5f, size.height * 0.3f)
-        val m = Offset(size.width * 0.8f, size.height * 0.55f)
-        drawLine(stepColor(watch).copy(alpha = t), p, w, strokeWidth = 6f)
-        drawLine(stepColor(pc).copy(alpha = t), p, m, strokeWidth = 6f)
-        phone(p, size.minDimension * 0.4f, stepColor(phone).copy(alpha = 0.35f + 0.65f * t))
-        watch(w, size.minDimension * 0.12f, stepColor(watch).copy(alpha = 0.35f + 0.65f * t))
-        pc(m, size.minDimension * 0.5f, stepColor(pc).copy(alpha = 0.35f + 0.65f * t))
     }
 }
 

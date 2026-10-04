@@ -11,15 +11,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.TabletAndroid
+import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.mobile.R
@@ -36,16 +42,19 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  */
 @Composable
 fun PairingScreen(ui: PairUi, onRetry: () -> Unit, onRescan: () -> Unit, onWithoutWatch: () -> Unit, onInstallOnWatch: () -> Unit, onDone: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding().padding(horizontal = 24.dp, vertical = 32.dp),
+    // Il tablet si chiama tablet; su uno schermo largo la colonna resta larga al massimo 640 dp, al centro.
+    val tablet = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
+    Box(Modifier.fillMaxSize().background(CmColors.bg), contentAlignment = Alignment.TopCenter) { Column(
+        Modifier.widthIn(max = 640.dp).fillMaxSize().systemBarsPadding().padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Text(stringResource(if (ui.phase == Phase.DONE) R.string.pair_done_title else R.string.pair_title), style = MaterialTheme.typography.headlineMedium, color = CmColors.text)
-        StepRow(stringResource(R.string.step_phone), null, ui.steps.getValue(Step.PHONE))
-        StepRow(stringResource(R.string.step_watch), watchNote(ui), ui.steps.getValue(Step.WATCH))
+        StepRow(stringResource(if (tablet) R.string.step_tablet else R.string.step_phone), null, ui.steps.getValue(Step.PHONE))
+        // Un'aggiunta (contratto 1.30) non passa dall'orologio: il suo passo non si mostra.
+        if (!ui.add) StepRow(stringResource(R.string.step_watch), watchNote(ui), ui.steps.getValue(Step.WATCH))
         StepRow(stringResource(R.string.step_pc), ui.host, ui.steps.getValue(Step.PC))
         ui.fail?.let { Text(stringResource(failText(it)), style = MaterialTheme.typography.bodyLarge, color = CmColors.gone) }
-        it.pixelbox.cmwatch.mobile.ui.art.LinkScene(ui.steps.getValue(Step.PHONE), ui.steps.getValue(Step.WATCH), ui.steps.getValue(Step.PC), Modifier.fillMaxWidth().weight(1f))
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { PairScheme(ui, tablet) }
         val big = Modifier.fillMaxWidth().height(56.dp)
         when {
             ui.phase == Phase.DONE -> Button(onDone, big) { Text(stringResource(R.string.pair_finish)) }
@@ -61,7 +70,61 @@ fun PairingScreen(ui: PairUi, onRetry: () -> Unit, onRescan: () -> Unit, onWitho
             ui.fail in RESCAN -> Button(onRescan, big) { Text(stringResource(R.string.pair_rescan)) }
             ui.fail != null -> Button(onRetry, big) { Text(stringResource(R.string.pair_retry)) }
         }
+    } }
+}
+
+/**
+ * Il collegamento mentre si accoppia (Franz, 04/10 13:45: «anche nella sezione pair»): gli stessi cerchi e fili dello schema
+ * delle Impostazioni, nel colore dei passi. Questo dispositivo a sinistra, il PC al centro, l'orologio a destra; in
+ * un'aggiunta l'orologio non c'è, ha già la chiave.
+ */
+@Composable
+private fun PairScheme(ui: PairUi, tablet: Boolean) {
+    val phone = ui.steps.getValue(Step.PHONE)
+    val watch = ui.steps.getValue(Step.WATCH)
+    val pc = ui.steps.getValue(Step.PC)
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(CmColors.surfaceLow).dotGrid()
+            .padding(start = 10.dp, end = 10.dp, top = 20.dp, bottom = 16.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        SchemeNode(
+            if (tablet) Icons.Rounded.TabletAndroid else Icons.Rounded.PhoneAndroid, 72.dp, stepColor(phone), CmColors.line, dashed = false,
+            stringResource(if (tablet) R.string.dev_tablet else R.string.dev_phone), stringResource(R.string.dev_this), null, null,
+        )
+        SchemeWire(stepColor(pc), dashed = pc == StepState.WAIT, moving = pc == StepState.WORKING, reverse = false, modifier = Modifier.weight(1f).padding(top = 32.dp))
+        SchemeNode(
+            Icons.Rounded.Computer, 84.dp, stepColor(pc), if (pc == StepState.WORKING) CmColors.actionIcon else CmColors.line, dashed = pc == StepState.WAIT,
+            ui.host ?: stringResource(R.string.dev_pc), stepStatus(pc), null, null,
+        )
+        if (!ui.add) {
+            val off = watch == StepState.WAIT || watch == StepState.SKIPPED
+            SchemeWire(stepColor(watch), dashed = off, moving = watch == StepState.WORKING, reverse = true, modifier = Modifier.weight(1f).padding(top = 32.dp))
+            SchemeNode(
+                Icons.Rounded.Watch, 72.dp, stepColor(watch), if (watch == StepState.WORKING) CmColors.actionIcon else CmColors.line, dashed = off,
+                ui.watchName ?: stringResource(R.string.dev_watch), stepStatus(watch), null, null,
+            )
+        }
     }
+}
+
+/** Il colore di un passo sul puntino e sul filo: fatto verde, in corso azzurro, in attesa ambra, fallito rosso. */
+private fun stepColor(s: StepState): androidx.compose.ui.graphics.Color = when (s) {
+    StepState.DONE -> CmColors.briefGood
+    StepState.WORKING -> CmColors.actionIcon
+    StepState.PENDING -> CmColors.waiting
+    StepState.FAILED -> CmColors.gone
+    StepState.WAIT, StepState.SKIPPED -> CmColors.briefTrack
+}
+
+@Composable
+private fun stepStatus(s: StepState): String = when (s) {
+    StepState.WAIT -> ""
+    StepState.WORKING -> stringResource(R.string.pair_node_working)
+    StepState.DONE -> stringResource(R.string.pair_node_done)
+    StepState.PENDING -> stringResource(R.string.pair_node_pending)
+    StepState.FAILED -> stringResource(R.string.pair_node_failed)
+    StepState.SKIPPED -> stringResource(R.string.pair_node_skipped)
 }
 
 private val RESCAN = setOf<PairFail?>(PairFail.EXPIRED, PairFail.INVALID, PairFail.WATCH_UID_CHANGED)
