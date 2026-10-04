@@ -112,7 +112,7 @@ class SessionSheetTest {
         }
     }
 
-    // Il fondo della chat della master, cinque stili fra cui scegliere (Franz, 04/10 23:36).
+    // Il fondo della chat della master, stili fra cui scegliere (Franz, 04/10 23:36 e 23:48: più incisivi, anche col bordo).
     private fun masterChat(style: it.pixelbox.cmwatch.mobile.ui.MasterChatStyle) = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
         val t = st.ts - 600
@@ -128,10 +128,11 @@ class SessionSheetTest {
         }
     }
     @Test fun masterChatBlack() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.BLACK)
-    @Test fun masterChatNight() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.NIGHT)
-    @Test fun masterChatGradient() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.GRADIENT)
-    @Test fun masterChatDots() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.DOTS)
-    @Test fun masterChatGlow() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.GLOW)
+    @Test fun masterChatFrame() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.FRAME)
+    @Test fun masterChatEdge() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.EDGE)
+    @Test fun masterChatViolet() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.VIOLET)
+    @Test fun masterChatAurora() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.AURORA)
+    @Test fun masterChatFrameField() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.FRAME_FIELD)
 
     // Stop al posto di Invia mentre la sessione lavora e il campo è vuoto (contratto 1.21).
     @Test fun sheetBusyStop() = paparazzi.snapshot {

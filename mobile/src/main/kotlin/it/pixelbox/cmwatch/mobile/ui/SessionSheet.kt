@@ -371,7 +371,7 @@ fun SessionSheet(
                     Column(
                         Modifier.fillMaxSize().then(
                             if (showList) Modifier
-                            else Modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).masterChat(LocalMasterChatStyle.current)
+                            else RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp).let { sh -> Modifier.clip(sh).masterChat(LocalMasterChatStyle.current, sh) }
                         ),
                     ) {
                         if (showList) {
@@ -552,6 +552,10 @@ private fun Composer(
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
+            // «Cornice e campo»: anche il campo della master ha il bordo lilla (Franz, 04/10 23:48).
+            colors = if (toMaster && LocalMasterChatStyle.current == MasterChatStyle.FRAME_FIELD)
+                androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MasterLilac.copy(alpha = 0.7f), focusedBorderColor = MasterLilac)
+            else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (inField != null && draft.isBlank()) TextButton(onClick = { onDraft(inField) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
@@ -676,39 +680,29 @@ class PromptBoxes(stepsOpen: Boolean, recurringOpen: Boolean, private val save: 
 val LocalPromptBoxes = androidx.compose.runtime.staticCompositionLocalOf { PromptBoxes(true, false) { _, _ -> } }
 
 /**
- * Il fondo della chat della master (Franz, 04/10 23:36: «servirebbe la modifica del fondo della chat»), fra cui scegliere:
- * nero com'è oggi, notte (un indaco quasi nero), sfumatura dall'alto, puntini lilla, alone lilla in cima.
+ * Il fondo della chat della master (Franz, 04/10 23:36: «servirebbe la modifica del fondo della chat»; 23:48: i primi cinque
+ * «poco incisivi, magari anche bordo»): nero com'è oggi, cornice lilla su fondo notte, bordo luminoso a sfumatura, viola
+ * deciso, aurora, e cornice col campo lilla.
  */
-enum class MasterChatStyle { BLACK, NIGHT, GRADIENT, DOTS, GLOW }
+enum class MasterChatStyle { BLACK, FRAME, EDGE, VIOLET, AURORA, FRAME_FIELD }
 val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.BLACK }
 
-private val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
-private val MasterLilac = androidx.compose.ui.graphics.Color(0xFFCDB8FF)
+internal val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
+internal val MasterLilac = androidx.compose.ui.graphics.Color(0xFFCDB8FF)
+private val MasterBlue = androidx.compose.ui.graphics.Color(0xFF4C7DFF)
 
-fun Modifier.masterChat(style: MasterChatStyle): Modifier = when (style) {
+fun Modifier.masterChat(style: MasterChatStyle, shape: androidx.compose.ui.graphics.Shape): Modifier = when (style) {
     MasterChatStyle.BLACK -> background(CmColors.bg)
-    MasterChatStyle.NIGHT -> background(MasterNight)
-    MasterChatStyle.GRADIENT -> background(CmColors.bg).background(
-        androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color(0xFF1D1633), 0.55f to androidx.compose.ui.graphics.Color(0xFF08070D), 1f to CmColors.bg),
-    )
-    MasterChatStyle.DOTS -> background(androidx.compose.ui.graphics.Color(0xFF07060B)).drawBehind {
-        val step = 14.dp.toPx()
-        val r = 1.dp.toPx() / 2 + 0.25f
-        val dot = MasterLilac.copy(alpha = 0.12f)
-        var y = step / 2
-        while (y < size.height) {
-            var x = step / 2
-            while (x < size.width) { drawCircle(dot, r, androidx.compose.ui.geometry.Offset(x, y)); x += step }
-            y += step
+    MasterChatStyle.FRAME, MasterChatStyle.FRAME_FIELD -> background(MasterNight).border(2.dp, MasterLilac.copy(alpha = 0.85f), shape)
+    MasterChatStyle.EDGE -> background(CmColors.bg)
+        .drawBehind {
+            drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(0f to MasterLilac.copy(alpha = 0.22f), 0.35f to androidx.compose.ui.graphics.Color.Transparent))
         }
-    }
-    MasterChatStyle.GLOW -> background(CmColors.bg).drawBehind {
-        drawRect(
-            androidx.compose.ui.graphics.Brush.radialGradient(
-                listOf(MasterLilac.copy(alpha = 0.20f), androidx.compose.ui.graphics.Color.Transparent),
-                center = androidx.compose.ui.geometry.Offset(size.width / 2, 0f), radius = size.width * 0.95f,
-            ),
-        )
+        .border(androidx.compose.foundation.BorderStroke(2.dp, androidx.compose.ui.graphics.Brush.sweepGradient(listOf(MasterLilac, MasterBlue, MasterLilac, MasterBlue, MasterLilac))), shape)
+    MasterChatStyle.VIOLET -> background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color(0xFF2C1F52), androidx.compose.ui.graphics.Color(0xFF120D22))))
+    MasterChatStyle.AURORA -> background(CmColors.bg).drawBehind {
+        drawRect(androidx.compose.ui.graphics.Brush.radialGradient(listOf(MasterLilac.copy(alpha = 0.38f), androidx.compose.ui.graphics.Color.Transparent), center = androidx.compose.ui.geometry.Offset(0f, 0f), radius = size.width * 1.1f))
+        drawRect(androidx.compose.ui.graphics.Brush.radialGradient(listOf(MasterBlue.copy(alpha = 0.28f), androidx.compose.ui.graphics.Color.Transparent), center = androidx.compose.ui.geometry.Offset(size.width, size.height), radius = size.width))
     }
 }
 
