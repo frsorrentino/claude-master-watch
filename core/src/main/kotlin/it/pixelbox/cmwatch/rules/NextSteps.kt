@@ -25,4 +25,37 @@ object NextSteps {
         val rest = (lines.take(idx) + lines.drop(idx + 1)).joinToString("\n").trimEnd()
         return Parsed(rest, steps)
     }
+
+    /** Il campo vuoto e il box «Prossimi» (Franz, 04/10 20:21): il suggerimento del campo e le righe che restano nel box. */
+    data class Box(val field: String?, val rows: List<String>)
+
+    /**
+     * I consigli della sessione vengono prima del suggerito del terminale, che spesso ne copia uno: il primo fa da
+     * suggerimento nel campo vuoto, gli altri stanno nel box senza doppioni, e il suggerito del terminale vi entra solo se
+     * è diverso da tutti. Una riga già portata nel campo esce dal box e ci torna se il testo la perde; scrivendo altro,
+     * anche quella del campo torna nel box. Senza consigli resta il suggerito del terminale nel campo, come prima.
+     */
+    fun box(steps: List<String>, terminal: String?, draft: String): Box {
+        val t = terminal?.trim()?.takeIf { it.isNotEmpty() }
+        if (steps.isEmpty()) return Box(t?.takeIf { draft.isBlank() }, emptyList())
+        val all = (steps + listOfNotNull(t)).distinctBy(::norm)
+        val field = all.first().takeIf { draft.isBlank() }
+        return Box(field, all.filter { it != field && !inDraft(draft, it) }.take(MAX))
+    }
+
+    /** Un testo già nel campo, a meno di maiuscole, spazi e punteggiatura. */
+    fun inDraft(draft: String, text: String): Boolean = norm(text).let { it.isNotEmpty() && it in norm(draft) }
+
+    /**
+     * Una riga toccata col campo già scritto si accoda (Franz, 04/10 20:21): «fai X e poi prova dal vivo». La prima lettera
+     * scende in minuscolo, tranne nelle sigle (CI, APK); la punteggiatura in fondo al testo di prima si toglie.
+     */
+    fun append(draft: String, step: String, then: String): String {
+        val head = draft.trimEnd().trimEnd('.', ',', ';', ':').trimEnd()
+        if (head.isEmpty()) return step
+        val tail = if (step.length > 1 && step[0].isUpperCase() && step[1].isLowerCase()) step[0].lowercase() + step.substring(1) else step
+        return "$head $then $tail"
+    }
+
+    private fun norm(s: String) = s.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
 }

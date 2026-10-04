@@ -64,6 +64,10 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.contract.Choices
+import it.pixelbox.cmwatch.contract.Recurring
+import it.pixelbox.cmwatch.rules.NextSteps
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
@@ -186,6 +190,17 @@ fun SessionSheet(
     val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
     var draft by (draftState ?: ownDraft)
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
+    // Il box «Prossimi» e il campo (Franz, 04/10 20:21): il primo consiglio dell'ultima risposta fa da suggerimento nel
+    // campo vuoto, gli altri restano nel box anche scrivendo; il suggerito del terminale entra solo se è diverso.
+    val idle = s.state == SessionState.IDLE && s.question == null
+    val steps = remember(feed) {
+        feed?.let { f -> ChatFeed.group(f).lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
+            ?.let { c -> NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
+    }
+    val stepsBox = if (idle) NextSteps.box(steps, s.suggestion, draft) else NextSteps.Box(null, emptyList())
+    val boxes = LocalPromptBoxes.current
+    val then = stringResource(R.string.next_then)
+    val fieldFocus = LocalFieldFocus.current
     val primary = PhonePrimary.button(s, draft)
     val list = rememberLazyListState()
     // La chat segue l'ultimo testo finché non la si sposta a mano per rileggere (Franz, 01/10 06:52). «Segui» si decide
@@ -314,15 +329,15 @@ fun SessionSheet(
                     }
             } }
             }
-            // Variante A dei consigli (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, con l'ultima risposta della
-            // sessione ferma e il campo vuoto; tocco = nel campo, ↗ = invio subito. Spariscono appena scrivi o mandi.
-            if (draft.isBlank() && s.state == SessionState.IDLE && s.question == null) {
-                val steps = remember(feed) {
-                    feed?.let { f -> ChatFeed.group(f).lastOrNull { it !is ChatFeed.Item.Tool && it !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
-                        ?.let { c -> it.pixelbox.cmwatch.rules.NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
-                }
-                if (steps.isNotEmpty()) StepsList(steps, onEdit = { t -> draft = t }, onSend = { t -> actions.send(PhonePrimary.Target.PROMPT, t); follow = true })
-            }
+            // Il box «Prossimi» (variante A del 03/10 15:20, rivista il 04/10 20:21): sopra la barra con la sessione ferma,
+            // anche scrivendo; il tocco porta la riga nel campo, accodata con «e poi» se c'è già testo, ↗ la manda subito a
+            // campo vuoto. Si chiude a una riga, e resta chiuso finché non lo si riapre.
+            if (stepsBox.rows.isNotEmpty()) PromptBox(
+                stringResource(R.string.next_steps), stepsBox.rows.map { PromptRow(it, it, direct = true) },
+                open = boxes.stepsOpen, onOpen = boxes::steps, draftBlank = draft.isBlank(),
+                onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
+                onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
+            )
         }
         if (home == null) { chatArea(); dock?.invoke() } else {
             // Nella home della master (Franz, 03/10 17:10) si anima solo la parte sopra il campo: la lista con la barra in
@@ -382,8 +397,24 @@ fun SessionSheet(
         // Il posto del mini-controller sopra il campo, come il mini-player delle app di musica (Franz, 03/10 23:00); il
         // controller lo disegna `ReadingOverlayHost` sopra tutte le pagine. Con la tastiera aperta no: il campo ha la precedenza.
         val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+        // Le azioni ricorrenti della master (Franz, 04/10 20:24; contratto 1.33), chiuse di default: stessi gesti dei
+        // Prossimi; un'azione che aspetta un pezzo (`param`) va nel campo col cursore in fondo e non parte da sola.
+        val recurring = LocalRecurring.current
+        if (home != null && recurring.isNotEmpty()) {
+            val rows = recurring.filterNot { r -> NextSteps.inDraft(draft, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
+            if (rows.isNotEmpty()) PromptBox(
+                stringResource(R.string.recurring), rows,
+                open = boxes.recurringOpen, onOpen = boxes::recurring, draftBlank = draft.isBlank(),
+                onPick = { r ->
+                    draft = NextSteps.append(draft, if (r.direct) r.text else r.text.trimEnd() + " ", then)
+                    if (!r.direct) fieldFocus?.target = s.name
+                },
+                onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
         if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles)
+        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field)
     }
 }
 
@@ -401,6 +432,8 @@ private fun Composer(
     toMaster: Boolean = false,
     /** Contratto 1.28: il relay accetta file di qualunque formato. */
     canAttachFiles: Boolean = false,
+    /** Il suggerimento del campo vuoto (`NextSteps.box`): il primo dei Prossimi, o il suggerito del terminale. */
+    fieldSuggestion: String? = null,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
@@ -425,7 +458,7 @@ private fun Composer(
         }
         // Contratto 1.23: il prompt suggerito del terminale, solo per una sessione ferma: attenuato nel campo vuoto, come
         // dopo ❯ nel terminale, e «Usa» lo mette nel campo da ritoccare (design 01/10, variante C; prima era una pillola).
-        val sug = PhonePrimary.suggestion(s, draft)?.takeIf { image == null }
+        val sug = fieldSuggestion?.takeIf { image == null }
         // Frasi rapide (piano 30/09, Task 6): stesse mosse del suggerito, solo senza una domanda aperta.
         if (phrases.isNotEmpty() && draft.isBlank() && image == null && s.question == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -495,8 +528,12 @@ private fun Composer(
         if (fieldFocus != null) LaunchedEffect(fieldFocus.target) {
             if (fieldFocus.target == s.name) { fieldFocus.target = null; runCatching { focusReq.requestFocus() } }
         }
+        // Il testo messo nel campo da fuori («Usa», una riga dei box) porta il cursore in fondo, pronto per continuare.
+        var field by remember { mutableStateOf(TextFieldValue(draft, TextRange(draft.length))) }
+        LaunchedEffect(draft) { if (field.text != draft) field = TextFieldValue(draft, TextRange(draft.length)) }
         OutlinedTextField(
-            value = draft, onValueChange = onDraft, maxLines = 5,
+            value = if (field.text == draft) field else TextFieldValue(draft, TextRange(draft.length)),
+            onValueChange = { v -> field = v; if (v.text != draft) onDraft(v.text) }, maxLines = 5,
             modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
                 .focusRequester(focusReq)
                 .onFocusChanged { f -> fieldFocus?.let { ff -> if (f.isFocused) ff.owner = s.name else if (ff.owner == s.name) ff.owner = null } }
@@ -585,28 +622,60 @@ private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
     }
 }
 
-/** «Prossimi» sopra la barra (variante A): un riquadro a tutta larghezza, una riga per consiglio, ↗ per mandarlo subito. */
+/** Una riga di un box sopra il campo: quello che si legge, quello che va nel campo, e se può partire subito. */
+private data class PromptRow(val label: String, val text: String, val direct: Boolean)
+
+/**
+ * I box sopra il campo, «Prossimi» e «Ricorrenti» (Franz, 04/10 20:21 e 20:24): un riquadro a tutta larghezza, una riga
+ * per voce. Il tocco porta la voce nel campo; a campo vuoto ↗ la manda subito, con del testo nel campo + la accoda.
+ * L'intestazione apre e chiude il box; chiuso resta una riga, col numero delle voci.
+ */
 @Composable
-private fun StepsList(steps: List<String>, onEdit: (String) -> Unit, onSend: (String) -> Unit) {
+private fun PromptBox(
+    title: String, rows: List<PromptRow>, open: Boolean, onOpen: (Boolean) -> Unit, draftBlank: Boolean,
+    onPick: (PromptRow) -> Unit, onSend: (PromptRow) -> Unit, modifier: Modifier = Modifier,
+) {
     Column(
-        Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surfaceLow)
+        modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surfaceLow)
             .border(1.dp, CmColors.line, RoundedCornerShape(18.dp)),
     ) {
-        Text(
-            stringResource(R.string.next_steps).uppercase(), style = MonoSmall,
-            modifier = Modifier.padding(start = 14.dp, top = 10.dp, bottom = 4.dp),
-        )
-        steps.forEachIndexed { i, step ->
-            if (i > 0) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-            Row(Modifier.fillMaxWidth().clickable { onEdit(step) }.padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(step, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
-                IconButton(onClick = { onSend(step) }) {
+        val toggle = stringResource(if (open) R.string.box_close else R.string.box_open, title)
+        Row(
+            Modifier.fillMaxWidth().clickable(onClickLabel = toggle) { onOpen(!open) }.padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.box_title, title.uppercase(), rows.size), style = MonoSmall, modifier = Modifier.weight(1f))
+            // Il box sta sopra il campo e si apre verso l'alto: chiuso la freccia sale, aperto scende.
+            Icon(if (open) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
+        }
+        if (open) rows.forEach { r ->
+            androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+            Row(Modifier.fillMaxWidth().clickable { onPick(r) }.padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(r.label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
+                if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }) {
                     Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+                } else IconButton(onClick = { onPick(r) }) {
+                    Icon(Icons.Rounded.Add, stringResource(R.string.box_append), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
                 }
             }
         }
     }
 }
+
+/** I box sopra il campo aperti o chiusi, ricordati dall'app (Franz, 04/10 20:21): Prossimi aperto, Ricorrenti chiuso. */
+class PromptBoxes(stepsOpen: Boolean, recurringOpen: Boolean, private val save: (String, Boolean) -> Unit) {
+    var stepsOpen by mutableStateOf(stepsOpen)
+        private set
+    var recurringOpen by mutableStateOf(recurringOpen)
+        private set
+    fun steps(open: Boolean) { stepsOpen = open; save(STEPS, open) }
+    fun recurring(open: Boolean) { recurringOpen = open; save(RECURRING, open) }
+    companion object { const val STEPS = "steps_open"; const val RECURRING = "recurring_open" }
+}
+val LocalPromptBoxes = androidx.compose.runtime.staticCompositionLocalOf { PromptBoxes(true, false) { _, _ -> } }
+
+/** Contratto 1.33: le azioni ricorrenti della master, dallo stato (`state.recurring`). */
+val LocalRecurring = androidx.compose.runtime.compositionLocalOf { emptyList<Recurring>() }
 
 /** Un consiglio sotto la risposta: «↳» e il testo nel colore delle azioni; tocco = nel campo, pressione lunga = invio. */
 @OptIn(ExperimentalFoundationApi::class)

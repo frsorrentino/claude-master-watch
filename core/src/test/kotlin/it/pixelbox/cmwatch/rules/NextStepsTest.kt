@@ -36,4 +36,33 @@ class NextStepsTest {
         assertEquals("Fatto.\nWatch: fatto", r.text)
         assertEquals(listOf("apri l'app", "prova"), r.steps)
     }
+
+    // Franz, 04/10 20:21: il suggerito del terminale ripeteva uno dei Prossimi.
+    @Test fun theFirstStepGoesInTheFieldAndTheTerminalCopyDisappears() {
+        val b = NextSteps.box(listOf("Prova dal vivo", "Apri la CI", "Scrivi il piano"), "prova dal vivo.", "")
+        assertEquals("Prova dal vivo", b.field)
+        assertEquals(listOf("Apri la CI", "Scrivi il piano"), b.rows)
+    }
+
+    @Test fun aDifferentTerminalSuggestionIsTheLastRow() {
+        val b = NextSteps.box(listOf("Prova dal vivo", "Apri la CI"), "Committa", "")
+        assertEquals(listOf("Apri la CI", "Committa"), b.rows)
+    }
+
+    @Test fun withoutStepsTheTerminalSuggestionStaysInTheField() {
+        assertEquals(NextSteps.Box("Committa", emptyList()), NextSteps.box(emptyList(), "Committa", ""))
+        assertEquals(NextSteps.Box(null, emptyList()), NextSteps.box(emptyList(), "Committa", "scrivo altro"))
+    }
+
+    @Test fun aStepInTheFieldLeavesTheBoxAndTheFieldOneComesBack() {
+        val b = NextSteps.box(listOf("Prova dal vivo", "Apri la CI", "Scrivi il piano"), null, "Fai il merge e poi apri la CI")
+        assertEquals(null, b.field)
+        assertEquals(listOf("Prova dal vivo", "Scrivi il piano"), b.rows)
+    }
+
+    @Test fun aTappedStepIsQueuedWithThen() {
+        assertEquals("Prova dal vivo", NextSteps.append("", "Prova dal vivo", "e poi"))
+        assertEquals("Fai il merge e poi prova dal vivo", NextSteps.append("Fai il merge.", "Prova dal vivo", "e poi"))
+        assertEquals("Fai il merge e poi CI verde", NextSteps.append("Fai il merge", "CI verde", "e poi"))
+    }
 }

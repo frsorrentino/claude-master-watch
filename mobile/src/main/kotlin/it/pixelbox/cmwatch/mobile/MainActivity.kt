@@ -264,6 +264,13 @@ class MainActivity : ComponentActivity() {
         val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
         val wide = it.pixelbox.cmwatch.rules.Tablet.wide(widthDp)
         val tabletPrefs = remember { getSharedPreferences("ui", MODE_PRIVATE) }
+        // I box sopra il campo aperti o chiusi (Franz, 04/10 20:21): Prossimi aperto e Ricorrenti chiuso finché non li tocca.
+        val promptBoxes = remember {
+            it.pixelbox.cmwatch.mobile.ui.PromptBoxes(
+                tabletPrefs.getBoolean(it.pixelbox.cmwatch.mobile.ui.PromptBoxes.STEPS, true),
+                tabletPrefs.getBoolean(it.pixelbox.cmwatch.mobile.ui.PromptBoxes.RECURRING, false),
+            ) { k, v -> tabletPrefs.edit().putBoolean(k, v).apply() }
+        }
         var pinned by remember { mutableStateOf(it.pixelbox.cmwatch.rules.Tablet.columnsFromPref(tabletPrefs.getString("tablet_columns", null))) }
         var sharesRaw by remember { mutableStateOf(tabletPrefs.getString("tablet_shares", null)) }
         var homeRight by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_home_right", false)) }
@@ -911,6 +918,8 @@ class MainActivity : ComponentActivity() {
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
             it.pixelbox.cmwatch.mobile.ui.LocalFieldFocus provides fieldFocus,
+            it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides promptBoxes,
+            it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides state?.recurring.orEmpty(),
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
         ) {
         if (wide && state != null && summary != null) tabletDesk(state, summary) else

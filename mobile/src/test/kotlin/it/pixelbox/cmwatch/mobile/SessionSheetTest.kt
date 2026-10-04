@@ -82,6 +82,36 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList())) }
     }
 
+    // Il box rivisto (Franz, 04/10 20:21): scrivendo resta, la riga già nel campo esce, il suggerito diverso del terminale
+    // entra in fondo, e le righe accodano (+) invece di partire.
+    @Test fun sheetNextStepsTyping() = paparazzi.snapshot {
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Rewrite the README with the three sections", at = t, origin = "pc"),
+            TranscriptEntry("a1.0", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2", at = t + 40),
+        )
+        val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = "Committa")
+        CmPhoneTheme(still = true) {
+            SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()),
+                draftState = androidx.compose.runtime.mutableStateOf("Fai il merge e poi apri la PR"))
+        }
+    }
+
+    // Le azioni ricorrenti della master (contratto 1.33, Franz 04/10 20:24): il box sopra il campo, qui aperto; quella che
+    // aspetta un pezzo (param) non ha ↗.
+    @Test fun masterRecurring() = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        val recurring = st.recurring.orEmpty()
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides recurring,
+                it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides it.pixelbox.cmwatch.mobile.ui.PromptBoxes(true, true) { _, _ -> },
+            ) {
+                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> })
+            }
+        }
+    }
+
     // Stop al posto di Invia mentre la sessione lavora e il campo è vuoto (contratto 1.21).
     @Test fun sheetBusyStop() = paparazzi.snapshot {
         val s = st.sessions.first { it.state == SessionState.BUSY }
