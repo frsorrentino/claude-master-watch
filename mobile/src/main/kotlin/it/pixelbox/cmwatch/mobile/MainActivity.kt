@@ -73,6 +73,8 @@ class MainActivity : ComponentActivity() {
     private var queueAsked by mutableStateOf(false)
     /** Dal widget: il nome della sessione da aprire, "" per la Panoramica, null per niente. */
     private var sessionAsked by mutableStateOf<String?>(null)
+    /** L'invito a zero tocchi dal relay (`cmwatch://pair?q=`): la riga del QR, in attesa della conferma. */
+    private var pairInvite by mutableStateOf<String?>(null)
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,6 +128,13 @@ class MainActivity : ComponentActivity() {
                     else -> NotPairedScreen(onPair = ::scan, onPaste = { paste = true }, onDemo = { app.setDemo(true) })
                 }
                 if (paste) PasteDialog(onPair = { t -> paste = false; scope.launch { app.pairing.run(t) } }, onDismiss = { paste = false })
+                // Franz, 04/10 15:48 («ok c»): l'invito che il relay apre sul Chromebook. Il link si può aprire anche da una
+                // pagina web, quindi mai un accoppiamento silenzioso: si dice a quale PC e si accoppia solo col tocco.
+                pairInvite?.let { line ->
+                    it.pixelbox.cmwatch.pairing.PairQr.parse(line)?.let { qr ->
+                        PairInviteDialog(qr.h, qr.add, onPair = { pairInvite = null; scope.launch { app.pairing.run(line) } }, onDismiss = { pairInvite = null })
+                    } ?: run { pairInvite = null }
+                }
             }
         }
     }
@@ -942,6 +951,8 @@ class MainActivity : ComponentActivity() {
 
     /** Notifica con domanda → la coda; widget → la scheda della sessione o la Panoramica. */
     private fun route(intent: Intent) {
+        // Un invito di accoppiamento (cmwatch://pair?q=…); senza `q` è «Apri sul telefono» dall'orologio e apre l'app e basta.
+        intent.data?.toString()?.let { uri -> it.pixelbox.cmwatch.pairing.PairLink.line(uri) }?.let { line -> pairInvite = line }
         if (intent.getBooleanExtra(EXTRA_QUEUE, false)) queueAsked = true
         intent.getStringExtra(EXTRA_SESSION)?.let { sessionAsked = it }
         if (intent.getBooleanExtra(EXTRA_OVERVIEW, false)) sessionAsked = ""

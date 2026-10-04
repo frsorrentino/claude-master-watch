@@ -481,4 +481,7 @@
     <string name="pair_err_expired_add">Codice scaduto: chiedine uno nuovo con relay pair --add sul PC, o dal telefono con Aggiungi un dispositivo.</string>
     <string name="pair_err_watch_code">Questo è il codice per l\'orologio: qui serve il QR, o la riga di relay pair --text che comincia con {\"v\":1.</string>
     <string name="paste_hint">La riga lunga stampata da relay pair --text, che comincia con {\"v\":1. Non il numero a 6 cifre: quello è per l\'orologio.</string>
+    <string name="invite_title">Accoppiare questo dispositivo a %1$s?</string>
+    <string name="invite_add">Il PC %1$s lo aggiunge accanto agli altri dispositivi accoppiati. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
+    <string name="invite_new">Il PC %1$s lo accoppia da capo: gli altri dispositivi accoppiati prima si scollegano. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
 </resources>

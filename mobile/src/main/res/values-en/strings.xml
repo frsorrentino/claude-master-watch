@@ -474,4 +474,7 @@
     <string name="pair_err_expired_add">Code expired: ask for a new one with relay pair --add on the PC, or from the phone with Add a device.</string>
     <string name="pair_err_watch_code">This is the code for the watch: here you need the QR, or the relay pair --text line that starts with {\"v\":1.</string>
     <string name="paste_hint">The long line printed by relay pair --text, starting with {\"v\":1. Not the 6-digit number: that one is for the watch.</string>
+    <string name="invite_title">Pair this device with %1$s?</string>
+    <string name="invite_add">The PC %1$s adds it next to the other paired devices. Pair only if %1$s is your PC and you have just asked for the pairing.</string>
+    <string name="invite_new">The PC %1$s pairs it from scratch: the devices paired before are unpaired. Pair only if %1$s is your PC and you have just asked for the pairing.</string>
 </resources>
