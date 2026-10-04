@@ -505,4 +505,5 @@
     <string name="tablet_insp_priority">priority</string>
     <string name="tablet_priority_active">low</string>
     <string name="tablet_priority_offered">low, offered</string>
+    <string name="tablet_forecast_stale">Old reading: the forecast comes back with the next update; resets at\u00A0%1$s</string>
 </resources>

@@ -513,4 +513,5 @@
     <string name="tablet_insp_priority">priorità</string>
     <string name="tablet_priority_active">bassa</string>
     <string name="tablet_priority_offered">bassa, proposta</string>
+    <string name="tablet_forecast_stale">Dato vecchio: la previsione torna col prossimo aggiornamento; riparte alle\u00A0%1$s</string>
 </resources>

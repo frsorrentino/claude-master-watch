@@ -357,7 +357,7 @@ private fun contextColor(pct: Int): Color = when (SessionMeters.contextTone(pct)
  * ripartenza (piena fino a ora, tratteggiata dopo, soglie 80 e 100), poi la settimana con il ritmo medio al rinnovo.
  */
 @Composable
-fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
+fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long, dataStale: Boolean = false) {
     val shape = RoundedCornerShape(16.dp)
     Column(
         Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.12f), shape).padding(14.dp),
@@ -375,8 +375,13 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long) {
             )
         } else {
             ring.h5?.let { MiniBar(it / 100f, Modifier.fillMaxWidth()) }
+            // Senza ritmo si dice perché: un dato vecchio (si proietterebbe dal passato) o letture ancora troppo poche.
             Text(
-                if (reset != null) stringResource(R.string.tablet_forecast_none, hhmm(reset)) else stringResource(R.string.ov_no_quota),
+                when {
+                    reset == null -> stringResource(R.string.ov_no_quota)
+                    dataStale || ring.stale -> stringResource(R.string.tablet_forecast_stale, hhmm(reset))
+                    else -> stringResource(R.string.tablet_forecast_none, hhmm(reset))
+                },
                 style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
             )
         }

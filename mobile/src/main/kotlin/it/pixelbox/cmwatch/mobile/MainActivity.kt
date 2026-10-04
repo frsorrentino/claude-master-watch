@@ -850,7 +850,7 @@ class MainActivity : ComponentActivity() {
                     TabletSessions(
                         groups, st.sessions.count { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }, sm.closed.size, selected?.name, now,
                         onPick = { n -> open = n; tab = StartRoute.Tab.OVERVIEW },
-                        bottom = ring?.let { r -> { TabletQuotaPanel(r, now) } },
+                        bottom = ring?.let { r -> { TabletQuotaPanel(r, now, dataStale = stale) } },
                     )
                 },
                 center = {
