@@ -298,6 +298,8 @@ class FakeTransport(
                     x.outcome?.let { o -> TimelineSession(x.name, x.state != SessionState.GONE, x.project, listOf(TimelineEvent(o.at, "outcome", o.short.take(160)))) }
                 }.sortedByDescending { it.events.last().at },
             )))
+            // Contratto 1.31: la demo non ha un PC con una chiave a cui aggiungere un dispositivo; risponde come il relay.
+            CmdOp.PAIR_ADD -> ko("pair --add: no saved key, nothing to add to — use `relay pair`")
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")

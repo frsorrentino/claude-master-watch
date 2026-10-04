@@ -85,7 +85,15 @@ class ContractTest {
         // Contratto 1.27: un search riuscito, «tuesday» in una sessione viva e in una chiusa.
         // Contratto 1.28: un report con un PDF, il nome ripulito dal relay.
         // Contratto 1.29: un timeline di tutte le sessioni da un epoch, con ogni kind di evento.
-        assertEquals(30, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.31: un pair_add riuscito, il QR della 1.30 e il codice a 6 cifre.
+        assertEquals(31, results.size); assertEquals(7, results.count { !it.ok })
+        val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
+        assertNull(invite.session); assertNull(invite.arg)
+        val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
+        assertEquals("482913", offer.code); assertEquals(1789211100L, offer.exp)
+        val qr = it.pixelbox.cmwatch.pairing.PairQr.parse(offer.qr!!)!!
+        assertTrue(qr.add); assertEquals(offer.exp, qr.e)
+        assertTrue("pair_add" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
         val timeline = cmds.single { it.op == CmdOp.TIMELINE }
         assertNull(timeline.session); assertEquals("1789200000", timeline.arg)
         val tl = ContractJson.decodeTimeline(results.first { it.id == timeline.id }.text)
