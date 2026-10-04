@@ -212,7 +212,17 @@ enum class CmdOp {
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
     val device: String? = null,
+    /** Contratto 1.34: `file` a pezzi (/file/<id>/parts e /meta). Assente, non scritto: un relay vecchio scrive il nodo unico. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val parts: Boolean? = null,
 )
+
+/**
+ * Contratto 1.34: il manifesto di un file a pezzi, in chiaro dentro /file/<id>/meta, scritto dal relay dopo tutti i pezzi.
+ * `n` pezzi da 1 MB (l'ultimo più corto), `size` e `sha256` (esadecimale) del file intero.
+ */
+@Serializable data class FileMeta(val n: Int, val size: Long, val sha256: String, val mime: String, val name: String? = null)
 
 @Serializable data class CmdResult(
     val id: String, val ok: Boolean, val text: String, val at: Long,

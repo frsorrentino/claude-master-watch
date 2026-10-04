@@ -33,7 +33,10 @@ object Blob {
         return Json.encodeToString(JsonObject.serializer(), JsonObject(mapOf("v" to JsonPrimitive(VERSION), "enc" to JsonPrimitive(enc))))
     }
 
-    fun open(doc: String, key: ByteArray): String {
+    fun open(doc: String, key: ByteArray): String = String(openBytes(doc, key))
+
+    /** Contratto 1.34: un pezzo di file è una busta dei byte grezzi, senza JSON in chiaro. */
+    fun openBytes(doc: String, key: ByteArray): ByteArray {
         val o = runCatching { Json.parseToJsonElement(doc).jsonObject }.getOrElse { throw BlobException("not a document", it) }
         if (o["v"]?.jsonPrimitive?.content?.toIntOrNull() != VERSION) throw BlobException("unsupported version")
         val raw = runCatching { Base64.getDecoder().decode(o.getValue("enc").jsonPrimitive.content) }
@@ -43,7 +46,7 @@ object Blob {
             val c = Cipher.getInstance("AES/GCM/NoPadding")
             c.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, raw, 0, NONCE))
             c.updateAAD(AAD)
-            String(c.doFinal(raw, NONCE, raw.size - NONCE))
+            c.doFinal(raw, NONCE, raw.size - NONCE)
         } catch (e: Exception) { throw BlobException("cannot open", e) }
     }
 }
