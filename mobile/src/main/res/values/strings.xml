@@ -396,7 +396,6 @@
     <string name="next_steps">Prossimi</string>
     <string name="suggestion_use">Usa</string>
     <string name="tts_code">Codice</string>
-    <string name="ctx_short">ctx %1$d%%</string>
     <string name="quota_reset_desc">Quota delle 5 ore al %1$d%%, si azzera %2$s</string>
     <string name="ctx_title">Contesto %1$d%%</string>
     <string name="ctx_handoff">Scrivi l\'handoff e riparti pulita</string>

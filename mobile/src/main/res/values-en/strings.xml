@@ -393,7 +393,6 @@
     <string name="next_steps">Next</string>
     <string name="suggestion_use">Use</string>
     <string name="tts_code">Code</string>
-    <string name="ctx_short">ctx %1$d%%</string>
     <string name="quota_reset_desc">5-hour quota at %1$d%%, resets %2$s</string>
     <string name="ctx_title">Context %1$d%%</string>
     <string name="ctx_handoff">Write the handoff and restart clean</string>
