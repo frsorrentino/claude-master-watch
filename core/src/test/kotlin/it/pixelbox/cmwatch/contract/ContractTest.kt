@@ -42,7 +42,9 @@ class ContractTest {
 
     @Test fun rulesHoldOnEveryFixture() {
         for (raw in all) {
-            assertTrue("state ≤ 8 KB", raw.toByteArray().size <= 8 * 1024)
+            // Gli 8 KB sono quelli dello stato che viaggia, JSON compatto: la fixture è indentata per leggerla (con i
+            // dispositivi della 1.32 e i ricorrenti della 1.33 state-1 indentata passa gli 8 KB, compatta ne pesa 5,7).
+            assertTrue("state ≤ 8 KB", Json.parseToJsonElement(raw).toString().toByteArray().size <= 8 * 1024)
             val s = ContractJson.decodeState(raw)
             for (ses in s.sessions) {
                 ses.outcome?.let { assertTrue(it.short.length <= 200); assertTrue(it.full.length <= 600) }
