@@ -95,6 +95,22 @@ class PairingControllerTest {
         assertEquals(0, fb.ensureCalls); assertEquals(0, watch.requests)
     }
 
+    // Franz, 04/10 15:46: il codice a 6 cifre della stampa di relay pair, incollato al posto della riga, si riconosce.
+    @Test fun theWatchCodeIsNotTheLine() = runTest {
+        val c = controller()
+        c.run(" 280503 ")
+        assertEquals(PairFail.WATCH_CODE, c.ui.value.fail)
+        assertEquals(0, fb.ensureCalls); assertEquals(0, watch.requests)
+    }
+
+    // Un QR scaduto di un'aggiunta lo sa: il testo dice --add, non il relay pair che scollegherebbe gli altri.
+    @Test fun anExpiredAdditionKnowsItIsOne() = runTest {
+        val c = controller(now = qr.e + 1)
+        c.run(qrText.trimEnd().removeSuffix("}") + ",\"m\":\"add\"}")
+        assertEquals(PairFail.EXPIRED, c.ui.value.fail)
+        assertTrue(c.ui.value.add)
+    }
+
     @Test fun expiredQr() = runTest {
         val c = controller(now = qr.e + 1)
         c.run(qrText)

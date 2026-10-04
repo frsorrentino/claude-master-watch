@@ -53,7 +53,7 @@ fun PairingScreen(ui: PairUi, onRetry: () -> Unit, onRescan: () -> Unit, onWitho
         // Un'aggiunta (contratto 1.30) non passa dall'orologio: il suo passo non si mostra.
         if (!ui.add) StepRow(stringResource(R.string.step_watch), watchNote(ui), ui.steps.getValue(Step.WATCH))
         StepRow(stringResource(R.string.step_pc), ui.host, ui.steps.getValue(Step.PC))
-        ui.fail?.let { Text(stringResource(failText(it)), style = MaterialTheme.typography.bodyLarge, color = CmColors.gone) }
+        ui.fail?.let { Text(stringResource(failText(it, ui.add)), style = MaterialTheme.typography.bodyLarge, color = CmColors.gone) }
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { PairScheme(ui, tablet) }
         val big = Modifier.fillMaxWidth().height(56.dp)
         when {
@@ -127,7 +127,7 @@ private fun stepStatus(s: StepState): String = when (s) {
     StepState.SKIPPED -> stringResource(R.string.pair_node_skipped)
 }
 
-private val RESCAN = setOf<PairFail?>(PairFail.EXPIRED, PairFail.INVALID, PairFail.WATCH_UID_CHANGED)
+private val RESCAN = setOf<PairFail?>(PairFail.EXPIRED, PairFail.INVALID, PairFail.WATCH_UID_CHANGED, PairFail.WATCH_CODE)
 
 @Composable
 private fun watchNote(ui: PairUi): String? = when {
@@ -137,10 +137,15 @@ private fun watchNote(ui: PairUi): String? = when {
     else -> ui.watchName
 }
 
+/**
+ * Mai «rilancia relay pair» da solo: senza --add scollega gli altri dispositivi (Franz, 04/10 15:47). Un QR di un'aggiunta
+ * scaduto chiede relay pair --add; uno qualunque dice di rilanciare lo stesso comando e che per uno in più c'è --add.
+ */
 @StringRes
-private fun failText(f: PairFail): Int = when (f) {
-    PairFail.EXPIRED -> R.string.pair_err_expired
+private fun failText(f: PairFail, add: Boolean): Int = when (f) {
+    PairFail.EXPIRED -> if (add) R.string.pair_err_expired_add else R.string.pair_err_expired
     PairFail.INVALID -> R.string.pair_err_invalid
+    PairFail.WATCH_CODE -> R.string.pair_err_watch_code
     PairFail.NO_WATCH -> R.string.pair_err_no_watch
     PairFail.WATCH_APP_MISSING -> R.string.pair_err_watch_app
     PairFail.NETWORK -> R.string.pair_err_network

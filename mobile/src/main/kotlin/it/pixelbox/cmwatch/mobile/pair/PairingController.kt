@@ -13,7 +13,7 @@ import java.security.KeyPair
 
 enum class Step { PHONE, WATCH, PC }
 enum class StepState { WAIT, WORKING, DONE, PENDING, SKIPPED, FAILED }
-enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED, FAILED, FULL }
+enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED, FAILED, FULL, WATCH_CODE }
 enum class Phase { IDLE, RUNNING, DONE, FAILED, RESTART }
 
 data class PairUi(
@@ -69,6 +69,8 @@ class PairingController(
     private suspend fun runLocked(text: String, withoutWatch: Boolean) {
         lastQr = text
         _ui.value = PairUi(phase = Phase.RUNNING)
+        // Il codice a 6 cifre di relay pair è per l'orologio: incollato qui si dice cosa serve (Franz, 04/10 15:46).
+        if (text.trim().matches(Regex("\\d{6}"))) return fail(PairFail.WATCH_CODE, Step.PHONE)
         val qr = PairQr.parse(text) ?: return fail(PairFail.INVALID, Step.PHONE)
         _ui.value = _ui.value.copy(add = qr.add)
         if (qr.expired(now())) return fail(PairFail.EXPIRED, Step.PHONE)
