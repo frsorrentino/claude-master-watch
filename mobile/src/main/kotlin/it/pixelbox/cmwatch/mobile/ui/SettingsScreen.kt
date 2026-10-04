@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.AddLink
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Speed
@@ -57,6 +58,8 @@ fun SettingsScreen(
     onBack: () -> Unit = {},
     /** Il dispositivo con la scheda aperta all'inizio (i provini); di solito il PC. */
     initialDevice: DeviceNode = DeviceNode.PC,
+    /** Contratto 1.31: un dispositivo in più dal telefono, senza PC; null con un relay che non lo sa fare. */
+    onAddDevice: (() -> Unit)? = null,
 ) {
     var choosing by remember { mutableStateOf(false) }
     var choosingVoice by remember { mutableStateOf(false) }
@@ -83,7 +86,10 @@ fun SettingsScreen(
                 }
             }
             // Una voce della lista, non un bottone pieno: là sembrava «Salva» (Franz, 30/09 20:26).
-            if (host != null) SectionCard { SettingsRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.paired_repair), stringResource(R.string.repair_sub), onRepair) }
+            if (host != null) SectionCard {
+                SettingsRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.paired_repair), stringResource(R.string.repair_sub), onRepair)
+                onAddDevice?.let { SettingsRow(Icons.Rounded.AddLink, stringResource(R.string.add_device), stringResource(R.string.add_device_sub), it) }
+            }
 
             GroupHeader(stringResource(R.string.sec_reading), CmColors.text2)
             SectionCard {
