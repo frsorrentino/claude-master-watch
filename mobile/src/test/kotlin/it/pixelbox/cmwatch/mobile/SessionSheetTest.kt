@@ -97,8 +97,20 @@ class SessionSheetTest {
         }
     }
 
-    // Le azioni ricorrenti della master (contratto 1.33, Franz 04/10 20:24): il box sopra il campo, qui aperto; quella che
-    // aspetta un pezzo (param) non ha ↗.
+    // Le azioni ricorrenti della master (contratto 1.33, Franz 04/10 20:24; tasto ⟳ nel campo, 23:55): chiuse, solo il tasto.
+    @Test fun masterRecurringClosed() = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides st.recurring.orEmpty(),
+                it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides it.pixelbox.cmwatch.mobile.ui.PromptBoxes(true, false) { _, _ -> },
+            ) {
+                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> }, canAttach = true)
+            }
+        }
+    }
+
+    // Aperte dal tasto ⟳: il pannello sopra il campo; quella che aspetta un pezzo (param) non ha ↗.
     @Test fun masterRecurring() = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
         val recurring = st.recurring.orEmpty()
@@ -107,7 +119,7 @@ class SessionSheetTest {
                 it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides recurring,
                 it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides it.pixelbox.cmwatch.mobile.ui.PromptBoxes(true, true) { _, _ -> },
             ) {
-                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> })
+                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> }, canAttach = true)
             }
         }
     }

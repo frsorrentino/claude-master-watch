@@ -397,6 +397,7 @@
     <string name="launch_open">Apri</string>
     <string name="next_steps">Prossimi</string>
     <string name="recurring">Ricorrenti</string>
+    <string name="recurring_open">Azioni ricorrenti</string>
     <string name="next_then">e poi</string>
     <string name="box_title">%1$s · %2$d</string>
     <string name="box_open">Apri %1$s</string>

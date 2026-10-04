@@ -398,24 +398,29 @@ fun SessionSheet(
         // Il posto del mini-controller sopra il campo, come il mini-player delle app di musica (Franz, 03/10 23:00); il
         // controller lo disegna `ReadingOverlayHost` sopra tutte le pagine. Con la tastiera aperta no: il campo ha la precedenza.
         val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
-        // Le azioni ricorrenti della master (Franz, 04/10 20:24; contratto 1.33), chiuse di default: stessi gesti dei
-        // Prossimi; un'azione che aspetta un pezzo (`param`) va nel campo col cursore in fondo e non parte da sola.
+        // Le azioni ricorrenti della master (Franz, 04/10 20:24; contratto 1.33). Chiuse non occupano righe: le apre il tasto
+        // ⟳ nel campo (Franz, 04/10 23:55), e il pannello sta sopra il campo con gli stessi gesti dei Prossimi; si chiude
+        // dall'intestazione o scegliendo un'azione. Una che aspetta un pezzo (`param`) va nel campo col cursore in fondo.
         val recurring = LocalRecurring.current
-        if (home != null && recurring.isNotEmpty()) {
-            val rows = recurring.filterNot { r -> NextSteps.inDraft(draft, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
-            if (rows.isNotEmpty()) PromptBox(
-                stringResource(R.string.recurring), rows,
-                open = boxes.recurringOpen, onOpen = boxes::recurring, draftBlank = draft.isBlank(),
-                onPick = { r ->
-                    draft = NextSteps.append(draft, if (r.direct) r.text else r.text.trimEnd() + " ", then)
-                    if (!r.direct) fieldFocus?.target = s.name
-                },
-                onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
+        val recurringRows = if (home == null) emptyList() else
+            recurring.filterNot { r -> NextSteps.inDraft(draft, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
+        if (boxes.recurringOpen && recurringRows.isNotEmpty()) PromptBox(
+            stringResource(R.string.recurring), recurringRows,
+            open = true, onOpen = { boxes.recurring(false) }, draftBlank = draft.isBlank(),
+            onPick = { r ->
+                draft = NextSteps.append(draft, if (r.direct) r.text else r.text.trimEnd() + " ", then)
+                boxes.recurring(false)
+                if (!r.direct) fieldFocus?.target = s.name
+            },
+            onSend = { r -> boxes.recurring(false); actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
+            modifier = Modifier.padding(top = 6.dp),
+        )
         if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
-        Composer(s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash, toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field)
+        Composer(
+            s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
+            toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field,
+            onRecurring = if (recurringRows.isEmpty()) null else ({ boxes.recurring(!boxes.recurringOpen) }), recurringOpen = boxes.recurringOpen,
+        )
     }
 }
 
@@ -435,6 +440,8 @@ private fun Composer(
     canAttachFiles: Boolean = false,
     /** Il suggerimento del campo vuoto (`NextSteps.box`): il primo dei Prossimi, o il suggerito del terminale. */
     fieldSuggestion: String? = null,
+    /** Il tasto ⟳ delle azioni ricorrenti della master nel campo; null senza azioni. */
+    onRecurring: (() -> Unit)? = null, recurringOpen: Boolean = false,
 ) {
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
@@ -556,7 +563,15 @@ private fun Composer(
             colors = if (toMaster && LocalMasterChatStyle.current == MasterChatStyle.FRAME_FIELD)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MasterLilac.copy(alpha = 0.7f), focusedBorderColor = MasterLilac)
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
-            leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
+            leadingIcon = if (canAttach || onRecurring != null) ({
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (canAttach) AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) }
+                    // Le azioni ricorrenti della master, accanto al + (Franz, 04/10 23:55): acceso mentre il pannello è aperto.
+                    if (onRecurring != null) IconButton(onClick = onRecurring) {
+                        Icon(Icons.Rounded.Autorenew, stringResource(R.string.recurring_open), tint = if (recurringOpen) CmColors.primary else CmColors.actionIcon)
+                    }
+                }
+            }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (inField != null && draft.isBlank()) TextButton(onClick = { onDraft(inField) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
                 // Con una tastiera fisica collegata il campo lo dice, come nel mockup del tablet.
