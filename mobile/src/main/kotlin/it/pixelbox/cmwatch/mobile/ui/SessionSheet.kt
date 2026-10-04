@@ -176,8 +176,8 @@ fun SessionSheet(
     headerLead: (@Composable RowScope.() -> Unit)? = null,
     /** La bozza tenuta sopra l'interruttore dei 840 dp: resta quando la finestra passa da telefono a tablet e indietro. */
     draftState: androidx.compose.runtime.MutableState<String>? = null,
-    /** Il tablet con l'ispettore: l'obiettivo sta già lì, in testata non si ripete. */
-    showGoal: Boolean = true,
+    /** Obiettivo e bassa priorità in testata; il tablet con l'ispettore li mostra lì e in testata non si ripetono. */
+    notesInHeader: Boolean = true,
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
@@ -217,7 +217,7 @@ fun SessionSheet(
             bar?.invoke()
             if (header) SheetHeader(
                 s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
-                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, showGoal = showGoal,
+                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, notesInHeader = notesInHeader,
             )
             elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
             // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
@@ -1112,7 +1112,7 @@ private fun SheetHeader(
     canExit: Boolean = false,
     quota: it.pixelbox.cmwatch.contract.QuotaAccount? = null,
     lead: (@Composable RowScope.() -> Unit)? = null,
-    showGoal: Boolean = true,
+    notesInHeader: Boolean = true,
 ) {
     var picker by remember { mutableStateOf<String?>(null) }   // "tune": il foglio di modello ed effort
     var menu by remember { mutableStateOf(false) }
@@ -1166,8 +1166,8 @@ private fun SheetHeader(
             }
         }
         val notes = listOfNotNull(
-            SessionsText.goalLine(s, stringResource(R.string.goal)).takeIf { showGoal },
-            SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)),
+            SessionsText.goalLine(s, stringResource(R.string.goal)).takeIf { notesInHeader },
+            SessionsText.priority(s, stringResource(R.string.low_priority), stringResource(R.string.low_priority_offered)).takeIf { notesInHeader },
             SessionsText.window(s, stringResource(R.string.no_window)),
         )
         notes.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 16.dp)) }

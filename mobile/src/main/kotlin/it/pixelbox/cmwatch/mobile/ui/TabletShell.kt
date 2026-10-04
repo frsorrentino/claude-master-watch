@@ -560,6 +560,10 @@ fun TabletInspector(i: Tablet.Inspector, quotaH5: Int?, loading: Boolean) {
             i.turn?.let { t -> listOfNotNull(Durations.since(0, t), s.tool).joinToString(" · ") } ?: stringResource(R.string.tablet_insp_turn_none),
         )
         ModelText.short(s.model)?.let { m -> KeyValue(stringResource(R.string.tablet_insp_model), listOfNotNull(m, s.effort).joinToString(" · ")) }
+        // Contratto 1.16: la sessione in bassa priorità (oltre il limite, o proposta); sul telefono sta sotto la testata.
+        it.pixelbox.cmwatch.rules.SessionsText.priority(s, stringResource(R.string.tablet_priority_active), stringResource(R.string.tablet_priority_offered))?.let { p ->
+            KeyValue(stringResource(R.string.tablet_insp_priority), p)
+        }
         // Col carattere grande due per riga: le etichette restano grandi e vanno a capo fra le parole, mai dentro.
         val perRow = if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.25f) 2 else 3
         FlowRow(

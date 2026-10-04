@@ -616,8 +616,8 @@ class MainActivity : ComponentActivity() {
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
                             home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
                             headerLead = lead, draftState = drafts.state(session),
-                            // Con l'ispettore l'obiettivo sta lì: in testata non si ripete (revisione della master, 04/10).
-                            showGoal = lead == null || !inspectorOn,
+                            // Con l'ispettore obiettivo e bassa priorità stanno lì: in testata non si ripetono (revisione della master, 04/10).
+                            notesInHeader = lead == null || !inspectorOn,
                             canAttachFiles = state?.share?.any == true,
                             // Sul riepilogo chi ti aspetta sta già nella lista: niente avviso doppio (ogni sessione una volta).
                             elsewhere = elsewhere.takeIf { home == null || !homeOpen },
