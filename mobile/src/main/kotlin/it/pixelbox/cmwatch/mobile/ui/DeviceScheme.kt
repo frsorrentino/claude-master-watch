@@ -136,7 +136,7 @@ internal fun SchemeNode(
     // Tutti i cerchi stanno in una fascia alta 72 dp: quello più grande del PC la sborda sopra e sotto, così i nomi restano
     // sulla stessa riga e i fili arrivano al centro di ogni cerchio.
     Column(Modifier.width(labelWidth ?: (size + 14.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.height(maxOf(NODE_BAND, size)), contentAlignment = Alignment.Center) { Box(Modifier.requiredSize(size)) {
+        Box(Modifier.height(NODE_BAND), contentAlignment = Alignment.Center) { Box(Modifier.requiredSize(size)) {
             Box(
                 Modifier.fillMaxSize().clip(CircleShape)
                     .background(if (dashed) Color.Transparent else CmColors.surface)
