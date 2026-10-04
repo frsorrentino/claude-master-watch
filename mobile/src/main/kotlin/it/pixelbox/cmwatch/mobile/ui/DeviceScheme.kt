@@ -132,6 +132,8 @@ private fun Node(
 internal fun SchemeNode(
     icon: ImageVector, size: Dp, dot: Color, ring: Color, dashed: Boolean, name: String, status: String,
     desc: String?, onClick: (() -> Unit)?, labelWidth: Dp? = null,
+    /** Con molti dispositivi in fila: nome e stato più piccoli, così non si tagliano. */
+    compact: Boolean = false,
 ) {
     // Tutti i cerchi stanno in una fascia alta 72 dp: quello più grande del PC la sborda sopra e sotto, così i nomi restano
     // sulla stessa riga e i fili arrivano al centro di ogni cerchio.
@@ -156,8 +158,8 @@ internal fun SchemeNode(
                     .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(dot),
             )
         } }
-        Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
-        if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
+        Text(name, style = (if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge).copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
+        if (status.isNotEmpty()) Text(status, style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
     }
 }
 
@@ -285,8 +287,9 @@ fun DeviceSchemeB(m: SettingsDevices.Model, linked: List<SettingsDevices.Linked>
             val n = linked.size.coerceAtLeast(1)
             val col = maxWidth / n
             val node = minOf(60.dp, col - 18.dp)
-            // Il filo dal PC, la sbarra e le discese: ognuna nel colore del suo dispositivo, tratteggiata se non ha mai letto.
-            Canvas(Modifier.fillMaxWidth().height(26.dp)) {
+            // Il filo dal PC, la sbarra e le discese fino al bordo del cerchio: ognuna nel colore del suo dispositivo,
+            // tratteggiata se non ha mai letto. I cerchi, pieni, stanno sopra la fine del filo.
+            Canvas(Modifier.fillMaxWidth().height(26.dp + (NODE_BAND - node) / 2 + 2.dp)) {
                 val w = 2.dp.toPx()
                 val bar = 12.dp.toPx()
                 val c = col.toPx()
@@ -307,7 +310,7 @@ fun DeviceSchemeB(m: SettingsDevices.Model, linked: List<SettingsDevices.Linked>
                             kindIcon(d.kind), node, toneColor(d.tone),
                             if (d.self || selected == d.uid) CmColors.actionIcon else CmColors.line, dashed = d.tone == Tone.OFF,
                             stringResource(kindLabel(d.kind)), if (d.self) stringResource(R.string.dev_this) else seenShort(d.seen, now),
-                            stringResource(R.string.dev_details, d.name), { onSelect(d.uid) }, labelWidth = col,
+                            stringResource(R.string.dev_details, d.name), { onSelect(d.uid) }, labelWidth = col, compact = col < 84.dp,
                         )
                     }
                 }
