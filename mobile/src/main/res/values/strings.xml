@@ -163,12 +163,12 @@
     <string name="fy_working">Al lavoro · %1$d</string>
     <!-- Riepilogo unico (design 03/10): Sessioni e casa della master in una schermata. -->
     <string name="summary_title">Master</string>
-    <string name="summary_open">%1$d aperte</string>
-    <string name="summary_waiting">Ti aspetta · %1$d</string>
-    <string name="summary_finished">Ha finito · %1$d</string>
-    <string name="summary_working">Al lavoro · %1$d</string>
-    <string name="summary_still">Ferme · %1$d</string>
-    <string name="summary_closed">Chiuse · %1$d</string>
+    <plurals name="summary_open"><item quantity="one">%1$d\u00A0aperta</item><item quantity="other">%1$d\u00A0aperte</item></plurals>
+    <plurals name="summary_waiting"><item quantity="one">Ti aspetta ·\u00A0%1$d</item><item quantity="other">Ti aspettano ·\u00A0%1$d</item></plurals>
+    <plurals name="summary_finished"><item quantity="one">Ha finito ·\u00A0%1$d</item><item quantity="other">Hanno finito ·\u00A0%1$d</item></plurals>
+    <plurals name="summary_working"><item quantity="one">Al lavoro ·\u00A0%1$d</item><item quantity="other">Al lavoro ·\u00A0%1$d</item></plurals>
+    <plurals name="summary_still"><item quantity="one">Ferma ·\u00A0%1$d</item><item quantity="other">Ferme ·\u00A0%1$d</item></plurals>
+    <plurals name="summary_closed"><item quantity="one">Chiusa ·\u00A0%1$d</item><item quantity="other">Chiuse ·\u00A0%1$d</item></plurals>
     <string name="summary_since">da %1$s</string>
     <string name="dock_master">MASTER</string>
     <string name="dock_listen">Ascolta l\'ultimo esito della master</string>
@@ -285,6 +285,7 @@
     <string name="attach_camera">Scatta una foto</string>
     <string name="attach_file">File</string>
     <string name="write_to">Scrivi a %1$s</string>
+    <string name="write_to_ad">Scrivi ad %1$s</string>
     <string name="attached_file">File: %1$s</string>
     <string name="file_too_big">Il file è troppo grande: il limite è %1$s</string>
     <string name="stop">Ferma</string>

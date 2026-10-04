@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -168,11 +169,11 @@ private fun SessionMenu(
                     else -> CmColors.text2
                 }
                 Text(
-                    stringResource(when (group) {
-                        it.pixelbox.cmwatch.rules.Summary.Group.WAITING -> R.string.summary_waiting
-                        it.pixelbox.cmwatch.rules.Summary.Group.WORKING -> R.string.summary_working
-                        else -> R.string.summary_still
-                    }, list.size).uppercase(),
+                    pluralStringResource(when (group) {
+                        it.pixelbox.cmwatch.rules.Summary.Group.WAITING -> R.plurals.summary_waiting
+                        it.pixelbox.cmwatch.rules.Summary.Group.WORKING -> R.plurals.summary_working
+                        else -> R.plurals.summary_still
+                    }, list.size, list.size).uppercase(),
                     style = MonoSmall.copy(color = tone), modifier = Modifier.padding(start = 20.dp, top = 10.dp, bottom = 2.dp),
                 )
                 list.forEach { s -> SessionMenuRow(s, group, now, s.name == current) { pick(s.name) } }
@@ -184,7 +185,7 @@ private fun SessionMenu(
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Icon(Icons.Rounded.Close, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
-                    Text(stringResource(R.string.summary_closed, model.closed), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
+                    Text(pluralStringResource(R.plurals.summary_closed, model.closed, model.closed), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.text2)
                 }
             }
@@ -242,7 +243,7 @@ fun PageHeader(
                 Row(Modifier.weight(1f).padding(start = 12.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
                     Text(
-                        stringResource(R.string.summary_open, openCount), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                        pluralStringResource(R.plurals.summary_open, openCount, openCount), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
                         maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(bottom = 2.dp),
                     )
                 }

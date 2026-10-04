@@ -466,7 +466,7 @@ private fun Composer(
             placeholder = {
                 if (sug != null) Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, maxLines = 2)
                 // Il destinatario esplicito, «Scrivi a fable-director» (osservazioni del 03/10).
-                else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(R.string.write_to, s.name) }, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
             },
             shape = MaterialTheme.shapes.extraLarge,
             leadingIcon = if (canAttach) ({ AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) } }) else null,
