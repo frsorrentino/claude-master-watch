@@ -67,6 +67,11 @@ enum class CmdOp {
      * «90m», «6h», «2d» (al massimo 7 giorni) o un epoch, null = 6h; il testo del risultato è un `TimelinePage`.
      */
     @SerialName("timeline") TIMELINE,
+    /**
+     * Contratto 1.31: accoppiare un dispositivo nuovo dal telefono, senza PC. `session` e `arg` null; il relay apre da sé
+     * `relay pair --add` per 5 minuti e risponde con un `PairAddOffer`. Una lettura: nessuna push dopo.
+     */
+    @SerialName("pair_add") PAIR_ADD,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -248,5 +253,14 @@ enum class CmdOp {
 
 /** Contratto 1.29: le sessioni dalla più recente, al massimo 40 eventi ciascuna; `more` = tagliata oltre 60 KB. */
 @Serializable data class TimelinePage(val since: Long, val sessions: List<TimelineSession> = emptyList(), val more: Boolean = false)
+
+/**
+ * Contratto 1.31: l'invito aperto dal relay per un dispositivo in più. `qr` = il documento del QR della 1.30 (con `m`
+ * «add»), null se mancano i dati dell'app Firebase; `code` = il codice a 6 cifre; `exp` = quando scade (epoch s).
+ */
+@Serializable data class PairAddOffer(val qr: kotlinx.serialization.json.JsonObject? = null, val code: String, val exp: Long)
+
+/** L'invito per chi lo mostra: il QR già come testo da disegnare (lo stesso che `PairQr.parse` legge). */
+data class PairAddInvite(val qr: String?, val code: String, val exp: Long)
 
 @Serializable data class TranscriptPage(val entries: List<TranscriptEntry> = emptyList(), val more: Boolean = false)

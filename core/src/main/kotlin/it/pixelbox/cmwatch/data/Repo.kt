@@ -331,6 +331,6 @@ class Repo(
          */
         private val OPTIMISTIC = setOf(CmdOp.ANSWER, CmdOp.PROMPT, CmdOp.FOLLOW, CmdOp.UNFOLLOW)
         /** Le letture che le schermate fanno da sole (terminale, chat): i loro risultati non sono azioni dell'utente. */
-        private val PASSIVE = setOf(CmdOp.SCREEN, CmdOp.LAST, CmdOp.TRANSCRIPT, CmdOp.PROJECTS, CmdOp.TIMELINE)
+        private val PASSIVE = setOf(CmdOp.SCREEN, CmdOp.LAST, CmdOp.TRANSCRIPT, CmdOp.PROJECTS, CmdOp.TIMELINE, CmdOp.PAIR_ADD)
     }
 }
