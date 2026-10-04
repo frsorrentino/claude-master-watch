@@ -54,4 +54,26 @@ class SessionMetersTest {
         assertEquals(ModelText.Family.OTHER, ModelText.family(Model("claude-qualcosa-nuovo", null)))
         assertNull(ModelText.family(null))
     }
+
+    // Franz, 04/10 20:43: in testata la quota delle 5 ore diceva «5h 1%» senza l'ora in cui si azzera.
+    @Test fun lAzzeramentoDiOggiNonHaBisognoDelGiorno() {
+        val rome = java.time.ZoneId.of("Europe/Rome")
+        val now = java.time.ZonedDateTime.of(2026, 10, 4, 20, 43, 0, 0, rome).toEpochSecond()
+        val reset = java.time.ZonedDateTime.of(2026, 10, 4, 23, 0, 0, 0, rome).toEpochSecond()
+        assertFalse(SessionMeters.resetNeedsDay(reset, now, rome))
+    }
+
+    @Test fun dopoMezzanotteServeIlGiorno() {
+        val rome = java.time.ZoneId.of("Europe/Rome")
+        val now = java.time.ZonedDateTime.of(2026, 10, 4, 22, 30, 0, 0, rome).toEpochSecond()
+        val reset = java.time.ZonedDateTime.of(2026, 10, 5, 1, 0, 0, 0, rome).toEpochSecond()
+        assertTrue(SessionMeters.resetNeedsDay(reset, now, rome))
+    }
+
+    @Test fun laQuotaHaIColoriDelContesto() {
+        assertEquals(BriefCards.Tone.NEUTRAL, SessionMeters.quotaTone(1))
+        assertEquals(BriefCards.Tone.WARN, SessionMeters.quotaTone(75))
+        assertEquals(BriefCards.Tone.ALERT, SessionMeters.quotaTone(90))
+        assertEquals(BriefCards.Tone.NEUTRAL, SessionMeters.quotaTone(null))
+    }
 }

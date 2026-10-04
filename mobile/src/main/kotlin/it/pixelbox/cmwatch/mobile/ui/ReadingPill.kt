@@ -15,8 +15,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -45,6 +47,8 @@ import androidx.compose.ui.unit.IntOffset
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.mobile.R
@@ -119,31 +123,56 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
 
 /**
  * Il mini-controller della lettura (Franz, 03/10 23:00): su ogni schermata finché la voce legge. Le barrette che si
- * muovono, da dove arriva il testo e la sua prima riga (il tocco riporta lì), la velocità e ■ per fermare.
+ * muovono, da dove arriva il testo e la sua prima riga (il tocco riporta lì), la velocità, la voce e ■ per fermare.
+ * Velocità e voce arrivano come parametri: il controller si disegna nell'overlay, fuori dai `CompositionLocal` della
+ * lettura (Franz, 04/10 20:28: lì il tasto della velocità leggeva sempre 1× e il tocco non faceva niente).
  */
 @Composable
-fun ReadingPill(source: String?, text: String, onOpen: (() -> Unit)?, onStop: () -> Unit, modifier: Modifier = Modifier) {
+fun ReadingPill(
+    source: String?, text: String, onOpen: (() -> Unit)?, onStop: () -> Unit,
+    rate: Float, onRate: (Float) -> Unit,
+    /** La voce di adesso (null = la predefinita) e il tocco che passa alla dopo; null senza voci italiane da scegliere. */
+    voice: String?, onVoice: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
-        Row(
-            Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Bars()
-            val openLabel = source?.let { stringResource(R.string.reading_open, it) }
-            Column(
-                Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                    .then(if (onOpen != null) Modifier.clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
-                    .padding(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
+        BoxWithConstraints {
+            // In una colonna stretta del tablet restano i tasti: la riga del testo si vede già nella colonna.
+            val roomy = maxWidth >= 300.dp
+            Row(
+                Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
-                Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
-            }
-            RatePill()
-            FilledTonalIconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
-                Icon(Icons.Rounded.Stop, stringResource(R.string.stop_reading), tint = CmColors.actionIcon)
+                Bars()
+                val openLabel = source?.let { stringResource(R.string.reading_open, it) }
+                if (roomy) Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                        .then(if (onOpen != null) Modifier.clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
+                        .padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    Text(source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
+                    Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+                } else Spacer(Modifier.weight(1f))
+                RatePill(rate, onRate)
+                if (onVoice != null) VoicePill(voice, onVoice)
+                FilledTonalIconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.Stop, stringResource(R.string.stop_reading), tint = CmColors.actionIcon)
+                }
             }
         }
+    }
+}
+
+/**
+ * Cambia voce durante la lettura (Franz, 04/10 20:28): a ogni tocco la voce italiana dopo, dopo l'ultima di nuovo la
+ * predefinita (`VoiceRules.next`); la lettura riparte dal pezzo che stava dicendo, con la voce nuova.
+ */
+@Composable
+private fun VoicePill(voice: String?, onClick: () -> Unit) {
+    val desc = stringResource(R.string.voice_change, voice ?: stringResource(R.string.voice_default))
+    Surface(onClick = onClick, color = CmColors.surface, shape = CircleShape, modifier = Modifier.semantics { contentDescription = desc }) {
+        Icon(Icons.Rounded.RecordVoiceOver, null, tint = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp).size(20.dp))
     }
 }
 

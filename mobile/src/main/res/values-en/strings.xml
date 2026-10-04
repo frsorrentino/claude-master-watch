@@ -393,6 +393,8 @@
     <string name="next_steps">Next</string>
     <string name="suggestion_use">Use</string>
     <string name="tts_code">Code</string>
+    <string name="ctx_short">ctx %1$d%%</string>
+    <string name="quota_reset_desc">5-hour quota at %1$d%%, resets %2$s</string>
     <string name="ctx_title">Context %1$d%%</string>
     <string name="ctx_handoff">Write the handoff and restart clean</string>
     <string name="ctx_handoff_prompt">Write the handoff with /fable-director:handoff --here, then restart clean with claude-master restart --clean.</string>
@@ -441,6 +443,7 @@
     <string name="voice">Voice</string>
     <string name="voice_default">Phone default</string>
     <string name="voice_try">Try</string>
+    <string name="voice_change">Change voice, now: %1$s</string>
     <string name="voice_sample">Hi Franz, this is the voice that will read the replies.</string>
     <string name="speech_rate">Reading speed</string>
     <string name="speech_rate_value">%1$s×</string>

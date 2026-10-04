@@ -28,4 +28,14 @@ object SessionMeters {
 
     /** La barra va da 0 a 1; oltre il 100 % resta piena invece di uscire dal binario. */
     fun contextFraction(pct: Int?): Float? = pct?.let { (it / 100f).coerceIn(0f, 1f) }
+
+    /** La quota delle 5 ore in testata ha gli stessi colori del contesto: da guardare oltre tre quarti, quasi finita dal 90 %. */
+    fun quotaTone(pct: Int?): BriefCards.Tone = contextTone(pct)
+
+    /**
+     * Quando si azzera la quota (Franz, 04/10 20:43: in testata mancava): se è oggi basta l'ora, altrimenti (dopo
+     * mezzanotte) serve anche il giorno.
+     */
+    fun resetNeedsDay(resetAt: Long, now: Long, zone: java.time.ZoneId): Boolean =
+        java.time.Instant.ofEpochSecond(resetAt).atZone(zone).toLocalDate() != java.time.Instant.ofEpochSecond(now).atZone(zone).toLocalDate()
 }

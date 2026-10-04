@@ -81,8 +81,7 @@ class Speech(ctx: Context) {
         if (!ready) return
         _source.value = source
         // Letta a ogni lettura: la lingua si cambia nelle impostazioni mentre l'app è aperta.
-        tts.language = AppLanguage.voiceLocale(AppLanguage.fromTags(locales.applicationLocales.toLanguageTags()), Locale.getDefault())
-        applyVoice()
+        useLanguageAndVoice()
         current = text
         _speaking.value = text
         val code = app.getString(R.string.tts_code)
@@ -133,6 +132,21 @@ class Speech(ctx: Context) {
     fun setRateNow(r: Float) {
         setRate(r)
         if (ready && _speaking.value != null && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex))
+    }
+
+    /**
+     * La voce cambiata durante la lettura dal mini-controller (Franz, 04/10 20:28): come la velocità, il motore la usa solo
+     * per i pezzi nuovi, quindi la lettura riparte dal pezzo che sta dicendo. Ricordata come quella delle impostazioni.
+     */
+    fun setVoiceNow(name: String?) {
+        setVoice(name)
+        if (ready && _speaking.value != null && items.isNotEmpty()) { useLanguageAndVoice(); startAt(chunk.coerceIn(0, items.lastIndex)) }
+    }
+
+    /** La lingua dell'app e poi la voce scelta: la lingua rimette la predefinita, così anche il ritorno a quella vale subito. */
+    private fun useLanguageAndVoice() {
+        tts.language = AppLanguage.voiceLocale(AppLanguage.fromTags(locales.applicationLocales.toLanguageTags()), Locale.getDefault())
+        applyVoice()
     }
 
     private fun finished() { _speaking.value = null; _block.value = null; _source.value = null }

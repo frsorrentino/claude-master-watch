@@ -51,6 +51,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -485,9 +488,18 @@ private fun Composer(
             Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon, style = MaterialTheme.typography.labelLarge)
         }
         val inField = sug.takeIf { !narrow }
+        // Scorrendo da una sessione all'altra il cursore segue la pagina che si vede (Franz, 04/10 20:53): chi scorre chiede
+        // il fuoco per questa sessione (`FieldFocus.target`), il campo lo prende appena c'è.
+        val fieldFocus = LocalFieldFocus.current
+        val focusReq = remember { FocusRequester() }
+        if (fieldFocus != null) LaunchedEffect(fieldFocus.target) {
+            if (fieldFocus.target == s.name) { fieldFocus.target = null; runCatching { focusReq.requestFocus() } }
+        }
         OutlinedTextField(
             value = draft, onValueChange = onDraft, maxLines = 5,
             modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
+                .focusRequester(focusReq)
+                .onFocusChanged { f -> fieldFocus?.let { ff -> if (f.isFocused) ff.owner = s.name else if (ff.owner == s.name) ff.owner = null } }
                 // Il tablet (pezzo 6): con la tastiera fisica Invio manda e Maiusc+Invio va a capo; la tastiera dello schermo
                 // resta com'è (il suo Invio arriva da un dispositivo virtuale, o come testo).
                 .onPreviewKeyEvent { e ->
@@ -1145,8 +1157,9 @@ private fun SheetHeader(
                 Spacer(Modifier.weight(1f))
             }
             if (lead != null) TunePill(tune, tunable) { picker = "tune" }
-            // La quota delle 5 ore dell'account, come sulla card del riepilogo; il dato vecchio nel colore dell'attesa.
-            quota?.h5?.let { Text(stringResource(R.string.quota_h5_short, it), style = MonoSmall, color = if (quota.stale) CmColors.waiting else CmColors.text2, maxLines = 1) }
+            // La quota delle 5 ore dell'account con l'ora in cui si azzera, accanto al contesto: due misure uguali, anello ed
+            // etichetta (Franz, 04/10 20:43); il dato vecchio nel colore dell'attesa.
+            quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now) }
             // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
             s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
             Box {
@@ -1396,14 +1409,56 @@ private fun ContextRing(pct: Int) {
     }
     val frac = SessionMeters.contextFraction(pct) ?: 0f
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
-            val w = 3.dp.toPx()
-            val inset = w / 2
-            val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
-            drawArc(CmColors.briefTrack, -90f, 360f, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w))
-            drawArc(tone, -90f, 360f * frac, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        MeterRing(frac, tone)
+        // «ctx» davanti alla percentuale (Franz, 04/10 20:43), come «5h» davanti alla quota.
+        Text(stringResource(R.string.ctx_short, pct), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
+    }
+}
+
+/** L'anello delle misure in testata: il binario e l'arco della frazione nel colore del tono. */
+@Composable
+private fun MeterRing(frac: Float, tone: androidx.compose.ui.graphics.Color) {
+    androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
+        val w = 3.dp.toPx()
+        val inset = w / 2
+        val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
+        drawArc(CmColors.briefTrack, -90f, 360f, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w))
+        drawArc(tone, -90f, 360f * frac, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+}
+
+/**
+ * La quota delle 5 ore in testata (Franz, 04/10 20:43: «manca l'info di data e ora azzeramento»): l'anello come quello del
+ * contesto, «5h 1%» e sotto l'ora in cui si azzera, col giorno se non è oggi. Un dato vecchio nel colore dell'attesa.
+ */
+@Composable
+private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long) {
+    val tone = if (stale) CmColors.waiting else when (SessionMeters.quotaTone(pct)) {
+        it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
+        it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
+        else -> CmColors.briefRing
+    }
+    val zone = ZoneId.systemDefault()
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val reset = resetAt?.takeIf { it > now }?.let { r ->
+        java.time.format.DateTimeFormatter.ofPattern(if (SessionMeters.resetNeedsDay(r, now, zone)) "EEE HH:mm" else "HH:mm", locale)
+            .format(Instant.ofEpochSecond(r).atZone(zone))
+    }
+    val desc = reset?.let { stringResource(R.string.quota_reset_desc, pct, it) }
+    Row(
+        Modifier.then(if (desc != null) Modifier.semantics(mergeDescendants = true) { contentDescription = desc } else Modifier),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        MeterRing((pct / 100f).coerceIn(0f, 1f), tone)
+        Column {
+            Text(stringResource(R.string.quota_h5_short, pct), style = MaterialTheme.typography.labelLarge, color = if (stale) CmColors.waiting else CmColors.text2, maxLines = 1)
+            reset?.let { r ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Icon(Icons.Rounded.Update, null, tint = CmColors.text2, modifier = Modifier.size(12.dp))
+                    Text(r, style = MaterialTheme.typography.labelSmall, color = CmColors.text2, maxLines = 1)
+                }
+            }
         }
-        Text("$pct%", style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
     }
 }
 
@@ -1448,6 +1503,19 @@ private fun ZoomedText(content: @Composable () -> Unit) {
 
 /** La velocità della voce e come cambiarla mentre legge (`Speech.rate`, `Speech.setRateNow`), da `MainActivity`. */
 val LocalSpeechRate = androidx.compose.runtime.staticCompositionLocalOf { it.pixelbox.cmwatch.rules.SpeechRate.NORMAL }
+
+/**
+ * Il campo che ha il cursore e quello che deve prenderlo (Franz, 04/10 20:53: cambiando sessione con lo swipe il testo
+ * finiva nella sessione di prima). Il pager tiene viva la pagina che ha il fuoco anche fuori dallo schermo: chi scorre
+ * sposta il fuoco sul campo della pagina che si vede.
+ */
+class FieldFocus {
+    /** La sessione il cui campo ha il cursore adesso. */
+    var owner by mutableStateOf<String?>(null)
+    /** La sessione il cui campo deve prendere il cursore appena c'è. */
+    var target by mutableStateOf<String?>(null)
+}
+val LocalFieldFocus = androidx.compose.runtime.staticCompositionLocalOf<FieldFocus?> { null }
 val LocalSetSpeechRate = androidx.compose.runtime.staticCompositionLocalOf<(Float) -> Unit> { {} }
 
 /**
@@ -1455,9 +1523,11 @@ val LocalSetSpeechRate = androidx.compose.runtime.staticCompositionLocalOf<(Floa
  * (`SpeechRate.next`) e la voce riparte dal pezzo che stava dicendo.
  */
 @Composable
-fun RatePill() {
-    val rate = LocalSpeechRate.current
-    val set = LocalSetSpeechRate.current
+fun RatePill() = RatePill(LocalSpeechRate.current, LocalSetSpeechRate.current)
+
+/** La stessa pillola con velocità e comando espliciti: il mini-controller sta fuori dal provider della lettura. */
+@Composable
+fun RatePill(rate: Float, set: (Float) -> Unit) {
     val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
         .apply { maximumFractionDigits = 2 }.format(rate)
     val label = stringResource(R.string.speech_rate_short, n)

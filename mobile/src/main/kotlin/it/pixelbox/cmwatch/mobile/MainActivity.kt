@@ -151,6 +151,8 @@ class MainActivity : ComponentActivity() {
         val snap by app.repo.snapshot.collectAsStateWithLifecycle()
         // Il mini-controller della lettura (Franz, 03/10 23:00): cosa legge e da dove; su ogni schermata finché legge.
         val readingNow by speech.speaking.collectAsStateWithLifecycle()
+        val fieldFocus = remember { it.pixelbox.cmwatch.mobile.ui.FieldFocus() }
+        val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
         val readingSource by speech.source.collectAsStateWithLifecycle()
         // Il permesso delle notifiche si chiede solo accoppiati, mai in Demo.
         val askNotifications = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
@@ -192,8 +194,13 @@ class MainActivity : ComponentActivity() {
             {
                 val src = readingSource
                 val live = src != null && snap.state?.sessions?.any { x -> x.name == src && x.state != it.pixelbox.cmwatch.contract.SessionState.GONE } == true
+                val rate by speech.rate.collectAsStateWithLifecycle()
+                val voices by speech.voices.collectAsStateWithLifecycle()
+                val voice by speech.voice.collectAsStateWithLifecycle()
                 ReadingPill(
                     src, text,
+                    rate = rate, onRate = speech::setRateNow,
+                    voice = voice, onVoice = if (voices.isEmpty()) null else ({ speech.setVoiceNow(it.pixelbox.cmwatch.rules.VoiceRules.next(voices, voice)) }),
                     onOpen = if (!live) null else ({
                         settingsOpen = false; searchOpen = false; queueOpen = false; tab = StartRoute.Tab.OVERVIEW
                         if (src == it.pixelbox.cmwatch.rules.ContextActions.MASTER) { open = null; masterChat = true } else open = src
@@ -903,6 +910,7 @@ class MainActivity : ComponentActivity() {
         CompositionLocalProvider(
             LocalSpeaking provides speaking, LocalSpeakingBlock provides speakingBlock, LocalBlocksOf provides speech::blocksOf,
             LocalSpeechRate provides speechRate, LocalSetSpeechRate provides speech::setRateNow,
+            it.pixelbox.cmwatch.mobile.ui.LocalFieldFocus provides fieldFocus,
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
         ) {
         if (wide && state != null && summary != null) tabletDesk(state, summary) else
@@ -959,6 +967,11 @@ class MainActivity : ComponentActivity() {
                                     // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
                                     if (move.name == null) tab = StartRoute.Tab.OVERVIEW
                                 }
+                                // Il cursore segue la pagina che si vede (Franz, 04/10 20:53): il pager teneva viva quella di prima
+                                // e il testo scritto finiva lì. Sul riepilogo, che non ha campo, la tastiera si chiude.
+                                val shown = currentPages.getOrNull(p)
+                                val owner = fieldFocus.owner
+                                if (owner != null && owner != shown) { if (shown != null) fieldFocus.target = shown else focusManager.clearFocus() }
                             }
                         }
                         LaunchedEffect(open, pages, active) {
