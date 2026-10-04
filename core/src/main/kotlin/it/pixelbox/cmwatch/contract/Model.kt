@@ -168,6 +168,8 @@ enum class CmdOp {
     val slash: List<String>? = null,
     /** Contratto 1.32: i dispositivi accoppiati, nell'ordine di accoppiamento; null con un relay precedente. */
     val devices: List<Device>? = null,
+    /** Contratto 1.33: le azioni ricorrenti della master, dall'ultima usata in cima, al massimo 8; null senza lista. */
+    val recurring: List<Recurring>? = null,
 )
 
 /**
@@ -175,6 +177,12 @@ enum class CmdOp {
  * sa; `seen` = epoch s dell'ultima lettura (`/seen`), null se non è mai arrivata.
  */
 @Serializable data class Device(val uid: String, val name: String, val kind: String? = null, val seen: Long? = null)
+
+/**
+ * Contratto 1.33: un'azione ricorrente della master (Franz, 04/10 20:24). `param` = il prompt aspetta un pezzo da
+ * aggiungere (un link, un numero di release): va nel campo col cursore in fondo, senza invio diretto.
+ */
+@Serializable data class Recurring(val id: String, val label: String, val prompt: String, val param: Boolean = false)
 
 /** Contratto 1.12: l'id del modello è quello completo di `model.id` (col suffisso `[1m]` dove c'è). */
 @Serializable data class Choices(val models: List<Model> = emptyList(), val efforts: List<String> = emptyList())

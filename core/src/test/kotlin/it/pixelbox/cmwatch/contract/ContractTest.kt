@@ -78,6 +78,14 @@ class ContractTest {
         assertNotNull(d.first().seen)
     }
 
+    // Contratto 1.33: le azioni ricorrenti della master, nell'ordine del PC; param solo dove il prompt aspetta un pezzo.
+    @Test fun stateCarriesTheRecurringActions() {
+        val r = ContractJson.decodeState(Fixtures.stateIdle).recurring!!
+        assertEquals(listOf("x-posts", "release-changelog", "plugin-rivals"), r.map { it.id })
+        assertEquals(listOf(false, true, false), r.map { it.param })
+        assertTrue(r.all { it.label.length <= 40 })
+    }
+
     @Test fun cmdAndResultDecodeAndEncode() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
