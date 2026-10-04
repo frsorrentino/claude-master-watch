@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.ui.res.pluralStringResource
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.SettingsDevices
 import it.pixelbox.cmwatch.rules.SettingsDevices.Tone
@@ -158,8 +162,23 @@ internal fun SchemeNode(
                     .background(CmColors.surfaceLow).padding(3.dp).clip(CircleShape).background(dot),
             )
         } }
-        Text(name, style = (if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge).copy(fontWeight = FontWeight.Medium), color = if (dashed) CmColors.text2 else CmColors.text, maxLines = 1)
-        if (status.isNotEmpty()) Text(status, style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
+        val nameColor = if (dashed) CmColors.text2 else CmColors.text
+        if (compact) {
+            // In fila stretta un nome lungo («Chromebook») scende di corpo finché entra, invece di tagliarsi.
+            val nameStyle = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+            val statusStyle = MaterialTheme.typography.labelSmall
+            BasicText(
+                name, style = LocalTextStyle.current.merge(nameStyle).copy(color = nameColor), maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = nameStyle.fontSize, stepSize = 0.5.sp),
+            )
+            if (status.isNotEmpty()) BasicText(
+                status, style = LocalTextStyle.current.merge(statusStyle).copy(color = CmColors.text2), maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = statusStyle.fontSize, stepSize = 0.5.sp),
+            )
+        } else {
+            Text(name, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium), color = nameColor, maxLines = 1)
+            if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.labelMedium, color = CmColors.text2, maxLines = 1)
+        }
     }
 }
 
