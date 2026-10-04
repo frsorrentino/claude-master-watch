@@ -298,6 +298,8 @@ class MainActivity : ComponentActivity() {
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
                 onAddDevice = if (!demo && state?.ops?.contains("pair_add") == true) askInvite else null,
+                // Contratto 1.32: lo schema dei collegamenti con i dispositivi veri; «questo» è il primo uid dell'accoppiamento.
+                linked = it.pixelbox.cmwatch.rules.SettingsDevices.linked(state, r?.uids?.firstOrNull(), now),
             )
             }
             return

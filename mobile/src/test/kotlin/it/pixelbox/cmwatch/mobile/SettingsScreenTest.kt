@@ -21,6 +21,17 @@ class SettingsScreenTest {
         CmPhoneTheme(still = true) { SettingsScreen("penguin", "Pixel 9", "Pixel Watch 5", false, false, "0.2", {}, {}, {}, {}, devices = devices()) }
     }
 
+    // Contratto 1.32, variante B (Franz, 04/10 17:11): il PC sopra e i dispositivi veri in fila sotto, «questo» è il telefono;
+    // il Chromebook letto ore fa in arancio, il Pixel 7 mai arrivato tratteggiato.
+    @Test fun settingsDevicesB() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            SettingsScreen(
+                "penguin", "Pixel 9", "Pixel Watch 5", false, false, "0.2", {}, {}, {}, {}, devices = devices(),
+                linked = SettingsDevices.linked(st, "phoneUid00000000000000000000", st.ts),
+            )
+        }
+    }
+
     // L'orologio senza chiave: il suo filo e il suo punto in arancio, la scheda dice cosa manca.
     @Test fun settingsWatchPending() = paparazzi.snapshot {
         CmPhoneTheme(still = true) {

@@ -484,4 +484,16 @@
     <string name="invite_title">Accoppiare questo dispositivo a %1$s?</string>
     <string name="invite_add">Il PC %1$s lo aggiunge accanto agli altri dispositivi accoppiati. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
     <string name="invite_new">Il PC %1$s lo accoppia da capo: gli altri dispositivi accoppiati prima si scollegano. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
+    <string name="dev_chromebook">Chromebook</string>
+    <string name="dev_other">Dispositivo</string>
+    <string name="dev_seen_now">ora</string>
+    <string name="dev_seen_min">%1$d\u00A0min</string>
+    <string name="dev_seen_h">%1$d\u00A0h</string>
+    <string name="dev_seen_d">%1$d\u00A0g</string>
+    <string name="dev_seen_never">mai</string>
+    <string name="dev_seen_never_long">mai letto</string>
+    <string name="dev_seen_ago">letto %1$s fa</string>
+    <string name="fact_kind">Tipo</string>
+    <string name="fact_seen">Ultima lettura</string>
+    <plurals name="dev_count"><item quantity="one">%1$d\u00A0dispositivo</item><item quantity="other">%1$d\u00A0dispositivi</item></plurals>
 </resources>

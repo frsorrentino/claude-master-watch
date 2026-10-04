@@ -68,6 +68,13 @@ class PhoneApp : Application() {
     /** La Demo (design 29/09): le fixture del contratto con i testi della demo, come sull'orologio. */
     val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
+    /** Contratto 1.32: che dispositivo è, per lo schema dei collegamenti di tutti (Android del Chromebook, tablet, telefono). */
+    private fun deviceKind(): String = when {
+        packageManager.hasSystemFeature("org.chromium.arc") || packageManager.hasSystemFeature("org.chromium.arc.device_management") -> "chromebook"
+        resources.configuration.smallestScreenWidthDp >= 600 -> "tablet"
+        else -> "phone"
+    }
+
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
@@ -78,7 +85,7 @@ class PhoneApp : Application() {
             firebase = SdkPhoneFirebase(this),
             link = WearWatchLink(this),
             keys = KeystoreKeyWrap,
-            pairer = { fb -> PcPairer { qr, uid, name, w -> PhonePairer(fb.rtdb()).pair(qr, uid, name, w) } },
+            pairer = { fb -> PcPairer { qr, uid, name, w -> PhonePairer(fb.rtdb(), kind = deviceKind()).pair(qr, uid, name, w) } },
             phoneName = phoneName,
         )
         transport = SwitchableTransport(choose(settings))

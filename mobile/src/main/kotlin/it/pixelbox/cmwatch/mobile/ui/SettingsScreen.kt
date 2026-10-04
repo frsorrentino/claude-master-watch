@@ -60,6 +60,8 @@ fun SettingsScreen(
     initialDevice: DeviceNode = DeviceNode.PC,
     /** Contratto 1.31: un dispositivo in più dal telefono, senza PC; null con un relay che non lo sa fare. */
     onAddDevice: (() -> Unit)? = null,
+    /** Contratto 1.32: i dispositivi veri per lo schema B; null con un relay precedente (resta lo schema di prima). */
+    linked: List<SettingsDevices.Linked>? = null,
 ) {
     var choosing by remember { mutableStateOf(false) }
     var choosingVoice by remember { mutableStateOf(false) }
@@ -74,7 +76,9 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             GroupHeader(stringResource(R.string.sec_link), CmColors.text2)
-            DeviceScheme(devices, device, onSelect = { device = it }) {
+            var linkedPick by rememberSaveable { mutableStateOf(PC_KEY) }
+            if (linked != null && host != null) DeviceSchemeB(devices, linked, nowSec(), linkedPick) { linkedPick = it }
+            else DeviceScheme(devices, device, onSelect = { device = it }) {
                 // Non accoppiati (Demo): accoppiare è l'azione principale, sotto lo schema tratteggiato.
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(R.string.connect_pc), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
@@ -216,3 +220,11 @@ private fun languageName(c: AppLanguage.Choice): String = stringResource(when (c
     AppLanguage.Choice.ITALIAN -> R.string.language_it
     AppLanguage.Choice.ENGLISH -> R.string.language_en
 })
+
+/** Adesso in secondi, per le letture dello schema B; fermo nei provini come il resto delle schermate. */
+@Composable
+private fun nowSec(): Long = if (LocalStill.current) STILL_NOW else System.currentTimeMillis() / 1000
+
+/** L'istante fisso dei provini dello schema B: dieci secondi dopo l'ultima lettura del telefono nelle fixture. */
+internal const val STILL_NOW = 1789210800L
+
