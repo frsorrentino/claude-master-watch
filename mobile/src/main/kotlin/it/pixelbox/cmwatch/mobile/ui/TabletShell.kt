@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -427,17 +428,43 @@ fun TabletDesk(
     override: (@Composable () -> Unit)? = null,
     inspector: (@Composable () -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
-        val homePane: @Composable () -> Unit = { Box(Modifier.width(400.dp).fillMaxHeight()) { home() } }
-        val side: @Composable () -> Unit = { HomeSideHandle(homeRight, onHomeSide) }
-        val details: @Composable () -> Unit = { inspector?.let { i -> VerticalDivider(color = CmColors.line); Box(Modifier.width(340.dp).fillMaxHeight()) { i() } } }
-        if (homeRight) details() else { homePane(); side() }
-        Box(Modifier.weight(1f).fillMaxHeight().dotGrid()) {
+    // La home cambia lato scivolando sopra le colonne, che scivolano dall'altra parte (Franz, 04/10 22:15: «spartane»). Le
+    // parti restano nello stesso punto della composizione e cambiano solo posizione: la home non si ricrea e tiene lo
+    // scorrimento.
+    val off = animationsOff()
+    val side by androidx.compose.animation.core.animateFloatAsState(
+        if (homeRight) 1f else 0f,
+        if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(dampingRatio = 0.86f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+        label = "homeSide",
+    )
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
+        val homeW = 400.dp
+        val handleW = 28.dp
+        val detailsW = if (inspector != null) 341.dp else 0.dp
+        val total = maxWidth
+        // Da sinistra: home, maniglia, colonne, dettagli; con la home a destra l'ordine si rovescia.
+        val at = { left: androidx.compose.ui.unit.Dp, right: androidx.compose.ui.unit.Dp ->
+            Modifier.offset { androidx.compose.ui.unit.IntOffset((left + (right - left) * side).roundToPx(), 0) }
+        }
+        Box(at(homeW + handleW, detailsW).width(total - homeW - handleW - detailsW).fillMaxHeight().dotGrid()) {
             if (override != null) override()
             else if (columns.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { empty() }
             else Columns(columns, shares, onSwap, onShares, column)
         }
-        if (homeRight) { side(); homePane() } else details()
+        inspector?.let { i ->
+            Row(at(total - detailsW, 0.dp).width(detailsW).fillMaxHeight()) {
+                if (!homeRight) VerticalDivider(color = CmColors.line)
+                Box(Modifier.weight(1f).fillMaxHeight()) { i() }
+                if (homeRight) VerticalDivider(color = CmColors.line)
+            }
+        }
+        Box(at(homeW, total - homeW - handleW).width(handleW).fillMaxHeight()) { HomeSideHandle(homeRight, onHomeSide) }
+        // A metà strada la home passa sopra le colonne, con un'ombra che c'è solo mentre si sposta.
+        Box(
+            at(0.dp, total - homeW).width(homeW).fillMaxHeight().zIndex(1f)
+                .graphicsLayer { shadowElevation = 32f * (1f - kotlin.math.abs(side * 2f - 1f)) }
+                .background(CmColors.bg),
+        ) { home() }
     }
 }
 
@@ -465,13 +492,15 @@ private fun Columns(
     column: @Composable (name: String, drag: Modifier) -> Unit,
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
+    val off = animationsOff()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().padding(10.dp)) {
         val gapPx = with(density) { 12.dp.toPx() }
         val widthPx = constraints.maxWidth.toFloat() - gapPx * (columns.size - 1)
         val unit = widthPx / Tablet.Shares.TOTAL
         var border by remember { mutableStateOf(-1) }
         var borderPx by remember { mutableStateOf(0f) }
-        var dragged by remember { mutableStateOf(-1) }
+        var dragged by remember { mutableStateOf<String?>(null) }
         var draggedPx by remember { mutableStateOf(0f) }
         // Le larghezze di adesso: quelle salvate, più il bordo che si sta trascinando (fra i limiti dei due dodicesimi).
         val live = shares.map { it * unit }.toMutableList().also { w ->
@@ -482,27 +511,64 @@ private fun Columns(
             }
         }
         val lefts = live.runningFold(0f) { x, w -> x + w + gapPx }
+        // La colonna sotto il centro di quella trascinata: lì cadrebbe, e intanto scivola già nel posto lasciato libero
+        // (Franz, 04/10 22:15: lo scambio era «spartano»).
+        val from = columns.indexOf(dragged)
+        val over = if (from < 0) -1 else lefts.dropLast(1).indexOfLast { it <= lefts[from] + live[from] / 2 + draggedPx }.coerceIn(0, columns.size - 1)
+        val overNow by androidx.compose.runtime.rememberUpdatedState(over)
+        val leftsNow by androidx.compose.runtime.rememberUpdatedState(lefts)
+        val spec: androidx.compose.animation.core.AnimationSpec<Float> =
+            if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
         columns.forEachIndexed { i, name ->
-            val dragging = dragged == i
-            val drag = Modifier.pointerInput(name, columns) {
-                detectDragGestures(
-                    onDragStart = { dragged = i; draggedPx = 0f },
-                    onDragEnd = {
-                        val center = lefts[i] + live[i] / 2 + draggedPx
-                        val target = lefts.dropLast(1).indexOfLast { it <= center }.coerceIn(0, columns.size - 1)
-                        dragged = -1; draggedPx = 0f
-                        if (target != i) onSwap(i, target)
-                    },
-                    onDragCancel = { dragged = -1; draggedPx = 0f },
-                ) { change, amount -> change.consume(); draggedPx += amount.x }
+            androidx.compose.runtime.key(name) {
+                val slot = if (from >= 0 && i == over && over != from) from else i
+                val dragging = name == dragged
+                val resizing = border >= 0
+                // Posizione e larghezza scivolano verso il loro posto: dopo uno scambio, al rilascio di un bordo (che scatta al
+                // dodicesimo), quando una colonna arriva o se ne va. Sotto il dito invece seguono senza ritardo.
+                val x = remember { androidx.compose.animation.core.Animatable(lefts[slot]) }
+                val w = remember { androidx.compose.animation.core.Animatable(live[slot]) }
+                androidx.compose.runtime.LaunchedEffect(lefts[slot], live[slot], dragging, resizing) {
+                    when {
+                        dragging -> w.snapTo(live[slot])
+                        resizing -> { x.snapTo(lefts[slot]); w.snapTo(live[slot]) }
+                        else -> { launch { x.animateTo(lefts[slot], spec) }; w.animateTo(live[slot], spec) }
+                    }
+                }
+                // Presa per la testata la colonna si alza un poco; una colonna nuova entra sfumando.
+                val lift by androidx.compose.animation.core.animateFloatAsState(if (dragging) 1f else 0f, if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow), label = "lift")
+                val appear = remember { androidx.compose.animation.core.Animatable(if (off) 1f else 0f) }
+                androidx.compose.runtime.LaunchedEffect(Unit) { appear.animateTo(1f, androidx.compose.animation.core.tween(220)) }
+                val drag = Modifier.pointerInput(name, columns) {
+                    detectDragGestures(
+                        onDragStart = { dragged = name; draggedPx = 0f },
+                        onDragEnd = {
+                            val target = overNow
+                            dragged = null; draggedPx = 0f
+                            if (target >= 0 && target != i) onSwap(i, target)
+                        },
+                        onDragCancel = { dragged = null; draggedPx = 0f },
+                    ) { change, amount ->
+                        change.consume(); draggedPx += amount.x
+                        scope.launch { x.snapTo(leftsNow[i] + draggedPx) }
+                    }
+                }
+                Box(
+                    Modifier.offset { androidx.compose.ui.unit.IntOffset(x.value.roundToInt(), 0) }
+                        .width(with(density) { w.value.toDp() }).fillMaxHeight()
+                        .zIndex(if (dragging) 2f else if (lift > 0f) 1f else 0f)
+                        .graphicsLayer {
+                            val s = (1f + 0.025f * lift) * (0.96f + 0.04f * appear.value)
+                            scaleX = s; scaleY = s
+                            shadowElevation = 28f * lift
+                            alpha = appear.value
+                        }
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(1.dp, if (dragging) CmColors.actionIcon.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp)),
+                ) { column(name, drag) }
             }
-            Box(
-                Modifier.offset { androidx.compose.ui.unit.IntOffset((lefts[i] + if (dragging) draggedPx else 0f).roundToInt(), 0) }
-                    .width(with(density) { live[i].toDp() }).fillMaxHeight()
-                    .zIndex(if (dragging) 1f else 0f)
-                    .graphicsLayer { if (dragging) { shadowElevation = 24f; alpha = 0.92f } }
-                    .clip(RoundedCornerShape(18.dp)).border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp)),
-            ) { column(name, drag) }
+        }
+        columns.indices.forEach { i ->
             // Il bordo dopo la colonna: si trascina, e al rilascio scatta al dodicesimo più vicino.
             if (i < columns.size - 1) Box(
                 Modifier.offset { androidx.compose.ui.unit.IntOffset((lefts[i] + live[i]).roundToInt(), 0) }

@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -39,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -78,8 +81,10 @@ fun ReadingSlot(name: String?, modifier: Modifier = Modifier) {
     val key = remember { Any() }
     DisposableEffect(key) { onDispose { o.slots.remove(key) } }
     val h = with(LocalDensity.current) { if (o.heightPx > 0) o.heightPx.toDp() else 60.dp }
+    // I bordi veri del posto, non quelli tagliati dallo schermo (Franz, 04/10 22:15): durante lo swipe la pagina che esce,
+    // tagliata, sembrava una colonna stretta, e il controller si restringeva con lei per poi riapparire nella pagina dopo.
     Spacer(modifier.fillMaxWidth().height(h).onGloballyPositioned { c ->
-        val r = name to c.boundsInWindow()
+        val r = name to Rect(c.positionInWindow(), c.size.toSize())
         if (o.slots[key] != r) o.slots[key] = r
     })
 }
@@ -102,7 +107,12 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
         val visible = o.slots.values.filter { (_, r) -> seen(r) >= 0.5f }
         val slot = (visible.firstOrNull { (n, _) -> n != null && n == o.source } ?: visible.sortedWith(compareByDescending<Pair<String?, Rect>> { seen(it.second) }.thenBy { it.second.left }).firstOrNull())?.second
         val lift = slot?.let { (root.bottom - it.bottom).roundToInt() } ?: bottomPx
-        val shown by animateIntAsState(lift, tween(220, easing = FastOutSlowInEasing), label = "readingLift")
+        // Fermo durante lo swipe (Franz, 04/10 22:15): finché la pagina scelta scorre, il controller resta all'altezza
+        // dell'ultima pagina ferma; a pagina posata scivola alla sua altezza, se è diversa.
+        val moving = slot != null && root.width > 0f && slot.width >= root.width * 0.9f && abs(slot.left - root.left) > 1f
+        var steady by remember { mutableIntStateOf(lift) }
+        LaunchedEffect(moving, lift) { if (!moving) steady = lift }
+        val shown by animateIntAsState(if (moving) steady else lift, tween(220, easing = FastOutSlowInEasing), label = "readingLift")
         AnimatedVisibility(
             o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 },
