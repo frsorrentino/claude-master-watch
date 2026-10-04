@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.pairing
 import it.pixelbox.cmwatch.Fixtures
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.Base64
@@ -20,6 +21,12 @@ class PairLinkTest {
         assertEquals(line, got)
         assertTrue(PairQr.parse(got!!)!!.add)
         assertEquals(line, PairLink.line("cmwatch://pair?q=${b64(line, pad = true)}"))
+    }
+
+    // Contratto 1.32: lo stesso vettore del relay (pair-link.json), la riga e il link che il relay apre con adb.
+    @Test fun theRelayLinkGivesTheRelayLine() {
+        val fx = Json.parseToJsonElement(Fixtures.read("pair-link.json")).jsonObject
+        assertEquals(fx["line"]!!.jsonPrimitive.content, PairLink.line(fx["uri"]!!.jsonPrimitive.content))
     }
 
     // «Apri sul telefono» dall'orologio apre cmwatch://pair senza invito: non è un accoppiamento.

@@ -58,4 +58,20 @@ class SettingsDevicesTest {
         val m = build(watch = null, reachable = null)
         assertTrue(m.paired); assertEquals(Tone.OFF, m.watch.tone); assertEquals(Tone.OFF, m.watchLink)
     }
+
+    // Contratto 1.32, variante B (Franz, 04/10 17:11): i dispositivi veri dallo stato; «questo» è il proprio uid; verde se
+    // ha letto da mezz'ora al massimo, arancio se da più tempo, spento se mai.
+    @Test fun linkedDevicesFromTheState() {
+        val st = it.pixelbox.cmwatch.contract.ContractJson.decodeState(java.io.File("../contract/state-2-idle.json").readText())
+        val now = st.devices!!.first().seen!! + 10
+        val l = SettingsDevices.linked(st, "tabletUid0000000000000000000", now)!!
+        assertEquals(listOf("Pixel 9", "Pixel Watch 5", "Pixel Tablet", "Chromebook", "Pixel 7"), l.map { it.name })
+        assertEquals(listOf(false, false, true, false, false), l.map { it.self })
+        assertEquals(SettingsDevices.Tone.LIVE, l[0].tone)
+        assertEquals(SettingsDevices.Tone.STALE, l[3].tone)
+        assertEquals(SettingsDevices.Tone.OFF, l[4].tone)
+        assertEquals(SettingsDevices.Tone.LIVE, l[2].tone)
+    }
+
+    @Test fun beforeTheContractThereIsNoList() = assertNull(SettingsDevices.linked(it.pixelbox.cmwatch.contract.State(v = 1, ts = 0, host = "pc"), "u", 0))
 }
