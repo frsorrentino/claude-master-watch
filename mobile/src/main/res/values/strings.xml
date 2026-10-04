@@ -326,4 +326,5 @@
     <string name="speech_rate">Velocità di lettura</string>
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normale)</string>
+    <string name="pair_err_full">Il PC ha già quattro dispositivi accoppiati: non ne accetta un altro.</string>
 </resources>

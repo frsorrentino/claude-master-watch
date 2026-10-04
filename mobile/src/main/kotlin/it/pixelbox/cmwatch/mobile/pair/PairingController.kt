@@ -13,7 +13,7 @@ import java.security.KeyPair
 
 enum class Step { PHONE, WATCH, PC }
 enum class StepState { WAIT, WORKING, DONE, PENDING, SKIPPED, FAILED }
-enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED, FAILED }
+enum class PairFail { EXPIRED, INVALID, NO_WATCH, WATCH_APP_MISSING, NETWORK, PC_NO_CONFIRM, WATCH_FAILED, WATCH_UID_CHANGED, FAILED, FULL }
 enum class Phase { IDLE, RUNNING, DONE, FAILED, RESTART }
 
 data class PairUi(
@@ -108,6 +108,7 @@ class PairingController(
                 is PairError.Unknown -> PairFail.INVALID
                 is PairError.Network -> PairFail.NETWORK
                 is PairError.NoConfirm, is PairError.BadConfirm -> PairFail.PC_NO_CONFIRM
+                is PairError.Full -> PairFail.FULL
             }, Step.PC)
         }
         val record = PairingRecord(
