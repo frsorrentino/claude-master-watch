@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -370,7 +371,7 @@ fun SessionSheet(
                     Column(
                         Modifier.fillMaxSize().then(
                             if (showList) Modifier
-                            else Modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(CmColors.bg)
+                            else Modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).masterChat(LocalMasterChatStyle.current)
                         ),
                     ) {
                         if (showList) {
@@ -673,6 +674,43 @@ class PromptBoxes(stepsOpen: Boolean, recurringOpen: Boolean, private val save: 
     companion object { const val STEPS = "steps_open"; const val RECURRING = "recurring_open" }
 }
 val LocalPromptBoxes = androidx.compose.runtime.staticCompositionLocalOf { PromptBoxes(true, false) { _, _ -> } }
+
+/**
+ * Il fondo della chat della master (Franz, 04/10 23:36: «servirebbe la modifica del fondo della chat»), fra cui scegliere:
+ * nero com'è oggi, notte (un indaco quasi nero), sfumatura dall'alto, puntini lilla, alone lilla in cima.
+ */
+enum class MasterChatStyle { BLACK, NIGHT, GRADIENT, DOTS, GLOW }
+val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.BLACK }
+
+private val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
+private val MasterLilac = androidx.compose.ui.graphics.Color(0xFFCDB8FF)
+
+fun Modifier.masterChat(style: MasterChatStyle): Modifier = when (style) {
+    MasterChatStyle.BLACK -> background(CmColors.bg)
+    MasterChatStyle.NIGHT -> background(MasterNight)
+    MasterChatStyle.GRADIENT -> background(CmColors.bg).background(
+        androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color(0xFF1D1633), 0.55f to androidx.compose.ui.graphics.Color(0xFF08070D), 1f to CmColors.bg),
+    )
+    MasterChatStyle.DOTS -> background(androidx.compose.ui.graphics.Color(0xFF07060B)).drawBehind {
+        val step = 14.dp.toPx()
+        val r = 1.dp.toPx() / 2 + 0.25f
+        val dot = MasterLilac.copy(alpha = 0.12f)
+        var y = step / 2
+        while (y < size.height) {
+            var x = step / 2
+            while (x < size.width) { drawCircle(dot, r, androidx.compose.ui.geometry.Offset(x, y)); x += step }
+            y += step
+        }
+    }
+    MasterChatStyle.GLOW -> background(CmColors.bg).drawBehind {
+        drawRect(
+            androidx.compose.ui.graphics.Brush.radialGradient(
+                listOf(MasterLilac.copy(alpha = 0.20f), androidx.compose.ui.graphics.Color.Transparent),
+                center = androidx.compose.ui.geometry.Offset(size.width / 2, 0f), radius = size.width * 0.95f,
+            ),
+        )
+    }
+}
 
 /** Contratto 1.33: le azioni ricorrenti della master, dallo stato (`state.recurring`). */
 val LocalRecurring = androidx.compose.runtime.compositionLocalOf { emptyList<Recurring>() }

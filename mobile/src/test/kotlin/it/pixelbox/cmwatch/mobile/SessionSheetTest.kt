@@ -112,6 +112,27 @@ class SessionSheetTest {
         }
     }
 
+    // Il fondo della chat della master, cinque stili fra cui scegliere (Franz, 04/10 23:36).
+    private fun masterChat(style: it.pixelbox.cmwatch.mobile.ui.MasterChatStyle) = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Come va la fase 2.2 di atlas-shop?", at = t, origin = "phone"),
+            TranscriptEntry("a1.0", "assistant", text = "Lanciata la fase 2.2 su atlas-shop: test verdi, 40 su 40. Solo commit locali: push e release con il tuo ok.\n\nEsito: fase 2.2 avviata su atlas-shop\nProssimi: fai il push · prova dal vivo", at = t + 40),
+        )
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalMasterChatStyle provides style) {
+                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> }, homeOpen = false,
+                    feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
+            }
+        }
+    }
+    @Test fun masterChatBlack() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.BLACK)
+    @Test fun masterChatNight() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.NIGHT)
+    @Test fun masterChatGradient() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.GRADIENT)
+    @Test fun masterChatDots() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.DOTS)
+    @Test fun masterChatGlow() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.GLOW)
+
     // Stop al posto di Invia mentre la sessione lavora e il campo è vuoto (contratto 1.21).
     @Test fun sheetBusyStop() = paparazzi.snapshot {
         val s = st.sessions.first { it.state == SessionState.BUSY }
