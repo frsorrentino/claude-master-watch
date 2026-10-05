@@ -111,7 +111,7 @@ class TabletShellTest {
             column = { name, drag ->
                 val r = rows.first { it.session.name == name }
                 SessionSheet(
-                    r.session, ts, emptyList(), 120, none, ops = st.ops, canAttach = true, header = false,
+                    r.session, ts, emptyList(), 120, none, ops = st.ops, canAttach = true, header = true, choices = st.choices,
                     feed = if (name == selected.name) feed else shortFeed(name),
                     appBar = { TabletColumnHeader(r, ts, onClose = {}, drag = drag) },
                 )

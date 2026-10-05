@@ -154,6 +154,21 @@ class FirebaseTransportTest {
         assertEquals(32, Base64.getDecoder().decode(written.getValue("watch_pub").jsonPrimitive.content).size)
     }
 
+    // Contratto 1.30 col codice a 6 cifre (Franz, 05/10 10:21): con `relay pair --add` la chiave non si deriva, arriva
+    // cifrata in /ok; salvare quella del giro rompeva l'orologio.
+    @Test fun pairingAnAddSavesTheRelayKey() = runBlocking {
+        val pc = Pairing.newKeyPair()
+        store["pair/123456"] = JsonObject(mapOf("pc_pub" to JsonPrimitive(Pairing.publicB64(pc)), "host" to JsonPrimitive("crostini-demo"), "exp" to JsonPrimitive(clock + 300), "mode" to JsonPrimitive("add"))).toString()
+        val watch = Pairing.newKeyPair()
+        val shared = Pairing.sharedKey(pc.private, Pairing.publicB64(watch))
+        val relayKey = ByteArray(32) { (96 + it).toByte() }
+        val env = Json.parseToJsonElement(Blob.seal("""{"key":"${relayKey.joinToString("") { "%02x".format(it) }}"}""", shared))
+        store["pair/123456/ok"] = JsonObject(mapOf("host" to JsonPrimitive("crostini-demo"), "check" to JsonPrimitive(Pairing.checkCode(shared, "123456:pc")), "key" to env)).toString()
+        val t = FirebaseTransport(Rtdb(server.url("/").toString().removeSuffix("/"), { "t0k" }), { null }, { "u1" }, { watch }, { clock }, pollMs = 10, backoffMs = listOf(10))
+        assertArrayEquals(relayKey, t.pair("123456", "watch-pixel5").key)
+        assertEquals("watch", Json.parseToJsonElement(store.getValue("pair/123456/watch")).jsonObject.getValue("kind").jsonPrimitive.content)
+    }
+
     @Test fun pairingWithWrongPcCheckFails() {
         val pc = Pairing.newKeyPair()
         store["pair/123456"] = JsonObject(mapOf("pc_pub" to JsonPrimitive(Pairing.publicB64(pc)), "host" to JsonPrimitive("h"), "exp" to JsonPrimitive(clock + 300))).toString()

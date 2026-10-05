@@ -186,6 +186,8 @@ class FirebaseTransport(
         val watch = JsonObject(mapOf(
             "watch_pub" to JsonPrimitive(Pairing.publicB64(kp)), "uid" to JsonPrimitive(myUid),
             "name" to JsonPrimitive(deviceName), "check" to JsonPrimitive(Pairing.checkCode(shared, code)),
+            // Contratto 1.32: il tipo, per lo schema dei collegamenti.
+            "kind" to JsonPrimitive("watch"),
         ))
         rtdb.put("pair/$code/watch", watch.toString())
         android.util.Log.i("cmwatch", "pair: /watch written, waiting for /ok")
@@ -199,6 +201,13 @@ class FirebaseTransport(
         val pcCheck = ok["check"]?.jsonPrimitive?.content
         if (pcCheck != Pairing.checkCode(shared, "$code:pc")) throw TransportException.Network("PC check failed")
         android.util.Log.i("cmwatch", "pair: PC check ok")
-        return PairingInfo(uid = myUid, host = ok["host"]?.jsonPrimitive?.content ?: host, key = shared)
+        // Contratto 1.30 (Franz, 05/10 10:21): con `relay pair --add` la chiave del relay arriva in `ok.key`, cifrata con
+        // quella del giro; senza, si salvava la chiave del giro e l'orologio non leggeva più lo stato.
+        val key = (ok["key"] as? JsonObject)?.let { env ->
+            val hex = runCatching { Json.parseToJsonElement(Blob.open(env.toString(), shared)).jsonObject["key"]!!.jsonPrimitive.content }.getOrNull()
+                ?.takeIf { it.matches(Regex("[0-9a-fA-F]{64}")) } ?: throw TransportException.Network("bad relay key in the confirmation")
+            ByteArray(32) { hex.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+        } ?: if (o["mode"]?.jsonPrimitive?.content == "add") throw TransportException.Network("add without the relay key") else shared
+        return PairingInfo(uid = myUid, host = ok["host"]?.jsonPrimitive?.content ?: host, key = key)
     }
 }
