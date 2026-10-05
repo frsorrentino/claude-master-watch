@@ -60,8 +60,8 @@ describe('SettingsDevices', () => {
     const st = decodeState(readFileSync(new URL('../../../contract/state-2-idle.json', import.meta.url), 'utf8'))
     const t = st.devices![0].seen! + 10
     const l = linked(st, 'tabletUid0000000000000000000', t)!
-    expect(l.map(d => d.name)).toEqual(['Pixel 9', 'Pixel Watch 5', 'Pixel Tablet', 'Chromebook', 'Pixel 7'])
-    expect(l.map(d => d.self)).toEqual([false, false, true, false, false])
+    expect(l.map(d => d.name)).toEqual(['Pixel 9', 'Pixel Watch 5', 'Pixel Tablet', 'Chromebook', 'Pixel 7', 'Safari on Mac'])
+    expect(l.map(d => d.self)).toEqual([false, false, true, false, false, false])
     expect(l[0].tone).toBe('live'); expect(l[3].tone).toBe('stale'); expect(l[4].tone).toBe('off'); expect(l[2].tone).toBe('live')
   })
 

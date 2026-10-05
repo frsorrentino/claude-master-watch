@@ -306,6 +306,11 @@ class FakeTransport(
                 ok("approved ${cmd.arg}")
             }
             CmdOp.DECISION -> if (cmd.text.isNullOrBlank()) ko("empty decision") else ok("decision sent to the master")
+            // Contratto 1.39: la demo toglie il dispositivo dalla lista, come il relay.
+            CmdOp.UNPAIR -> s.devices?.firstOrNull { it.uid == cmd.arg }?.let { d ->
+                current.value = current.value.let { st -> st.copy(devices = st.devices?.filter { it.uid != d.uid }) }
+                ok("removed ${d.name}")
+            } ?: ko("unknown device ${cmd.arg}")
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")

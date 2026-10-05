@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material.icons.rounded.TabletAndroid
 import androidx.compose.material.icons.rounded.LaptopChromebook
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Watch
@@ -349,6 +350,8 @@ private fun kindIcon(kind: String?): ImageVector = when (kind) {
     "watch" -> Icons.Rounded.Watch
     "tablet" -> Icons.Rounded.TabletAndroid
     "chromebook" -> Icons.Rounded.LaptopChromebook
+    // Contratto 1.39: un browser della web app remota.
+    "web" -> Icons.Rounded.Language
     else -> Icons.Rounded.Devices
 }
 
@@ -357,6 +360,7 @@ private fun kindLabel(kind: String?): Int = when (kind) {
     "watch" -> R.string.dev_watch
     "tablet" -> R.string.dev_tablet
     "chromebook" -> R.string.dev_chromebook
+    "web" -> R.string.dev_web
     else -> R.string.dev_other
 }
 

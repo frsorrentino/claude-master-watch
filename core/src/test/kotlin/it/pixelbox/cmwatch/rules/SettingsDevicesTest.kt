@@ -65,8 +65,9 @@ class SettingsDevicesTest {
         val st = it.pixelbox.cmwatch.contract.ContractJson.decodeState(java.io.File("../contract/state-2-idle.json").readText())
         val now = st.devices!!.first().seen!! + 10
         val l = SettingsDevices.linked(st, "tabletUid0000000000000000000", now)!!
-        assertEquals(listOf("Pixel 9", "Pixel Watch 5", "Pixel Tablet", "Chromebook", "Pixel 7"), l.map { it.name })
-        assertEquals(listOf(false, false, true, false, false), l.map { it.self })
+        // Contratto 1.39: in fondo un browser, «Safari on Mac».
+        assertEquals(listOf("Pixel 9", "Pixel Watch 5", "Pixel Tablet", "Chromebook", "Pixel 7", "Safari on Mac"), l.map { it.name })
+        assertEquals(listOf(false, false, true, false, false, false), l.map { it.self })
         assertEquals(SettingsDevices.Tone.LIVE, l[0].tone)
         assertEquals(SettingsDevices.Tone.STALE, l[3].tone)
         assertEquals(SettingsDevices.Tone.OFF, l[4].tone)

@@ -76,6 +76,8 @@ enum class CmdOp {
     @SerialName("approve") APPROVE,
     /** Contratto 1.37: una decisione da salvare nella memoria della master; `text` obbligatorio, `arg` = progetto o null. */
     @SerialName("decision") DECISION,
+    /** Contratto 1.39: togliere un dispositivo accoppiato; `arg` = uid. Solo «Scollega questo browser», col proprio uid. */
+    @SerialName("unpair") UNPAIR,
 }
 
 @Serializable data class Option(val n: Int, val label: String)

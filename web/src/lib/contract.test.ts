@@ -16,7 +16,7 @@ describe('contratto', () => {
   it('porta i ricorrenti della 1.33 e i dispositivi della 1.32', () => {
     const s = decodeState(fixture('state-2-idle.json'))
     expect(s.recurring?.map(r => r.id)).toEqual(['x-posts', 'release-changelog', 'plugin-rivals'])
-    expect(s.devices?.map(d => d.kind)).toEqual(['phone', 'watch', 'tablet', 'chromebook', null])
+    expect(s.devices?.map(d => d.kind)).toEqual(['phone', 'watch', 'tablet', 'chromebook', null, 'web'])
   })
 
   it('porta consiglio, approvazioni e sessioni finite della 1.37, con i default quando mancano', () => {

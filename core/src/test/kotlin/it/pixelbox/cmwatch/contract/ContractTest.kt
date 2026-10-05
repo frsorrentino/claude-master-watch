@@ -75,8 +75,10 @@ class ContractTest {
     // Contratto 1.32: i dispositivi accoppiati, nell'ordine del PC; kind e seen null quando non si sanno.
     @Test fun stateCarriesThePairedDevices() {
         val d = ContractJson.decodeState(Fixtures.stateIdle).devices!!
-        assertEquals(listOf("phone", "watch", "tablet", "chromebook", null), d.map { it.kind })
-        assertEquals("Pixel 7", d.last().name); assertNull(d.last().seen)
+        // Contratto 1.39: un browser, «Safari on Mac», di tipo web.
+        assertEquals(listOf("phone", "watch", "tablet", "chromebook", null, "web"), d.map { it.kind })
+        val unknown = d.single { it.kind == null }
+        assertEquals("Pixel 7", unknown.name); assertNull(unknown.seen)
         assertNotNull(d.first().seen)
     }
 
@@ -105,7 +107,8 @@ class ContractTest {
         // Contratto 1.29: un timeline di tutte le sessioni da un epoch, con ogni kind di evento.
         // Contratto 1.31: un pair_add riuscito, il QR della 1.30 e il codice a 6 cifre.
         // Contratto 1.36: un prompt dalla web app, con `device` "web". Contratto 1.37: due approve (uno rifiutato) e un decision.
-        assertEquals(35, results.size); assertEquals(8, results.count { !it.ok })
+        // Contratto 1.39: due unpair, uno riuscito e uno rifiutato.
+        assertEquals(37, results.size); assertEquals(9, results.count { !it.ok })
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
