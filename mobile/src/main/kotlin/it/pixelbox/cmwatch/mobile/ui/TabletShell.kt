@@ -396,17 +396,13 @@ fun TabletColumnHeader(r: Summary.Row, now: Long, onClose: () -> Unit, drag: Mod
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SessionBadge(s, 24.dp)
             Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
-            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.tablet_close_column, s.name), tint = CmColors.text2) }
+            IconButton(onClick = onClose, modifier = Modifier.handCursor()) { Icon(Icons.Rounded.Close, stringResource(R.string.tablet_close_column, s.name), tint = CmColors.text2) }
         }
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 listOfNotNull(stringResource(groupWord(r.group)), rowAge(r, now).takeIf { r.group == Summary.Group.WORKING || r.group == Summary.Group.WAITING }).joinToString(" · ").uppercase(),
                 style = MonoLabel.copy(color = groupTone(r.group)),
             )
-            s.context?.let { c ->
-                MiniBar(c / 100f, Modifier.weight(1f), contextColor(c))
-                Text(stringResource(R.string.ctx_short, c), style = Mono)
-            }
         }
         HorizontalDivider(color = CmColors.line)
     }
@@ -475,7 +471,7 @@ private fun HomeSideHandle(homeRight: Boolean, onHomeSide: () -> Unit) {
         Box(Modifier.align(Alignment.Center).width(1.dp).fillMaxHeight().background(CmColors.line))
         Box(
             Modifier.align(Alignment.TopCenter).padding(top = 10.dp).size(28.dp).clip(CircleShape).background(CmColors.surface)
-                .clickable(onClickLabel = stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), onClick = onHomeSide),
+                .clickable(onClickLabel = stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), onClick = onHomeSide).handCursor(),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.Rounded.SwapHoriz, stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
     }
@@ -539,7 +535,7 @@ private fun Columns(
                 val lift by androidx.compose.animation.core.animateFloatAsState(if (dragging) 1f else 0f, if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow), label = "lift")
                 val appear = remember { androidx.compose.animation.core.Animatable(if (off) 1f else 0f) }
                 androidx.compose.runtime.LaunchedEffect(Unit) { appear.animateTo(1f, androidx.compose.animation.core.tween(220)) }
-                val drag = Modifier.pointerInput(name, columns) {
+                val drag = Modifier.grabCursor().pointerInput(name, columns) {
                     detectDragGestures(
                         onDragStart = { dragged = name; draggedPx = 0f },
                         onDragEnd = {
@@ -572,7 +568,7 @@ private fun Columns(
             // Il bordo dopo la colonna: si trascina, e al rilascio scatta al dodicesimo più vicino.
             if (i < columns.size - 1) Box(
                 Modifier.offset { androidx.compose.ui.unit.IntOffset((lefts[i] + live[i]).roundToInt(), 0) }
-                    .width(with(density) { gapPx.toDp() }).fillMaxHeight()
+                    .width(with(density) { gapPx.toDp() }).fillMaxHeight().resizeCursor()
                     .pointerInput(columns, shares) {
                         detectHorizontalDragGestures(
                             onDragStart = { border = i; borderPx = 0f },

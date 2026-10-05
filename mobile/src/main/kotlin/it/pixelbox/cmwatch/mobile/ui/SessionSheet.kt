@@ -575,7 +575,7 @@ private fun Composer(
                 // Il cerchio concentrico all'estremità della barra (segnalazione 03/10 19:18, come ChatGPT): 40 dp nella barra da 56,
                 // quindi 8 dp sopra, sotto e a destra.
                 val endPad = with(density) { ((lineH.toDp() - 40.dp) / 2).coerceAtLeast(6.dp) }
-                val size = Modifier.padding(end = if (lineH > 0) endPad else 8.dp).size(40.dp)
+                val size = Modifier.padding(end = if (lineH > 0) endPad else 8.dp).size(40.dp).handCursor()
                 when (mode) {
                     PhonePrimary.Composer.SEND -> FilledIconButton(onClick = send, colors = filled, modifier = size) {
                         Icon(Icons.AutoMirrored.Rounded.Send, stringResource(R.string.send))
@@ -656,7 +656,7 @@ private fun PromptBox(
     ) {
         val toggle = stringResource(if (open) R.string.box_close else R.string.box_open, title)
         Row(
-            Modifier.fillMaxWidth().clickable(onClickLabel = toggle) { onOpen(!open) }.padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().clickable(onClickLabel = toggle) { onOpen(!open) }.handCursor().padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.box_title, title.uppercase(), rows.size), style = MonoSmall, modifier = Modifier.weight(1f))
@@ -665,11 +665,11 @@ private fun PromptBox(
         }
         if (open) rows.forEach { r ->
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-            Row(Modifier.fillMaxWidth().clickable { onPick(r) }.padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable { onPick(r) }.handCursor().padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(r.label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
-                if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }) {
+                if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }, modifier = Modifier.handCursor()) {
                     Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
-                } else IconButton(onClick = { onPick(r) }) {
+                } else IconButton(onClick = { onPick(r) }, modifier = Modifier.handCursor()) {
                     Icon(Icons.Rounded.Add, stringResource(R.string.box_append), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
                 }
             }
@@ -789,7 +789,7 @@ private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecur
     val document = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { onPicked(listOf(it)) } }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> shot?.let { u -> if (ok) onPicked(listOf(Uri.parse(u))) }; shot = null }
     Box {
-        IconButton(onClick = { menu = true }, content = icon)
+        IconButton(onClick = { menu = true }, modifier = Modifier.handCursor(), content = icon)
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
             AttachMenuItems(
                 attach = attach, files = files, onRecurring = onRecurring?.let { r -> { menu = false; r() } },

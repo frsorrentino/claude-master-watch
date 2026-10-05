@@ -909,7 +909,9 @@ class MainActivity : ComponentActivity() {
                 column = { name, drag ->
                     rows.firstOrNull { r -> r.session.name == name }?.let { r ->
                         sessionPage(
-                            r.session, ChatFeed.pageEntries(name, chatName, entriesOwner, entries, feedCache), null, false, null, null, true,
+                            // La testata della sessione resta anche in colonna (Franz, 05/10 10:13): modello, quota, contesto e il
+                            // menu ⋮ con Segui, Terminale e Chiudi la sessione.
+                            r.session, ChatFeed.pageEntries(name, chatName, entriesOwner, entries, feedCache), null, true, null, null, true,
                             { TabletColumnHeader(r, now, onClose = { saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, name)) }, drag) }, null,
                         )
                     }
