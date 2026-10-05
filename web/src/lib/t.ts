@@ -14,7 +14,7 @@ export const t = {
   writeTo: (name: string) => (name === 'master' ? 'Scrivi alla master' : `Scrivi ${/^[aàá]/i.test(name.trimStart()) ? 'ad' : 'a'} ${name}`),
   send: 'Invia', use: 'Usa', next: 'Prossimi', pick: 'Scegli una sessione dalla home',
   quota5h: (p: number) => `5h ${p}%`, ctx: (p: number) => `ctx ${p}%`, week: (p: number) => `sett. ${p}%`,
-  stale: 'dato vecchio', demo: 'Dati di prova', updated: (h: string) => `${h} · aggiornato ora`,
+  stale: 'dato vecchio', demo: 'Dati di prova', relayConnecting: 'Collegamento al PC', relayDown: 'PC non raggiungibile, riprovo', noAnswer: 'il PC non ha risposto', updated: (h: string) => `${h} · aggiornato ora`,
   homeLast: (hm: string) => `Ultimo esito · ${hm}`, homeLastBare: 'Ultimo esito', listen: 'Ascolta',
   openConversation: 'Apri la conversazione', forYou: 'Per te', stepHint: 'Clic: nel campo · doppio clic: invia subito',
   fyContext: (name: string, p: number) => `Contesto di ${name} al ${p}%`, fyContextDetail: 'Conviene un handoff prima di continuare',

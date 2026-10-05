@@ -1,8 +1,10 @@
 <script lang="ts">
   import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
-  import type { SearchPage } from './lib/contract'
-  import type { CmdOp, TranscriptEntry } from './lib/contract'
-  import type { Sent, Status } from './lib/chatRules'
+  import { untrack } from 'svelte'
+  import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
+  import { advance, prune, status, type PendingStatus, type Sent, type Status } from './lib/chatRules'
+  import type { Sample } from './lib/quotaHistory'
+  import { LocalTransport, localAccess, newCmd } from './lib/transport'
   import { toggle } from './lib/speech.svelte'
   import Home from './lib/Home.svelte'
   import Chat from './lib/Chat.svelte'
@@ -28,26 +30,116 @@
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
-  import { add, columns, columnsFromPref, columnsPref, inspect, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
+  import { add, columns, columnsFromPref, columnsPref, inspect, sharesFromPref, sharesPref, timelineArg, toggle as toggleCol, wide as isWide } from './lib/tablet'
 
-  // Per ora i dati di prova (fixture del contratto); la strada locale del relay arriva con il contratto 1.35.
-  const st = demoState
-  let transcripts = $state<Record<string, TranscriptEntry[]>>(structuredClone(demoTranscripts))
-  let mine = $state<[Sent, Status][]>(structuredClone(demoMine))
+  const load = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
+  const save = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* resta per la sessione */ } }
+  const json = <T,>(k: string, d: T): T => { try { return JSON.parse(load(k) ?? '') as T } catch { return d } }
+  const nowS = () => Math.round(Date.now() / 1000)
+
+  // Strada locale (contratto 1.35) sulla pagina servita dal relay; altrove, finché non c'è la strada remota, i dati di prova.
+  const access = localAccess(new URL(location.href), { get: load, set: save })
+  if (access?.clean != null) history.replaceState(null, '', access.clean)
+  const tr = access ? new LocalTransport(access.base, access.token) : null
+  let st = $state<State>(demoState)
+  let ready = $state(!tr)
+  let down = $state(false)
+  let clock = $state(nowS())
+  // L'ora delle età e dei conti: quella vera con il relay, quella della fixture nella demo.
+  const now = $derived(tr ? clock : st.ts)
+  let events = $state<Event[]>(tr ? [] : demoEvents)
+  let transcripts = $state<Record<string, TranscriptEntry[]>>(tr ? {} : structuredClone(demoTranscripts))
+  // I messaggi mandati da qui: lo stato di ognuno viene dal comando (in volo, risposta del PC) e dalla sessione (turno).
+  let msgs = $state<Sent[]>(tr ? prune(json<Sent[]>('cm.sent', []), nowS()) : demoMine.map(([m]) => m))
+  let pend = $state<Record<string, PendingStatus>>({})
+  let res = $state<Record<string, CmdResult>>({})
+  const demoStatus = new Map(demoMine.map(([m, x]) => [m.id, x]))
+  const mine = $derived<[Sent, Status][]>(msgs.map(m => [m, tr
+    ? status(m, pend[m.id] ?? null, res[m.id] ?? null, st.sessions.find(x => x.name === m.session) ?? null)
+    : demoStatus.get(m.id) ?? 'sent']))
+  // Le letture della quota delle 5 ore, per il ritmo: le tiene la web app, come QuotaHistory sul telefono.
+  let samples = $state<Record<string, Sample[]>>(tr ? json('cm.samples', {}) : demoSamples)
   // Quello che si è letto o avviato (turni finiti, resoconto, prossimi passi) e i messaggi mandati da qui, per «Per te».
   let read = $state(new Set<string>())
   const sent = $derived(mine.map(([m]) => m))
   const master = $derived(st.sessions.find(s => s.name === MASTER && s.state !== 'gone') ?? null)
+  // Un comando rifiutato o senza risposta: una riga in basso per qualche secondo.
+  let notice = $state<string | null>(null)
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined
+  function say(text: string) { notice = text; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => (notice = null), 6000) }
 
-  const load = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
-  const save = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* resta per la sessione */ } }
+  function record(s: State) {
+    const next = { ...samples }
+    for (const [acct, q] of Object.entries(s.quota)) {
+      if (q.h5 == null || q.stale) continue
+      const list = (next[acct] ?? []).filter(x => x.ts >= s.ts - 6 * 3600)
+      const last = list.at(-1)
+      if (!last || last.pct !== q.h5 || s.ts - last.ts >= 300) list.push({ ts: s.ts, pct: q.h5 })
+      next[acct] = list
+    }
+    samples = next
+    save('cm.samples', JSON.stringify(next))
+  }
+
+  async function refreshEvents() {
+    if (!tr) return
+    try {
+      const fresh = await tr.fetchEvents(events[0]?.ts ?? 0)
+      if (!fresh.length) return
+      const keys = new Set(fresh.map(e => e.key))
+      events = [...fresh, ...events.filter(e => !keys.has(e.key))].sort((a, b) => b.ts - a.ts).slice(0, 300)
+    } catch { /* al prossimo stato */ }
+  }
+
+  if (tr) {
+    tr.subscribe(s => {
+      st = s; ready = true; down = false; clock = nowS()
+      msgs = msgs.map(m => advance(m, s.sessions.find(x => x.name === m.session) ?? null, nowS()))
+      record(s)
+      refreshEvents()
+    }, () => { down = true })
+    setInterval(() => (clock = nowS()), 30_000)
+  }
+  $effect(() => { if (tr) save('cm.sent', JSON.stringify(msgs)) })
+
+  /** Un comando al relay; il rifiuto si mostra in basso. */
+  async function run(c: Cmd): Promise<CmdResult | null> {
+    if (!tr) { console.info('[cm] comando', c.session, c.op, c.arg, c.text); return null }
+    try {
+      const r = await tr.send(c)
+      if (!r.ok) say(`✗ ${r.text}`)
+      return r
+    } catch {
+      say(`✗ ${t.noAnswer}`)
+      return null
+    }
+  }
+
+  // La conversazione delle sessioni a schermo: la prima volta le ultime 50 voci, poi solo quelle venute dopo.
+  const loadingT = new Set<string>()
+  async function loadTranscript(name: string) {
+    if (!tr || loadingT.has(name)) return
+    loadingT.add(name)
+    try {
+      const have = untrack(() => transcripts[name])
+      const last = have?.at(-1)?.id
+      const r = await tr.send(newCmd('transcript', name, last ? `200:after=${last}` : '50'))
+      if (!r.ok) {
+        if (last && r.text.startsWith('no entry')) transcripts = { ...transcripts, [name]: [] }
+        return
+      }
+      const p: TranscriptPage = JSON.parse(r.text)
+      if (last && !p.entries.length) return
+      transcripts = { ...transcripts, [name]: last ? [...(have ?? []), ...p.entries] : p.entries }
+    } catch { /* al prossimo stato */ } finally { loadingT.delete(name) }
+  }
 
   // Da 840 px la plancia con le colonne, come il tablet; sotto, una colonna sola come il telefono.
   let width = $state(window.innerWidth)
   const wide = $derived(isWide(width))
   // `#nome` apre quella sessione (link diretto, e i provini).
   const linked = decodeURIComponent(location.hash.slice(1))
-  const known = (n: string) => st.sessions.some(s => s.name === n && s.state !== 'gone')
+  const known = (n: string) => !!tr || st.sessions.some(s => s.name === n && s.state !== 'gone')
 
   // La master vive nella home: ridotta è la barra in fondo, espansa occupa la home (mai una colonna o una pagina a parte).
   let masterOpen = $state(linked === MASTER)
@@ -57,7 +149,7 @@
 
   // Plancia: le colonne scelte (le prime tre senza una scelta salvata), le larghezze in dodicesimi, il lato della home.
   // Le colonne sono le sessioni della lista, senza la master: una master rimasta fra le scelte salvate si toglie da sé.
-  const summary = $derived(build(st, sent, st.ts, read))
+  const summary = $derived(build(st, sent, now, read))
   const live = $derived(summary.rows.map(r => r.session.name).filter(n => n !== MASTER))
   let pinned = $state<string[] | null>(columnsFromPref(load('cm.columns')))
   if (known(linked) && linked !== MASTER) pinned = add(pinned ?? columns(null, live), linked)
@@ -95,7 +187,7 @@
   const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle }
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
-  const overview = $derived(overviewOf(st, demoEvents, demoSamples, st.ts, undefined, false))
+  const overview = $derived(overviewOf(st, events, samples, now, undefined, down))
   let nightDlg: HTMLDialogElement | undefined = $state()
   // La ricerca nelle conversazioni (contratto 1.27): per ora la risposta di prova, poi il comando `search` al relay.
   let searchPage = $state<SearchPage | null>(null)
@@ -103,7 +195,7 @@
   let seenAlerts = $state(new Set<string>())
   // Sulla plancia niente avviso per una sessione che è già in una colonna accanto.
   function elsewhereFor(name: string) {
-    const a = elsewhereOf(st, name, st.ts, new Set(sent.map(m => m.session)), seenAlerts)
+    const a = elsewhereOf(st, name, now, new Set(sent.map(m => m.session)), seenAlerts)
     if (!a || !wide) return a
     return (a.type === 'waiting' ? a.sessions.every(n => cols.includes(n)) : cols.includes(a.session)) ? null : a
   }
@@ -117,11 +209,40 @@
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
 
-  function sendTo(name: string, text: string) {
-    // Senza trasporto il messaggio resta «inviato al PC»: lo stato vero arriva con il relay.
-    mine = [...mine, [{ id: crypto.randomUUID(), session: name, text, sentAt: Math.round(Date.now() / 1000) }, 'sent']]
+  async function sendTo(name: string, text: string) {
+    // Senza trasporto il messaggio resta «inviato al PC».
+    const m: Sent = { id: crypto.randomUUID(), session: name, text, sentAt: nowS() }
+    msgs = [...msgs, m]
+    if (!tr) return
+    pend = { ...pend, [m.id]: 'sending' }
+    try {
+      const r = await tr.send({ ...newCmd('prompt', name, null, text), id: m.id })
+      res = { ...res, [m.id]: r }
+    } catch { pend = { ...pend, [m.id]: 'failed' } }
   }
-  const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => console.info('[cm] comando', name, op, arg, text)
+  // «Chiedi alla master» arriva come `prompt` della sessione: va alla master, come messaggio nella sua chat.
+  const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => {
+    if (op === 'prompt' && arg) sendTo(MASTER, arg)
+    else run(newCmd(op, name || null, arg, text))
+  }
+  // La conversazione di quello che è a schermo, a ogni stato nuovo; la master sempre (vive nella home).
+  $effect(() => {
+    void st.ts
+    for (const n of new Set([MASTER, ...slots])) if (n && st.sessions.some(x => x.name === n)) untrack(() => loadTranscript(n))
+  })
+  // La ricerca (1.27) e la cronologia di oggi per i dettagli della prima colonna (1.29).
+  async function search(q: string) {
+    if (!tr) { searchPage = demoSearch(q); return }
+    const r = await run(newCmd('search', null, q))
+    if (r?.ok) searchPage = JSON.parse(r.text)
+  }
+  let timeline = $state<TimelinePage | null>(tr ? null : demoTimeline)
+  $effect(() => {
+    if (!tr || !details || !cols[0]) return
+    const name = cols[0]
+    void st.ts
+    untrack(() => run(newCmd('timeline', name, timelineArg(nowS())))).then(r => { if (r?.ok) timeline = JSON.parse(r.text) })
+  })
   const answer = (n: string, x: number) => { pick(n); cmd(n)('answer', String(x)) }
 </script>
 
@@ -130,7 +251,7 @@
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
-    onAnswer={answer} onCmd={cmd(name)} events={demoEvents} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo}
+    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}
@@ -138,7 +259,7 @@
 {#snippet homePane()}
   <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
     {#snippet list()}
-      <AppBar {st} now={st.ts} openCount={summary.open} onPage={openPage} />
+      <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
@@ -152,31 +273,31 @@
       <Launch {st} onSession={(n, reopen) => { if (reopen) cmd(n)('reopen'); else { openPage(null); pick(n) } }}
         onLaunch={(pr, first) => { cmd(pr.name)('launch', pr.path, first || undefined); openPage(null) }} />
     {:else if p === 'diary'}
-      <Diary {st} events={demoEvents} rings={overview.rings} now={st.ts} onAdd={() => nightDlg?.showModal()} onRemove={(id) => cmd('')('night_remove', id)}
+      <Diary {st} {events} rings={overview.rings} now={now} onAdd={() => nightDlg?.showModal()} onRemove={(id) => cmd('')('night_remove', id)}
         onQuadro={() => openPage('overview')} onSession={(n) => { openPage(null); pick(n) }} />
     {:else if p === 'overview'}
       <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
         onQuestion={() => openPage('queue')} />
     {:else if p === 'search'}
-      <Search {sent} events={demoEvents} remote onQuery={(q) => (searchPage = demoSearch(q))} page={searchPage}
+      <Search {sent} {events} remote onQuery={search} page={searchPage}
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
     {:else if p === 'settings'}
-      <Settings m={devicesOf(st.host, st, freshness(st.ts, st.ts), st.ts, '', __APP_VERSION__, true, null, false, null)}
-        devices={linkedDevices(st, null, st.ts) ?? []} now={st.ts} channel={t.channelDemo} onRate={setRate} onVoice={setVoice}
+      <Settings m={devicesOf(st.host, st, freshness(st.ts, now), now, '', __APP_VERSION__, true, null, false, null)}
+        devices={linkedDevices(st, null, now) ?? []} now={now} channel={tr ? t.channelLocal : t.channelDemo} onRate={setRate} onVoice={setVoice}
         details={wide ? details : null} onDetails={(on) => { details = on; save('cm.details', on ? '1' : '0') }} />
     {:else if p === 'queue'}
-      <Queue {st} now={st.ts} onAnswer={(n, arg, op = 'answer') => cmd(n)(op, arg || undefined)} onSession={(n) => { openPage(null); pick(n) }} />
+      <Queue {st} now={now} onAnswer={(n, arg, op = 'answer') => cmd(n)(op, arg || undefined)} onSession={(n) => { openPage(null); pick(n) }} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}
   </Page>
 {/snippet}
 
-{#snippet quotaPanels()}{#each overview.rings as r (r.account)}<QuotaPanel ring={r} now={st.ts} />{/each}{/snippet}
+{#snippet quotaPanels()}{#each overview.rings as r (r.account)}<QuotaPanel ring={r} now={now} />{/each}{/snippet}
 
 {#snippet inspector()}
   {@const first = st.sessions.find(x => x.name === cols[0])}
-  {#if first}<Inspector i={inspect(first, demoTimeline, st.ts)} quotaH5={st.quota[first.account]?.h5 ?? null} loading={false} />{/if}
+  {#if first}<Inspector i={inspect(first, timeline, now)} quotaH5={st.quota[first.account]?.h5 ?? null} loading={!!tr && !timeline} />{/if}
 {/snippet}
 
 {#snippet deskPage()}{#if page}{@render pageView(page)}{/if}{/snippet}
@@ -187,7 +308,7 @@
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
       <div class="column" data-col={name}>
-        {#if rowOf[name]}<ColumnHead r={rowOf[name]} now={st.ts} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
+        {#if rowOf[name]}<ColumnHead r={rowOf[name]} now={now} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
         <div class="cbody">{@render chatOf(name, true)}</div>
       </div>
     {/snippet}
@@ -199,7 +320,8 @@
   </div>
 {/if}
 {#if wco}<CaptionBar {st} cols={wide ? cols : []} onFocus={focusColumn} onClose={(n) => setCols(cols.filter(c => c !== n))} />{/if}
-<span class="demo mono">{t.demo}</span>
+{#if !tr}<span class="demo mono">{t.demo}</span>{:else if !ready || down}<span class="demo mono">{ready ? t.relayDown : t.relayConnecting}</span>{/if}
+{#if notice}<div class="notice" role="status">{notice}</div>{/if}
 
 <!-- «Aggiungi alla notte»: lo stesso foglio di Lancia, solo progetti (LaunchSheet con night_add). -->
 <dialog bind:this={nightDlg} class="sheet" onclick={(e) => e.target === e.currentTarget && nightDlg?.close()}>
@@ -219,6 +341,7 @@
   .sheet::backdrop { background: rgb(0 0 0 / .55); }
   .sheet h2 { font-size: 22px; font-weight: 600; padding: 0 20px; }
   @media (max-width: 599px) { .sheet { margin: auto 0 0; max-width: 100vw; border-radius: 28px 28px 0 0; } }
+  .notice { position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%); max-width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 16px; background: var(--surface); color: var(--text); box-shadow: 0 4px 16px rgb(0 0 0 / .35); z-index: 20; }
   .demo { position: fixed; right: 12px; bottom: 6px; opacity: .6; pointer-events: none; }
   @media (max-width: 839px) { .demo { bottom: 0; right: 50%; transform: translateX(50%); font-size: 10px; } }
 </style>
