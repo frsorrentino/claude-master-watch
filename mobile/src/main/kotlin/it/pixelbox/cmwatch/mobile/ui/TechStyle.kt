@@ -41,22 +41,17 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  */
 
 /**
- * Griglia di puntini dietro la schermata: 1 dp, bianco al 7,5 %, passo 14 dp. I punti si calcolano una volta per misura e
- * si disegnano in una sola chiamata (Franz, 05/10 12:12: l'app andava in ANR sul Chromebook; migliaia di cerchi disegnati
- * uno per uno a ogni fotogramma tenevano la GPU occupata per secondi).
+ * Griglia di puntini dietro la schermata: 1 dp, bianco al 7,5 %, passo 14 dp. Un solo punto disegnato in una piastrella
+ * grande un passo, ripetuta dalla GPU come texture (Franz, 05/10 12:12 e 13:13: ANR e testo lentissimo sul Chromebook;
+ * ogni fotogramma passava 41 ms a ridisegnare migliaia di punti).
  */
 fun Modifier.dotGrid(): Modifier = drawWithCache {
-    val step = 14.dp.toPx()
+    val step = kotlin.math.max(1, kotlin.math.round(14.dp.toPx()).toInt())
     val r = 1.dp.toPx() / 2 + 0.25f
-    val dot = Color.White.copy(alpha = 0.075f)
-    val points = ArrayList<Offset>()
-    var y = step / 2
-    while (y < size.height) {
-        var x = step / 2
-        while (x < size.width) { points.add(Offset(x, y)); x += step }
-        y += step
-    }
-    onDrawBehind { drawPoints(points, androidx.compose.ui.graphics.PointMode.Points, dot, strokeWidth = r * 2, cap = androidx.compose.ui.graphics.StrokeCap.Round) }
+    val tile = androidx.compose.ui.graphics.ImageBitmap(step, step)
+    androidx.compose.ui.graphics.Canvas(tile).drawCircle(Offset(step / 2f, step / 2f), r, androidx.compose.ui.graphics.Paint().apply { color = Color.White.copy(alpha = 0.075f); isAntiAlias = true })
+    val brush = androidx.compose.ui.graphics.ShaderBrush(androidx.compose.ui.graphics.ImageShader(tile, androidx.compose.ui.graphics.TileMode.Repeated, androidx.compose.ui.graphics.TileMode.Repeated))
+    onDrawBehind { drawRect(brush) }
 }
 
 /** Una card come vetro: bordo chiaro al 14 %, angoli 16 dp, riflesso in alto. `tint` colora bordo e velo (Per te: ambra). */
