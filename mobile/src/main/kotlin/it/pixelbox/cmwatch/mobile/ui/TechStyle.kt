@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -38,17 +39,23 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  * led luminoso, numeri da strumento.
  */
 
-/** Griglia di puntini dietro la schermata: 1 dp, bianco al 7,5 %, passo 14 dp. */
-fun Modifier.dotGrid(): Modifier = drawBehind {
+/**
+ * Griglia di puntini dietro la schermata: 1 dp, bianco al 7,5 %, passo 14 dp. I punti si calcolano una volta per misura e
+ * si disegnano in una sola chiamata (Franz, 05/10 12:12: l'app andava in ANR sul Chromebook; migliaia di cerchi disegnati
+ * uno per uno a ogni fotogramma tenevano la GPU occupata per secondi).
+ */
+fun Modifier.dotGrid(): Modifier = drawWithCache {
     val step = 14.dp.toPx()
     val r = 1.dp.toPx() / 2 + 0.25f
     val dot = Color.White.copy(alpha = 0.075f)
+    val points = ArrayList<Offset>()
     var y = step / 2
     while (y < size.height) {
         var x = step / 2
-        while (x < size.width) { drawCircle(dot, r, Offset(x, y)); x += step }
+        while (x < size.width) { points.add(Offset(x, y)); x += step }
         y += step
     }
+    onDrawBehind { drawPoints(points, androidx.compose.ui.graphics.PointMode.Points, dot, strokeWidth = r * 2, cap = androidx.compose.ui.graphics.StrokeCap.Round) }
 }
 
 /** Una card come vetro: bordo chiaro al 14 %, angoli 16 dp, riflesso in alto. `tint` colora bordo e velo (Per te: ambra). */
