@@ -19,6 +19,19 @@ describe('contratto', () => {
     expect(s.devices?.map(d => d.kind)).toEqual(['phone', 'watch', 'tablet', 'chromebook', null])
   })
 
+  it('porta consiglio, approvazioni e sessioni finite della 1.37, con i default quando mancano', () => {
+    const s = decodeState(fixture('state-1-question.json'))
+    const atlas = s.sessions.find(x => x.name === 'atlas-shop')!
+    expect(atlas.advice).toMatchObject({ model: 'claude-fable-5-1', effort: 'high', switch_cost_tokens: 36000, when: 'next_task', differs: true })
+    expect(s.sessions.find(x => x.name === 'field-notes')!.finished).toBe(true)
+    expect(atlas.finished).toBe(false)
+    expect(atlas.duplicate_of).toBeNull()
+    expect(s.sessions.find(x => x.name === 'field-notes')!.advice).toBeNull()
+    expect(s.approvals.map(a => [a.task, a.deploy])).toEqual([['atlas-release-2-4', true]])
+    expect(decodeState(fixture('state-3-stale.json')).approvals).toEqual([])
+    expect(s.ops).toEqual(expect.arrayContaining(['approve', 'decision']))
+  })
+
   it('rifiuta quello che non è uno stato', () => {
     expect(() => decodeState('{"x":1}')).toThrow()
   })

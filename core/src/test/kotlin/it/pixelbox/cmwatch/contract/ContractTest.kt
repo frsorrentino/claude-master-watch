@@ -104,8 +104,8 @@ class ContractTest {
         // Contratto 1.28: un report con un PDF, il nome ripulito dal relay.
         // Contratto 1.29: un timeline di tutte le sessioni da un epoch, con ogni kind di evento.
         // Contratto 1.31: un pair_add riuscito, il QR della 1.30 e il codice a 6 cifre.
-        // Contratto 1.36: un prompt dalla web app, con `device` "web".
-        assertEquals(32, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.36: un prompt dalla web app, con `device` "web". Contratto 1.37: due approve (uno rifiutato) e un decision.
+        assertEquals(35, results.size); assertEquals(8, results.count { !it.ok })
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
@@ -300,5 +300,21 @@ class ContractTest {
         assertEquals("phone", cmd.device)
         assertTrue(ContractJson.encode(cmd).contains("\"device\":\"phone\""))
         assertFalse(ContractJson.encode(cmd.copy(device = null)).contains("device"))
+    }
+
+    // Contratto 1.37: consiglio, sessioni finite e approvazioni; i campi assenti prendono i default.
+    @Test fun masterServiceFields() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val atlas = s.sessions.first { it.name == "atlas-shop" }
+        assertEquals("claude-fable-5-1", atlas.advice?.model)
+        assertEquals(36000L, atlas.advice?.switchCostTokens)
+        assertEquals("next_task", atlas.advice?.whenToSwitch)
+        assertTrue(atlas.advice!!.differs)
+        assertFalse(atlas.finished)
+        assertNull(atlas.duplicateOf)
+        assertTrue(s.sessions.first { it.name == "field-notes" }.finished)
+        assertEquals(listOf("atlas-release-2-4"), s.approvals.map { it.task })
+        assertTrue(s.approvals.single().deploy)
+        assertTrue(ContractJson.decodeState(Fixtures.stateStale).approvals.isEmpty())
     }
 }

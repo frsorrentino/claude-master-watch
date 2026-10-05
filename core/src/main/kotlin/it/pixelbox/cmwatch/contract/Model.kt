@@ -72,6 +72,10 @@ enum class CmdOp {
      * `relay pair --add` per 5 minuti e risponde con un `PairAddOffer`. Una lettura: nessuna push dopo.
      */
     @SerialName("pair_add") PAIR_ADD,
+    /** Contratto 1.37: l'ok a un compito che lo aspetta; `arg` = id del compito, `text` facoltativo («ok»). */
+    @SerialName("approve") APPROVE,
+    /** Contratto 1.37: una decisione da salvare nella memoria della master; `text` obbligatorio, `arg` = progetto o null. */
+    @SerialName("decision") DECISION,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -114,6 +118,25 @@ enum class CmdOp {
     val goal: Goal? = null,
     /** Contratto 1.23: il prompt suggerito che il terminale mostra attenuato dopo ❯; solo per una sessione ferma. */
     val suggestion: String? = null,
+    /** Contratto 1.37: il consiglio di fable-director; assente quando non c'è. */
+    val advice: Advice? = null,
+    /** Contratto 1.37: ferma, con «Esito:» e senza «Prossimi:»; assente = false. */
+    val finished: Boolean = false,
+    /** Contratto 1.37: la sessione aperta prima sulla stessa cartella e conversazione; assente = null. */
+    @SerialName("duplicate_of") val duplicateOf: String? = null,
+)
+
+/** Contratto 1.37: `when` "now" o "next_task"; `differs` = la scelta attuale è diversa (il puntino sul tasto). */
+@Serializable data class Advice(
+    val model: String, val effort: String, val reason: String,
+    @SerialName("switch_cost_tokens") val switchCostTokens: Long = 0, val at: Long = 0, val source: String? = null,
+    @SerialName("when") val whenToSwitch: String? = null, val differs: Boolean = false,
+)
+
+/** Contratto 1.37: un compito del registro che aspetta l'ok; `deploy` = esce in produzione. */
+@Serializable data class Approval(
+    val task: String, val title: String, val what: String? = null, val where: String? = null, val deploy: Boolean = false,
+    @SerialName("requested_at") val requestedAt: Long = 0,
 )
 
 /** Contratto 1.16: testo dell'obiettivo (/goal), da quando, e se è soddisfatto quando il PC lo sa dire. */
@@ -170,6 +193,8 @@ enum class CmdOp {
     val devices: List<Device>? = null,
     /** Contratto 1.33: le azioni ricorrenti della master, dall'ultima usata in cima, al massimo 8; null senza lista. */
     val recurring: List<Recurring>? = null,
+    /** Contratto 1.37: i compiti che aspettano l'ok, dal più vecchio; vuota con un relay precedente. */
+    val approvals: List<Approval> = emptyList(),
 )
 
 /**

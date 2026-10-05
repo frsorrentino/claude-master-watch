@@ -15,7 +15,14 @@ export type Session = {
   next?: string | null; next_at?: number | null; color?: string | null; icon?: string | null; account_kind?: string | null
   model?: Model | null; effort?: string | null; context?: number | null; low_priority?: string | null
   goal?: Goal | null; suggestion?: string | null
+  /** Contratto 1.37: assenti nello stato quando non valorizzati; la lettura mette null / false / null. */
+  advice?: Advice | null; finished?: boolean; duplicate_of?: string | null
 }
+
+/** Contratto 1.37: il consiglio di fable-director; `when` "now" o "next_task", `differs` = il puntino sul tasto. */
+export type Advice = { model: string; effort: string; reason: string; switch_cost_tokens: number; at: number; source: string; when: 'now' | 'next_task'; differs: boolean }
+/** Contratto 1.37: un compito che aspetta l'ok; `deploy` = esce in produzione. */
+export type Approval = { task: string; title: string; what: string; where: string; deploy: boolean; requested_at: number }
 
 export type QuotaAccount = { h5?: number | null; w7?: number | null; reset_w7?: number | null; reset_h5?: number | null; stale?: boolean; kind?: string | null }
 export type Device = { uid: string; name: string; kind?: string | null; seen?: number | null }
@@ -56,11 +63,12 @@ export type State = {
   devices?: Device[] | null; recurring?: Recurring[] | null
   choices?: { models: Model[]; efforts: string[] } | null
   share?: { max_bytes: number; any?: boolean } | null
+  approvals?: Approval[]
 }
 
 export type CmdOp = 'answer' | 'prompt' | 'launch' | 'follow' | 'unfollow' | 'resume' | 'screen' | 'allow_all' | 'last' | 'reopen'
   | 'model' | 'effort' | 'night_add' | 'night_remove' | 'report' | 'interrupt' | 'transcript' | 'file' | 'slash' | 'projects'
-  | 'search' | 'timeline' | 'pair_add'
+  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision'
 export type Cmd = { id: string; op: CmdOp; session?: string | null; arg?: string | null; issued: number; by: string; text?: string; device?: string; parts?: boolean }
 export type CmdResult = { id: string; ok: boolean; text: string; at: number; session?: string | null; job?: string | null }
 
@@ -68,5 +76,6 @@ export type CmdResult = { id: string; ok: boolean; text: string; at: number; ses
 export function decodeState(raw: string): State {
   const s = JSON.parse(raw)
   if (typeof s?.v !== 'number' || typeof s?.ts !== 'number' || typeof s?.host !== 'string') throw new Error('not a state')
-  return { ...s, sessions: s.sessions ?? [], quota: s.quota ?? {}, projects: s.projects ?? [], night: { queued: 0, ...s.night }, recap: { date: '', items: [], ...s.recap } }
+  const sessions = (s.sessions ?? []).map((x: Session) => ({ ...x, advice: x.advice ?? null, finished: x.finished ?? false, duplicate_of: x.duplicate_of ?? null }))
+  return { ...s, sessions, approvals: s.approvals ?? [], quota: s.quota ?? {}, projects: s.projects ?? [], night: { queued: 0, ...s.night }, recap: { date: '', items: [], ...s.recap } }
 }

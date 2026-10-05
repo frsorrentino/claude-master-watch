@@ -266,6 +266,36 @@
       "device": "web",
       "issued": 1789210960,
       "by": "web"
+    },
+    {
+      "id": "6f1c2d3e-0370-4000-8000-000000000370",
+      "op": "approve",
+      "session": null,
+      "arg": "atlas-release-2-4",
+      "text": "ok, go ahead",
+      "device": "phone",
+      "issued": 1789210970,
+      "by": "phone-pixel8"
+    },
+    {
+      "id": "6f1c2d3e-0371-4000-8000-000000000371",
+      "op": "approve",
+      "session": null,
+      "arg": "atlas-old-task",
+      "text": "ok",
+      "device": "phone",
+      "issued": 1789210975,
+      "by": "phone-pixel8"
+    },
+    {
+      "id": "6f1c2d3e-0372-4000-8000-000000000372",
+      "op": "decision",
+      "session": null,
+      "arg": "atlas-shop",
+      "text": "Prices always include VAT on the checkout page",
+      "device": "phone",
+      "issued": 1789210980,
+      "by": "phone-pixel8"
     }
   ],
   "result": [
@@ -462,6 +492,24 @@
       "ok": true,
       "text": "delivered",
       "at": 1789210961
+    },
+    {
+      "id": "6f1c2d3e-0370-4000-8000-000000000370",
+      "ok": true,
+      "text": "approved atlas-release-2-4",
+      "at": 1789210971
+    },
+    {
+      "id": "6f1c2d3e-0371-4000-8000-000000000371",
+      "ok": false,
+      "text": "atlas-old-task: no task waiting for an ok",
+      "at": 1789210976
+    },
+    {
+      "id": "6f1c2d3e-0372-4000-8000-000000000372",
+      "ok": true,
+      "text": "decision sent to the master",
+      "at": 1789210981
     }
   ]
 }
