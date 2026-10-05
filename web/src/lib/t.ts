@@ -77,6 +77,8 @@ export const t = {
   chipConnected: 'collegato', voice: 'Voce', voiceTry: 'Prova', speechRate: 'Velocità di lettura', rateHint: 'Anche dalla pillola accanto a ■ mentre legge',
   versionTitle: 'Versione', webVersion: (v: string) => `${v} · web app`, voiceSample: 'Questa è la voce che legge le risposte delle sessioni.',
   closeWord: 'Chiudi',
+  elsewhereWaiting: (n: string) => `${n} ti aspetta`, elsewhereWaitingMany: (n: number) => `${n} sessioni ti aspettano`, elsewhereReply: 'Rispondi',
+  elsewhereFinished: (n: string) => `${n} ha finito`, elsewhereOpen: 'Apri',
   soon: 'Questa pagina arriva nel prossimo passo.',
   home: 'Casa', dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },

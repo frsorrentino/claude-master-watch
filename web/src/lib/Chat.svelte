@@ -11,6 +11,8 @@
   import { toggle } from './speech.svelte'
   import Feed from './Feed.svelte'
   import ReadingPill from './ReadingPill.svelte'
+  import ElsewherePill from './ElsewherePill.svelte'
+  import type { Alert } from './elsewhere'
   import QuestionCard from './QuestionCard.svelte'
   import { CHAT_ARG } from './questionRules'
   import { append, box as boxOf, inDraft } from './composer'
@@ -18,10 +20,12 @@
   import PromptBox from './PromptBox.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
+    /** L'avviso delle altre sessioni sotto la barra (Elsewhere). */
+    elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
   // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
@@ -75,6 +79,7 @@
 
 <section class="chat">
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} />
+  {#if elsewhere}<ElsewherePill alert={elsewhere} onOpen={onElsewhere} onDismiss={onElsewhereDismiss} />{/if}
   {#if s.name === MASTER && conversation}<button class="tohome" onclick={() => (conversation = false)}>{t.home}</button>{/if}
 
   <div class="lines" class:dots={home} bind:this={list}>

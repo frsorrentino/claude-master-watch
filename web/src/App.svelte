@@ -17,6 +17,7 @@
   import Overview from './lib/Overview.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
+  import { alert as elsewhereOf, key as alertKey, type Alert } from './lib/elsewhere'
   import { build as devicesOf, linked as linkedDevices } from './lib/devices'
   import { freshness } from './lib/durations'
   import { setRate, setVoice } from './lib/speech.svelte'
@@ -84,6 +85,16 @@
   let nightDlg: HTMLDialogElement | undefined = $state()
   // La ricerca nelle conversazioni (contratto 1.27): per ora la risposta di prova, poi il comando `search` al relay.
   let searchPage = $state<SearchPage | null>(null)
+  // Gli avvisi delle altre sessioni chiusi con ✕ (una domanda non si chiude: resta finché qualcuno risponde).
+  let seenAlerts = $state(new Set<string>())
+  const elsewhereFor = (name: string) => elsewhereOf(st, name, st.ts, new Set(sent.map(m => m.session)), seenAlerts)
+  function openAlert(a: Alert) {
+    if (a.type === 'finished') { seenAlerts = new Set([...seenAlerts, alertKey(a)]); pick(a.session) }
+    else if (a.sessions.length === 1) pick(a.sessions[0])
+    else openQueue()
+  }
+  let queueOpen = $state(false)
+  const openQueue = () => smooth(() => { queueOpen = true })
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
@@ -102,7 +113,8 @@
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
     onAnswer={answer} onCmd={cmd(name)} events={demoEvents} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo}
-    wide={false} {slots} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
+    wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
+    onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}
 
 {#snippet homePane()}
