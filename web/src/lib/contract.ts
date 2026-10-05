@@ -17,7 +17,11 @@ export type Session = {
   goal?: Goal | null; suggestion?: string | null
   /** Contratto 1.37: assenti nello stato quando non valorizzati; la lettura mette null / false / null. */
   advice?: Advice | null; finished?: boolean; duplicate_of?: string | null
+  /** Contratto 1.38: i Prossimi dell'ultimo esito, col «!» tolto; `blocking` = sblocca un lavoro fermo. */
+  next_steps?: NextStep[] | null
 }
+
+export type NextStep = { text: string; blocking: boolean }
 
 /** Contratto 1.37: il consiglio di fable-director; `when` "now" o "next_task", `differs` = il puntino sul tasto. */
 export type Advice = { model: string; effort: string; reason: string; switch_cost_tokens: number; at: number; source: string; when: 'now' | 'next_task'; differs: boolean }

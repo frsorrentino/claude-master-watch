@@ -325,4 +325,11 @@ class ContractTest {
         assertTrue(s.approvals.single().deploy)
         assertTrue(ContractJson.decodeState(Fixtures.stateStale).approvals.isEmpty())
     }
+
+    // Contratto 1.38: i Prossimi che sbloccano, col «!» già tolto dal relay.
+    @Test fun nextStepsCarryTheBlockingOnes() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        assertEquals(listOf(NextStep("ok to deploy on staging", true), NextStep("review the test seeds", false)), s.sessions.first { it.name == "atlas-shop" }.nextSteps)
+        assertNull(s.sessions.first { it.name == "field-notes" }.nextSteps)
+    }
 }

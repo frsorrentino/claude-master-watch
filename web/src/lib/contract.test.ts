@@ -32,6 +32,14 @@ describe('contratto', () => {
     expect(s.ops).toEqual(expect.arrayContaining(['approve', 'decision']))
   })
 
+  it('porta i Prossimi della 1.38, con le voci che sbloccano', () => {
+    const s = decodeState(fixture('state-1-question.json'))
+    expect(s.sessions.find(x => x.name === 'atlas-shop')!.next_steps).toEqual([
+      { text: 'ok to deploy on staging', blocking: true }, { text: 'review the test seeds', blocking: false },
+    ])
+    expect(s.sessions.find(x => x.name === 'field-notes')!.next_steps).toBeUndefined()
+  })
+
   it('rifiuta quello che non è uno stato', () => {
     expect(() => decodeState('{"x":1}')).toThrow()
   })
