@@ -20,6 +20,9 @@
     const now = Math.round(Date.now() / 1000)
     chats[open] = [...(chats[open] ?? []), { id: crypto.randomUUID(), role: 'user', text, at: now }]
   }
+  // Desktop o telefono: la testata mostra nome e badge solo dove la home non sta accanto con la sessione evidenziata.
+  let width = $state(window.innerWidth)
+  const wide = $derived(width > 760)
   const master = $derived(st.sessions.find(s => s.name === MASTER && s.state !== 'gone') ?? null)
   function speak(text: string) { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'it-IT'; speechSynthesis.speak(u) }
   // Il cambio di sessione con la transizione del browser, quando c'è (Chrome): niente ridisegni continui.
@@ -29,6 +32,8 @@
   }
 </script>
 
+<svelte:window bind:innerWidth={width} />
+
 <div class="desk" class:chatOpen={open !== null}>
   <aside>
     <div class="list"><Home {st} selected={open} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }} onStep={(n, x) => { pick(n); send(x) }} /></div>
@@ -36,7 +41,8 @@
   </aside>
   <main>
     {#if session}
-      <Chat {st} s={session} lines={chats[session.name] ?? []} onSend={send} onBack={() => (open = null)} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }} />
+      <Chat {st} s={session} lines={chats[session.name] ?? []} onSend={send} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }}
+        onCmd={(op, arg) => console.info('[cm] comando', op, arg)} {wide} onBack={wide ? undefined : () => (open = null)} />
     {:else}
       <p class="empty">{t.pick}</p>
     {/if}
@@ -54,9 +60,8 @@
   /* Sul telefono una colonna sola: la home, e la chat al posto suo quando se ne apre una. */
   @media (max-width: 760px) {
     .desk { grid-template-columns: minmax(0, 1fr); }
-    .demo { bottom: auto; top: 4px; }
+    .demo { bottom: 0; right: 50%; transform: translateX(50%); font-size: 10px; }
     .desk.chatOpen aside { display: none; }
     .desk:not(.chatOpen) main { display: none; }
   }
-  @media (min-width: 761px) { :global(.back) { display: none; } }
 </style>

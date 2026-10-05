@@ -2,13 +2,15 @@
   import type { Session, State } from './contract'
   import { MASTER } from './summary'
   import MasterHome from './MasterHome.svelte'
+  import Header from './Header.svelte'
+  import type { CmdOp } from './contract'
   import type { Line } from './demo'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  import Badge from './Badge.svelte'
-  let { st, s, lines, onSend, onBack, onPick, onAnswer }: {
+  let { st, s, lines, onSend, onBack, onPick, onAnswer, onCmd, wide }: {
     st: State; s: Session; lines: Line[]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
+    onCmd: (op: CmdOp, arg?: string) => void; wide: boolean
   } = $props()
   // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
   let conversation = $state(false)
@@ -33,15 +35,8 @@
 </script>
 
 <section class="chat">
-  <header>
-    {#if onBack}<button class="back" onclick={onBack} aria-label={t.back}>←</button>{/if}
-    <Badge {s} size={26} />
-    <h1>{s.name}</h1>
-    <span class="mono">{[s.model?.label, s.effort].filter(Boolean).join(' · ')}</span>
-    <span class="sp"></span>
-    {#if s.context != null}<span class="mono">{t.ctx(s.context)}</span>{/if}
-    {#if s.name === MASTER && conversation}<button class="tohome" onclick={() => (conversation = false)}>{t.home}</button>{/if}
-  </header>
+  <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} />
+  {#if s.name === MASTER && conversation}<button class="tohome" onclick={() => (conversation = false)}>{t.home}</button>{/if}
 
   <div class="lines" class:dots={home} bind:this={list}>
     {#if home}
@@ -87,15 +82,11 @@
 
 <style>
   .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; }
-  header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
-  h1 { font-size: 19px; font-weight: 600; }
-  .sp { flex: 1; }
-  .tohome { color: var(--icon); padding: 6px 12px; border-radius: 16px; }
+  .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
   .tohome:hover { background: var(--surface); }
   /* La griglia di puntini dietro la casa della master (TechStyle.dotGrid): un'immagine ripetuta, niente ridisegni. */
   .lines.dots { padding: 16px max(10px, calc((100% - 760px) / 2)); }
   .dots { background-image: radial-gradient(rgb(255 255 255 / .07) 1px, transparent 1.4px); background-size: 16px 16px; }
-  .back { font-size: 20px; padding: 4px 8px; }
   .lines { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .me { align-self: flex-end; max-width: 75%; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   .me p { background: var(--surface); border-radius: 20px 20px 6px 20px; padding: 10px 14px; }

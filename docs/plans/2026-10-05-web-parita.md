@@ -7,7 +7,7 @@ indicato, fianco a fianco.
 - [x] Home: righe della lista come `SummaryList` (età, contesto, gruppi con riga, «Fuori dalle sessioni», chiuse)
 - [x] Home della master: ultimo esito, Per te, quote, barra della master nella home (`SessionSheetTest_masterHomeA`, `SummaryListTest_dockMaster`).
   In «Per te» mancano resoconto e notte, prossimi del recap e invii programmati: il tipo `State` della web app non legge ancora `recap`, `night` ed eventi.
-- [ ] Testata della sessione: pillola modello · effort, anello 5h con azzeramento, anello ctx, menu ⋮ (`sheetBusyWithGoal`)
+- [x] Testata della sessione: pillola modello · effort col foglio delle scelte, anello 5h con azzeramento, anello ctx col suo foglio, menu ⋮ a pannello, obiettivo, priorità e finestra (`sheetBusyWithGoal`). I comandi (modello, effort, segui, /exit) aspettano il trasporto: per ora restano nella pagina.
 - [ ] Chat: markdown e tabelle, righe degli strumenti, costo del turno, copia e ▶, riga dal vivo (`sheetTranscript`, `sheetTables`)
 - [ ] Domanda: scheda con opzioni, prima piena, Parliamone, Consenti tutto (`sheetQuestion`)
 - [ ] Campo: + allega (immagini e file), suggerimento con Usa, Prossimi, Ricorrenti, slash (`sheetNextStepsTyping`, `masterRecurring`)
