@@ -198,8 +198,10 @@ fun SessionSheet(
     // Il box «Prossimi» e il campo (Franz, 04/10 20:21): il primo consiglio dell'ultima risposta fa da suggerimento nel
     // campo vuoto, gli altri restano nel box anche scrivendo; il suggerito del terminale entra solo se è diverso.
     val idle = s.state == SessionState.IDLE && s.question == null
-    val steps = remember(feed) {
-        feed?.let { f -> ChatFeed.group(f).lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
+    // La conversazione raggruppata una volta per feed, non a ogni ricomposizione della lista.
+    val groupedFeed = remember(feed) { feed?.let { f -> ChatFeed.group(f) } }
+    val steps = remember(groupedFeed) {
+        groupedFeed?.let { g -> g.lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
             ?.let { c -> NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
     }
     val stepsBox by remember(steps, s.suggestion, idle, draftHolder) {
@@ -274,7 +276,7 @@ fun SessionSheet(
                         TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                     }
                     // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
-                    val grouped = remember(feed) { ChatFeed.group(feed) }
+                    val grouped = groupedFeed.orEmpty()
                     items(grouped, key = { feedKey(it) }) { it ->
                         when (it) {
                             // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
