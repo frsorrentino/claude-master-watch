@@ -15,7 +15,7 @@ class ChatFeedTest {
     private val after = ContractJson.decodeTranscript(results[20].text)
 
     @Test fun parsesTheFixturePage() {
-        assertEquals(17, first.entries.size)
+        assertEquals(18, first.entries.size)
         assertFalse(first.more)
         assertEquals("image/png", first.entries.first { it.id == "a6.0" }.files!!.single().mime)
         assertEquals(130L, first.entries.first { it.id == "a4.0" }.turn!!.out)

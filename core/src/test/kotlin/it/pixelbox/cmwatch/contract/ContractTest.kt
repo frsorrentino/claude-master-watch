@@ -104,7 +104,8 @@ class ContractTest {
         // Contratto 1.28: un report con un PDF, il nome ripulito dal relay.
         // Contratto 1.29: un timeline di tutte le sessioni da un epoch, con ogni kind di evento.
         // Contratto 1.31: un pair_add riuscito, il QR della 1.30 e il codice a 6 cifre.
-        assertEquals(31, results.size); assertEquals(7, results.count { !it.ok })
+        // Contratto 1.36: un prompt dalla web app, con `device` "web". Contratto 1.37: due approve (uno rifiutato) e un decision.
+        assertEquals(35, results.size); assertEquals(8, results.count { !it.ok })
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
@@ -123,7 +124,8 @@ class ContractTest {
         val tests = tl.sessions[0].events.filter { it.kind == "test" }
         assertEquals(listOf(false, true), tests.map { it.ok }); assertEquals("3/4 OK, FAIL: A2 invoices", tests[0].ref)
         assertEquals("0f20786", tl.sessions[0].events.single { it.kind == "commit" }.ref)
-        assertEquals(listOf("phone"), tl.sessions[1].events.mapNotNull { it.ref })
+        // Contratto 1.36: il prompt della web app ha `ref` "web".
+        assertEquals(listOf("phone", "web"), tl.sessions[1].events.mapNotNull { it.ref })
         // Mai eventi dopo la richiesta, mai prima di `since`.
         tl.sessions.flatMap { it.events }.forEach { e -> assertTrue(e.at in tl.since..timeline.issued) }
         assertTrue("timeline" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
@@ -295,9 +297,32 @@ class ContractTest {
     /** Contratto 1.22: `device` dice al relay se il prompt arriva dal telefono o dall'orologio; assente, non si scrive. */
     @Test fun promptCarriesTheDevice() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
-        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT }
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT && it.device == "phone" }
         assertEquals("phone", cmd.device)
         assertTrue(ContractJson.encode(cmd).contains("\"device\":\"phone\""))
         assertFalse(ContractJson.encode(cmd.copy(device = null)).contains("device"))
+    }
+
+    // Contratto 1.36: la web app manda `device` "web".
+    @Test fun webPromptCarriesItsDevice() {
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT }
+        assertEquals("web", cmd.device); assertEquals("web", cmd.by)
+    }
+
+    // Contratto 1.37: consiglio, sessioni finite e approvazioni; i campi assenti prendono i default.
+    @Test fun masterServiceFields() {
+        val s = ContractJson.decodeState(Fixtures.stateQuestion)
+        val atlas = s.sessions.first { it.name == "atlas-shop" }
+        assertEquals("claude-fable-5-1", atlas.advice?.model)
+        assertEquals(36000L, atlas.advice?.switchCostTokens)
+        assertEquals("next_task", atlas.advice?.whenToSwitch)
+        assertTrue(atlas.advice!!.differs)
+        assertFalse(atlas.finished)
+        assertNull(atlas.duplicateOf)
+        assertTrue(s.sessions.first { it.name == "field-notes" }.finished)
+        assertEquals(listOf("atlas-release-2-4"), s.approvals.map { it.task })
+        assertTrue(s.approvals.single().deploy)
+        assertTrue(ContractJson.decodeState(Fixtures.stateStale).approvals.isEmpty())
     }
 }

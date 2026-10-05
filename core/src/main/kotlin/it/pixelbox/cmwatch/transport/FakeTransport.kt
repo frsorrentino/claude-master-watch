@@ -300,6 +300,12 @@ class FakeTransport(
             )))
             // Contratto 1.31: la demo non ha un PC con una chiave a cui aggiungere un dispositivo; risponde come il relay.
             CmdOp.PAIR_ADD -> ko("pair --add: no saved key, nothing to add to — use `relay pair`")
+            // Contratto 1.37: i testi del relay; la demo toglie il compito approvato dalla lista.
+            CmdOp.APPROVE -> if (s.approvals.none { it.task == cmd.arg }) ko("${cmd.arg}: no task waiting for an ok") else {
+                current.value = current.value.let { st -> st.copy(approvals = st.approvals.filter { it.task != cmd.arg }) }
+                ok("approved ${cmd.arg}")
+            }
+            CmdOp.DECISION -> if (cmd.text.isNullOrBlank()) ko("empty decision") else ok("decision sent to the master")
             // Contratto 1.21: i testi del relay; la demo ferma davvero il turno, così lo Stop si vede.
             CmdOp.INTERRUPT -> when {
                 ses == null || ses.state == SessionState.GONE -> ko("${cmd.session} is not running")
