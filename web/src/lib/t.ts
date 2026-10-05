@@ -52,6 +52,7 @@ export const t = {
   menuLaunch: 'Lancia una sessione', menuLaunchSub: 'Un progetto, con il primo messaggio', menuRegister: 'Registro',
   menuRegisterSub: 'Stanotte, i giorni, la coda della notte', menuQuadro: 'Utilizzo e limiti', menuQuadroSub: 'Finestre di 5 ore e settimana, ritmo',
   menuSearch: 'Cerca nelle conversazioni', menuSearchSub: 'Messaggi, esiti e registro', settingsTitle: 'Impostazioni',
+  launch: 'Lancia', launchProject: 'Progetto', launchFirst: 'Primo messaggio', launchRecent: 'Recenti', launchOpen: 'Apri',
   soon: 'Questa pagina arriva nel prossimo passo.',
   home: 'Casa', dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },

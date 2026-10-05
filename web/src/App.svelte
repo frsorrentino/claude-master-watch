@@ -11,6 +11,7 @@
   import HomePane from './lib/HomePane.svelte'
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
+  import Launch from './lib/Launch.svelte'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
   import { add, columns, columnsFromPref, columnsPref, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
@@ -64,7 +65,9 @@
     else smooth(() => { open = name })
   }
   // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
-  let page = $state<PageName | null>(null)
+  // `?page=diary` apre una pagina (link diretto, e i provini).
+  const asked = new URLSearchParams(location.search).get('page')
+  let page = $state<PageName | null>(asked && ['launch', 'diary', 'overview', 'search', 'settings'].includes(asked) ? (asked as PageName) : null)
   const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle }
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
@@ -101,7 +104,12 @@
 
 {#snippet pageView(p: PageName)}
   <Page title={pageTitle[p]} onBack={() => openPage(null)}>
-    <p class="soon">{t.soon}</p>
+    {#if p === 'launch'}
+      <Launch {st} onSession={(n, reopen) => { if (reopen) cmd(n)('reopen'); else { openPage(null); pick(n) } }}
+        onLaunch={(pr, first) => { cmd(pr.name)('launch', pr.path, first || undefined); openPage(null) }} />
+    {:else}
+      <p class="soon">{t.soon}</p>
+    {/if}
   </Page>
 {/snippet}
 
