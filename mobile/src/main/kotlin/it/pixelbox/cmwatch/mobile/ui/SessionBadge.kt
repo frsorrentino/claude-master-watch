@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -37,10 +38,11 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
 @Composable
 fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier) {
     val spec = Badge.of(s.account, s.color, s.state, s.icon, s.accountKind)
-    val alpha = if (Badge.breathes(s.state) && !animationsOff()) {
-        val a by rememberInfiniteTransition(label = "respiro").animateFloat(1f, 0.55f, infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "a")
-        a
-    } else 1f
+    // Il respiro in un livello suo, letto solo lì (Franz, 05/10 12:30: «l'app è sempre molto lenta»): letto qui ricomponeva
+    // il badge a ogni fotogramma e ridisegnava tutta la lista che lo contiene.
+    val breath = if (Badge.breathes(s.state) && !animationsOff())
+        rememberInfiniteTransition(label = "respiro").animateFloat(1f, 0.55f, infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "a")
+    else null
     val labels = Badge.Labels(
         waiting = stringResource(R.string.state_waiting), busy = stringResource(R.string.state_busy),
         idle = stringResource(R.string.state_idle), gone = stringResource(R.string.state_closed),
@@ -48,7 +50,7 @@ fun SessionBadge(s: Session, size: Dp = 22.dp, modifier: Modifier = Modifier) {
         work = stringResource(R.string.badge_work),
     )
     val description = Badge.description(s.account, s.accountKind, s.state, labels)
-    Canvas(modifier.size(size).semantics { contentDescription = description }) { drawBadge(spec, this.size.minDimension, alpha) }
+    Canvas(modifier.size(size).graphicsLayer { alpha = breath?.value ?: 1f }.semantics { contentDescription = description }) { drawBadge(spec, this.size.minDimension, 1f) }
 }
 
 /** Solo la forma dell'account, vuota: dove c'è l'account ma nessuna sessione (quota, «Lancia», filtro). */

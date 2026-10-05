@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -98,7 +99,8 @@ fun Led(stale: Boolean, dot: Dp = 8.dp) {
             kotlinx.coroutines.delay(50)
         }
     }
-    Canvas(Modifier.size(dot + 10.dp)) {
+    // In un livello suo: il bagliore ridisegna solo il led, non la testata (Franz, 05/10 12:30).
+    Canvas(Modifier.size(dot + 10.dp).graphicsLayer()) {
         val c = Offset(size.width / 2, size.height / 2)
         drawCircle(color.copy(alpha = 0.35f * glow), radius = dot.toPx() / 2 + 5.dp.toPx() * glow, center = c)
         drawCircle(color.copy(alpha = 0.6f + 0.4f * glow), radius = dot.toPx() / 2, center = c)
