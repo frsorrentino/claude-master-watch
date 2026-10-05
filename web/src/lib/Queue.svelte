@@ -61,7 +61,7 @@
 <style>
   .queue { height: 100%; display: flex; flex-direction: column; }
   .empty { color: var(--text2); padding: 0 20px; font-size: 16px; }
-  .strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
   .page { flex: 0 0 100%; scroll-snap-align: start; padding: 0 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
   .who { display: flex; align-items: center; gap: 10px; padding: 6px 0; text-align: left; border-radius: 8px; }
   .who b { flex: 1; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; }

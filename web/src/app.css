@@ -8,7 +8,9 @@
   --mono: ui-monospace, "Roboto Mono", "JetBrains Mono", monospace;
   color-scheme: dark;
 }
-* { box-sizing: border-box; margin: 0; }
+/* Niente barre di scorrimento, come nell'app Android (Franz, 05/10 20:47): si scorre con dita, rotella e touchpad. */
+* { box-sizing: border-box; margin: 0; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
 html, body, #app { height: 100%; }
 /* Installata su iPhone e iPad la pagina va fin sotto la tacca e la barra in basso: i bordi sicuri restano liberi. */
 #app { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
