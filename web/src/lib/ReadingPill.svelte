@@ -4,11 +4,14 @@
   import { t } from './t'
   // Il mini-controller della lettura (ReadingPill dell'app): le barrette che si muovono, da dove arriva il testo e la sua
   // prima riga (il clic riporta lì), la velocità, la voce e ■ per fermare. Stretto restano solo i tasti.
-  let { onOpen }: { onOpen?: (source: string) => void } = $props()
+  // Un controller solo per schermata: `slots` sono i posti in vista (le colonne, o la home = null), `here` questo. Sta sopra
+  // il campo della sessione che legge, se è in vista; altrimenti nel primo posto.
+  let { onOpen, slots, here }: { onOpen?: (source: string) => void; slots: (string | null)[]; here: string | null } = $props()
+  const mineHere = $derived(speech.source != null && slots.includes(speech.source) ? speech.source === here : slots[0] === here)
   const rate = $derived(`${speech.rate.toLocaleString('it-IT', { maximumFractionDigits: 2 })}×`)
 </script>
 
-{#if speech.text}
+{#if speech.text && mineHere}
   <div class="pill" role="region" aria-label={t.readingNow}>
     <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
     <button class="what" disabled={!speech.source || !onOpen} aria-label={speech.source ? t.readingOpen(speech.source) : undefined}

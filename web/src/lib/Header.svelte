@@ -9,6 +9,7 @@
   // dell'azzeramento, il contesto ad anello e il menu ⋮; sotto obiettivo, priorità e finestra. Su desktop a sinistra anche
   // badge e nome, come la plancia del tablet.
   let { st, s, wide, onBack, onCmd, onPrompt }: {
+    /** `wide`: badge e nome a sinistra (la testata unica del desktop); in una colonna della plancia li ha la colonna. */
     st: State; s: Session; wide: boolean; onBack?: () => void
     onCmd: (op: CmdOp, arg?: string) => void; onPrompt: (text: string) => void
   } = $props()
@@ -25,6 +26,11 @@
   const notes = $derived(notesOf(s, t.notes))
   const wider = $derived(widerOf({ ...s, model }, st.choices))
   const canExit = $derived(!!st.slash?.includes('exit') && s.state !== 'gone')
+  // L'ora dell'azzeramento accanto alla percentuale quando la testata è larga (480 px, come l'app), sotto se è stretta.
+  let width = $state(0)
+  const inline = $derived(width >= 480)
+  // Una colonna molto stretta: «62%» senza «ctx», così il menu ⋮ resta in vista.
+  const compact = $derived(width > 0 && width < 300)
   const ring: Record<Tone, string> = { neutral: 'var(--b-ring)', warn: 'var(--b-warn)', alert: 'var(--b-alert)' }
   const arc = (pct: number) => `${Math.max(0, Math.min(100, pct)) * 0.4712} 100`
 
@@ -41,7 +47,7 @@
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && (menu = false)} />
 
-<header>
+<header bind:clientWidth={width}>
   <div class="row">
     {#if onBack}<button class="ib back" onclick={onBack} aria-label={t.back}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>{/if}
     {#if wide}
@@ -52,10 +58,11 @@
       {#if tunable}<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="var(--text2)" /></svg>{/if}
     </button>
     {#if !wide}<span class="sp"></span>{/if}
-    {#if quota?.h5 != null}
+    <!-- In una colonna stretta la quota lascia il posto a modello, contesto e menu (è anche nella home). -->
+    {#if quota?.h5 != null && (width === 0 || width >= 340)}
       <span class="meter" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined}>
         <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(quota.h5)} style="stroke:{quota.stale ? 'var(--wait)' : ring[tone(quota.h5)]}" class="arc" /></svg>
-        <span class="mcol" class:inline={wide}>
+        <span class="mcol" class:inline>
           <span class="ml" class:stale={quota.stale}>{t.quota5h(quota.h5)}</span>
           {#if reset}<span class="reset"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{reset}</span>{/if}
         </span>
@@ -64,7 +71,7 @@
     {#if s.context != null}
       <button class="meter ctxb" disabled={!tunable} onclick={() => ctx?.showModal()}>
         <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(s.context)} style="stroke:{ring[tone(s.context)]}" class="arc" /></svg>
-        <span class="ml">{t.ctx(s.context)}</span>
+        <span class="ml">{compact ? `${s.context}%` : t.ctx(s.context)}</span>
       </button>
     {/if}
     <span class="anchor">
@@ -151,7 +158,7 @@
   .ib { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--text2); flex: none; }
   .ib:hover { background: var(--surface); }
   .back { color: var(--text); width: 36px; }
-  .pill { display: flex; align-items: center; min-width: 0; overflow: hidden; background: var(--surface); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 1 auto; }
+  .pill { display: flex; align-items: center; min-width: min-content; overflow: hidden; background: var(--surface); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 1 auto; }
   .pill svg { flex: none; }
   .pill:disabled { padding-right: 12px; cursor: default; }
   .pill:not(:disabled):hover { filter: brightness(1.2); }

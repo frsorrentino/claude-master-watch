@@ -51,13 +51,18 @@
     if (md === 'send' || md === 'send_tonal') send()
   }
   export function focus() { area?.focus(); area?.setSelectionRange(draft.length, draft.length) }
-  const placeholder = $derived(field ?? (s.question ? t.answerFree : toMaster ? t.masterPlaceholder : t.writeTo(s.name)))
+  // In un campo stretto (le colonne della plancia) il suggerimento accanto a «Usa» e all'invio andava a frammenti: lì sta
+  // su una riga sua sopra il campo, intero, e il clic lo mette nel campo (come l'app sotto i 320 dp).
+  let barW = $state(0)
+  const narrow = $derived(barW > 0 && barW < 320)
+  const inField = $derived(narrow ? null : field)
+  const placeholder = $derived(inField ?? (s.question ? t.answerFree : toMaster ? t.masterPlaceholder : t.writeTo(s.name)))
 </script>
 
 {#if md === 'reopen'}
   <div class="bar"><button class="reopen" onclick={onReopen}>{t.reopen}</button></div>
 {:else}
-  <div class="bar">
+  <div class="bar" bind:clientWidth={barW}>
     {#if files.length}
       <div class="thumbs">
         {#each files as f, i}
@@ -70,6 +75,9 @@
     {/if}
     {#if hints.length}
       <div class="chips">{#each hints as c}<button class="chip" onclick={() => { draft = `/${c} `; area?.focus() }}>/{c}</button>{/each}</div>
+    {/if}
+    {#if narrow && field && !draft.trim()}
+      <button type="button" class="sugrow" onclick={() => { draft = field ?? ''; area?.focus() }}><i>{field}</i><span>{t.use}</span></button>
     {/if}
     <form class="field" onsubmit={(e) => { e.preventDefault(); send() }}>
       <span class="anchor">
@@ -92,8 +100,8 @@
       <input bind:this={images} type="file" accept="image/*" multiple hidden onchange={picked} />
       <input bind:this={camera} type="file" accept="image/*" capture="environment" hidden onchange={picked} />
       <input bind:this={any} type="file" hidden onchange={picked} />
-      <textarea bind:this={area} rows="1" class:sug={!!field} bind:value={draft} onkeydown={key} {placeholder}></textarea>
-      {#if field && !draft.trim()}<button type="button" class="use" onclick={() => { draft = field ?? ''; area?.focus() }}>{t.use}</button>{/if}
+      <textarea bind:this={area} rows="1" class:sug={!!inField} bind:value={draft} onkeydown={key} {placeholder}></textarea>
+      {#if inField && !draft.trim()}<button type="button" class="use" onclick={() => { draft = field ?? ''; area?.focus() }}>{t.use}</button>{/if}
       {#if md === 'stop'}
         <button type="button" class="round filled" aria-label={t.stop} title={t.stop} onclick={onStop}><svg viewBox="0 0 24 24" width="20" height="20"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" /></svg></button>
       {:else}
@@ -102,7 +110,7 @@
         </button>
       {/if}
     </form>
-    <div class="keys mono">{t.enterSends}</div>
+    {#if !narrow}<div class="keys mono">{t.enterSends}</div>{/if}
   </div>
 {/if}
 
@@ -142,6 +150,10 @@
   textarea::placeholder { color: var(--text2); }
   /* In corsivo e attenuato solo il suggerimento, come dopo ❯ nel terminale. */
   textarea.sug::placeholder { font-style: italic; color: var(--stale); }
+  .sugrow { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 12px; text-align: left; }
+  .sugrow i { flex: 1; color: var(--stale); }
+  .sugrow span { color: var(--icon); font-weight: 500; font-size: 14px; }
+  .sugrow:hover { background: var(--surface); }
   .use { color: var(--icon); padding: 8px 10px; font-weight: 500; border-radius: 16px; }
   .use:hover { background: var(--surface); }
   .round { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--surface); color: var(--text2); }

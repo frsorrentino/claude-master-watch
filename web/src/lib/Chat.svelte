@@ -18,10 +18,10 @@
   import PromptBox from './PromptBox.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
-    onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean
+    onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
   // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
@@ -49,7 +49,28 @@
   const idle = $derived(s.state === 'idle' && !s.question)
   const stepsBox = $derived(idle ? boxOf(steps, s.suggestion, draft) : { field: null, rows: [] })
   const recurringRows = $derived(s.name === MASTER ? (st.recurring ?? []).filter(r => !inDraft(draft, r.prompt)).map(r => ({ label: r.label, text: r.prompt, direct: !r.param && idle })) : [])
-  $effect(() => { items.length; if (!home) list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' }) })
+  // In fondo alla conversazione: subito all'apertura (e dopo che la colonna ha preso la sua misura), con l'animazione
+  // quando arriva qualcosa di nuovo.
+  let settled = false
+  $effect.pre(() => { s.name; settled = false })
+  $effect(() => {
+    items.length; s.question
+    if (home || !list) return
+    const el = list
+    if (!settled) { requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; settled = true }); return }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  })
+  // Una colonna che cambia larghezza fa andare a capo i testi: resta in fondo se lo era.
+  $effect(() => {
+    if (!list) return
+    const el = list
+    let atEnd = true
+    const onScroll = () => { atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
+    const ro = new ResizeObserver(() => { if (atEnd && !home) el.scrollTop = el.scrollHeight })
+    el.addEventListener('scroll', onScroll, { passive: true })
+    ro.observe(el)
+    return () => { el.removeEventListener('scroll', onScroll); ro.disconnect() }
+  })
 </script>
 
 <section class="chat">
@@ -77,7 +98,7 @@
       onPick={(r) => { draft = append(draft, r.direct ? r.text : r.text.trimEnd() + ' ', t.then); recurringOpen = false; save('cm.recurring_open', false); composer?.focus() }}
       onSend={(r) => { recurringOpen = false; save('cm.recurring_open', false); onSend(r.text) }} />
   {/if}
-  <ReadingPill onOpen={onPick} />
+  <ReadingPill onOpen={onPick} {slots} here={s.name} />
   <Composer bind:this={composer} {st} {s} bind:draft field={stepsBox.field} toMaster={s.name === MASTER} {onSend}
     onAnswerText={(arg) => onCmd('answer', arg)} onSlash={(c, a) => onCmd('slash', c, a ?? undefined)} onStop={() => onCmd('interrupt')}
     onReopen={() => onCmd('reopen')} onAttach={(fs, text) => onCmd('report', fs.map(f => f.name).join(', '), text)}

@@ -2,6 +2,7 @@
   import { flip } from 'svelte/animate'
   import type { State } from './contract'
   import { build, type Group, type Row } from './summary'
+  import { groups as deskGroups } from './tablet'
   import { summary as outcomeSummary } from './outcome'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
@@ -10,14 +11,15 @@
 
   // La home del telefono (SummaryList.kt): ogni sessione una card nei gruppi del bisogno; il tocco apre la sessione, ▼ la
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
-  let { st, selected, onPick, onAnswer, onStep }: {
-    st: State; selected: string | null; onPick: (name: string) => void
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false }: {
+    /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
+    st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     onAnswer: (session: string, n: number) => void; onStep: (session: string, text: string) => void
   } = $props()
   const model = $derived(build(st, [], st.ts, new Set()))
   let expanded = $state<string | null>(null)
   const tone: Record<Group, string> = { waiting: 'var(--b-warn)', finished: 'var(--b-good)', working: 'var(--b-ring)', still: 'var(--text2)' }
-  const groups = $derived((['waiting', 'finished', 'working', 'still'] as Group[]).map(g => [g, model.rows.filter(r => r.group === g)] as [Group, Row[]]).filter(([, rows]) => rows.length > 0))
+  const groups = $derived(withMaster ? deskGroups(model) : (['waiting', 'finished', 'working', 'still'] as Group[]).map(g => [g, model.rows.filter(r => r.group === g)] as [Group, Row[]]).filter(([, rows]) => rows.length > 0))
   const ctxTone = (p: number) => (p >= 90 ? 'var(--b-alert)' : p >= 75 ? 'var(--b-warn)' : 'var(--b-ring)')
   function text(r: Row) {
     const parsed = parseSteps(r.text ?? '')
@@ -33,7 +35,7 @@
       {@const s = r.session}
       {@const x = text(r)}
       {@const open = expanded === s.name}
-      <div class="card" class:waiting={group === 'waiting'} class:on={selected === s.name} animate:flip={{ duration: 250 }}
+      <div class="card" class:waiting={group === 'waiting'} class:on={selected.includes(s.name)} animate:flip={{ duration: 250 }}
         role="button" tabindex="0" onclick={() => onPick(s.name)} onkeydown={(e) => e.key === 'Enter' && onPick(s.name)}>
         <div class="top">
           <Badge {s} size={24} />
