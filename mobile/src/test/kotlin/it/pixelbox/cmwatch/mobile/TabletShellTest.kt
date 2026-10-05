@@ -1,5 +1,8 @@
 package it.pixelbox.cmwatch.mobile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
@@ -135,6 +138,22 @@ class TabletShellTest {
 
     // Nessuna colonna ancora: l'invito a toccare una sessione nella home.
     @Test fun tabletDeskEmpty() = paparazzi.snapshot { desk(emptyList(), emptyList()) }
+
+    // La barra del titolo nostra sul Pixel Tablet in finestra (Franz, 05/10 11:21): schede delle colonne, quota a destra, i
+    // tasti di sistema lasciati liberi (qui 140 dp a destra, come quelli di Android).
+    @Test fun captionBar() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.background(it.pixelbox.cmwatch.ui.tokens.CmColors.bg)) {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxWidth().height(40.dp)) {
+                    it.pixelbox.cmwatch.mobile.ui.CaptionStrip(androidx.compose.ui.Modifier.padding(end = 140.dp)) {
+                        st.sessions.take(2).forEach { ses -> it.pixelbox.cmwatch.mobile.ui.CaptionTab(ses, onFocus = {}, onClose = {}) }
+                        androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.weight(1f))
+                        androidx.compose.material3.Text("personale · 5h 11%", style = it.pixelbox.cmwatch.mobile.ui.MonoSmall)
+                    }
+                }
+            }
+        }
+    }
 
     companion object {
         /** Tablet in orizzontale, 1440×900 dp. */

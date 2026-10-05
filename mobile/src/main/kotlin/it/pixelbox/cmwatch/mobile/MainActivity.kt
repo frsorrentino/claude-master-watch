@@ -85,6 +85,11 @@ class MainActivity : ComponentActivity() {
         val rotating = savedInstanceState?.getBoolean(KEY_ROTATING) == true
         launchId = savedInstanceState?.getString(KEY_LAUNCH)?.takeIf { rotating } ?: java.util.UUID.randomUUID().toString()
         enableEdgeToEdge()
+        // Pixel Tablet in finestra (Android 15+): la barra del titolo trasparente, la disegna la plancia (Franz, 05/10 11:21).
+        if (android.os.Build.VERSION.SDK_INT >= 35) window.insetsController?.setSystemBarsAppearance(
+            android.view.WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND,
+            android.view.WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND,
+        )
         setContent {
             CmPhoneTheme {
                 val settings by app.prefs.flow.collectAsStateWithLifecycle(initialValue = null)
@@ -926,6 +931,18 @@ class MainActivity : ComponentActivity() {
                 inspector = if (inspectorOn && first != null) ({
                     TabletInspector(it.pixelbox.cmwatch.rules.Tablet.inspect(first, timeline, now, zone), st.quota[first.account]?.h5, loading = timelineOk && timeline == null)
                 }) else null,
+                // La barra del titolo della finestra: le colonne come schede, a destra la quota delle 5 ore per account.
+                caption = {
+                    tabletCols.forEach { name ->
+                        st.sessions.firstOrNull { x -> x.name == name }?.let { ses ->
+                            it.pixelbox.cmwatch.mobile.ui.CaptionTab(ses, onFocus = { fieldFocus.target = name }, onClose = { saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, name)) })
+                        }
+                    }
+                    androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                    st.quota.forEach { (acc, q) ->
+                        q.h5?.let { h -> Text("$acc · " + getString(R.string.quota_h5_short, h), style = it.pixelbox.cmwatch.mobile.ui.MonoSmall, color = if (q.stale) it.pixelbox.cmwatch.ui.tokens.CmColors.waiting else it.pixelbox.cmwatch.ui.tokens.CmColors.text2) }
+                    }
+                },
             )
         }
         CompositionLocalProvider(

@@ -423,6 +423,62 @@ fun TabletDesk(
     /** Al posto delle colonne, per esempio il Registro aperto dal menu della home. */
     override: (@Composable () -> Unit)? = null,
     inspector: (@Composable () -> Unit)? = null,
+    /** Quello che va nella barra del titolo della finestra, quando Android la lascia all'app (Pixel Tablet in finestra). */
+    caption: (@Composable RowScope.() -> Unit)? = null,
+) {
+    // La barra del titolo nostra (Franz, 05/10 11:21: «come fa Chrome»): in una finestra di Android 15 e successivi la barra
+    // è trasparente (MainActivity) e la riempiamo noi, lasciando liberi i tasti di sistema. Senza barra (schermo intero,
+    // Chromebook) tutto come prima.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val captionPx = androidx.compose.foundation.layout.WindowInsets.captionBar.getTop(density)
+    if (caption != null && captionPx > 0) {
+        val view = androidx.compose.ui.platform.LocalView.current
+        val buttons = if (android.os.Build.VERSION.SDK_INT >= 35)
+            view.rootWindowInsets?.getBoundingRects(android.view.WindowInsets.Type.captionBar()).orEmpty() else emptyList()
+        Column(Modifier.fillMaxSize().background(CmColors.bg)) {
+            BoxWithConstraints(Modifier.fillMaxWidth().height(with(density) { captionPx.toDp() })) {
+                val w = constraints.maxWidth
+                val left = buttons.filter { it.centerX() < w / 2 }.maxOfOrNull { it.right } ?: 0
+                val right = buttons.filter { it.centerX() >= w / 2 }.minOfOrNull { it.left }?.let { w - it } ?: 0
+                CaptionStrip(Modifier.padding(start = with(density) { left.toDp() }, end = with(density) { right.toDp() }), caption)
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                DeskBody(home, homeRight, onHomeSide, columns, shares, onSwap, onShares, column, empty, override, inspector, insets = false)
+            }
+        }
+        return
+    }
+    DeskBody(home, homeRight, onHomeSide, columns, shares, onSwap, onShares, column, empty, override, inspector, insets = true)
+}
+
+/** La barra del titolo dell'app: le colonne come schede a sinistra, a destra quello che serve (la quota); il resto si trascina. */
+@Composable
+internal fun CaptionStrip(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(modifier.fillMaxSize().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), content = content)
+}
+
+/** Una scheda della barra del titolo: la sessione di una colonna; il tocco porta il cursore nel suo campo, × la chiude. */
+@Composable
+fun CaptionTab(s: Session, onFocus: () -> Unit, onClose: () -> Unit) {
+    Row(
+        Modifier.clip(RoundedCornerShape(10.dp)).background(CmColors.surface).clickable(onClick = onFocus).handCursor()
+            .padding(start = 8.dp, end = 2.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        SessionBadge(s, 16.dp)
+        Text(s.name, style = MaterialTheme.typography.labelLarge, color = CmColors.text, maxLines = 1)
+        IconButton(onClick = onClose, modifier = Modifier.size(28.dp).handCursor()) {
+            Icon(Icons.Rounded.Close, stringResource(R.string.tablet_close_column, s.name), tint = CmColors.text2, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun DeskBody(
+    home: @Composable () -> Unit, homeRight: Boolean, onHomeSide: () -> Unit,
+    columns: List<String>, shares: List<Int>, onSwap: (Int, Int) -> Unit, onShares: (List<Int>) -> Unit,
+    column: @Composable (name: String, drag: Modifier) -> Unit, empty: @Composable () -> Unit,
+    override: (@Composable () -> Unit)?, inspector: (@Composable () -> Unit)?, insets: Boolean,
 ) {
     // La home cambia lato scivolando sopra le colonne, che scivolano dall'altra parte (Franz, 04/10 22:15: «spartane»). Le
     // parti restano nello stesso punto della composizione e cambiano solo posizione: la home non si ricrea e tiene lo
@@ -433,7 +489,7 @@ fun TabletDesk(
         if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(dampingRatio = 0.86f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
         label = "homeSide",
     )
-    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(CmColors.bg).then(if (insets) Modifier.systemBarsPadding() else Modifier.navigationBarsPadding())) {
         val homeW = 400.dp
         val handleW = 28.dp
         val detailsW = if (inspector != null) 341.dp else 0.dp
