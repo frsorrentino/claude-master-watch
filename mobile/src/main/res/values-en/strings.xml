@@ -406,7 +406,7 @@
     <string name="quota_reset_desc">5-hour quota at %1$d%%, resets %2$s</string>
     <string name="ctx_title">Context %1$d%%</string>
     <string name="ctx_handoff">Write the handoff and restart clean</string>
-    <string name="ctx_handoff_prompt">Write the handoff with /fable-director:handoff --here, then restart clean with claude-master restart --clean.</string>
+    <string name="ctx_handoff_prompt">Write the handoff with /fable-director:handoff --here, then I send /clear.</string>
     <string name="ctx_compact">Compact the conversation</string>
     <string name="ctx_wider">Switch to the 1M window</string>
     <string name="ask_master">Ask the master to check</string>

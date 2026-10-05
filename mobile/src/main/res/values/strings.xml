@@ -410,7 +410,7 @@
     <string name="quota_reset_desc">Quota delle 5 ore al %1$d%%, si azzera %2$s</string>
     <string name="ctx_title">Contesto %1$d%%</string>
     <string name="ctx_handoff">Scrivi l\'handoff e riparti pulita</string>
-    <string name="ctx_handoff_prompt">Scrivi l\'handoff con /fable-director:handoff --here, poi riavviati pulita con claude-master restart --clean.</string>
+    <string name="ctx_handoff_prompt">Scrivi l\'handoff con /fable-director:handoff --here, poi io mando /clear.</string>
     <string name="ctx_compact">Compatta la conversazione</string>
     <string name="ctx_wider">Passa alla finestra da 1M</string>
     <string name="ask_master">Fai controllare alla master</string>

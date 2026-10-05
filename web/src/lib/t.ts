@@ -119,6 +119,6 @@ export const t = {
   exitTitle: (n: string) => `Mandare /exit a ${n}?`, exitText: 'La sessione si chiude.', exitOk: 'Manda',
   ctxTitle: (p: number) => `Contesto ${p}%`, ctxHandoff: "Scrivi l'handoff e riparti pulita", ctxCompact: 'Compatta la conversazione',
   ctxWider: 'Passa alla finestra da 1M',
-  ctxHandoffPrompt: "Scrivi l'handoff con /fable-director:handoff --here, poi riavviati pulita con claude-master restart --clean.", conversation: 'Conversazione',
+  ctxHandoffPrompt: "Scrivi l'handoff con /fable-director:handoff --here, poi io mando /clear.", conversation: 'Conversazione',
   enterSends: 'Invio manda · Maiusc+Invio a capo', back: 'Indietro',
 }
