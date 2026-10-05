@@ -119,9 +119,10 @@ screens = {
         'Prossimi: lì non cambia niente.'),
 }
 
-for name, html in screens.items():
-    (HERE / f'{name}.html').write_text(html, encoding='utf-8')
-    subprocess.run(['chromium', '--headless=new', '--no-sandbox', '--hide-scrollbars', '--force-device-scale-factor=2',
-                    '--window-size=412,1000', '--virtual-time-budget=3000', f'--screenshot={HERE / (name + ".png")}',
-                    (HERE / f'{name}.html').as_uri()], check=True, capture_output=True, timeout=60)
-    print(name)
+if __name__ == "__main__":
+  for name, html in screens.items():
+      (HERE / f'{name}.html').write_text(html, encoding='utf-8')
+      subprocess.run(['chromium', '--headless=new', '--no-sandbox', '--hide-scrollbars', '--force-device-scale-factor=2',
+                      '--window-size=412,1000', '--virtual-time-budget=3000', f'--screenshot={HERE / (name + ".png")}',
+                      (HERE / f'{name}.html').as_uri()], check=True, capture_output=True, timeout=60)
+      print(name)

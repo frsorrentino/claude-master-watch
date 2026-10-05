@@ -1,0 +1,71 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=412"><style>
+:root{--bg:#000;--low:#1B1F26;--surf:#23272E;--high:#292F3A;--line:#2A2E35;--text:#F2F4F7;--text2:#B0B8C4;--icon:#A8C7FA;
+--primary:#D3E3FD;--onp:#0A2050;--wait:#FFB020;--good:#65C581;--busy:#7FA1FF;--ring:#8BB4F7;--track:#455165;--label:#BCE4C7;--new:#C58AF9}
+*{box-sizing:border-box;margin:0}
+body{background:#120D1C;color:var(--text);font:15px/1.4 Roboto,system-ui,sans-serif;width:412px}
+.screen{position:relative;width:412px;height:915px;overflow:hidden;background:var(--bg)}
+.tag{position:absolute;top:0;left:0;right:0;z-index:50;background:#2B1F45;color:#E9DDFF;font:600 11px/1.3 "Roboto Mono",monospace;letter-spacing:.06em;padding:6px 12px}
+.legend{background:#120D1C;color:#E9DDFF;font-size:12.5px;line-height:1.4;padding:10px 14px 14px;border-top:1px solid #3A2C5C}
+.mono{font-family:"Roboto Mono",monospace;letter-spacing:.08em;color:var(--text2);font-size:12px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.top{padding:34px 20px 6px;display:flex;align-items:baseline;gap:10px}.top h1{font-size:26px;font-weight:500}.top span{color:var(--text2)}
+.grp{display:flex;align-items:center;gap:10px;margin:18px 22px 8px;font:500 12px/1 "Roboto Mono",monospace;letter-spacing:.14em}
+.grp::after{content:"";flex:1;height:1px;background:currentColor;opacity:.3}
+.card{background:var(--low);border-radius:24px;padding:14px 16px;margin:0 14px 10px}
+.ch{display:flex;align-items:center;gap:12px}.ch b{font-size:17px;font-weight:600;flex:1}
+.badge{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+.line{color:var(--text2);margin-top:8px}
+.goal{color:var(--label);font-size:13px;margin-top:8px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:8px 14px;font-size:14px;background:rgba(211,227,253,.12)}
+.chip.unblock{background:rgba(255,176,32,.16);color:var(--wait);font-weight:500}
+.prog{height:3px;border-radius:2px;background:var(--track);margin-top:12px;overflow:hidden}.prog i{display:block;height:100%;width:18%;background:var(--ring)}
+.box{position:absolute;left:12px;right:12px;bottom:84px;background:var(--low);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.bh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:10px;padding:13px 16px;border-top:1px solid var(--line);font-size:16px}
+.row:first-of-type{border-top:0}
+.row span{flex:1}
+.row.unblock{background:rgba(255,176,32,.10);color:var(--wait);font-weight:500;box-shadow:inset 3px 0 0 var(--wait)}
+.comp{position:absolute;left:12px;right:12px;bottom:14px;border:1px solid var(--line);border-radius:28px;height:56px;display:flex;align-items:center;gap:14px;padding:0 8px 0 18px;color:var(--text2)}
+.send{margin-left:auto;width:42px;height:42px;border-radius:50%;background:var(--high);display:grid;place-items:center}
+.chat{padding:40px 16px 0}.cl{font-size:15.5px;line-height:1.5;margin:6px 0}
+.hero{background:var(--surf);border-radius:24px;padding:16px 16px 10px;margin:0 14px}
+.hero h3{font-size:18px;font-weight:600;margin:8px 0 6px}.hero p{color:var(--text2)}
+.step{display:flex;align-items:center;gap:8px;color:var(--icon);font-size:16px;padding:8px 0}
+.step.unblock{color:var(--wait);font-weight:500}
+.new{outline:2px dashed var(--new);outline-offset:3px;border-radius:14px}
+
+.chip{color:var(--text);font-weight:400}
+.row{color:var(--text)}
+.chat{padding:0 16px}
+.box{position:static;margin:18px 12px 0}
+/* V1: solo il lucchetto ambra */
+.v1 .chip.u, .v1 .row.u{}
+/* V2: un filo ambra */
+.v2 .chip.u{box-shadow:inset 0 0 0 1.5px rgba(255,176,32,.65)}
+.v2 .row.u{box-shadow:inset 3px 0 0 var(--wait)}
+/* V3: fondo ambra tenue */
+.v3 .chip.u{background:rgba(255,176,32,.14)}
+.v3 .row.u{background:rgba(255,176,32,.09)}
+.head{font:500 12px/1.3 "Roboto Mono",monospace;letter-spacing:.12em;color:var(--text2);margin:20px 22px 0}
+</style></head><body class="v1"><div class="screen" style="height:860px"><div class="tag">VARIANTE 1 · SOLO IL LUCCHETTO</div><div style="height:38px"></div>
+<div class="head">SCHEDA DELLA SESSIONE, NELLA HOME</div>
+<div class="grp" style="color:var(--busy);margin-top:10px">AL LAVORO · 1</div>
+<div class="card">
+ <div class="ch"><span class="badge" style="background:var(--good)"><svg class="i" viewBox="0 0 24 24" style="color:currentColor;width:16px;height:16px"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="#0B2A14" stroke="none"/></svg></span><b>atlas-shop</b><span class="mono">ctx 18%  5h 11%</span><svg class="i" viewBox="0 0 24 24" style="color:#B0B8C4;width:22px;height:22px"><path d="M6 9l6 6 6-6"/></svg></div>
+ <div class="line">migrations 008-011 applied, tests green.</div>
+ <div class="chips"><span class="chip u"><svg class="i" viewBox="0 0 24 24" style="color:var(--wait);width:16px;height:16px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>ok to deploy on staging</span><span class="chip">review the test seeds</span></div>
+ <div class="prog"><i></i></div>
+</div>
+<div class="head" style="margin-top:26px">CASELLA PROSSIMI NELLA CHAT</div>
+<div class="box">
+ <div class="bh"><span class="mono">PROSSIMI · 3</span><svg class="i" viewBox="0 0 24 24" style="color:#B0B8C4;width:22px;height:22px"><path d="M6 9l6 6 6-6"/></svg></div>
+ <div class="row u"><svg class="i" viewBox="0 0 24 24" style="color:var(--wait);width:18px;height:18px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg><span>ok al push su main</span><svg class="i" viewBox="0 0 24 24" style="color:#A8C7FA;width:20px;height:20px"><path d="M7 17 17 7M8 7h9v9"/></svg></div>
+ <div class="row"><span>aggiorna il changelog</span><svg class="i" viewBox="0 0 24 24" style="color:#A8C7FA;width:20px;height:20px"><path d="M7 17 17 7M8 7h9v9"/></svg></div>
+ <div class="row"><span>tagga la v1.2</span><svg class="i" viewBox="0 0 24 24" style="color:#A8C7FA;width:20px;height:20px"><path d="M7 17 17 7M8 7h9v9"/></svg></div>
+</div>
+<div class="head" style="margin-top:26px">ULTIMO ESITO DELLA MASTER</div>
+<div class="hero" style="margin-top:10px;padding-top:6px">
+ <div class="step u"><svg class="i" viewBox="0 0 24 24" style="color:var(--wait);width:18px;height:18px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>approva il piano Firebase</div>
+ <div class="step"><svg class="i" viewBox="0 0 24 24" style="color:#A8C7FA;width:18px;height:18px"><path d="M5 4v7a3 3 0 0 0 3 3h11M15 10l4 4-4 4"/></svg>codice del contratto 1.37</div>
+</div></div><div class="legend">Il tasto è uguale agli altri: lo distingue solo il lucchetto ambra davanti, e sta sempre per primo. La più discreta.</div></body></html>
