@@ -5,6 +5,7 @@
   import { age } from './summary'
   import { PATHS } from './badge'
   import { t } from './t'
+  import Options from './Options.svelte'
 
   // La casa della master (casa A, MasterHome.kt): l'ultimo esito in grande con i consigli, «Per te» con chi ti aspetta,
   // chi ha finito e chi lavora, la quota in due barre. Con una domanda aperta «Per te» va in testa.
@@ -127,11 +128,7 @@
     {#if open}
       <div class="abody">
         {#if body}<p>{body}</p>{/if}
-        {#if q}
-          <div class="options">
-            {#each q.options as o, n}<button class="opt" class:first={n === 0} onclick={() => onAnswer(i.session, o.n)}>{o.n} · {o.label}</button>{/each}
-          </div>
-        {/if}
+        {#if q}<Options {q} onAnswer={(n) => onAnswer(i.session, n)} />{/if}
         {#if !q && p.steps.length}
           <div class="chips">{#each p.steps as step}<button class="chip" onclick={() => onSendStep(step)}>{step}</button>{/each}</div>
         {/if}
@@ -234,14 +231,9 @@
   .aline { font-size: 14px; color: var(--text2); }
   .abody { padding: 0 8px 12px 40px; display: flex; flex-direction: column; gap: 8px; }
   .abody p { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .options { display: flex; gap: 4px; }
-  .opt { flex: 1; min-height: 46px; border-radius: 24px 8px 8px 24px; background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
-  .opt:last-child { border-radius: 8px 24px 24px 8px; }
-  .opt:only-child { border-radius: 24px; }
-  .opt.first { background: var(--primary); color: var(--on-primary); font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { border: 1px solid color-mix(in srgb, var(--t) 50%, transparent); border-radius: 999px; padding: 8px 14px; font-size: 14px; }
-  .opt:hover, .chip:hover { filter: brightness(1.15); }
+  .chip:hover { filter: brightness(1.15); }
   .link { align-self: flex-start; color: var(--icon); padding: 8px 12px; border-radius: 20px; font-weight: 500; font-size: 14px; }
   .link:hover { background: rgb(255 255 255 / .05); }
   .svc { display: flex; align-items: center; gap: 12px; padding: 6px 8px; }

@@ -6,6 +6,7 @@
   import { parseSteps } from './nextSteps'
   import { t } from './t'
   import Badge from './Badge.svelte'
+  import Options from './Options.svelte'
 
   // La home del telefono (SummaryList.kt): ogni sessione una card nei gruppi del bisogno; il tocco apre la sessione, ▼ la
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
@@ -47,11 +48,7 @@
         {#if x.body}<p class="body" class:full={open} class:strong={group === 'waiting' || open}>{x.body}</p>{/if}
         {#if open}<div class="details">{[s.model?.label, s.effort, s.account].filter(Boolean).join(' · ')}</div>{/if}
         {#if group === 'waiting' && s.question}
-          <div class="options">
-            {#each s.question.options as o, i}
-              <button class="opt" class:first={i === 0} onclick={(e) => { e.stopPropagation(); onAnswer(s.name, o.n) }}>{o.n} · {o.label}</button>
-            {/each}
-          </div>
+          <Options q={s.question} onAnswer={(n) => onAnswer(s.name, n)} tonal="color-mix(in srgb, var(--primary) 12%, var(--surface))" />
         {/if}
         {#if x.steps.length}
           <div class="chips">
@@ -101,13 +98,6 @@
   .details { font-size: 12.5px; color: var(--text2); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { border-radius: 999px; padding: 8px 14px; font-size: 14px; background: color-mix(in srgb, var(--primary) 12%, transparent); }
-  .options { display: flex; gap: 4px; }
-  /* Le opzioni come i tasti a gruppo dell'app: larghe uguali, la prima piena. */
-  .opt { flex: 1; min-height: 50px; border-radius: 26px 8px 8px 26px; font-size: 16px; background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
-  .opt:last-child { border-radius: 8px 26px 26px 8px; }
-  .opt:only-child { border-radius: 26px; }
-  .opt.first { background: var(--primary); color: var(--on-primary); font-weight: 500; }
-  .opt:hover { filter: brightness(1.12); }
   .chip:hover { filter: brightness(1.15); }
   .track { margin-right: 4px; height: 3px; border-radius: 2px; background: var(--b-track); overflow: hidden; }
   .fill { height: 100%; }

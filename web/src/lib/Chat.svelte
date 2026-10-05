@@ -10,6 +10,8 @@
   import type { Sent, Status } from './chatRules'
   import { toggle } from './speech.svelte'
   import Feed from './Feed.svelte'
+  import QuestionCard from './QuestionCard.svelte'
+  import { CHAT_ARG, textArg } from './questionRules'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
   let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
@@ -31,7 +33,9 @@
   function send() {
     const text = draft.trim()
     if (!text) return
-    onSend(text); draft = ''
+    // Con una domanda aperta il campo risponde a parole (contratto 1.10).
+    if (s.question) onCmd('answer', textArg(text)); else onSend(text)
+    draft = ''
   }
   // Invio manda, Maiusc+Invio va a capo, come sul tablet con la tastiera fisica.
   function key(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
@@ -50,14 +54,7 @@
     {:else}
     <Feed {s} {items} now={st.ts} />
     {#if s.question}
-      <div class="question">
-        <p>{s.question.text}</p>
-        <div class="options">
-          {#each s.question.options as o, i}
-            <button class:first={i === 0} onclick={() => onSend(String(o.n))}>{o.n} · {o.label}</button>
-          {/each}
-        </div>
-      </div>
+      <QuestionCard q={s.question} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
     {/if}
     {/if}
   </div>
@@ -72,8 +69,8 @@
   {/if}
 
   <form class="composer" onsubmit={(e) => { e.preventDefault(); send() }}>
-    <textarea rows="1" bind:value={draft} onkeydown={key} placeholder={s.suggestion ?? t.writeTo(s.name)}></textarea>
-    {#if !draft && s.suggestion}<button type="button" class="use" onclick={() => (draft = s.suggestion ?? '')}>{t.use}</button>{/if}
+    <textarea rows="1" class:hint={!s.question && !!s.suggestion} bind:value={draft} onkeydown={key} placeholder={s.question ? t.answerFree : s.suggestion ?? t.writeTo(s.name)}></textarea>
+    {#if !draft && s.suggestion && !s.question}<button type="button" class="use" onclick={() => (draft = s.suggestion ?? '')}>{t.use}</button>{/if}
     <button type="submit" class="sendbtn" disabled={!draft.trim()} aria-label={t.send}>➤</button>
   </form>
   <div class="hint mono">{t.enterSends}</div>
@@ -91,10 +88,6 @@
   .me p { background: var(--surface); border-radius: 20px 20px 6px 20px; padding: 10px 14px; }
   .claude { display: flex; flex-direction: column; gap: 4px; max-width: 760px; }
   p { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .question { border: 2px solid var(--wait); background: var(--high); border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
-  .options { display: flex; flex-wrap: wrap; gap: 8px; }
-  .options button { background: var(--surface); border-radius: 999px; padding: 8px 16px; }
-  .options button.first { background: var(--primary); color: var(--on-primary); font-weight: 500; }
   .steps { margin: 0 16px; background: var(--low); border: 1px solid var(--line); border-radius: 18px; padding: 8px 0; }
   .steps .mono { padding: 2px 14px 6px; }
   .step { display: flex; align-items: center; border-top: 1px solid var(--line); }
@@ -104,7 +97,9 @@
   .composer { margin: 10px 16px 4px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 28px; padding: 6px 6px 6px 18px; }
   .composer:focus-within { border-color: var(--icon); }
   textarea { flex: 1; resize: none; background: none; border: 0; outline: 0; color: var(--text); font: inherit; field-sizing: content; max-height: 8lh; padding: 8px 0; }
-  textarea::placeholder { color: var(--text2); font-style: italic; }
+  textarea::placeholder { color: var(--text2); }
+  /* In corsivo solo il suggerimento di Claude, come nell'app. */
+  textarea.hint::placeholder { font-style: italic; }
   .use { color: var(--icon); padding: 6px 10px; }
   .sendbtn { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); }
   .sendbtn:disabled { background: var(--surface); color: var(--text2); cursor: default; }

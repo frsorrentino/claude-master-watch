@@ -34,6 +34,8 @@ export const t = {
     sending: () => 'invio', sent: () => 'inviato al PC', uncertain: () => 'in attesa del PC', failed: () => 'non consegnato',
     delivered: () => 'consegnato alla sessione', queued: () => 'in coda', working: () => 'preso in carico', done: () => 'elaborato',
   } as Record<string, (hm: string) => string>,
+  questionHighRisk: "Rischio alto: tieni premuta l'opzione per rispondere", questionHold: 'Tieni premuto per confermare',
+  chatAboutThis: 'Parliamone', allowAll: 'Consenti tutto', answerFree: 'Rispondi con parole tue',
   home: 'Casa', dockMaster: 'MASTER', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },
   modelTitle: 'Modello', effortTitle: 'Effort', choiceThisSession: 'Vale solo per questa sessione',
