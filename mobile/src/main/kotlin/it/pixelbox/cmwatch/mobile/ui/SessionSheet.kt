@@ -189,7 +189,11 @@ fun SessionSheet(
 ) {
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
-    var draft by (draftState ?: ownDraft)
+    // La bozza si legge solo dove serve (Franz, 05/10 10:45: «la digitazione risulta ancora molto lenta»): letta qui in
+    // cima, ogni lettera ricomponeva tutta la scheda e la conversazione. Il campo la legge da sé; qui solo valori derivati,
+    // che cambiano quando cambia il risultato.
+    val draftHolder = draftState ?: ownDraft
+    var draft by draftHolder
     var holdHint by rememberSaveable(s.question?.id) { mutableStateOf(false) }
     // Il box «Prossimi» e il campo (Franz, 04/10 20:21): il primo consiglio dell'ultima risposta fa da suggerimento nel
     // campo vuoto, gli altri restano nel box anche scrivendo; il suggerito del terminale entra solo se è diverso.
@@ -198,11 +202,14 @@ fun SessionSheet(
         feed?.let { f -> ChatFeed.group(f).lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
             ?.let { c -> NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
     }
-    val stepsBox = if (idle) NextSteps.box(steps, s.suggestion, draft) else NextSteps.Box(null, emptyList())
+    val stepsBox by remember(steps, s.suggestion, idle, draftHolder) {
+        derivedStateOf { if (idle) NextSteps.box(steps, s.suggestion, draftHolder.value) else NextSteps.Box(null, emptyList()) }
+    }
+    val draftBlank by remember(draftHolder) { derivedStateOf { draftHolder.value.isBlank() } }
     val boxes = LocalPromptBoxes.current
     val then = stringResource(R.string.next_then)
     val fieldFocus = LocalFieldFocus.current
-    val primary = PhonePrimary.button(s, draft)
+    val primary by remember(s, draftHolder) { derivedStateOf { PhonePrimary.button(s, draftHolder.value) } }
     val list = rememberLazyListState()
     // La chat segue l'ultimo testo finché non la si sposta a mano per rileggere (Franz, 01/10 06:52). «Segui» si decide
     // solo quando lo scorrimento si ferma: letto dopo l'arrivo di un testo nuovo, il fondo era già più giù e la chat
@@ -267,7 +274,7 @@ fun SessionSheet(
                         TextButton(onClick = { follow = false; onOlder() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.load_older), color = CmColors.actionIcon) }
                     }
                     // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
-                    val grouped = ChatFeed.group(feed)
+                    val grouped = remember(feed) { ChatFeed.group(feed) }
                     items(grouped, key = { feedKey(it) }) { it ->
                         when (it) {
                             // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
@@ -335,7 +342,7 @@ fun SessionSheet(
             // campo vuoto. Si chiude a una riga, e resta chiuso finché non lo si riapre.
             if (stepsBox.rows.isNotEmpty()) PromptBox(
                 stringResource(R.string.next_steps), stepsBox.rows.map { PromptRow(it, it, direct = true) },
-                open = boxes.stepsOpen, onOpen = boxes::steps, draftBlank = draft.isBlank(),
+                open = boxes.stepsOpen, onOpen = boxes::steps, draftBlank = draftBlank,
                 onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
             )
@@ -402,11 +409,15 @@ fun SessionSheet(
         // ⟳ nel campo (Franz, 04/10 23:55), e il pannello sta sopra il campo con gli stessi gesti dei Prossimi; si chiude
         // dall'intestazione o scegliendo un'azione. Una che aspetta un pezzo (`param`) va nel campo col cursore in fondo.
         val recurring = LocalRecurring.current
-        val recurringRows = if (home == null) emptyList() else
-            recurring.filterNot { r -> NextSteps.inDraft(draft, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
+        val recurringRows by remember(recurring, home == null, idle, draftHolder) {
+            derivedStateOf {
+                if (home == null) emptyList()
+                else recurring.filterNot { r -> NextSteps.inDraft(draftHolder.value, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
+            }
+        }
         if (boxes.recurringOpen && recurringRows.isNotEmpty()) PromptBox(
             stringResource(R.string.recurring), recurringRows,
-            open = true, onOpen = { boxes.recurring(false) }, draftBlank = draft.isBlank(),
+            open = true, onOpen = { boxes.recurring(false) }, draftBlank = draftBlank,
             onPick = { r ->
                 draft = NextSteps.append(draft, if (r.direct) r.text else r.text.trimEnd() + " ", then)
                 boxes.recurring(false)
@@ -417,7 +428,7 @@ fun SessionSheet(
         )
         if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
         Composer(
-            s, draft, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
+            s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
             toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field,
             onRecurring = if (recurringRows.isEmpty()) null else ({ boxes.recurring(!boxes.recurringOpen) }), recurringOpen = boxes.recurringOpen,
         )
@@ -431,7 +442,7 @@ fun SessionSheet(
  */
 @Composable
 private fun Composer(
-    s: Session, draft: String, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
+    s: Session, draftState: androidx.compose.runtime.State<String>, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
     quota: QuotaWarning.Warn? = null, phrases: List<String> = emptyList(), canTonight: Boolean = false,
     slash: List<String>? = null,
     /** Il campo del riepilogo, che scrive alla master: «Scrivi alla master». */
@@ -443,6 +454,7 @@ private fun Composer(
     /** Il tasto ⟳ delle azioni ricorrenti della master nel campo; null senza azioni. */
     onRecurring: (() -> Unit)? = null, recurringOpen: Boolean = false,
 ) {
+    val draft = draftState.value
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
     // clear ed exit svuotano o chiudono la sessione: prima si chiede (Franz, 02/10 11:12).
     var confirm by remember(s.id) { mutableStateOf<it.pixelbox.cmwatch.rules.Slash.Parsed?>(null) }
