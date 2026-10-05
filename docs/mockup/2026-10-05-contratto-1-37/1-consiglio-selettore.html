@@ -1,0 +1,102 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=412"><style>
+:root{--bg:#000;--low:#1B1F26;--surf:#23272E;--high:#292F3A;--line:#2A2E35;--text:#F2F4F7;--text2:#B0B8C4;--icon:#A8C7FA;
+--primary:#D3E3FD;--onp:#0A2050;--wait:#FFB020;--good:#65C581;--busy:#7FA1FF;--gone:#FF453A;--warn:#FFC46B;--alert:#E5736B;
+--ring:#8BB4F7;--track:#455165;--label:#BCE4C7;--new:#C58AF9}
+*{box-sizing:border-box;margin:0}
+body{background:#120D1C;color:var(--text);font:15px/1.4 Roboto,system-ui,sans-serif;width:412px}
+.screen{position:relative;width:412px;height:915px;overflow:hidden;background:var(--bg)}
+.mono{font-family:"Roboto Mono",monospace;letter-spacing:.08em;color:var(--text2);font-size:12px}
+.tag{position:absolute;top:0;left:0;right:0;z-index:50;background:#2B1F45;color:#E9DDFF;font:600 11px/1.3 "Roboto Mono",monospace;letter-spacing:.06em;padding:6px 12px}
+.new{outline:2px dashed var(--new);outline-offset:3px;border-radius:14px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* testata della sessione */
+.hdr{border-bottom:1px solid var(--line);padding:30px 0 8px}
+.hrow{display:flex;align-items:center;gap:6px;padding-left:2px;min-height:52px}
+.back{width:36px;display:grid;place-items:center}
+.pill{position:relative;display:flex;align-items:center;gap:2px;background:var(--surf);border-radius:999px;padding:6px 6px 6px 12px;font-size:14px;font-weight:500;white-space:nowrap}
+.dot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--new);border:2px solid var(--bg)}
+.sp{flex:1}
+.meter{display:flex;align-items:center;gap:6px;padding:4px;font-size:14px;font-weight:500;color:var(--text2);white-space:nowrap}
+.note{padding:0 16px;font-size:12px;font-weight:500;color:var(--label);letter-spacing:.03em}
+/* chat */
+.chat{padding:12px 16px}
+.me{display:flex;flex-direction:column;align-items:flex-end;margin:8px 0 14px;padding-left:40px}
+.bub{background:var(--surf);border-radius:22px 22px 6px 22px;padding:10px 16px;font-size:15.5px}
+.meta{display:flex;gap:10px;align-items:center;color:var(--text2);font-size:13px;margin-top:6px}
+.cl{font-size:15.5px;line-height:1.5;margin:6px 0}
+.acts{display:flex;align-items:center;gap:10px;color:var(--text2);margin:6px 0 14px}
+.play{width:36px;height:36px;border-radius:50%;background:var(--high);display:grid;place-items:center}
+.comp{position:absolute;left:12px;right:12px;bottom:14px;border:1px solid var(--line);border-radius:28px;height:56px;display:flex;align-items:center;gap:14px;padding:0 8px 0 18px;color:var(--text2)}
+.send{margin-left:auto;width:42px;height:42px;border-radius:50%;background:var(--primary);display:grid;place-items:center;color:var(--onp)}
+/* home */
+.top{padding:34px 20px 6px;display:flex;align-items:baseline;gap:10px}
+.top h1{font-size:26px;font-weight:500}.top span{color:var(--text2);font-size:15px}
+.ql{display:flex;gap:16px;padding:6px 16px 4px;font-size:12px}
+.grp{display:flex;align-items:center;gap:10px;margin:18px 22px 8px;font:500 12px/1 "Roboto Mono",monospace;letter-spacing:.14em}
+.grp::after{content:"";flex:1;height:1px;background:currentColor;opacity:.3}
+.card{background:var(--low);border-radius:24px;padding:14px 16px;margin:0 14px 10px}
+.ch{display:flex;align-items:center;gap:12px}
+.ch b{font-size:17px;font-weight:600}
+.badge{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+.prog{height:3px;border-radius:2px;background:var(--track);margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ring)}
+.line{color:var(--text2);margin-top:8px;font-size:15px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin-top:10px;font-size:14.5px}
+.kv span:nth-child(odd){color:var(--text2)}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font:600 11px/1.4 "Roboto Mono",monospace;letter-spacing:.08em}
+.prod{background:rgba(229,115,107,.16);color:var(--alert)}
+.dup{background:rgba(255,196,107,.14);color:var(--warn)}
+.btns{display:flex;gap:10px;margin-top:12px;align-items:center}
+.filled{background:var(--primary);color:var(--onp);border-radius:999px;padding:11px 20px;font-weight:500;text-align:center}
+.tonal{background:var(--high);border-radius:999px;padding:11px 20px;font-weight:500;text-align:center}
+.textb{color:var(--icon);padding:11px 8px;font-weight:500}
+/* fogli */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:20}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:30;background:var(--surf);border-radius:28px 28px 0 0;padding:20px 20px 26px}
+.alert{position:absolute;left:22px;right:22px;top:50%;transform:translateY(-50%);z-index:30;background:var(--surf);border-radius:28px;padding:22px}
+.sheet h3,.alert h3{font-size:22px;font-weight:600;margin:10px 0 4px}
+.sheet h3:first-child,.alert h3:first-child{margin-top:0}
+.sub{color:var(--text2);font-size:14px}
+.radio{display:flex;align-items:center;gap:14px;padding:7px 4px;font-size:16px}
+.rb{width:20px;height:20px;border-radius:50%;border:2px solid var(--text2);flex:none}
+.rb.on{border:6px solid var(--primary)}
+.rec{margin-left:auto;font:600 11px/1.4 "Roboto Mono",monospace;letter-spacing:.06em;color:var(--new);background:rgba(197,138,249,.14);border-radius:999px;padding:3px 9px}
+.why{margin:-4px 0 4px 38px;font-size:13px;color:var(--text2)}
+.cost{display:flex;gap:10px;align-items:flex-start;background:rgba(255,196,107,.10);color:var(--warn);border-radius:16px;padding:10px 12px;font-size:13.5px;margin:12px 0 2px}
+.field{background:var(--high);border-radius:16px;padding:12px 14px;font-size:15.5px;margin-top:12px;line-height:1.45}
+.lab{font-size:12px;color:var(--text2);margin:14px 0 6px}
+.col{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.opt small{font-size:12.5px;font-weight:400;opacity:.8;margin-top:2px}
+.banner{position:absolute;left:12px;right:12px;bottom:80px;display:flex;align-items:center;gap:12px;background:var(--high);border-radius:20px;padding:10px 10px 10px 14px}
+.banner .t{flex:1;font-size:14px;line-height:1.3}
+.banner .t b{display:block;font-weight:500;font-size:14.5px}
+.banner .tonal{background:#3A4356;color:var(--primary)}
+.legend{background:#120D1C;color:#E9DDFF;font-size:12.5px;line-height:1.4;padding:10px 14px 14px;border-top:1px solid #3A2C5C}
+</style></head><body><div class="screen"><div class="tag">MOCKUP 1.37 · A · CONSIGLIO DENTRO IL SELETTORE</div><div class="hdr"><div class="hrow">
+ <span class="back"><svg class="i" viewBox="0 0 24 24" style="color:#F2F4F7;width:22px;height:22px"><path d="M15 6l-6 6 6 6"/></svg></span>
+ <span class="pill new">Sonnet 5 · medium<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="#B0B8C4" stroke="none"/></svg><span class="dot"></span></span>
+ <span class="sp"></span>
+ <span class="meter"><svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#455165" stroke-width="3"/><circle cx="10" cy="10" r="7.5" fill="none" stroke="var(--ring)" stroke-width="3" pathLength="47.12" stroke-dasharray="5.2 100" transform="rotate(-90 10 10)" stroke-linecap="round"/></svg>5h 11%</span>
+ <span class="meter"><svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#455165" stroke-width="3"/><circle cx="10" cy="10" r="7.5" fill="none" stroke="var(--ring)" stroke-width="3" pathLength="47.12" stroke-dasharray="8.5 100" transform="rotate(-90 10 10)" stroke-linecap="round"/></svg>ctx 18%</span>
+ <span style="width:34px;display:grid;place-items:center"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4" fill="#B0B8C4"/><circle cx="12" cy="12" r="1.4" fill="#B0B8C4"/><circle cx="12" cy="19" r="1.4" fill="#B0B8C4"/></svg></span>
+</div><div class="note">Obiettivo: tutti i test del checkout verdi</div></div><div class="chat">
+ <div class="me"><div class="bub">Rifai il checkout con il riepilogo in alto</div><div class="meta">dal PC 12:40 <svg class="i" viewBox="0 0 24 24" style="color:#B0B8C4;width:20px;height:20px"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></div></div>
+ <div class="cl">Ho diviso il checkout in tre passaggi. Restano i test delle spedizioni.</div>
+ <div class="acts"><svg class="i" viewBox="0 0 24 24" style="color:#B0B8C4;width:22px;height:22px"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span class="play"><svg class="i" viewBox="0 0 24 24" style="color:currentColor;width:18px;height:18px"><path d="M8 5v14l11-7z" fill="#A8C7FA" stroke="none"/></svg></span><span style="font-size:13px">12:46</span></div>
+</div><div class="scrim"></div><div class="sheet">
+ <p class="sub">La scelta vale per questa sessione</p>
+ <h3>Modello</h3>
+ <div class="radio"><span class="rb"></span>Opus 5</div>
+ <div class="new" style="padding-bottom:6px"><div class="radio"><span class="rb"></span>Fable 5.1<span class="rec">CONSIGLIATO</span></div>
+ <div class="why">Refactor del checkout su molti file</div></div>
+ <div class="radio"><span class="rb on"></span>Sonnet 5</div>
+ <div class="radio"><span class="rb"></span>Haiku 4.5</div>
+ <h3>Effort</h3>
+ <div class="radio"><span class="rb"></span>low</div>
+ <div class="radio"><span class="rb on"></span>medium</div>
+ <div class="radio new"><span class="rb"></span>high<span class="rec">CONSIGLIATO</span></div>
+ <div class="radio"><span class="rb"></span>xhigh</div>
+ <div class="radio"><span class="rb"></span>max</div>
+ <div class="cost new"><svg class="i" viewBox="0 0 24 24" style="color:var(--warn);width:18px;height:18px"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg><span>Sta lavorando: cambiare adesso ricarica circa 36 000 token di cache. Conviene al prossimo compito.</span></div>
+</div></div><div class="legend">Puntino lilla sul tasto solo se la scelta attuale è diversa dal consiglio. Nel foglio «consigliato» accanto a modello ed effort, sotto il modello il motivo. Il riquadro ambra c'è solo a metà lavoro (when = next_task). Il consiglio non si applica da solo: si sceglie come oggi.</div></body></html>
