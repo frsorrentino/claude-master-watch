@@ -36,9 +36,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.ui.draganddrop.mimeTypes
-import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableIntStateOf
@@ -470,6 +470,7 @@ fun SessionSheet(
  * L'immagine scelta resta in attesa sopra il campo, con la sua anteprima e la ×, e parte con Invia insieme al testo
  * (Franz, 30/09 22:03: prima partiva subito).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Composer(
     s: Session, draftState: androidx.compose.runtime.State<String>, onDraft: (String) -> Unit, ops: List<String>?, canAttach: Boolean, actions: SheetActions, onSent: () -> Unit,
@@ -581,31 +582,28 @@ private fun Composer(
             if (fieldFocus.target == s.name) { fieldFocus.target = null; runCatching { focusReq.requestFocus() } }
         }
         // Il testo messo nel campo da fuori («Usa», una riga dei box) porta il cursore in fondo, pronto per continuare.
-        var field by remember { mutableStateOf(TextFieldValue(draft, TextRange(draft.length))) }
-        // File trascinati sul campo da un'altra app (tablet, Chromebook; Franz, 05/10 22:29): vanno fra gli allegati come dal +.
-        val dropActivity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
-        val dropTarget = remember(s.id) {
-            object : androidx.compose.ui.draganddrop.DragAndDropTarget {
-                override fun onDrop(event: androidx.compose.ui.draganddrop.DragAndDropEvent): Boolean {
-                    val e = event.toAndroidDragEvent()
-                    dropActivity?.requestDragAndDropPermissions(e)
-                    val clip = e.clipData ?: return false
-                    val uris = (0 until clip.itemCount).mapNotNull { i -> clip.getItemAt(i).uri }
-                    if (uris.isEmpty()) return false
-                    images = (images + uris).distinct().take(MAX_IMAGES)
-                    return true
-                }
-            }
+        // Il campo a stato (TextFieldState): riceve anche immagini e file incollati, dalla tastiera o trascinati da un'altra
+        // app (Franz, 05/10 22:29), che vanno fra gli allegati come dal +. La bozza resta sincronizzata nei due versi.
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        val fieldState = androidx.compose.foundation.text.input.rememberTextFieldState(draft)
+        val currentDraft by androidx.compose.runtime.rememberUpdatedState(draft)
+        LaunchedEffect(draft) { if (fieldState.text.toString() != draft) fieldState.setTextAndPlaceCursorAtEnd(draft) }
+        LaunchedEffect(fieldState) {
+            androidx.compose.runtime.snapshotFlow { fieldState.text.toString() }.collect { t -> if (t != currentDraft) onDraft(t) }
         }
-        LaunchedEffect(draft) { if (field.text != draft) field = TextFieldValue(draft, TextRange(draft.length)) }
         OutlinedTextField(
-            value = if (field.text == draft) field else TextFieldValue(draft, TextRange(draft.length)),
-            onValueChange = { v -> field = v; if (v.text != draft) onDraft(v.text) }, maxLines = 5,
+            state = fieldState, lineLimits = androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
             modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
-                .dragAndDropTarget(
-                    shouldStartDragAndDrop = { ev -> canAttach && ev.mimeTypes().any { m -> m.startsWith("image/") || (canAttachFiles && m != "text/plain") } },
-                    target = dropTarget,
-                )
+                .contentReceiver { content ->
+                    if (!canAttach) return@contentReceiver content
+                    content.consume { item ->
+                        val u = item.uri ?: return@consume false
+                        val mime = ctx.contentResolver.getType(u).orEmpty()
+                        if (!mime.startsWith("image/") && !canAttachFiles) return@consume false
+                        images = (images + u).distinct().take(MAX_IMAGES)
+                        true
+                    }
+                }
                 .focusRequester(focusReq)
                 .onFocusChanged { f -> fieldFocus?.let { ff -> if (f.isFocused) ff.owner = s.name else if (ff.owner == s.name) ff.owner = null } }
                 // Il tablet (pezzo 6): con la tastiera fisica Invio manda e Maiusc+Invio va a capo; la tastiera dello schermo
