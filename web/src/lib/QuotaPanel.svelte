@@ -16,6 +16,8 @@
   const L = 30, W = 262, T = 4, H = 76
   const x = (v: number) => L + W * v
   const y = (p: number) => T + H * (1 - Math.min(100, Math.max(0, p)) / 100)
+  // Le righe 100 e 50 del grafico: valore e colore.
+  const GRID: [number, string][] = [[100, 'var(--line)'], [50, 'color-mix(in srgb, var(--line) 60%, transparent)']]
 </script>
 
 <div class="panel">
@@ -23,8 +25,8 @@
   {#if f && ring.resetAt}
     {@const pts = f.points.map(([px, p]) => `${x(px)},${y(p)}`).join(' ')}
     <svg viewBox="0 0 300 96" class="chart" role="img" aria-label={f.projected != null ? t.tabletForecast(f.projected, hm(ring.resetAt)) : t.tabletForecastFlat(hm(ring.resetAt))}>
-      {#each [[100, 'var(--line)'], [50, 'color-mix(in srgb, var(--line) 60%, transparent)']] as [p, c]}
-        <line x1={L} y1={y(+p)} x2={L + W} y2={y(+p)} stroke={c} stroke-width="1" /><text x="0" y={y(+p) + 3} class="ax">{p}</text>
+      {#each GRID as [p, c]}
+        <line x1={L} y1={y(p)} x2={L + W} y2={y(p)} stroke={c} stroke-width="1" /><text x="0" y={y(p) + 3} class="ax">{p}</text>
       {/each}
       <line x1={L} y1={y(80)} x2={L + W} y2={y(80)} stroke="var(--b-warn)" stroke-width="1" stroke-dasharray="6 6" /><text x="0" y={y(80) + 3} class="ax warn">80</text>
       <line x1={x(f.nowX)} y1={T} x2={x(f.nowX)} y2={T + H} stroke="var(--text2)" stroke-opacity=".6" stroke-dasharray="2 4" />

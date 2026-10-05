@@ -20,10 +20,12 @@
   import PromptBox from './PromptBox.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
+    /** Allegati del «+»: prima /share, poi `report` (contratti 1.19 e 1.28). */
+    onAttach: (files: File[], text: string) => void
     /** L'avviso delle altre sessioni sotto la barra (Elsewhere). */
     elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
@@ -106,7 +108,7 @@
   <ReadingPill onOpen={onPick} {slots} here={s.name} />
   <Composer bind:this={composer} {st} {s} bind:draft field={stepsBox.field} toMaster={s.name === MASTER} {onSend}
     onAnswerText={(arg) => onCmd('answer', arg)} onSlash={(c, a) => onCmd('slash', c, a ?? undefined)} onStop={() => onCmd('interrupt')}
-    onReopen={() => onCmd('reopen')} onAttach={(fs, text) => onCmd('report', fs.map(f => f.name).join(', '), text)}
+    onReopen={() => onCmd('reopen')} {onAttach}
     onRecurring={recurringRows.length ? () => { recurringOpen = !recurringOpen; save('cm.recurring_open', recurringOpen) } : null} />
 </section>
 

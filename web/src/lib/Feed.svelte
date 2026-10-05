@@ -142,7 +142,8 @@
   {#if it.type === 'mine'}
     {@const [ic, tone] = status[it.status]}
     <div class="me">
-      {@render bubble(it.sent.text, false)}
+      {#if it.sent.attachment}<span class="att"><Icon name="file" size={16} />{it.sent.attachment}</span>{/if}
+      {#if it.sent.text}{@render bubble(it.sent.text, false)}{/if}
       <div class="mrow">
         <span class="mark" style="color:{tone}"><Icon name={ic} size={16} color={tone} />{it.status === 'scheduled' && it.sent.scheduledFor ? t.chatStatus.scheduled(hm(it.sent.scheduledFor)) : t.chatStatus[it.status]('')}</span>
         {#if it.status !== 'scheduled'}<span class="time">{hm(it.sent.sentAt)}</span>{/if}
@@ -180,6 +181,7 @@
 <style>
   p { white-space: pre-wrap; overflow-wrap: anywhere; }
   .me { align-self: stretch; padding-left: 40px; display: flex; flex-direction: column; align-items: flex-end; }
+  .att { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; margin-bottom: 4px; border-radius: 14px; background: var(--surface); color: var(--text2); font-size: 14px; overflow-wrap: anywhere; }
   .bubble { background: var(--high); border-radius: 20px 20px 6px 20px; padding: 12px 16px; font-size: 16px; letter-spacing: .03em; max-width: 760px; }
   .bubble.low { background: var(--surface); }
   .mrow { display: flex; align-items: center; gap: 2px; }

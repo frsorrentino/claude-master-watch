@@ -30,7 +30,7 @@ export const t = {
   stepsCount: (n: number) => (n === 1 ? '1 passaggio' : `${n} passaggi`), stepsFailed: (n: number) => (n === 1 ? '1 fallito' : `${n} falliti`),
   origin: { pc: 'dal PC', watch: "dall'orologio", phone: 'dal telefono' } as Record<string, string>,
   chatStatus: {
-    scheduled: (hm: string) => `parte alle ${hm}`, offline: () => 'senza rete, parte appena torna', uploading: () => "carico l'immagine",
+    scheduled: (hm: string) => `parte alle ${hm}`, offline: () => 'senza rete, parte appena torna', uploading: () => "carico l'allegato",
     sending: () => 'invio', sent: () => 'inviato al PC', uncertain: () => 'in attesa del PC', failed: () => 'non consegnato',
     delivered: () => 'consegnato alla sessione', queued: () => 'in coda', working: () => 'preso in carico', done: () => 'elaborato',
   } as Record<string, (hm: string) => string>,

@@ -2,7 +2,7 @@
   import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
   import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
-  import { advance, prune, status, type PendingStatus, type Sent, type Status } from './lib/chatRules'
+  import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
   import type { Sample } from './lib/quotaHistory'
   import { LocalTransport, localAccess, newCmd } from './lib/transport'
   import { toggle } from './lib/speech.svelte'
@@ -53,9 +53,10 @@
   let msgs = $state<Sent[]>(tr ? prune(json<Sent[]>('cm.sent', []), nowS()) : demoMine.map(([m]) => m))
   let pend = $state<Record<string, PendingStatus>>({})
   let res = $state<Record<string, CmdResult>>({})
+  let uploads = $state<Record<string, Upload>>({})
   const demoStatus = new Map(demoMine.map(([m, x]) => [m.id, x]))
   const mine = $derived<[Sent, Status][]>(msgs.map(m => [m, tr
-    ? status(m, pend[m.id] ?? null, res[m.id] ?? null, st.sessions.find(x => x.name === m.session) ?? null)
+    ? status(m, pend[m.id] ?? null, res[m.id] ?? null, st.sessions.find(x => x.name === m.session) ?? null, uploads[m.id] ?? null)
     : demoStatus.get(m.id) ?? 'sent']))
   // Le letture della quota delle 5 ore, per il ritmo: le tiene la web app, come QuotaHistory sul telefono.
   let samples = $state<Record<string, Sample[]>>(tr ? json('cm.samples', {}) : demoSamples)
@@ -216,9 +217,31 @@
     if (!tr) return
     pend = { ...pend, [m.id]: 'sending' }
     try {
-      const r = await tr.send({ ...newCmd('prompt', name, null, text), id: m.id })
+      const r = await tr.send({ ...newCmd('prompt', name, text), id: m.id })
       res = { ...res, [m.id]: r }
     } catch { pend = { ...pend, [m.id]: 'failed' } }
+  }
+  // Allegati: un messaggio per file, il testo con l'ultimo; ogni file va prima in /share/<id>, poi `report` con quell'id.
+  async function attach(name: string, files: File[], text: string) {
+    for (const [i, f] of files.entries()) {
+      const m: Sent = { id: crypto.randomUUID(), session: name, text: i === files.length - 1 ? text : '', sentAt: nowS(), attachment: f.name }
+      msgs = [...msgs, m]
+      if (!tr) continue
+      const sid = crypto.randomUUID()
+      uploads = { ...uploads, [m.id]: { type: 'going' } }
+      try {
+        await tr.share(sid, f.type || 'application/octet-stream', new Uint8Array(await f.arrayBuffer()), f.name)
+      } catch (e) {
+        uploads = { ...uploads, [m.id]: { type: 'failed', reason: e instanceof Error ? e.message : String(e) } }
+        continue
+      }
+      const { [m.id]: _, ...rest } = uploads
+      uploads = rest
+      pend = { ...pend, [m.id]: 'sending' }
+      try {
+        res = { ...res, [m.id]: await tr.send({ ...newCmd('report', name, sid, m.text || undefined), id: m.id }) }
+      } catch { pend = { ...pend, [m.id]: 'failed' } }
+    }
   }
   // «Chiedi alla master» arriva come `prompt` della sessione: va alla master, come messaggio nella sua chat.
   const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => {
@@ -251,7 +274,7 @@
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
-    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo}
+    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}
