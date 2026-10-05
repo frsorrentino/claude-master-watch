@@ -21,6 +21,8 @@ enum class EventKind {
     @SerialName("gone") GONE, @SerialName("launched") LAUNCHED, @SerialName("quota") QUOTA, @SerialName("resumed") RESUMED,
     /** Contratto 1.18 (R4): il diario delle 20:00 e il resoconto della notte; `ref` = giorno ISO, `session` e `account` null. */
     @SerialName("recap") RECAP, @SerialName("night_report") NIGHT_REPORT,
+    /** Contratto 1.40: un riavvio di sessione non riuscito; `ref` = nome della sessione, `session` null. */
+    @SerialName("restart_failed") RESTART_FAILED,
 }
 
 @Serializable
