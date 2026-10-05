@@ -19,6 +19,12 @@ object PhoneOverview {
         val weekResetAt: Long? = null, val stale: Boolean = false,
     )
 
+    /**
+     * La riga della quota nella home: con almeno un account aggiornato quelli non aggiornati non si mostrano, e l'altro
+     * prende tutta la larghezza (segnalazione 05/10 20:54); se sono tutti vecchi restano, con «non aggiornata».
+     */
+    fun lineRings(rings: List<Ring>): List<Ring> = rings.filter { !it.stale }.ifEmpty { rings }
+
     /** Una riga del contesto: le soglie della card delle misure, più modello ed effort come li legge il PC. */
     data class ContextRow(val name: String, val pct: Int, val tone: BriefCards.Tone, val model: String?, val effort: String?)
 

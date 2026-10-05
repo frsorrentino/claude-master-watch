@@ -377,7 +377,9 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
  * e la percentuale; ambra da 75 %, rossa da 90 %, «non aggiornata» se il dato è vecchio. Tocco = Quadro e quota.
  */
 @Composable
-fun QuotaLine(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
+fun QuotaLine(all: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
+    // Con un account non aggiornato si vede solo l'altro, a tutta larghezza e con l'ora in cui si azzera (05/10 20:54).
+    val rings = PhoneOverview.lineRings(all)
     if (rings.isEmpty()) return
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).handCursor().clickable(onClick = onOpen).padding(vertical = 4.dp),
@@ -401,6 +403,8 @@ fun QuotaLine(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
                     if (r.stale) stringResource(R.string.quota_line_stale) else "$pct%", style = MonoSmall.copy(color = if (pct >= 75 && !r.stale) tone else CmColors.text2),
                     maxLines = 1, overflow = TextOverflow.Clip,
                 )
+                val reset = r.resetAt?.takeIf { rings.size == 1 && !r.stale && it > Instant.now().epochSecond }
+                if (reset != null) Text("· " + stringResource(R.string.quota_resets_at, hm(reset)), style = MonoSmall.copy(color = CmColors.text2), maxLines = 1)
             }
         }
     }

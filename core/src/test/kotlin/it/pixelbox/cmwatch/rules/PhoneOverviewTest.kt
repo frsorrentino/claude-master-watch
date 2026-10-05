@@ -65,4 +65,13 @@ class PhoneOverviewTest {
         assertFalse(rings.first { it.account == "personal" }.stale)
         assertTrue(rings.first { it.account == "work" }.stale)
     }
+
+    // Segnalazione 05/10 20:54: con un account non aggiornato la riga della home mostra solo quelli aggiornati.
+    @Test fun quotaLineHidesStaleAccountsWhileAnotherIsFresh() {
+        val rings = build().rings
+        assertEquals(listOf("personal"), PhoneOverview.lineRings(rings).map { it.account })
+        val allStale = rings.map { it.copy(stale = true) }
+        assertEquals(allStale, PhoneOverview.lineRings(allStale))
+        assertEquals(emptyList<PhoneOverview.Ring>(), PhoneOverview.lineRings(emptyList()))
+    }
 }
