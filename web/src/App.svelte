@@ -5,6 +5,7 @@
   import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
   import type { Sample } from './lib/quotaHistory'
   import { LocalTransport, localAccess, newCmd } from './lib/transport'
+  import { approveText, canClear, clearDue, handoffPrompt } from './lib/masterService'
   import { toggle } from './lib/speech.svelte'
   import Home from './lib/Home.svelte'
   import Chat from './lib/Chat.svelte'
@@ -97,11 +98,40 @@
       st = s; ready = true; down = false; clock = nowS()
       msgs = msgs.map(m => advance(m, s.sessions.find(x => x.name === m.session) ?? null, nowS()))
       record(s)
+      clearsDue(s)
       refreshEvents()
     }, () => { down = true })
     setInterval(() => (clock = nowS()), 30_000)
   }
   $effect(() => { if (tr) save('cm.sent', JSON.stringify(msgs)) })
+
+  // Contratto 1.37, «Handoff, poi /clear»: il /clear parte a turno finito, una volta sola; dopo 3 ore si lascia perdere.
+  let clearAfter = $state<Record<string, number>>(tr ? json('cm.clear_after', {}) : {})
+  function handoff(name: string) {
+    const s = st.sessions.find(x => x.name === name)
+    if (!s) return
+    const clear = canClear(st)
+    sendTo(name, handoffPrompt(st, s, clear ? t.ctxHandoffClearPrompt : t.ctxHandoffPrompt))
+    if (clear) { clearAfter = { ...clearAfter, [name]: nowS() }; save('cm.clear_after', JSON.stringify(clearAfter)) }
+  }
+  function clearsDue(s: State) {
+    const next = { ...clearAfter }
+    let changed = false
+    for (const [name, sentAt] of Object.entries(clearAfter)) {
+      const due = clearDue(s.sessions.find(x => x.name === name), sentAt)
+      if (due) run(newCmd('slash', name, 'clear'))
+      if (due || nowS() - sentAt > 3 * 3600) { delete next[name]; changed = true }
+    }
+    if (changed) { clearAfter = next; save('cm.clear_after', JSON.stringify(next)) }
+  }
+  async function approve(task: string, note: string) {
+    const r = await run(newCmd('approve', null, task, approveText(note)))
+    if (r?.ok) say(`✓ ${t.approved}`)
+  }
+  async function decide(text: string, project: string | null) {
+    const r = await run(newCmd('decision', null, project, text))
+    if (r?.ok) say(`✓ ${t.decisionSent}`)
+  }
 
   /** Un comando al relay; il rifiuto si mostra in basso. */
   async function run(c: Cmd): Promise<CmdResult | null> {
@@ -293,7 +323,7 @@
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
-    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p) => openFile(name, p)}
+    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p) => openFile(name, p)} onHandoff={() => handoff(name)} onDecision={decide}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}
@@ -302,7 +332,8 @@
   <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
     {#snippet list()}
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
-      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined} /></div>
+      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined}
+        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}

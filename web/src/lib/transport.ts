@@ -104,7 +104,8 @@ export function localAccess(url: URL, store: Store): { base: string; token: stri
   return { base: url.origin, token, clean }
 }
 
-const DEVICE_OPS = new Set<CmdOp>(['prompt', 'resume', 'launch', 'report'])
+// Contratto 1.37: anche approve e decision dicono da dove arrivano.
+const DEVICE_OPS = new Set<CmdOp>(['prompt', 'resume', 'launch', 'report', 'approve', 'decision'])
 
 /** Un comando nuovo dalla web app: `by` = "web" come mette il relay di default. */
 export function newCmd(op: CmdOp, session: string | null, arg?: string | null, text?: string): Cmd {

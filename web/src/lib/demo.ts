@@ -13,7 +13,8 @@ export const demoState = {
   sessions: [
     { id: 'm', name: 'master', account: 'personal', project: 'personali/claude-master', state: 'idle' as const, since: base.ts - 3600, context: 34, attached: true,
       model: { id: 'claude-opus-5-5', label: 'Opus 5.5' }, effort: 'high', suggestion: 'commit the README changes and open a PR' },
-    ...base.sessions.map(s => (s.name === 'field-notes' ? { ...s, followed: true, outcome: { ...s.outcome!, at: base.ts - 900 } } : s)),
+    // Contesto al 64 %: la proposta «handoff, poi /clear» del contratto 1.37 si vede nella sua chat.
+    ...base.sessions.map(s => (s.name === 'field-notes' ? { ...s, followed: true, context: 64, outcome: { ...s.outcome!, at: base.ts - 900 } } : s)),
   ],
 }
 

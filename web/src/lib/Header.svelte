@@ -4,14 +4,17 @@
   import { MASTER } from './summary'
   import { t } from './t'
   import Badge from './Badge.svelte'
+  import { adviceOf, ctxBand, tokens } from './masterService'
 
   // La testata della sessione (SheetHeader.kt): una riga con modello · effort in una pillola, la quota delle 5 ore con l'ora
   // dell'azzeramento, il contesto ad anello e il menu ⋮; sotto obiettivo, priorità e finestra. Su desktop a sinistra anche
   // badge e nome, come la plancia del tablet.
-  let { st, s, wide, onBack, onCmd, onPrompt }: {
+  let { st, s, wide, onBack, onCmd, onPrompt, onHandoff }: {
     /** `wide`: badge e nome a sinistra (la testata unica del desktop); in una colonna della plancia li ha la colonna. */
     st: State; s: Session; wide: boolean; onBack?: () => void
     onCmd: (op: CmdOp, arg?: string) => void; onPrompt: (text: string) => void
+    /** Contratto 1.37: «Handoff, poi /clear»; lo gestisce App (prompt e /clear a turno finito). */
+    onHandoff: () => void
   } = $props()
 
   // La scelta resta in vista finché il PC non la conferma (Tune.model): qui finché si resta sulla sessione.
@@ -26,6 +29,8 @@
   const notes = $derived(notesOf(s, t.notes))
   const wider = $derived(widerOf({ ...s, model }, st.choices))
   const canExit = $derived(!!st.slash?.includes('exit') && s.state !== 'gone')
+  // Contratto 1.37: il consiglio di fable-director, dentro il foglio; il puntino solo se la scelta attuale è diversa.
+  const advice = $derived(adviceOf(s, st.choices, st.ts))
   // L'ora dell'azzeramento accanto alla percentuale quando la testata è larga (480 px, come l'app), sotto se è stretta.
   let width = $state(0)
   const inline = $derived(width >= 480)
@@ -56,6 +61,7 @@
     <button class="pill" disabled={!tunable} onclick={() => tune?.showModal()}>
       {[shortModel(model) ?? t.modelTitle, effort].filter(Boolean).join(' · ')}
       {#if tunable}<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="var(--text2)" /></svg>{/if}
+      {#if tunable && advice?.dot}<span class="dot" title={t.adviceDot} aria-label={t.adviceDot}></span>{/if}
     </button>
     {#if !wide}<span class="sp"></span>{/if}
     <!-- In una colonna stretta la quota lascia il posto a modello, contesto e menu (è anche nella home). -->
@@ -118,23 +124,28 @@
     <h3>{title}</h3>
     {#if kind === 'model'}
       {#each st.choices?.models ?? [] as m}
-        <label class="radio"><input type="radio" name="model" checked={sameModel(m.id, model?.id)} onchange={() => setModel(m)} />{m.label ?? shortModel(m) ?? m.id}</label>
+        {@const rec = !!advice && sameModel(m.id, advice.model)}
+        <label class="radio"><input type="radio" name="model" checked={sameModel(m.id, model?.id)} onchange={() => setModel(m)} />{m.label ?? shortModel(m) ?? m.id}{#if rec}<span class="rec">{t.adviceTag}</span>{/if}</label>
+        {#if rec}<p class="why">{advice!.reason}</p>{/if}
       {/each}
     {:else}
       {#each st.choices?.efforts ?? [] as e}
-        <label class="radio"><input type="radio" name="effort" checked={e === effort} onchange={() => setEffort(e)} />{e}</label>
+        <label class="radio"><input type="radio" name="effort" checked={e === effort} onchange={() => setEffort(e)} />{e}{#if advice?.effort === e}<span class="rec">{t.adviceTag}</span>{/if}</label>
       {/each}
     {/if}
   {/each}
+  {#if advice?.cost}
+    <p class="cost"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{t.adviceCost(tokens(advice.cost))}</p>
+  {/if}
 </dialog>
 
 <dialog bind:this={ctx} onclick={backdrop}>
   {#if s.context != null}
     <h3>{t.ctxTitle(s.context)}</h3>
     <div class="col">
-      <button class:filled={s.context >= 80} class="tonal" onclick={() => { onPrompt(t.ctxHandoffPrompt); close(ctx) }}>{t.ctxHandoff}</button>
-      <button class="tonal" onclick={() => { onPrompt('/compact'); close(ctx) }}>{t.ctxCompact}</button>
-      {#if wider}<button class="tonal" onclick={() => setModel(wider!)}>{t.ctxWider}</button>{/if}
+      <button class:filled={ctxBand(s.context) != null} class="tonal opt" onclick={() => { onHandoff(); close(ctx) }}>{t.ctxHandoffClear}<small>{t.ctxHandoffClearSub}</small></button>
+      <button class="tonal opt" onclick={() => { onPrompt('/compact'); close(ctx) }}>{t.ctxCompact}<small>{t.ctxCompactSub}</small></button>
+      {#if wider}<button class="tonal opt" onclick={() => setModel(wider!)}>{t.ctxWider}<small>{t.ctxWiderSub}</small></button>{/if}
     </div>
   {/if}
 </dialog>
@@ -159,7 +170,16 @@
   .ib:hover { background: var(--surface); }
   .back { color: var(--text); width: 36px; }
   .pill { display: flex; align-items: center; min-width: min-content; overflow: hidden; background: var(--surface); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 1 auto; }
+  .pill { position: relative; }
   .pill svg { flex: none; }
+  /* Il puntino del consiglio, in alto a destra della pillola (mockup 1.37). */
+  .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--advice); border: 2px solid var(--bg); }
+  .rec { margin-left: auto; font: 600 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--advice); background: color-mix(in srgb, var(--advice) 14%, transparent); border-radius: 999px; padding: 3px 9px; }
+  .why { margin: -6px 0 4px 38px; font-size: 13px; color: var(--text2); }
+  .cost { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 10px 12px; border-radius: 16px; font-size: 13.5px; color: var(--b-warn); background: color-mix(in srgb, var(--b-warn) 10%, transparent); }
+  .cost svg { flex: none; margin-top: 1px; }
+  .opt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+  .opt small { font-size: 12.5px; font-weight: 400; opacity: .8; margin-top: 2px; }
   .pill:disabled { padding-right: 12px; cursor: default; }
   .pill:not(:disabled):hover { filter: brightness(1.2); }
   .meter { display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 8px; flex: none; }
