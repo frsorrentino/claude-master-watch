@@ -1,7 +1,8 @@
-import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
 
-// https://vite.dev/config/
+// Le fixture del contratto stanno fuori dalla cartella della web app (../contract): i dati di prova le leggono da lì.
 export default defineConfig({
   plugins: [svelte()],
+  server: { fs: { allow: ['..'] } },
 })

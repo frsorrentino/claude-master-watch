@@ -1,0 +1,14 @@
+/* I colori dell'app Android (ui-tokens/CmColors.kt), così telefono e web si riconoscono. */
+:root {
+  --bg: #000; --low: #1B1F26; --surface: #23272E; --high: #292F3A; --line: #2A2E35;
+  --text: #F2F4F7; --text2: #B0B8C4; --icon: #A8C7FA; --primary: #D3E3FD; --on-primary: #0A2050;
+  --wait: #FFB020; --good: #65C581; --opus: #D97757;
+  --mono: ui-monospace, "Roboto Mono", "JetBrains Mono", monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body, #app { height: 100%; }
+body { background: var(--bg); color: var(--text); font: 15px/1.45 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.mono { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--text2); }
+::selection { background: #3457D5; }
