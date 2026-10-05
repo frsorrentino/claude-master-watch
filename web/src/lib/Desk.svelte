@@ -6,10 +6,12 @@
   // La plancia (TabletDesk, seconda versione): la home di lato, a sinistra o a destra con ⇄; da una a quattro sessioni in
   // colonne affiancate. Una colonna presa per la testata e lasciata sopra un'altra scambia il posto con lei; i bordi fra le
   // colonne si trascinano a scatti di un dodicesimo (la colonna che cresce prende da tutte le altre).
-  let { cols, shares, homeRight, onCols, onShares, onHomeSide, home, column, empty }: {
+  let { cols, shares, homeRight, onCols, onShares, onHomeSide, home, column, empty, override = null }: {
     cols: string[]; shares: number[]; homeRight: boolean
     onCols: (c: string[]) => void; onShares: (s: number[]) => void; onHomeSide: () => void
     home: Snippet; column: Snippet<[string, (e: PointerEvent) => void]>; empty: Snippet
+    /** Al posto delle colonne, per esempio il Registro aperto dal menu della home (TabletDesk.override). */
+    override?: Snippet | null
   } = $props()
 
   const GAP = 12
@@ -85,7 +87,9 @@
     {/if}
   </div>
   <div class="cols" class:resizing={border >= 0} bind:clientWidth={cw}>
-    {#if !cols.length}
+    {#if override}
+      <div class="override">{@render override()}</div>
+    {:else if !cols.length}
       <div class="empty">{@render empty()}</div>
     {:else}
       {#each cols as name, i (name)}
@@ -122,6 +126,7 @@
   .border { position: absolute; top: 0; bottom: 0; width: 12px; cursor: col-resize; display: grid; place-items: center; touch-action: none; }
   .border i { width: 4px; height: 40px; border-radius: 2px; background: var(--line); }
   .border:hover i, .border.on i { background: var(--icon); }
+  .override { position: absolute; inset: 10px; border-radius: 18px; border: 1px solid rgb(255 255 255 / .12); overflow: hidden; background: var(--bg); }
   .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text2); padding: 40px; text-align: center; }
   @media (prefers-reduced-motion: reduce) { .col { transition: none; animation: none; } }
 </style>

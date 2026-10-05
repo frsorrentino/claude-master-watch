@@ -9,6 +9,8 @@
   import ColumnHead from './lib/ColumnHead.svelte'
   import { t } from './lib/t'
   import HomePane from './lib/HomePane.svelte'
+  import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
+  import Page from './lib/Page.svelte'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
   import { add, columns, columnsFromPref, columnsPref, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
@@ -61,6 +63,10 @@
     else if (wide) setCols(add(cols, name))
     else smooth(() => { open = name })
   }
+  // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
+  let page = $state<PageName | null>(null)
+  const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle }
+  const openPage = (p: PageName | null) => smooth(() => { page = p })
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
@@ -85,6 +91,7 @@
 {#snippet homePane()}
   <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
     {#snippet list()}
+      <AppBar {st} now={st.ts} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
@@ -92,8 +99,16 @@
   </HomePane>
 {/snippet}
 
+{#snippet pageView(p: PageName)}
+  <Page title={pageTitle[p]} onBack={() => openPage(null)}>
+    <p class="soon">{t.soon}</p>
+  </Page>
+{/snippet}
+
+{#snippet deskPage()}{#if page}{@render pageView(page)}{/if}{/snippet}
+
 {#if wide}
-  <Desk {cols} {shares} {homeRight} onCols={setCols} onShares={setShares}
+  <Desk {cols} {shares} {homeRight} onCols={setCols} onShares={setShares} override={page ? deskPage : null}
     onHomeSide={() => smooth(() => { homeRight = !homeRight; save('cm.home_right', homeRight ? '1' : '0') })}>
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
@@ -106,7 +121,7 @@
   </Desk>
 {:else}
   <div class="phone">
-    {#if session}{@render chatOf(session.name, false)}{:else}{@render homePane()}{/if}
+    {#if page}{@render pageView(page)}{:else if session}{@render chatOf(session.name, false)}{:else}{@render homePane()}{/if}
   </div>
 {/if}
 <span class="demo mono">{t.demo}</span>
@@ -118,6 +133,7 @@
   .reading { padding: 8px 0; }
   .column { height: 100%; display: flex; flex-direction: column; }
   .cbody { flex: 1; min-height: 0; }
+  .soon { color: var(--text2); padding: 24px; }
   .demo { position: fixed; right: 12px; bottom: 6px; opacity: .6; pointer-events: none; }
   @media (max-width: 839px) { .demo { bottom: 0; right: 50%; transform: translateX(50%); font-size: 10px; } }
 </style>
