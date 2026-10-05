@@ -85,7 +85,7 @@
           <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 5v14M5 12h14" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round" /></svg>
         </button>
         {#if menu}
-          <button type="button" class="scrim" aria-label={t.close} onclick={() => (menu = false)}></button>
+          <button type="button" class="scrim" aria-label={t.closeWord} onclick={() => (menu = false)}></button>
           <div class="menu" role="menu">
             <button type="button" role="menuitem" onclick={() => { menu = false; images?.click() }}><Icon name="image" color="var(--icon)" size={22} />{t.attachGallery}</button>
             <button type="button" role="menuitem" onclick={() => { menu = false; camera?.click() }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" /><circle cx="12" cy="13" r="3" /></svg>{t.attachCamera}</button>

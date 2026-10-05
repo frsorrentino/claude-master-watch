@@ -16,6 +16,10 @@
   import Diary from './lib/Diary.svelte'
   import Overview from './lib/Overview.svelte'
   import Search from './lib/Search.svelte'
+  import Settings from './lib/Settings.svelte'
+  import { build as devicesOf, linked as linkedDevices } from './lib/devices'
+  import { freshness } from './lib/durations'
+  import { setRate, setVoice } from './lib/speech.svelte'
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
@@ -126,6 +130,9 @@
     {:else if p === 'search'}
       <Search {sent} events={demoEvents} remote onQuery={(q) => (searchPage = demoSearch(q))} page={searchPage}
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
+    {:else if p === 'settings'}
+      <Settings m={devicesOf(st.host, st, freshness(st.ts, st.ts), st.ts, '', __APP_VERSION__, true, null, false, null)}
+        devices={linkedDevices(st, null, st.ts) ?? []} now={st.ts} channel={t.channelDemo} onRate={setRate} onVoice={setVoice} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}

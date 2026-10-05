@@ -6,7 +6,7 @@ Ogni punto si chiude con la resa confrontata col provino Android, la prova dal v
 - [x] Registro: recap, notte, coda della notte (`DiaryScreenTest_*`)
 - [x] Utilizzo e limiti: quote, ritmo, lavoro (`OverviewScreenTest_*`)
 - [x] Cerca nelle conversazioni (`SearchScreenTest_*`)
-- [ ] Impostazioni: schema dei collegamenti, lettura ad alta voce (`SettingsScreenTest_*`)
+- [x] Impostazioni: schema dei collegamenti, lettura ad alta voce (`SettingsScreenTest_*`)
 - [ ] Avviso delle altre sessioni sotto la barra (`SessionSheetTest_sheetElsewhere*`)
 - [ ] Coda delle domande (`QueueScreenTest_*`)
 - [ ] Plancia: pannello quota con la previsione e dettagli della sessione (`TabletShellTest_tabletDeskHomeRightDetails`)

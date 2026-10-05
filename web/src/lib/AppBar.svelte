@@ -60,7 +60,7 @@
     <div class="ph">
       <i class="led" class:stale={fresh.stale}></i>
       <span>{t.menuConnected(st.host || t.menuPc, updated)}</span>
-      <button class="ib" aria-label={t.close} onclick={() => (menu = false)}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" /></svg></button>
+      <button class="ib" aria-label={t.closeWord} onclick={() => (menu = false)}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" /></svg></button>
     </div>
     {#each entries as e}
       <button class="mi" role="menuitem" onclick={() => go(e.page)}>

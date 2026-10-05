@@ -79,7 +79,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22"><g fill="var(--text2)"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></g></svg>
       </button>
       {#if menu}
-        <button class="scrim" aria-label={t.close} onclick={() => (menu = false)}></button>
+        <button class="scrim" aria-label={t.closeWord} onclick={() => (menu = false)}></button>
         <div class="panel" role="menu">
           <div class="ph"><Badge {s} size={20} /><b>{s.name}</b></div>
           <button class="mi" role="menuitem" onclick={() => { picked.followed = !followed; onCmd(followed ? 'unfollow' : 'follow'); menu = false }}>

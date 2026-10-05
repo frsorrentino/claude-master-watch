@@ -60,3 +60,7 @@ export function cycleVoice() {
   store('cm.voice', speech.voice)
   if (speech.text) play(at)
 }
+
+/** Dalle Impostazioni: una velocità e una voce scelte (null = la migliore italiana). */
+export function setRate(r: number) { speech.rate = rateOf(r); store('cm.rate', String(speech.rate)); if (speech.text) play(at) }
+export function setVoice(v: string | null) { speech.voice = v; store('cm.voice', v); if (speech.text) play(at) }
