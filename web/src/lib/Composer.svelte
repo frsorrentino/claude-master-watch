@@ -29,9 +29,22 @@
   let area: HTMLTextAreaElement | undefined = $state()
 
   function picked(e: Event) {
-    const list = [...((e.currentTarget as HTMLInputElement).files ?? [])]
-    files = [...files, ...list.map(file => ({ file, url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null }))].slice(0, MAX_FILES)
+    addFiles([...((e.currentTarget as HTMLInputElement).files ?? [])])
     ;(e.currentTarget as HTMLInputElement).value = ''
+  }
+  /**
+   * Allegati anche incollati nel campo e trascinati sulla chat (Franz, 05/10 22:29): le immagini se il relay accetta
+   * allegati, gli altri file solo con `share.any` (contratto 1.28). Torna quanti ne ha presi.
+   */
+  export function addFiles(list: File[]): number {
+    const ok = list.filter(f => (f.type.startsWith('image/') ? !!st.share : canFiles))
+    if (!ok.length) return 0
+    files = [...files, ...ok.map(file => ({ file, url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null }))].slice(0, MAX_FILES)
+    return ok.length
+  }
+  function paste(e: ClipboardEvent) {
+    const list = [...(e.clipboardData?.files ?? [])]
+    if (list.length && addFiles(list)) e.preventDefault()
   }
   function drop(i: number) { const f = files[i]; if (f.url) URL.revokeObjectURL(f.url); files = files.filter((_, j) => j !== i) }
   function send() {
@@ -103,7 +116,7 @@
       <input bind:this={images} type="file" accept="image/*" multiple hidden onchange={picked} />
       <input bind:this={camera} type="file" accept="image/*" capture="environment" hidden onchange={picked} />
       <input bind:this={any} type="file" hidden onchange={picked} />
-      <textarea bind:this={area} rows="1" class:sug={!!inField} bind:value={draft} onkeydown={key} {placeholder}></textarea>
+      <textarea bind:this={area} rows="1" class:sug={!!inField} bind:value={draft} onkeydown={key} onpaste={paste} {placeholder}></textarea>
       {#if inField && !draft.trim()}<button type="button" class="use" onclick={() => { draft = field ?? ''; area?.focus() }}>{t.use}</button>{/if}
       {#if md === 'stop'}
         <button type="button" class="round filled" aria-label={t.stop} title={t.stop} onclick={onStop}><svg viewBox="0 0 24 24" width="20" height="20"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" /></svg></button>

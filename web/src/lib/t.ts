@@ -27,7 +27,7 @@ export const t = {
   decisionSave: 'Salva come decisione', decisionSub: 'La master la scrive nella sua memoria: la leggono il giro novità e le sessioni.',
   decisionFor: 'Vale per', decisionAll: 'Tutti i progetti', decisionOk: 'Salva', decisionNew: 'Salva una decisione',
   cleanupFinished: 'Compito chiuso, senza finestra', cleanupAttached: 'Finestra aperta sul PC: si chiude da lì',
-  cleanupDuplicate: (of: string) => `Doppione di ${of}: stessa conversazione`, cleanupDupTag: 'Doppione', cleanupClose: 'Chiudi', approved: 'Approvato', decisionSent: 'Decisione mandata alla master', fileDemo: 'con i dati di prova non ci sono file', fileOpening: (n: string) => `apro ${n}`, relayConnecting: 'Collegamento al PC', relayDown: 'PC non raggiungibile, riprovo', noAnswer: 'il PC non ha risposto', updated: (h: string) => `${h} · aggiornato ora`,
+  cleanupDuplicate: (of: string) => `Doppione di ${of}: stessa conversazione`, cleanupDupTag: 'Doppione', cleanupClose: 'Chiudi', dropHere: 'Rilascia per allegare', approved: 'Approvato', decisionSent: 'Decisione mandata alla master', fileDemo: 'con i dati di prova non ci sono file', fileOpening: (n: string) => `apro ${n}`, relayConnecting: 'Collegamento al PC', relayDown: 'PC non raggiungibile, riprovo', noAnswer: 'il PC non ha risposto', updated: (h: string) => `${h} · aggiornato ora`,
   homeLast: (hm: string) => `Ultimo esito · ${hm}`, homeLastBare: 'Ultimo esito', listen: 'Ascolta',
   openConversation: 'Apri la conversazione', forYou: 'Per te', stepHint: 'Clic: nel campo · doppio clic: invia subito',
   fyContext: (name: string, p: number) => `Contesto di ${name} al ${p}%`, fyContextDetail: 'Conviene un handoff prima di continuare',

@@ -71,6 +71,15 @@
   // «Salva come decisione»: la bozza dalla risposta di Claude (o vuota dal + della master), il progetto della sessione.
   const canDecide = $derived(!!st.ops?.includes('decision'))
   let decisionDlg: HTMLDialogElement | undefined = $state()
+  // File trascinati sulla colonna: vanno nel campo come quelli scelti con il +.
+  let dragging = $state(false)
+  const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files')
+  function onDrop(e: DragEvent) {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    dragging = false
+    if (composer?.addFiles([...(e.dataTransfer?.files ?? [])])) composer.focus()
+  }
   let decisionText = $state('')
   let decisionAll = $state(false)
   const project = $derived(s.name === MASTER ? null : decisionProject(s))
@@ -105,7 +114,9 @@
   })
 </script>
 
-<section class="chat">
+<section class="chat" class:dragging aria-label={s.name}
+  ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
+  {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
   {#if elsewhere}<ElsewherePill alert={elsewhere} onOpen={onElsewhere} onDismiss={onElsewhereDismiss} />{/if}
   {#if s.name === MASTER && conversation}<button class="tohome" onclick={() => (conversation = false)}>{t.home}</button>{/if}
@@ -165,7 +176,8 @@
 </dialog>
 
 <style>
-  .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; }
+  .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; }
+  .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
   .tohome:hover { background: var(--surface); }
   /* La griglia di puntini dietro la casa della master (TechStyle.dotGrid): un'immagine ripetuta, niente ridisegni. */
