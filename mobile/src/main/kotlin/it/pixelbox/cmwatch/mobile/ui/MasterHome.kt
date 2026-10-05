@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ButtonDefaults
@@ -361,11 +362,15 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
             Text(stringResource(R.string.next_steps), style = MonoSmall)
             // Come sotto l'ultima risposta: tocco = nel campo, pressione lunga = invio subito.
             hero.steps.forEach { step ->
-                Text(
-                    "↳ $step", style = MaterialTheme.typography.bodyLarge, color = CmColors.actionIcon,
-                    modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                // Contratto 1.38, variante 2: chi sblocca ha il lucchetto aperto ambra al posto di «↳».
+                Row(
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
                         .handCursor().combinedClickable(onClick = { onStep(step) }, onLongClick = { onSendStep(step) }).padding(vertical = 4.dp),
-                )
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (step in hero.blocking) androidx.compose.material3.Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(18.dp))
+                    Text(if (step in hero.blocking) step else "↳ $step", style = MaterialTheme.typography.bodyLarge, color = CmColors.actionIcon)
+                }
             }
         }
     }

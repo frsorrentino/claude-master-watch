@@ -35,6 +35,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableIntStateOf
@@ -125,6 +126,10 @@ data class SheetActions(
     val askMaster: (() -> Unit)? = null,
     /** La lettura a voce da un paragrafo toccato (Franz, 02/10 00:01: «come in orologio»). */
     val speakFrom: (text: String, block: Int) -> Unit = { _, _ -> },
+    /** Contratto 1.37: «Handoff, poi /clear» (il /clear parte a turno finito, lo gestisce chi tiene lo stato). */
+    val handoff: () -> Unit = {},
+    /** Contratto 1.37: una decisione per la memoria della master; `project` null = vale per tutti; null = op non supportata. */
+    val decision: ((text: String, project: String?) -> Unit)? = null,
 )
 
 /** Un messaggio della chat con il suo stato e, se non è stato consegnato, il motivo (`ChatRules.status`/`reason`). */
@@ -204,6 +209,11 @@ fun SessionSheet(
         groupedFeed?.let { g -> g.lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude }
             ?.let { c -> NextSteps.parse(c.entry.text.orEmpty()).steps }.orEmpty()
     }
+    // Contratto 1.38: quali Prossimi sbloccano, dal «!» dell'ultima risposta o da `next_steps` della sessione.
+    val stepsBlocking = remember(groupedFeed, s.nextSteps) {
+        val c = groupedFeed?.lastOrNull { x -> x !is ChatFeed.Item.Tool && x !is ChatFeed.Item.Steps } as? ChatFeed.Item.Claude
+        NextSteps.parse(c?.entry?.text.orEmpty()).blocking + s.nextSteps.orEmpty().filter { it.blocking }.map { it.text }
+    }
     val stepsBox by remember(steps, s.suggestion, idle, draftHolder) {
         derivedStateOf { if (idle) NextSteps.box(steps, s.suggestion, draftHolder.value) else NextSteps.Box(null, emptyList()) }
     }
@@ -213,6 +223,14 @@ fun SessionSheet(
     val fieldFocus = LocalFieldFocus.current
     val primary by remember(s, draftHolder) { derivedStateOf { PhonePrimary.button(s, draftHolder.value) } }
     val list = rememberLazyListState()
+    // Contratto 1.37: «Salva come decisione», dalla risposta di Claude o dal + della master (campo vuoto).
+    var decisionDraft by remember { mutableStateOf<String?>(null) }
+    val decide: ((String) -> Unit)? = actions.decision?.let { _ -> { t: String -> decisionDraft = it.pixelbox.cmwatch.rules.MasterService.decisionDraft(t) } }
+    decisionDraft?.let { d ->
+        DecisionSheet(d, project = if (home != null) null else it.pixelbox.cmwatch.rules.MasterService.decisionProject(s), onDismiss = { decisionDraft = null }) { text, project ->
+            actions.decision?.invoke(text, project); decisionDraft = null
+        }
+    }
     // La chat segue l'ultimo testo finché non la si sposta a mano per rileggere (Franz, 01/10 06:52). «Segui» si decide
     // solo quando lo scorrimento si ferma: letto dopo l'arrivo di un testo nuovo, il fondo era già più giù e la chat
     // restava ferma. Un proprio invio torna a seguire; una pagina di messaggi precedenti non rimbalza in fondo.
@@ -289,7 +307,7 @@ fun SessionSheet(
                             is ChatFeed.Item.User -> UserBubble(it.entry, onResend = { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                             is ChatFeed.Item.Claude -> ClaudeBubble(
                                 it.entry.text.orEmpty(), it.entry.at, ttsMinChars, actions.speak, cut = it.entry.cut, turn = it.entry.turn,
-                                onSpeakFrom = actions.speakFrom,
+                                onSpeakFrom = actions.speakFrom, onDecision = decide,
                             )
                             is ChatFeed.Item.Tool -> ToolLine(it.entry)
                             is ChatFeed.Item.Steps -> StepsCard(it)
@@ -344,7 +362,7 @@ fun SessionSheet(
             // anche scrivendo; il tocco porta la riga nel campo, accodata con «e poi» se c'è già testo, ↗ la manda subito a
             // campo vuoto. Si chiude a una riga, e resta chiuso finché non lo si riapre.
             if (stepsBox.rows.isNotEmpty()) PromptBox(
-                stringResource(R.string.next_steps), stepsBox.rows.map { PromptRow(it, it, direct = true) },
+                stringResource(R.string.next_steps), stepsBox.rows.map { PromptRow(it, it, direct = true, blocking = it in stepsBlocking) },
                 open = boxes.stepsOpen, onOpen = boxes::steps, draftBlank = draftBlank,
                 onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
@@ -429,12 +447,17 @@ fun SessionSheet(
             onSend = { r -> boxes.recurring(false); actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
             modifier = Modifier.padding(top = 6.dp),
         )
+        // Contratto 1.37: oltre il 60 % di contesto, a sessione ferma, la proposta «handoff, poi /clear»; chiusa torna a 70 e 80.
+        var ctxDismissed by rememberSaveable(s.name) { mutableStateOf<Int?>(null) }
+        val nudge = if (home != null && homeOpen) null else it.pixelbox.cmwatch.rules.ContextActions.nudge(s, ctxDismissed)
+        if (nudge != null) ContextNudge(s.context ?: nudge, onGo = actions.handoff, onDismiss = { ctxDismissed = nudge })
         if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
             toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field,
             onRecurring = if (recurringRows.isEmpty()) null else ({ boxes.recurring(!boxes.recurringOpen) }), recurringOpen = boxes.recurringOpen,
+            onDecisionNew = if (home != null && decide != null) ({ decisionDraft = "" }) else null,
         )
     }
 }
@@ -457,6 +480,8 @@ private fun Composer(
     fieldSuggestion: String? = null,
     /** Il tasto ⟳ delle azioni ricorrenti della master nel campo; null senza azioni. */
     onRecurring: (() -> Unit)? = null, recurringOpen: Boolean = false,
+    /** Contratto 1.37: «Salva una decisione» nel + della master. */
+    onDecisionNew: (() -> Unit)? = null,
 ) {
     val draft = draftState.value
     var images by rememberSaveable(s.id) { mutableStateOf(listOf<Uri>()) }
@@ -580,8 +605,8 @@ private fun Composer(
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MasterLilac.copy(alpha = 0.7f), focusedBorderColor = MasterLilac)
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
-            leadingIcon = if (canAttach || onRecurring != null) ({
-                AttachButton(files = canAttachFiles, attach = canAttach, onRecurring = onRecurring) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) }
+            leadingIcon = if (canAttach || onRecurring != null || onDecisionNew != null) ({
+                AttachButton(files = canAttachFiles, attach = canAttach, onRecurring = onRecurring, onDecision = onDecisionNew) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) }
             }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (inField != null && draft.isBlank()) TextButton(onClick = { onDraft(inField) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
@@ -654,7 +679,8 @@ private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
 }
 
 /** Una riga di un box sopra il campo: quello che si legge, quello che va nel campo, e se può partire subito. */
-private data class PromptRow(val label: String, val text: String, val direct: Boolean)
+/** `blocking`: un Prossimo che sblocca un lavoro fermo (contratto 1.38): riga ambra a sinistra e lucchetto. */
+private data class PromptRow(val label: String, val text: String, val direct: Boolean, val blocking: Boolean = false)
 
 /**
  * I box sopra il campo, «Prossimi» e «Ricorrenti» (Franz, 04/10 20:21 e 20:24): un riquadro a tutta larghezza, una riga
@@ -681,7 +707,13 @@ private fun PromptBox(
         }
         if (open) rows.forEach { r ->
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-            Row(Modifier.fillMaxWidth().handCursor().clickable { onPick(r) }.handCursor().padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().handCursor().clickable { onPick(r) }.handCursor()
+                    .then(if (r.blocking) Modifier.drawBehind { drawRect(CmColors.waiting, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) } else Modifier)
+                    .padding(start = 14.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (r.blocking) Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(18.dp))
                 Text(r.label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
                 if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }, modifier = Modifier.handCursor()) {
                     Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
@@ -807,7 +839,7 @@ private fun UriThumb(uri: Uri, modifier: Modifier) {
  * (Paparazzi) non c'è, e il tasto resta disegnato senza selettore.
  */
 @Composable
-private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecurring: (() -> Unit)? = null, onPicked: (List<Uri>) -> Unit) {
+private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecurring: (() -> Unit)? = null, onDecision: (() -> Unit)? = null, onPicked: (List<Uri>) -> Unit) {
     val icon: @Composable () -> Unit = { Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon) }
     if (androidx.activity.compose.LocalActivityResultRegistryOwner.current == null) { IconButton(onClick = {}, content = icon); return }
     val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -824,6 +856,7 @@ private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecur
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
             AttachMenuItems(
                 attach = attach, files = files, onRecurring = onRecurring?.let { r -> { menu = false; r() } },
+                onDecision = onDecision?.let { d -> { menu = false; d() } },
                 onGallery = { menu = false; pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 onCamera = {
                     menu = false
@@ -845,6 +878,7 @@ private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecur
 @Composable
 internal fun AttachMenuItems(
     attach: Boolean, files: Boolean, onRecurring: (() -> Unit)?, onGallery: () -> Unit, onCamera: () -> Unit, onFile: () -> Unit,
+    onDecision: (() -> Unit)? = null,
 ) {
     if (attach) {
         DropdownMenuItem(text = { Text(stringResource(R.string.attach_gallery)) }, leadingIcon = { Icon(Icons.Rounded.Image, null, tint = CmColors.actionIcon) }, onClick = onGallery)
@@ -854,6 +888,38 @@ internal fun AttachMenuItems(
     if (onRecurring != null) {
         if (attach) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
         DropdownMenuItem(text = { Text(stringResource(R.string.recurring_open)) }, leadingIcon = { Icon(Icons.Rounded.Autorenew, null, tint = CmColors.actionIcon) }, onClick = onRecurring)
+    }
+    if (onDecision != null) DropdownMenuItem(text = { Text(stringResource(R.string.decision_new)) }, leadingIcon = { Icon(Icons.Rounded.BookmarkBorder, null, tint = CmColors.actionIcon) }, onClick = onDecision)
+}
+
+/** Contratto 1.37: il foglio «Salva come decisione»: il testo da correggere e per quale progetto vale. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DecisionSheet(draft: String, project: String?, onDismiss: () -> Unit, onSave: (String, String?) -> Unit) {
+    var text by remember(draft) { mutableStateOf(draft) }
+    var all by remember(project) { mutableStateOf(project == null) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = CmColors.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.decision_save), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+            Text(stringResource(R.string.decision_sub), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+            androidx.compose.material3.OutlinedTextField(
+                text, { v -> text = v.take(it.pixelbox.cmwatch.rules.MasterService.DECISION_MAX) }, modifier = Modifier.fillMaxWidth(), minLines = 3,
+            )
+            if (project != null) {
+                Text(stringResource(R.string.decision_for), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.FilterChip(selected = !all, onClick = { all = false }, label = { Text(project) })
+                    androidx.compose.material3.FilterChip(selected = all, onClick = { all = true }, label = { Text(stringResource(R.string.decision_all)) })
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = CmColors.text2) }
+                Button(
+                    onClick = { onSave(text.trim(), if (all) null else project) }, enabled = text.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
+                ) { Text(stringResource(R.string.decision_ok)) }
+            }
+        }
     }
 }
 
@@ -1127,6 +1193,8 @@ private fun ClaudeBubble(
     /** Mostra i consigli della riga `Prossimi:` (solo l'ultima risposta); la riga non si vede mai nel testo. */
     withSteps: Boolean = false, onStep: (String) -> Unit = {}, onSendStep: (String) -> Unit = {},
     onSpeakFrom: (String, Int) -> Unit = { _, _ -> },
+    /** Contratto 1.37: «Salva come decisione» con il testo della risposta; null = op non supportata. */
+    onDecision: ((String) -> Unit)? = null,
 ) {
     val parsed = it.pixelbox.cmwatch.rules.NextSteps.parse(raw)
     val text = parsed.text
@@ -1202,6 +1270,7 @@ private fun ClaudeBubble(
                     tint = CmColors.actionIcon, modifier = Modifier.size(20.dp),
                 )
             }
+            onDecision?.let { d -> SmallAction(Icons.Rounded.BookmarkBorder, stringResource(R.string.decision_save)) { d(text) } }
             at?.let { Text(hhmm(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, modifier = Modifier.padding(start = 4.dp)) }
         }
     }
@@ -1307,6 +1376,8 @@ private fun SheetHeader(
     var exitAsk by remember { mutableStateOf(false) }
     var ctxSheet by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
+    // Contratto 1.37: il consiglio di fable-director, dentro il foglio; il puntino solo se la scelta attuale è diversa.
+    val advice = it.pixelbox.cmwatch.rules.MasterService.advice(s, choices, now)
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
         // La larghezza della testata: larga (tablet, finestra, Chromebook) l'ora della quota sta accanto alla percentuale.
         var headerW by remember { mutableIntStateOf(0) }
@@ -1320,10 +1391,10 @@ private fun SheetHeader(
             // Sul tablet il nome e lo stato a sinistra, nel posto che resta; la pillola a destra (mockup della plancia).
             if (lead != null) Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { lead() }
             else {
-                TunePill(tune, tunable) { picker = "tune" }
+                TunePill(tune, tunable, dot = tunable && advice?.dot == true) { picker = "tune" }
                 Spacer(Modifier.weight(1f))
             }
-            if (lead != null) TunePill(tune, tunable) { picker = "tune" }
+            if (lead != null) TunePill(tune, tunable, dot = tunable && advice?.dot == true) { picker = "tune" }
             // La quota delle 5 ore dell'account con l'ora in cui si azzera, accanto al contesto: due misure uguali, anello ed
             // etichetta (Franz, 04/10 20:43); il dato vecchio nel colore dell'attesa.
             quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now, inline = wideHeader) }
@@ -1390,6 +1461,7 @@ private fun SheetHeader(
                     // La lista porta «claude-opus-5-5[1m]», la sessione «claude-opus-5-5»: stesso modello (segnalazione 01/10 20:22).
                     fun selected(value: String) = if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
                     rows.forEach { (value, label) ->
+                        val rec = advice != null && (if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, advice.model) else value == advice.effort)
                         Row(
                             Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable {
                                 if (kind == "model") actions.setModel(value) else actions.setEffort(value)
@@ -1398,12 +1470,42 @@ private fun SheetHeader(
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             RadioButton(selected = selected(value), onClick = null)
-                            Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+                            Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+                            if (rec) AdviceTag()
                         }
+                        // Il motivo sotto il modello consigliato, una riga.
+                        if (rec && kind == "model") Text(advice!!.reason, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.padding(start = 52.dp, bottom = 4.dp))
+                    }
+                }
+                // A metà lavoro cambiare costa la cache: il riquadro ambra lo dice prima di scegliere.
+                advice?.cost?.let { c ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(CmColors.briefWarn.copy(alpha = .10f)).padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(Icons.Rounded.WarningAmber, null, tint = CmColors.briefWarn, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.advice_cost, it.pixelbox.cmwatch.rules.MasterService.tokens(c)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarn)
                     }
                 }
             }
         }
+    }
+}
+
+/** La proposta del contesto pieno sopra il campo (contratto 1.37): «Contesto al 64%», «Fallo», ×. */
+@Composable
+private fun ContextNudge(pct: Int, onGo: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp).clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceHigh).padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Rounded.Layers, null, tint = CmColors.briefWarn, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.ctx_nudge, pct), style = MaterialTheme.typography.labelLarge, color = CmColors.text, maxLines = 1)
+            Text(stringResource(R.string.ctx_nudge_sub), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1)
+        }
+        FilledTonalButton(onClick = onGo) { Text(stringResource(R.string.ctx_nudge_go)) }
+        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.close), tint = CmColors.text2) }
     }
 }
 
@@ -1417,12 +1519,19 @@ private fun ContextSheet(pct: Int, wider: it.pixelbox.cmwatch.contract.Model?, a
     ModalBottomSheet(onDismissRequest = onClose, containerColor = CmColors.surface) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.ctx_title, pct), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
-            val handoff = { actions.send(PhonePrimary.Target.PROMPT, ctx.getString(R.string.ctx_handoff_prompt)); onClose() }
-            if (it.pixelbox.cmwatch.rules.ContextActions.urgent(pct)) {
-                Button(onClick = handoff, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)) { Text(stringResource(R.string.ctx_handoff)) }
-            } else FilledTonalButton(onClick = handoff, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_handoff)) }
-            FilledTonalButton(onClick = { actions.send(PhonePrimary.Target.PROMPT, "/compact"); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_compact)) }
-            wider?.let { m -> FilledTonalButton(onClick = { actions.setModel(m.id); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ctx_wider)) } }
+            // Contratto 1.37: «Handoff, poi /clear», pieno dal 60 % (mockup approvato il 05/10 21:07); le voci spiegate sotto.
+            val handoff = { actions.handoff(); onClose() }
+            val two: @Composable (Int, Int) -> Unit = { title, sub ->
+                Column(Modifier.fillMaxWidth()) {
+                    Text(stringResource(title))
+                    Text(stringResource(sub), style = MaterialTheme.typography.bodySmall, modifier = Modifier.alpha(.8f))
+                }
+            }
+            if (it.pixelbox.cmwatch.rules.ContextActions.band(pct) != null) {
+                Button(onClick = handoff, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary)) { two(R.string.ctx_handoff_clear, R.string.ctx_handoff_clear_sub) }
+            } else FilledTonalButton(onClick = handoff, modifier = Modifier.fillMaxWidth()) { two(R.string.ctx_handoff_clear, R.string.ctx_handoff_clear_sub) }
+            FilledTonalButton(onClick = { actions.send(PhonePrimary.Target.PROMPT, "/compact"); onClose() }, modifier = Modifier.fillMaxWidth()) { two(R.string.ctx_compact, R.string.ctx_compact_sub) }
+            wider?.let { m -> FilledTonalButton(onClick = { actions.setModel(m.id); onClose() }, modifier = Modifier.fillMaxWidth()) { two(R.string.ctx_wider, R.string.ctx_wider_sub) } }
         }
     }
 }
@@ -1557,14 +1666,25 @@ fun Speakable(text: String, speak: Boolean, onSpeak: (String) -> Unit) {
 
 /** Una pillola compatta e toccabile per il modello (contratto 1.12); la freccia solo se si può cambiare. */
 @Composable
-private fun TunePill(label: String, enabled: Boolean, onClick: () -> Unit) {
-    Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
-        Row(Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text)
-            if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
+private fun TunePill(label: String, enabled: Boolean, dot: Boolean = false, onClick: () -> Unit) {
+    Box {
+        Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
+            Row(Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text)
+                if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
+            }
         }
+        // Contratto 1.37: c'è un consiglio diverso dalla scelta di adesso (mockup approvato il 05/10 21:07).
+        if (dot) Box(Modifier.align(Alignment.TopEnd).size(10.dp).background(CmColors.bg, CircleShape).padding(2.dp).background(CmColors.advice, CircleShape))
     }
 }
+
+/** «CONSIGLIATO» accanto al modello e all'effort che fable-director consiglia (contratto 1.37). */
+@Composable
+private fun AdviceTag() = Text(
+    stringResource(R.string.advice_tag).uppercase(), style = MonoSmall.copy(color = CmColors.advice, fontWeight = FontWeight.SemiBold),
+    modifier = Modifier.clip(CircleShape).background(CmColors.advice.copy(alpha = .14f)).padding(horizontal = 9.dp, vertical = 3.dp),
+)
 
 /** Il contesto come anellino con la percentuale accanto, nel colore delle soglie (`SessionMeters`). */
 @Composable

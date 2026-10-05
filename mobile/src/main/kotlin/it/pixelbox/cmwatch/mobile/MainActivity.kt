@@ -428,6 +428,18 @@ class MainActivity : ComponentActivity() {
         // I resoconti della notte già ascoltati e i prossimi passi già avviati: spariscono da «Per te» e non tornano,
         // nemmeno dopo la coda, una rotazione o un riavvio (revisione finale 02/10: in memoria si perdevano).
         val forYouPrefs = remember { getSharedPreferences("for-you", MODE_PRIVATE) }
+        // Contratto 1.37, «Handoff, poi /clear»: il /clear parte a turno finito, una volta sola; dopo 3 ore si lascia perdere.
+        val clearAfter = remember { getSharedPreferences("clear-after", MODE_PRIVATE) }
+        LaunchedEffect(state) {
+            val st0 = state ?: return@LaunchedEffect
+            val nowS = System.currentTimeMillis() / 1000
+            clearAfter.all.forEach { (name, v) ->
+                val sentAt = (v as? Long) ?: return@forEach
+                val due = it.pixelbox.cmwatch.rules.ContextActions.clearDue(st0.sessions.firstOrNull { x -> x.name == name }, sentAt)
+                if (due) runCatching { app.repo.command(CmdOp.SLASH, name, "clear", null) }
+                if (due || nowS - sentAt > 3 * 3600) clearAfter.edit().remove(name).apply()
+            }
+        }
         val readReports = remember { androidx.compose.runtime.mutableStateListOf<String>().apply { addAll(forYouPrefs.getStringSet("read", emptySet()).orEmpty()) } }
         val markRead: (String) -> Unit = { k -> if (k !in readReports) { readReports.add(k); forYouPrefs.edit().putStringSet("read", readReports.toSet()).apply() } }
         var entries by remember { mutableStateOf<List<it.pixelbox.cmwatch.contract.TranscriptEntry>>(emptyList()) }
@@ -666,6 +678,21 @@ class MainActivity : ComponentActivity() {
                             overview = { overviewSheet = true },
                             // Proposta approvata (01/10 21:19): la master legge la sessione e risponde nella sua chat.
                             speakFrom = { t, i -> speech.speakBlocks(t, i, session.name) },
+                            handoff = {
+                                state?.let { st0 ->
+                                    val clear = it.pixelbox.cmwatch.rules.ContextActions.canClear(st0)
+                                    val fallback = getString(if (clear) R.string.ctx_handoff_clear_prompt else R.string.ctx_handoff_prompt)
+                                    sendAndLog(PhonePrimary.Target.PROMPT, it.pixelbox.cmwatch.rules.ContextActions.handoffPrompt(st0, session, fallback))
+                                    if (clear) clearAfter.edit().putLong(session.name, System.currentTimeMillis() / 1000).apply()
+                                }
+                            },
+                            decision = if (state?.ops?.contains("decision") == true) ({ text, project ->
+                                scope.launch {
+                                    runCatching { app.repo.command(CmdOp.DECISION, null, project, text) }.onSuccess {
+                                        android.widget.Toast.makeText(this@MainActivity, getString(R.string.decision_sent), android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }) else null,
                             askMaster = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.takeIf { m -> m.name != session.name }?.let { m -> {
                                 scope.launch {
                                     val text = getString(R.string.ask_master_prompt, session.name)
@@ -785,6 +812,16 @@ class MainActivity : ComponentActivity() {
                     },
                     onAnswer = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } },
                     onStep = sendPrompt, onService = forYouAction, onClosed = { closedOpen = true },
+                    // Contratto 1.37: approvazioni in cima e «Chiudi» per le sessioni finite o doppie senza finestra.
+                    approvals = state?.approvals.orEmpty(),
+                    onApprove = { task, note -> scope.launch {
+                        runCatching { app.repo.command(CmdOp.APPROVE, null, task, it.pixelbox.cmwatch.rules.MasterService.approveText(note)) }.onSuccess {
+                            android.widget.Toast.makeText(this@MainActivity, getString(R.string.approved), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    } },
+                    canExit = state?.ops?.contains("slash") == true && state.slash?.contains("exit") == true,
+                    onClose = { n -> scope.launch { runCatching { app.repo.command(CmdOp.SLASH, n, "exit", null) } } },
+                    now = now,
                     footer = if (wide) ({
                         val rings = remember(st, events, samples, now, snap.freshness) {
                             PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings

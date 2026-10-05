@@ -579,4 +579,39 @@
     <string name="fact_kind">Tipo</string>
     <string name="fact_seen">Ultima lettura</string>
     <plurals name="dev_count"><item quantity="one">%1$d\u00A0dispositivo</item><item quantity="other">%1$d\u00A0dispositivi</item></plurals>
+    <!-- Contratto 1.37: la master al servizio dell'app (mockup approvati il 05/10 alle 21:07). -->
+    <string name="advice_tag">consigliato</string>
+    <string name="advice_dot">C\'è un consiglio per modello ed effort</string>
+    <string name="advice_cost">Sta lavorando: cambiare adesso ricarica circa %1$s token di cache. Conviene al prossimo compito.</string>
+    <string name="ctx_handoff_clear">Handoff, poi /clear</string>
+    <string name="ctx_handoff_clear_sub">Scrive il punto in docs, poi svuota il contesto a turno finito</string>
+    <string name="ctx_handoff_clear_prompt">Scrivi l\'handoff con /fable-director:handoff --here.</string>
+    <string name="ctx_compact_sub">/compact: riassume e tiene il filo</string>
+    <string name="ctx_wider_sub">Stesso modello, più spazio</string>
+    <string name="ctx_nudge">Contesto al %1$d%%</string>
+    <string name="ctx_nudge_sub">Handoff, poi /clear</string>
+    <string name="ctx_nudge_go">Fallo</string>
+    <string name="decision_save">Salva come decisione</string>
+    <string name="decision_sub">La master la scrive nella sua memoria: la leggono il giro novità e le sessioni.</string>
+    <string name="decision_for">Vale per</string>
+    <string name="decision_all">Tutti i progetti</string>
+    <string name="decision_ok">Salva</string>
+    <string name="decision_new">Salva una decisione</string>
+    <string name="decision_sent">Decisione mandata alla master</string>
+    <string name="approvals_group">Da approvare</string>
+    <string name="approval_prod">Produzione</string>
+    <string name="approval_what">Esce</string>
+    <string name="approval_where">Dove</string>
+    <string name="approval_asked">Chiesto</string>
+    <string name="approve">Approva</string>
+    <string name="approve_prod_title">Approvi l\'uscita in produzione?</string>
+    <string name="approve_title">Approvi «%1$s»?</string>
+    <string name="approve_text">%1$s: %2$s, verso %3$s.</string>
+    <string name="approve_note">Nota per la sessione (facoltativa)</string>
+    <string name="approved">Approvato</string>
+    <string name="cleanup_finished">Compito chiuso, senza finestra</string>
+    <string name="cleanup_attached">Finestra aperta sul PC: si chiude da lì</string>
+    <string name="cleanup_duplicate">Doppione di %1$s: stessa conversazione</string>
+    <string name="cleanup_dup_tag">Doppione</string>
+    <string name="cleanup_close">Chiudi</string>
 </resources>

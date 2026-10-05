@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +26,11 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.PowerSettingsNew
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +64,11 @@ fun SummaryList(
     onService: (MasterHome.Row) -> Unit, onClosed: () -> Unit, initiallyOpen: String? = null,
     /** Il tablet (Franz, 04/10 14:31): nell'altezza in più, sotto, le schede di «Utilizzo e limiti». */
     footer: (@Composable () -> Unit)? = null,
+    /** Contratto 1.37: i compiti che aspettano l'ok, in cima; l'ok con la nota (vuota = «ok»). */
+    approvals: List<it.pixelbox.cmwatch.contract.Approval> = emptyList(), onApprove: (task: String, note: String) -> Unit = { _, _ -> },
+    /** Contratto 1.37: «Chiudi» per le sessioni finite o doppie senza finestra; `canExit` = il PC accetta /exit. */
+    canExit: Boolean = false, onClose: (String) -> Unit = {},
+    now: Long = System.currentTimeMillis() / 1000,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
@@ -78,6 +88,11 @@ fun SummaryList(
         Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Contratto 1.37: «Da approvare» prima di «Ti aspetta» (mockup approvato il 05/10 21:07).
+        if (approvals.isNotEmpty()) {
+            item(key = "h-approvals") { Box(moving()) { GroupHeader(stringResource(R.string.approvals_group) + " · " + approvals.size, CmColors.advice) } }
+            items(approvals, key = { "a-" + it.task }) { a -> Box(moving()) { ApprovalCard(a, now, onApprove) } }
+        }
         model.rows.groupBy { it.group }.forEach { (group, rows) ->
             item(key = "h-${group.name}") { Box(moving()) { GroupHeader(pluralStringResource(groupLabel(group), rows.size, rows.size), groupTone(group)) } }
             items(rows, key = { "s-" + it.session.name }) { r ->
@@ -87,6 +102,7 @@ fun SummaryList(
                     SummaryCard(
                         r, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
                         onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
+                        firstFilled = approvals.isEmpty(), canExit = canExit, onClose = { onClose(s.name) },
                     )
                 }
             }
@@ -138,8 +154,10 @@ private fun details(s: Session): List<String> = listOfNotNull(
 private fun SummaryCard(
     r: Summary.Row, open: Boolean, onToggle: () -> Unit,
     onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
+    firstFilled: Boolean = true, canExit: Boolean = false, onClose: () -> Unit = {},
 ) {
     val s = r.session
+    var closeAsk by rememberSaveable(s.name) { mutableStateOf(false) }
     val waiting = r.group == Summary.Group.WAITING
     val parsed = androidx.compose.runtime.remember(r.text) { it.pixelbox.cmwatch.rules.NextSteps.parse(r.text.orEmpty()) }
     // L'esito per primo e senza l'etichetta «Esito:»; la domanda così com'è.
@@ -159,6 +177,7 @@ private fun SummaryCard(
                 s.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
             )
+            if (s.duplicateOf != null) Tag(stringResource(R.string.cleanup_dup_tag), CmColors.briefWarn)
             // «ctx 17%»: il contesto occupato, non un avanzamento del lavoro (osservazioni del 03/10).
             s.context?.let { Text(stringResource(R.string.ctx_short, it), style = MonoSmall) }
             // La quota delle 5 ore dell'account al posto dell'età della sessione (Franz, 03/10 20:31: «non è un'informazione
@@ -186,21 +205,43 @@ private fun SummaryCard(
         if (waiting) s.question?.let { q ->
             var holdHint by rememberSaveable(q.id) { mutableStateOf(false) }
             // Sul fondo della card il tonale di sempre quasi spariva (provini 03/10): un velo del colore primario.
-            QuestionOptions(q, firstFilled = true, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer, tonal = CmColors.primary.copy(alpha = 0.12f))
+            QuestionOptions(q, firstFilled = firstFilled, holdHint = holdHint, onHold = { holdHint = true }, onAnswer = onAnswer, tonal = CmColors.primary.copy(alpha = 0.12f))
         }
         // I consigli come tasti, sempre visibili (Franz, 03/10 17:27): il tocco li manda subito a quella sessione, che li
         // prende a fine turno se sta lavorando.
         if (!waiting && parsed.steps.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            parsed.steps.forEach { step ->
-                Surface(
-                    onClick = { onStep(step) }, shape = CircleShape, color = CmColors.primary.copy(alpha = 0.12f), contentColor = CmColors.text,
-                ) {
-                    Text(step, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+            // Contratto 1.38, variante 2: chi sblocca ha il filo ambra e il lucchetto (dal «!» o da `next_steps`).
+            val blocking = parsed.blocking + s.nextSteps.orEmpty().filter { it.blocking }.map { it.text }
+            parsed.steps.forEach { step -> StepChip(step, step in blocking) { onStep(step) } }
+        }
+        // Contratto 1.37: compito chiuso o doppione, a sessione ferma; «Chiudi» solo senza finestra.
+        it.pixelbox.cmwatch.rules.MasterService.cleanup(s, canExit)?.let { c ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    when {
+                        c.kind == it.pixelbox.cmwatch.rules.MasterService.Cleanup.Kind.DUPLICATE -> stringResource(R.string.cleanup_duplicate, c.of.orEmpty())
+                        s.attached -> stringResource(R.string.cleanup_attached)
+                        else -> stringResource(R.string.cleanup_finished)
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
+                )
+                if (c.canClose) Surface(onClick = { closeAsk = true }, shape = CircleShape, color = CmColors.surfaceHigh, contentColor = CmColors.text) {
+                    Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.PowerSettingsNew, null, tint = CmColors.briefAlertRing, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.cleanup_close), style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
         }
+        if (closeAsk) androidx.compose.material3.AlertDialog(
+            onDismissRequest = { closeAsk = false }, containerColor = CmColors.surface,
+            title = { Text(stringResource(R.string.slash_confirm_title, "exit", s.name)) },
+            text = { Text(stringResource(R.string.slash_confirm_exit)) },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { closeAsk = false; onClose() }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { closeAsk = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
+        )
         s.context?.let { pct ->
             val bar = when (it.pixelbox.cmwatch.rules.SessionMeters.contextTone(pct)) {
                 it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
@@ -308,4 +349,68 @@ private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
         Text(names, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))
         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, pluralStringResource(R.plurals.summary_closed, closed.size, closed.size), tint = CmColors.text2)
     }
+}
+
+/** Un Prossimo come tasto; con `blocking` (contratto 1.38, variante 2) il filo ambra e il lucchetto aperto. */
+@Composable
+internal fun StepChip(text: String, blocking: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick, shape = CircleShape, color = CmColors.primary.copy(alpha = 0.12f), contentColor = CmColors.text,
+        border = if (blocking) androidx.compose.foundation.BorderStroke(1.5.dp, CmColors.waiting.copy(alpha = 0.65f)) else null,
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (blocking) Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(16.dp))
+            Text(text, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+/** Un'etichetta piccola nel colore dato, «DOPPIONE» o «PRODUZIONE». */
+@Composable
+private fun Tag(text: String, tone: Color) = Text(
+    text.uppercase(), style = MonoSmall.copy(color = tone, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+    modifier = Modifier.clip(CircleShape).background(tone.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 3.dp),
+)
+
+/** Contratto 1.37: un compito che aspetta l'ok — cosa esce, dove, da quanto — con «Approva» e la conferma. */
+@Composable
+private fun ApprovalCard(a: it.pixelbox.cmwatch.contract.Approval, now: Long, onApprove: (String, String) -> Unit) {
+    var ask by rememberSaveable(a.task) { mutableStateOf(false) }
+    var note by rememberSaveable(a.task) { mutableStateOf("") }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Rounded.Verified, null, tint = CmColors.advice, modifier = Modifier.size(24.dp))
+            Text(a.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, modifier = Modifier.weight(1f))
+            if (a.deploy) Tag(stringResource(R.string.approval_prod), CmColors.prod)
+        }
+        listOfNotNull(
+            a.what?.let { stringResource(R.string.approval_what) to it },
+            a.where?.let { stringResource(R.string.approval_where) to it },
+            stringResource(R.string.approval_asked) to it.pixelbox.cmwatch.contract.Durations.since(a.requestedAt, now),
+        ).forEach { (k, v) ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(k, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.width(64.dp))
+                Text(v, style = MaterialTheme.typography.bodyMedium, color = CmColors.text)
+            }
+        }
+        androidx.compose.material3.Button(
+            onClick = { ask = true }, modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
+        ) { Text(stringResource(R.string.approve)) }
+    }
+    if (ask) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { ask = false }, containerColor = CmColors.surface,
+        title = { Text(if (a.deploy) stringResource(R.string.approve_prod_title) else stringResource(R.string.approve_title, a.title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.approve_text, a.title, a.what.orEmpty(), a.where.orEmpty()))
+                androidx.compose.material3.OutlinedTextField(note, { note = it }, label = { Text(stringResource(R.string.approve_note)) }, placeholder = { Text("ok") }, singleLine = true)
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { ask = false; onApprove(a.task, note) }) { Text(stringResource(R.string.approve), color = CmColors.actionIcon) } },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = { ask = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
+    )
 }

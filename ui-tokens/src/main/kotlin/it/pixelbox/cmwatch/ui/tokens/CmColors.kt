@@ -25,6 +25,9 @@ object CmColors {
     // resta ai bottoni pieni, sulle icone era un blu acceso.
     val actionIcon = Color(0xFFA8C7FA)
     val waiting = Color(0xFFFFB020)
+    /** Contratto 1.37: il consiglio di modello ed effort (puntino e «consigliato») e il bollino della produzione. */
+    val advice = Color(0xFFC58AF9)
+    val prod = Color(0xFFE5736B)
     // Giallino della sessione seguita, «come se fosse accesa» (Franz, 14/09 16:27): più chiaro dell'ambra di attesa.
     val followed = Color(0xFFFFE08A)
     val busy = Color(0xFF7FA1FF)

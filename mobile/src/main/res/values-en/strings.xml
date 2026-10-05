@@ -570,4 +570,39 @@
     <string name="fact_kind">Kind</string>
     <string name="fact_seen">Last read</string>
     <plurals name="dev_count"><item quantity="one">%1$d\u00A0device</item><item quantity="other">%1$d\u00A0devices</item></plurals>
+    <!-- Contract 1.37: the master at the app's service. -->
+    <string name="advice_tag">recommended</string>
+    <string name="advice_dot">There is advice for model and effort</string>
+    <string name="advice_cost">Working: switching now reloads about %1$s cache tokens. Better at the next task.</string>
+    <string name="ctx_handoff_clear">Handoff, then /clear</string>
+    <string name="ctx_handoff_clear_sub">Writes where things stand in docs, then clears the context when the turn ends</string>
+    <string name="ctx_handoff_clear_prompt">Write the handoff with /fable-director:handoff --here.</string>
+    <string name="ctx_compact_sub">/compact: summarises and keeps the thread</string>
+    <string name="ctx_wider_sub">Same model, more room</string>
+    <string name="ctx_nudge">Context at %1$d%%</string>
+    <string name="ctx_nudge_sub">Handoff, then /clear</string>
+    <string name="ctx_nudge_go">Do it</string>
+    <string name="decision_save">Save as decision</string>
+    <string name="decision_sub">The master writes it in its memory: the news round and the sessions read it.</string>
+    <string name="decision_for">Applies to</string>
+    <string name="decision_all">All projects</string>
+    <string name="decision_ok">Save</string>
+    <string name="decision_new">Save a decision</string>
+    <string name="decision_sent">Decision sent to the master</string>
+    <string name="approvals_group">To approve</string>
+    <string name="approval_prod">Production</string>
+    <string name="approval_what">Ships</string>
+    <string name="approval_where">Where</string>
+    <string name="approval_asked">Asked</string>
+    <string name="approve">Approve</string>
+    <string name="approve_prod_title">Approve the release to production?</string>
+    <string name="approve_title">Approve «%1$s»?</string>
+    <string name="approve_text">%1$s: %2$s, to %3$s.</string>
+    <string name="approve_note">Note for the session (optional)</string>
+    <string name="approved">Approved</string>
+    <string name="cleanup_finished">Task closed, no window</string>
+    <string name="cleanup_attached">Window open on the PC: close it there</string>
+    <string name="cleanup_duplicate">Duplicate of %1$s: same conversation</string>
+    <string name="cleanup_dup_tag">Duplicate</string>
+    <string name="cleanup_close">Close</string>
 </resources>
