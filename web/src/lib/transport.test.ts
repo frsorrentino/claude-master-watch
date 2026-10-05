@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { LocalTransport, localAccess, resultTimeoutMs, TransportError } from './transport'
+import { LocalTransport, localAccess, newCmd, resultTimeoutMs, TransportError } from './transport'
 import type { Cmd } from './contract'
 
 const raw = (n: string) => readFileSync(new URL(`../../../contract/${n}`, import.meta.url), 'utf8')
@@ -99,5 +99,13 @@ describe('accesso locale', () => {
   it('attese come l\'app Android: slash 60 s, gli altri 20 s', () => {
     expect(resultTimeoutMs('slash')).toBe(60_000)
     expect(resultTimeoutMs('prompt')).toBe(20_000)
+  })
+
+  it('i comandi che parlano alla sessione portano device "web" (1.36), come il prompt della fixture', () => {
+    const sample = JSON.parse(raw('cmd-result-sample.json'))
+    const web = sample.cmd.find((c: Cmd) => c.device === 'web')
+    const mine = newCmd('prompt', web.session, web.arg)
+    expect({ op: mine.op, device: mine.device, by: mine.by, arg: mine.arg }).toEqual({ op: web.op, device: web.device, by: web.by, arg: web.arg })
+    expect(newCmd('transcript', 'x', '50').device).toBeUndefined()
   })
 })

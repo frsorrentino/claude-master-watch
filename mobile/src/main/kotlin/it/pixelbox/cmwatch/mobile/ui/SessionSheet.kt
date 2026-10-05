@@ -957,6 +957,7 @@ private fun UserBubble(e: TranscriptEntry, onResend: (String) -> Unit) {
                 "pc" -> R.string.origin_pc
                 "watch" -> R.string.origin_watch
                 "phone" -> R.string.origin_phone
+                "web" -> R.string.origin_web
                 else -> null
             }
             from?.let { Text(stringResource(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2) }

@@ -77,9 +77,10 @@ export function merge(entries: TranscriptEntry[], sent: [Sent, Status][], more =
       // Il relay antepone al prompt le sue istruzioni: basta che la voce finisca con il testo mandato.
       const t = (e.text ?? '').trim()
       const at = e.at ?? Number.MAX_SAFE_INTEGER
-      // Solo le voci dal telefono (o da un relay che non lo dice), mai i messaggi falliti; fra più candidati il più vicino nel tempo.
+      // Solo le voci mandate da qui (web, e remote da un relay prima della 1.36), dal telefono o da un relay che non lo dice;
+      // mai i messaggi falliti; fra più candidati il più vicino nel tempo.
       let hit: [Sent, Status] | null = null
-      if (e.origin == null || e.origin === 'phone') {
+      if (e.origin == null || e.origin === 'phone' || e.origin === 'web' || e.origin === 'remote') {
         for (const c of left) {
           const [m, st] = c
           if (st !== 'failed' && m.failed == null && !waiting(m) && m.text.trim() !== '' && t.endsWith(m.text.trim()) && at >= m.sentAt - SKEW_S &&

@@ -307,6 +307,7 @@
     <string name="origin_pc">from the PC</string>
     <string name="origin_watch">from the watch</string>
     <string name="origin_phone">from the phone</string>
+    <string name="origin_web">from the web app</string>
     <string name="text_cut">text shortened by the PC</string>
     <string name="turn_tokens">%1$d tokens written</string>
     <string name="remove_image">Remove the image</string>

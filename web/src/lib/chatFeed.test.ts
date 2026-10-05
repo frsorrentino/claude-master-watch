@@ -15,7 +15,7 @@ const D: Status = 'delivered'
 
 describe('ChatFeed', () => {
   it('parses the fixture page', () => {
-    expect(first.entries).toHaveLength(17)
+    expect(first.entries).toHaveLength(18)
     expect(first.more ?? false).toBe(false)
     expect(first.entries.find(e => e.id === 'a6.0')!.files![0].mime).toBe('image/png')
     expect(first.entries.find(e => e.id === 'a4.0')!.turn!.out).toBe(130)

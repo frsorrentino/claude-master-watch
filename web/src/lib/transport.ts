@@ -104,9 +104,13 @@ export function localAccess(url: URL, store: Store): { base: string; token: stri
   return { base: url.origin, token, clean }
 }
 
+const DEVICE_OPS = new Set<CmdOp>(['prompt', 'resume', 'launch', 'report'])
+
 /** Un comando nuovo dalla web app: `by` = "web" come mette il relay di default. */
 export function newCmd(op: CmdOp, session: string | null, arg?: string | null, text?: string): Cmd {
   const c: Cmd = { id: crypto.randomUUID(), op, session, arg: arg ?? null, issued: Math.round(Date.now() / 1000), by: 'web' }
   if (text !== undefined) c.text = text
+  // Contratto 1.36: il relay scrive «via web app» e la trascrizione dà origin "web".
+  if (DEVICE_OPS.has(op)) c.device = 'web'
   return c
 }

@@ -28,7 +28,7 @@ export const t = {
   copy: 'Copia', readAloud: 'Leggi ad alta voce', stopReading: 'Ferma la lettura', outcomeLabel: 'Esito', textCut: 'testo accorciato dal PC',
   turnTokens: (n: number) => `${n} token scritti`, thinking: 'sta pensando',
   stepsCount: (n: number) => (n === 1 ? '1 passaggio' : `${n} passaggi`), stepsFailed: (n: number) => (n === 1 ? '1 fallito' : `${n} falliti`),
-  origin: { pc: 'dal PC', watch: "dall'orologio", phone: 'dal telefono' } as Record<string, string>,
+  origin: { pc: 'dal PC', watch: "dall'orologio", phone: 'dal telefono', web: 'dalla web app' } as Record<string, string>,
   chatStatus: {
     scheduled: (hm: string) => `parte alle ${hm}`, offline: () => 'senza rete, parte appena torna', uploading: () => "carico l'allegato",
     sending: () => 'invio', sent: () => 'inviato al PC', uncertain: () => 'in attesa del PC', failed: () => 'non consegnato',

@@ -311,6 +311,7 @@
     <string name="origin_pc">dal PC</string>
     <string name="origin_watch">dall\'orologio</string>
     <string name="origin_phone">dal telefono</string>
+    <string name="origin_web">dalla web app</string>
     <string name="text_cut">testo accorciato dal PC</string>
     <string name="turn_tokens">%1$d token scritti</string>
     <string name="remove_image">Togli l\'immagine</string>
