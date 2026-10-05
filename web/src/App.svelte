@@ -7,7 +7,8 @@
   // Per ora i dati di prova (fixture del contratto); la strada locale del relay arriva con il contratto 1.35.
   const st = demoState
   let chats = $state<Record<string, Line[]>>(structuredClone(demoChats))
-  let open = $state<string | null>(st.sessions.find(s => s.state === 'waiting')?.name ?? null)
+  // Sul telefono si parte dalla home; su desktop con la prima sessione che ti aspetta già aperta.
+  let open = $state<string | null>(window.innerWidth > 760 ? (st.sessions.find(s => s.state === 'waiting')?.name ?? null) : null)
   const session = $derived(st.sessions.find(s => s.name === open) ?? null)
 
   function send(text: string) {
@@ -23,7 +24,7 @@
 </script>
 
 <div class="desk" class:chatOpen={open !== null}>
-  <aside><Home {st} selected={open} onPick={pick} /></aside>
+  <aside><Home {st} selected={open} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }} onStep={(n, x) => { pick(n); send(x) }} /></aside>
   <main>
     {#if session}
       <Chat s={session} lines={chats[session.name] ?? []} onSend={send} onBack={() => (open = null)} />

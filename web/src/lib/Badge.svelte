@@ -1,18 +1,22 @@
 <script lang="ts">
   import type { Session } from './contract'
-  // Il segno della sessione come sul telefono: il colore dice lo stato; chi aspetta te respira piano, solo con il CSS
-  // (la GPU anima l'opacità senza ridisegnare la pagina).
+  import { badge, breathes, PATHS } from './badge'
+  // Il badge come sul telefono e sull'orologio (SessionBadge.kt): glifo in un riquadro di 0,6 del diametro, tratto 3 su 24.
+  // Il respiro è CSS sull'opacità: la GPU lo fa senza ridisegnare la pagina.
   let { s, size = 22 }: { s: Session; size?: number } = $props()
-  const tone = $derived({ waiting: 'var(--wait)', busy: 'var(--good)', awaiting: 'var(--icon)', idle: 'var(--text2)', gone: '#596273' }[s.state])
+  const b = $derived(badge(s.account, s.color, s.state, s.icon, s.account_kind))
 </script>
 
-<span class="badge" class:breathe={s.state === 'waiting'} style="--t:{tone};width:{size}px;height:{size}px" aria-hidden="true">
-  {#if s.state === 'waiting'}✋{:else if s.state === 'busy'}⚡{:else if s.state === 'gone'}✕{:else}❙❙{/if}
-</span>
+<svg width={size} height={size} viewBox="0 0 24 24" class:breathe={breathes(s.state)} role="img" aria-label={s.state}>
+  {#if b.square}<rect width="24" height="24" rx="5.5" fill={b.fill} />{:else}<circle cx="12" cy="12" r="12" fill={b.fill} />{/if}
+  <g transform="translate(4.8 4.8) scale(0.6)" fill="none" stroke={b.ink} stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    {#each PATHS[b.glyph] as d}<path {d} />{/each}
+  </g>
+</svg>
 
 <style>
-  .badge { display: inline-grid; place-items: center; border-radius: 50%; background: var(--t); color: #0B0F14; font-size: 11px; font-weight: 700; flex: none; }
-  .breathe { animation: breathe 3s ease-in-out infinite; }
-  @keyframes breathe { 50% { opacity: .55; } }
+  svg { flex: none; display: block; }
+  .breathe { animation: breathe 1.5s ease-in-out infinite alternate; }
+  @keyframes breathe { to { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .breathe { animation: none; } }
 </style>

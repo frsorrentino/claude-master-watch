@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { decodeState } from './contract'
-import { age, groups } from './summary'
+import { age, build } from './summary'
+import type { Session, State } from './contract'
 import { parseSteps } from './nextSteps'
 
 const st = decodeState(readFileSync(new URL('../../../contract/state-1-question.json', import.meta.url), 'utf8'))
 
 describe('home', () => {
-  it('raggruppa come il telefono', () => {
-    expect(groups(st.sessions).map(g => [g.group, g.sessions.map(s => s.name)])).toEqual([
-      ['waiting', ['ledger-api']], ['working', ['atlas-shop']], ['idle', ['field-notes']], ['closed', ['orbit-docs']],
-    ])
-  })
   it('scrive le età corte', () => {
     expect(age(0, 300)).toBe('5 m'); expect(age(0, 3 * 3600)).toBe('3 h'); expect(age(0, 2 * 86400)).toBe('2 g')
   })
@@ -30,4 +26,37 @@ describe('Prossimi', () => {
   it('senza riga niente consigli', () => {
     expect(parseSteps('Fatto.\n\nEsito: tutto ok.')).toEqual({ text: 'Fatto.\n\nEsito: tutto ok.', steps: [] })
   })
+})
+
+// Gli stessi casi di SummaryTest in Kotlin.
+describe('riepilogo', () => {
+  const at = (h: number, m = 0) => Date.UTC(2026, 9, 3, h - 2, m) / 1000
+  const s = (name: string, state: Session['state'] = 'idle', since = at(9)): Session => ({ id: name, name, account: 'personale', project: name, state, since })
+  const q = (asked: number) => ({ id: '1', kind: 'ask' as const, text: 'Pubblico?', options: [], tier: 'low' as const, asked_at: asked })
+  const done = (t: number) => ({ short: 'Fatto', full: 'Test verdi.\nProssimi: tagga · apri la PR', at: t })
+  const st = (...ss: Session[]): State => ({ v: 1, ts: at(15), host: 'pc', sessions: ss, quota: {} })
+  const b = (state: State) => build(state, [], at(15), new Set())
+
+  it("nell'ordine del bisogno", () => {
+    const m = b(st(s('idle'), s('busy', 'busy'), { ...s('asks', 'waiting'), question: q(at(14)) }, { ...s('fin'), outcome: done(at(14, 50)), followed: true }))
+    expect(m.rows.map(r => r.group)).toEqual(['waiting', 'finished', 'working', 'still'])
+    expect(m.rows.map(r => r.session.name)).toEqual(['asks', 'fin', 'busy', 'idle'])
+  })
+  it('ogni riga porta la quota del suo account', () => {
+    const m = b({ ...st(s('idle'), { ...s('cli', 'busy'), account: 'professionale' }), quota: { personale: { h5: 4 }, professionale: { h5: 62, stale: true } } })
+    expect(m.rows.map(r => r.quota?.h5)).toEqual([62, 4])
+  })
+  it('chi ha finito non è anche ferma', () => expect(b(st({ ...s('fin'), outcome: done(at(14, 50)), followed: true })).rows.map(r => r.group)).toEqual(['finished']))
+  it('la master solo quando chiede', () => {
+    expect(b(st(s('master', 'busy'))).rows).toEqual([])
+    expect(b(st({ ...s('master', 'waiting'), question: q(at(14)) })).rows.map(r => r.session.name)).toEqual(['master'])
+  })
+  it('le chiuse a parte', () => {
+    const m = b(st(s('a'), s('x', 'gone'), s('y', 'gone')))
+    expect(m.closed.map(x => x.name)).toEqual(['x', 'y'])
+  })
+  it('aperte senza la master', () => expect(b(st(s('a'), s('b'), s('master'), s('x', 'gone'))).open).toBe(2))
+  it('ferme dalla più recente', () => expect(b(st(s('old', 'idle', at(8)), s('new', 'idle', at(12)))).rows.map(r => r.session.name)).toEqual(['new', 'old']))
+  it('in attesa senza domanda resta in lista', () => expect(b(st(s('w', 'waiting'))).rows.map(r => r.session.name)).toEqual(['w']))
+  it('al lavoro con una domanda compare una volta', () => expect(b(st({ ...s('b', 'busy'), question: q(at(14)) })).rows.map(r => r.group)).toEqual(['waiting']))
 })
