@@ -55,7 +55,7 @@
     {#if quota?.h5 != null}
       <span class="meter" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined}>
         <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(quota.h5)} style="stroke:{quota.stale ? 'var(--wait)' : ring[tone(quota.h5)]}" class="arc" /></svg>
-        <span class="mcol">
+        <span class="mcol" class:inline={wide}>
           <span class="ml" class:stale={quota.stale}>{t.quota5h(quota.h5)}</span>
           {#if reset}<span class="reset"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{reset}</span>{/if}
         </span>
@@ -162,6 +162,8 @@
   .trk { stroke: var(--b-track); }
   .arc { stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
   .mcol { display: flex; flex-direction: column; line-height: 1.2; }
+  /* Su desktop l'ora dell'azzeramento sta accanto alla percentuale (segnalazione 05/10 16:41). */
+  .mcol.inline { flex-direction: row; align-items: center; gap: 8px; }
   .ml { font-size: 14px; font-weight: 500; color: var(--text2); white-space: nowrap; }
   .ml.stale { color: var(--wait); }
   .reset { display: flex; align-items: center; gap: 2px; font-size: 11px; color: var(--text2); }

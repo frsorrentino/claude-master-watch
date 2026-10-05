@@ -1307,7 +1307,10 @@ private fun SheetHeader(
     var ctxSheet by remember { mutableStateOf(false) }
     val tunable = canTune && choices != null && s.state != SessionState.GONE
     Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // La larghezza della testata: larga (tablet, finestra, Chromebook) l'ora della quota sta accanto alla percentuale.
+        var headerW by remember { mutableIntStateOf(0) }
+        val wideHeader = with(androidx.compose.ui.platform.LocalDensity.current) { headerW.toDp() } >= QUOTA_INLINE_MIN
+        Row(Modifier.fillMaxWidth().onSizeChanged { headerW = it.width }.padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Una riga sola: modello, effort, contesto e menu. Lo stato e il tempo vanno nella riga dal vivo in fondo alla chat
             // (Franz, 30/09 23:01: «disordinata», «lavora 5 h potrebbe essere rimosso»).
             // Modello ed effort in una pillola sola, «Opus 5.5 · medium», che apre un foglio con le due scelte (osservazioni del 03/10:
@@ -1322,7 +1325,7 @@ private fun SheetHeader(
             if (lead != null) TunePill(tune, tunable) { picker = "tune" }
             // La quota delle 5 ore dell'account con l'ora in cui si azzera, accanto al contesto: due misure uguali, anello ed
             // etichetta (Franz, 04/10 20:43); il dato vecchio nel colore dell'attesa.
-            quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now) }
+            quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now, inline = wideHeader) }
             // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
             s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).handCursor().clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
             Box {
@@ -1595,7 +1598,7 @@ private fun MeterRing(frac: Float, tone: androidx.compose.ui.graphics.Color) {
  * contesto, «5h 1%» e sotto l'ora in cui si azzera, col giorno se non è oggi. Un dato vecchio nel colore dell'attesa.
  */
 @Composable
-private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long) {
+private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long, inline: Boolean = false) {
     val tone = if (stale) CmColors.waiting else when (SessionMeters.quotaTone(pct)) {
         it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
         it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
@@ -1613,7 +1616,8 @@ private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long) {
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         MeterRing((pct / 100f).coerceIn(0f, 1f), tone)
-        Column {
+        // L'ora accanto alla percentuale quando la testata è larga, sotto se è stretta (segnalazione 05/10 16:41).
+        val body: @Composable () -> Unit = {
             Text(stringResource(R.string.quota_h5_short, pct), style = MaterialTheme.typography.labelLarge, color = if (stale) CmColors.waiting else CmColors.text2, maxLines = 1)
             reset?.let { r ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1622,8 +1626,12 @@ private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long) {
                 }
             }
         }
+        if (inline) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { body() } else Column { body() }
     }
 }
+
+/** Da questa larghezza della testata l'ora dell'azzeramento sta sulla riga della quota (segnalazione 05/10 16:41). */
+private val QUOTA_INLINE_MIN = 480.dp
 
 /** Quante immagini si possono mandare insieme: ognuna è un `report`, e il relay le esegue una per volta. */
 private const val MAX_IMAGES = 5
