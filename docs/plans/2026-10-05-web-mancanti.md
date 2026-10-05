@@ -10,4 +10,4 @@ Ogni punto si chiude con la resa confrontata col provino Android, la prova dal v
 - [x] Avviso delle altre sessioni sotto la barra (`SessionSheetTest_sheetElsewhere*`)
 - [x] Coda delle domande (`QueueScreenTest_*`)
 - [x] Plancia: pannello quota con la previsione e dettagli della sessione (`TabletShellTest_tabletDeskHomeRightDetails`)
-- [ ] Barra del titolo della PWA con Window Controls Overlay (`TabletShellTest_captionBar`)
+- [x] Barra del titolo della PWA con Window Controls Overlay (`TabletShellTest_captionBar`)

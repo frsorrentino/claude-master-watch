@@ -20,6 +20,7 @@
   import Queue from './lib/Queue.svelte'
   import QuotaPanel from './lib/QuotaPanel.svelte'
   import Inspector from './lib/Inspector.svelte'
+  import CaptionBar from './lib/CaptionBar.svelte'
   import { alert as elsewhereOf, key as alertKey, type Alert } from './lib/elsewhere'
   import { build as devicesOf, linked as linkedDevices } from './lib/devices'
   import { freshness } from './lib/durations'
@@ -64,6 +65,14 @@
   let shares = $state(sharesFromPref(load('cm.shares'), 0))
   $effect(() => { if (shares.length !== cols.length) shares = sharesFromPref(load('cm.shares'), cols.length) })
   let homeRight = $state(load('cm.home_right') === '1')
+  // La barra del titolo nostra: solo nella web app installata con Window Controls Overlay acceso (`?wco=1` la simula).
+  const wcoApi = (navigator as Navigator & { windowControlsOverlay?: EventTarget & { visible: boolean } }).windowControlsOverlay
+  const wcoForced = new URLSearchParams(location.search).has('wco')
+  let wco = $state(wcoForced || !!wcoApi?.visible)
+  wcoApi?.addEventListener('geometrychange', () => { wco = wcoForced || !!wcoApi?.visible })
+  $effect(() => { document.body.classList.toggle('wco', wco) })
+  // Il clic su una scheda porta il cursore nel campo di quella colonna.
+  const focusColumn = (name: string) => document.querySelector<HTMLTextAreaElement>(`[data-col="${CSS.escape(name)}"] textarea`)?.focus()
   // I dettagli della prima colonna accanto alle colonne: dalle Impostazioni, spenti di default (Franz, 04/10 14:40).
   let details = $state(load('cm.details') === '1')
   const rowOf = $derived(Object.fromEntries(summary.rows.map(r => [r.session.name, r])))
@@ -177,7 +186,7 @@
     onHomeSide={() => smooth(() => { homeRight = !homeRight; save('cm.home_right', homeRight ? '1' : '0') })}>
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
-      <div class="column">
+      <div class="column" data-col={name}>
         {#if rowOf[name]}<ColumnHead r={rowOf[name]} now={st.ts} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
         <div class="cbody">{@render chatOf(name, true)}</div>
       </div>
@@ -189,6 +198,7 @@
     {#if page}{@render pageView(page)}{:else if session}{@render chatOf(session.name, false)}{:else}{@render homePane()}{/if}
   </div>
 {/if}
+{#if wco}<CaptionBar {st} cols={wide ? cols : []} onFocus={focusColumn} onClose={(n) => setCols(cols.filter(c => c !== n))} />{/if}
 <span class="demo mono">{t.demo}</span>
 
 <!-- «Aggiungi alla notte»: lo stesso foglio di Lancia, solo progetti (LaunchSheet con night_add). -->

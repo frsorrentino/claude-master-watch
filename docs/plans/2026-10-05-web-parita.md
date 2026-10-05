@@ -20,4 +20,4 @@ indicato, fianco a fianco.
 ## PWA
 
 - [x] Installabile (05/10 17:40): manifest in italiano, icone dal segno dell'app (tonda, adattiva, Apple), service worker che apre senza rete e non tiene mai in cache l'API locale (`/api/`), bordi sicuri per iPhone. Verificato in Chrome: service worker attivo, manifest e icone serviti.
-- [ ] Barra del titolo nostra con Window Controls Overlay, come la `captionBar` del tablet (schede delle colonne, quota a destra).
+- [x] Barra del titolo nostra con Window Controls Overlay, come la `captionBar` del tablet (schede delle colonne, quota a destra); `?wco=1` la simula fuori dalla finestra installata.
