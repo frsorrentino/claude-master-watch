@@ -7,6 +7,8 @@ const base = decodeState(stateRaw)
 export const demoState = {
   ...base,
   // Il recap di oggi con un progetto senza sessione, così «Per te» propone il suo prossimo passo.
+  // La finestra delle 5 ore cominciata da due ore, così il ritmo ha letture da mostrare.
+  quota: { ...base.quota, personal: { ...base.quota.personal, reset_h5: base.ts + 3 * 3600 } },
   recap: { ...base.recap, items: [...base.recap.items, { project: 'orbit-docs', done: 'API pages drafted', next: 'Review the API pages' }] },
   sessions: [
     { id: 'm', name: 'master', account: 'personal', project: 'personali/claude-master', state: 'idle' as const, since: base.ts - 3600, context: 34, attached: true,
@@ -58,3 +60,8 @@ export const demoMine: [Sent, Status][] = [
   [{ id: 'c1', session: 'atlas-shop', text: 'Also add the attendees list', sentAt: t0 + 156 }, 'working'],
   [{ id: 'c2', session: 'field-notes', text: 'Dammi i numeri', sentAt: t0 - 2 }, 'done'],
 ]
+
+/** Le letture della quota delle 5 ore che l'app tiene da sé, per il ritmo (QuotaHistory): qui tre dell'account personale. */
+export const demoSamples = {
+  personal: [{ ts: demoState.ts - 7200, pct: 4 }, { ts: demoState.ts - 3600, pct: 7 }, { ts: demoState.ts, pct: 11 }],
+}

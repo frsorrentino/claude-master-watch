@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { demoEvents, demoMine, demoState, demoTranscripts } from './lib/demo'
+  import { demoEvents, demoMine, demoSamples, demoState, demoTranscripts } from './lib/demo'
   import type { CmdOp, TranscriptEntry } from './lib/contract'
   import type { Sent, Status } from './lib/chatRules'
   import { toggle } from './lib/speech.svelte'
@@ -13,6 +13,7 @@
   import Page from './lib/Page.svelte'
   import Launch from './lib/Launch.svelte'
   import Diary from './lib/Diary.svelte'
+  import Overview from './lib/Overview.svelte'
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
@@ -73,7 +74,7 @@
   const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle }
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
-  const overview = $derived(overviewOf(st, demoEvents, {}, st.ts, undefined, false))
+  const overview = $derived(overviewOf(st, demoEvents, demoSamples, st.ts, undefined, false))
   let nightDlg: HTMLDialogElement | undefined = $state()
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
@@ -115,6 +116,9 @@
     {:else if p === 'diary'}
       <Diary {st} events={demoEvents} rings={overview.rings} now={st.ts} onAdd={() => nightDlg?.showModal()} onRemove={(id) => cmd('')('night_remove', id)}
         onQuadro={() => openPage('overview')} onSession={(n) => { openPage(null); pick(n) }} />
+    {:else if p === 'overview'}
+      <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
+        onQuestion={() => { const q = st.sessions.filter(x => x.question && x.state !== 'gone').sort((a, b) => a.question!.asked_at - b.question!.asked_at)[0]; if (q) { openPage(null); pick(q.name) } }} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}

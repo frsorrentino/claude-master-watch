@@ -4,7 +4,7 @@ Ogni punto si chiude con la resa confrontata col provino Android, la prova dal v
 
 - [x] Lancia una sessione (`LaunchSheetTest_launchSheet`)
 - [x] Registro: recap, notte, coda della notte (`DiaryScreenTest_*`)
-- [ ] Utilizzo e limiti: quote, ritmo, lavoro (`OverviewScreenTest_*`)
+- [x] Utilizzo e limiti: quote, ritmo, lavoro (`OverviewScreenTest_*`)
 - [ ] Cerca nelle conversazioni (`SearchScreenTest_*`)
 - [ ] Impostazioni: schema dei collegamenti, lettura ad alta voce (`SettingsScreenTest_*`)
 - [ ] Avviso delle altre sessioni sotto la barra (`SessionSheetTest_sheetElsewhere*`)
