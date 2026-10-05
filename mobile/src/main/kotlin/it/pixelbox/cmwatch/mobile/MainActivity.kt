@@ -772,7 +772,12 @@ class MainActivity : ComponentActivity() {
                 SummaryList(
                     summary,
                     // Aprire una sessione che ha finito la toglie da «Ha finito», come in «Per te».
-                    onOpen = { n -> summary.rows.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead); open = n },
+                    onOpen = { n ->
+                        summary.rows.firstOrNull { r -> r.session.name == n && r.key != null }?.key?.let(markRead)
+                        // Sul tablet il tocco sulla scheda apre e chiude la sua colonna (Franz, 05/10 11:09); le altre strade
+                        // (ricerca, notifica, menu) aprono soltanto.
+                        if (wide) saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, n)) else open = n
+                    },
                     onAnswer = { n, k -> scope.launch { runCatching { app.repo.answer(n, k) } } },
                     onStep = sendPrompt, onService = forYouAction, onClosed = { closedOpen = true },
                     footer = if (wide) ({
