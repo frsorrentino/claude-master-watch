@@ -310,7 +310,8 @@
     "timeline",
     "pair_add",
     "approve",
-    "decision"
+    "decision",
+    "unpair"
   ],
   "slash": [
     "compact",
@@ -348,6 +349,12 @@
       "uid": "spareUid00000000000000000000",
       "name": "Pixel 7",
       "kind": null,
+      "seen": null
+    },
+    {
+      "uid": "webUid000000000000000000000",
+      "name": "Safari on Mac",
+      "kind": "web",
       "seen": null
     }
   ],
