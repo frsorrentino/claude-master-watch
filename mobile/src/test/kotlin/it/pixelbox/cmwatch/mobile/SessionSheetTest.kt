@@ -4,7 +4,9 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.unit.dp
 import org.junit.Test
 import it.pixelbox.cmwatch.contract.*
@@ -110,7 +112,31 @@ class SessionSheetTest {
         }
     }
 
-    // Aperte dal tasto ⟳: il pannello sopra il campo; quella che aspetta un pezzo (param) non ha ↗.
+    // Il menu del + nella master: gli allegati e, in fondo, le azioni ricorrenti (Franz, 05/10 07:27). Il popup non si
+    // disegna nei provini: le stesse voci, in una superficie come quella del menu, sopra il +.
+    @Test fun masterPlusMenu() = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides st.recurring.orEmpty(),
+                it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides it.pixelbox.cmwatch.mobile.ui.PromptBoxes(true, false) { _, _ -> },
+            ) {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> }, canAttach = true, canAttachFiles = true)
+                    androidx.compose.material3.Surface(
+                        color = it.pixelbox.cmwatch.ui.tokens.CmColors.surface, shape = androidx.compose.material3.MaterialTheme.shapes.extraSmall, shadowElevation = 3.dp,
+                        modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomStart).padding(start = 18.dp, bottom = 76.dp).width(232.dp),
+                    ) {
+                        androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(vertical = 8.dp)) {
+                            it.pixelbox.cmwatch.mobile.ui.AttachMenuItems(attach = true, files = true, onRecurring = {}, onGallery = {}, onCamera = {}, onFile = {})
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Aperte dal menu del +: il pannello sopra il campo; quella che aspetta un pezzo (param) non ha ↗.
     @Test fun masterRecurring() = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
         val recurring = st.recurring.orEmpty()

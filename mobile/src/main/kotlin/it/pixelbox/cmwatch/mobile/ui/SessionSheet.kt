@@ -563,14 +563,9 @@ private fun Composer(
             colors = if (toMaster && LocalMasterChatStyle.current == MasterChatStyle.FRAME_FIELD)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MasterLilac.copy(alpha = 0.7f), focusedBorderColor = MasterLilac)
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
+            // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
             leadingIcon = if (canAttach || onRecurring != null) ({
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (canAttach) AttachButton(files = canAttachFiles) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) }
-                    // Le azioni ricorrenti della master, accanto al + (Franz, 04/10 23:55): acceso mentre il pannello è aperto.
-                    if (onRecurring != null) IconButton(onClick = onRecurring) {
-                        Icon(Icons.Rounded.Autorenew, stringResource(R.string.recurring_open), tint = if (recurringOpen) CmColors.primary else CmColors.actionIcon)
-                    }
-                }
+                AttachButton(files = canAttachFiles, attach = canAttach, onRecurring = onRecurring) { picked -> images = (images + picked).distinct().take(MAX_IMAGES) }
             }) else null,
             trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
                 if (inField != null && draft.isBlank()) TextButton(onClick = { onDraft(inField) }) { Text(stringResource(R.string.suggestion_use), color = CmColors.actionIcon) }
@@ -781,7 +776,7 @@ private fun UriThumb(uri: Uri, modifier: Modifier) {
  * (Paparazzi) non c'è, e il tasto resta disegnato senza selettore.
  */
 @Composable
-private fun AttachButton(files: Boolean = false, onPicked: (List<Uri>) -> Unit) {
+private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecurring: (() -> Unit)? = null, onPicked: (List<Uri>) -> Unit) {
     val icon: @Composable () -> Unit = { Icon(Icons.Rounded.Add, stringResource(R.string.attach_image), tint = CmColors.actionIcon) }
     if (androidx.activity.compose.LocalActivityResultRegistryOwner.current == null) { IconButton(onClick = {}, content = icon); return }
     val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -796,25 +791,38 @@ private fun AttachButton(files: Boolean = false, onPicked: (List<Uri>) -> Unit) 
     Box {
         IconButton(onClick = { menu = true }, content = icon)
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = CmColors.surface) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.attach_gallery)) }, leadingIcon = { Icon(Icons.Rounded.Image, null, tint = CmColors.actionIcon) },
-                onClick = { menu = false; pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.attach_camera)) }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null, tint = CmColors.actionIcon) },
-                onClick = {
+            AttachMenuItems(
+                attach = attach, files = files, onRecurring = onRecurring?.let { r -> { menu = false; r() } },
+                onGallery = { menu = false; pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onCamera = {
                     menu = false
                     val file = java.io.File(java.io.File(ctx.cacheDir, "camera").apply { mkdirs() }, java.util.UUID.randomUUID().toString() + ".jpg")
                     val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", file)
                     shot = uri.toString()
                     runCatching { camera.launch(uri) }.onFailure { shot = null }
                 },
-            )
-            if (files) DropdownMenuItem(
-                text = { Text(stringResource(R.string.attach_file)) }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null, tint = CmColors.actionIcon) },
-                onClick = { menu = false; runCatching { document.launch(arrayOf("*/*")) } },
+                onFile = { menu = false; runCatching { document.launch(arrayOf("*/*")) } },
             )
         }
+    }
+}
+
+/**
+ * Le voci del menu del +: galleria, fotocamera, file e, nella master, le azioni ricorrenti in fondo (Franz, 05/10 07:27:
+ * nel campo il ⟳ stringeva troppo insieme al + e a «Usa»). Fuori dal menu solo per il provino, che i popup non li disegna.
+ */
+@Composable
+internal fun AttachMenuItems(
+    attach: Boolean, files: Boolean, onRecurring: (() -> Unit)?, onGallery: () -> Unit, onCamera: () -> Unit, onFile: () -> Unit,
+) {
+    if (attach) {
+        DropdownMenuItem(text = { Text(stringResource(R.string.attach_gallery)) }, leadingIcon = { Icon(Icons.Rounded.Image, null, tint = CmColors.actionIcon) }, onClick = onGallery)
+        DropdownMenuItem(text = { Text(stringResource(R.string.attach_camera)) }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null, tint = CmColors.actionIcon) }, onClick = onCamera)
+        if (files) DropdownMenuItem(text = { Text(stringResource(R.string.attach_file)) }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null, tint = CmColors.actionIcon) }, onClick = onFile)
+    }
+    if (onRecurring != null) {
+        if (attach) androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+        DropdownMenuItem(text = { Text(stringResource(R.string.recurring_open)) }, leadingIcon = { Icon(Icons.Rounded.Autorenew, null, tint = CmColors.actionIcon) }, onClick = onRecurring)
     }
 }
 
