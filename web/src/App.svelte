@@ -12,6 +12,8 @@
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
   import Launch from './lib/Launch.svelte'
+  import Diary from './lib/Diary.svelte'
+  import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
   import { add, columns, columnsFromPref, columnsPref, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
@@ -70,6 +72,9 @@
   let page = $state<PageName | null>(asked && ['launch', 'diary', 'overview', 'search', 'settings'].includes(asked) ? (asked as PageName) : null)
   const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle }
   const openPage = (p: PageName | null) => smooth(() => { page = p })
+  // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
+  const overview = $derived(overviewOf(st, demoEvents, {}, st.ts, undefined, false))
+  let nightDlg: HTMLDialogElement | undefined = $state()
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
@@ -107,6 +112,9 @@
     {#if p === 'launch'}
       <Launch {st} onSession={(n, reopen) => { if (reopen) cmd(n)('reopen'); else { openPage(null); pick(n) } }}
         onLaunch={(pr, first) => { cmd(pr.name)('launch', pr.path, first || undefined); openPage(null) }} />
+    {:else if p === 'diary'}
+      <Diary {st} events={demoEvents} rings={overview.rings} now={st.ts} onAdd={() => nightDlg?.showModal()} onRemove={(id) => cmd('')('night_remove', id)}
+        onQuadro={() => openPage('overview')} onSession={(n) => { openPage(null); pick(n) }} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}
@@ -134,6 +142,12 @@
 {/if}
 <span class="demo mono">{t.demo}</span>
 
+<!-- «Aggiungi alla notte»: lo stesso foglio di Lancia, solo progetti (LaunchSheet con night_add). -->
+<dialog bind:this={nightDlg} class="sheet" onclick={(e) => e.target === e.currentTarget && nightDlg?.close()}>
+  <h2>{t.nightAddTitle}</h2>
+  <Launch {st} action={t.nightAddTitle} onLaunch={(pr, text) => { cmd(pr.name)('night_add', pr.path, text); nightDlg?.close() }} />
+</dialog>
+
 <style>
   .phone { height: 100%; display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; }
   .list { flex: 1; min-height: 0; }
@@ -142,6 +156,10 @@
   .column { height: 100%; display: flex; flex-direction: column; }
   .cbody { flex: 1; min-height: 0; }
   .soon { color: var(--text2); padding: 24px; }
+  .sheet { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 0 0; width: min(600px, 100vw); max-height: 90vh; border-radius: 28px; }
+  .sheet::backdrop { background: rgb(0 0 0 / .55); }
+  .sheet h2 { font-size: 22px; font-weight: 600; padding: 0 20px; }
+  @media (max-width: 599px) { .sheet { margin: auto 0 0; max-width: 100vw; border-radius: 28px 28px 0 0; } }
   .demo { position: fixed; right: 12px; bottom: 6px; opacity: .6; pointer-events: none; }
   @media (max-width: 839px) { .demo { bottom: 0; right: 50%; transform: translateX(50%); font-size: 10px; } }
 </style>
