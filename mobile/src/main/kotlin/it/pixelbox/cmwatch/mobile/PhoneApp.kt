@@ -77,6 +77,8 @@ class PhoneApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Il registro dei crash e degli ANR, per primo: copre anche quello che succede dopo (Franz, 05/10 14:08).
+        CrashLog.install(this)
         prefs = Prefs(this)
         val settings = runBlocking { prefs.current() }
         FirebaseBoot.start(this, FirebaseConfig.fromJson(settings.firebaseJson))
