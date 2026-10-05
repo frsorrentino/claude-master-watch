@@ -5,11 +5,15 @@
   import Header from './Header.svelte'
   import type { CmdOp, Event } from './contract'
   import type { Scheduled } from './masterHome'
-  import type { Line } from './demo'
+  import type { TranscriptEntry } from './contract'
+  import { merge, group } from './chatFeed'
+  import type { Sent, Status } from './chatRules'
+  import { toggle } from './speech.svelte'
+  import Feed from './Feed.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, lines, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
-    st: State; s: Session; lines: Line[]; onSend: (text: string) => void; onBack?: () => void
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
+    st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
@@ -17,13 +21,12 @@
   // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
   let conversation = $state(false)
   const home = $derived(s.name === MASTER && !conversation)
-  function speak(text: string) { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'it-IT'; speechSynthesis.speak(u) }
 
   let draft = $state('')
   let list: HTMLElement | undefined = $state()
-  const last = $derived([...lines].reverse().find(l => l.role === 'assistant'))
-  const steps = $derived(last ? parseSteps(last.text).steps : [])
-  const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  const items = $derived(group(merge(entries, mine)))
+  const last = $derived([...entries].reverse().find(e => e.role === 'assistant' && e.text?.trim()))
+  const steps = $derived(last ? parseSteps(last.text ?? '').steps : [])
 
   function send() {
     const text = draft.trim()
@@ -33,7 +36,7 @@
   // Invio manda, Maiusc+Invio va a capo, come sul tablet con la tastiera fisica.
   function key(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
   function pick(step: string) { draft = draft.trim() ? `${draft.trim().replace(/[.,;:]$/, '')} e poi ${step}` : step }
-  $effect(() => { lines.length; if (!home) list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' }) })
+  $effect(() => { items.length; if (!home) list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' }) })
 </script>
 
 <section class="chat">
@@ -42,16 +45,10 @@
 
   <div class="lines" class:dots={home} bind:this={list}>
     {#if home}
-      <MasterHome {st} master={s} entries={lines} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
-        {onAnswer} onSession={onPick} onSpeak={speak} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
+      <MasterHome {st} master={s} {entries} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
+        {onAnswer} onSession={onPick} onSpeak={toggle} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
-    {#each lines as l (l.id)}
-      {#if l.role === 'user'}
-        <div class="me"><p>{l.text}</p><span class="mono">{hm(l.at)}</span></div>
-      {:else}
-        <div class="claude"><p>{parseSteps(l.text).text}</p><span class="mono">{hm(l.at)}</span></div>
-      {/if}
-    {/each}
+    <Feed {s} {items} now={st.ts} />
     {#if s.question}
       <div class="question">
         <p>{s.question.text}</p>

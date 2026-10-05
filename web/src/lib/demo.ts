@@ -19,23 +19,42 @@ import eventsRaw from '../../../contract/events-sample.json?raw'
 import type { Event } from './contract'
 export const demoEvents: Event[] = JSON.parse(eventsRaw)
 
-export type Line = { id: string; role: 'user' | 'assistant'; text: string; at: number }
-const t0 = demoState.ts - 900
-export const demoChats: Record<string, Line[]> = {
+import type { TranscriptEntry } from './contract'
+import type { Sent, Status } from './chatRules'
+
+// Le conversazioni di prova, come i provini della chat (SessionSheetTest: sheetTranscript, sheetTables).
+const t0 = demoState.ts - 600
+const said = (id: string, text: string, at: number, origin = 'pc'): TranscriptEntry => ({ id, role: 'user', text, at, origin })
+const claude = (id: string, text: string, at: number, extra: Partial<TranscriptEntry> = {}): TranscriptEntry => ({ id, role: 'assistant', text, at, ...extra })
+const tool = (id: string, tool: string, text: string, at: number, extra: Partial<TranscriptEntry> = {}): TranscriptEntry => ({ id, role: 'tool', tool, text, at, ...extra })
+export const demoTranscripts: Record<string, TranscriptEntry[]> = {
   master: [
-    { id: 'u1', role: 'user', text: 'Lancia claude-master sulla fase 2.2', at: demoState.ts - 660 },
-    { id: 'a1', role: 'assistant', text: 'Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb · prova la casa dal vivo', at: demoState.ts - 600 },
+    said('u1', 'Lancia claude-master sulla fase 2.2', demoState.ts - 660, 'phone'),
+    claude('a1', 'Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb · prova la casa dal vivo', demoState.ts - 600),
   ],
   'ledger-api': [
-    { id: 'u1', role: 'user', text: 'Prepare the deploy of 2.4 and wait for my ok', at: t0 },
-    { id: 'a1', role: 'assistant', text: 'The build is ready and the migration notes are checked. I\'m waiting for the client\'s ok before the deploy.', at: t0 + 120 },
+    said('u1', 'Prepare the deploy of 2.4 and wait for my ok', t0 - 300),
+    tool('a1', 'Bash', './gradlew assembleRelease', t0 - 250, { note: 'Build the release' }),
+    tool('a2', 'Read', 'docs/migrations/2.4.md', t0 - 200),
+    claude('a3', "The build is ready and the **migration notes** are checked. I'm waiting for the client's ok before the deploy.", t0 - 120, { turn: { started: t0 - 300, ended: t0 - 118, out: 412 } }),
   ],
   'atlas-shop': [
-    { id: 'u1', role: 'user', text: 'Tag the release candidate and run the checkout tests', at: t0 },
-    { id: 'a1', role: 'assistant', text: 'Checkout suite green: 48 passed. The release candidate is tagged as 2.4.0-rc1; the payment suite still has two failures in the refund path.\n\nEsito: release candidate tagged, payments to fix\nProssimi: fix the refund path · run the payment suite', at: t0 + 400 },
+    said('u1.0', 'Add the Tuesday meeting notes to the draft', t0),
+    claude('a1.0', "I'll read the draft first.", t0 + 5),
+    tool('a1.1', 'Read', 'docs/draft.md', t0 + 5),
+    tool('a3.0', 'Bash', 'grep -n Tuesday notes/*.md', t0 + 20, { note: 'Find the Tuesday notes', error: true }),
+    claude('a4.0', 'The notes file was missing, so I added the Tuesday section to the draft by hand.', t0 + 40, { turn: { started: t0, ended: t0 + 45, in: 4020, out: 130 } }),
+    tool('a6.0', 'Write', 'docs/cover.png', t0 + 152, { files: [{ path: '/w/field-notes/docs/cover.png', mime: 'image/png', size: 48_000 }] }),
+    tool('a7.0', 'SendUserFile', 'Tuesday minutes', t0 + 155, { files: [{ path: '/w/field-notes/docs/minutes.pdf', mime: 'application/pdf', size: 212_000 }] }),
+    said('p1.0', 'Also add the attendees list', t0 + 158, 'phone'),
   ],
   'field-notes': [
-    { id: 'u1', role: 'user', text: 'Rewrite the README with the three sections', at: t0 },
-    { id: 'a1', role: 'assistant', text: 'README rewritten with the three sections asked for.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2', at: t0 + 60 },
+    said('u1', 'Dammi i numeri', t0, 'phone'),
+    claude('a1', 'I file toccati:\n\n| file | righe |\n|---|---|\n| Repo.kt | 336 |\n| Slash.kt | 47 |\n\nI numeri\n\n| cosa | ora | a mezzogiorno |\n|---|---|---|\n| post del film (01/10) | 223 visualizzazioni, 4 repost | 121 visualizzazioni, 1 repost |\n| nuovi follower | 1 | — |\n\nDettagli in https://claude.ai/artifact/RGdmD5fx e nel file `docs/numeri.md`.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2', t0 + 60, { turn: { started: t0 + 5, ended: t0 + 60, out: 288 } }),
   ],
 }
+/** I messaggi mandati da qui, col loro stato. */
+export const demoMine: [Sent, Status][] = [
+  [{ id: 'c1', session: 'atlas-shop', text: 'Also add the attendees list', sentAt: t0 + 156 }, 'working'],
+  [{ id: 'c2', session: 'field-notes', text: 'Dammi i numeri', sentAt: t0 - 2 }, 'done'],
+]

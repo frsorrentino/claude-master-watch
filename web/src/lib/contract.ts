@@ -29,6 +29,16 @@ export type Recap = { date: string; items: RecapItem[] }
 export type EventKind = 'question' | 'answered' | 'outcome' | 'gone' | 'launched' | 'quota' | 'resumed' | 'recap' | 'night_report'
 export type Event = { key: string; kind: EventKind; session?: string | null; account?: string | null; ts: number; title: string; body?: string; ref?: string | null }
 
+// Trascrizione (contratto 1.22): `in` comprende la cache; `queued` = scritta a turno in corso e non ancora presa; `cut` = accorciata dal PC.
+export type TranscriptTurn = { started?: number | null; ended?: number | null; in?: number | null; out?: number | null }
+export type TranscriptFile = { path: string; mime?: string | null; size?: number | null }
+export type TranscriptEntry = {
+  id: string; role: string; text?: string | null; at?: number | null; tool?: string | null; note?: string | null
+  error?: boolean | null; cut?: boolean; turn?: TranscriptTurn | null; files?: TranscriptFile[] | null
+  origin?: string | null; queued?: boolean
+}
+export type TranscriptPage = { entries: TranscriptEntry[]; more?: boolean }
+
 export type State = {
   v: number; ts: number; host: string
   sessions: Session[]; quota: Record<string, QuotaAccount>

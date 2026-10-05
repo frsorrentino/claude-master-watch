@@ -4,6 +4,7 @@ import { decodeState } from './contract'
 import { age, build } from './summary'
 import type { Session, State } from './contract'
 import { parseSteps } from './nextSteps'
+import { t } from './t'
 
 const st = decodeState(readFileSync(new URL('../../../contract/state-1-question.json', import.meta.url), 'utf8'))
 
@@ -59,4 +60,13 @@ describe('riepilogo', () => {
   it('ferme dalla più recente', () => expect(b(st(s('old', 'idle', at(8)), s('new', 'idle', at(12)))).rows.map(r => r.session.name)).toEqual(['new', 'old']))
   it('in attesa senza domanda resta in lista', () => expect(b(st(s('w', 'waiting'))).rows.map(r => r.session.name)).toEqual(['w']))
   it('al lavoro con una domanda compare una volta', () => expect(b(st({ ...s('b', 'busy'), question: q(at(14)) })).rows.map(r => r.group)).toEqual(['waiting']))
+})
+
+// Gli stessi casi di PrepositionTest in Kotlin.
+describe('preposizione', () => {
+  it('ad solo davanti alla a', () => {
+    expect(['atlas-shop', 'Atlas', 'àncora'].map(t.writeTo)).toEqual(['Scrivi ad atlas-shop', 'Scrivi ad Atlas', 'Scrivi ad àncora'])
+    expect(['ledger-api', 'orbit-docs', 'Euro'].map(t.writeTo)).toEqual(['Scrivi a ledger-api', 'Scrivi a orbit-docs', 'Scrivi a Euro'])
+    expect(t.writeTo('master')).toBe('Scrivi alla master')
+  })
 })

@@ -16,7 +16,7 @@ export type ForYouRow = {
 }
 export type ForYou = { rows: ForYouRow[]; more: number }
 export type Hero = { headline: string; body: string; steps: string[]; at: number | null }
-export type Entry = { role: string; text?: string | null; at: number }
+export type Entry = { role: string; text?: string | null; at?: number | null }
 /** Un messaggio programmato da questo dispositivo: aspetta finché `sentAt` è prima di `scheduledFor`. */
 export type Scheduled = Sent & { scheduledFor?: number | null }
 
