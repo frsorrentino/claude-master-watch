@@ -79,6 +79,8 @@ export const t = {
   closeWord: 'Chiudi',
   elsewhereWaiting: (n: string) => `${n} ti aspetta`, elsewhereWaitingMany: (n: number) => `${n} sessioni ti aspettano`, elsewhereReply: 'Rispondi',
   elsewhereFinished: (n: string) => `${n} ha finito`, elsewhereOpen: 'Apri',
+  queueTitle: 'Ti aspettano', queueEmpty: 'Nessuno ti aspetta', queueAge: (x: string) => `da ${x}`, queuePosition: (i: number, n: number) => `${i} di ${n}`,
+  queuePrev: 'Domanda precedente', queueNext: 'Domanda successiva',
   soon: 'Questa pagina arriva nel prossimo passo.',
   home: 'Casa', dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },

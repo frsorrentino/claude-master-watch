@@ -1,5 +1,5 @@
 <script module lang="ts">
-  export type Page = 'launch' | 'diary' | 'overview' | 'search' | 'settings'
+  export type Page = 'launch' | 'diary' | 'overview' | 'search' | 'settings' | 'queue'
 </script>
 
 <script lang="ts">

@@ -17,6 +17,7 @@
   import Overview from './lib/Overview.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
+  import Queue from './lib/Queue.svelte'
   import { alert as elsewhereOf, key as alertKey, type Alert } from './lib/elsewhere'
   import { build as devicesOf, linked as linkedDevices } from './lib/devices'
   import { freshness } from './lib/durations'
@@ -77,8 +78,8 @@
   // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
   // `?page=diary` apre una pagina (link diretto, e i provini).
   const asked = new URLSearchParams(location.search).get('page')
-  let page = $state<PageName | null>(asked && ['launch', 'diary', 'overview', 'search', 'settings'].includes(asked) ? (asked as PageName) : null)
-  const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle }
+  let page = $state<PageName | null>(asked && ['launch', 'diary', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
+  const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle }
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
   const overview = $derived(overviewOf(st, demoEvents, demoSamples, st.ts, undefined, false))
@@ -93,8 +94,7 @@
     else if (a.sessions.length === 1) pick(a.sessions[0])
     else openQueue()
   }
-  let queueOpen = $state(false)
-  const openQueue = () => smooth(() => { queueOpen = true })
+  const openQueue = () => openPage('queue')
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
@@ -138,13 +138,15 @@
         onQuadro={() => openPage('overview')} onSession={(n) => { openPage(null); pick(n) }} />
     {:else if p === 'overview'}
       <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
-        onQuestion={() => { const q = st.sessions.filter(x => x.question && x.state !== 'gone').sort((a, b) => a.question!.asked_at - b.question!.asked_at)[0]; if (q) { openPage(null); pick(q.name) } }} />
+        onQuestion={() => openPage('queue')} />
     {:else if p === 'search'}
       <Search {sent} events={demoEvents} remote onQuery={(q) => (searchPage = demoSearch(q))} page={searchPage}
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
     {:else if p === 'settings'}
       <Settings m={devicesOf(st.host, st, freshness(st.ts, st.ts), st.ts, '', __APP_VERSION__, true, null, false, null)}
         devices={linkedDevices(st, null, st.ts) ?? []} now={st.ts} channel={t.channelDemo} onRate={setRate} onVoice={setVoice} />
+    {:else if p === 'queue'}
+      <Queue {st} now={st.ts} onAnswer={(n, arg, op = 'answer') => cmd(n)(op, arg || undefined)} onSession={(n) => { openPage(null); pick(n) }} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}
