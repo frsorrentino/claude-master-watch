@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTranscripts } from './lib/demo'
+  import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import type { SearchPage } from './lib/contract'
   import type { CmdOp, TranscriptEntry } from './lib/contract'
   import type { Sent, Status } from './lib/chatRules'
@@ -18,6 +18,8 @@
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
   import Queue from './lib/Queue.svelte'
+  import QuotaPanel from './lib/QuotaPanel.svelte'
+  import Inspector from './lib/Inspector.svelte'
   import { alert as elsewhereOf, key as alertKey, type Alert } from './lib/elsewhere'
   import { build as devicesOf, linked as linkedDevices } from './lib/devices'
   import { freshness } from './lib/durations'
@@ -25,7 +27,7 @@
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
-  import { add, columns, columnsFromPref, columnsPref, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
+  import { add, columns, columnsFromPref, columnsPref, inspect, sharesFromPref, sharesPref, toggle as toggleCol, wide as isWide } from './lib/tablet'
 
   // Per ora i dati di prova (fixture del contratto); la strada locale del relay arriva con il contratto 1.35.
   const st = demoState
@@ -62,6 +64,8 @@
   let shares = $state(sharesFromPref(load('cm.shares'), 0))
   $effect(() => { if (shares.length !== cols.length) shares = sharesFromPref(load('cm.shares'), cols.length) })
   let homeRight = $state(load('cm.home_right') === '1')
+  // I dettagli della prima colonna accanto alle colonne: dalle Impostazioni, spenti di default (Franz, 04/10 14:40).
+  let details = $state(load('cm.details') === '1')
   const rowOf = $derived(Object.fromEntries(summary.rows.map(r => [r.session.name, r])))
 
   // Il cambio con la transizione del browser, quando c'è (Chrome): niente ridisegni continui.
@@ -88,7 +92,12 @@
   let searchPage = $state<SearchPage | null>(null)
   // Gli avvisi delle altre sessioni chiusi con ✕ (una domanda non si chiude: resta finché qualcuno risponde).
   let seenAlerts = $state(new Set<string>())
-  const elsewhereFor = (name: string) => elsewhereOf(st, name, st.ts, new Set(sent.map(m => m.session)), seenAlerts)
+  // Sulla plancia niente avviso per una sessione che è già in una colonna accanto.
+  function elsewhereFor(name: string) {
+    const a = elsewhereOf(st, name, st.ts, new Set(sent.map(m => m.session)), seenAlerts)
+    if (!a || !wide) return a
+    return (a.type === 'waiting' ? a.sessions.every(n => cols.includes(n)) : cols.includes(a.session)) ? null : a
+  }
   function openAlert(a: Alert) {
     if (a.type === 'finished') { seenAlerts = new Set([...seenAlerts, alertKey(a)]); pick(a.session) }
     else if (a.sessions.length === 1) pick(a.sessions[0])
@@ -121,7 +130,7 @@
   <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
     {#snippet list()}
       <AppBar {st} now={st.ts} openCount={summary.open} onPage={openPage} />
-      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} /></div>
+      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}
@@ -144,7 +153,8 @@
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
     {:else if p === 'settings'}
       <Settings m={devicesOf(st.host, st, freshness(st.ts, st.ts), st.ts, '', __APP_VERSION__, true, null, false, null)}
-        devices={linkedDevices(st, null, st.ts) ?? []} now={st.ts} channel={t.channelDemo} onRate={setRate} onVoice={setVoice} />
+        devices={linkedDevices(st, null, st.ts) ?? []} now={st.ts} channel={t.channelDemo} onRate={setRate} onVoice={setVoice}
+        details={wide ? details : null} onDetails={(on) => { details = on; save('cm.details', on ? '1' : '0') }} />
     {:else if p === 'queue'}
       <Queue {st} now={st.ts} onAnswer={(n, arg, op = 'answer') => cmd(n)(op, arg || undefined)} onSession={(n) => { openPage(null); pick(n) }} />
     {:else}
@@ -153,10 +163,17 @@
   </Page>
 {/snippet}
 
+{#snippet quotaPanels()}{#each overview.rings as r (r.account)}<QuotaPanel ring={r} now={st.ts} />{/each}{/snippet}
+
+{#snippet inspector()}
+  {@const first = st.sessions.find(x => x.name === cols[0])}
+  {#if first}<Inspector i={inspect(first, demoTimeline, st.ts)} quotaH5={st.quota[first.account]?.h5 ?? null} loading={false} />{/if}
+{/snippet}
+
 {#snippet deskPage()}{#if page}{@render pageView(page)}{/if}{/snippet}
 
 {#if wide}
-  <Desk {cols} {shares} {homeRight} onCols={setCols} onShares={setShares} override={page ? deskPage : null}
+  <Desk {cols} {shares} {homeRight} onCols={setCols} onShares={setShares} override={page ? deskPage : null} details={details && cols.length && !page ? inspector : null}
     onHomeSide={() => smooth(() => { homeRight = !homeRight; save('cm.home_right', homeRight ? '1' : '0') })}>
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}

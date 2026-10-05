@@ -9,5 +9,5 @@ Ogni punto si chiude con la resa confrontata col provino Android, la prova dal v
 - [x] Impostazioni: schema dei collegamenti, lettura ad alta voce (`SettingsScreenTest_*`)
 - [x] Avviso delle altre sessioni sotto la barra (`SessionSheetTest_sheetElsewhere*`)
 - [x] Coda delle domande (`QueueScreenTest_*`)
-- [ ] Plancia: pannello quota con la previsione e dettagli della sessione (`TabletShellTest_tabletDeskHomeRightDetails`)
+- [x] Plancia: pannello quota con la previsione e dettagli della sessione (`TabletShellTest_tabletDeskHomeRightDetails`)
 - [ ] Barra del titolo della PWA con Window Controls Overlay (`TabletShellTest_captionBar`)

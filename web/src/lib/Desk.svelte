@@ -6,12 +6,14 @@
   // La plancia (TabletDesk, seconda versione): la home di lato, a sinistra o a destra con ⇄; da una a quattro sessioni in
   // colonne affiancate. Una colonna presa per la testata e lasciata sopra un'altra scambia il posto con lei; i bordi fra le
   // colonne si trascinano a scatti di un dodicesimo (la colonna che cresce prende da tutte le altre).
-  let { cols, shares, homeRight, onCols, onShares, onHomeSide, home, column, empty, override = null }: {
+  let { cols, shares, homeRight, onCols, onShares, onHomeSide, home, column, empty, override = null, details = null }: {
     cols: string[]; shares: number[]; homeRight: boolean
     onCols: (c: string[]) => void; onShares: (s: number[]) => void; onHomeSide: () => void
     home: Snippet; column: Snippet<[string, (e: PointerEvent) => void]>; empty: Snippet
     /** Al posto delle colonne, per esempio il Registro aperto dal menu della home (TabletDesk.override). */
     override?: Snippet | null
+    /** I dettagli della prima colonna, dall'altra parte della home (TabletInspector). */
+    details?: Snippet | null
   } = $props()
 
   const GAP = 12
@@ -73,7 +75,7 @@
   const unequal = $derived(cols.length > 1 && shares.join() !== equal(cols.length).join())
 </script>
 
-<div class="desk" class:right={homeRight}>
+<div class="desk" class:right={homeRight} class:details={!!details}>
   <aside class="home">{@render home()}</aside>
   <div class="handle">
     <i></i>
@@ -86,6 +88,7 @@
       </button>
     {/if}
   </div>
+  {#if details}<aside class="det">{@render details()}</aside>{/if}
   <div class="cols" class:resizing={border >= 0} bind:clientWidth={cw}>
     {#if override}
       <div class="override">{@render override()}</div>
@@ -110,6 +113,10 @@
 <style>
   .desk { display: grid; grid-template-columns: 400px 28px minmax(0, 1fr); grid-template-areas: 'home handle cols'; height: 100%; background: var(--bg); }
   .desk.right { grid-template-columns: minmax(0, 1fr) 28px 400px; grid-template-areas: 'cols handle home'; }
+  .desk.details { grid-template-columns: 400px 28px minmax(0, 1fr) 341px; grid-template-areas: 'home handle cols det'; }
+  .desk.right.details { grid-template-columns: 341px minmax(0, 1fr) 28px 400px; grid-template-areas: 'det cols handle home'; }
+  .det { grid-area: det; min-height: 0; border-left: 1px solid var(--line); }
+  .desk.right .det { border-left: 0; border-right: 1px solid var(--line); }
   .home { grid-area: home; min-height: 0; display: flex; flex-direction: column; view-transition-name: desk-home; }
   .handle { grid-area: handle; position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 10px; }
   .handle > i { position: absolute; inset: 0 auto 0 50%; width: 1px; background: var(--line); }

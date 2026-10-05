@@ -11,9 +11,12 @@
 
   // La home del telefono (SummaryList.kt): ogni sessione una card nei gruppi del bisogno; il tocco apre la sessione, ▼ la
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false }: {
+  import type { Snippet } from 'svelte'
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
+    /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
+    footer?: Snippet
     onAnswer: (session: string, n: number) => void; onStep: (session: string, text: string) => void
   } = $props()
   const model = $derived(build(st, [], st.ts, new Set()))
@@ -78,6 +81,7 @@
       <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
     </button>
   {/if}
+  {#if footer}<div class="footer">{@render footer()}</div>{/if}
 </section>
 
 <style>
@@ -111,4 +115,5 @@
   .cat { margin-top: 6px; }
   .closed { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 20px; background: var(--low); color: var(--text2); text-align: left; }
   .closed span { flex: 1; }
+  .footer { display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
 </style>

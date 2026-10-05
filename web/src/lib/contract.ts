@@ -43,6 +43,11 @@ export type TranscriptPage = { entries: TranscriptEntry[]; more?: boolean }
 export type SearchHit = { session: string; live: boolean; project?: string | null; entry?: string | null; role?: string | null; at?: number | null; snippet: string; match?: number[] }
 export type SearchPage = { hits?: SearchHit[]; more?: boolean }
 
+/** Contratto 1.29: la cronologia di oggi; `live` distingue la stessa cartella viva e chiusa. */
+export type TimelineEvent = { at: number; kind: string; text: string; ok?: boolean | null; ref?: string | null }
+export type TimelineSession = { session: string; live: boolean; project?: string | null; events: TimelineEvent[] }
+export type TimelinePage = { since: number; sessions: TimelineSession[]; more?: boolean }
+
 export type State = {
   v: number; ts: number; host: string
   sessions: Session[]; quota: Record<string, QuotaAccount>

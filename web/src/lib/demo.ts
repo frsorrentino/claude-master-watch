@@ -83,3 +83,11 @@ export function demoSearch(q: string): SearchPage {
   }))
   return { hits, more: false }
 }
+
+/** La cronologia di oggi (contratto 1.29) come la manderebbe il relay, per i dettagli della plancia. */
+import type { TimelinePage } from './contract'
+const d0 = demoState.ts - 5 * 3600
+export const demoTimeline: TimelinePage = { since: d0, sessions: [
+  { session: 'ledger-api', live: true, events: [{ at: d0 + 600, kind: 'prompt', text: 'Prepare the deploy of 2.4', ref: 'ledger-api' }, { at: d0 + 4000, kind: 'commit', text: 'bump version to 2.4.0', ref: '4c1e9a2' }, { at: d0 + 9000, kind: 'test', text: 'migration suite', ok: true }] },
+  { session: 'atlas-shop', live: true, events: [{ at: d0 + 1200, kind: 'commit', text: 'fix the cart totals', ref: '4be1c2a' }, { at: d0 + 2400, kind: 'prompt', text: 'ok, run the checkout tests', ref: 'atlas-shop' }, { at: d0 + 6000, kind: 'test', text: 'checkout suite', ok: true }, { at: d0 + 12000, kind: 'test', text: 'payment suite', ok: false }, { at: d0 + 15000, kind: 'outcome', text: 'release candidate tagged, payments to fix' }] },
+] }

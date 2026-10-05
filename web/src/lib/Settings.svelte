@@ -6,9 +6,11 @@
 
   // Impostazioni (SettingsScreen dell'app, mockup A): sezioni con l'etichetta e il filo. Collegamento: lo schema dei
   // dispositivi da toccare (schema B, contratto 1.32); Lettura ad alta voce: voce e velocità; Informazioni: la versione.
-  let { m, devices, now, channel, onRate, onVoice, timeZone }: {
+  let { m, devices, now, channel, onRate, onVoice, timeZone, details = null, onDetails = () => {} }: {
     m: DevicesModel; devices: Linked[]; now: number; channel: string
     onRate: (r: number) => void; onVoice: (v: string | null) => void; timeZone?: string
+    /** Sulla plancia: i dettagli della sessione accanto alle colonne, spenti di default; null altrove. */
+    details?: boolean | null; onDetails?: (on: boolean) => void
   } = $props()
 
   const PC = 'pc'
@@ -85,6 +87,16 @@
     <p class="hint">{t.devHint}</p>
   </div>
 
+  {#if details != null}
+    <div class="sec">
+      <label class="srow">
+        <span class="sic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg></span>
+        <span class="st"><b>{t.tabletDetails}</b><small>{t.tabletDetailsSub}</small></span>
+        <input class="switch" type="checkbox" role="switch" checked={details} onchange={(e) => onDetails((e.currentTarget as HTMLInputElement).checked)} />
+      </label>
+    </div>
+  {/if}
+
   <div class="gh"><span>{t.secReading.toUpperCase()}</span><i></i></div>
   <div class="sec">
     <button class="srow" onclick={() => voiceDlg?.showModal()}>
@@ -159,6 +171,12 @@
   .st { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .st b { font-size: 16px; font-weight: 500; }
   .st small { font-size: 12.5px; color: var(--text2); }
+  label.srow { cursor: pointer; }
+  label.srow:hover { background: var(--surface); }
+  .switch { appearance: none; width: 52px; height: 32px; border-radius: 16px; background: var(--high); border: 2px solid var(--stale); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+  .switch::after { content: ''; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--stale); transition: all .15s; }
+  .switch:checked { background: var(--icon); border-color: var(--icon); }
+  .switch:checked::after { left: 24px; top: 2px; width: 24px; height: 24px; background: var(--on-primary); }
   .rates { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 14px 70px; }
   .rate { min-width: 44px; height: 36px; padding: 0 10px; border-radius: 18px; background: var(--low); border: 1px solid var(--line); font-size: 14px; font-weight: 500; }
   .rate.on { background: var(--icon); border-color: var(--icon); color: var(--on-primary); }
