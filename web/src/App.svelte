@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { demoEvents, demoMine, demoSamples, demoState, demoTranscripts } from './lib/demo'
+  import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTranscripts } from './lib/demo'
+  import type { SearchPage } from './lib/contract'
   import type { CmdOp, TranscriptEntry } from './lib/contract'
   import type { Sent, Status } from './lib/chatRules'
   import { toggle } from './lib/speech.svelte'
@@ -14,6 +15,7 @@
   import Launch from './lib/Launch.svelte'
   import Diary from './lib/Diary.svelte'
   import Overview from './lib/Overview.svelte'
+  import Search from './lib/Search.svelte'
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
@@ -76,6 +78,8 @@
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
   const overview = $derived(overviewOf(st, demoEvents, demoSamples, st.ts, undefined, false))
   let nightDlg: HTMLDialogElement | undefined = $state()
+  // La ricerca nelle conversazioni (contratto 1.27): per ora la risposta di prova, poi il comando `search` al relay.
+  let searchPage = $state<SearchPage | null>(null)
   // Il tocco su una scheda della home: sulla plancia apre e chiude la sua colonna (Franz, 05/10 11:09), sul telefono apre.
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
@@ -119,6 +123,9 @@
     {:else if p === 'overview'}
       <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
         onQuestion={() => { const q = st.sessions.filter(x => x.question && x.state !== 'gone').sort((a, b) => a.question!.asked_at - b.question!.asked_at)[0]; if (q) { openPage(null); pick(q.name) } }} />
+    {:else if p === 'search'}
+      <Search {sent} events={demoEvents} remote onQuery={(q) => (searchPage = demoSearch(q))} page={searchPage}
+        known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
     {:else}
       <p class="soon">{t.soon}</p>
     {/if}

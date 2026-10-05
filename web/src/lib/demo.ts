@@ -65,3 +65,21 @@ export const demoMine: [Sent, Status][] = [
 export const demoSamples = {
   personal: [{ ts: demoState.ts - 7200, pct: 4 }, { ts: demoState.ts - 3600, pct: 7 }, { ts: demoState.ts, pct: 11 }],
 }
+
+/**
+ * Quello che il relay risponderebbe a `search` (contratto 1.27) cercando nelle conversazioni di prova: un punto trovato per
+ * voce, la riga intorno (fino a 160 caratteri) e la parte trovata. Finto: serve finché la web app non ha il trasporto.
+ */
+import type { SearchPage } from './contract'
+export function demoSearch(q: string): SearchPage {
+  const needle = q.toLowerCase()
+  const hits = Object.entries(demoTranscripts).flatMap(([session, entries]) => entries.flatMap(e => {
+    const text = e.text ?? ''
+    const line = text.split('\n').find(l => l.toLowerCase().includes(needle))
+    if (!line) return []
+    const snippet = line.slice(0, 160)
+    const i = snippet.toLowerCase().indexOf(needle)
+    return i < 0 ? [] : [{ session, live: demoState.sessions.some(s => s.name === session && s.state !== 'gone'), entry: e.id, role: e.role, at: e.at ?? null, snippet, match: [i, i + needle.length] }]
+  }))
+  return { hits, more: false }
+}

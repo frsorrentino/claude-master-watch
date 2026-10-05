@@ -64,6 +64,8 @@ export const t = {
   quotaOldWord: 'dato vecchio', staleData: (m: number) => `dati di ${m} min fa`,
   ovUpdatedNow: (h: string) => `aggiornato ora · ${h}`, ovUpdatedAgo: (m: number, h: string) => `aggiornato ${m} min fa · ${h}`,
   ovStale: (m: number, h: string) => `PC fermo da ${m} min · ${h}`,
+  searchHint: 'Cerca nei messaggi mandati, negli esiti e nel registro', searchHintAll: 'Cerca nelle conversazioni di tutte le sessioni',
+  searchNone: 'Nessun risultato', searchClosed: 'chiusa', searchMore: 'Ci sono altri risultati: aggiungi una parola per restringere.',
   soon: 'Questa pagina arriva nel prossimo passo.',
   home: 'Casa', dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },
