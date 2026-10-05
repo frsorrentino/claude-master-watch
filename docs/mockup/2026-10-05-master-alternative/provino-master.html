@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>provino master</title>
+<style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%;display:block}</style></head>
+<body>
+<iframe id="f"></iframe>
+<script>
+// Provini delle alternative per distinguere la master (Franz, 05/10 22:21). Solo per gli screenshot, non fa parte dell'app.
+const q = new URLSearchParams(location.search)
+const v = q.get('v') || 'oggi'
+const open = q.get('open') === '1'
+const f = document.getElementById('f')
+f.src = '/' + (open && v !== 'isola' ? '#master' : '')
+const CSS = {
+  vetro: `
+.pane{position:relative}
+.dock{position:absolute !important;left:12px;right:12px;bottom:12px;border-radius:26px !important;border:0 !important;
+ background:rgba(38,42,52,.58) !important;backdrop-filter:blur(22px) saturate(160%);
+ box-shadow:0 18px 40px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.10),inset 0 0 0 1px rgba(255,255,255,.06) !important;z-index:5}
+.dock.expanded{top:12px;bottom:auto}
+.dock .mono{color:#E8EAEE !important;letter-spacing:.14em}
+.dock svg[role=img] rect,.dock svg[role=img] circle{fill:rgba(255,255,255,.92) !important}
+.dock svg[role=img] g{stroke:#16181D !important}
+.hero{background:rgba(38,42,52,.55) !important;backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px rgba(0,0,0,.4) !important}`,
+  editoriale: `
+.dock{background:#0F1014 !important;border-top:1px solid rgba(232,226,214,.16) !important}
+.dock.expanded{border-bottom:1px solid rgba(232,226,214,.16) !important}
+.dock svg[role=img]{display:none}
+.mg{width:30px;height:30px;border-radius:50%;border:1px solid rgba(232,226,214,.55);display:grid;place-items:center;font:500 17px/1 'Newsreader',serif;font-style:italic;color:#EDE6D8;flex:none}
+.dock .mono{font-variant:all-small-caps;letter-spacing:.18em;color:#BDB6A8 !important;font-size:13px !important}
+.dock .col > :last-child{font-family:'Newsreader',serif !important;font-style:italic;font-weight:500 !important;font-size:20px !important;color:#F3EEE4 !important}
+.hero h3,.hero .head,.hero b{font-family:'Newsreader',serif !important;font-weight:500 !important}
+.hero .label{font-variant:all-small-caps;letter-spacing:.18em;color:#BDB6A8 !important;--c:#BDB6A8 !important}
+.hero{background:#121317 !important;box-shadow:inset 0 0 0 1px rgba(232,226,214,.14) !important}`,
+  isola: `
+.desk{margin-top:60px;height:calc(100% - 60px) !important}
+.dock{display:none !important}
+#isola{position:fixed;top:8px;left:50%;transform:translateX(-50%);height:44px;min-width:470px;border-radius:22px;background:#000;
+ box-shadow:0 0 0 1px rgba(255,255,255,.09),0 10px 30px rgba(0,0,0,.6);display:flex;align-items:center;gap:12px;padding:0 8px 0 8px;z-index:50;
+ font:500 14px/1.2 Roboto,system-ui,sans-serif;color:#F2F4F7}
+#isola .ic{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,#D97757,#F2C1A8,#FFFFFF,#D97757);display:grid;place-items:center}
+#isola .ic i{width:22px;height:22px;border-radius:50%;background:#000;display:grid;place-items:center;font:600 12px/1 Roboto;color:#fff;font-style:normal}
+#isola .t{flex:1;white-space:nowrap}
+#isola .k{font:500 11px/1 'Roboto Mono',monospace;letter-spacing:.12em;color:#9AA3AF}
+#isola .live{width:7px;height:7px;border-radius:50%;background:#34C759;box-shadow:0 0 8px #34C759}
+#isola .go{width:30px;height:30px;border-radius:50%;background:#1C1E24;display:grid;place-items:center;color:#A8C7FA}
+#isolaPanel{position:fixed;top:8px;left:50%;transform:translateX(-50%);width:640px;border-radius:30px;background:#000;z-index:49;
+ box-shadow:0 0 0 1px rgba(255,255,255,.09),0 24px 60px rgba(0,0,0,.7);padding:62px 24px 18px;color:#F2F4F7;font:15px/1.45 Roboto,system-ui,sans-serif}
+#isolaPanel .k{font:500 11px/1 'Roboto Mono',monospace;letter-spacing:.14em;color:#9AA3AF}
+#isolaPanel h3{font-size:19px;font-weight:600;margin:8px 0 6px}
+#isolaPanel p{color:#B0B8C4;margin:0 0 14px}
+#isolaPanel .steps{display:flex;gap:8px;margin-bottom:14px}#isolaPanel .steps span{background:#1C1E24;border-radius:999px;padding:8px 14px;font-size:14px}
+#isolaPanel .field{border:1px solid #2A2E35;border-radius:24px;height:48px;display:flex;align-items:center;padding:0 16px;color:#8B93A0}`,
+  luce: `
+.dock{position:relative;overflow:visible !important;background:#14161B !important;border-top:0 !important}
+.dock::before{content:'';position:absolute;inset:-1px -1px auto -1px;height:2px;border-radius:26px 26px 0 0;background:linear-gradient(90deg,transparent,#D97757 18%,#F6C9AE 50%,#D97757 82%,transparent)}
+.dock::after{content:'';position:absolute;left:8%;right:8%;top:-26px;height:40px;background:radial-gradient(ellipse at 50% 100%,rgba(217,119,87,.38),rgba(217,119,87,0) 70%);pointer-events:none;filter:blur(4px)}
+.dock .mono{color:#F2C1A8 !important}
+.dock svg[role=img] rect,.dock svg[role=img] circle{fill:#D97757 !important}
+.dock svg[role=img] g{stroke:#1A0F0A !important}
+.hero{box-shadow:inset 0 0 0 1px rgba(217,119,87,.30),0 0 40px rgba(217,119,87,.10) !important}
+.hero .label{color:#F2C1A8 !important;--c:#F2C1A8 !important}`,
+}
+f.addEventListener('load', () => {
+  const d = f.contentDocument
+  const go = () => {
+    if (!d.querySelector('.dock')) return setTimeout(go, 200)
+    if (v === 'editoriale') {
+      const l = d.createElement('link'); l.rel = 'stylesheet'
+      l.href = 'https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,500&display=swap'
+      d.head.appendChild(l)
+      const dock = d.querySelector('.dock'); const m = d.createElement('span'); m.className = 'mg'; m.textContent = 'M'; dock.insertBefore(m, dock.firstChild)
+      const t = [...d.querySelectorAll('aside header *')].find(e => e.children.length === 0 && e.textContent.trim() === 'Master')
+      if (t) { t.style.fontFamily = "'Newsreader',serif"; t.style.fontWeight = '500'; t.style.fontSize = '30px' }
+    }
+    if (v === 'isola') {
+      const i = d.createElement('div'); i.id = 'isola'
+      i.innerHTML = '<span class="ic"><i>M</i></span><span class="k">MASTER</span><span class="t">Fase 2.2 avviata su claude-master</span><span class="live"></span><span class="k">12:50</span><span class="go">▾</span>'
+      d.body.appendChild(i)
+      if (open) {
+        const p = d.createElement('div'); p.id = 'isolaPanel'
+        p.innerHTML = '<div class="k">ULTIMO ESITO · 12:50</div><h3>Fase 2.2 avviata su claude-master</h3><p>Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.</p><div class="steps"><span>distilla il confronto nella kb</span><span>prova la casa dal vivo</span></div><div class="field">Scrivi alla master</div>'
+        d.body.appendChild(p)
+      }
+    }
+    if (v === 'luce') {
+      const lab = d.querySelector('.dock .mono'); if (lab) lab.textContent = 'MASTER · STA LAVORANDO · 1 MIN · Opus 5.5'
+    }
+    const hero = [...d.querySelectorAll('.label')].find(e => e.innerText.startsWith('ULTIMO ESITO'))?.closest('.hero')
+    if (hero) hero.classList.add('hero')
+    if (CSS[v]) { const s = d.createElement('style'); s.textContent = CSS[v]; d.head.appendChild(s) }
+  }
+  go()
+})
+</script>
+</body></html>
