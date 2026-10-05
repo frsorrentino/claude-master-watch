@@ -12,7 +12,8 @@ object NextSteps {
     private const val PREFIX = "Prossimi:"
     private const val WATCH = "Watch:"
 
-    data class Parsed(val text: String, val steps: List<String>)
+    /** Contratto 1.38: `blocking` = le voci scritte con «!» davanti, che sbloccano un lavoro fermo; il «!» si toglie. */
+    data class Parsed(val text: String, val steps: List<String>, val blocking: Set<String> = emptySet())
 
     fun parse(text: String): Parsed {
         val lines = text.split('\n')
@@ -20,10 +21,12 @@ object NextSteps {
             ?: return Parsed(text, emptyList())
         val line = lines[idx].trim()
         if (!line.startsWith(PREFIX)) return Parsed(text, emptyList())
-        val steps = line.removePrefix(PREFIX).split('·').map { it.trim() }
-            .filter { it.isNotEmpty() && it.length <= MAX_CHARS }.take(MAX)
+        // Il «!» non conta nei 40 caratteri (regola 10 del kernel).
+        val raw = line.removePrefix(PREFIX).split('·').map { it.trim() }
+            .map { (it.startsWith("!")) to it.removePrefix("!").trim() }
+            .filter { (_, s) -> s.isNotEmpty() && s.length <= MAX_CHARS }.take(MAX)
         val rest = (lines.take(idx) + lines.drop(idx + 1)).joinToString("\n").trimEnd()
-        return Parsed(rest, steps)
+        return Parsed(rest, raw.map { it.second }, raw.filter { it.first }.map { it.second }.toSet())
     }
 
     /** Il campo vuoto e il box «Prossimi» (Franz, 04/10 20:21): il suggerimento del campo e le righe che restano nel box. */

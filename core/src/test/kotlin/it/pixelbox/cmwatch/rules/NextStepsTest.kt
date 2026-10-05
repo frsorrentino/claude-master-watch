@@ -65,4 +65,11 @@ class NextStepsTest {
         assertEquals("Fai il merge e poi prova dal vivo", NextSteps.append("Fai il merge.", "Prova dal vivo", "e poi"))
         assertEquals("Fai il merge e poi CI verde", NextSteps.append("Fai il merge", "CI verde", "e poi"))
     }
+
+    // Contratto 1.38: «!» davanti a una voce = sblocca un lavoro fermo; si toglie dal testo e non conta nei 40 caratteri.
+    @Test fun bangMarksTheUnblockingSteps() {
+        val p = NextSteps.parse("Fatto.\n\nProssimi: !ok release claude-master 0.6.9 · aggiorna il changelog · !${"x".repeat(40)}")
+        assertEquals(listOf("ok release claude-master 0.6.9", "aggiorna il changelog", "x".repeat(40)), p.steps)
+        assertEquals(setOf("ok release claude-master 0.6.9", "x".repeat(40)), p.blocking)
+    }
 }

@@ -23,9 +23,13 @@ describe('Prossimi', () => {
   })
   it('al massimo tre e non troppo lunghi', () => {
     expect(parseSteps(`Fatto.\nProssimi: uno · ${'x'.repeat(41)} · due · tre · quattro`).steps).toEqual(['uno', 'due', 'tre'])
+    // Contratto 1.38: «!» = sblocca; si toglie dal testo e non conta nei 40 caratteri.
+    const b = parseSteps(`Fatto.\n\nProssimi: !ok release claude-master 0.6.9 · aggiorna il changelog · !${'x'.repeat(40)}`)
+    expect(b.steps).toEqual(['ok release claude-master 0.6.9', 'aggiorna il changelog', 'x'.repeat(40)])
+    expect([...b.blocking]).toEqual(['ok release claude-master 0.6.9', 'x'.repeat(40)])
   })
   it('senza riga niente consigli', () => {
-    expect(parseSteps('Fatto.\n\nEsito: tutto ok.')).toEqual({ text: 'Fatto.\n\nEsito: tutto ok.', steps: [] })
+    expect(parseSteps('Fatto.\n\nEsito: tutto ok.')).toEqual({ text: 'Fatto.\n\nEsito: tutto ok.', steps: [], blocking: new Set() })
   })
 })
 
