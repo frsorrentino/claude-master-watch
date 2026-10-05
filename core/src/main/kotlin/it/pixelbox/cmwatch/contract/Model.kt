@@ -124,7 +124,12 @@ enum class CmdOp {
     val finished: Boolean = false,
     /** Contratto 1.37: la sessione aperta prima sulla stessa cartella e conversazione; assente = null. */
     @SerialName("duplicate_of") val duplicateOf: String? = null,
+    /** Contratto 1.38: i Prossimi dell'ultimo esito, col «!» tolto; assente = nessun tasto. */
+    @SerialName("next_steps") val nextSteps: List<NextStep>? = null,
 )
+
+/** Contratto 1.38: una voce di «Prossimi:»; `blocking` = sblocca un lavoro fermo (un ok, una scelta). */
+@Serializable data class NextStep(val text: String, val blocking: Boolean = false)
 
 /** Contratto 1.37: `when` "now" o "next_task"; `differs` = la scelta attuale è diversa (il puntino sul tasto). */
 @Serializable data class Advice(

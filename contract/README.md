@@ -184,3 +184,5 @@ Contratto 1.37 (05/10/2026, solo aggiunte, proposta della master accettata da Fr
 - Op nuove: `approve` (arg = compito, text) → `claude-master task approve`, solo per un compito che aspetta l'ok; `decision` (text, arg = progetto facoltativo) → `talk master`, che la scrive in memoria.
 - Fixture: advice e approvals in state-1, finished in state-1 e state-2, approve (riuscito e rifiutato) e decision in fondo a cmd-result-sample.
 - `v` resta 1. Relay: claude-master `de41a5f`.
+
+Contratto 1.38 (05/10/2026, solo aggiunte, chiesto da Franz alle 21:10: «Colora i tasti che sbloccano»): un «!» davanti a una voce della riga «Prossimi:» la segna come voce che sblocca un lavoro fermo (un ok, una scelta). `sessions[].next_steps` = le voci dell'ultima riga «Prossimi:», [{text, blocking}], al massimo tre, col «!» tolto dal testo; c'è solo quando ci sono voci e un esito. Anche `outcome.full` porta la riga senza «!». Regola 10 del kernel: le voci che sbloccano vanno per prime, col «!» (che non conta nei 40 caratteri). Fixture: `next_steps` di atlas-shop in state-1. `v` resta 1. Relay: claude-master `f35fbd4`.
