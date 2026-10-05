@@ -101,7 +101,7 @@
       <div class="mono">{t.next}</div>
       {#each h.steps as step}
         <!-- Come sotto l'ultima risposta: clic = nel campo, doppio clic = invio subito. -->
-        <button class="step" title={t.stepHint} onclick={(e) => { e.stopPropagation(); onStep(step) }} ondblclick={(e) => { e.stopPropagation(); onSendStep(step) }}>↳ {step}</button>
+        <button class="step" class:unblock={h.blocking.has(step)} title={t.stepHint} onclick={(e) => { e.stopPropagation(); onStep(step) }} ondblclick={(e) => { e.stopPropagation(); onSendStep(step) }}>{#if h.blocking.has(step)}<svg class="lock" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--wait)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>{:else}↳{/if} {step}</button>
       {/each}
     {/if}
   </div>
@@ -216,6 +216,7 @@
   .round:hover, .pill:hover, .tonal:hover { filter: brightness(1.15); }
   hr { border: 0; height: 1px; background: var(--line); margin: 2px 0; }
   .step { text-align: left; color: var(--icon); font-size: 16px; padding: 4px 0; border-radius: 8px; }
+  .step.unblock { display: flex; align-items: center; gap: 8px; }
   .step:hover { background: rgb(255 255 255 / .04); }
   .gh { display: flex; align-items: center; gap: 10px; margin: 6px 8px 0; font: 12px var(--mono); letter-spacing: .06em; color: var(--b-ring); }
   .gh i { flex: 1; height: 1px; background: color-mix(in srgb, var(--b-ring) 25%, transparent); }

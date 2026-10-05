@@ -6,7 +6,7 @@
   import { build, type Group, type Row } from './summary'
   import { groups as deskGroups } from './tablet'
   import { summary as outcomeSummary } from './outcome'
-  import { parseSteps } from './nextSteps'
+  import { blockingOf, parseSteps } from './nextSteps'
   import { t } from './t'
   import Badge from './Badge.svelte'
   import Options from './Options.svelte'
@@ -42,7 +42,7 @@
   function text(r: Row) {
     const parsed = parseSteps(r.text ?? '')
     const shown = r.group === 'waiting' ? parsed.text : r.session.outcome ? outcomeSummary(r.session.outcome) : parsed.text
-    return { body: shown.replace(/\*\*|__|`/g, '').trim(), steps: r.group === 'waiting' ? [] : parsed.steps }
+    return { body: shown.replace(/\*\*|__|`/g, '').trim(), steps: r.group === 'waiting' ? [] : parsed.steps, blocking: blockingOf(r.session, parsed.blocking) }
   }
 </script>
 
@@ -92,7 +92,7 @@
         {/if}
         {#if x.steps.length}
           <div class="chips">
-            {#each x.steps as step}<button class="chip" onclick={(e) => { e.stopPropagation(); onStep(s.name, step) }}>{step}</button>{/each}
+            {#each x.steps as step}<button class="chip" class:unblock={x.blocking.has(step)} onclick={(e) => { e.stopPropagation(); onStep(s.name, step) }}>{#if x.blocking.has(step)}<svg class="lock" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--wait)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>{/if}{step}</button>{/each}
           </div>
         {/if}
         {#if c}
@@ -194,6 +194,8 @@
   dialog .filled { background: var(--primary); color: var(--on-primary); }
   .chip { border-radius: 999px; padding: 8px 14px; font-size: 14px; background: color-mix(in srgb, var(--primary) 12%, transparent); }
   .chip:hover { filter: brightness(1.15); }
+  /* Contratto 1.38, variante 2 (Franz, 05/10 22:06): il Prossimo che sblocca ha un filo ambra e il lucchetto aperto. */
+  .chip.unblock { display: inline-flex; align-items: center; gap: 6px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wait) 65%, transparent); }
   .track { margin-right: 4px; height: 3px; border-radius: 2px; background: var(--b-track); overflow: hidden; }
   .fill { height: 100%; }
   .outside { margin: 18px 4px 0; }

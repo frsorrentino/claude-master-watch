@@ -1,5 +1,5 @@
 import type { Event, Session, State } from './contract'
-import { parseSteps } from './nextSteps'
+import { blockingOf, parseSteps } from './nextSteps'
 import { FINISHED_S, MASTER, finishedKey, type Sent } from './summary'
 
 // La casa della master, porta di MasterHome.kt: l'ultimo esito in testa, «Per te» e il gruppo «al lavoro». «Per te» in
@@ -15,7 +15,7 @@ export type ForYouRow = {
   key?: string; number?: number; at?: number
 }
 export type ForYou = { rows: ForYouRow[]; more: number }
-export type Hero = { headline: string; body: string; steps: string[]; at: number | null }
+export type Hero = { headline: string; body: string; steps: string[]; blocking: Set<string>; at: number | null }
 export type Entry = { role: string; text?: string | null; at?: number | null }
 /** Un messaggio programmato da questo dispositivo: aspetta finché `sentAt` è prima di `scheduledFor`. */
 export type Scheduled = Sent & { scheduledFor?: number | null }
@@ -92,11 +92,12 @@ export function hero(entries: Entry[], master: Session): Hero | null {
   const watch = all.find(isWatch)?.trim().slice('Watch:'.length).trim() || null
   const lines = all.filter(l => !isWatch(l))
   const outcome = lines.findIndex(l => l.trimStart().startsWith('Esito:'))
-  if (outcome < 0 && watch) return { headline: watch, body: lines.join('\n').trim(), steps: parsed.steps, at }
+  const blocking = blockingOf(master, parsed.blocking)
+  if (outcome < 0 && watch) return { headline: watch, body: lines.join('\n').trim(), steps: parsed.steps, blocking, at }
   const head = outcome >= 0 ? outcome : lines.findIndex(l => l.trim())
   if (head < 0) return null
   const headline = lines[head].trim().replace(/^Esito:/, '').trim()
-  return { headline, body: lines.filter((_, i) => i !== head).join('\n').trim(), steps: parsed.steps, at }
+  return { headline, body: lines.filter((_, i) => i !== head).join('\n').trim(), steps: parsed.steps, blocking, at }
 }
 
 /** Il gruppo «al lavoro» dentro «Per te»: solo chi lavora adesso, senza la master, con l'ultimo esito intero. */

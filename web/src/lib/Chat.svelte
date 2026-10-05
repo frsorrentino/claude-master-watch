@@ -18,7 +18,7 @@
   import { append, box as boxOf, inDraft } from './composer'
   import Composer from './Composer.svelte'
   import PromptBox from './PromptBox.svelte'
-  import { parseSteps } from './nextSteps'
+  import { blockingOf, parseSteps } from './nextSteps'
   import { t } from './t'
   import { ctxNudge, decisionDraft, decisionProject, DECISION_MAX } from './masterService'
   let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
@@ -48,7 +48,9 @@
   const items = $derived(group(merge(entries, mine)))
   // I consigli dell'ultima risposta di Claude, se dopo non c'è altro che passaggi.
   const last = $derived.by(() => { const it = [...items].reverse().find(i => i.type !== 'tool' && i.type !== 'steps'); return it?.type === 'claude' ? it.entry : null })
-  const steps = $derived(last ? parseSteps(last.text ?? '').steps : [])
+  const lastParsed = $derived(last ? parseSteps(last.text ?? '') : null)
+  const steps = $derived(lastParsed?.steps ?? [])
+  const stepsBlocking = $derived(blockingOf(s, lastParsed?.blocking ?? new Set()))
 
   let composer: Composer | undefined = $state()
   function pick(step: string) { draft = append(draft, step, t.then); composer?.focus() }
@@ -134,7 +136,7 @@
   </div>
 
   {#if stepsBox.rows.length && !home}
-    <PromptBox title={t.next} rows={stepsBox.rows.map(x => ({ label: x, text: x, direct: true }))} open={stepsOpen}
+    <PromptBox title={t.next} rows={stepsBox.rows.map(x => ({ label: x, text: x, direct: true, blocking: stepsBlocking.has(x) }))} open={stepsOpen}
       onOpen={(o) => { stepsOpen = o; save('cm.steps_open', o) }} draftBlank={!draft.trim()} onPick={(r) => pick(r.text)} onSend={(r) => onSend(r.text)} />
   {/if}
   {#if recurringOpen && recurringRows.length}
@@ -145,7 +147,7 @@
   {#if nudge != null}
     <div class="nudge" role="status">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--b-warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-      <span class="nt"><b>{t.ctxNudge(s.context ?? nudge)}</b>{t.ctxNudgeSub}</span>
+      <span class="nt"><b>{t.ctxNudge(s.context ?? nudge)}</b><span class="nsub">{t.ctxNudgeSub}</span></span>
       <button class="go" onclick={onHandoff}>{t.ctxNudgeGo}</button>
       <button class="x" aria-label={t.closeWord} title={t.closeWord} onclick={dismissNudge}><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" /></svg></button>
     </div>
@@ -176,7 +178,7 @@
 </dialog>
 
 <style>
-  .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; }
+  .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; container-type: inline-size; }
   .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
   .tohome:hover { background: var(--surface); }
@@ -186,7 +188,10 @@
   .lines { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .nudge { display: flex; align-items: center; gap: 12px; margin: 0 12px 8px; padding: 10px 6px 10px 14px; border-radius: 20px; background: var(--high); }
   .nudge .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; color: var(--text2); }
-  .nudge .nt b { font-weight: 500; font-size: 14.5px; color: var(--text); }
+  .nudge .nt b { font-weight: 500; font-size: 14.5px; color: var(--text); white-space: nowrap; }
+  .nudge .nsub { white-space: nowrap; }
+  /* Una colonna stretta della plancia: resta il titolo, su una riga. */
+  @container (max-width: 380px) { .nudge { flex-wrap: wrap; } .nudge .nsub { display: none; } .nudge .nt { flex: 1 1 calc(100% - 40px); } .nudge .go { margin-left: auto; } }
   .nudge .go { background: color-mix(in srgb, var(--primary) 16%, var(--high)); color: var(--primary); border-radius: 999px; padding: 9px 16px; font-weight: 500; }
   .nudge .x { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; }
   .sheet { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 20px 24px; width: min(560px, 100vw); max-height: 85vh; border-radius: 28px; }
