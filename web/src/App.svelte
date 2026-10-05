@@ -7,6 +7,7 @@
   import Chat from './lib/Chat.svelte'
   import { t } from './lib/t'
   import MasterDock from './lib/MasterDock.svelte'
+  import ReadingPill from './lib/ReadingPill.svelte'
   import { MASTER } from './lib/summary'
 
   // Per ora i dati di prova (fixture del contratto); la strada locale del relay arriva con il contratto 1.35.
@@ -43,7 +44,9 @@
 <div class="desk" class:chatOpen={open !== null}>
   <aside>
     <div class="list"><Home {st} selected={open} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }} onStep={(n, x) => { pick(n); send(x) }} /></div>
-    {#if master && open !== MASTER}<MasterDock {master} entries={transcripts[MASTER] ?? []} onOpen={() => pick(MASTER)} onSpeak={toggle} />{/if}
+    <!-- Sul telefono, dalla home: il controller sopra la barra della master. -->
+    {#if !session}<div class="reading"><ReadingPill onOpen={pick} /></div>{/if}
+    {#if master && open !== MASTER}<MasterDock {master} entries={transcripts[MASTER] ?? []} onOpen={() => pick(MASTER)} onSpeak={(x) => toggle(x, MASTER)} />{/if}
   </aside>
   <main>
     {#if session}
@@ -61,6 +64,7 @@
   .desk { display: grid; grid-template-columns: 380px 1fr; height: 100%; }
   aside { border-right: 1px solid var(--line); min-height: 0; display: flex; flex-direction: column; }
   .list { flex: 1; min-height: 0; }
+  .reading { padding: 8px 0; }
   main { min-height: 0; min-width: 0; }
   .empty { color: var(--text2); padding: 40px; }
   .demo { position: fixed; right: 12px; bottom: 6px; opacity: .6; }

@@ -10,6 +10,7 @@
   import type { Sent, Status } from './chatRules'
   import { toggle } from './speech.svelte'
   import Feed from './Feed.svelte'
+  import ReadingPill from './ReadingPill.svelte'
   import QuestionCard from './QuestionCard.svelte'
   import { CHAT_ARG } from './questionRules'
   import { append, box as boxOf, inDraft } from './composer'
@@ -58,11 +59,11 @@
   <div class="lines" class:dots={home} bind:this={list}>
     {#if home}
       <MasterHome {st} master={s} {entries} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
-        {onAnswer} onSession={onPick} onSpeak={toggle} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
+        {onAnswer} onSession={onPick} onSpeak={(x) => toggle(x, s.name)} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
     <Feed {s} {items} now={st.ts} />
     {#if s.question}
-      <QuestionCard q={s.question} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
+      <QuestionCard q={s.question} source={s.name} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
     {/if}
     {/if}
   </div>
@@ -76,6 +77,7 @@
       onPick={(r) => { draft = append(draft, r.direct ? r.text : r.text.trimEnd() + ' ', t.then); recurringOpen = false; save('cm.recurring_open', false); composer?.focus() }}
       onSend={(r) => { recurringOpen = false; save('cm.recurring_open', false); onSend(r.text) }} />
   {/if}
+  <ReadingPill onOpen={onPick} />
   <Composer bind:this={composer} {st} {s} bind:draft field={stepsBox.field} toMaster={s.name === MASTER} {onSend}
     onAnswerText={(arg) => onCmd('answer', arg)} onSlash={(c, a) => onCmd('slash', c, a ?? undefined)} onStop={() => onCmd('interrupt')}
     onReopen={() => onCmd('reopen')} onAttach={(fs, text) => onCmd('report', fs.map(f => f.name).join(', '), text)}

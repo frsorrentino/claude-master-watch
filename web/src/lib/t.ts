@@ -40,6 +40,8 @@ export const t = {
   recurring: 'Ricorrenti', recurringOpen: 'Azioni ricorrenti', attach: 'Allega', attachGallery: 'Foto dalla galleria', attachCamera: 'Scatta una foto',
   attachFile: 'File', removeImage: "Togli l'immagine", reopen: 'Riapri', stop: 'Ferma', masterPlaceholder: 'Scrivi alla master',
   slashConfirmTitle: (c: string, n: string) => `Mandare /${c} a ${n}?`, slashConfirmClear: 'La conversazione della sessione si svuota: il contesto riparte da zero.',
+  codeLabel: 'segue un blocco di codice', readingNow: 'IN LETTURA', readingOpen: (n: string) => `Torna a ${n}`,
+  rateChange: (r: string) => `Velocità di lettura ${r}: tocca per cambiarla`, voiceChange: (v: string) => `Cambia voce, ora: ${v}`, voiceDefault: 'Predefinita del telefono',
   home: 'Casa', dockMaster: 'MASTER', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },
   modelTitle: 'Modello', effortTitle: 'Effort', choiceThisSession: 'Vale solo per questa sessione',

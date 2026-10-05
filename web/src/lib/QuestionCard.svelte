@@ -1,20 +1,23 @@
 <script lang="ts">
   import type { Question } from './contract'
   import { allowAllVisible } from './questionRules'
+  import { question } from './speechRules'
   import { speech, toggle } from './speech.svelte'
   import { t } from './t'
   import Md from './Md.svelte'
   import Options from './Options.svelte'
   // La domanda in fondo alla chat (QuestionCard dell'app): bordo ambra, rosso col rischio alto; il testo con ▶, le
   // opzioni con la prima piena, sotto «Parliamone» e, per i permessi, «Consenti tutto».
-  let { q, onAnswer, onChat, onAllowAll }: { q: Question; onAnswer: (n: number) => void; onChat: () => void; onAllowAll: () => void } = $props()
-  const reading = $derived(speech.text === q.text)
+  let { q, source, onAnswer, onChat, onAllowAll }: { q: Question; source: string; onAnswer: (n: number) => void; onChat: () => void; onAllowAll: () => void } = $props()
+  // Si legge la domanda con le opzioni numerate.
+  const spoken = $derived(question(q))
+  const reading = $derived(speech.text === spoken)
 </script>
 
 <div class="qcard" class:high={q.tier === 'high'}>
   <div class="qtext">
     <p><Md text={q.text} /></p>
-    <button class="speak" aria-label={reading ? t.stopReading : t.readAloud} onclick={() => toggle(q.text)}>
+    <button class="speak" aria-label={reading ? t.stopReading : t.readAloud} onclick={() => toggle(spoken, source)}>
       {#if reading}<svg viewBox="0 0 24 24" width="22" height="22"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" /></svg>
       {:else}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>{/if}
     </button>
