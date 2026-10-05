@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.ViewColumn
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -508,7 +509,9 @@ private fun DeskBody(
                 if (homeRight) VerticalDivider(color = CmColors.line)
             }
         }
-        Box(at(homeW, total - homeW - handleW).width(handleW).fillMaxHeight()) { HomeSideHandle(homeRight, onHomeSide) }
+        // Le colonne di nuovo uguali, quando non lo sono (Franz, 05/10 12:30: «ci vuole un tasto per resettare le dimensioni»).
+        val reset = if (columns.size > 1 && shares != Tablet.Shares.equal(columns.size)) ({ onShares(Tablet.Shares.equal(columns.size)) }) else null
+        Box(at(homeW, total - homeW - handleW).width(handleW).fillMaxHeight()) { HomeSideHandle(homeRight, onHomeSide, reset) }
         // A metà strada la home passa sopra le colonne, con un'ombra che c'è solo mentre si sposta.
         Box(
             at(0.dp, total - homeW).width(homeW).fillMaxHeight().zIndex(1f)
@@ -520,7 +523,7 @@ private fun DeskBody(
 
 /** Il filo fra la home e le colonne, con ⇄ in alto: un clic porta la home dall'altro lato. */
 @Composable
-private fun HomeSideHandle(homeRight: Boolean, onHomeSide: () -> Unit) {
+private fun HomeSideHandle(homeRight: Boolean, onHomeSide: () -> Unit, onReset: (() -> Unit)? = null) {
     Box(Modifier.width(28.dp).fillMaxHeight()) {
         Box(Modifier.align(Alignment.Center).width(1.dp).fillMaxHeight().background(CmColors.line))
         Box(
@@ -528,6 +531,11 @@ private fun HomeSideHandle(homeRight: Boolean, onHomeSide: () -> Unit) {
                 .handCursor().clickable(onClickLabel = stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), onClick = onHomeSide).handCursor(),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.Rounded.SwapHoriz, stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
+        if (onReset != null) Box(
+            Modifier.align(Alignment.TopCenter).padding(top = 46.dp).size(28.dp).clip(CircleShape).background(CmColors.surface)
+                .handCursor().clickable(onClickLabel = stringResource(R.string.tablet_reset_widths), onClick = onReset),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Rounded.ViewColumn, stringResource(R.string.tablet_reset_widths), tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
     }
 }
 
@@ -552,14 +560,9 @@ private fun Columns(
         var borderPx by remember { mutableStateOf(0f) }
         var dragged by remember { mutableStateOf<String?>(null) }
         var draggedPx by remember { mutableStateOf(0f) }
-        // Le larghezze di adesso: quelle salvate, più il bordo che si sta trascinando (fra i limiti dei due dodicesimi).
-        val live = shares.map { it * unit }.toMutableList().also { w ->
-            if (border in 0 until w.size - 1) {
-                val pair = w[border] + w[border + 1]
-                val left = (w[border] + borderPx).coerceIn(Tablet.Shares.MIN * unit, pair - Tablet.Shares.MIN * unit)
-                w[border] = left; w[border + 1] = pair - left
-            }
-        }
+        // Le larghezze di adesso: col bordo trascinato già a scatti, con la stessa regola del rilascio (la colonna che cresce
+        // prende da tutte le altre).
+        val live = (if (border >= 0) Tablet.Shares.drag(shares, border, Tablet.Shares.parts(borderPx, widthPx)) else shares).map { it * unit }
         val lefts = live.runningFold(0f) { x, w -> x + w + gapPx }
         // La colonna sotto il centro di quella trascinata: lì cadrebbe, e intanto scivola già nel posto lasciato libero
         // (Franz, 04/10 22:15: lo scambio era «spartano»).

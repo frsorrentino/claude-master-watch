@@ -129,12 +129,22 @@ object Tablet {
 
         fun equal(n: Int): List<Int> = if (n <= 0) emptyList() else List(n) { i -> TOTAL / n + if (i < TOTAL % n) 1 else 0 }
 
+        /**
+         * Un bordo trascinato fa crescere la colonna verso cui si sposta (a destra quella di sinistra, a sinistra quella di
+         * destra); le altre si dividono in parti uguali quello che resta, mai sotto [MIN] (Franz, 05/10 12:30: con molte
+         * colonne allargarne una toglieva spazio solo alla vicina).
+         */
         fun drag(shares: List<Int>, border: Int, parts: Int): List<Int> {
-            if (border !in 0 until shares.size - 1) return shares
-            val pair = shares[border] + shares[border + 1]
-            val left = (shares[border] + parts).coerceIn(MIN, pair - MIN)
-            return shares.toMutableList().also { it[border] = left; it[border + 1] = pair - left }
+            if (border !in 0 until shares.size - 1 || parts == 0) return shares
+            val grown = if (parts > 0) border else border + 1
+            val size = (shares[grown] + kotlin.math.abs(parts)).coerceAtMost(TOTAL - MIN * (shares.size - 1))
+            if (size <= shares[grown]) return shares
+            val rest = equalOf(TOTAL - size, shares.size - 1)
+            var k = 0
+            return List(shares.size) { i -> if (i == grown) size else rest[k++] }
         }
+
+        private fun equalOf(total: Int, n: Int): List<Int> = List(n) { i -> total / n + if (i < total % n) 1 else 0 }
 
         /** I pixel trascinati in parti intere della larghezza delle colonne (lo scatto). */
         fun parts(dragPx: Float, widthPx: Float): Int = if (widthPx <= 0f) 0 else kotlin.math.round(dragPx / (widthPx / TOTAL)).toInt()

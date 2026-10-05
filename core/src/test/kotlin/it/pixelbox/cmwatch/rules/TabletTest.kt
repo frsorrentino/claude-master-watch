@@ -153,9 +153,11 @@ class TabletTest {
 
     // Il bordo fra due colonne sposta parti intere dall'una all'altra, e nessuna scende sotto le 2 parti (un sesto).
     @Test fun aBorderMovesWholeParts() {
-        assertEquals(listOf(6, 2, 4), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 2))
-        assertEquals(listOf(6, 2, 4), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 5))
-        assertEquals(listOf(4, 2, 6), Tablet.Shares.drag(listOf(4, 4, 4), border = 1, parts = -3))
+        // Franz, 05/10 12:30: la colonna che cresce prende lo spazio da tutte le altre, che si dividono in parti uguali il resto.
+        assertEquals(listOf(6, 3, 3), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 2))
+        assertEquals(listOf(8, 2, 2), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 5))
+        assertEquals(listOf(3, 2, 7), Tablet.Shares.drag(listOf(4, 4, 4), border = 1, parts = -3))
+        assertEquals(listOf(4, 4, 2, 2), Tablet.Shares.drag(listOf(3, 3, 3, 3), border = 0, parts = 1))
         assertEquals(listOf(8, 4), Tablet.Shares.drag(listOf(6, 6), border = 0, parts = 2))
         assertEquals(listOf(6, 6), Tablet.Shares.drag(listOf(6, 6), border = 3, parts = 2))
     }

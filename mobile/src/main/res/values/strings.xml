@@ -558,6 +558,7 @@
     <string name="invite_title">Accoppiare questo dispositivo a %1$s?</string>
     <string name="invite_add">Il PC %1$s lo aggiunge accanto agli altri dispositivi accoppiati. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
     <string name="invite_new">Il PC %1$s lo accoppia da capo: gli altri dispositivi accoppiati prima si scollegano. Accoppia solo se %1$s è il tuo PC e hai appena chiesto l\'accoppiamento.</string>
+    <string name="tablet_reset_widths">Colonne di nuovo uguali</string>
     <string name="tablet_home_left">Porta la home a sinistra</string>
     <string name="tablet_home_right">Porta la home a destra</string>
     <string name="tablet_desk_empty">Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.</string>
