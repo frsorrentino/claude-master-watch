@@ -124,7 +124,8 @@ class ContractTest {
         val tests = tl.sessions[0].events.filter { it.kind == "test" }
         assertEquals(listOf(false, true), tests.map { it.ok }); assertEquals("3/4 OK, FAIL: A2 invoices", tests[0].ref)
         assertEquals("0f20786", tl.sessions[0].events.single { it.kind == "commit" }.ref)
-        assertEquals(listOf("phone"), tl.sessions[1].events.mapNotNull { it.ref })
+        // Contratto 1.36: il prompt della web app ha `ref` "web".
+        assertEquals(listOf("phone", "web"), tl.sessions[1].events.mapNotNull { it.ref })
         // Mai eventi dopo la richiesta, mai prima di `since`.
         tl.sessions.flatMap { it.events }.forEach { e -> assertTrue(e.at in tl.since..timeline.issued) }
         assertTrue("timeline" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
@@ -296,10 +297,17 @@ class ContractTest {
     /** Contratto 1.22: `device` dice al relay se il prompt arriva dal telefono o dall'orologio; assente, non si scrive. */
     @Test fun promptCarriesTheDevice() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
-        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT }
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT && it.device == "phone" }
         assertEquals("phone", cmd.device)
         assertTrue(ContractJson.encode(cmd).contains("\"device\":\"phone\""))
         assertFalse(ContractJson.encode(cmd.copy(device = null)).contains("device"))
+    }
+
+    // Contratto 1.36: la web app manda `device` "web".
+    @Test fun webPromptCarriesItsDevice() {
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT }
+        assertEquals("web", cmd.device); assertEquals("web", cmd.by)
     }
 
     // Contratto 1.37: consiglio, sessioni finite e approvazioni; i campi assenti prendono i default.
