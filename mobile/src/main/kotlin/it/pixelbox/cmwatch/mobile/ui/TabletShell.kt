@@ -588,22 +588,18 @@ private fun Columns(
  * quando la finestra cambiava larghezza (standard della master, 04/10).
  */
 class DraftStore(initial: Map<String, String> = emptyMap()) {
-    private val map = androidx.compose.runtime.mutableStateMapOf<String, String>().apply { putAll(initial) }
-
-    fun state(s: Session): androidx.compose.runtime.MutableState<String> {
-        val key = s.id + "/" + s.question?.id.orEmpty()
-        return object : androidx.compose.runtime.MutableState<String> {
-            override var value: String
-                get() = map[key].orEmpty()
-                set(v) { if (v.isEmpty()) map.remove(key) else map[key] = v }
-            override fun component1() = value
-            override fun component2(): (String) -> Unit = { value = it }
-        }
+    // Uno stato per bozza, non una mappa osservata tutta insieme (Franz, 05/10 10:21: «la digitazione è molto rallentata»):
+    // con la mappa ogni lettera ricomponeva tutte le colonne e le pagine che leggevano una bozza qualsiasi.
+    private val states = HashMap<String, androidx.compose.runtime.MutableState<String>>().apply {
+        initial.forEach { (k, v) -> put(k, androidx.compose.runtime.mutableStateOf(v)) }
     }
+
+    fun state(s: Session): androidx.compose.runtime.MutableState<String> =
+        states.getOrPut(s.id + "/" + s.question?.id.orEmpty()) { androidx.compose.runtime.mutableStateOf("") }
 
     companion object {
         val Saver = androidx.compose.runtime.saveable.Saver<DraftStore, ArrayList<String>>(
-            save = { st -> ArrayList(st.map.flatMap { listOf(it.key, it.value) }) },
+            save = { st -> ArrayList(st.states.filterValues { it.value.isNotEmpty() }.flatMap { listOf(it.key, it.value.value) }) },
             restore = { l -> DraftStore(l.chunked(2).filter { it.size == 2 }.associate { it[0] to it[1] }) },
         )
     }
