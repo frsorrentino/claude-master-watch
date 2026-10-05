@@ -45,7 +45,7 @@ export const t = {
   tabletState: { waiting: 'ti aspetta', finished: 'ha finito', working: 'al lavoro', still: 'ferma' } as Record<string, string>,
   tabletClose: (n: string) => `Togli ${n} dalle colonne`, tabletHomeLeft: 'Porta la home a sinistra', tabletHomeRight: 'Porta la home a destra',
   tabletResetWidths: 'Colonne di nuovo uguali', tabletDeskEmpty: 'Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.',
-  home: 'Casa', dockMaster: 'MASTER', more: 'Altro', cancel: 'Annulla',
+  home: 'Casa', dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },
   modelTitle: 'Modello', effortTitle: 'Effort', choiceThisSession: 'Vale solo per questa sessione',
   quotaResetDesc: (p: number, r: string) => `Quota delle 5 ore al ${p}%, si azzera ${r}`,

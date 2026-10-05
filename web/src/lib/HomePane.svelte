@@ -1,0 +1,35 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte'
+  import type { Session } from './contract'
+  import type { Entry } from './masterHome'
+  import MasterDock from './MasterDock.svelte'
+
+  // La home come sul telefono (summaryPage di MainActivity): la lista con la barra della master in fondo; la master si
+  // espande sul posto, dentro la home, con la sua barra in cima, e torna ridotta toccando la barra. Non diventa mai una
+  // colonna o una pagina a parte (segnalazione di Franz, 05/10 17:45: si sganciava dalla home e non tornava più).
+  let { master, entries, open, onToggle, onSpeak, list, chat }: {
+    master: Session | null; entries: Entry[]; open: boolean; onToggle: (open: boolean) => void; onSpeak: (text: string) => void
+    list: Snippet; chat: Snippet
+  } = $props()
+</script>
+
+<div class="pane">
+  {#if master && open}
+    <div class="slide">
+      <MasterDock {master} {entries} expanded onToggle={() => onToggle(false)} {onSpeak} />
+      <div class="body">{@render chat()}</div>
+    </div>
+  {:else}
+    <div class="body">{@render list()}</div>
+    {#if master}<MasterDock {master} {entries} onToggle={() => onToggle(true)} {onSpeak} />{/if}
+  {/if}
+</div>
+
+<style>
+  .pane { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+  .slide { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: up .3s cubic-bezier(.2, .8, .2, 1); }
+  .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  /* La master sale dal basso, dalla sua barra. */
+  @keyframes up { from { translate: 0 40px; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .slide { animation: none; } }
+</style>

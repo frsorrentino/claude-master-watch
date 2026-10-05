@@ -39,6 +39,10 @@ export type TranscriptEntry = {
 }
 export type TranscriptPage = { entries: TranscriptEntry[]; more?: boolean }
 
+// Ricerca (contratto 1.27): `match` = [inizio, fine] dentro `snippet`.
+export type SearchHit = { session: string; live: boolean; project?: string | null; entry?: string | null; role?: string | null; at?: number | null; snippet: string; match?: number[] }
+export type SearchPage = { hits?: SearchHit[]; more?: boolean }
+
 export type State = {
   v: number; ts: number; host: string
   sessions: Session[]; quota: Record<string, QuotaAccount>
