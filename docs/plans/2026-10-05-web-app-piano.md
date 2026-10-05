@@ -19,7 +19,11 @@ l'interfaccia `Transport` dell'app Android.
 
 La web app sceglie da sola: se `localhost` risponde usa la strada locale, altrimenti Firebase.
 
-## Tecnologia: la decisione da prendere
+## Tecnologia: decisa
+
+Franz, 05/10 14:36: «serve la tecnologia con l'esperienza d'uso per l'utente migliore». Quindi la 1: TypeScript con
+**Svelte 5 + Vite**, come PWA. È web nativo, pesa poco, è veloce sul Chromebook, e le transizioni le fa la View Transitions
+API del browser. Le alternative restano qui sotto per memoria.
 
 1. **TypeScript + un framework web leggero (consigliata).**
    - Pro: interfaccia web vera (veloce, mouse, tastiera, finestre) e la più veloce da far bene; nessun peso Wasm.
