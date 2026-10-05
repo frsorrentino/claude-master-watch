@@ -132,7 +132,7 @@ private fun SessionMenu(
     val cur = sessions.firstOrNull { it.name == current }
     Box(modifier) {
         Row(
-            Modifier.clip(CircleShape).clickable { open = true }.padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.clip(CircleShape).handCursor().clickable { open = true }.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             cur?.let { SessionBadge(it, size = 18.dp) }
@@ -152,7 +152,7 @@ private fun SessionMenu(
             val pick: (String?) -> Unit = { n -> close(); onPick(n) }
             // La home in testa: il riepilogo con la master.
             Row(
-                Modifier.fillMaxWidth().clickable { pick(null) }.padding(horizontal = 20.dp, vertical = 10.dp),
+                Modifier.fillMaxWidth().handCursor().clickable { pick(null) }.padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // La firma della master (Franz, 05/10 11:30): l'anello corallo-lilla anche nel menu.
@@ -188,7 +188,7 @@ private fun SessionMenu(
             if (model.closed > 0) {
                 HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
                 Row(
-                    Modifier.fillMaxWidth().clickable { close(); onClosed() }.padding(horizontal = 20.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().handCursor().clickable { close(); onClosed() }.padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Icon(Icons.Rounded.Close, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
@@ -211,7 +211,7 @@ private fun SessionMenuRow(s: Session, group: it.pixelbox.cmwatch.rules.Summary.
     }
     Row(
         Modifier.fillMaxWidth().background(if (current) CmColors.primary.copy(alpha = 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
-            .clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 9.dp),
+            .handCursor().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         SessionBadge(s, size = 24.dp)

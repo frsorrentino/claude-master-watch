@@ -274,7 +274,7 @@ private fun ContextCard(rows: List<PhoneOverview.ContextRow>, onSession: (String
     BriefShell(stringResource(R.string.ov_context)) {
         rows.forEach { r ->
             val fill = fillOnEntry(SessionMeters.contextFraction(r.pct) ?: 0f)
-            Column(Modifier.fillMaxWidth().clickable { onSession(r.name) }.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.fillMaxWidth().handCursor().clickable { onSession(r.name) }.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(r.name, style = MaterialTheme.typography.titleMedium, color = CmColors.briefBig, modifier = Modifier.weight(1f))
                     Text("${r.pct}%", style = MaterialTheme.typography.titleMedium, color = toneColour(r.tone))

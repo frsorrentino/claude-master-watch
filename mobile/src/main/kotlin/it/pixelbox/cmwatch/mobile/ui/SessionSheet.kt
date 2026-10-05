@@ -538,7 +538,7 @@ private fun Composer(
         // in frammenti di una parola: lì sta su una riga sua sopra il campo, intero, e il tocco lo mette nel campo.
         val narrow = fieldW > 0 && with(density) { fieldW.toDp() } < 320.dp
         if (narrow && sug != null) Row(
-            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { onDraft(sug) }.padding(horizontal = 12.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable { onDraft(sug) }.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(sug, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = CmColors.stale, modifier = Modifier.weight(1f))
@@ -624,7 +624,7 @@ private fun hardKeyboard(): Boolean {
  */
 @Composable
 private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, canTonight: Boolean, actions: SheetActions, onDeferred: () -> Unit, night: Boolean = false) {
-    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(CmColors.briefWarn).clickable(onClick = actions.overview).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 2.dp)) {
+    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(CmColors.briefWarn).handCursor().clickable(onClick = actions.overview).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 2.dp)) {
         Text(
             stringResource(if (w.projected) R.string.quota_warn_pace else R.string.quota_warn, w.pct, hhmm(w.resetAt)),
             style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarnInk,
@@ -647,7 +647,7 @@ private fun QuotaLine(w: QuotaWarning.Warn, draft: String, canDefer: Boolean, ca
 private fun PhraseChip(text: String, onSend: () -> Unit, onEdit: () -> Unit) {
     Surface(
         color = CmColors.surfaceHigh, contentColor = CmColors.text, shape = MaterialTheme.shapes.large,
-        modifier = Modifier.clip(MaterialTheme.shapes.large).combinedClickable(onClick = onSend, onLongClick = onEdit),
+        modifier = Modifier.clip(MaterialTheme.shapes.large).handCursor().combinedClickable(onClick = onSend, onLongClick = onEdit),
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
     }
@@ -672,7 +672,7 @@ private fun PromptBox(
     ) {
         val toggle = stringResource(if (open) R.string.box_close else R.string.box_open, title)
         Row(
-            Modifier.fillMaxWidth().clickable(onClickLabel = toggle) { onOpen(!open) }.handCursor().padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().handCursor().clickable(onClickLabel = toggle) { onOpen(!open) }.handCursor().padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.box_title, title.uppercase(), rows.size), style = MonoSmall, modifier = Modifier.weight(1f))
@@ -681,7 +681,7 @@ private fun PromptBox(
         }
         if (open) rows.forEach { r ->
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-            Row(Modifier.fillMaxWidth().clickable { onPick(r) }.handCursor().padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().handCursor().clickable { onPick(r) }.handCursor().padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(r.label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
                 if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }, modifier = Modifier.handCursor()) {
                     Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
@@ -755,7 +755,7 @@ val LocalRecurring = androidx.compose.runtime.compositionLocalOf { emptyList<Rec
 @Composable
 private fun NextStep(text: String, onEdit: () -> Unit, onSend: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).combinedClickable(onClick = onEdit, onLongClick = onSend).padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).handCursor().combinedClickable(onClick = onEdit, onLongClick = onSend).padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("↳", style = MaterialTheme.typography.bodyLarge, color = CmColors.stale)
@@ -768,7 +768,7 @@ private fun NextStep(text: String, onEdit: () -> Unit, onSend: () -> Unit) {
 private fun SuggestionPill(text: String, onEdit: () -> Unit) {
     Surface(
         color = CmColors.surfaceHigh, contentColor = CmColors.text, shape = MaterialTheme.shapes.large,
-        modifier = Modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onEdit),
+        modifier = Modifier.clip(MaterialTheme.shapes.large).handCursor().clickable(onClick = onEdit),
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.suggested), tint = CmColors.actionIcon, modifier = Modifier.size(16.dp))
@@ -1067,7 +1067,7 @@ private fun StepsCard(g: ChatFeed.Item.Steps) {
         Modifier.fillMaxWidth().clip(shape).background(if (failed > 0) CmColors.stepsFailBg else CmColors.stepsBg).smoothSize(),
     ) {
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).handCursor().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
                 val total = androidx.compose.ui.res.pluralStringResource(R.plurals.steps_count, g.entries.size, g.entries.size)
                 val errors = if (failed > 0) androidx.compose.ui.res.pluralStringResource(R.plurals.steps_failed, failed, failed) else null
                 // Una riga sola: il totale, lo strumento più usato e quanti altri tipi ci sono.
@@ -1152,7 +1152,7 @@ private fun ClaudeBubble(
                             linked(b.text), style = MaterialTheme.typography.bodyLarge, color = if (i == cur) CmColors.text else CmColors.text2,
                             modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
                                 .background(if (i == cur) CmColors.surfaceHigh else androidx.compose.ui.graphics.Color.Transparent)
-                                .clickable { onSpeakFrom(text, i) }.padding(horizontal = 6.dp, vertical = 4.dp),
+                                .handCursor().clickable { onSpeakFrom(text, i) }.padding(horizontal = 6.dp, vertical = 4.dp),
                         )
                     }
                 // Fuori dalla lettura il testo si seleziona a pezzi con la pressione lunga (Franz, 02/10 20:31); durante la lettura
@@ -1249,7 +1249,7 @@ private fun AttachmentThumb(path: String) {
     val bmp = remember(path) { decodeScaled(path, 720) } ?: return
     androidx.compose.foundation.Image(
         bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop,
-        modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 180.dp).clip(RoundedCornerShape(14.dp)).clickable { full = true },
+        modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 180.dp).clip(RoundedCornerShape(14.dp)).handCursor().clickable { full = true },
     )
     if (full) ImageViewer(path) { full = false }
 }
@@ -1324,7 +1324,7 @@ private fun SheetHeader(
             // etichetta (Franz, 04/10 20:43); il dato vecchio nel colore dell'attesa.
             quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now) }
             // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
-            s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
+            s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).handCursor().clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
                 // Il menu della sessione come quello dell'app (Franz, 03/10 15:26): pannello, voci spiegate.
@@ -1387,7 +1387,7 @@ private fun SheetHeader(
                     fun selected(value: String) = if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
                     rows.forEach { (value, label) ->
                         Row(
-                            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable {
+                            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable {
                                 if (kind == "model") actions.setModel(value) else actions.setEffort(value)
                                 picker = null
                             }.padding(vertical = 12.dp),
@@ -1470,7 +1470,7 @@ private fun OptionButton(
     Surface(
         color = if (filled) CmColors.primary else tonal, contentColor = if (filled) CmColors.onPrimary else CmColors.text,
         shape = shape,
-        modifier = modifier.heightIn(min = 44.dp).clip(shape).combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        modifier = modifier.heightIn(min = 44.dp).clip(shape).handCursor().combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Box(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), contentAlignment = if (center) Alignment.Center else Alignment.CenterStart) {
             Text(label, style = MaterialTheme.typography.labelLarge.copy(fontSize = MaterialTheme.typography.bodyLarge.fontSize), maxLines = if (center) 1 else Int.MAX_VALUE, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
@@ -1697,7 +1697,7 @@ fun RatePill(rate: Float, set: (Float) -> Unit) {
     val desc = stringResource(R.string.speech_rate_change, label)
     Surface(
         onClick = { set(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }, color = CmColors.surface, shape = CircleShape,
-        modifier = Modifier.semantics { contentDescription = desc },
+        modifier = Modifier.handCursor().semantics { contentDescription = desc },
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
     }

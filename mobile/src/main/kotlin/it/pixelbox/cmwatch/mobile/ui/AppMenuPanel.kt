@@ -25,7 +25,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -69,7 +68,7 @@ fun MenuPanel(
     footer?.let { f ->
         HorizontalDivider(color = CmColors.line, modifier = Modifier.padding(vertical = 4.dp))
         Row(
-            Modifier.fillMaxWidth().clickable { close(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().handCursor().clickable { close(); f.onClick() }.padding(horizontal = 28.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             val tone = if (f.destructive) CmColors.briefAlertRing else CmColors.text2
@@ -111,7 +110,7 @@ fun PanelShell(
             ) {
                 Box(
                     Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f))
-                        .clickable(remember { MutableInteractionSource() }, indication = null, onClick = close),
+                        .handCursor().clickable(remember { MutableInteractionSource() }, indication = null, onClick = close),
                 )
             }
             androidx.compose.animation.AnimatedVisibility(
@@ -123,7 +122,7 @@ fun PanelShell(
                 Surface(
                     shape = RoundedCornerShape(28.dp), color = CmColors.surface, shadowElevation = 8.dp,
                     // Il tocco dentro il pannello non lo chiude.
-                    modifier = Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, indication = null) {},
+                    modifier = Modifier.fillMaxWidth().handCursor().clickable(remember { MutableInteractionSource() }, indication = null) {},
                 ) {
                     Column(Modifier.padding(vertical = 8.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -166,7 +165,7 @@ fun AppMenuPanel(
 @Composable
 private fun MenuItem(icon: ImageVector, title: String, sub: String, tone: Color, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).handCursor().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(Modifier.size(40.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) {

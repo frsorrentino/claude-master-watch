@@ -144,7 +144,7 @@ private fun Tonight(state: State, onAdd: () -> Unit, onRemove: (String) -> Unit)
 private fun NightCard(n: Event, onSpeak: (String) -> Unit) {
     val jobs = Registro.night(n.body)
     var open by androidx.compose.runtime.saveable.rememberSaveable(n.key) { androidx.compose.runtime.mutableStateOf(false) }
-    RegCard(Modifier.clickable { open = !open }) {
+    RegCard(Modifier.handCursor().clickable { open = !open }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { RegLabel(n.title) }
             IconButton(onClick = { onSpeak(n.body) }) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon) }
@@ -173,7 +173,7 @@ private fun NightCard(n: Event, onSpeak: (String) -> Unit) {
 private fun DayCard(title: String, lines: List<Registro.Line>, raw: String?, startOpen: Boolean, onSession: (String) -> Unit, onSpeak: (String) -> Unit, ttsMinChars: Int) {
     var open by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(startOpen) }
     RegCard {
-        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).handCursor().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
             if (lines.isNotEmpty()) Text(pluralStringResource(R.plurals.reg_projects, lines.size, lines.size), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
             Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
@@ -181,7 +181,7 @@ private fun DayCard(title: String, lines: List<Registro.Line>, raw: String?, sta
         if (open) {
             if (lines.isEmpty()) raw?.let { Speakable(it, speak = it.length > ttsMinChars, onSpeak) }
             lines.forEach { l ->
-                Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { onSession(l.project) }.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).handCursor().clickable { onSession(l.project) }.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(l.project, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.width(128.dp))
                     Text(l.text, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
                 }
@@ -204,7 +204,7 @@ private fun RecapDayCard(
     var open by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(startOpen) }
     val count = view.sections.sumOf { it.entries.size }
     RegCard {
-        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).handCursor().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = CmColors.text, modifier = Modifier.weight(1f))
             Text(pluralStringResource(R.plurals.reg_projects, count, count), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
             Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
@@ -251,7 +251,7 @@ private fun RecapEntry(
     )
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surface)
-            .then(if (live != null) Modifier.clickable { onSession(e.name) } else Modifier).padding(horizontal = 12.dp, vertical = 10.dp),
+            .then(if (live != null) Modifier.handCursor().clickable { onSession(e.name) } else Modifier).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

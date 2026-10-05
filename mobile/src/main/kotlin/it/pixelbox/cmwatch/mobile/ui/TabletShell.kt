@@ -32,14 +32,12 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.ViewColumn
 import androidx.compose.material.icons.rounded.ViewSidebar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -461,7 +459,7 @@ internal fun CaptionStrip(modifier: Modifier = Modifier, content: @Composable Ro
 @Composable
 fun CaptionTab(s: Session, onFocus: () -> Unit, onClose: () -> Unit) {
     Row(
-        Modifier.clip(RoundedCornerShape(10.dp)).background(CmColors.surface).clickable(onClick = onFocus).handCursor()
+        Modifier.clip(RoundedCornerShape(10.dp)).background(CmColors.surface).handCursor().clickable(onClick = onFocus).handCursor()
             .padding(start = 8.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -527,7 +525,7 @@ private fun HomeSideHandle(homeRight: Boolean, onHomeSide: () -> Unit) {
         Box(Modifier.align(Alignment.Center).width(1.dp).fillMaxHeight().background(CmColors.line))
         Box(
             Modifier.align(Alignment.TopCenter).padding(top = 10.dp).size(28.dp).clip(CircleShape).background(CmColors.surface)
-                .clickable(onClickLabel = stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), onClick = onHomeSide).handCursor(),
+                .handCursor().clickable(onClickLabel = stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), onClick = onHomeSide).handCursor(),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.Rounded.SwapHoriz, stringResource(if (homeRight) R.string.tablet_home_left else R.string.tablet_home_right), tint = CmColors.text2, modifier = Modifier.size(18.dp)) }
     }

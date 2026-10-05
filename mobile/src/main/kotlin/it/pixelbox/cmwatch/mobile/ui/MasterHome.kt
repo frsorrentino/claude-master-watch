@@ -23,12 +23,9 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -170,7 +167,7 @@ internal fun AttentionRow(
     }
     Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (open) tone.copy(alpha = 0.08f) else Color.Transparent)) {
         Row(
-            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().handCursor().clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             androidx.compose.material3.Icon(
@@ -252,7 +249,7 @@ internal fun ForYouRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) 
  */
 @Composable
 fun QuadroStrip(model: PhoneOverview.Model, sessions: List<Session>, onOpen: () -> Unit, onSession: (String) -> Unit) {
-    GlassCard(Modifier.clickable(onClick = onOpen)) {
+    GlassCard(Modifier.handCursor().clickable(onClick = onOpen)) {
         RuledLabel(stringResource(R.string.quadro_title), CmColors.idle, rule = false) {
             Led(stale = model.updated.stale)
             Text(
@@ -296,7 +293,7 @@ private fun SessionChip(s: Session, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     val waiting = s.state == SessionState.WAITING
     Row(
-        Modifier.clip(shape).background(if (waiting) CmColors.waiting.copy(alpha = 0.14f) else CmColors.surfaceHigh).clickable(onClick = onClick).height(IntrinsicSize.Min),
+        Modifier.clip(shape).background(if (waiting) CmColors.waiting.copy(alpha = 0.14f) else CmColors.surfaceHigh).handCursor().clickable(onClick = onClick).height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val working = s.state == SessionState.BUSY || s.state == SessionState.AWAITING
@@ -339,7 +336,7 @@ fun MasterAbsent(onReopen: () -> Unit) {
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onConversation: () -> Unit, onStep: (String) -> Unit, onSendStep: (String) -> Unit) {
-    GlassCard(Modifier.clickable(onClick = onConversation)) {
+    GlassCard(Modifier.handCursor().clickable(onClick = onConversation)) {
         RuledLabel(hero?.at?.let { stringResource(R.string.home_last, hm(it)) } ?: stringResource(R.string.home_last_bare), CmColors.idle, rule = false) {
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor(master.state)))
@@ -367,7 +364,7 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
                 Text(
                     "↳ $step", style = MaterialTheme.typography.bodyLarge, color = CmColors.actionIcon,
                     modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
-                        .combinedClickable(onClick = { onStep(step) }, onLongClick = { onSendStep(step) }).padding(vertical = 4.dp),
+                        .handCursor().combinedClickable(onClick = { onStep(step) }, onLongClick = { onSendStep(step) }).padding(vertical = 4.dp),
                 )
             }
         }
@@ -383,7 +380,7 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
 fun QuotaLine(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
     if (rings.isEmpty()) return
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).handCursor().clickable(onClick = onOpen).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         rings.forEach { r ->
@@ -415,7 +412,7 @@ fun QuotaBars(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit, stacked: Bool
     // `stacked`: una barra per riga, a tutta larghezza (nel Registro, dentro un blocco che ha già il fondo).
     val cell: @Composable (PhoneOverview.Ring, Modifier) -> Unit = { r, mod ->
             Column(
-                mod.clip(RoundedCornerShape(12.dp)).background(if (stacked) CmColors.bg else CmColors.surfaceLow).clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp),
+                mod.clip(RoundedCornerShape(12.dp)).background(if (stacked) CmColors.bg else CmColors.surfaceLow).handCursor().clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(

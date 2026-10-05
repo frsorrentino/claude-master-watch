@@ -152,7 +152,7 @@ internal fun SchemeNode(
                             drawCircle(CmColors.briefTrack, radius = this.size.minDimension / 2 - w / 2, style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
                         } else Modifier.border(2.dp, ring, CircleShape),
                     )
-                    .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick).semantics { desc?.let { contentDescription = it } } else Modifier),
+                    .then(if (onClick != null) Modifier.handCursor().clickable(role = Role.Button, onClick = onClick).semantics { desc?.let { contentDescription = it } } else Modifier),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = if (dashed) CmColors.stale else CmColors.actionIcon, modifier = Modifier.size(size * 0.42f))

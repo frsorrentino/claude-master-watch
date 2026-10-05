@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -69,7 +68,7 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
         }
         Row(
             Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).then(drag)
-                .clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
+                .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).

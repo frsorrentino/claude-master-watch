@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -157,7 +156,7 @@ fun ReadingPill(
                 val openLabel = source?.let { stringResource(R.string.reading_open, it) }
                 if (roomy) Column(
                     Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                        .then(if (onOpen != null) Modifier.clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
+                        .then(if (onOpen != null) Modifier.handCursor().clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
                         .padding(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
@@ -181,7 +180,7 @@ fun ReadingPill(
 @Composable
 private fun VoicePill(voice: String?, onClick: () -> Unit) {
     val desc = stringResource(R.string.voice_change, voice ?: stringResource(R.string.voice_default))
-    Surface(onClick = onClick, color = CmColors.surface, shape = CircleShape, modifier = Modifier.semantics { contentDescription = desc }) {
+    Surface(onClick = onClick, color = CmColors.surface, shape = CircleShape, modifier = Modifier.handCursor().semantics { contentDescription = desc }) {
         Icon(Icons.Rounded.RecordVoiceOver, null, tint = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp).size(20.dp))
     }
 }

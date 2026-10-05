@@ -60,7 +60,7 @@ fun QueueScreen(state: State, now: Long, actionsFor: (Session) -> SheetActions, 
             })
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(
-                    Modifier.fillMaxWidth().clickable { onSession(s.name) }.padding(vertical = 6.dp),
+                    Modifier.fillMaxWidth().handCursor().clickable { onSession(s.name) }.padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     SessionBadge(s, size = 26.dp)

@@ -150,7 +150,7 @@ private fun SummaryCard(
         // La chat si restringe verso la sua card durante il gesto indietro.
         Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(fill).smoothSize()
             // Franz, 03/10 17:05: il tocco sulla card porta dritto alla sessione; il tasto ▼ la apre sul posto.
-            .clickable(onClick = onOpen).handCursor().padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 12.dp),
+            .handCursor().clickable(onClick = onOpen).handCursor().padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -302,7 +302,7 @@ private val OUT_HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
     val names = closed.take(3).joinToString(", ") { it.name } + if (closed.size > 3) " " + stringResource(R.string.closed_more, closed.size - 3) else ""
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).clickable(onClick = onClick).handCursor().padding(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow).handCursor().clickable(onClick = onClick).handCursor().padding(14.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(names, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f))

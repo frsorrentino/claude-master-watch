@@ -71,7 +71,7 @@ fun LaunchSheet(
             sessions.forEach { s ->
                 val closed = s.state == it.pixelbox.cmwatch.contract.SessionState.GONE
                 Row(
-                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { onSession?.invoke(s.name, closed) }.padding(horizontal = 8.dp, vertical = 10.dp),
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable { onSession?.invoke(s.name, closed) }.padding(horizontal = 8.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     SessionBadge(s, size = 18.dp)
@@ -82,7 +82,7 @@ fun LaunchSheet(
             found.forEach { p ->
                 val personal = state.quota[p.account]?.let { Accounts.isPersonalQuota(p.account, it) } ?: Accounts.personal(p.account, null)
                 Row(
-                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { chosen = p; typed = p.name }.padding(horizontal = 8.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable { chosen = p; typed = p.name }.padding(horizontal = 8.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     AccountMark(personal, size = 14.dp)

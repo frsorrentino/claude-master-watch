@@ -74,7 +74,7 @@ fun SearchScreen(
             items(hits, key = { it.ref }) { h ->
                 val canOpen = h.kind != ChatSearch.Kind.CONVERSATION || h.live == true || h.session in known
                 Column(
-                    Modifier.fillMaxWidth().then(if (canOpen) Modifier.clickable { onOpen(h.session) } else Modifier).padding(horizontal = 12.dp, vertical = 10.dp),
+                    Modifier.fillMaxWidth().then(if (canOpen) Modifier.handCursor().clickable { onOpen(h.session) } else Modifier).padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

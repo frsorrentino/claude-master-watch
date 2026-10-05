@@ -119,7 +119,7 @@ fun SettingsScreen(
                             Modifier.heightIn(min = 36.dp).widthIn(min = 44.dp).clip(CircleShape)
                                 .background(if (on) CmColors.actionIcon else CmColors.surfaceLow)
                                 .border(1.dp, if (on) CmColors.actionIcon else CmColors.line, CircleShape)
-                                .clickable { onRate(r) }.padding(horizontal = 10.dp),
+                                .handCursor().clickable { onRate(r) }.padding(horizontal = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) { Text(rateShort(r), style = MaterialTheme.typography.labelLarge, color = if (on) CmColors.onPrimary else CmColors.text) }
                     }
@@ -152,7 +152,7 @@ fun SettingsScreen(
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     (listOf<String?>(null) + voices).forEach { v ->
                         Row(
-                            Modifier.fillMaxWidth().clickable { onVoice(v) }.padding(vertical = 10.dp),
+                            Modifier.fillMaxWidth().handCursor().clickable { onVoice(v) }.padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             RadioButton(selected = v == voice, onClick = null)
@@ -171,7 +171,7 @@ fun SettingsScreen(
                 Column {
                     AppLanguage.Choice.entries.forEach { c ->
                         Row(
-                            Modifier.fillMaxWidth().clickable { choosing = false; onLanguage(c) }.padding(vertical = 12.dp),
+                            Modifier.fillMaxWidth().handCursor().clickable { choosing = false; onLanguage(c) }.padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             RadioButton(selected = c == language, onClick = null)
@@ -197,7 +197,7 @@ private fun SettingsRow(
     icon: ImageVector, title: String, sub: String, onClick: (() -> Unit)?, trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).then(if (onClick != null) Modifier.handCursor().clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
