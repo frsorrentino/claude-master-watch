@@ -10,6 +10,8 @@
 }
 * { box-sizing: border-box; margin: 0; }
 html, body, #app { height: 100%; }
+/* Installata su iPhone e iPad la pagina va fin sotto la tacca e la barra in basso: i bordi sicuri restano liberi. */
+#app { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 body { background: var(--bg); color: var(--text); font: 15px/1.45 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 .mono { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--text2); }

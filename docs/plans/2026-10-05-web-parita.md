@@ -16,3 +16,8 @@ indicato, fianco a fianco.
 - [ ] Ispettore (dettagli della sessione con la cronologia di oggi, contratto 1.29) e pannello della quota con la previsione (`TabletQuotaPanel`): servono la cronologia e lo storico delle letture, che arrivano col trasporto.
 - [ ] Impostazioni e schema dei collegamenti (`settingsDevicesB`)
 - [ ] Ricerca, Registro, Panoramica, Lancia
+
+## PWA
+
+- [x] Installabile (05/10 17:40): manifest in italiano, icone dal segno dell'app (tonda, adattiva, Apple), service worker che apre senza rete e non tiene mai in cache l'API locale (`/api/`), bordi sicuri per iPhone. Verificato in Chrome: service worker attivo, manifest e icone serviti.
+- [ ] Barra del titolo nostra con Window Controls Overlay, come la `captionBar` del tablet (schede delle colonne, quota a destra).
