@@ -49,6 +49,7 @@ const CSS = {
 #isolaPanel h3{font-size:19px;font-weight:600;margin:8px 0 6px}
 #isolaPanel p{color:#B0B8C4;margin:0 0 14px}
 #isolaPanel .steps{display:flex;gap:8px;margin-bottom:14px}#isolaPanel .steps span{background:#1C1E24;border-radius:999px;padding:8px 14px;font-size:14px}
+#isolaPanel .me{margin-left:auto;width:max-content;max-width:80%;background:#1C1E24;border-radius:20px 20px 6px 20px;padding:10px 16px}
 #isolaPanel .field{border:1px solid #2A2E35;border-radius:24px;height:48px;display:flex;align-items:center;padding:0 16px;color:#8B93A0}`,
   luce: `
 .dock{position:relative;overflow:visible !important;background:#14161B !important;border-top:0 !important}
@@ -59,6 +60,23 @@ const CSS = {
 .dock svg[role=img] g{stroke:#1A0F0A !important}
 .hero{box-shadow:inset 0 0 0 1px rgba(217,119,87,.30),0 0 40px rgba(217,119,87,.10) !important}
 .hero .label{color:#F2C1A8 !important;--c:#F2C1A8 !important}`,
+}
+const CONV = {
+  vetro: `
+aside .chat > header{background:rgba(38,42,52,.55) !important;backdrop-filter:blur(18px);border-bottom:0 !important;box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,255,255,.06)}
+aside .lines{background:linear-gradient(180deg,#0B0C10,#000) !important}
+aside .ctext{background:rgba(255,255,255,.035);border-radius:18px;padding:12px 14px !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+aside .field{background:rgba(38,42,52,.6) !important;backdrop-filter:blur(18px);border:0 !important;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.09) !important}`,
+  editoriale: `
+aside .ctext{font-family:'Newsreader',serif !important;font-size:19px !important;line-height:1.55 !important;letter-spacing:0 !important;color:#F3EEE4}
+aside .lines{background:#0D0E11 !important}
+aside .chat > header{border-bottom:1px solid rgba(232,226,214,.14) !important}
+aside .field textarea::placeholder{font-family:'Newsreader',serif;font-style:italic;font-size:18px}
+aside .field{border-color:rgba(232,226,214,.28) !important}`,
+  luce: `
+aside .chat > header::after{content:'';display:block;height:2px;margin:6px 16px 0;border-radius:2px;background:linear-gradient(90deg,transparent,#D97757 20%,#F6C9AE 50%,#D97757 80%,transparent)}
+aside .claude{border-left:2px solid rgba(217,119,87,.75);padding-left:12px}
+aside .field{border-color:rgba(217,119,87,.55) !important;box-shadow:0 0 24px rgba(217,119,87,.18) !important}`,
 }
 f.addEventListener('load', () => {
   const d = f.contentDocument
@@ -78,7 +96,7 @@ f.addEventListener('load', () => {
       d.body.appendChild(i)
       if (open) {
         const p = d.createElement('div'); p.id = 'isolaPanel'
-        p.innerHTML = '<div class="k">ULTIMO ESITO · 12:50</div><h3>Fase 2.2 avviata su claude-master</h3><p>Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.</p><div class="steps"><span>distilla il confronto nella kb</span><span>prova la casa dal vivo</span></div><div class="field">Scrivi alla master</div>'
+        p.innerHTML = '<div class="me">Lancia claude-master sulla fase 2.2</div><div class="k" style="text-align:right;margin:6px 0 14px">DAL TELEFONO · 12:49</div><p style="color:#F2F4F7;font-size:16px">Lanciata claude-master sulla fase 2.2. Solo commit locali: push e release con il tuo ok.</p><p style="color:#F2F4F7;font-size:16px">Esito: Fase 2.2 avviata su claude-master</p><div class="steps"><span>distilla il confronto nella kb</span><span>prova la casa dal vivo</span></div><div class="field">Scrivi alla master</div>'
         d.body.appendChild(p)
       }
     }
@@ -88,6 +106,12 @@ f.addEventListener('load', () => {
     const hero = [...d.querySelectorAll('.label')].find(e => e.innerText.startsWith('ULTIMO ESITO'))?.closest('.hero')
     if (hero) hero.classList.add('hero')
     if (CSS[v]) { const s = d.createElement('style'); s.textContent = CSS[v]; d.head.appendChild(s) }
+    // Aperta: la conversazione della master, non la sua casa (Franz, 05/10 22:56).
+    if (open && v !== 'isola') {
+      const btn = [...d.querySelectorAll('button')].find(b => b.textContent.trim().startsWith('Apri la conversazione'))
+      btn?.click()
+      if (CONV[v]) { const s = d.createElement('style'); s.textContent = CONV[v]; d.head.appendChild(s) }
+    }
   }
   go()
 })
