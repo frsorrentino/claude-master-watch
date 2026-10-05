@@ -11,7 +11,10 @@
   import { toggle } from './speech.svelte'
   import Feed from './Feed.svelte'
   import QuestionCard from './QuestionCard.svelte'
-  import { CHAT_ARG, textArg } from './questionRules'
+  import { CHAT_ARG } from './questionRules'
+  import { append, box as boxOf, inDraft } from './composer'
+  import Composer from './Composer.svelte'
+  import PromptBox from './PromptBox.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
   let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
@@ -25,21 +28,26 @@
   const home = $derived(s.name === MASTER && !conversation)
 
   let draft = $state('')
+  // Una bozza per sessione (DraftStore dell'app): cambiando sessione la bozza resta dov'era.
+  const drafts: Record<string, string> = {}
+  let shown = s.name
+  $effect.pre(() => { const name = s.name; if (name !== shown) { drafts[shown] = draft; draft = drafts[name] ?? ''; shown = name } })
   let list: HTMLElement | undefined = $state()
   const items = $derived(group(merge(entries, mine)))
-  const last = $derived([...entries].reverse().find(e => e.role === 'assistant' && e.text?.trim()))
+  // I consigli dell'ultima risposta di Claude, se dopo non c'è altro che passaggi.
+  const last = $derived.by(() => { const it = [...items].reverse().find(i => i.type !== 'tool' && i.type !== 'steps'); return it?.type === 'claude' ? it.entry : null })
   const steps = $derived(last ? parseSteps(last.text ?? '').steps : [])
 
-  function send() {
-    const text = draft.trim()
-    if (!text) return
-    // Con una domanda aperta il campo risponde a parole (contratto 1.10).
-    if (s.question) onCmd('answer', textArg(text)); else onSend(text)
-    draft = ''
-  }
-  // Invio manda, Maiusc+Invio va a capo, come sul tablet con la tastiera fisica.
-  function key(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
-  function pick(step: string) { draft = draft.trim() ? `${draft.trim().replace(/[.,;:]$/, '')} e poi ${step}` : step }
+  let composer: Composer | undefined = $state()
+  function pick(step: string) { draft = append(draft, step, t.then); composer?.focus() }
+  // I box sopra il campo, aperti o chiusi come li hai lasciati: Prossimi aperto, Ricorrenti chiuso.
+  const saved = (k: string, d: boolean) => { try { const v = localStorage.getItem(k); return v == null ? d : v === '1' } catch { return d } }
+  const save = (k: string, v: boolean) => { try { localStorage.setItem(k, v ? '1' : '0') } catch { /* senza memoria resta per la sessione */ } }
+  let stepsOpen = $state(saved('cm.steps_open', true))
+  let recurringOpen = $state(saved('cm.recurring_open', false))
+  const idle = $derived(s.state === 'idle' && !s.question)
+  const stepsBox = $derived(idle ? boxOf(steps, s.suggestion, draft) : { field: null, rows: [] })
+  const recurringRows = $derived(s.name === MASTER ? (st.recurring ?? []).filter(r => !inDraft(draft, r.prompt)).map(r => ({ label: r.label, text: r.prompt, direct: !r.param && idle })) : [])
   $effect(() => { items.length; if (!home) list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' }) })
 </script>
 
@@ -59,21 +67,19 @@
     {/if}
   </div>
 
-  {#if steps.length && !s.question && !home}
-    <div class="steps">
-      <div class="mono">{t.next.toUpperCase()} · {steps.length}</div>
-      {#each steps as step}
-        <div class="step"><button class="pick" onclick={() => pick(step)}>{step}</button><button class="go" aria-label={t.send} onclick={() => onSend(step)}>↗</button></div>
-      {/each}
-    </div>
+  {#if stepsBox.rows.length && !home}
+    <PromptBox title={t.next} rows={stepsBox.rows.map(x => ({ label: x, text: x, direct: true }))} open={stepsOpen}
+      onOpen={(o) => { stepsOpen = o; save('cm.steps_open', o) }} draftBlank={!draft.trim()} onPick={(r) => pick(r.text)} onSend={(r) => onSend(r.text)} />
   {/if}
-
-  <form class="composer" onsubmit={(e) => { e.preventDefault(); send() }}>
-    <textarea rows="1" class:hint={!s.question && !!s.suggestion} bind:value={draft} onkeydown={key} placeholder={s.question ? t.answerFree : s.suggestion ?? t.writeTo(s.name)}></textarea>
-    {#if !draft && s.suggestion && !s.question}<button type="button" class="use" onclick={() => (draft = s.suggestion ?? '')}>{t.use}</button>{/if}
-    <button type="submit" class="sendbtn" disabled={!draft.trim()} aria-label={t.send}>➤</button>
-  </form>
-  <div class="hint mono">{t.enterSends}</div>
+  {#if recurringOpen && recurringRows.length}
+    <PromptBox title={t.recurring} rows={recurringRows} open={true} onOpen={() => { recurringOpen = false; save('cm.recurring_open', false) }} draftBlank={!draft.trim()}
+      onPick={(r) => { draft = append(draft, r.direct ? r.text : r.text.trimEnd() + ' ', t.then); recurringOpen = false; save('cm.recurring_open', false); composer?.focus() }}
+      onSend={(r) => { recurringOpen = false; save('cm.recurring_open', false); onSend(r.text) }} />
+  {/if}
+  <Composer bind:this={composer} {st} {s} bind:draft field={stepsBox.field} toMaster={s.name === MASTER} {onSend}
+    onAnswerText={(arg) => onCmd('answer', arg)} onSlash={(c, a) => onCmd('slash', c, a ?? undefined)} onStop={() => onCmd('interrupt')}
+    onReopen={() => onCmd('reopen')} onAttach={(fs, text) => onCmd('report', fs.map(f => f.name).join(', '), text)}
+    onRecurring={recurringRows.length ? () => { recurringOpen = !recurringOpen; save('cm.recurring_open', recurringOpen) } : null} />
 </section>
 
 <style>
@@ -84,25 +90,4 @@
   .lines.dots { padding: 16px max(10px, calc((100% - 760px) / 2)); }
   .dots { background-image: radial-gradient(rgb(255 255 255 / .07) 1px, transparent 1.4px); background-size: 16px 16px; }
   .lines { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-  .me { align-self: flex-end; max-width: 75%; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-  .me p { background: var(--surface); border-radius: 20px 20px 6px 20px; padding: 10px 14px; }
-  .claude { display: flex; flex-direction: column; gap: 4px; max-width: 760px; }
-  p { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .steps { margin: 0 16px; background: var(--low); border: 1px solid var(--line); border-radius: 18px; padding: 8px 0; }
-  .steps .mono { padding: 2px 14px 6px; }
-  .step { display: flex; align-items: center; border-top: 1px solid var(--line); }
-  .pick { flex: 1; text-align: left; padding: 10px 14px; }
-  .go { padding: 10px 14px; color: var(--icon); }
-  .pick:hover, .go:hover { background: var(--surface); }
-  .composer { margin: 10px 16px 4px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 28px; padding: 6px 6px 6px 18px; }
-  .composer:focus-within { border-color: var(--icon); }
-  textarea { flex: 1; resize: none; background: none; border: 0; outline: 0; color: var(--text); font: inherit; field-sizing: content; max-height: 8lh; padding: 8px 0; }
-  textarea::placeholder { color: var(--text2); }
-  /* In corsivo solo il suggerimento di Claude, come nell'app. */
-  textarea.hint::placeholder { font-style: italic; }
-  .use { color: var(--icon); padding: 6px 10px; }
-  .sendbtn { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); }
-  .sendbtn:disabled { background: var(--surface); color: var(--text2); cursor: default; }
-  .hint { padding: 0 34px 12px; }
-  @media (max-width: 760px) { .hint { display: none; } .composer { margin-bottom: 14px; } }
 </style>
