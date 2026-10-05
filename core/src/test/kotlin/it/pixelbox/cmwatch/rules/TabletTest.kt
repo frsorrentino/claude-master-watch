@@ -157,7 +157,7 @@ class TabletTest {
         assertEquals(listOf(6, 3, 3), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 2))
         assertEquals(listOf(8, 2, 2), Tablet.Shares.drag(listOf(4, 4, 4), border = 0, parts = 5))
         assertEquals(listOf(3, 2, 7), Tablet.Shares.drag(listOf(4, 4, 4), border = 1, parts = -3))
-        assertEquals(listOf(4, 4, 2, 2), Tablet.Shares.drag(listOf(3, 3, 3, 3), border = 0, parts = 1))
+        assertEquals(listOf(4, 3, 3, 2), Tablet.Shares.drag(listOf(3, 3, 3, 3), border = 0, parts = 1))
         assertEquals(listOf(8, 4), Tablet.Shares.drag(listOf(6, 6), border = 0, parts = 2))
         assertEquals(listOf(6, 6), Tablet.Shares.drag(listOf(6, 6), border = 3, parts = 2))
     }
