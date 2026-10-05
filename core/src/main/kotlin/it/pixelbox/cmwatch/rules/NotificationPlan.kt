@@ -83,7 +83,9 @@ object NotificationPlan {
     fun outcome(s: Session, l: Labels): Plan {
         val o = s.outcome ?: error("no outcome")
         return Plan(
-            session = s.name, title = s.name, person = null, messages = listOf(o.short), bigText = o.full,
+            session = s.name, title = s.name, person = null, messages = listOf(o.short),
+            // La riga «Prossimi:» sono tasti nell'app, non testo da leggere nella notifica (contratto 1.38: ora c'è nell'esito).
+            bigText = NextSteps.parse(o.full).text,
             actions = listOf(Act.Read, Act.Write, Act.Open), choices = emptyList(), freeForm = true, channel = CH_OUTCOMES,
             whenS = o.at, chronometer = false, subText = s.account, autoCancel = true, timeoutMs = 12 * 3600_000L,
             progress = null, accent = SessionState.IDLE,
