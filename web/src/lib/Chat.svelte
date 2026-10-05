@@ -20,12 +20,14 @@
   import PromptBox from './PromptBox.svelte'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
     /** Allegati del «+»: prima /share, poi `report` (contratti 1.19 e 1.28). */
     onAttach: (files: File[], text: string) => void
+    /** Un file della conversazione (contratto 1.24): il PC lo manda e si apre in una scheda. */
+    onFile: (path: string) => void
     /** L'avviso delle altre sessioni sotto la barra (Elsewhere). */
     elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
@@ -89,7 +91,7 @@
       <MasterHome {st} master={s} {entries} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
         {onAnswer} onSession={onPick} onSpeak={(x) => toggle(x, s.name)} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
-    <Feed {s} {items} now={st.ts} />
+    <Feed {s} {items} now={st.ts} {onFile} />
     {#if s.question}
       <QuestionCard q={s.question} source={s.name} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
     {/if}

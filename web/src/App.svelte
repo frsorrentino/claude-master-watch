@@ -243,6 +243,25 @@
       } catch { pend = { ...pend, [m.id]: 'failed' } }
     }
   }
+  // Un file della chat: il comando `file`, poi i byte da /api/file/<id> in una scheda nuova. HTML, SVG e XML si scaricano
+  // invece di aprirsi: dalla stessa origine della pagina leggerebbero il token.
+  async function openFile(name: string, path: string) {
+    if (!tr) { say(t.fileDemo); return }
+    say(t.fileOpening(path.split('/').pop() ?? path))
+    const c = newCmd('file', name, path)
+    const r = await run(c)
+    if (!r?.ok) return
+    const f = await tr.fetchFile(c.id).catch(() => null)
+    if (!f) { say(`✗ ${t.noAnswer}`); return }
+    const url = URL.createObjectURL(new Blob([f.data as Uint8Array<ArrayBuffer>], { type: f.mime }))
+    const fileName = f.name ?? path.split('/').pop() ?? 'file'
+    if (/html|svg|xml/.test(f.mime)) {
+      const a = Object.assign(document.createElement('a'), { href: url, download: fileName })
+      a.click()
+    } else window.open(url, '_blank')
+    notice = null
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
   // «Chiedi alla master» arriva come `prompt` della sessione: va alla master, come messaggio nella sua chat.
   const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => {
     if (op === 'prompt' && arg) sendTo(MASTER, arg)
@@ -274,7 +293,7 @@
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
-    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)}
+    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p) => openFile(name, p)}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}

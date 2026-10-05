@@ -267,6 +267,7 @@
     <string name="speech_rate_short">%1$s×</string>
     <string name="speech_rate_change">Velocità di lettura %1$s: tocca per cambiarla</string>
     <string name="quota_line_stale">non aggiornata</string>
+    <string name="quota_line_window" translatable="false">5h</string>
     <string name="chat_empty">Conversazione nuova: ancora nessun messaggio. Scrivi qui sotto per cominciare.</string>
     <string name="menu_goto">Vai a</string>
     <string name="menu_home_sub">La home: sessioni e chat della master</string>

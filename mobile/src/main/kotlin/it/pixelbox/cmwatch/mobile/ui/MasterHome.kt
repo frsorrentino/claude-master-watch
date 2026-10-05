@@ -393,6 +393,7 @@ fun QuotaLine(rings: List<PhoneOverview.Ring>, onOpen: () -> Unit) {
             }
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccountMark(r.personal, size = 12.dp, color = if (r.stale) CmColors.text2 else CmColors.text2)
+                Text(stringResource(R.string.quota_line_window), style = MonoSmall.copy(color = CmColors.text2), maxLines = 1)
                 Box(Modifier.weight(1f).height(3.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.briefTrack)) {
                     if (!r.stale) Box(Modifier.fillMaxWidth(pct / 100f).fillMaxHeight().background(tone))
                 }

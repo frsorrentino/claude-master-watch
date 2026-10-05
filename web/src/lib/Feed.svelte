@@ -14,7 +14,7 @@
 
   // La conversazione della scheda (SessionSheet.kt): i messaggi a destra con lo stato, Claude a tutta larghezza con Copia
   // e ▶, i passaggi raccolti in una card, i file come chip, il costo del turno, e in fondo la riga dal vivo.
-  let { s, items, now }: { s: Session; items: Item[]; now: number } = $props()
+  let { s, items, now, onFile = () => {} }: { s: Session; items: Item[]; now: number; onFile?: (path: string) => void } = $props()
 
   const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   const copy = (x: string) => navigator.clipboard?.writeText(x)
@@ -96,7 +96,7 @@
 {#snippet files(fs: TranscriptFile[])}
   <div class="files">
     {#each fs as f}
-      <button class="fchip" title={f.path}><Icon name={fileIcon(f)} color="var(--icon)" /><span class="fname">{f.path.split('/').pop()}</span>{#if f.size != null}<span class="fsize">{size(f.size)}</span>{/if}</button>
+      <button class="fchip" title={f.path} onclick={() => onFile(f.path)}><Icon name={fileIcon(f)} color="var(--icon)" /><span class="fname">{f.path.split('/').pop()}</span>{#if f.size != null}<span class="fsize">{size(f.size)}</span>{/if}</button>
     {/each}
   </div>
 {/snippet}

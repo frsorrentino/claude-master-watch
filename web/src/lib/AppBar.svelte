@@ -46,6 +46,7 @@
           <svg viewBox="0 0 14 14" width="12" height="12" aria-label={personal(name, r.kind) ? t.badgePersonal : t.badgeWork}>
             {#if personal(name, r.kind)}<circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--text2)" stroke-width="2" />{:else}<rect x="1" y="1" width="12" height="12" rx="3.2" fill="none" stroke="var(--text2)" stroke-width="2" />{/if}
           </svg>
+          <span class="mono win">{t.quotaLineWindow}</span>
           <span class="track">{#if !stale}<i style="width:{pct}%;background:{tone(pct, stale)}"></i>{/if}</span>
           <span class="mono" style="color:{pct >= 75 && !stale ? tone(pct, stale) : 'var(--text2)'}">{stale ? t.quotaLineStale : `${pct}%`}</span>
         </span>
@@ -84,6 +85,7 @@
   .open { font-size: 14px; color: var(--text2); white-space: nowrap; }
   .ib { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; }
   .ib:hover { background: var(--surface); }
+  .win { color: var(--text2); }
   .quota { display: flex; gap: 16px; width: calc(100% - 16px); margin: 0 8px; padding: 4px 0; border-radius: 8px; }
   .q { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
   .track { flex: 1; height: 3px; border-radius: 2px; background: var(--b-track); overflow: hidden; }
