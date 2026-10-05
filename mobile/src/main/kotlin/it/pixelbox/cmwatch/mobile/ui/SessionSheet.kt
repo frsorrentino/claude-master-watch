@@ -240,7 +240,8 @@ fun SessionSheet(
         appBar?.invoke()
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
-        val chatArea: @Composable ColumnScope.() -> Unit = {
+        val masterVoice = home != null && LocalMasterLook.current.voice
+        val chatArea: @Composable ColumnScope.() -> Unit = { androidx.compose.runtime.CompositionLocalProvider(LocalVoiceAccent provides masterVoice) {
             // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
             bar?.invoke()
             if (header) SheetHeader(
@@ -348,7 +349,7 @@ fun SessionSheet(
                 onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
             )
-        }
+        } }
         if (home == null) { chatArea(); dock?.invoke() } else {
             // Nella home della master (Franz, 03/10 17:10) si anima solo la parte sopra il campo: la lista con la barra in
             // basso lascia il posto, salendo dal basso, a barra in cima, intestazione e conversazione. Il campo resta fermo,
@@ -429,6 +430,7 @@ fun SessionSheet(
             modifier = Modifier.padding(top = 6.dp),
         )
         if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
+        if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
             toMaster = home != null, canAttachFiles = canAttachFiles, fieldSuggestion = stepsBox.field,
@@ -709,6 +711,21 @@ val LocalPromptBoxes = androidx.compose.runtime.staticCompositionLocalOf { Promp
  * deciso, aurora, e cornice col campo lilla.
  */
 enum class MasterChatStyle { BLACK, FRAME, EDGE, VIOLET, AURORA, FRAME_FIELD }
+
+/**
+ * Il segno della master in tutta l'app (Franz, 05/10 11:30: «una soluzione che si integri bene in tutta l'app»), tre
+ * direzioni da scegliere: la firma (la sua icona con un anello corallo-lilla dove compare), il filo (una linea corallo-lilla
+ * sotto la sua barra e sopra il suo campo), la voce (le sue risposte con una barra lilla a sinistra). Si combinano.
+ */
+data class MasterLook(val signature: Boolean = false, val thread: Boolean = false, val voice: Boolean = false)
+val LocalMasterLook = androidx.compose.runtime.staticCompositionLocalOf { MasterLook() }
+/** La sfumatura della master: dal corallo di Claude al lilla. */
+val MasterGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(CmColors.modelOpus, androidx.compose.ui.graphics.Color(0xFFCDB8FF)))
+/** Il filo della master, 2 dp. */
+@Composable
+fun MasterThread(modifier: Modifier = Modifier) = Box(modifier.fillMaxWidth().height(2.dp).background(MasterGradient))
+/** La voce della master: la barra a sinistra delle sue risposte. */
+internal val LocalVoiceAccent = androidx.compose.runtime.staticCompositionLocalOf { false }
 val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.BLACK }
 
 internal val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
@@ -1114,7 +1131,15 @@ private fun ClaudeBubble(
     val text = parsed.text
     val clip = LocalClipboardManager.current
     // Claude a tutta larghezza, senza fumetto, come nell'app nativa (Franz, 30/09 22:17: «non limitiamo nei balloon»).
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+    // Nella chat della master, con la «voce», una barra lilla a sinistra.
+    val voice = LocalVoiceAccent.current
+    Column(
+        Modifier.fillMaxWidth().then(
+            if (voice) Modifier.drawBehind { drawRect(androidx.compose.ui.graphics.Color(0xFFCDB8FF).copy(alpha = 0.8f), size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }.padding(start = 10.dp)
+            else Modifier,
+        ),
+        horizontalAlignment = Alignment.Start,
+    ) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Durante la lettura a voce il testo si mostra a paragrafi, quello letto in evidenza; il tocco su un paragrafo

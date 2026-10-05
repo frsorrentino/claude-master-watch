@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
@@ -154,7 +155,13 @@ private fun SessionMenu(
                 Modifier.fillMaxWidth().clickable { pick(null) }.padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Box(Modifier.size(36.dp).clip(CircleShape).background(CmColors.accent.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                // La firma della master (Franz, 05/10 11:30): l'anello corallo-lilla anche nel menu.
+                val sign = LocalMasterLook.current.signature
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(CmColors.accent.copy(alpha = 0.25f))
+                        .then(if (sign) Modifier.border(2.dp, MasterGradient, CircleShape) else Modifier),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(Icons.Rounded.Home, null, tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {

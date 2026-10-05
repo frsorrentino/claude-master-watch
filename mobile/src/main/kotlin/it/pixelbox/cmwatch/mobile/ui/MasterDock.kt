@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -53,7 +54,8 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
     val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), ctx).joinToString(" · ")
     val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
-        if (!expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
+        val look = LocalMasterLook.current
+        if (!expanded) { if (look.thread) MasterThread() else Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
         // Franz, 03/10 17:05: anche col gesto. Trascinare in su la barra ridotta la espande, trascinarla in giù da espansa la
         // riduce. Sulla barra e non dal bordo dello schermo, dove Android tiene il gesto per la schermata Home.
         val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
@@ -70,7 +72,9 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
                 .clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SessionBadge(master, 20.dp)
+            // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).
+            if (look.signature) Box(Modifier.size(28.dp).border(2.dp, MasterGradient, androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) { SessionBadge(master, 18.dp) }
+            else SessionBadge(master, 20.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(label, style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
                 hero?.let {
@@ -97,6 +101,6 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
                 )
             }
         }
-        if (expanded) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
+        if (expanded) { if (look.thread) MasterThread() else Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
     }
 }

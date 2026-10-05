@@ -165,6 +165,29 @@ class SessionSheetTest {
             }
         }
     }
+    // Il segno della master in tutta l'app (Franz, 05/10 11:30): la barra in cima, la chat e il campo con firma, filo, voce.
+    private fun masterLook(look: it.pixelbox.cmwatch.mobile.ui.MasterLook) = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Come va la fase 2.2 di atlas-shop?", at = t, origin = "phone"),
+            TranscriptEntry("a1.0", "assistant", text = "Lanciata la fase 2.2 su atlas-shop: test verdi, 40 su 40. Solo commit locali: push e release con il tuo ok.\n\nEsito: fase 2.2 avviata su atlas-shop", at = t + 40),
+        )
+        val hero = it.pixelbox.cmwatch.rules.MasterHome.hero(entries, m)
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalMasterLook provides look) {
+                SessionSheet(m, st.ts, emptyList(), 120, none, grid = true, home = { _, _ -> }, homeOpen = false, header = false,
+                    bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true) },
+                    feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
+            }
+        }
+    }
+    @Test fun masterLookToday() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook())
+    @Test fun masterLookSignature() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(signature = true))
+    @Test fun masterLookThread() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(thread = true))
+    @Test fun masterLookVoice() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(voice = true))
+    @Test fun masterLookAll() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(signature = true, thread = true, voice = true))
+
     @Test fun masterChatBlack() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.BLACK)
     @Test fun masterChatFrame() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.FRAME)
     @Test fun masterChatEdge() = masterChat(it.pixelbox.cmwatch.mobile.ui.MasterChatStyle.EDGE)
