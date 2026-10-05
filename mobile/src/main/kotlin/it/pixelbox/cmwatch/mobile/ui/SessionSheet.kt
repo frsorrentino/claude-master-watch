@@ -1195,7 +1195,7 @@ private fun ClaudeBubble(
             val reading = LocalSpeaking.current == text
             if (reading) RatePill()
             // Il ▶ tondo come nel riepilogo e nel riquadro della master (Franz, 03/10 16:13), non l'altoparlante.
-            androidx.compose.material3.FilledTonalIconButton(onClick = { onSpeak(text) }, modifier = Modifier.size(36.dp)) {
+            FilledTonalIconButton(onClick = { onSpeak(text) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, stringResource(if (reading) R.string.stop_reading else R.string.read_aloud),
                     tint = CmColors.actionIcon, modifier = Modifier.size(20.dp),

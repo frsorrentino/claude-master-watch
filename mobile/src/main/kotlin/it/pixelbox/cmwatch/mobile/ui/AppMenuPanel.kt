@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -94,6 +94,7 @@ fun PanelShell(
     content: @Composable androidx.compose.foundation.layout.ColumnScope.(close: () -> Unit) -> Unit,
 ) {
     val off = animationsOff()
+    val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
     // L'apertura si chiede una volta sola: impostata a ogni ricomposizione rimetteva `true` subito dopo la chiusura e il
     // pannello non si chiudeva più (segnalazione del 03/10 20:24).
     val shown = remember { androidx.compose.animation.core.MutableTransitionState(off).apply { targetState = true } }
@@ -110,19 +111,22 @@ fun PanelShell(
             ) {
                 Box(
                     Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f))
-                        .handCursor().clickable(remember { MutableInteractionSource() }, indication = null, onClick = close),
+                        .clickable(remember { MutableInteractionSource() }, indication = null, onClick = close),
                 )
             }
             androidx.compose.animation.AnimatedVisibility(
                 shown,
                 enter = androidx.compose.animation.fadeIn(enter) + androidx.compose.animation.scaleIn(enter, initialScale = 0.96f, transformOrigin = origin),
                 exit = androidx.compose.animation.fadeOut(exit) + androidx.compose.animation.scaleOut(exit, targetScale = 0.96f, transformOrigin = origin),
-                modifier = Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).fillMaxWidth(),
+                // Su tablet e desktop un menu largo 380 dp dalla parte del tasto che lo apre, non a tutta larghezza (Franz, 05/10 13:10).
+                modifier = if (wide) Modifier.align(if (origin.pivotFractionX > 0.5f) Alignment.TopEnd else Alignment.TopStart)
+                    .statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).width(380.dp)
+                else Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 24.dp).fillMaxWidth(),
             ) {
                 Surface(
                     shape = RoundedCornerShape(28.dp), color = CmColors.surface, shadowElevation = 8.dp,
                     // Il tocco dentro il pannello non lo chiude.
-                    modifier = Modifier.fillMaxWidth().handCursor().clickable(remember { MutableInteractionSource() }, indication = null) {},
+                    modifier = Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, indication = null) {},
                 ) {
                     Column(Modifier.padding(vertical = 8.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

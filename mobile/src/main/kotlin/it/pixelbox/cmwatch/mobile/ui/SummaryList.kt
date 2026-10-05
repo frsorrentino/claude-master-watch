@@ -164,7 +164,7 @@ private fun SummaryCard(
             // La quota delle 5 ore dell'account al posto dell'età della sessione (Franz, 03/10 20:31: «non è un'informazione
             // rilevante»); il dato vecchio nel colore dell'attesa, come nel Quadro.
             r.quota?.let { q -> q.h5?.let { Text(stringResource(R.string.quota_h5_short, it), style = MonoSmall, color = if (q.stale) CmColors.waiting else CmColors.text2, maxLines = 1) } }
-            androidx.compose.material3.IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
                 androidx.compose.material3.Icon(
                     if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     stringResource(if (open) R.string.steps_close else R.string.steps_open), tint = CmColors.text2,
@@ -194,7 +194,7 @@ private fun SummaryCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             parsed.steps.forEach { step ->
-                androidx.compose.material3.Surface(
+                Surface(
                     onClick = { onStep(step) }, shape = CircleShape, color = CmColors.primary.copy(alpha = 0.12f), contentColor = CmColors.text,
                 ) {
                     Text(step, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
@@ -289,7 +289,7 @@ private fun OutsideRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) 
             Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text)
             detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Clip) }
         }
-        androidx.compose.material3.Surface(onClick = { onAction(row) }, shape = CircleShape, color = CmColors.surface, contentColor = CmColors.primary) {
+        Surface(onClick = { onAction(row) }, shape = CircleShape, color = CmColors.surface, contentColor = CmColors.primary) {
             Text(stringResource(action), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
         }
     }

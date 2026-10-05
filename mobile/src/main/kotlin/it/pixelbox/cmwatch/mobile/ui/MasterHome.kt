@@ -110,7 +110,7 @@ fun ForYouCard(
         val more = all.size - MasterHome.MAX
         if (more > 0) TextButton(onClick = { open = true }) { Text(stringResource(R.string.fy_more, more), color = CmColors.actionIcon) }
     }
-    if (open) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { open = false }, containerColor = CmColors.surface) {
+    if (open) ModalBottomSheet(onDismissRequest = { open = false }, containerColor = CmColors.surface) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             RuledLabel(stringResource(R.string.fy_title), CmColors.waiting)
             all.forEach { row -> item(row) { open = false; onAction(it) } }
@@ -206,7 +206,7 @@ internal fun AttentionRow(
             }
             if (!waiting && parsed.steps.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 parsed.steps.forEach { step ->
-                    androidx.compose.material3.OutlinedButton(onClick = { onStep(step) }, border = androidx.compose.foundation.BorderStroke(1.dp, tone.copy(alpha = 0.5f))) {
+                    OutlinedButton(onClick = { onStep(step) }, border = androidx.compose.foundation.BorderStroke(1.dp, tone.copy(alpha = 0.5f))) {
                         Text(step, color = CmColors.text)
                     }
                 }
@@ -348,7 +348,7 @@ fun HeroCard(hero: MasterHome.Hero?, master: Session, onSpeak: () -> Unit, onCon
         }
         // Variante 3 dei mockup (Franz, 02/10 21:56): ▶ tondo per ascoltare, la pillola larga per la conversazione.
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (hero != null) androidx.compose.material3.FilledTonalIconButton(onClick = onSpeak, modifier = Modifier.size(44.dp)) {
+            if (hero != null) FilledTonalIconButton(onClick = onSpeak, modifier = Modifier.size(44.dp)) {
                 androidx.compose.material3.Icon(Icons.Rounded.PlayArrow, stringResource(R.string.fy_btn_listen), tint = CmColors.actionIcon)
             }
             FilledTonalButton(onClick = onConversation, modifier = Modifier.weight(1f).height(44.dp)) {
