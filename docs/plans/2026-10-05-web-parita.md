@@ -5,7 +5,8 @@ indicato, fianco a fianco.
 
 - [x] Badge: forma per account, colore della sessione, glifi Lucide, contrasto (provino `SummaryListTest_summaryOpen`)
 - [x] Home: righe della lista come `SummaryList` (età, contesto, gruppi con riga, «Fuori dalle sessioni», chiuse)
-- [ ] Home della master: ultimo esito, Per te, quote ad anello (`SessionSheetTest_masterHomeA`)
+- [x] Home della master: ultimo esito, Per te, quote, barra della master nella home (`SessionSheetTest_masterHomeA`, `SummaryListTest_dockMaster`).
+  In «Per te» mancano resoconto e notte, prossimi del recap e invii programmati: il tipo `State` della web app non legge ancora `recap`, `night` ed eventi.
 - [ ] Testata della sessione: pillola modello · effort, anello 5h con azzeramento, anello ctx, menu ⋮ (`sheetBusyWithGoal`)
 - [ ] Chat: markdown e tabelle, righe degli strumenti, costo del turno, copia e ▶, riga dal vivo (`sheetTranscript`, `sheetTables`)
 - [ ] Domanda: scheda con opzioni, prima piena, Parliamone, Consenti tutto (`sheetQuestion`)

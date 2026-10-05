@@ -14,5 +14,11 @@ export const t = {
   send: 'Invia', use: 'Usa', next: 'Prossimi', pick: 'Scegli una sessione dalla home',
   quota5h: (p: number) => `5h ${p}%`, ctx: (p: number) => `ctx ${p}%`, week: (p: number) => `sett. ${p}%`,
   stale: 'dato vecchio', demo: 'Dati di prova', updated: (h: string) => `${h} · aggiornato ora`,
+  homeLast: (hm: string) => `Ultimo esito · ${hm}`, homeLastBare: 'Ultimo esito', listen: 'Ascolta',
+  openConversation: 'Apri la conversazione', forYou: 'Per te', stepHint: 'Clic: nel campo · doppio clic: invia subito',
+  fyContext: (name: string, p: number) => `Contesto di ${name} al ${p}%`, fyContextDetail: 'Conviene un handoff prima di continuare',
+  fyHandoff: 'Handoff e riavvio', fyMore: (n: number) => `+${n} altre`,
+  quota: (a: string, h5: number, w7: number) => `${a} ${h5}% · sett. ${w7}%`, quotaOld: (a: string) => `${a} · non aggiornata`,
+  home: 'Casa', dockMaster: 'MASTER', conversation: 'Conversazione',
   enterSends: 'Invio manda · Maiusc+Invio a capo', back: 'Indietro',
 }
