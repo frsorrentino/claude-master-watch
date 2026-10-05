@@ -21,9 +21,18 @@ export type QuotaAccount = { h5?: number | null; w7?: number | null; reset_w7?: 
 export type Device = { uid: string; name: string; kind?: string | null; seen?: number | null }
 export type Recurring = { id: string; label: string; prompt: string; param?: boolean }
 
+export type Project = { path: string; name: string; account: string; last_used?: number | null }
+export type NightItem = { id: string; dir: string; name: string; prompt: string; added: number; started?: number | null }
+export type Night = { queued: number; running?: string | null; items?: NightItem[] | null }
+export type RecapItem = { project: string; done: string; next?: string | null }
+export type Recap = { date: string; items: RecapItem[] }
+export type EventKind = 'question' | 'answered' | 'outcome' | 'gone' | 'launched' | 'quota' | 'resumed' | 'recap' | 'night_report'
+export type Event = { key: string; kind: EventKind; session?: string | null; account?: string | null; ts: number; title: string; body?: string; ref?: string | null }
+
 export type State = {
   v: number; ts: number; host: string
   sessions: Session[]; quota: Record<string, QuotaAccount>
+  projects: Project[]; night: Night; recap: Recap
   ops?: string[] | null; slash?: string[] | null
   devices?: Device[] | null; recurring?: Recurring[] | null
   choices?: { models: Model[]; efforts: string[] } | null
@@ -40,5 +49,5 @@ export type CmdResult = { id: string; ok: boolean; text: string; at: number; ses
 export function decodeState(raw: string): State {
   const s = JSON.parse(raw)
   if (typeof s?.v !== 'number' || typeof s?.ts !== 'number' || typeof s?.host !== 'string') throw new Error('not a state')
-  return { ...s, sessions: s.sessions ?? [], quota: s.quota ?? {} }
+  return { ...s, sessions: s.sessions ?? [], quota: s.quota ?? {}, projects: s.projects ?? [], night: { queued: 0, ...s.night }, recap: { date: '', items: [], ...s.recap } }
 }

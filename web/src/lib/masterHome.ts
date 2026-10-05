@@ -1,19 +1,41 @@
-import type { Session, State } from './contract'
+import type { Event, Session, State } from './contract'
 import { parseSteps } from './nextSteps'
 import { FINISHED_S, MASTER, finishedKey, type Sent } from './summary'
 
-// La casa della master, porta di MasterHome.kt: l'ultimo esito in testa, «Per te» (chi ti aspetta, chi ha finito, il
-// contesto dall'80 %) e il gruppo «al lavoro». Resoconto e notte, prossimi del recap e invii programmati arrivano con i
-// campi del contratto che la web app ancora non legge.
+// La casa della master, porta di MasterHome.kt: l'ultimo esito in testa, «Per te» e il gruppo «al lavoro». «Per te» in
+// ordine di urgenza: domande, turni finiti, contesto dall'80 %, resoconto della notte (la mattina, finché non è letto), notte
+// (dalle 20), prossimi passi del recap dei progetti senza sessione, invii programmati.
 export const MAX = 3
 export const URGENT = 80
-export type Kind = 'question' | 'finished' | 'context'
-export type ForYouRow = { kind: Kind; title: string; detail?: string | null; session: string; key?: string; number?: number; at?: number }
+export const MORNING_END = 12
+export const EVENING = 20
+export type Kind = 'question' | 'finished' | 'context' | 'night_report' | 'night' | 'next_step' | 'scheduled'
+export type ForYouRow = {
+  kind: Kind; title: string; detail?: string | null; session?: string | null; project?: string | null
+  key?: string; number?: number; at?: number
+}
 export type ForYou = { rows: ForYouRow[]; more: number }
 export type Hero = { headline: string; body: string; steps: string[]; at: number | null }
 export type Entry = { role: string; text?: string | null; at: number }
+/** Un messaggio programmato da questo dispositivo: aspetta finché `sentAt` è prima di `scheduledFor`. */
+export type Scheduled = Sent & { scheduledFor?: number | null }
 
-export function forYou(state: State, sent: Sent[], now: number, read: Set<string> = new Set(), limit = MAX): ForYou {
+/** La chiave di un prossimo passo avviato: ricordata, il passo non torna. */
+export const nextKey = (project: string, next: string) => `next:${project}:${next}`
+
+/** Giorno ISO e ora locali di un istante, nel fuso dato (quello del browser se manca). */
+export function local(epoch: number, timeZone?: string): { day: string; hour: number } {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(epoch * 1000)).map(x => [x.type, x.value]))
+  return { day: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) }
+}
+const dayBefore = (iso: string) => new Date(Date.parse(`${iso}T12:00:00Z`) - 86400000).toISOString().slice(0, 10)
+
+export function forYou(
+  state: State, events: Event[], sent: Scheduled[], now: number,
+  { read = new Set<string>(), limit = MAX, timeZone }: { read?: Set<string>; limit?: number; timeZone?: string } = {},
+): ForYou {
+  const { day: today, hour } = local(now, timeZone)
   const live = state.sessions.filter(s => s.state !== 'gone')
   const all: ForYouRow[] = [
     ...live.filter(s => s.question).sort((a, b) => a.question!.asked_at - b.question!.asked_at)
@@ -29,6 +51,26 @@ export function forYou(state: State, sent: Sent[], now: number, read: Set<string
     ...live.filter(s => s.context != null && s.context >= URGENT).sort((a, b) => b.context! - a.context!)
       .map(s => ({ kind: 'context' as const, title: s.name, session: s.name, number: s.context! })),
   ]
+  if (hour < MORNING_END) {
+    const report = events.filter(e => e.kind === 'night_report').sort((a, b) => b.ts - a.ts)[0]
+    if (report && local(report.ts, timeZone).day === today && !read.has(report.key))
+      all.push({ kind: 'night_report', title: report.title, detail: report.body ?? '', key: report.key })
+  }
+  if (hour >= EVENING && state.night.items != null) all.push({ kind: 'night', title: '', number: state.night.queued })
+  // Il recap di oggi o di ieri: quello delle 20 serve anche la mattina dopo. Mai a un progetto con una sessione aperta: il
+  // progetto della sessione è un percorso relativo, quello del recap il nome della cartella.
+  if (state.recap.date && state.recap.date >= dayBefore(today)) for (const item of state.recap.items) {
+    const next = item.next?.trim()
+    if (!next) continue
+    if (live.some(s => s.name === item.project || s.project.split('/').pop() === item.project)) continue
+    if (read.has(nextKey(item.project, next))) continue
+    all.push({ kind: 'next_step', title: item.project, detail: next, project: state.projects.find(p => p.name === item.project)?.path ?? null })
+  }
+  const waiting = sent.filter(m => m.scheduledFor != null && m.sentAt < m.scheduledFor)
+  if (waiting.length) {
+    const first = waiting.reduce((a, b) => (b.scheduledFor! < a.scheduledFor! ? b : a))
+    all.push({ kind: 'scheduled', title: '', session: first.session, number: waiting.length, at: first.scheduledFor! })
+  }
   return { rows: all.slice(0, limit), more: Math.max(0, all.length - limit) }
 }
 

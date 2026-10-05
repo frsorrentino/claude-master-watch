@@ -6,12 +6,18 @@ import { decodeState } from './contract'
 const base = decodeState(stateRaw)
 export const demoState = {
   ...base,
+  // Il recap di oggi con un progetto senza sessione, così «Per te» propone il suo prossimo passo.
+  recap: { ...base.recap, items: [...base.recap.items, { project: 'orbit-docs', done: 'API pages drafted', next: 'Review the API pages' }] },
   sessions: [
-    { id: 'm', name: 'master', account: 'personal', project: 'personali/claude-master', state: 'idle' as const, since: base.ts - 3600, context: 34,
+    { id: 'm', name: 'master', account: 'personal', project: 'personali/claude-master', state: 'idle' as const, since: base.ts - 3600, context: 34, attached: true,
       model: { id: 'claude-opus-5-5', label: 'Opus 5.5' }, effort: 'high', suggestion: 'commit the README changes and open a PR' },
     ...base.sessions.map(s => (s.name === 'field-notes' ? { ...s, followed: true, outcome: { ...s.outcome!, at: base.ts - 900 } } : s)),
   ],
 }
+
+import eventsRaw from '../../../contract/events-sample.json?raw'
+import type { Event } from './contract'
+export const demoEvents: Event[] = JSON.parse(eventsRaw)
 
 export type Line = { id: string; role: 'user' | 'assistant'; text: string; at: number }
 const t0 = demoState.ts - 900

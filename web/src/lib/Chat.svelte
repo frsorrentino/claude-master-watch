@@ -3,14 +3,16 @@
   import { MASTER } from './summary'
   import MasterHome from './MasterHome.svelte'
   import Header from './Header.svelte'
-  import type { CmdOp } from './contract'
+  import type { CmdOp, Event } from './contract'
+  import type { Scheduled } from './masterHome'
   import type { Line } from './demo'
   import { parseSteps } from './nextSteps'
   import { t } from './t'
-  let { st, s, lines, onSend, onBack, onPick, onAnswer, onCmd, wide }: {
+  let { st, s, lines, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo }: {
     st: State; s: Session; lines: Line[]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
-    onCmd: (op: CmdOp, arg?: string) => void; wide: boolean
+    onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean
+    events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
   // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
   let conversation = $state(false)
@@ -41,7 +43,7 @@
   <div class="lines" class:dots={home} bind:this={list}>
     {#if home}
       <MasterHome {st} master={s} entries={lines} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
-        {onAnswer} onSession={onPick} onSpeak={speak} />
+        {onAnswer} onSession={onPick} onSpeak={speak} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
     {#each lines as l (l.id)}
       {#if l.role === 'user'}

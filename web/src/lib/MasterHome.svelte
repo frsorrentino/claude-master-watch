@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Session, State } from './contract'
-  import { forYou, forYouFirst, hero as heroOf, working, type Entry, type ForYouRow } from './masterHome'
+  import type { CmdOp, Event, Session, State } from './contract'
+  import { forYou, forYouFirst, hero as heroOf, nextKey, working, type Entry, type ForYouRow, type Scheduled } from './masterHome'
   import { parseSteps } from './nextSteps'
   import { age } from './summary'
   import { PATHS } from './badge'
@@ -8,14 +8,21 @@
 
   // La casa della master (casa A, MasterHome.kt): l'ultimo esito in grande con i consigli, «Per te» con chi ti aspetta,
   // chi ha finito e chi lavora, la quota in due barre. Con una domanda aperta «Per te» va in testa.
-  let { st, master, entries, onConversation, onStep, onSendStep, onAnswer, onSession, onSpeak }: {
-    st: State; master: Session; entries: Entry[]
+  let { st, master, entries, events, sent, read, onRead, onConversation, onStep, onSendStep, onAnswer, onSession, onSpeak, onPrompt, onCmd }: {
+    st: State; master: Session; entries: Entry[]; events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void
     onConversation: () => void; onStep: (text: string) => void; onSendStep: (text: string) => void
     onAnswer: (session: string, n: number) => void; onSession: (name: string) => void; onSpeak: (text: string) => void
+    onPrompt: (session: string, text: string) => void; onCmd: (op: CmdOp, arg?: string, text?: string) => void
   } = $props()
 
   const h = $derived(heroOf(entries, master))
-  const fy = $derived(forYou(st, [], st.ts))
+  const fy = $derived(forYou(st, events, sent, st.ts, { read }))
+  // «+N altre»: tutte le righe in un foglio.
+  const every = $derived(forYou(st, events, sent, st.ts, { read, limit: Infinity }))
+  let allSheet: HTMLDialogElement | undefined = $state()
+  let nightSheet: HTMLDialogElement | undefined = $state()
+  let nightDir = $state('')
+  let nightText = $state('')
   const busy = $derived(working(st))
   const first = $derived(forYouFirst(fy))
   let expanded = $state<string | null>(null)
@@ -26,10 +33,40 @@
   const tone = { waiting: 'var(--b-warn)', finished: 'var(--b-good)', working: 'var(--b-ring)' }
   type Variant = keyof typeof tone
   type Item = { id: string; variant: Variant; title: string; detail: string | null; at: number | null; session: string; context?: number | null }
-  const attention = $derived(fy.rows.filter(r => r.kind !== 'context').map((r: ForYouRow): Item => ({
-    id: `${r.kind}:${r.session}`, variant: r.kind === 'question' ? 'waiting' : 'finished', title: r.title, detail: r.detail ?? null, at: r.at ?? null, session: r.session,
-  })))
-  const service = $derived(fy.rows.filter(r => r.kind === 'context'))
+  const isAttention = (r: ForYouRow) => (r.kind === 'question' || r.kind === 'finished') && !!r.session
+  const toItem = (r: ForYouRow): Item => ({
+    id: `${r.kind}:${r.session}`, variant: r.kind === 'question' ? 'waiting' : 'finished', title: r.title, detail: r.detail ?? null, at: r.at ?? null, session: r.session!,
+  })
+  const attention = $derived(fy.rows.filter(isAttention).map(toItem))
+  const service = $derived(fy.rows.filter(r => !isAttention(r)))
+  // Le righe di servizio: titolo, dettaglio e un tasto tonale (ForYouRow dell'app).
+  function serviceText(r: ForYouRow): { title: string; detail: string | null; action: string } {
+    const first = (x?: string | null) => x?.split('\n').find(l => l.trim()) ?? null
+    switch (r.kind) {
+      case 'context': return { title: t.fyContext(r.title, r.number ?? 0), detail: t.fyContextDetail, action: t.fyHandoff }
+      case 'night_report': return { title: r.title, detail: first(r.detail), action: t.listen }
+      case 'night': return { title: (r.number ?? 0) > 0 ? t.fyNightQueued(r.number!) : t.fyNightEmpty, detail: t.fyNightDetail, action: t.fyAdd }
+      case 'next_step': return { title: t.fyNext(r.title), detail: r.detail ?? null, action: t.fyStart }
+      case 'scheduled': return { title: t.fyScheduled(r.number ?? 1), detail: r.at ? t.fyScheduledDetail(hm(r.at)) : null, action: t.fySee }
+      case 'question': return { title: t.fyQuestion(r.title), detail: r.detail ?? null, action: t.fyAnswer }
+      case 'finished': return { title: t.fyFinished(r.title), detail: first(r.detail), action: t.fyOpen }
+    }
+  }
+  function act(r: ForYouRow) {
+    allSheet?.close()
+    switch (r.kind) {
+      case 'context': if (r.session) onPrompt(r.session, t.ctxHandoffPrompt); break
+      case 'night_report': if (r.detail) onSpeak(r.detail); if (r.key) onRead(r.key); break
+      case 'night': nightDir = st.projects[0]?.path ?? ''; nightText = ''; nightSheet?.showModal(); break
+      case 'next_step':
+        onRead(nextKey(r.title, r.detail ?? ''))
+        if (r.session) onPrompt(r.session, r.detail ?? ''); else if (r.project) onCmd('launch', r.project, r.detail ?? undefined)
+        break
+      case 'finished': if (r.key) onRead(r.key); if (r.session) onSession(r.session); break
+      default: if (r.session) onSession(r.session)
+    }
+  }
+  const backdrop = (e: MouseEvent) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLDialogElement).close() }
   const work = $derived(busy.map(({ session: s, detail }): Item => ({
     id: `work:${s.name}`, variant: 'working', title: s.name, detail, at: (s.turn_started ?? s.since) || null, session: s.name, context: s.context,
   })))
@@ -104,6 +141,14 @@
   </div>
 {/snippet}
 
+{#snippet svc(r: ForYouRow)}
+  {@const x = serviceText(r)}
+  <div class="svc">
+    <span><span class="stitle">{x.title}</span>{#if x.detail}<span class="sdet">{x.detail}</span>{/if}</span>
+    <button class="tonal" onclick={() => act(r)}>{x.action}</button>
+  </div>
+{/snippet}
+
 {#snippet forYouCard()}
   {#if attention.length || work.length || service.length}
     <div class="glass foryou">
@@ -113,13 +158,8 @@
         <div class="gh"><span>{t.summary.working(work.length).toUpperCase()}</span><i></i></div>
         {#each work as i (i.id)}{@render row(i)}{/each}
       {/if}
-      {#each service as r}
-        <div class="svc">
-          <span><span class="stitle">{t.fyContext(r.title, r.number ?? 0)}</span><span class="sdet">{t.fyContextDetail}</span></span>
-          <button class="tonal" onclick={() => onSession(r.session)}>{t.fyHandoff}</button>
-        </div>
-      {/each}
-      {#if fy.more > 0}<button class="link">{t.fyMore(fy.more)}</button>{/if}
+      {#each service as r}{@render svc(r)}{/each}
+      {#if fy.more > 0}<button class="link" onclick={() => allSheet?.showModal()}>{t.fyMore(fy.more)}</button>{/if}
     </div>
   {/if}
 {/snippet}
@@ -137,6 +177,25 @@
     </div>
   {/if}
 </div>
+
+<dialog bind:this={allSheet} onclick={backdrop}>
+  <div class="label rule" style="--c:var(--wait)"><span>{t.forYou.toUpperCase()}</span><i></i></div>
+  <div class="sheetrows">{#each every.rows as r}{@render svc(r)}{/each}</div>
+</dialog>
+
+<dialog bind:this={nightSheet} onclick={backdrop}>
+  <h3>{t.nightTitle}</h3>
+  <form class="night" onsubmit={(e) => { e.preventDefault(); if (nightDir && nightText.trim()) { onCmd('night_add', nightDir, nightText.trim()); nightSheet?.close() } }}>
+    <label>{t.nightProject}
+      <select bind:value={nightDir}>{#each st.projects as p}<option value={p.path}>{p.name}</option>{/each}</select>
+    </label>
+    <textarea rows="4" bind:value={nightText} placeholder={t.nightPrompt}></textarea>
+    <div class="btns">
+      <button type="button" class="link" onclick={() => nightSheet?.close()}>{t.cancel}</button>
+      <button type="submit" class="filled" disabled={!nightDir || !nightText.trim()}>{t.nightAdd}</button>
+    </div>
+  </form>
+</dialog>
 
 <style>
   .mhome { display: flex; flex-direction: column; gap: 20px; }
@@ -190,6 +249,22 @@
   .stitle { font-size: 16px; }
   .sdet { font-size: 12.5px; color: var(--text2); }
   .tonal { border-radius: 20px; padding: 10px 16px; font-weight: 500; font-size: 14px; }
+  .svc .stitle { color: var(--text); }
+  .sdet { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tonal { flex: none; }
+  dialog { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 20px 24px; width: min(560px, 100vw); max-height: 85vh; border-radius: 28px; }
+  dialog::backdrop { background: rgb(0 0 0 / .55); }
+  @media (max-width: 599px) { dialog { margin: auto 0 0; max-width: 100vw; border-radius: 28px 28px 0 0; } }
+  dialog h3 { font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+  .sheetrows { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+  .night { display: flex; flex-direction: column; gap: 12px; }
+  .night label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text2); }
+  .night select, .night textarea { font: inherit; color: var(--text); background: var(--high); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .night textarea { resize: vertical; }
+  .night :focus-visible { outline: 2px solid var(--icon); outline-offset: 1px; }
+  .btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .filled { background: var(--primary); color: var(--on-primary); border-radius: 20px; padding: 10px 18px; font-weight: 500; }
+  .filled:disabled { background: var(--high); color: var(--text2); cursor: default; }
   .quota { display: flex; gap: 10px; }
   .qcell { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 12px; background: var(--low); text-align: left; }
   .qcell:hover { filter: brightness(1.15); }

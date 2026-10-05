@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { demoChats, demoState, type Line } from './lib/demo'
+  import { demoChats, demoEvents, demoState, type Line } from './lib/demo'
   import Home from './lib/Home.svelte'
   import Chat from './lib/Chat.svelte'
   import { t } from './lib/t'
@@ -15,11 +15,14 @@
   let open = $state<string | null>(st.sessions.some(s => s.name === linked) ? linked : window.innerWidth > 760 ? (st.sessions.find(s => s.state === 'waiting')?.name ?? null) : null)
   const session = $derived(st.sessions.find(s => s.name === open) ?? null)
 
-  function send(text: string) {
-    if (!open) return
+  function sendTo(name: string, text: string) {
     const now = Math.round(Date.now() / 1000)
-    chats[open] = [...(chats[open] ?? []), { id: crypto.randomUUID(), role: 'user', text, at: now }]
+    chats[name] = [...(chats[name] ?? []), { id: crypto.randomUUID(), role: 'user', text, at: now }]
   }
+  function send(text: string) { if (open) sendTo(open, text) }
+  // Quello che si è letto o avviato (turni finiti, resoconto, prossimi passi) e i messaggi mandati da qui, per «Per te».
+  let read = $state(new Set<string>())
+  const sent = $derived(Object.entries(chats).flatMap(([session, ls]) => ls.filter(l => l.role === 'user').map(l => ({ session, sentAt: l.at }))))
   // Desktop o telefono: la testata mostra nome e badge solo dove la home non sta accanto con la sessione evidenziata.
   let width = $state(window.innerWidth)
   const wide = $derived(width > 760)
@@ -42,7 +45,8 @@
   <main>
     {#if session}
       <Chat {st} s={session} lines={chats[session.name] ?? []} onSend={send} onPick={pick} onAnswer={(n, x) => { pick(n); send(String(x)) }}
-        onCmd={(op, arg) => console.info('[cm] comando', op, arg)} {wide} onBack={wide ? undefined : () => (open = null)} />
+        onCmd={(op, arg, text) => console.info('[cm] comando', op, arg, text)}
+        events={demoEvents} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} {wide} onBack={wide ? undefined : () => (open = null)} />
     {:else}
       <p class="empty">{t.pick}</p>
     {/if}

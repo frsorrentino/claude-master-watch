@@ -1,46 +1,94 @@
 import { describe, expect, it } from 'vitest'
-import type { Question, Session, State } from './contract'
+import type { Event, Question, Session, State } from './contract'
 import { finishedKey, FINISHED_S } from './summary'
-import { forYou, forYouFirst, hero, working } from './masterHome'
+import { forYou, forYouFirst, hero, nextKey, working, type Scheduled } from './masterHome'
 
 // Gli stessi casi di MasterHomeTest in Kotlin (le righe che la web app già legge).
 const at = (h: number, m = 0) => Date.UTC(2026, 9, 2, h - 2, m) / 1000
 const s = (name: string, state: Session['state'] = 'idle', ctx: number | null = 10, q: Question | null = null): Session =>
   ({ id: name, name, account: 'personale', project: name, state, since: 0, context: ctx, question: q })
 const q = (id: string, asked: number): Question => ({ id, kind: 'ask', text: 'Pubblico?', options: [], tier: 'low', asked_at: asked })
-const st = (...ss: Session[]): State => ({ v: 1, ts: 0, host: 'pc', sessions: ss, quota: {} })
+const st = (...ss: Session[]): State => ({ v: 1, ts: 0, host: 'pc', sessions: ss, quota: {}, projects: [], night: { queued: 0 }, recap: { date: '', items: [] } })
+const zone = { timeZone: 'Europe/Rome' }
+const fy = (state: State, now: number, o: { events?: Event[]; sent?: Scheduled[]; read?: Set<string>; limit?: number } = {}) =>
+  forYou(state, o.events ?? [], o.sent ?? [], now, { ...zone, read: o.read, limit: o.limit })
+const kinds = (f: ReturnType<typeof forYou>) => f.rows.map(r => r.kind)
 const done = (name: string, t: number): Session => ({ ...s(name), followed: true, outcome: { short: 'Fatto', full: 'Test verdi.', at: t } })
 const claude = (text: string, t: number) => ({ role: 'assistant', text, at: t })
 
 describe('Per te', () => {
   it('niente da fare, niente righe', () => {
-    expect(forYou(st(s('kb')), [], at(15))).toEqual({ rows: [], more: 0 })
+    expect(fy(st(s('kb')), at(15))).toEqual({ rows: [], more: 0 })
   })
   it('domande dalla più vecchia, poi il contesto', () => {
-    const f = forYou(st(s('a', 'waiting', 10, q('2', at(14))), s('b', 'waiting', 10, q('1', at(13))), s('master', 'idle', 83)), [], at(15))
+    const f = fy(st(s('a', 'waiting', 10, q('2', at(14))), s('b', 'waiting', 10, q('1', at(13))), s('master', 'idle', 83)), at(15))
     expect(f.rows.map(r => r.kind)).toEqual(['question', 'question', 'context'])
     expect(f.rows.map(r => r.session)).toEqual(['b', 'a', 'master'])
     expect(f.rows[2].number).toBe(83)
   })
   it('tagliate a tre con il conto delle altre', () => {
     const state = st(s('a', 'idle', 81), s('b', 'idle', 82), s('c', 'idle', 83), s('d', 'idle', 84))
-    const f = forYou(state, [], at(15))
+    const f = fy(state, at(15))
     expect(f.rows.map(r => r.session)).toEqual(['d', 'c', 'b']); expect(f.more).toBe(1)
-    expect(forYou(state, [], at(15), new Set(), Infinity).rows).toHaveLength(4)
+    expect(fy(state, at(15), { limit: Infinity }).rows).toHaveLength(4)
   })
   it('chi ha finito resta finché non lo leggi, non gli scrivi o passano 12 ore', () => {
     const b = done('b', at(14, 30))
-    expect(forYou(st(b), [], at(15)).rows.map(r => r.kind)).toEqual(['finished'])
-    expect(forYou(st(b), [{ session: 'b', sentAt: at(14, 40) }], at(15)).rows).toEqual([])
-    expect(forYou(st(b), [], at(15), new Set([finishedKey('b', at(14, 30))])).rows).toEqual([])
-    expect(forYou(st(b), [], at(14, 30) + FINISHED_S + 1).rows).toEqual([])
+    expect(kinds(fy(st(b), at(15)))).toEqual(['finished'])
+    expect(fy(st(b), at(15), { sent: [{ session: 'b', sentAt: at(14, 40) }] }).rows).toEqual([])
+    expect(fy(st(b), at(15), { read: new Set([finishedKey('b', at(14, 30))]) }).rows).toEqual([])
+    expect(fy(st(b), at(14, 30) + FINISHED_S + 1).rows).toEqual([])
   })
   it('la master non sta mai nella sua lista', () => {
-    expect(forYou(st(done('master', at(14, 30))), [], at(15)).rows).toEqual([])
+    expect(fy(st(done('master', at(14, 30))), at(15)).rows).toEqual([])
   })
   it('una domanda mette Per te prima', () => {
-    expect(forYouFirst(forYou(st(s('a', 'waiting', 10, q('1', at(14)))), [], at(15)))).toBe(true)
-    expect(forYouFirst(forYou(st(s('a', 'idle', 85)), [], at(15)))).toBe(false)
+    expect(forYouFirst(fy(st(s('a', 'waiting', 10, q('1', at(14)))), at(15)))).toBe(true)
+    expect(forYouFirst(fy(st(s('a', 'idle', 85)), at(15)))).toBe(false)
+  })
+})
+
+describe('Per te: notte, recap e programmati', () => {
+  const report: Event = { key: 'nr-1', kind: 'night_report', ts: at(6, 10), title: 'Stanotte', body: '3 lavori fatti' }
+  it('resoconto della notte solo la mattina e finché non è letto', () => {
+    expect(kinds(fy(st(s('kb')), at(7, 40), { events: [report] }))).toEqual(['night_report'])
+    expect(fy(st(s('kb')), at(12, 30), { events: [report] }).rows).toEqual([])
+    expect(fy(st(s('kb')), at(7, 40), { events: [report], read: new Set(['nr-1']) }).rows).toEqual([])
+  })
+  it('la notte solo dalle 20 e con la notte attiva', () => {
+    const on = { ...st(s('kb')), night: { queued: 0, items: [] } }
+    expect(fy(on, at(19, 59)).rows).toEqual([])
+    const f = fy(on, at(20))
+    expect(kinds(f)).toEqual(['night']); expect(f.rows[0].number).toBe(0)
+    expect(fy({ ...st(s('kb')), night: { queued: 0, items: null } }, at(21)).rows).toEqual([])
+  })
+  const withRecap = (state: State, date: string, items: { project: string; done: string; next?: string }[], projects = state.projects) => ({ ...state, recap: { date, items }, projects })
+  it('prossimo passo solo per i progetti senza sessione', () => {
+    const items = [{ project: 'kb', done: 'nota scritta', next: 'distillare la nota' }, { project: 'atlas', done: 'test', next: 'pubblicare' }]
+    const projects = [{ path: '/w/kb', name: 'kb', account: 'personale' }, { path: '/w/atlas', name: 'atlas', account: 'personale' }]
+    expect(fy(withRecap(st(s('kb'), s('atlas', 'busy')), '2026-10-02', items, projects), at(15)).rows).toEqual([])
+    const closed = fy(withRecap(st(), '2026-10-02', items, projects), at(15))
+    expect(kinds(closed)).toEqual(['next_step', 'next_step'])
+    expect([closed.rows[0].title, closed.rows[0].detail, closed.rows[0].project]).toEqual(['kb', 'distillare la nota', '/w/kb'])
+    expect(closed.rows.map(r => r.session ?? null)).toEqual([null, null])
+  })
+  it('il nome della cartella e la master contano come sessione', () => {
+    const items = ['claude-master-phone', 'master', 'chrome-bridge', 'fable-director'].map((project, i) => ({ project, done: 'x', next: ['merge', 'Store', 'Store', 'rilettura'][i] }))
+    const state = withRecap(st({ ...s('claude-master-phone', 'busy'), project: 'personali/claude-master-phone' }, { ...s('master'), project: 'workspaces' }, { ...s('chrome-bridge', 'gone'), project: 'personali/chrome-bridge' }), '2026-10-03', items)
+    expect(fy(state, at(15)).rows.map(r => r.title)).toEqual(['chrome-bridge', 'fable-director'])
+  })
+  it('un recap vecchio non conta, uno di ieri sì', () => {
+    expect(fy(withRecap(st(), '2026-09-29', [{ project: 'kb', done: 'x', next: 'y' }]), at(15)).rows).toEqual([])
+    expect(kinds(fy(withRecap(st(), '2026-10-01', [{ project: 'kb', done: 'x', next: 'y' }]), at(9)))).toEqual(['next_step'])
+  })
+  it('un prossimo passo avviato non torna', () => {
+    const state = withRecap(st(), '2026-10-02', [{ project: 'kb', done: 'nota scritta', next: 'distillare la nota' }])
+    expect(fy(state, at(15), { read: new Set([nextKey('kb', 'distillare la nota')]) }).rows).toEqual([])
+  })
+  it('i programmati: quanti e il primo', () => {
+    const sent = [{ session: 'kb', sentAt: at(14), scheduledFor: at(16) }, { session: 'kb', sentAt: at(14), scheduledFor: at(15, 30) }]
+    const f = fy(st(s('kb')), at(15), { sent })
+    expect(kinds(f)).toEqual(['scheduled']); expect(f.rows[0].number).toBe(2); expect(f.rows[0].at).toBe(at(15, 30))
   })
 })
 

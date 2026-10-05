@@ -34,7 +34,7 @@ describe('riepilogo', () => {
   const s = (name: string, state: Session['state'] = 'idle', since = at(9)): Session => ({ id: name, name, account: 'personale', project: name, state, since })
   const q = (asked: number) => ({ id: '1', kind: 'ask' as const, text: 'Pubblico?', options: [], tier: 'low' as const, asked_at: asked })
   const done = (t: number) => ({ short: 'Fatto', full: 'Test verdi.\nProssimi: tagga · apri la PR', at: t })
-  const st = (...ss: Session[]): State => ({ v: 1, ts: at(15), host: 'pc', sessions: ss, quota: {} })
+  const st = (...ss: Session[]): State => ({ v: 1, ts: at(15), host: 'pc', sessions: ss, quota: {}, projects: [], night: { queued: 0 }, recap: { date: '', items: [] } })
   const b = (state: State) => build(state, [], at(15), new Set())
 
   it("nell'ordine del bisogno", () => {
