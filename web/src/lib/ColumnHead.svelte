@@ -29,4 +29,7 @@
   .x { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--text2); cursor: pointer; }
   .x:hover { background: var(--surface); }
   .state { padding: 0 16px 10px; font-size: 11px; letter-spacing: .1em; }
+  /* Nella web app installata icona, nome e × stanno nella linguetta sopra la colonna (CaptionBar): qui resta lo stato. */
+  :global(body.wcodesk) .top { display: none; }
+  :global(body.wcodesk) .state { padding-top: 10px; }
 </style>

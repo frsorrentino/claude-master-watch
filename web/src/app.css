@@ -20,7 +20,7 @@ html, body, #app { height: 100%; }
    `?wco=1` la simula a 40 px. Si trascina la finestra dalla testata della home e dai vuoti sopra le colonne. */
 body.wco #app { padding-top: env(titlebar-area-height, 40px); }
 body.wcodesk #app { padding-top: 0; }
-body.wcodesk .desk .col { top: env(titlebar-area-height, 40px); border-top-color: transparent; border-top-left-radius: 0; border-top-right-radius: 0; }
+body.wcodesk .desk .col { top: env(titlebar-area-height, 40px); border-top-left-radius: 0; }
 body.wcodesk .desk .override { top: env(titlebar-area-height, 40px); }
 body.wcodesk .desk .cols::before { content: ''; position: absolute; inset: 0 0 auto 0; height: env(titlebar-area-height, 40px); app-region: drag; -webkit-app-region: drag; }
 body.wcodesk .desk:not(.right) .home header .bar { app-region: drag; -webkit-app-region: drag; }
