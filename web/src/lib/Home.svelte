@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseDialog from './CloseDialog.svelte'
   import { flip } from 'svelte/animate'
   import type { Approval, State } from './contract'
   import { cleanupOf } from './masterService'
@@ -34,10 +35,8 @@
   let pending = $state<Approval | null>(null)
   let note = $state('')
   let approveDlg: HTMLDialogElement | undefined = $state()
-  let closing = $state<string | null>(null)
-  let closeDlg: HTMLDialogElement | undefined = $state()
+  let closer: CloseDialog | undefined = $state()
   function askApprove(a: Approval) { pending = a; note = ''; approveDlg?.showModal() }
-  function askClose(name: string) { closing = name; closeDlg?.showModal() }
   const ctxTone = (p: number) => (p >= 90 ? 'var(--b-alert)' : p >= 75 ? 'var(--b-warn)' : 'var(--b-ring)')
   function text(r: Row) {
     const parsed = parseSteps(r.text ?? '')
@@ -97,10 +96,11 @@
         {/if}
         {#if c}
           <div class="clean">
-            <span>{c.kind === 'duplicate' ? t.cleanupDuplicate(c.of ?? '') : s.attached ? t.cleanupAttached : t.cleanupFinished}</span>
+            <!-- Chi ha finito o è un doppione resta qui e dice di essere aperta (Franz, 06/10 10:57). -->
+            <span>{#if s.attached}{t.cleanupAttached}{:else}<b class="alive">● {t.cleanupOpen}</b> · {c.kind === 'duplicate' ? t.cleanupDuplicate(c.of ?? '') : s.outcome?.at ? t.cleanupFinishedAt(new Date(s.outcome.at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })) : t.cleanupFinished}{/if}</span>
             {#if c.canClose}
-              <button class="close" onclick={(e) => { e.stopPropagation(); askClose(s.name) }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--b-alert)" stroke-width="2" stroke-linecap="round"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0" /></svg>{t.cleanupClose}
+              <button class="close" onclick={(e) => { e.stopPropagation(); closer?.ask(s) }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--b-alert)" stroke-width="2" stroke-linecap="round"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0" /></svg>{t.cleanupClose(s.name)}
               </button>
             {/if}
           </div>
@@ -141,18 +141,10 @@
   {/if}
 </dialog>
 
-<dialog bind:this={closeDlg} class="alert" onclick={(e) => e.target === e.currentTarget && closeDlg?.close()}>
-  {#if closing}
-    <h3>{t.exitTitle(closing)}</h3>
-    <p class="sub">{t.exitText}</p>
-    <div class="btns">
-      <button class="text2" onclick={() => closeDlg?.close()}>{t.cancel}</button>
-      <button class="link" onclick={() => { onClose(closing!); closeDlg?.close() }}>{t.exitOk}</button>
-    </div>
-  {/if}
-</dialog>
+<CloseDialog bind:this={closer} onConfirm={onClose} />
 
 <style>
+  .alive { color: var(--idle); font-weight: 500; }
   .home { padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; height: 100%; }
   .gh { display: flex; align-items: center; gap: 8px; margin: 6px 8px 0; font: 500 12px/1.4 var(--mono); letter-spacing: .08em; color: var(--t); }
   .gh i { flex: 1; height: 1px; background: color-mix(in srgb, var(--t) 25%, transparent); }
@@ -190,7 +182,6 @@
   dialog .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
   dialog .btns button { padding: 10px 16px; border-radius: 20px; font-weight: 500; }
   dialog .text2 { color: var(--text2); }
-  dialog .link { color: var(--icon); }
   dialog .filled { background: var(--primary); color: var(--on-primary); }
   .chip { border-radius: 999px; padding: 8px 14px; font-size: 14px; background: color-mix(in srgb, var(--primary) 12%, transparent); }
   .chip:hover { filter: brightness(1.15); }

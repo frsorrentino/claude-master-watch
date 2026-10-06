@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseDialog from './CloseDialog.svelte'
   import type { Session, State } from './contract'
   import { mode as modeOf, slashConfirm, slashParse, slashSuggest } from './composer'
   import { textArg } from './questionRules'
@@ -22,6 +23,8 @@
   const canFiles = $derived(!!st.share?.any)
   let confirm = $state<{ cmd: string; args: string | null } | null>(null)
   let confirmDlg: HTMLDialogElement | undefined = $state()
+  let closer: CloseDialog | undefined = $state()
+  let exitArgs: string | null = null
   let menu = $state(false)
   let images: HTMLInputElement | undefined = $state()
   let camera: HTMLInputElement | undefined = $state()
@@ -51,6 +54,8 @@
     const text = draft.trim()
     // Un testo che comincia con un comando consentito parte come comando (contratto 1.25); clear ed exit chiedono prima.
     const cmd = !files.length && !s.question ? slashParse(draft, st.slash) : null
+    // /exit passa dalla stessa domanda di ogni chiusura, col nome e lo stato (Franz, 06/10 12:25).
+    if (cmd?.cmd === 'exit') { exitArgs = cmd.args; closer?.ask(s); return }
     if (cmd && slashConfirm(cmd.cmd)) { confirm = cmd; confirmDlg?.showModal(); return }
     if (cmd) onSlash(cmd.cmd, cmd.args)
     else if (files.length) { onAttach(files.map(f => f.file), text); files.forEach(f => f.url && URL.revokeObjectURL(f.url)); files = [] }
@@ -130,13 +135,14 @@
   </div>
 {/if}
 
+<CloseDialog bind:this={closer} onConfirm={() => { onSlash('exit', exitArgs); draft = '' }} />
 <dialog bind:this={confirmDlg} onclose={() => (confirm = null)}>
   {#if confirm}
     <h3>{t.slashConfirmTitle(confirm.cmd, s.name)}</h3>
-    <p>{confirm.cmd === 'exit' ? t.exitText : t.slashConfirmClear}</p>
+    <p>{t.slashConfirmClear}</p>
     <div class="btns">
       <button class="text2" onclick={() => confirmDlg?.close()}>{t.cancel}</button>
-      <button class="link" onclick={() => { if (confirm) onSlash(confirm.cmd, confirm.args); draft = ''; confirmDlg?.close() }}>{t.exitOk}</button>
+      <button class="link" onclick={() => { if (confirm) onSlash(confirm.cmd, confirm.args); draft = ''; confirmDlg?.close() }}>{t.slashConfirmOk}</button>
     </div>
   {/if}
 </dialog>

@@ -74,6 +74,18 @@ export function decisionDraft(text: string): string {
 /** E. La pulizia: compito chiuso o doppione, solo a sessione ferma; «Chiudi» solo senza finestra e con /exit permesso. */
 export type Cleanup = { kind: 'finished' | 'duplicate'; of: string | null; canClose: boolean }
 
+/**
+ * Prima di chiudere una sessione, cosa sta facendo (Franz, 06/10 10:57 e 12:25): nessuna chiusura senza una domanda col
+ * nome, e la domanda dice che la sessione è aperta. `at` è l'ora dell'ultimo esito per chi ha finito il compito.
+ */
+export type CloseState = { kind: 'working' | 'finished' | 'duplicate' | 'still'; of: string | null; at: number | null }
+export function closeStateOf(s: Session): CloseState {
+  if (s.state === 'busy' || s.state === 'awaiting' || s.state === 'waiting') return { kind: 'working', of: null, at: null }
+  if (s.duplicate_of) return { kind: 'duplicate', of: s.duplicate_of, at: null }
+  if (s.finished) return { kind: 'finished', of: null, at: s.outcome?.at ?? null }
+  return { kind: 'still', of: null, at: null }
+}
+
 export function cleanupOf(s: Session, canExit: boolean): Cleanup | null {
   if (s.state !== 'idle') return null
   const canClose = canExit && !s.attached

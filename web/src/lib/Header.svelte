@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseDialog from './CloseDialog.svelte'
   import type { CmdOp, Model, Session, State } from './contract'
   import { notes as notesOf, resetLabel, sameModel, shortModel, tone, wider as widerOf, type Tone } from './header'
   import { MASTER } from './summary'
@@ -42,7 +43,7 @@
   let menu = $state(false)
   let tune: HTMLDialogElement | undefined = $state()
   let ctx: HTMLDialogElement | undefined = $state()
-  let exit: HTMLDialogElement | undefined = $state()
+  let closer: CloseDialog | undefined = $state()
   function close(d?: HTMLDialogElement) { d?.close() }
   function setModel(m: Model) { picked.model = m; onCmd('model', m.id); close(tune); close(ctx) }
   function setEffort(e: string) { picked.effort = e; onCmd('effort', e); close(tune) }
@@ -106,7 +107,7 @@
           {/if}
           {#if canExit}
             <hr />
-            <button class="mi danger" role="menuitem" onclick={() => { menu = false; exit?.showModal() }}>
+            <button class="mi danger" role="menuitem" onclick={() => { menu = false; closer?.ask(s) }}>
               <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0" /></svg>
               <span><span class="mt">{t.menuExit}</span><span class="ms">{t.menuExitSub}</span></span>
             </button>
@@ -150,14 +151,7 @@
   {/if}
 </dialog>
 
-<dialog bind:this={exit} onclick={backdrop} class="alert">
-  <h3>{t.exitTitle(s.name)}</h3>
-  <p class="sub">{t.exitText}</p>
-  <div class="btns">
-    <button class="text2" onclick={() => close(exit)}>{t.cancel}</button>
-    <button class="link" onclick={() => { onCmd('slash', 'exit'); close(exit) }}>{t.exitOk}</button>
-  </div>
-</dialog>
+<CloseDialog bind:this={closer} onConfirm={() => onCmd('slash', 'exit')} />
 
 <style>
   header { border-bottom: 1px solid var(--line); padding: 4px 0 8px; background: var(--bg); }
@@ -214,7 +208,6 @@
   dialog::backdrop { background: rgb(0 0 0 / .55); }
   dialog :focus-visible { outline: 2px solid var(--icon); outline-offset: 2px; }
   @media (max-width: 599px) { dialog { margin: auto 0 0; max-width: 100vw; border-radius: 28px 28px 0 0; } }
-  dialog.alert { width: min(400px, 92vw); margin: auto; border-radius: 28px; }
   dialog h3 { font-size: 22px; font-weight: 600; margin: 12px 0 4px; }
   dialog h3:first-child { margin-top: 0; }
   .sub { color: var(--text2); font-size: 14px; }
@@ -225,9 +218,4 @@
   .tonal { background: var(--high); border-radius: 999px; padding: 12px 20px; font-weight: 500; }
   .tonal.filled { background: var(--primary); color: var(--on-primary); }
   .tonal:hover { filter: brightness(1.12); }
-  .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-  .btns button { padding: 10px 14px; border-radius: 20px; font-weight: 500; }
-  .text2 { color: var(--text2); }
-  .link { color: var(--icon); }
-  .btns button:hover { background: var(--high); }
 </style>

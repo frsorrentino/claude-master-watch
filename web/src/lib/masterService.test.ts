@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { decodeState, type Session, type State } from './contract'
 import { MASTER } from './summary'
 import {
-  adviceOf, approveText, canClear, cleanupOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
+  adviceOf, approveText, canClear, cleanupOf, closeStateOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
 } from './masterService'
 
 const st: State = decodeState(readFileSync(new URL('../../../contract/state-1-question.json', import.meta.url), 'utf8'))
@@ -97,4 +97,19 @@ describe('E. pulizia', () => {
     expect(cleanupOf({ ...field, state: 'idle', attached: false }, false)).toEqual({ kind: 'finished', of: null, canClose: false })
     expect(cleanupOf({ ...atlas, finished: false }, true)).toBeNull()
   })
+})
+
+describe('closeStateOf', () => {
+  const base = { name: 'rino', state: 'idle', finished: false, duplicate_of: null } as unknown as Session
+  it('dice che chi ha finito è ancora aperta, con l\'ora del compito', () => {
+    expect(closeStateOf({ ...base, finished: true, outcome: { at: 1000 } } as Session)).toEqual({ kind: 'finished', of: null, at: 1000 })
+  })
+  it('il doppione nomina la sessione originale', () => {
+    expect(closeStateOf({ ...base, duplicate_of: 'rino-1' })).toEqual({ kind: 'duplicate', of: 'rino-1', at: null })
+  })
+  it('chi lavora o aspetta è al lavoro, prima di doppione e finita', () => {
+    expect(closeStateOf({ ...base, state: 'busy', finished: true }).kind).toBe('working')
+    expect(closeStateOf({ ...base, state: 'waiting' }).kind).toBe('working')
+  })
+  it('altrimenti ferma', () => { expect(closeStateOf(base).kind).toBe('still') })
 })
