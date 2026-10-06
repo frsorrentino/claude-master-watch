@@ -33,11 +33,11 @@
   .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; background: var(--low); border-radius: 26px 26px 0 0; border-top: 1px solid var(--line); cursor: pointer; outline: none; }
   /* Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto: aperta, non rivoltata (Franz, 06/10 08:48). */
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
-  /* La master si riconosce dal corallo del logo di Claude, sempre: un filo sul bordo in alto, la riga e le icone dei tasti
-     nello stesso tono, il fondo resta scuro (variante 3 «filo corallo», Franz, 06/10 08:45-09:44). */
-  .dock { border-top-color: transparent; box-shadow: inset 0 3px 0 var(--opus); }
-  .dock .mono { color: var(--opus); }
-  .dock .ib { color: #E2A58C; }
+  /* La master è un blocco terracotta a sé: la linguetta appena più chiara del fondo che prosegue intorno al campo, riga e
+     icone corallo (variante B, Franz, 06/10 17:50-18:19). */
+  .dock { background: var(--master-tab); border-top-color: transparent; }
+  .dock .mono { color: #E2A58C; }
+  .dock .ib { background: rgb(217 119 87 / .18); color: #F2C1A8; }
   .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .col > * { white-space: nowrap; overflow: hidden; }
   b { font-size: 16px; font-weight: 600; }

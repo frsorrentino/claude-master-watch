@@ -31,7 +31,7 @@
 <style>
   .pane { height: 100%; display: flex; flex-direction: column; min-height: 0; }
   .slide { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: up .3s cubic-bezier(.2, .8, .2, 1); }
-  .closed { background: var(--low); border-radius: 26px 26px 0 0; }
+  .closed { background: var(--master-bed); border-radius: 26px 26px 0 0; }
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   /* La master sale dal basso, dalla sua barra. */
   @keyframes up { from { translate: 0 40px; opacity: 0; } }

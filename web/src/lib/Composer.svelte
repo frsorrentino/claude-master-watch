@@ -160,7 +160,7 @@
   .field { display: flex; align-items: center; gap: 4px; border: 1px solid rgb(255 255 255 / .25); border-radius: 28px; padding: 0 8px 0 4px; min-height: 56px; }
   .field:focus-within { border-color: var(--icon); border-width: 2px; padding: 0 7px 0 3px; }
   /* Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45). */
-  .field.master { border: 2px solid rgb(217 119 87 / .75); padding: 0 7px 0 3px; }
+  .field.master { border: 2px solid rgb(217 119 87 / .55); padding: 0 7px 0 3px; background: var(--master-field); }
   .field.master:focus-within { border-color: var(--opus); }
   .anchor { position: relative; flex: none; }
   .plus { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
