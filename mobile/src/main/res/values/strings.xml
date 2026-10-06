@@ -609,9 +609,21 @@
     <string name="approve_text">%1$s: %2$s, verso %3$s.</string>
     <string name="approve_note">Nota per la sessione (facoltativa)</string>
     <string name="approved">Approvato</string>
-    <string name="cleanup_finished">Compito chiuso, senza finestra</string>
+    <string name="cleanup_finished">ha finito il compito</string>
     <string name="cleanup_attached">Finestra aperta sul PC: si chiude da lì</string>
-    <string name="cleanup_duplicate">Doppione di %1$s: stessa conversazione</string>
+    <string name="cleanup_duplicate">stessa conversazione di %1$s</string>
     <string name="cleanup_dup_tag">Doppione</string>
-    <string name="cleanup_close">Chiudi</string>
+    <string name="cleanup_open">aperta</string>
+    <string name="cleanup_finished_at">ha finito il compito alle %1$s</string>
+    <string name="close_title">Chiudere %1$s?</string>
+    <string name="close_keep">Lascia aperta</string>
+    <string name="close_inline">Riceve /exit e va in «Chiuse», da dove si riapre.</string>
+    <string name="close_working">%1$s è aperta e sta lavorando.</string>
+    <string name="close_still">%1$s è aperta e ferma.</string>
+    <string name="close_finished">%1$s è aperta e ferma: ha finito il compito.</string>
+    <string name="close_finished_at">%1$s è aperta e ferma: ha finito il compito alle %2$s.</string>
+    <string name="close_duplicate">%1$s è aperta: stessa conversazione di %2$s.</string>
+    <string name="close_what">• riceve /exit e si chiude\n• esce dall\'elenco delle aperte e va in «Chiuse»\n• si può riaprire da «Chiuse»</string>
+    <string name="step_sent">%1$s: mandato</string>
+    <string name="cleanup_close">Chiudi %1$s</string>
 </resources>

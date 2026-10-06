@@ -600,9 +600,21 @@
     <string name="approve_text">%1$s: %2$s, to %3$s.</string>
     <string name="approve_note">Note for the session (optional)</string>
     <string name="approved">Approved</string>
-    <string name="cleanup_finished">Task closed, no window</string>
+    <string name="cleanup_finished">finished its task</string>
     <string name="cleanup_attached">Window open on the PC: close it there</string>
-    <string name="cleanup_duplicate">Duplicate of %1$s: same conversation</string>
+    <string name="cleanup_duplicate">same conversation as %1$s</string>
     <string name="cleanup_dup_tag">Duplicate</string>
-    <string name="cleanup_close">Close</string>
+    <string name="cleanup_open">open</string>
+    <string name="cleanup_finished_at">finished its task at %1$s</string>
+    <string name="close_title">Close %1$s?</string>
+    <string name="close_keep">Keep open</string>
+    <string name="close_inline">It gets /exit and moves to «Closed», where it can be reopened.</string>
+    <string name="close_working">%1$s is open and working.</string>
+    <string name="close_still">%1$s is open and idle.</string>
+    <string name="close_finished">%1$s is open and idle: it finished its task.</string>
+    <string name="close_finished_at">%1$s is open and idle: it finished its task at %2$s.</string>
+    <string name="close_duplicate">%1$s is open: same conversation as %2$s.</string>
+    <string name="close_what">• it gets /exit and closes\n• it leaves the open list and moves to «Closed»\n• it can be reopened from «Closed»</string>
+    <string name="step_sent">%1$s: sent</string>
+    <string name="cleanup_close">Close %1$s</string>
 </resources>

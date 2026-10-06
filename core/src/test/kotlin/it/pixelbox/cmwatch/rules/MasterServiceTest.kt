@@ -72,12 +72,22 @@ class MasterServiceTest {
 
     @Test fun cleanupOnlyWhenStoppedAndCloseOnlyWithoutWindow() {
         val stopped = field.copy(state = SessionState.IDLE, attached = false)
-        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, true), MasterService.cleanup(stopped, true))
-        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, false), MasterService.cleanup(stopped.copy(attached = true), true))
+        val later = stopped.since + MasterService.CLEANUP_QUIET_S
+        assertNull(MasterService.cleanup(stopped, true, later - 1))
+        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, true), MasterService.cleanup(stopped, true, later))
+        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, false), MasterService.cleanup(stopped.copy(attached = true), true, later))
         assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.DUPLICATE, "field-notes", true),
-            MasterService.cleanup(stopped.copy(finished = false, duplicateOf = "field-notes", name = "field-notes-2"), true))
-        assertNull(MasterService.cleanup(field.copy(state = SessionState.BUSY), true))
-        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, false), MasterService.cleanup(stopped, false))
-        assertNull(MasterService.cleanup(atlas.copy(finished = false), true))
+            MasterService.cleanup(stopped.copy(finished = false, duplicateOf = "field-notes", name = "field-notes-2"), true, later))
+        assertNull(MasterService.cleanup(field.copy(state = SessionState.BUSY), true, later))
+        assertEquals(MasterService.Cleanup(MasterService.Cleanup.Kind.FINISHED, null, false), MasterService.cleanup(stopped, false, later))
+        assertNull(MasterService.cleanup(atlas.copy(finished = false), true, later))
+    }
+
+    @Test fun closeStateSaysTheSessionIsOpen() {
+        val idle = field.copy(state = SessionState.IDLE, finished = false, duplicateOf = null)
+        assertEquals(MasterService.CloseState.Kind.STILL, MasterService.closeState(idle).kind)
+        assertEquals(MasterService.CloseState(MasterService.CloseState.Kind.FINISHED, at = 1000), MasterService.closeState(idle.copy(finished = true, outcome = Outcome("x", "x", 1000))))
+        assertEquals(MasterService.CloseState(MasterService.CloseState.Kind.DUPLICATE, of = "rino"), MasterService.closeState(idle.copy(duplicateOf = "rino")))
+        assertEquals(MasterService.CloseState.Kind.WORKING, MasterService.closeState(idle.copy(state = SessionState.BUSY, finished = true)).kind)
     }
 }

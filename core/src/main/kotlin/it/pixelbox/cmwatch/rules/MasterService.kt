@@ -51,10 +51,28 @@ object MasterService {
         enum class Kind { FINISHED, DUPLICATE }
     }
 
-    fun cleanup(s: Session, canExit: Boolean): Cleanup? {
+    /** Chi ha finito il compito si propone di chiudere solo dopo dieci minuti ferma: prima la si può ancora usare (Franz, 06/10 12:40-12:45). */
+    const val CLEANUP_QUIET_S = 10 * 60L
+
+    fun cleanup(s: Session, canExit: Boolean, now: Long): Cleanup? {
         if (s.state != SessionState.IDLE) return null
         val close = canExit && !s.attached
         s.duplicateOf?.let { return Cleanup(Cleanup.Kind.DUPLICATE, it, close) }
-        return if (s.finished) Cleanup(Cleanup.Kind.FINISHED, null, close) else null
+        return if (s.finished && now - s.since >= CLEANUP_QUIET_S) Cleanup(Cleanup.Kind.FINISHED, null, close) else null
+    }
+
+    /**
+     * Prima di chiudere una sessione, cosa sta facendo (Franz, 06/10 10:57 e 12:25): nessuna chiusura senza una domanda col
+     * nome, e la domanda dice che la sessione è aperta. `at` è l'ora dell'ultimo esito per chi ha finito il compito.
+     */
+    data class CloseState(val kind: Kind, val of: String? = null, val at: Long? = null) {
+        enum class Kind { WORKING, FINISHED, DUPLICATE, STILL }
+    }
+
+    fun closeState(s: Session): CloseState = when {
+        s.state == SessionState.BUSY || s.state == SessionState.AWAITING || s.state == SessionState.WAITING -> CloseState(CloseState.Kind.WORKING)
+        s.duplicateOf != null -> CloseState(CloseState.Kind.DUPLICATE, of = s.duplicateOf)
+        s.finished -> CloseState(CloseState.Kind.FINISHED, at = s.outcome?.at)
+        else -> CloseState(CloseState.Kind.STILL)
     }
 }

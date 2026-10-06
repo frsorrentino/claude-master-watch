@@ -548,11 +548,13 @@ private fun Composer(
                 AssistChip(onClick = { onDraft("/$c ") }, label = { Text("/$c", fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) })
             }
         }
-        confirm?.let { c ->
+        // /exit passa dalla stessa domanda di ogni chiusura, col nome e lo stato (Franz, 06/10 12:25).
+        confirm?.takeIf { it.cmd == "exit" }?.let { c -> CloseDialog(s, onDismiss = { confirm = null }, onConfirm = { confirm = null; actions.slash(c.cmd, c.args); onSent() }) }
+        confirm?.takeIf { it.cmd != "exit" }?.let { c ->
             AlertDialog(
                 onDismissRequest = { confirm = null }, containerColor = CmColors.surface,
                 title = { Text(stringResource(R.string.slash_confirm_title, c.cmd, s.name)) },
-                text = { Text(stringResource(if (c.cmd == "exit") R.string.slash_confirm_exit else R.string.slash_confirm_clear)) },
+                text = { Text(stringResource(R.string.slash_confirm_clear)) },
                 confirmButton = { TextButton(onClick = { confirm = null; actions.slash(c.cmd, c.args); onSent() }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
                 dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
             )
@@ -1457,13 +1459,7 @@ private fun SheetHeader(
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(color = CmColors.line)
     }
-    if (exitAsk) androidx.compose.material3.AlertDialog(
-        onDismissRequest = { exitAsk = false }, containerColor = CmColors.surface,
-        title = { Text(stringResource(R.string.slash_confirm_title, "exit", s.name)) },
-        text = { Text(stringResource(R.string.slash_confirm_exit)) },
-        confirmButton = { TextButton(onClick = { exitAsk = false; actions.slash("exit", null) }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
-        dismissButton = { TextButton(onClick = { exitAsk = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
-    )
+    if (exitAsk) CloseDialog(s, onDismiss = { exitAsk = false }, onConfirm = { exitAsk = false; actions.slash("exit", null) })
     if (ctxSheet) s.context?.let { pct -> ContextSheet(pct, it.pixelbox.cmwatch.rules.ContextActions.wider(s.copy(model = model), choices), actions) { ctxSheet = false } }
     if (picker != null && choices != null) {
         ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {

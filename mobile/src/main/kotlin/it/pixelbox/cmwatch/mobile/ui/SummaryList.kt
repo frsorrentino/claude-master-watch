@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Verified
@@ -42,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -102,7 +105,7 @@ fun SummaryList(
                     SummaryCard(
                         r, expanded == id, onToggle = { expanded = if (expanded == id) null else id },
                         onAnswer = { n -> onAnswer(s.name, n) }, onStep = { t -> onStep(s.name, t) }, onOpen = { onOpen(s.name) },
-                        firstFilled = approvals.isEmpty(), canExit = canExit, onClose = { onClose(s.name) },
+                        firstFilled = approvals.isEmpty(), canExit = canExit, onClose = { onClose(s.name) }, now = now,
                     )
                 }
             }
@@ -154,10 +157,12 @@ private fun details(s: Session): List<String> = listOfNotNull(
 private fun SummaryCard(
     r: Summary.Row, open: Boolean, onToggle: () -> Unit,
     onAnswer: (Int) -> Unit, onStep: (String) -> Unit, onOpen: () -> Unit,
-    firstFilled: Boolean = true, canExit: Boolean = false, onClose: () -> Unit = {},
+    firstFilled: Boolean = true, canExit: Boolean = false, onClose: () -> Unit = {}, now: Long = System.currentTimeMillis() / 1000,
 ) {
     val s = r.session
     var closeAsk by rememberSaveable(s.name) { mutableStateOf(false) }
+    // Il tasto di un passo toccato resta segnato «mandato» finché la sessione non cambia esito (Franz, 06/10 12:32).
+    var sentSteps by rememberSaveable(s.name, s.outcome?.at) { mutableStateOf(listOf<String>()) }
     val waiting = r.group == Summary.Group.WAITING
     val parsed = androidx.compose.runtime.remember(r.text) { it.pixelbox.cmwatch.rules.NextSteps.parse(r.text.orEmpty()) }
     // L'esito per primo e senza l'etichetta «Esito:»; la domanda così com'è.
@@ -214,34 +219,44 @@ private fun SummaryCard(
         ) {
             // Contratto 1.38, variante 2: chi sblocca ha il filo ambra e il lucchetto (dal «!» o da `next_steps`).
             val blocking = parsed.blocking + s.nextSteps.orEmpty().filter { it.blocking }.map { it.text }
-            parsed.steps.forEach { step -> StepChip(step, step in blocking) { onStep(step) } }
+            parsed.steps.forEach { step -> StepChip(step, step in blocking, sent = step in sentSteps) { sentSteps = sentSteps + step; onStep(step) } }
         }
-        // Contratto 1.37: compito chiuso o doppione, a sessione ferma; «Chiudi» solo senza finestra.
-        it.pixelbox.cmwatch.rules.MasterService.cleanup(s, canExit)?.let { c ->
+        // Contratto 1.37: compito chiuso o doppione, a sessione ferma; «Chiudi» solo senza finestra. Chi ha finito resta qui e
+        // dice di essere aperta; la conferma sta nella card, senza finestre (Franz, 06/10 10:57-12:45).
+        it.pixelbox.cmwatch.rules.MasterService.cleanup(s, canExit, now)?.let { c ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val detail = when {
+                    s.attached -> null
+                    c.kind == it.pixelbox.cmwatch.rules.MasterService.Cleanup.Kind.DUPLICATE -> stringResource(R.string.cleanup_duplicate, c.of.orEmpty())
+                    else -> s.outcome?.at?.let { stringResource(R.string.cleanup_finished_at, hm(it)) } ?: stringResource(R.string.cleanup_finished)
+                }
+                val open = stringResource(R.string.cleanup_open)
                 Text(
-                    when {
-                        c.kind == it.pixelbox.cmwatch.rules.MasterService.Cleanup.Kind.DUPLICATE -> stringResource(R.string.cleanup_duplicate, c.of.orEmpty())
-                        s.attached -> stringResource(R.string.cleanup_attached)
-                        else -> stringResource(R.string.cleanup_finished)
+                    if (detail == null) androidx.compose.ui.text.AnnotatedString(stringResource(R.string.cleanup_attached))
+                    else androidx.compose.ui.text.buildAnnotatedString {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = CmColors.idle, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)) { append("● $open") }
+                        append(" · $detail")
                     },
-                    style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.weight(1f),
                 )
-                if (c.canClose) Surface(onClick = { closeAsk = true }, shape = CircleShape, color = CmColors.surfaceHigh, contentColor = CmColors.text) {
+                if (c.canClose && !closeAsk) Surface(onClick = { closeAsk = true }, shape = CircleShape, color = CmColors.surfaceHigh, contentColor = CmColors.text) {
                     Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Rounded.PowerSettingsNew, null, tint = CmColors.briefAlertRing, modifier = Modifier.size(18.dp))
-                        Text(stringResource(R.string.cleanup_close), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.cleanup_close, s.name), style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
+            if (c.canClose && closeAsk) androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(stringResource(R.string.close_inline), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.padding(end = 4.dp))
+                androidx.compose.material3.TextButton(onClick = { closeAsk = false }) { Text(stringResource(R.string.close_keep), color = CmColors.actionIcon) }
+                androidx.compose.material3.Button(
+                    onClick = { closeAsk = false; onClose() },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = CmColors.gone, contentColor = Color.White),
+                ) { Text(stringResource(R.string.cleanup_close, s.name)) }
+            }
         }
-        if (closeAsk) androidx.compose.material3.AlertDialog(
-            onDismissRequest = { closeAsk = false }, containerColor = CmColors.surface,
-            title = { Text(stringResource(R.string.slash_confirm_title, "exit", s.name)) },
-            text = { Text(stringResource(R.string.slash_confirm_exit)) },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { closeAsk = false; onClose() }) { Text(stringResource(R.string.slash_confirm_ok), color = CmColors.actionIcon) } },
-            dismissButton = { androidx.compose.material3.TextButton(onClick = { closeAsk = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
-        )
         s.context?.let { pct ->
             val bar = when (it.pixelbox.cmwatch.rules.SessionMeters.contextTone(pct)) {
                 it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
@@ -353,13 +368,17 @@ private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
 
 /** Un Prossimo come tasto; con `blocking` (contratto 1.38, variante 2) il filo ambra e il lucchetto aperto. */
 @Composable
-internal fun StepChip(text: String, blocking: Boolean, onClick: () -> Unit) {
+internal fun StepChip(text: String, blocking: Boolean, sent: Boolean = false, onClick: () -> Unit) {
+    val label = stringResource(R.string.step_sent, text)
     Surface(
-        onClick = onClick, shape = CircleShape, color = CmColors.primary.copy(alpha = 0.12f), contentColor = CmColors.text,
-        border = if (blocking) androidx.compose.foundation.BorderStroke(1.5.dp, CmColors.waiting.copy(alpha = 0.65f)) else null,
+        onClick = onClick, enabled = !sent, shape = CircleShape,
+        color = if (sent) CmColors.idle.copy(alpha = 0.14f) else CmColors.primary.copy(alpha = 0.12f), contentColor = if (sent) CmColors.text2 else CmColors.text,
+        border = if (blocking && !sent) androidx.compose.foundation.BorderStroke(1.5.dp, CmColors.waiting.copy(alpha = 0.65f)) else null,
+        modifier = if (sent) Modifier.semantics { contentDescription = label } else Modifier,
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (blocking) Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(16.dp))
+            if (sent) Icon(Icons.Rounded.Check, null, tint = CmColors.idle, modifier = Modifier.size(16.dp))
+            else if (blocking) Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(16.dp))
             Text(text, style = MaterialTheme.typography.bodyMedium)
         }
     }
