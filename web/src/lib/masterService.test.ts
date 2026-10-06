@@ -85,7 +85,7 @@ describe('D. salva come decisione', () => {
 
 describe('E. pulizia', () => {
   const LATER = field.since + CLEANUP_QUIET_S
-  it('chi ha appena finito non si propone di chiudere: aspetta mezz\'ora ferma', () => {
+  it('chi ha appena finito non si propone di chiudere: aspetta dieci minuti ferma', () => {
     expect(cleanupOf({ ...field, state: 'idle', attached: false }, true, field.since + CLEANUP_QUIET_S - 1)).toBeNull()
   })
   it('ferma col compito chiuso: «Chiudi» solo senza finestra', () => {

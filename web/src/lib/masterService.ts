@@ -86,8 +86,8 @@ export function closeStateOf(s: Session): CloseState {
   return { kind: 'still', of: null, at: null }
 }
 
-/** Chi ha finito il compito si propone di chiudere solo dopo mezz'ora ferma: prima la si può ancora usare (Franz, 06/10 12:40). */
-export const CLEANUP_QUIET_S = 30 * 60
+/** Chi ha finito il compito si propone di chiudere solo dopo dieci minuti ferma: prima la si può ancora usare (Franz, 06/10 12:40-12:45). */
+export const CLEANUP_QUIET_S = 10 * 60
 
 export function cleanupOf(s: Session, canExit: boolean, now: number): Cleanup | null {
   if (s.state !== 'idle') return null
