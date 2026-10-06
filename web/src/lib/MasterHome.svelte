@@ -3,7 +3,7 @@
   import { forYou, forYouFirst, hero as heroOf, nextKey, working, type Entry, type ForYouRow, type Scheduled } from './masterHome'
   import { parseSteps } from './nextSteps'
   import { age } from './summary'
-  import { PATHS } from './badge'
+  import { breathes, PATHS } from './badge'
   import { t } from './t'
   import Options from './Options.svelte'
 
@@ -76,7 +76,7 @@
 </script>
 
 {#snippet heroCard()}
-  <div class="glass hero" class:lit={master.state === 'busy'} role="button" tabindex="0" onclick={onConversation} onkeydown={(e) => e.key === 'Enter' && onConversation()}>
+  <div class="glass hero" class:lit={breathes(master.state)} role="button" tabindex="0" onclick={onConversation} onkeydown={(e) => e.key === 'Enter' && onConversation()}>
     <div class="label" style="--c:var(--idle)">
       <span>{(h?.at ? t.homeLast(hm(h.at)) : t.homeLastBare).toUpperCase()}</span><span class="sp"></span>
       <i class="led" style="background:{dot[master.state]}"></i>
