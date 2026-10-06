@@ -13,6 +13,7 @@
   import ColumnHead from './lib/ColumnHead.svelte'
   import { t } from './lib/t'
   import HomePane from './lib/HomePane.svelte'
+  import Composer from './lib/Composer.svelte'
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
   import Launch from './lib/Launch.svelte'
@@ -241,6 +242,7 @@
   function card(name: string) { if (name !== MASTER && wide) setCols(toggleCol(cols, name)); else pick(name) }
   const slots = $derived<(string | null)[]>(wide ? [masterOpen ? MASTER : null, ...cols] : [session ? session.name : masterOpen ? MASTER : null])
 
+  let masterDraft = $state('')
   async function sendTo(name: string, text: string) {
     // Senza trasporto il messaggio resta «inviato al PC».
     const m: Sent = { id: crypto.randomUUID(), session: name, text, sentAt: nowS() }
@@ -330,8 +332,8 @@
 {/snippet}
 
 {#snippet homePane()}
-  <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}
-    onSend={(x) => { sendTo(MASTER, x); smooth(() => { masterOpen = true }) }}>
+  <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
+    {#snippet quick()}{@render masterQuick()}{/snippet}
     {#snippet list()}
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined}
@@ -340,6 +342,20 @@
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}
   </HomePane>
+{/snippet}
+
+{#snippet masterQuick()}
+  {@const m = st.sessions.find(x => x.name === MASTER)}
+  {#if m}
+    <!-- Il campo della master da chiusa (Franz, 06/10 10:45-10:54): lo stesso della conversazione, + compreso; mandare apre
+         la conversazione. -->
+    <div class="mquick">
+      <Composer {st} s={m} bind:draft={masterDraft} field={null} toMaster onSend={(x) => { sendTo(MASTER, x); smooth(() => { masterOpen = true }) }}
+        onAnswerText={(arg) => cmd(MASTER)('answer', arg)} onSlash={(c, a) => { cmd(MASTER)('slash', c, a ?? undefined); smooth(() => { masterOpen = true }) }}
+        onStop={() => cmd(MASTER)('interrupt')} onReopen={() => cmd(MASTER)('reopen')}
+        onAttach={(fs, x) => { attach(MASTER, fs, x); smooth(() => { masterOpen = true }) }} onRecurring={null} />
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet pageView(p: PageName)}
@@ -409,6 +425,7 @@
 </dialog>
 
 <style>
+  .mquick { padding: 0 0 4px; }
   .phone { height: 100%; display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; }
   .list { flex: 1; min-height: 0; }
   .reading:empty { display: none; }

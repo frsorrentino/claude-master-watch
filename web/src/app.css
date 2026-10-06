@@ -25,6 +25,8 @@ body.wcodesk .desk .override { top: env(titlebar-area-height, 40px); }
 body.wcodesk .desk .cols::before { content: ''; position: absolute; inset: 0 0 auto 0; height: env(titlebar-area-height, 40px); app-region: drag; -webkit-app-region: drag; }
 body.wcodesk .desk:not(.right) .home header .bar { app-region: drag; -webkit-app-region: drag; }
 body.wcodesk .desk .home header .bar button { app-region: no-drag; -webkit-app-region: no-drag; }
+/* Il tasto che sposta la home sta sotto la barra del titolo, all'altezza delle colonne (Franz, 06/10 11:14). */
+body.wcodesk .desk .handle { padding-top: calc(env(titlebar-area-height, 40px) + 8px); }
 /* Con la home a destra sotto i tasti di sistema la home comincia sotto la barra. */
 body.wcodesk .desk.right .home, body.wcodesk .desk .det { padding-top: env(titlebar-area-height, 40px); }
 body { background: var(--bg); color: var(--text); font: 15px/1.45 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
