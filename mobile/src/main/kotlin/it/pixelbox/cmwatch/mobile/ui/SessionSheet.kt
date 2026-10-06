@@ -622,9 +622,11 @@ private fun Composer(
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
-            // «Cornice e campo»: anche il campo della master ha il bordo lilla (Franz, 04/10 23:48).
-            colors = if (toMaster && LocalMasterChatStyle.current == MasterChatStyle.FRAME_FIELD)
-                androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MasterLilac.copy(alpha = 0.7f), focusedBorderColor = MasterLilac)
+            // Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45, segnalazione 14:43).
+            colors = if (toMaster)
+                androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = CmColors.modelOpus.copy(alpha = 0.75f), focusedBorderColor = CmColors.modelOpus,
+                )
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
             leadingIcon = if (canAttach || onRecurring != null || onDecisionNew != null) ({

@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +52,11 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
     val ctx = master.context?.let { stringResource(R.string.ctx_short, it) }
     val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), ctx).joinToString(" · ")
-    val shape = if (expanded) RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp) else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    // Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (Franz, 06/10 08:48), e la master si riconosce
+    // dal filo corallo di Claude in alto, con la riga e le icone nello stesso tono, come nella web app (06/10 09:44, segnalazione 14:43).
+    val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    val coral = CmColors.modelOpus
+    val coralSoft = androidx.compose.ui.graphics.Color(0xFFE2A58C)
     Column(Modifier.fillMaxWidth()) {
         val look = LocalMasterLook.current
         if (!expanded) { if (look.thread) MasterThread() else Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
@@ -67,7 +72,9 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             )
         }
         Row(
-            Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).then(drag)
+            Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow)
+                .drawWithContent { drawContent(); drawRect(coral, size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx())) }
+                .then(drag)
                 .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -75,7 +82,7 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             if (look.signature) Box(Modifier.size(28.dp).border(2.dp, MasterGradient, androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) { SessionBadge(master, 18.dp) }
             else SessionBadge(master, 20.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(label, style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
+                Text(label, style = MonoSmall.copy(color = coral), maxLines = 1, overflow = TextOverflow.Clip)
                 hero?.let {
                     Text(
                         linked(it.headline), style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -90,13 +97,13 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp)) {
                 Icon(
                     if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                    stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.actionIcon,
+                    stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = coralSoft,
                 )
             }
             FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp)) {
                 Icon(
                     if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
-                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = CmColors.actionIcon,
+                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = coralSoft,
                 )
             }
         }
