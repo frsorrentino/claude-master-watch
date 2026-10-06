@@ -3,7 +3,6 @@
   import { hero as heroOf, type Entry } from './masterHome'
   import { t } from './t'
   import Badge from './Badge.svelte'
-  import { breathes } from './badge'
   // La master nella home (MasterDock.kt): ridotta è la barra agganciata in fondo, «MASTER · ora · modello · contesto» e il
   // titolo dell'ultimo esito, ▶ per ascoltarlo e ▲ per espanderla; espansa la stessa barra sta in cima con ▼ e la riduce.
   let { master, entries, onToggle, onSpeak, expanded = false }: {
@@ -12,7 +11,7 @@
   const h = $derived(heroOf(entries, master))
   const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   // Variante D «Luce» (Franz, 06/10 08:11): mentre la master lavora un alone corallo, il colore di Claude, e la riga dice da quanto.
-  const lit = $derived(breathes(master.state))
+  const lit = $derived(master.state === 'busy')
   const label = $derived(lit
     ? [t.dockMaster, t.dockWorking(Math.max(1, Math.round((Date.now() / 1000 - master.since) / 60))), master.model?.label].filter(Boolean).join(' · ')
     : [t.dockMaster, h?.at ? hm(h.at) : null, master.model?.label, master.context != null ? t.ctx(master.context) : null].filter(Boolean).join(' · '))

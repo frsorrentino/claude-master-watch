@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { breathes } from './badge'
   import type { Session, State } from './contract'
   import { MASTER } from './summary'
   import MasterHome from './MasterHome.svelte'
@@ -117,7 +116,7 @@
   })
 </script>
 
-<section class="chat" class:dragging class:lit={s.name === MASTER && breathes(s.state)} aria-label={s.name}
+<section class="chat" class:dragging class:lit={s.name === MASTER && s.state === 'busy'} aria-label={s.name}
   ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
   {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
