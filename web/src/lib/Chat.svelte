@@ -35,8 +35,8 @@
     elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
-  // La master si apre sulla sua casa; la conversazione è a un tocco (casa A).
-  let conversation = $state(false)
+  // Franz, 06/10 08:46: la master si apre sulla conversazione; la sua casa resta a un tocco («Casa»).
+  let conversation = $state(true)
   const home = $derived(s.name === MASTER && !conversation)
 
   let draft = $state('')
