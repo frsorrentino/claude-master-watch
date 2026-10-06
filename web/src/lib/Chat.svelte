@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import type { Session, State } from './contract'
   import { MASTER } from './summary'
   import MasterHome from './MasterHome.svelte'
@@ -21,10 +22,12 @@
   import { blockingOf, parseSteps } from './nextSteps'
   import { t } from './t'
   import { ctxNudge, decisionDraft, decisionProject, DECISION_MAX } from './masterService'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {}, status }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
+    /** Lo stato della colonna nella riga della testata (web app installata). */
+    status?: Snippet
     /** Allegati del «+»: prima /share, poi `report` (contratti 1.19 e 1.28). */
     onAttach: (files: File[], text: string) => void
     /** Un file della conversazione (contratto 1.24): il PC lo manda e si apre in una scheda. */
@@ -119,7 +122,7 @@
 <section class="chat" class:dragging class:lit={s.name === MASTER && s.state === 'busy'} aria-label={s.name}
   ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
   {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
-  <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
+  <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} {status} />
   {#if elsewhere}<ElsewherePill alert={elsewhere} onOpen={onElsewhere} onDismiss={onElsewhereDismiss} />{/if}
   {#if s.name === MASTER && conversation}<button class="tohome" onclick={() => (conversation = false)}>{t.home}</button>{/if}
 

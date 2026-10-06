@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
   import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
@@ -321,12 +322,12 @@
 
 <svelte:window bind:innerWidth={width} />
 
-{#snippet chatOf(name: string, inColumn: boolean)}
+{#snippet chatOf(name: string, inColumn: boolean, status?: Snippet)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
     onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p) => openFile(name, p)} onHandoff={() => handoff(name)} onDecision={decide}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
-    onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
+    onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} {status} />
 {/snippet}
 
 {#snippet homePane()}
@@ -382,8 +383,9 @@
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
       <div class="column" data-col={name}>
-        {#if rowOf[name]}<ColumnHead r={rowOf[name]} now={now} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
-        <div class="cbody">{@render chatOf(name, true)}</div>
+        {#snippet colState()}{#if rowOf[name]}<ColumnHead bare r={rowOf[name]} now={now} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}{/snippet}
+        {#if rowOf[name] && !wco}<ColumnHead r={rowOf[name]} now={now} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
+        <div class="cbody">{@render chatOf(name, true, wco ? colState : undefined)}</div>
       </div>
     {/snippet}
     {#snippet empty()}<p>{t.tabletDeskEmpty}</p>{/snippet}

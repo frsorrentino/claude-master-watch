@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import type { CmdOp, Model, Session, State } from './contract'
   import { notes as notesOf, resetLabel, sameModel, shortModel, tone, wider as widerOf, type Tone } from './header'
   import { MASTER } from './summary'
@@ -9,8 +10,10 @@
   // La testata della sessione (SheetHeader.kt): una riga con modello · effort in una pillola, la quota delle 5 ore con l'ora
   // dell'azzeramento, il contesto ad anello e il menu ⋮; sotto obiettivo, priorità e finestra. Su desktop a sinistra anche
   // badge e nome, come la plancia del tablet.
-  let { st, s, wide, onBack, onCmd, onPrompt, onHandoff }: {
+  let { st, s, wide, onBack, onCmd, onPrompt, onHandoff, status }: {
     /** `wide`: badge e nome a sinistra (la testata unica del desktop); in una colonna della plancia li ha la colonna. */
+    /** `status`: lo stato della colonna in testa alla riga (web app installata, la testata della colonna non c'è). */
+    status?: Snippet
     st: State; s: Session; wide: boolean; onBack?: () => void
     onCmd: (op: CmdOp, arg?: string) => void; onPrompt: (text: string) => void
     /** Contratto 1.37: «Handoff, poi /clear»; lo gestisce App (prompt e /clear a turno finito). */
@@ -55,6 +58,7 @@
 <header bind:clientWidth={width}>
   <div class="row">
     {#if onBack}<button class="ib back" onclick={onBack} aria-label={t.back}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>{/if}
+    {#if status}{@render status()}{/if}
     {#if wide}
       <span class="lead"><Badge {s} size={26} /><h1>{s.name}</h1></span>
     {/if}
