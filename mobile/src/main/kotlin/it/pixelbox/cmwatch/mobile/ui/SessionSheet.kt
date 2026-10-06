@@ -262,13 +262,21 @@ fun SessionSheet(
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
         val masterVoice = home != null && LocalMasterLook.current.voice
-        val chatArea: @Composable ColumnScope.() -> Unit = { androidx.compose.runtime.CompositionLocalProvider(LocalVoiceAccent provides masterVoice, LocalBubble provides (if (home != null) MasterRaise else null)) {
+        val chatArea: @Composable ColumnScope.() -> Unit = { androidx.compose.runtime.CompositionLocalProvider(LocalVoiceAccent provides masterVoice, LocalBubble provides (if (home != null) MasterHighest else null)) {
             // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
             bar?.invoke()
-            if (header) SheetHeader(
-                s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort, bg = if (home != null) MasterSheet else CmColors.bg,
-                canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, notesInHeader = notesInHeader,
-            )
+            // Nella chat della master, mentre rileggi più su, la testata rientra come le barre che si comprimono del Material 3
+            // Expressive, e torna quando sei in fondo (Franz, 06/10 22:27).
+            if (header) androidx.compose.animation.AnimatedVisibility(
+                visible = home == null || follow,
+                enter = androidx.compose.animation.expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + androidx.compose.animation.fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                exit = androidx.compose.animation.shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + androidx.compose.animation.fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
+            ) {
+                SheetHeader(
+                    s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort, bg = if (home != null) MasterHigh else CmColors.bg,
+                    canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, notesInHeader = notesInHeader,
+                )
+            }
             elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
             // Nascosto mentre si scrive (con la tastiera la chat e la barra non avrebbero spazio) e mentre si rilegge; mai più
             // alto di 300 dp, con lo scorrimento dentro (revisione finale 02/10).
@@ -497,7 +505,7 @@ private fun Composer(
     val mode = if (image != null && base != PhonePrimary.Composer.REOPEN && base != PhonePrimary.Composer.SEND && base != PhonePrimary.Composer.SEND_TONAL)
         (if (PhonePrimary.button(s, "x") == PhonePrimary.Button.OPTION) PhonePrimary.Composer.SEND_TONAL else PhonePrimary.Composer.SEND) else base
     // Il campo della master sta sul fondo della master, velato di celeste e piatto (Celeste velato, Franz 06/10 21:23).
-    val bar = Modifier.fillMaxWidth().background(if (toMaster) MasterSheet else CmColors.bg)
+    val bar = Modifier.fillMaxWidth().background(if (toMaster) MasterHigh else CmColors.bg)
         .imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
     if (mode == PhonePrimary.Composer.REOPEN) {
         Button(
@@ -628,7 +636,7 @@ private fun Composer(
             colors = if (toMaster)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent, focusedBorderColor = CmColors.text2,
-                    unfocusedContainerColor = MasterWell, focusedContainerColor = MasterWell, cursorColor = CmColors.modelOpus,
+                    unfocusedContainerColor = MasterContainer, focusedContainerColor = MasterContainer, cursorColor = CmColors.modelOpus,
                 )
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
@@ -796,7 +804,7 @@ private val MasterBlue = androidx.compose.ui.graphics.Color(0xFF4C7DFF)
 fun Modifier.masterChat(style: MasterChatStyle, shape: androidx.compose.ui.graphics.Shape): Modifier = when (style) {
     MasterChatStyle.BLACK -> background(CmColors.bg)
     // La conversazione della master su un solo tono, il più scuro del suo celeste velato (Franz, 06/10 21:23).
-    MasterChatStyle.DEPTH -> background(MasterChat)
+    MasterChatStyle.DEPTH -> background(MasterLow)
     MasterChatStyle.FRAME, MasterChatStyle.FRAME_FIELD -> background(MasterNight).border(2.dp, MasterLilac.copy(alpha = 0.85f), shape)
     MasterChatStyle.EDGE -> background(CmColors.bg)
         .drawBehind {

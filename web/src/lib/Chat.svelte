@@ -95,7 +95,7 @@
   // In fondo alla conversazione: subito all'apertura (e dopo che la colonna ha preso la sua misura), con l'animazione
   // quando arriva qualcosa di nuovo, ma solo se si era già in fondo: chi sta rileggendo più su resta dov'è (Franz, 06/10 10:03).
   let settled = false
-  let atEnd = true
+  let atEnd = $state(true)
   let auto = false
   $effect.pre(() => { s.name; settled = false; atEnd = true })
   $effect(() => {
@@ -125,7 +125,7 @@
   })
 </script>
 
-<section class="chat" class:dragging class:master={s.name === MASTER} aria-label={s.name}
+<section class="chat" class:dragging class:master={s.name === MASTER} class:reading={s.name === MASTER && !atEnd} aria-label={s.name}
   ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
   {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
@@ -189,15 +189,19 @@
 <style>
   /* La master aperta, piatta e velata di celeste come la sua linguetta: la chat su un solo tono più scuro, testata e campo sul
      fondo della master, bolle e Prossimi un passo sopra (Celeste velato, Franz 06/10 21:23). */
-  .chat.master { background: var(--master-chat); }
-  .chat.master > :global(header) { background: var(--master-sheet); border-bottom: 1px solid var(--line); }
-  .chat.master :global(header .pill) { background: var(--master-raise); }
+  .chat.master { background: var(--master-low); }
+  .chat.master > :global(header) { background: var(--master-high); border-bottom: 1px solid var(--line); max-height: 200px; transition: max-height .4s var(--spring), opacity .2s; }
+  /* Mentre rileggi più su, la riga modello/quota rientra, come le barre che si comprimono del Material 3 Expressive; in fondo
+     torna (Franz, 06/10 22:27). */
+  .chat.master.reading > :global(header) { max-height: 0; opacity: 0; overflow: hidden; border-bottom-width: 0; }
+  @media (prefers-reduced-motion: reduce) { .chat.master > :global(header) { transition: none; } }
+  .chat.master :global(header .pill) { background: var(--master-highest); }
   .chat.master .lines { background: none; }
-  .chat.master :global(.me .bubble), .chat.master :global(.play), .chat.master :global(.box) { background: var(--master-raise); }
-  .chat.master :global(.steps) { background: var(--master-sheet); }
+  .chat.master :global(.me .bubble), .chat.master :global(.play), .chat.master :global(.box) { background: var(--master-highest); }
+  .chat.master :global(.steps) { background: var(--master-high); }
   .chat.master :global(.box) { border: 0; }
   .chat.master :global(.box .row) { border-top-color: var(--line); }
-  .chat.master > :global(.bar) { margin-top: 10px; padding-top: 10px; border-radius: 26px 26px 0 0; background: var(--master-sheet); }
+  .chat.master > :global(.bar) { margin-top: 10px; padding-top: 10px; border-radius: 26px 26px 0 0; background: var(--master-high); }
   .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; container-type: inline-size; }
   .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }

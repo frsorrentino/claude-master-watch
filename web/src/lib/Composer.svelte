@@ -161,9 +161,9 @@
   .field:focus-within { border-color: var(--icon); border-width: 2px; padding: 0 7px 0 3px; }
   /* Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45). */
   /* Il campo della master sul suo fondo velato di celeste, piatto e senza bordo; scrivendo, un anello chiaro (Franz, 06/10 21:23). */
-  .field.master { background: var(--master-well); border: 0; padding: 0 8px 0 4px; caret-color: var(--opus); }
+  .field.master { background: var(--master-container); border: 0; padding: 0 8px 0 4px; caret-color: var(--opus); }
   .field.master:focus-within { box-shadow: inset 0 0 0 2px var(--text2); }
-  .field.master .round:not(.filled) { background: var(--master-raise); }
+  .field.master .round:not(.filled) { background: var(--master-highest); }
   .anchor { position: relative; flex: none; }
   .plus { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
   .plus:hover { background: var(--surface); }

@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.draw.clip
@@ -46,15 +48,26 @@ private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
  * La master è la superficie più alta dell'app, velata del celeste d'accento come vuole l'elevazione tonale del Material 3:
- * linguetta, fondo del campo e chat piatti, nessun effetto di luce (Celeste velato, Franz 06/10 21:15-21:23). Gli stessi
- * valori della web app.
+ * i toni dei ruoli di superficie (T22 più alta, T17 alta, T12 contenitore, T10 bassa, T30 tasti) generati dal celeste
+ * d'accento #A8C7FA, tinta 273, croma 14; piatti, nessun effetto di luce (Celeste velato, Franz 06/10 21:15-22:27).
+ * Gli stessi valori della web app.
  */
-internal val MasterTab = androidx.compose.ui.graphics.Color(0xFF29364A)
-internal val MasterDisc = androidx.compose.ui.graphics.Color(0xFF3B485E)
-internal val MasterSheet = androidx.compose.ui.graphics.Color(0xFF1E2A3E)
-internal val MasterWell = androidx.compose.ui.graphics.Color(0xFF131F32)
-internal val MasterRaise = androidx.compose.ui.graphics.Color(0xFF243145)
-internal val MasterChat = androidx.compose.ui.graphics.Color(0xFF0C1729)
+internal val MasterHighest = androidx.compose.ui.graphics.Color(0xFF283549)
+internal val MasterHigh = androidx.compose.ui.graphics.Color(0xFF1D2B3E)
+internal val MasterContainer = androidx.compose.ui.graphics.Color(0xFF122033)
+internal val MasterLow = androidx.compose.ui.graphics.Color(0xFF0E1C2E)
+internal val MasterKey = androidx.compose.ui.graphics.Color(0xFF3B475C)
+
+/**
+ * I tasti tondi della master cambiano forma quando li premi, come quelli del Material 3 Expressive: da cerchio a quadrato
+ * smussato, con la molla veloce del tema (Franz, 06/10 22:27).
+ */
+@Composable
+internal fun rememberMorphShape(source: androidx.compose.foundation.interaction.MutableInteractionSource): androidx.compose.ui.graphics.Shape {
+    val pressed by source.collectIsPressedAsState()
+    val radius by androidx.compose.animation.core.animateDpAsState(if (pressed) 12.dp else 22.dp, MaterialTheme.motionScheme.fastSpatialSpec(), label = "morph")
+    return RoundedCornerShape(radius)
+}
 
 /** La scintilla di Claude, l'unico colore della master: otto raggi, gira mentre la master lavora o aspetta un permesso. */
 @Composable
@@ -84,7 +97,9 @@ internal fun MasterSpark(state: it.pixelbox.cmwatch.contract.SessionState, size:
 fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
     val ctx = master.context?.let { stringResource(R.string.ctx_short, it) }
-    val label = listOfNotNull(stringResource(R.string.dock_master), time, ModelText.short(master.model), ctx).joinToString(" · ")
+    // Aperta, modello e contesto stanno già nella riga sotto la linguetta: qui resta l'ora. Chiusa, l'ora e il contesto, che
+    // conta per l'handoff: il modello cambia di rado, e con lui la riga non stava nella larghezza (Franz, 06/10 22:27).
+    val label = (if (expanded) listOfNotNull(stringResource(R.string.dock_master), time) else listOfNotNull(stringResource(R.string.dock_master), time, ctx)).joinToString(" · ")
     // Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (Franz, 06/10 08:48).
     val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
@@ -102,19 +117,18 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             )
         }
         Row(
-            Modifier.fillMaxWidth().clip(shape).background(MasterTab)
+            Modifier.fillMaxWidth().clip(shape).background(MasterHighest)
                 .then(drag)
                 .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).
-            if (look.signature) Box(Modifier.size(28.dp).border(2.dp, MasterGradient, androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) { SessionBadge(master, 18.dp) }
-            else SessionBadge(master, 20.dp)
+            // Il badge di stato solo quando la master ti aspetta o è chiusa; altrimenti la scintilla di Claude, che gira mentre
+            // lavora. Il cerchio rosso era l'elemento più saturo della schermata e nel Material 3 il rosso è «errore» (22:27).
+            if (master.state == it.pixelbox.cmwatch.contract.SessionState.WAITING || master.state == it.pixelbox.cmwatch.contract.SessionState.GONE) SessionBadge(master, 20.dp)
+            else MasterSpark(master.state, 20.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    MasterSpark(master.state)
-                    Text(label, style = MonoSmall.copy(color = CmColors.text2), maxLines = 1, overflow = TextOverflow.Clip)
-                }
+                Text(label, style = MonoSmall.copy(color = CmColors.text2), maxLines = 1, overflow = TextOverflow.Clip)
                 hero?.let {
                     Text(
                         linked(it.headline), style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -126,13 +140,15 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             val spoken = hero?.let { h -> listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n") }
             val reading = spoken != null && LocalSpeaking.current == spoken
             if (reading) RatePill()
-            if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterDisc)) {
+            val speakSrc = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp), shape = rememberMorphShape(speakSrc), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterKey), interactionSource = speakSrc) {
                 Icon(
                     if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
                     stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.text,
                 )
             }
-            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterDisc)) {
+            val toggleSrc = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp), shape = rememberMorphShape(toggleSrc), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterKey), interactionSource = toggleSrc) {
                 Icon(
                     if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
                     stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = CmColors.text,

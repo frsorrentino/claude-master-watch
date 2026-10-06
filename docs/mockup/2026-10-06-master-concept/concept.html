@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>concept master</title>
+<style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%;display:block}</style></head>
+<body>
+<iframe id="f" src="/"></iframe>
+<script>
+// Banco di prova dei concept per la master (06/10). Solo per gli screenshot: carica la web app vera coi dati di prova,
+// inietta mc/concept-<k>.css e, con open=1, apre la master. Non fa parte dell'app.
+const q = new URLSearchParams(location.search)
+const k = q.get('k') || 'base'
+const open = q.get('open') === '1'
+const f = document.getElementById('f')
+f.addEventListener('load', () => {
+  const d = f.contentDocument
+  const go = async () => {
+    if (!d.querySelector('.dock')) return setTimeout(go, 200)
+    const css = await fetch('/mc/concept-' + k + '.css?' + Date.now()).then(r => (r.ok ? r.text() : '')).catch(() => '')
+    const s = d.createElement('style'); s.id = 'concept'; s.textContent = css; d.head.appendChild(s)
+    if (open) {
+      d.querySelector('.dock').click()
+      const wait = () => {
+        const lines = d.querySelector('.slide .lines')
+        if (!lines) return setTimeout(wait, 150)
+        // scroll=up: la chat riletta più su, per vedere la testata che rientra.
+        if (q.get('scroll') === 'up') setTimeout(() => { lines.scrollTop = 0; lines.dispatchEvent(new Event('scrollend')) }, 700)
+        setTimeout(() => (document.title = 'pronto'), 1600)
+      }
+      wait()
+    } else setTimeout(() => (document.title = 'pronto'), 600)
+  }
+  go()
+})
+</script>
+</body></html>

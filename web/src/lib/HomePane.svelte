@@ -30,9 +30,9 @@
 
 <style>
   .pane { height: 100%; display: flex; flex-direction: column; min-height: 0; }
-  .slide { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: up .3s cubic-bezier(.2, .8, .2, 1); }
+  .slide { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: up .45s var(--spring); }
   /* La master chiusa: linguetta e campo su un solo fondo, velato di celeste (Celeste velato, 06/10 21:23). */
-  .closed { border-radius: 26px 26px 0 0; background: var(--master-sheet); }
+  .closed { border-radius: 26px 26px 0 0; background: var(--master-high); }
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   /* La master sale dal basso, dalla sua barra. */
   @keyframes up { from { translate: 0 40px; opacity: 0; } }
