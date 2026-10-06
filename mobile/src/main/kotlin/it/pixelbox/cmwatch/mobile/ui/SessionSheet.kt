@@ -56,8 +56,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -498,12 +496,8 @@ private fun Composer(
     // Con un'immagine in attesa c'è sempre qualcosa da mandare, anche con il campo vuoto.
     val mode = if (image != null && base != PhonePrimary.Composer.REOPEN && base != PhonePrimary.Composer.SEND && base != PhonePrimary.Composer.SEND_TONAL)
         (if (PhonePrimary.button(s, "x") == PhonePrimary.Button.OPTION) PhonePrimary.Composer.SEND_TONAL else PhonePrimary.Composer.SEND) else base
-    // Il campo della master sta sul suo foglio, con il filo di luce in alto: sotto la piega della linguetta fa da labbro
-    // chiaro, sotto la conversazione aperta chiude la vasca (Profondità, Franz 06/10 20:12).
-    val bar = Modifier.fillMaxWidth()
-        .then(if (toMaster) Modifier.background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(MasterSheet, MasterSheetLow)))
-            .drawWithContent { drawContent(); drawRect(MasterRim, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx())) }
-        else Modifier.background(CmColors.bg))
+    // Il campo della master sta sul fondo della master, velato di celeste e piatto (Celeste velato, Franz 06/10 21:23).
+    val bar = Modifier.fillMaxWidth().background(if (toMaster) MasterSheet else CmColors.bg)
         .imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
     if (mode == PhonePrimary.Composer.REOPEN) {
         Button(
@@ -603,7 +597,7 @@ private fun Composer(
         }
         OutlinedTextField(
             state = fieldState, lineLimits = androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
-            modifier = Modifier.fillMaxWidth().then(if (toMaster) Modifier.masterWell() else Modifier).onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
+            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
                 .contentReceiver { content ->
                     if (!canAttach) return@contentReceiver content
                     content.consume { item ->
@@ -630,7 +624,7 @@ private fun Composer(
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
-            // Il campo della master è un incavo morbido nel suo foglio, del tono delle card, senza bordo (variante B, Franz 06/10 20:48).
+            // Il campo della master sul suo fondo velato di celeste, piatto e senza bordo; scrivendo, il bordo chiaro (Franz, 06/10 21:23).
             colors = if (toMaster)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent, focusedBorderColor = CmColors.text2,
@@ -799,13 +793,8 @@ private val MasterBlue = androidx.compose.ui.graphics.Color(0xFF4C7DFF)
 
 fun Modifier.masterChat(style: MasterChatStyle, shape: androidx.compose.ui.graphics.Shape): Modifier = when (style) {
     MasterChatStyle.BLACK -> background(CmColors.bg)
-    // La conversazione della master è una vasca: dal grigio-blu del foglio scende a un blu-nero più profondo e risale, con una
-    // vignettatura lieve (Profondità, Franz 06/10 20:12).
-    MasterChatStyle.DEPTH -> background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to MasterSheet, 0.26f to MasterDusk, 0.68f to MasterDeep, 1f to MasterDusk))
-        .drawBehind {
-            drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0.5f to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f),
-                center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.45f), radius = maxOf(size.width, size.height) * 0.75f))
-        }
+    // La conversazione della master su un solo tono, il più scuro del suo celeste velato (Franz, 06/10 21:23).
+    MasterChatStyle.DEPTH -> background(MasterChat)
     MasterChatStyle.FRAME, MasterChatStyle.FRAME_FIELD -> background(MasterNight).border(2.dp, MasterLilac.copy(alpha = 0.85f), shape)
     MasterChatStyle.EDGE -> background(CmColors.bg)
         .drawBehind {
@@ -1927,24 +1916,4 @@ private fun elapsed(s: Long): String = when {
     s < 60 -> stringResource(R.string.live_s, s)
     s < 3600 -> stringResource(R.string.live_ms, s / 60, s % 60)
     else -> stringResource(R.string.live_hm, s / 3600, (s % 3600) / 60)
-}
-
-/** L'incavo del campo della master: un'ombra interna in alto e un labbro chiaro sotto, come nella web app (Franz, 06/10 20:48). */
-private fun Modifier.masterWell(): Modifier = drawBehind {
-    // Gli angoli del campo: `shapes.extraLarge`, 28 dp, mai più della metà dell'altezza.
-    val r = minOf(28.dp.toPx(), size.height / 2f)
-    drawRoundRect(
-        androidx.compose.ui.graphics.Color(0x14DEE9FF),
-        topLeft = androidx.compose.ui.geometry.Offset(0f, 1.dp.toPx()), size = size,
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
-    )
-}.drawWithContent {
-    drawContent()
-    val r = minOf(28.dp.toPx(), size.height / 2f)
-    val path = androidx.compose.ui.graphics.Path().apply {
-        addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, 0f, size.width, size.height, androidx.compose.ui.geometry.CornerRadius(r, r)))
-    }
-    clipPath(path) {
-        drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f), 1f to androidx.compose.ui.graphics.Color.Transparent, startY = 0f, endY = 7.dp.toPx()))
-    }
 }

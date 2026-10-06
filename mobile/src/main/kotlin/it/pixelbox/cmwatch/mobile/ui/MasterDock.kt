@@ -28,8 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,22 +45,16 @@ import java.time.format.DateTimeFormatter
 private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
- * La master è un foglio sollevato sulla rampa grigio-blu delle card, un passo più chiaro (Profondità, Franz 06/10 20:09-20:12):
- * la luce batte sul bordo in alto della linguetta, una piega la separa dal fondo del campo, il foglio getta l'ombra sulla
- * lista e, aperta, la conversazione è una vasca che scende a un blu-nero più profondo. Gli stessi valori della web app.
+ * La master è la superficie più alta dell'app, velata del celeste d'accento come vuole l'elevazione tonale del Material 3:
+ * linguetta, fondo del campo e chat piatti, nessun effetto di luce (Celeste velato, Franz 06/10 21:15-21:23). Gli stessi
+ * valori della web app.
  */
-internal val MasterLip = androidx.compose.ui.graphics.Color(0xFF3B4048)
-internal val MasterTab = androidx.compose.ui.graphics.Color(0xFF30343C)
-internal val MasterDisc = androidx.compose.ui.graphics.Color(0xFF444953)
-internal val MasterSheet = androidx.compose.ui.graphics.Color(0xFF252930)
-internal val MasterSheetLow = androidx.compose.ui.graphics.Color(0xFF1F232A)
-internal val MasterWell = androidx.compose.ui.graphics.Color(0xFF1B1F26)
-internal val MasterDusk = androidx.compose.ui.graphics.Color(0xFF161A20)
-internal val MasterDeep = androidx.compose.ui.graphics.Color(0xFF0C0E13)
-internal val MasterRim = androidx.compose.ui.graphics.Color(0x29DEE9FF)
-internal val MasterGlint = androidx.compose.ui.graphics.Color(0xE6EAF2FF)
-internal val MasterCrease = androidx.compose.ui.graphics.Color(0x8C000000)
-internal val MasterLine = androidx.compose.ui.graphics.Color(0x33DEE9FF)
+internal val MasterTab = androidx.compose.ui.graphics.Color(0xFF29364A)
+internal val MasterDisc = androidx.compose.ui.graphics.Color(0xFF3B485E)
+internal val MasterSheet = androidx.compose.ui.graphics.Color(0xFF1E2A3E)
+internal val MasterWell = androidx.compose.ui.graphics.Color(0xFF131F32)
+internal val MasterRaise = androidx.compose.ui.graphics.Color(0xFF243145)
+internal val MasterChat = androidx.compose.ui.graphics.Color(0xFF0C1729)
 
 /** La scintilla di Claude, l'unico colore della master: otto raggi, gira mentre la master lavora o aspetta un permesso. */
 @Composable
@@ -110,28 +102,7 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             )
         }
         Row(
-            Modifier.fillMaxWidth()
-                // Chiusa, il foglio sta sopra la lista e le getta l'ombra (fuori dal ritaglio, sopra la linguetta).
-                .then(if (expanded) Modifier else Modifier.drawBehind {
-                    val h = 30.dp.toPx()
-                    drawRect(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f), startY = -h, endY = 0f),
-                        topLeft = androidx.compose.ui.geometry.Offset(0f, -h), size = androidx.compose.ui.geometry.Size(size.width, h),
-                    )
-                })
-                .clip(shape)
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to MasterLip, 0.62f to MasterTab))
-                .drawWithContent {
-                    drawContent()
-                    // Il filo di luce sul bordo in alto, più vivo al centro, e la piega in basso.
-                    val px = 1.dp.toPx()
-                    drawRect(MasterRim, size = androidx.compose.ui.geometry.Size(size.width, px))
-                    drawRect(
-                        androidx.compose.ui.graphics.Brush.horizontalGradient(0f to androidx.compose.ui.graphics.Color.Transparent, 0.5f to MasterGlint, 1f to androidx.compose.ui.graphics.Color.Transparent, startX = size.width * 0.18f, endX = size.width * 0.82f),
-                        topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.18f, 0f), size = androidx.compose.ui.geometry.Size(size.width * 0.64f, px),
-                    )
-                    drawRect(MasterCrease, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - px), size = androidx.compose.ui.geometry.Size(size.width, px))
-                }
+            Modifier.fillMaxWidth().clip(shape).background(MasterTab)
                 .then(drag)
                 .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
