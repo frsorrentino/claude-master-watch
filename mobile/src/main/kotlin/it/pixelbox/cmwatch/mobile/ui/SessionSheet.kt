@@ -496,7 +496,8 @@ private fun Composer(
     // Con un'immagine in attesa c'è sempre qualcosa da mandare, anche con il campo vuoto.
     val mode = if (image != null && base != PhonePrimary.Composer.REOPEN && base != PhonePrimary.Composer.SEND && base != PhonePrimary.Composer.SEND_TONAL)
         (if (PhonePrimary.button(s, "x") == PhonePrimary.Button.OPTION) PhonePrimary.Composer.SEND_TONAL else PhonePrimary.Composer.SEND) else base
-    val bar = Modifier.fillMaxWidth().background(CmColors.bg).imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
+    // Il campo della master sta sul fondo terracotta della sua barra (variante B, Franz, 06/10 18:19).
+    val bar = Modifier.fillMaxWidth().background(if (toMaster) MasterBed else CmColors.bg).imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
     if (mode == PhonePrimary.Composer.REOPEN) {
         Button(
             onClick = actions.reopen, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
@@ -625,7 +626,8 @@ private fun Composer(
             // Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45, segnalazione 14:43).
             colors = if (toMaster)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = CmColors.modelOpus.copy(alpha = 0.75f), focusedBorderColor = CmColors.modelOpus,
+                    unfocusedBorderColor = CmColors.modelOpus.copy(alpha = 0.55f), focusedBorderColor = CmColors.modelOpus,
+                    unfocusedContainerColor = MasterField, focusedContainerColor = MasterField,
                 )
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
