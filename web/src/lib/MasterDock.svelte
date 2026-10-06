@@ -31,7 +31,7 @@
 
 <style>
   .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; background: var(--low); border-radius: 26px 26px 0 0; border-top: 1px solid var(--line); cursor: pointer; outline: none; }
-  .dock.expanded { border-radius: 0 0 26px 26px; border-top: 0; border-bottom: 1px solid var(--line); }
+  /* Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto: aperta, non rivoltata (Franz, 06/10 08:48). */
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
   /* La master ha il corallo del logo di Claude, sempre: la si riconosce a colpo d'occhio (Franz, 06/10 08:45). */
   .dock { background: var(--opus); border-color: transparent; color: #1A0F0A; }
