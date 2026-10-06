@@ -93,26 +93,35 @@
     decisionDlg?.close()
   }
   // In fondo alla conversazione: subito all'apertura (e dopo che la colonna ha preso la sua misura), con l'animazione
-  // quando arriva qualcosa di nuovo.
+  // quando arriva qualcosa di nuovo, ma solo se si era già in fondo: chi sta rileggendo più su resta dov'è (Franz, 06/10 10:03).
   let settled = false
-  $effect.pre(() => { s.name; settled = false })
+  let atEnd = true
+  let auto = false
+  $effect.pre(() => { s.name; settled = false; atEnd = true })
   $effect(() => {
     items.length; s.question
     if (home || !list) return
     const el = list
-    if (!settled) { requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; settled = true }); return }
+    if (!settled) { requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; settled = true; atEnd = true }); return }
+    if (!atEnd) return
+    // Già in fondo non c'è scorrimento e quindi nemmeno `scrollend`: il segno «scorrimento nostro» non deve restare acceso.
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 2) return
+    auto = true
+    setTimeout(() => { auto = false }, 1000)
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   })
-  // Una colonna che cambia larghezza fa andare a capo i testi: resta in fondo se lo era.
+  // Una colonna che cambia larghezza fa andare a capo i testi: resta in fondo se lo era. Lo scorrimento animato nostro non
+  // conta come «ha lasciato il fondo» finché non finisce.
   $effect(() => {
     if (!list) return
     const el = list
-    let atEnd = true
-    const onScroll = () => { atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
+    const onScroll = () => { if (!auto) atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
+    const onEnd = () => { auto = false; atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
     const ro = new ResizeObserver(() => { if (atEnd && !home) el.scrollTop = el.scrollHeight })
     el.addEventListener('scroll', onScroll, { passive: true })
+    el.addEventListener('scrollend', onEnd)
     ro.observe(el)
-    return () => { el.removeEventListener('scroll', onScroll); ro.disconnect() }
+    return () => { el.removeEventListener('scroll', onScroll); el.removeEventListener('scrollend', onEnd); ro.disconnect() }
   })
 </script>
 
