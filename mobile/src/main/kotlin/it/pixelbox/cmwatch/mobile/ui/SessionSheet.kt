@@ -56,6 +56,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -266,7 +267,7 @@ fun SessionSheet(
             // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
             bar?.invoke()
             if (header) SheetHeader(
-                s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort,
+                s, now, choices, canTune, actions, showTerminal = feed == null, model = model, effort = effort, bg = if (home != null) MasterSheet else CmColors.bg,
                 canExit = slash?.contains("exit") == true && s.state != SessionState.GONE, quota = accountQuota, lead = headerLead, notesInHeader = notesInHeader,
             )
             elsewhere?.let { ElsewherePill(it, onElsewhere, onElsewhereDismiss) }
@@ -496,8 +497,13 @@ private fun Composer(
     // Con un'immagine in attesa c'è sempre qualcosa da mandare, anche con il campo vuoto.
     val mode = if (image != null && base != PhonePrimary.Composer.REOPEN && base != PhonePrimary.Composer.SEND && base != PhonePrimary.Composer.SEND_TONAL)
         (if (PhonePrimary.button(s, "x") == PhonePrimary.Button.OPTION) PhonePrimary.Composer.SEND_TONAL else PhonePrimary.Composer.SEND) else base
-    // Il campo della master sta sul fondo terracotta della sua barra (variante B, Franz, 06/10 18:19).
-    val bar = Modifier.fillMaxWidth().background(if (toMaster) MasterBed else CmColors.bg).imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
+    // Il campo della master sta sul suo foglio, con il filo di luce in alto: sotto la piega della linguetta fa da labbro
+    // chiaro, sotto la conversazione aperta chiude la vasca (Profondità, Franz 06/10 20:12).
+    val bar = Modifier.fillMaxWidth()
+        .then(if (toMaster) Modifier.background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(MasterSheet, MasterSheetLow)))
+            .drawWithContent { drawContent(); drawRect(MasterRim, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx())) }
+        else Modifier.background(CmColors.bg))
+        .imePadding().padding(horizontal = 12.dp, vertical = 10.dp)
     if (mode == PhonePrimary.Composer.REOPEN) {
         Button(
             onClick = actions.reopen, colors = ButtonDefaults.buttonColors(containerColor = CmColors.primary, contentColor = CmColors.onPrimary),
@@ -623,11 +629,11 @@ private fun Composer(
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
-            // Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45, segnalazione 14:43).
+            // Il campo della master è un incavo nel suo foglio, senza cornice colorata (Profondità, Franz 06/10 20:12).
             colors = if (toMaster)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = CmColors.modelOpus.copy(alpha = 0.55f), focusedBorderColor = CmColors.modelOpus,
-                    unfocusedContainerColor = MasterField, focusedContainerColor = MasterField,
+                    unfocusedBorderColor = MasterLine, focusedBorderColor = CmColors.text2,
+                    unfocusedContainerColor = MasterWell, focusedContainerColor = MasterWell, cursorColor = CmColors.modelOpus,
                 )
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
             // Le azioni ricorrenti della master stanno nel menu del + (Franz, 05/10 07:27: il ⟳ nel campo stringeva troppo).
@@ -768,7 +774,7 @@ val LocalPromptBoxes = androidx.compose.runtime.staticCompositionLocalOf { Promp
  * «poco incisivi, magari anche bordo»): nero com'è oggi, cornice lilla su fondo notte, bordo luminoso a sfumatura, viola
  * deciso, aurora, e cornice col campo lilla.
  */
-enum class MasterChatStyle { BLACK, FRAME, EDGE, VIOLET, AURORA, FRAME_FIELD }
+enum class MasterChatStyle { BLACK, FRAME, EDGE, VIOLET, AURORA, FRAME_FIELD, DEPTH }
 
 /**
  * Il segno della master in tutta l'app (Franz, 05/10 11:30: «una soluzione che si integri bene in tutta l'app»), tre
@@ -784,7 +790,7 @@ val MasterGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(listO
 fun MasterThread(modifier: Modifier = Modifier) = Box(modifier.fillMaxWidth().height(2.dp).background(MasterGradient))
 /** La voce della master: la barra a sinistra delle sue risposte. */
 internal val LocalVoiceAccent = androidx.compose.runtime.staticCompositionLocalOf { false }
-val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.BLACK }
+val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.DEPTH }
 
 internal val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
 internal val MasterLilac = androidx.compose.ui.graphics.Color(0xFFCDB8FF)
@@ -792,6 +798,13 @@ private val MasterBlue = androidx.compose.ui.graphics.Color(0xFF4C7DFF)
 
 fun Modifier.masterChat(style: MasterChatStyle, shape: androidx.compose.ui.graphics.Shape): Modifier = when (style) {
     MasterChatStyle.BLACK -> background(CmColors.bg)
+    // La conversazione della master è una vasca: dal grigio-blu del foglio scende a un blu-nero più profondo e risale, con una
+    // vignettatura lieve (Profondità, Franz 06/10 20:12).
+    MasterChatStyle.DEPTH -> background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to MasterSheet, 0.26f to MasterDusk, 0.68f to MasterDeep, 1f to MasterDusk))
+        .drawBehind {
+            drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0.5f to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f),
+                center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.45f), radius = maxOf(size.width, size.height) * 0.75f))
+        }
     MasterChatStyle.FRAME, MasterChatStyle.FRAME_FIELD -> background(MasterNight).border(2.dp, MasterLilac.copy(alpha = 0.85f), shape)
     MasterChatStyle.EDGE -> background(CmColors.bg)
         .drawBehind {
@@ -1391,6 +1404,8 @@ private fun ImageViewer(path: String, onClose: () -> Unit) {
 private fun SheetHeader(
     s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean,
     model: it.pixelbox.cmwatch.contract.Model? = s.model, effort: String? = s.effort,
+    /** Il fondo della testata: il foglio per la master, il nero per le altre. */
+    bg: androidx.compose.ui.graphics.Color = CmColors.bg,
     /** Contratto 1.25: il PC accetta /exit per questa sessione; il menu offre di chiuderla, dopo una conferma. */
     canExit: Boolean = false,
     quota: it.pixelbox.cmwatch.contract.QuotaAccount? = null,
@@ -1404,7 +1419,7 @@ private fun SheetHeader(
     val tunable = canTune && choices != null && s.state != SessionState.GONE
     // Contratto 1.37: il consiglio di fable-director, dentro il foglio; il puntino solo se la scelta attuale è diversa.
     val advice = it.pixelbox.cmwatch.rules.MasterService.advice(s, choices, now)
-    Column(Modifier.fillMaxWidth().background(CmColors.bg)) {
+    Column(Modifier.fillMaxWidth().background(bg)) {
         // La larghezza della testata: larga (tablet, finestra, Chromebook) l'ora della quota sta accanto alla percentuale.
         var headerW by remember { mutableIntStateOf(0) }
         val wideHeader = with(androidx.compose.ui.platform.LocalDensity.current) { headerW.toDp() } >= QUOTA_INLINE_MIN

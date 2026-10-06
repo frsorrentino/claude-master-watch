@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,12 +45,42 @@ import java.time.format.DateTimeFormatter
 
 private val DOCK_HM = DateTimeFormatter.ofPattern("HH:mm")
 
-/** La master è un blocco terracotta a sé: la linguetta appena più chiara del fondo intorno al campo (variante B, Franz, 06/10 18:19). */
-internal val MasterTab = androidx.compose.ui.graphics.Color(0xFF36221A)
-internal val MasterBed = androidx.compose.ui.graphics.Color(0xFF24160F)
-internal val MasterField = androidx.compose.ui.graphics.Color(0xFF180E0A)
-private val MasterSoft = androidx.compose.ui.graphics.Color(0xFFE2A58C)
-private val MasterIcon = androidx.compose.ui.graphics.Color(0xFFF2C1A8)
+/**
+ * La master è un foglio sollevato sulla rampa grigio-blu delle card, un passo più chiaro (Profondità, Franz 06/10 20:09-20:12):
+ * la luce batte sul bordo in alto della linguetta, una piega la separa dal fondo del campo, il foglio getta l'ombra sulla
+ * lista e, aperta, la conversazione è una vasca che scende a un blu-nero più profondo. Gli stessi valori della web app.
+ */
+internal val MasterLip = androidx.compose.ui.graphics.Color(0xFF3B4048)
+internal val MasterTab = androidx.compose.ui.graphics.Color(0xFF30343C)
+internal val MasterDisc = androidx.compose.ui.graphics.Color(0xFF444953)
+internal val MasterSheet = androidx.compose.ui.graphics.Color(0xFF252930)
+internal val MasterSheetLow = androidx.compose.ui.graphics.Color(0xFF1F232A)
+internal val MasterWell = androidx.compose.ui.graphics.Color(0xFF0D0F15)
+internal val MasterDusk = androidx.compose.ui.graphics.Color(0xFF161A20)
+internal val MasterDeep = androidx.compose.ui.graphics.Color(0xFF0C0E13)
+internal val MasterRim = androidx.compose.ui.graphics.Color(0x29DEE9FF)
+internal val MasterGlint = androidx.compose.ui.graphics.Color(0xE6EAF2FF)
+internal val MasterCrease = androidx.compose.ui.graphics.Color(0x8C000000)
+internal val MasterLine = androidx.compose.ui.graphics.Color(0x33DEE9FF)
+
+/** La scintilla di Claude, l'unico colore della master: otto raggi, gira mentre la master lavora o aspetta un permesso. */
+@Composable
+internal fun MasterSpark(state: it.pixelbox.cmwatch.contract.SessionState, size: androidx.compose.ui.unit.Dp = 11.dp) {
+    val spin = it.pixelbox.cmwatch.rules.Badge.breathes(state) && !animationsOff()
+    val angle = if (spin) {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "spark")
+        t.animateFloat(0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.LinearEasing)), label = "spark").value
+    } else 0f
+    androidx.compose.foundation.Canvas(Modifier.size(size).graphicsLayer { rotationZ = angle }) {
+        val c = center; val r = this.size.minDimension / 2f; val w = r * 2.1f / 9f
+        for (i in 0 until 8) {
+            val a = Math.toRadians(i * 45.0)
+            val inner = r * 0.24f; val dx = kotlin.math.cos(a).toFloat(); val dy = kotlin.math.sin(a).toFloat()
+            drawLine(CmColors.modelOpus, androidx.compose.ui.geometry.Offset(c.x + dx * inner, c.y + dy * inner),
+                androidx.compose.ui.geometry.Offset(c.x + dx * (r - w / 2), c.y + dy * (r - w / 2)), strokeWidth = w, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        }
+    }
+}
 
 /**
  * La master nella home (design 03/10, tavola 4; Franz 16:30-16:44): ridotta è la barra agganciata sopra «Scrivi alla
@@ -63,7 +96,7 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
     val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
         val look = LocalMasterLook.current
-        if (!expanded) { if (look.thread) MasterThread() else Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
+        if (!expanded && look.thread) MasterThread()
         // Franz, 03/10 17:05: anche col gesto. Trascinare in su la barra ridotta la espande, trascinarla in giù da espansa la
         // riduce. Sulla barra e non dal bordo dello schermo, dove Android tiene il gesto per la schermata Home.
         val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
@@ -76,7 +109,29 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             )
         }
         Row(
-            Modifier.fillMaxWidth().clip(shape).background(MasterTab).then(drag)
+            Modifier.fillMaxWidth()
+                // Chiusa, il foglio sta sopra la lista e le getta l'ombra (fuori dal ritaglio, sopra la linguetta).
+                .then(if (expanded) Modifier else Modifier.drawBehind {
+                    val h = 30.dp.toPx()
+                    drawRect(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f), startY = -h, endY = 0f),
+                        topLeft = androidx.compose.ui.geometry.Offset(0f, -h), size = androidx.compose.ui.geometry.Size(size.width, h),
+                    )
+                })
+                .clip(shape)
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to MasterLip, 0.62f to MasterTab))
+                .drawWithContent {
+                    drawContent()
+                    // Il filo di luce sul bordo in alto, più vivo al centro, e la piega in basso.
+                    val px = 1.dp.toPx()
+                    drawRect(MasterRim, size = androidx.compose.ui.geometry.Size(size.width, px))
+                    drawRect(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(0f to androidx.compose.ui.graphics.Color.Transparent, 0.5f to MasterGlint, 1f to androidx.compose.ui.graphics.Color.Transparent, startX = size.width * 0.18f, endX = size.width * 0.82f),
+                        topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.18f, 0f), size = androidx.compose.ui.geometry.Size(size.width * 0.64f, px),
+                    )
+                    drawRect(MasterCrease, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - px), size = androidx.compose.ui.geometry.Size(size.width, px))
+                }
+                .then(drag)
                 .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -84,7 +139,10 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             if (look.signature) Box(Modifier.size(28.dp).border(2.dp, MasterGradient, androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) { SessionBadge(master, 18.dp) }
             else SessionBadge(master, 20.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(label, style = MonoSmall.copy(color = MasterSoft), maxLines = 1, overflow = TextOverflow.Clip)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    MasterSpark(master.state)
+                    Text(label, style = MonoSmall.copy(color = CmColors.text2), maxLines = 1, overflow = TextOverflow.Clip)
+                }
                 hero?.let {
                     Text(
                         linked(it.headline), style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -96,19 +154,19 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
             val spoken = hero?.let { h -> listOf(h.headline, h.body).filter { it.isNotBlank() }.joinToString("\n") }
             val reading = spoken != null && LocalSpeaking.current == spoken
             if (reading) RatePill()
-            if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = CmColors.modelOpus.copy(alpha = 0.18f))) {
+            if (spoken != null) FilledTonalIconButton(onClick = { onSpeak(spoken) }, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterDisc)) {
                 Icon(
                     if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                    stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = MasterIcon,
+                    stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.text,
                 )
             }
-            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = CmColors.modelOpus.copy(alpha = 0.18f))) {
+            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterDisc)) {
                 Icon(
                     if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
-                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = MasterIcon,
+                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = CmColors.text,
                 )
             }
         }
-        if (expanded) { if (look.thread) MasterThread() else Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
+        if (expanded && look.thread) MasterThread()
     }
 }
