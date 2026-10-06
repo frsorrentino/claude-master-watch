@@ -24,7 +24,7 @@
   import Queue from './lib/Queue.svelte'
   import QuotaPanel from './lib/QuotaPanel.svelte'
   import Inspector from './lib/Inspector.svelte'
-  import CaptionBar from './lib/CaptionBar.svelte'
+  import ColumnTab from './lib/ColumnTab.svelte'
   import { alert as elsewhereOf, key as alertKey, type Alert } from './lib/elsewhere'
   import { build as devicesOf, linked as linkedDevices } from './lib/devices'
   import { freshness } from './lib/durations'
@@ -375,10 +375,15 @@
   {#if first}<Inspector i={inspect(first, timeline, now)} quotaH5={st.quota[first.account]?.h5 ?? null} loading={!!tr && !timeline} />{/if}
 {/snippet}
 
+{#snippet columnTab(name: string)}
+  {@const s = st.sessions.find(x => x.name === name)}
+  {#if s}<ColumnTab {s} onFocus={() => focusColumn(name)} onClose={() => setCols(cols.filter(c => c !== name))} />{/if}
+{/snippet}
+
 {#snippet deskPage()}{#if page}{@render pageView(page)}{/if}{/snippet}
 
 {#if wide}
-  <Desk {cols} {shares} {homeRight} onCols={setCols} onShares={setShares} override={page ? deskPage : null} details={details && cols.length && !page ? inspector : null}
+  <Desk {cols} {shares} {homeRight} tab={wco ? columnTab : null} onCols={setCols} onShares={setShares} override={page ? deskPage : null} details={details && cols.length && !page ? inspector : null}
     onHomeSide={() => smooth(() => { homeRight = !homeRight; save('cm.home_right', homeRight ? '1' : '0') })}>
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
@@ -395,7 +400,6 @@
     {#if page}{@render pageView(page)}{:else if session}{@render chatOf(session.name, false)}{:else}{@render homePane()}{/if}
   </div>
 {/if}
-{#if wco}<CaptionBar {st} cols={wide ? cols : []} onFocus={focusColumn} onClose={(n) => setCols(cols.filter(c => c !== n))} />{/if}
 {#if !tr}<span class="demo mono">{t.demo}</span>{:else if !ready || down}<span class="demo mono">{ready ? t.relayDown : t.relayConnecting}</span>{/if}
 {#if notice}<div class="notice" role="status">{notice}</div>{/if}
 

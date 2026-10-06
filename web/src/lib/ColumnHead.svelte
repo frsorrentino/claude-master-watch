@@ -5,7 +5,7 @@
   import Badge from './Badge.svelte'
   // La testata di una colonna (TabletColumnHeader): l'icona della sessione, il nome, × per toglierla; sotto lo stato e da
   // quanto, nel colore del gruppo. Si prende per trascinare la colonna sopra un'altra.
-  // `bare`: nella web app installata icona, nome e × stanno nella linguetta sopra la colonna (CaptionBar) e lo stato va nella
+  // `bare`: nella web app installata icona, nome e × stanno nella linguetta sopra la colonna (ColumnTab) e lo stato va nella
   // riga di modello, quota e contesto (Franz, 06/10 08:24): qui resta solo lo stato, da cui si trascina ancora la colonna.
   let { r, now, onClose, onGrab, bare = false }: { r: Row; now: number; onClose: () => void; onGrab: (e: PointerEvent) => void; bare?: boolean } = $props()
   const tone: Record<Group, string> = { waiting: 'var(--b-warn)', finished: 'var(--b-good)', working: 'var(--b-ring)', still: 'var(--text2)' }

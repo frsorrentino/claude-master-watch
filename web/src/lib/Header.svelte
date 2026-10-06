@@ -58,6 +58,8 @@
 <header bind:clientWidth={width}>
   <div class="row">
     {#if onBack}<button class="ib back" onclick={onBack} aria-label={t.back}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>{/if}
+    <!-- Web app installata in una colonna stretta: lo stato sopra, modello e effort sotto (Franz, 06/10 08:27). -->
+    <span class="sm" class:stack={!!status && width > 0 && width < 600}>
     {#if status}{@render status()}{/if}
     {#if wide}
       <span class="lead"><Badge {s} size={26} /><h1>{s.name}</h1></span>
@@ -67,6 +69,7 @@
       {#if tunable}<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="var(--text2)" /></svg>{/if}
       {#if tunable && advice?.dot}<span class="dot" title={t.adviceDot} aria-label={t.adviceDot}></span>{/if}
     </button>
+    </span>
     {#if !wide}<span class="sp"></span>{/if}
     <!-- In una colonna stretta la quota lascia il posto a modello, contesto e menu (è anche nella home). -->
     {#if quota?.h5 != null && (width === 0 || width >= 340)}
@@ -167,6 +170,8 @@
   header { border-bottom: 1px solid var(--line); padding: 4px 0 8px; background: var(--bg); }
   .row { display: flex; align-items: center; gap: 8px; padding: 0 0 0 16px; min-height: 52px; }
   .row:has(.back) { padding-left: 2px; gap: 6px; }
+  .sm { display: contents; }
+  .sm.stack { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0; min-width: 0; }
   .lead { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; }
   h1 { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; }
   .sp { flex: 1; }
