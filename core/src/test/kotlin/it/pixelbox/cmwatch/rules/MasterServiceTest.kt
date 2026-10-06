@@ -25,6 +25,22 @@ class MasterServiceTest {
         assertFalse(v.dot); assertNull(v.cost)
     }
 
+    @Test fun adviceEqualToTheChoiceHasNoCostEvenMidWork() {
+        val same = atlas.copy(advice = atlas.advice!!.copy(differs = false))
+        val v = MasterService.advice(same, st.choices, at)!!
+        assertFalse(v.dot); assertNull(v.cost)
+    }
+
+    @Test fun useTheAdviceChangesOnlyWhatDiffersWithTheListId() {
+        val a = MasterService.advice(atlas, st.choices, at)!!
+        val fable = it.pixelbox.cmwatch.contract.Model("claude-fable-5-1", "Fable 5.1")
+        assertEquals(MasterService.AdviceSteps(fable, "high"), MasterService.adviceSteps(a, st.choices, "claude-sonnet-5", "medium"))
+        assertEquals(MasterService.AdviceSteps(null, "high"), MasterService.adviceSteps(a, st.choices, "claude-fable-5-1", "medium"))
+        assertEquals(MasterService.AdviceSteps(null, null), MasterService.adviceSteps(a, st.choices, "claude-fable-5-1", "high"))
+        val opus = a.copy(model = "claude-opus-5")
+        assertEquals(it.pixelbox.cmwatch.contract.Model("claude-opus-5[1m]", "Opus 5"), MasterService.adviceSteps(opus, st.choices, "claude-sonnet-5", "high").model)
+    }
+
     @Test fun adviceHiddenWhenOldOrOutsideTheChoices() {
         assertNull(MasterService.advice(atlas, st.choices, at + 6 * 3600))
         assertNull(MasterService.advice(atlas.copy(advice = atlas.advice!!.copy(model = "claude-x")), st.choices, at))

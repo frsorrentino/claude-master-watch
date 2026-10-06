@@ -299,7 +299,6 @@
     <string name="chat_done">done</string>
     <string name="model_title">Model</string>
     <string name="effort_title">Effort</string>
-    <string name="choice_this_session">Applies to this session only</string>
     <string name="all_sessions">All sessions</string>
     <string name="connect_pc">Connect the PC</string>
     <string name="connect_pc_sub">Scan the QR the PC shows with claude-master relay pair</string>
@@ -574,6 +573,19 @@
     <string name="advice_tag">recommended</string>
     <string name="advice_dot">There is advice for model and effort</string>
     <string name="advice_cost">Working: switching now reloads about %1$s cache tokens. Better at the next task.</string>
+    <string name="tune_head">Model and effort · this session only</string>
+    <string name="advice_head">Advice for this task</string>
+    <string name="advice_same">Fine as it is: %1$s</string>
+    <string name="advice_use">Use the advice</string>
+    <string name="model_sub_opus">Top model: plans, writes and verifies</string>
+    <string name="model_sub_fable">Strongest at judgment, costs more</string>
+    <string name="model_sub_sonnet">Handles clear tasks well, costs less</string>
+    <string name="model_sub_haiku">Simple, quick tasks</string>
+    <string name="effort_sub_low">Quick answers, little reasoning</string>
+    <string name="effort_sub_medium">Balance of speed and reasoning</string>
+    <string name="effort_sub_high">Reasons more: debugging and plans</string>
+    <string name="effort_sub_xhigh">Long, hard work</string>
+    <string name="effort_sub_max">No limit on reasoning: uses more quota</string>
     <string name="ctx_handoff_clear">Handoff, then /clear</string>
     <string name="ctx_handoff_clear_sub">Writes where things stand in docs, then clears the context when the turn ends</string>
     <string name="ctx_handoff_clear_prompt">Write the handoff with /fable-director:handoff --here.</string>

@@ -1,6 +1,6 @@
 // Contratto 1.37, la master al servizio dell'app: le regole delle cinque funzioni (mockup approvati da Franz il 05/10
 // alle 21:07, docs/mockup/2026-10-05-contratto-1-37/). Le stesse in MasterService.kt.
-import type { Session, State } from './contract'
+import type { Model, Session, State } from './contract'
 import { sameModel } from './header'
 import { parseSteps } from './nextSteps'
 import { MASTER } from './summary'
@@ -14,7 +14,14 @@ export function adviceOf(s: Session, choices: State['choices'], now: number): Ad
   const a = s.advice
   if (!a || now - a.at >= ADVICE_MAX_AGE_S) return null
   if (!choices?.models.some(m => sameModel(m.id, a.model)) || !choices.efforts.includes(a.effort)) return null
-  return { model: a.model, effort: a.effort, reason: a.reason, dot: a.differs, cost: a.when === 'next_task' && a.switch_cost_tokens > 0 ? a.switch_cost_tokens : null }
+  return { model: a.model, effort: a.effort, reason: a.reason, dot: a.differs, cost: a.differs && a.when === 'next_task' && a.switch_cost_tokens > 0 ? a.switch_cost_tokens : null }
+}
+
+/** A. «Usa il consiglio»: solo quello che cambia rispetto alla scelta attuale; il modello con l'id della lista (`[1m]`
+ *  compreso), quello che il PC sa applicare. */
+export function adviceSteps(a: AdviceView, choices: State['choices'], model: string | null | undefined, effort: string | null | undefined): { model: Model | null; effort: string | null } {
+  const m = sameModel(model, a.model) ? null : choices?.models.find(x => sameModel(x.id, a.model)) ?? null
+  return { model: m, effort: a.effort === effort ? null : a.effort }
 }
 
 /** «36.000»: i token del costo del cambio, come si scrivono in italiano. */

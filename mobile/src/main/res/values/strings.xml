@@ -303,7 +303,6 @@
     <string name="chat_done">elaborato</string>
     <string name="model_title">Modello</string>
     <string name="effort_title">Effort</string>
-    <string name="choice_this_session">Vale solo per questa sessione</string>
     <string name="all_sessions">Tutte le sessioni</string>
     <string name="connect_pc">Collega il PC</string>
     <string name="connect_pc_sub">Inquadra il QR che il PC mostra con claude-master relay pair</string>
@@ -583,6 +582,19 @@
     <string name="advice_tag">consigliato</string>
     <string name="advice_dot">C\'è un consiglio per modello ed effort</string>
     <string name="advice_cost">Sta lavorando: cambiare adesso ricarica circa %1$s token di cache. Conviene al prossimo compito.</string>
+    <string name="tune_head">Modello ed effort · vale per questa sessione</string>
+    <string name="advice_head">Consiglio per questo compito</string>
+    <string name="advice_same">Va bene così: %1$s</string>
+    <string name="advice_use">Usa il consiglio</string>
+    <string name="model_sub_opus">Di punta: pianifica, scrive e verifica</string>
+    <string name="model_sub_fable">Il più forte nei giudizi, costa di più</string>
+    <string name="model_sub_sonnet">Esegue bene compiti chiari, costa meno</string>
+    <string name="model_sub_haiku">Compiti semplici e veloci</string>
+    <string name="effort_sub_low">Risposte rapide, ragiona poco</string>
+    <string name="effort_sub_medium">Equilibrio fra velocità e ragionamento</string>
+    <string name="effort_sub_high">Ragiona di più: debug e piani</string>
+    <string name="effort_sub_xhigh">Lavori lunghi e difficili</string>
+    <string name="effort_sub_max">Nessun limite al ragionamento: consuma più quota</string>
     <string name="ctx_handoff_clear">Handoff, poi /clear</string>
     <string name="ctx_handoff_clear_sub">Scrive il punto in docs, poi svuota il contesto a turno finito</string>
     <string name="ctx_handoff_clear_prompt">Scrivi l\'handoff con /fable-director:handoff --here.</string>

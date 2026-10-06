@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from './contract'
-import { notes, resetLabel, sameModel, shortModel, tone, wider } from './header'
+import { modelKind, notes, resetLabel, sameModel, shortModel, tone, wider } from './header'
 
 // Gli stessi casi di ModelTextTest, TuneTest, ContextActionsTest, SessionMetersTest e SessionsTextTest in Kotlin.
 describe('modello', () => {
+  it('famiglia, per la riga che lo spiega nel pannello', () => {
+    expect(['claude-opus-5-5[1m]', 'claude-fable-5-1', 'claude-sonnet-5', 'claude-haiku-4-5', 'claude-x'].map(modelKind))
+      .toEqual(['opus', 'fable', 'sonnet', 'haiku', null])
+  })
   it('nome corto', () => {
     expect(shortModel({ id: 'claude-opus-5[1m]', label: 'Opus 5' })).toBe('Opus 5')
     expect(shortModel({ id: 'claude-opus-5' })).toBe('Opus 5')

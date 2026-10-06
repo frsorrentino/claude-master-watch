@@ -19,6 +19,9 @@ export function shortModel(m: Model | null | undefined): string | null {
 export const sameModel = (a?: string | null, b?: string | null) => a != null && b != null && a.split('[')[0] === b.split('[')[0]
 
 /** La finestra da 1M dello stesso modello, se c'è fra le scelte e la sessione non la usa già. */
+/** La famiglia del modello, per la riga che lo spiega nel pannello Modello ed effort; sconosciuta: null. */
+export const modelKind = (id: string) => (['opus', 'fable', 'sonnet', 'haiku'] as const).find(k => id.includes(k)) ?? null
+
 export function wider(s: Session, choices: State['choices']): Model | null {
   const id = s.model?.id
   if (!id || id.endsWith('[1m]')) return null

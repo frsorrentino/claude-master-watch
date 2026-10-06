@@ -1480,51 +1480,8 @@ private fun SheetHeader(
     }
     if (exitAsk) CloseDialog(s, onDismiss = { exitAsk = false }, onConfirm = { exitAsk = false; actions.slash("exit", null) })
     if (ctxSheet) s.context?.let { pct -> ContextSheet(pct, it.pixelbox.cmwatch.rules.ContextActions.wider(s.copy(model = model), choices), actions) { ctxSheet = false } }
-    if (picker != null && choices != null) {
-        ModalBottomSheet(onDismissRequest = { picker = null }, containerColor = CmColors.surface) {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.choice_this_session), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
-                // Le due scelte nello stesso foglio: prima il modello, poi l'effort.
-                listOf("model", "effort").forEach { kind ->
-                    Text(
-                        stringResource(if (kind == "model") R.string.model_title else R.string.effort_title),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                    )
-                    val rows: List<Pair<String, String>> = if (kind == "model") choices.models.map { it.id to (it.label ?: ModelText.short(it) ?: it.id) }
-                        else choices.efforts.map { it to it }
-                    // La lista porta «claude-opus-5-5[1m]», la sessione «claude-opus-5-5»: stesso modello (segnalazione 01/10 20:22).
-                    fun selected(value: String) = if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, model?.id) else value == effort
-                    rows.forEach { (value, label) ->
-                        val rec = advice != null && (if (kind == "model") it.pixelbox.cmwatch.rules.Tune.sameModel(value, advice.model) else value == advice.effort)
-                        Row(
-                            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).handCursor().clickable {
-                                if (kind == "model") actions.setModel(value) else actions.setEffort(value)
-                                picker = null
-                            }.padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            RadioButton(selected = selected(value), onClick = null)
-                            Text(label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
-                            if (rec) AdviceTag()
-                        }
-                        // Il motivo sotto il modello consigliato, una riga.
-                        if (rec && kind == "model") Text(advice!!.reason, style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.padding(start = 52.dp, bottom = 4.dp))
-                    }
-                }
-                // A metà lavoro cambiare costa la cache: il riquadro ambra lo dice prima di scegliere.
-                advice?.cost?.let { c ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(CmColors.briefWarn.copy(alpha = .10f)).padding(horizontal = 12.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Icon(Icons.Rounded.WarningAmber, null, tint = CmColors.briefWarn, modifier = Modifier.size(18.dp))
-                        Text(stringResource(R.string.advice_cost, it.pixelbox.cmwatch.rules.MasterService.tokens(c)), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefWarn)
-                    }
-                }
-            }
-        }
-    }
+    // Il pannello Modello ed effort, dalla pillola (bozza approvata da Franz il 07/10 alle 00:06).
+    if (picker != null && choices != null) TunePanel(choices, model?.id, effort, advice, onModel = actions.setModel, onEffort = actions.setEffort) { picker = null }
 }
 
 /** La proposta del contesto pieno sopra il campo (contratto 1.37): «Contesto al 64%», «Fallo», ×. */
@@ -1714,9 +1671,9 @@ private fun TunePill(label: String, enabled: Boolean, dot: Boolean = false, onCl
     }
 }
 
-/** «CONSIGLIATO» accanto al modello e all'effort che fable-director consiglia (contratto 1.37). */
+/** «CONSIGLIATO» accanto al modello che fable-director consiglia (contratto 1.37), nel pannello Modello ed effort. */
 @Composable
-private fun AdviceTag() = Text(
+internal fun AdviceTag() = Text(
     stringResource(R.string.advice_tag).uppercase(), style = MonoSmall.copy(color = CmColors.advice, fontWeight = FontWeight.SemiBold),
     modifier = Modifier.clip(CircleShape).background(CmColors.advice.copy(alpha = .14f)).padding(horizontal = 9.dp, vertical = 3.dp),
 )

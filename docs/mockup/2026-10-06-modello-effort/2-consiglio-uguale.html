@@ -1,0 +1,78 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=412">
+<style>
+:root{--bg:#000;--low:#1B1F26;--surf:#23272E;--high:#292F3A;--line:#2A2E35;--text:#F2F4F7;--text2:#B0B8C4;--icon:#A8C7FA;
+--primary:#D3E3FD;--onp:#0A2050;--good:#65C581;--warn:#FFC46B;--ring:#8BB4F7;--track:#455165;--advice:#C58AF9}
+*{box-sizing:border-box;margin:0}
+body{background:#120D1C;color:var(--text);font:15px/1.4 Roboto,system-ui,sans-serif;width:412px}
+.screen{position:relative;width:412px;height:915px;overflow:hidden;background:var(--bg)}
+.tag{position:absolute;top:0;left:0;right:0;z-index:50;background:#2B1F45;color:#E9DDFF;font:600 11px/1.3 "Roboto Mono",monospace;letter-spacing:.06em;padding:6px 12px}
+svg.i{width:24px;height:24px;flex:none}
+/* testata della sessione, come oggi */
+.top{padding-top:30px;border-bottom:1px solid var(--line)}
+.r1{display:flex;align-items:center;gap:10px;height:56px;padding:0 12px 0 8px}
+.back{width:40px;display:grid;place-items:center}
+.badge{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--good);flex:none}
+.name{font-size:20px;font-weight:500}
+.sp{flex:1}
+.r2{display:flex;align-items:center;gap:14px;padding:2px 12px 12px}
+.pill{position:relative;display:flex;align-items:center;gap:4px;background:var(--surf);border-radius:999px;padding:8px 8px 8px 16px;font-size:15.5px;font-weight:500;white-space:nowrap}
+.dot{position:absolute;top:1px;right:3px;width:10px;height:10px;border-radius:50%;background:var(--advice);border:2px solid var(--bg)}
+.meter{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500;color:var(--text2);white-space:nowrap}
+.meter small{display:block;font-size:11.5px}
+.chat{padding:14px 16px}
+.me{display:flex;justify-content:flex-end;margin:6px 0 16px 40px}
+.bub{background:var(--surf);border-radius:22px 22px 6px 22px;padding:10px 16px;font-size:15.5px}
+.cl{font-size:15.5px;line-height:1.5}
+/* il pannello, come MenuPanel/PanelShell */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:20}
+.panel{position:absolute;left:12px;right:12px;top:86px;z-index:30;background:var(--surf);border-radius:28px;padding:8px 0 14px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.ph{display:flex;align-items:center;min-height:48px;padding:0 8px 0 20px;color:var(--text2);font-size:14px}
+.ph .x{width:48px;height:48px;display:grid;place-items:center}
+.grp{font:500 12px/1 "Roboto Mono",monospace;letter-spacing:.14em;color:var(--text2);margin:16px 20px 6px}
+.circ{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--high);color:var(--icon);font:600 17px/1 Roboto,sans-serif;flex:none}
+.mi{display:flex;align-items:center;gap:16px;min-height:64px;padding:10px 20px}
+.mi.sel{background:var(--high)}
+.mi.sel .circ{background:rgba(168,199,250,.25)}
+.tx{flex:1;min-width:0}
+.mt{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:500}
+.ms{font-size:12.5px;color:var(--text2);margin-top:2px}
+.rec{font:600 11px/1.4 "Roboto Mono",monospace;letter-spacing:.06em;color:var(--advice);background:rgba(197,138,249,.14);border-radius:999px;padding:3px 9px}
+/* il consiglio */
+.adv{margin:2px 12px 4px;background:rgba(197,138,249,.10);border-radius:20px;padding:12px 14px 14px}
+.adv .row{display:flex;gap:14px;align-items:flex-start}
+.adv .circ{background:rgba(197,138,249,.22);color:var(--advice)}
+.ov{font:600 11px/1.4 "Roboto Mono",monospace;letter-spacing:.08em;color:var(--advice)}
+.at{font-size:16.5px;font-weight:500;margin-top:2px}
+.aw{font-size:13.5px;color:var(--text2);margin-top:2px;line-height:1.35}
+.cost{display:flex;gap:8px;align-items:flex-start;color:var(--warn);font-size:13px;line-height:1.35;margin:10px 0 0 54px}
+.use{display:inline-flex;align-items:center;gap:8px;margin:12px 0 0 54px;background:rgba(197,138,249,.24);color:#EBD9FF;border-radius:999px;padding:9px 18px;font-weight:500;font-size:14.5px}
+/* effort: gruppo di tasti connessi (ButtonGroup di Material 3 Expressive) */
+.bgp{display:flex;gap:2px;margin:4px 20px 0}
+.bgp span{position:relative;flex:1;height:44px;display:grid;place-items:center;background:var(--high);font-size:14px;font-weight:500;border-radius:8px}
+.bgp span:first-child{border-radius:22px 8px 8px 22px}
+.bgp span:last-child{border-radius:8px 22px 22px 8px}
+.bgp span.on{background:var(--primary);color:var(--onp);border-radius:22px}
+.bgp i{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--advice)}
+.ed{font-size:13px;color:var(--text2);margin:10px 20px 0}
+.legend{background:#120D1C;color:#E9DDFF;font-size:12.5px;line-height:1.4;padding:10px 14px 14px;border-top:1px solid #3A2C5C}
+</style></head><body><div class="screen"><div class="tag">BOZZA · SCELTA GIÀ CONSIGLIATA</div>
+<div class="top"><div class="r1"><span class="back"><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M15 6l-6 6 6 6" fill="none" stroke="#F2F4F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="badge"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="#0B2A14"/></svg></span>
+ <span class="name">atlas-shop</span><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M7 10l5 5 5-5z" fill="#B0B8C4"/></svg><span class="sp"></span><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M4 7h16M4 12h16M4 17h16" stroke="#A8C7FA" stroke-width="2" stroke-linecap="round"/></svg></div>
+ <div class="r2"><span class="pill">Opus 5.5 · medium<svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M7 10l5 5 5-5z" fill="#B0B8C4"/></svg></span><span class="meter"><svg viewBox="0 0 20 20" width="22" height="22"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#455165" stroke-width="3"/><circle cx="10" cy="10" r="7.5" fill="none" stroke="#8BB4F7" stroke-width="3" pathLength="47.12" stroke-dasharray="5.2 100" transform="rotate(-90 10 10)" stroke-linecap="round"/></svg><span>5h 11%<small><svg class="i" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" fill="none" stroke="#B0B8C4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> mer 03:20</small></span></span><span class="meter"><svg viewBox="0 0 20 20" width="22" height="22"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#455165" stroke-width="3"/><circle cx="10" cy="10" r="7.5" fill="none" stroke="#8BB4F7" stroke-width="3" pathLength="47.12" stroke-dasharray="8.5 100" transform="rotate(-90 10 10)" stroke-linecap="round"/></svg><span>ctx 18%</span></span></div></div>
+<div class="chat"><div class="me"><div class="bub">Rivediamo insieme i colori della home</div></div>
+<div class="cl">Ecco tre varianti della card, la seconda è più vicina al resto dell'app.</div></div>
+<div class="scrim"></div><div class="panel">
+ <div class="ph"><span class="sp">Modello ed effort · vale per questa sessione</span><span class="x"><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M6 6l12 12M18 6 6 18" stroke="#B0B8C4" stroke-width="2" stroke-linecap="round"/></svg></span></div>
+<div class="adv"><div class="row"><span class="circ"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="#C58AF9"/></svg></span><span class="tx">
+ <div class="ov">CONSIGLIO PER QUESTO COMPITO</div><div class="at">Va bene così: Opus 5.5 · medium</div>
+ <div class="aw">Revisione grafica con te: serve il modello di punta, medium basta</div></span></div></div>
+<div class="grp">MODELLO</div><div class="mi sel"><span class="circ">O</span>
+ <span class="tx"><div class="mt">Opus 5.5</div><div class="ms">Di punta: pianifica, scrive e verifica</div></span>
+ <svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#A8C7FA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="mi"><span class="circ">F</span>
+ <span class="tx"><div class="mt">Fable 5.1</div><div class="ms">Il più forte nei giudizi, costa di più</div></span>
+ </div><div class="mi"><span class="circ">S</span>
+ <span class="tx"><div class="mt">Sonnet 5</div><div class="ms">Esegue bene compiti chiari, costa meno</div></span>
+ </div><div class="mi"><span class="circ">H</span>
+ <span class="tx"><div class="mt">Haiku 4.5</div><div class="ms">Compiti semplici e veloci</div></span>
+ </div><div class="grp">EFFORT</div><div class="bgp"><span class="">low</span><span class="on">medium</span><span class="">high</span><span class="">xhigh</span><span class="">max</span></div><div class="ed">medium · Equilibrio fra velocità e ragionamento</div>
+</div></div><div class="legend">Consiglio uguale alla scelta: una conferma col motivo, senza tasto, senza costo e senza puntino sul tasto. Senza consiglio (assente o più vecchio di 6 ore) il riquadro non c'è. I motivi sono esempi: oggi fable-director scrive solo la quota («quota ok: Opus 5.5 medium va bene»), il compito non lo guarda.</div></body></html>

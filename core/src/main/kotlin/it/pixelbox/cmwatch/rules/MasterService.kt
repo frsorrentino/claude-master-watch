@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Choices
+import it.pixelbox.cmwatch.contract.Model
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import java.text.NumberFormat
@@ -22,8 +23,17 @@ object MasterService {
         val a = s.advice ?: return null
         if (now - a.at >= ADVICE_MAX_AGE_S) return null
         if (choices == null || choices.models.none { Tune.sameModel(it.id, a.model) } || a.effort !in choices.efforts) return null
-        return AdviceView(a.model, a.effort, a.reason, a.differs, a.switchCostTokens.takeIf { a.whenToSwitch == "next_task" && it > 0 })
+        return AdviceView(a.model, a.effort, a.reason, a.differs, a.switchCostTokens.takeIf { a.differs && a.whenToSwitch == "next_task" && it > 0 })
     }
+
+    /** «Usa il consiglio»: solo quello che cambia rispetto alla scelta attuale; null = resta com'è. */
+    data class AdviceSteps(val model: Model?, val effort: String?)
+
+    /** Il modello con l'id della lista (`[1m]` compreso), quello che il PC sa applicare. */
+    fun adviceSteps(a: AdviceView, choices: Choices?, model: String?, effort: String?): AdviceSteps = AdviceSteps(
+        if (Tune.sameModel(model, a.model)) null else choices?.models?.firstOrNull { Tune.sameModel(it.id, a.model) },
+        a.effort.takeIf { it != effort },
+    )
 
     /** «36.000»: i token del costo del cambio, come si scrivono in italiano. */
     fun tokens(n: Long): String = NumberFormat.getIntegerInstance(Locale.ITALIAN).format(n)

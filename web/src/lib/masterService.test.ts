@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { decodeState, type Session, type State } from './contract'
 import { MASTER } from './summary'
 import {
-  adviceOf, approveText, canClear, cleanupOf, CLEANUP_QUIET_S, closeStateOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
+  adviceOf, adviceSteps, approveText, canClear, cleanupOf, CLEANUP_QUIET_S, closeStateOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
 } from './masterService'
 
 const st: State = decodeState(readFileSync(new URL('../../../contract/state-1-question.json', import.meta.url), 'utf8'))
@@ -21,11 +21,23 @@ describe('A. consiglio di modello ed effort', () => {
     const s = { ...atlas, advice: { ...atlas.advice!, when: 'now' as const, differs: false } }
     expect(adviceOf(s, st.choices, at)).toMatchObject({ dot: false, cost: null })
   })
+  it('uguale alla scelta: niente costo nemmeno a metà lavoro', () => {
+    const s = { ...atlas, advice: { ...atlas.advice!, differs: false } }
+    expect(adviceOf(s, st.choices, at)).toMatchObject({ dot: false, cost: null })
+  })
   it('vecchio di 6 ore, o fuori dalle scelte: non si mostra', () => {
     expect(adviceOf(atlas, st.choices, at + 6 * 3600)).toBeNull()
     expect(adviceOf({ ...atlas, advice: { ...atlas.advice!, model: 'claude-x' } }, st.choices, at)).toBeNull()
     expect(adviceOf({ ...atlas, advice: { ...atlas.advice!, effort: 'turbo' } }, st.choices, at)).toBeNull()
     expect(adviceOf(field, st.choices, at)).toBeNull()
+  })
+  it('«Usa il consiglio»: solo quello che cambia, il modello con l\'id della lista', () => {
+    const a = adviceOf(atlas, st.choices, at)!
+    expect(adviceSteps(a, st.choices, 'claude-sonnet-5', 'medium')).toEqual({ model: { id: 'claude-fable-5-1', label: 'Fable 5.1' }, effort: 'high' })
+    expect(adviceSteps(a, st.choices, 'claude-fable-5-1', 'medium')).toEqual({ model: null, effort: 'high' })
+    expect(adviceSteps(a, st.choices, 'claude-fable-5-1', 'high')).toEqual({ model: null, effort: null })
+    const opus = { ...a, model: 'claude-opus-5' }
+    expect(adviceSteps(opus, st.choices, 'claude-sonnet-5', 'high').model).toEqual({ id: 'claude-opus-5[1m]', label: 'Opus 5' })
   })
   it('i token come si scrivono in italiano', () => {
     expect(tokens(36000)).toBe('36.000')

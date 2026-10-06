@@ -18,6 +18,9 @@ object Tune {
     /** «claude-opus-5-5[1m]» e «claude-opus-5-5» sono lo stesso modello: la lista delle scelte porta la finestra, la sessione no. */
     fun sameModel(a: String?, b: String?): Boolean = a != null && b != null && a.substringBefore('[') == b.substringBefore('[')
 
+    /** La famiglia del modello, per la riga che lo spiega nel pannello Modello ed effort; sconosciuta: null. */
+    fun kind(id: String): String? = listOf("opus", "fable", "sonnet", "haiku").firstOrNull { it in id }
+
     fun model(s: Session, pick: Pick?, result: CmdResult?, now: Long): Model? {
         val p = pick?.takeIf { held(it, result, now) && it.model != null } ?: return s.model
         val unchanged = s.model?.id?.substringBefore('[') == p.was?.substringBefore('[')

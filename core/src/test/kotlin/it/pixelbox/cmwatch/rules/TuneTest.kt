@@ -20,6 +20,10 @@ class TuneTest {
     private fun s(model: Model? = opus, effort: String? = "medium") =
         Session(id = "m", name = "master", account = "personal", project = "p", state = SessionState.IDLE, since = 0, model = model, effort = effort)
 
+    @Test fun kindForThePanelLine() {
+        assertEquals(listOf("opus", "fable", "sonnet", "haiku", null), listOf("claude-opus-5-5[1m]", "claude-fable-5-1", "claude-sonnet-5", "claude-haiku-4-5", "claude-x").map(Tune::kind))
+    }
+
     @Test fun theOneMillionWindowIsTheSameModel() {
         assertTrue(Tune.sameModel("claude-opus-5-5[1m]", "claude-opus-5-5"))
         assertFalse(Tune.sameModel("claude-sonnet-5", "claude-opus-5-5"))

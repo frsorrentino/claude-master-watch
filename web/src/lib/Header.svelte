@@ -1,11 +1,11 @@
 <script lang="ts">
   import CloseDialog from './CloseDialog.svelte'
   import type { CmdOp, Model, Session, State } from './contract'
-  import { notes as notesOf, resetLabel, sameModel, shortModel, tone, wider as widerOf, type Tone } from './header'
+  import { modelKind, notes as notesOf, resetLabel, sameModel, shortModel, tone, wider as widerOf, type Tone } from './header'
   import { MASTER } from './summary'
   import { t } from './t'
   import Badge from './Badge.svelte'
-  import { adviceOf, ctxBand, tokens } from './masterService'
+  import { adviceOf, adviceSteps, ctxBand, tokens } from './masterService'
 
   // La testata della sessione (SheetHeader.kt): una riga con modello · effort in una pillola, la quota delle 5 ore con l'ora
   // dell'azzeramento, il contesto ad anello e il menu ⋮; sotto obiettivo, priorità e finestra. Su desktop a sinistra anche
@@ -47,6 +47,27 @@
   function close(d?: HTMLDialogElement) { d?.close() }
   function setModel(m: Model) { picked.model = m; onCmd('model', m.id); close(tune); close(ctx) }
   function setEffort(e: string) { picked.effort = e; onCmd('effort', e); close(tune) }
+  // Il pannello scende dalla pillola: sul telefono largo quanto lo schermo meno 12 px per lato, più largo 380 px sotto la
+  // pillola, dentro la finestra (come il menu dell'app, AppBar).
+  let pill: HTMLButtonElement | undefined = $state()
+  let tunePos = $state('')
+  function openTune() {
+    const r = pill?.getBoundingClientRect()
+    const vw = window.innerWidth
+    const top = Math.round((r?.bottom ?? 48) + 6)
+    const w = vw < 600 ? vw - 24 : 380
+    const left = vw < 600 ? 12 : Math.round(Math.max(12, Math.min((r?.left ?? 12) - 8, vw - w - 12)))
+    tunePos = `top:${top}px;left:${left}px;width:${w}px;max-height:calc(100dvh - ${top + 16}px)`
+    tune?.showModal()
+  }
+  // «Usa il consiglio»: solo quello che cambia, con l'id della lista; poi il pannello si chiude.
+  function useAdvice() {
+    if (!advice) return
+    const go = adviceSteps(advice, st.choices, model?.id, effort)
+    if (go.model) { picked.model = go.model; onCmd('model', go.model.id) }
+    if (go.effort) { picked.effort = go.effort; onCmd('effort', go.effort) }
+    close(tune)
+  }
   // Clic sul fondo del dialogo: si chiude, come il foglio dell'app.
   const backdrop = (e: MouseEvent) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLDialogElement).close() }
 </script>
@@ -59,7 +80,7 @@
     {#if wide}
       <span class="lead"><Badge {s} size={26} /><h1>{s.name}</h1></span>
     {/if}
-    <button class="pill" disabled={!tunable} onclick={() => tune?.showModal()}>
+    <button class="pill" bind:this={pill} disabled={!tunable} onclick={openTune}>
       {[shortModel(model) ?? t.modelTitle, effort].filter(Boolean).join(' · ')}
       {#if tunable}<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="var(--text2)" /></svg>{/if}
       {#if tunable && advice?.dot}<span class="dot" title={t.adviceDot} aria-label={t.adviceDot}></span>{/if}
@@ -119,25 +140,52 @@
   {#each notes as n}<div class="note">{n}</div>{/each}
 </header>
 
-<dialog bind:this={tune} onclick={backdrop}>
-  <p class="sub">{t.choiceThisSession}</p>
-  {#each [['model', t.modelTitle], ['effort', t.effortTitle]] as [kind, title]}
-    <h3>{title}</h3>
-    {#if kind === 'model'}
-      {#each st.choices?.models ?? [] as m}
-        {@const rec = !!advice && sameModel(m.id, advice.model)}
-        <label class="radio"><input type="radio" name="model" checked={sameModel(m.id, model?.id)} onchange={() => setModel(m)} />{m.label ?? shortModel(m) ?? m.id}{#if rec}<span class="rec">{t.adviceTag}</span>{/if}</label>
-        {#if rec}<p class="why">{advice!.reason}</p>{/if}
-      {/each}
-    {:else}
-      {#each st.choices?.efforts ?? [] as e}
-        <label class="radio"><input type="radio" name="effort" checked={e === effort} onchange={() => setEffort(e)} />{e}{#if advice?.effort === e}<span class="rec">{t.adviceTag}</span>{/if}</label>
-      {/each}
+<!-- Il pannello Modello ed effort (bozza approvata da Franz il 07/10 alle 00:06, docs/mockup/2026-10-06-modello-effort/):
+     come il menu dell'app, scende dalla pillola; in testa il consiglio sul compito, poi i modelli con la riga che li spiega
+     e l'effort come gruppo di tasti. -->
+<dialog bind:this={tune} class="tunep" style={tunePos} onclick={backdrop} aria-label={t.tuneHead}>
+  <div class="tpi">
+    <div class="tph"><span>{t.tuneHead}</span><button class="ib" aria-label={t.closeWord} onclick={() => close(tune)}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
+    {#if advice}
+      {@const am = st.choices?.models.find(m => sameModel(m.id, advice.model))}
+      {@const label = `${am?.label ?? shortModel(am) ?? advice.model} · ${advice.effort}`}
+      {@const steps = adviceSteps(advice, st.choices, model?.id, effort)}
+      {@const same = !steps.model && !steps.effort}
+      <div class="adv">
+        <div class="advr">
+          <span class="circ adc"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="currentColor" /></svg></span>
+          <span class="tx"><span class="ov">{t.adviceHead}</span><span class="at">{same ? t.adviceSame(label) : label}</span><span class="aw">{advice.reason}</span></span>
+        </div>
+        {#if !same && advice.cost}
+          <p class="cost"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{t.adviceCost(tokens(advice.cost))}</p>
+        {/if}
+        {#if !same}<button class="use" onclick={useAdvice}>{t.adviceUse}</button>{/if}
+      </div>
     {/if}
-  {/each}
-  {#if advice?.cost}
-    <p class="cost"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{t.adviceCost(tokens(advice.cost))}</p>
-  {/if}
+    <p class="grp">{t.modelTitle}</p>
+    <div role="radiogroup" aria-label={t.modelTitle}>
+      {#each st.choices?.models ?? [] as m}
+        {@const label = m.label ?? shortModel(m) ?? m.id}
+        {@const on = sameModel(m.id, model?.id)}
+        {@const kind = modelKind(m.id)}
+        <button class="tr" class:on role="radio" aria-checked={on} onclick={() => setModel(m)}>
+          <span class="circ">{label.charAt(0).toUpperCase()}</span>
+          <span class="tx">
+            <span class="tt">{label}{#if !on && advice && sameModel(m.id, advice.model)}<span class="rec">{t.adviceTag}</span>{/if}</span>
+            {#if kind}<span class="ts">{t.modelSub[kind]}</span>{/if}
+          </span>
+          {#if on}<svg class="ok" viewBox="0 0 24 24" width="24" height="24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>{/if}
+        </button>
+      {/each}
+    </div>
+    <p class="grp">{t.effortTitle}</p>
+    <div class="bgp" role="radiogroup" aria-label={t.effortTitle}>
+      {#each st.choices?.efforts ?? [] as e}
+        <button class:on={e === effort} role="radio" aria-checked={e === effort} onclick={() => setEffort(e)}>{e}{#if e !== effort && advice?.effort === e}<i title={t.adviceTag}></i>{/if}</button>
+      {/each}
+    </div>
+    {#if effort}<p class="ed">{effort}{#if t.effortSub[effort]} · {t.effortSub[effort]}{/if}</p>{/if}
+  </div>
 </dialog>
 
 <dialog bind:this={ctx} onclick={backdrop}>
@@ -168,10 +216,46 @@
   .pill svg { flex: none; }
   /* Il puntino del consiglio, in alto a destra della pillola (mockup 1.37). */
   .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--advice); border: 2px solid var(--bg); }
-  .rec { margin-left: auto; font: 600 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--advice); background: color-mix(in srgb, var(--advice) 14%, transparent); border-radius: 999px; padding: 3px 9px; }
-  .why { margin: -6px 0 4px 38px; font-size: 13px; color: var(--text2); }
-  .cost { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 10px 12px; border-radius: 16px; font-size: 13.5px; color: var(--b-warn); background: color-mix(in srgb, var(--b-warn) 10%, transparent); }
+  /* Il pannello Modello ed effort, come il menu dell'app (AppBar): angoli da 28, voci da 64 con il cerchio da 40. */
+  dialog.tunep { position: fixed; inset: auto; margin: 0; padding: 0; max-width: none; border-radius: 28px; box-shadow: 0 12px 40px rgb(0 0 0 / .5); overflow-y: auto; transform-origin: top left; animation: pop .2s cubic-bezier(.2, .8, .2, 1); }
+  dialog.tunep::backdrop { animation: fade .15s; }
+  @media (max-width: 599px) { dialog.tunep { margin: 0; border-radius: 28px; } }
+  @media (prefers-reduced-motion: reduce) { dialog.tunep, dialog.tunep::backdrop { animation: none; } }
+  @keyframes pop { from { opacity: 0; scale: .96; } }
+  @keyframes fade { from { opacity: 0; } }
+  .tpi { padding: 8px 0 14px; }
+  .tph { display: flex; align-items: center; min-height: 48px; padding: 0 2px 0 20px; font-size: 14px; color: var(--text2); }
+  .tph span { flex: 1; }
+  .circ { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--high); color: var(--icon); font-size: 17px; font-weight: 600; }
+  .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+  /* Il consiglio sul compito: fondo lilla tenue, il motivo sotto, il costo e «Usa il consiglio» solo se è diverso. */
+  .adv { margin: 2px 12px 4px; padding: 12px 14px 14px; border-radius: 20px; background: color-mix(in srgb, var(--advice) 10%, transparent); }
+  .advr { display: flex; gap: 14px; align-items: flex-start; }
+  .adc { background: color-mix(in srgb, var(--advice) 22%, transparent); color: var(--advice); }
+  .ov { font: 600 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--advice); }
+  .at { font-size: 16.5px; font-weight: 500; }
+  .aw { font-size: 13.5px; line-height: 1.35; color: var(--text2); }
+  .cost { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0 54px; font-size: 13px; line-height: 1.35; color: var(--b-warn); }
   .cost svg { flex: none; margin-top: 1px; }
+  .use { margin: 12px 0 0 54px; padding: 9px 18px; border-radius: 999px; font-size: 14.5px; font-weight: 500; color: color-mix(in srgb, var(--advice) 30%, white); background: color-mix(in srgb, var(--advice) 24%, transparent); }
+  .use:hover { filter: brightness(1.15); }
+  .grp { margin: 16px 20px 6px; font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+  .tr { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 64px; padding: 10px 20px; }
+  .tr:hover, .tr.on { background: var(--high); }
+  .tr.on .circ { background: color-mix(in srgb, #4C7DFF 25%, transparent); }
+  .tt { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 500; white-space: nowrap; }
+  .ts { font-size: 12.5px; color: var(--text2); white-space: nowrap; overflow: hidden; }
+  .ok { flex: none; color: var(--icon); }
+  .rec { font: 600 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--advice); background: color-mix(in srgb, var(--advice) 14%, transparent); border-radius: 999px; padding: 3px 9px; }
+  /* L'effort come gruppo di tasti connessi (ButtonGroup dell'app): la scelta si arrotonda tutta. */
+  .bgp { display: flex; gap: 2px; margin: 4px 20px 0; }
+  .bgp button { position: relative; flex: 1; height: 44px; border-radius: 8px; background: var(--high); font-size: 14px; font-weight: 500; transition: border-radius .2s cubic-bezier(.2, .8, .2, 1), background-color .2s; }
+  .bgp button:first-child { border-radius: 22px 8px 8px 22px; }
+  .bgp button:last-child { border-radius: 8px 22px 22px 8px; }
+  .bgp button.on { border-radius: 22px; background: var(--primary); color: var(--on-primary); }
+  .bgp button:not(.on):hover { filter: brightness(1.2); }
+  .bgp i { position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--advice); }
+  .ed { margin: 10px 20px 0; font-size: 13px; color: var(--text2); }
   .opt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
   .opt small { font-size: 12.5px; font-weight: 400; opacity: .8; margin-top: 2px; }
   .pill:disabled { padding-right: 12px; cursor: default; }
@@ -210,10 +294,6 @@
   @media (max-width: 599px) { dialog { margin: auto 0 0; max-width: 100vw; border-radius: 28px 28px 0 0; } }
   dialog h3 { font-size: 22px; font-weight: 600; margin: 12px 0 4px; }
   dialog h3:first-child { margin-top: 0; }
-  .sub { color: var(--text2); font-size: 14px; }
-  .radio { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-radius: 12px; cursor: pointer; font-size: 16px; }
-  .radio:hover { background: var(--high); }
-  .radio input { width: 20px; height: 20px; accent-color: var(--primary); margin: 0; }
   .col { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
   .tonal { background: var(--high); border-radius: 999px; padding: 12px 20px; font-weight: 500; }
   .tonal.filled { background: var(--primary); color: var(--on-primary); }
