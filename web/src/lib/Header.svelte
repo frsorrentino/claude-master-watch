@@ -59,6 +59,8 @@
     const left = vw < 600 ? 12 : Math.round(Math.max(12, Math.min((r?.left ?? 12) - 8, vw - w - 12)))
     tunePos = `top:${top}px;left:${left}px;width:${w}px;max-height:calc(100dvh - ${top + 16}px)`
     tune?.showModal()
+    // Il fuoco sul pannello, non sulla ✕: l'anello attorno alla ✕ sembrava una scelta.
+    tune?.querySelector<HTMLElement>('.tpi')?.focus()
   }
   // «Usa il consiglio»: solo quello che cambia, con l'id della lista; poi il pannello si chiude.
   function useAdvice() {
@@ -144,7 +146,7 @@
      come il menu dell'app, scende dalla pillola; in testa il consiglio sul compito, poi i modelli con la riga che li spiega
      e l'effort come gruppo di tasti. -->
 <dialog bind:this={tune} class="tunep" style={tunePos} onclick={backdrop} aria-label={t.tuneHead}>
-  <div class="tpi">
+  <div class="tpi" tabindex="-1">
     <div class="tph"><span>{t.tuneHead}</span><button class="ib" aria-label={t.closeWord} onclick={() => close(tune)}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
     {#if advice}
       {@const am = st.choices?.models.find(m => sameModel(m.id, advice.model))}
@@ -184,7 +186,7 @@
         <button class:on={e === effort} role="radio" aria-checked={e === effort} onclick={() => setEffort(e)}>{e}{#if e !== effort && advice?.effort === e}<i title={t.adviceTag}></i>{/if}</button>
       {/each}
     </div>
-    {#if effort}<p class="ed">{effort}{#if t.effortSub[effort]} · {t.effortSub[effort]}{/if}</p>{/if}
+    {#if effort}<p class="ed">{[effort, t.effortSub[effort]].filter(Boolean).join(' · ')}</p>{/if}
   </div>
 </dialog>
 
@@ -223,7 +225,7 @@
   @media (prefers-reduced-motion: reduce) { dialog.tunep, dialog.tunep::backdrop { animation: none; } }
   @keyframes pop { from { opacity: 0; scale: .96; } }
   @keyframes fade { from { opacity: 0; } }
-  .tpi { padding: 8px 0 14px; }
+  .tpi { padding: 8px 0 14px; outline: none; }
   .tph { display: flex; align-items: center; min-height: 48px; padding: 0 2px 0 20px; font-size: 14px; color: var(--text2); }
   .tph span { flex: 1; }
   .circ { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--high); color: var(--icon); font-size: 17px; font-weight: 600; }
