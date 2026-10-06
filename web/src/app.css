@@ -2,11 +2,13 @@
 :root {
   --bg: #000; --low: #1B1F26; --surface: #23272E; --high: #292F3A; --line: #2A2E35;
   --text: #F2F4F7; --text2: #B0B8C4; --icon: #A8C7FA; --primary: #D3E3FD; --on-primary: #0A2050;
-  --wait: #FFB020; --good: #65C581; --opus: #D97757; --master-tab: #36221A; --master-bed: #24160F; --master-field: #180E0A; --stale: #98A2B3; --busy: #7FA1FF; --idle: #34C759; --gone: #FF453A; --gone-dim: #C2554D;
+  --wait: #FFB020; --good: #65C581; --opus: #D97757; --master-lip: #3B4048; --master-tab: #30343C; --master-disc: #444953; --master-sheet: #252930; --master-sheet-low: #1F232A; --master-well: #0D0F15; --master-raise: #2E333B; --master-steps: #161A20; --master-dusk: #161A20; --master-deep: #0C0E13; --stale: #98A2B3; --busy: #7FA1FF; --idle: #34C759; --gone: #FF453A; --gone-dim: #C2554D;
   --steps-bg: #141A24; --steps-fail: #24161A; --steps-dot: #5B6578; --b-second: #BCC0CB; --b-week: #B9A6F5;
   --b-warn: #FFC46B; --b-good: #65C581; --b-ring: #8BB4F7; --b-track: #455165; --b-label: #BCE4C7; --b-alert: #E5736B;
   --advice: #C58AF9; --prod: #E5736B;
   --mono: ui-monospace, "Roboto Mono", "JetBrains Mono", monospace;
+  /* La master è un foglio sollevato sulla rampa grigio-blu delle card, un passo più chiaro (Profondità, Franz 06/10 20:09-20:12). */
+  --master-rim: rgb(222 233 255 / .16); --master-glint: rgb(234 242 255 / .9); --master-crease: rgb(0 0 0 / .55); --master-line: rgb(222 233 255 / .2);
   color-scheme: dark;
 }
 /* Niente barre di scorrimento, come nell'app Android (Franz, 05/10 20:47): si scorre con dita, rotella e touchpad. */

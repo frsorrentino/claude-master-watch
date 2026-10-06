@@ -125,7 +125,7 @@
   })
 </script>
 
-<section class="chat" class:dragging aria-label={s.name}
+<section class="chat" class:dragging class:master={s.name === MASTER} aria-label={s.name}
   ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
   {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
@@ -187,6 +187,20 @@
 </dialog>
 
 <style>
+  /* La master aperta (Profondità, 06/10 20:12): la conversazione è una vasca tra la linguetta e il fondo del campo, scende dal
+     grigio-blu del foglio a un blu-nero più profondo e risale; le bolle, i passaggi e i Prossimi stanno a rilievo. */
+  .chat.master { background: radial-gradient(140% 70% at 50% 45%, transparent 50%, rgb(0 0 0 / .4) 100%), radial-gradient(120% 45% at 50% 0%, rgb(226 236 255 / .05), transparent 70%),
+    linear-gradient(180deg, var(--master-sheet) 0%, var(--master-dusk) 26%, var(--master-deep) 68%, var(--master-dusk) 100%); }
+  .chat.master > :global(header) { background: var(--master-sheet); border-bottom: 1px solid rgb(0 0 0 / .5); box-shadow: 0 1px 0 rgb(226 236 255 / .04); }
+  .chat.master :global(header .pill) { background: var(--master-raise); box-shadow: inset 0 1px 0 rgb(226 236 255 / .07); }
+  .chat.master .lines { background: none; }
+  .chat.master :global(.me .bubble) { background: var(--master-raise); box-shadow: inset 0 1px 0 rgb(226 236 255 / .07), 0 4px 10px -4px rgb(0 0 0 / .6); }
+  .chat.master :global(.play) { background: var(--master-raise); box-shadow: inset 0 1px 0 rgb(226 236 255 / .07); }
+  .chat.master :global(.steps) { background: var(--master-steps); box-shadow: inset 0 1px 2px rgb(0 0 0 / .5); }
+  .chat.master :global(.box) { background: var(--master-raise); border: 0; box-shadow: inset 0 1px 0 rgb(226 236 255 / .08), 0 8px 18px -8px rgb(0 0 0 / .75); }
+  .chat.master :global(.box .row) { border-top-color: rgb(0 0 0 / .4); }
+  .chat.master > :global(.bar) { position: relative; margin-top: 10px; padding-top: 10px; border-radius: 26px 26px 0 0;
+    background: linear-gradient(180deg, var(--master-sheet) 0%, var(--master-sheet-low) 100%); box-shadow: inset 0 1px 0 var(--master-rim), 0 -12px 24px -10px rgb(0 0 0 / .85); }
   .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; container-type: inline-size; }
   .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
