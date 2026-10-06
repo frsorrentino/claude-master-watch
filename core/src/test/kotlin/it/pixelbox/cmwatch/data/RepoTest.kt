@@ -46,7 +46,7 @@ class RepoTest {
         assertEquals(4, repo.snapshot.value.state!!.sessions.size)     // poi dal transport
         assertEquals(Freshness.Fresh, repo.snapshot.value.freshness)
         assertEquals(4, store.loadState()!!.first.sessions.size)
-        assertEquals(9 + 14, repo.events.value.size)                  // i 9 della fixture (1.18) e i 14 sparsi della demo (16/09)
+        assertEquals(10 + 14, repo.events.value.size)                 // i 10 della fixture (1.40) e i 14 sparsi della demo (16/09)
     }
 
     /** Revisione 29/09: una sveglia FCM a freddo arriva prima del caricamento da Room; lo stato vecchio non deve coprire quello fresco. */
@@ -56,7 +56,7 @@ class RepoTest {
         val tr = fake()
         val repo = Repo(store, tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
         repo.loadFromStore(); repo.start(); idle()
-        assertEquals(9 + 14, repo.events.value.size)
+        assertEquals(10 + 14, repo.events.value.size)
         repo.live(false)
         repo.dropEvents(tr.eventKeys)
         assertTrue(repo.events.value.isEmpty())

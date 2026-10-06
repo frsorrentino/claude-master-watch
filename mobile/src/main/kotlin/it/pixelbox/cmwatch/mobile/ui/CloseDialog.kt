@@ -27,12 +27,12 @@ internal fun closeStateLine(s: Session): String {
     return when (c.kind) {
         MasterService.CloseState.Kind.WORKING -> stringResource(R.string.close_working, s.name)
         MasterService.CloseState.Kind.DUPLICATE -> stringResource(R.string.close_duplicate, s.name, c.of.orEmpty())
-        MasterService.CloseState.Kind.FINISHED -> c.at?.let { stringResource(R.string.close_finished_at, s.name, hm(it)) } ?: stringResource(R.string.close_finished, s.name)
+        MasterService.CloseState.Kind.FINISHED -> c.at?.let { stringResource(R.string.close_finished_at, s.name, clockHm(it)) } ?: stringResource(R.string.close_finished, s.name)
         MasterService.CloseState.Kind.STILL -> stringResource(R.string.close_still, s.name)
     }
 }
 
-internal fun hm(at: Long): String = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(at))
+internal fun clockHm(at: Long): String = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(at))
 
 /**
  * La domanda prima di chiudere una sessione dal menu o con /exit scritto nel campo (Franz, 06/10 10:57, mockup approvato

@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -228,7 +229,7 @@ private fun SummaryCard(
                 val detail = when {
                     s.attached -> null
                     c.kind == it.pixelbox.cmwatch.rules.MasterService.Cleanup.Kind.DUPLICATE -> stringResource(R.string.cleanup_duplicate, c.of.orEmpty())
-                    else -> s.outcome?.at?.let { stringResource(R.string.cleanup_finished_at, hm(it)) } ?: stringResource(R.string.cleanup_finished)
+                    else -> s.outcome?.at?.let { stringResource(R.string.cleanup_finished_at, clockHm(it)) } ?: stringResource(R.string.cleanup_finished)
                 }
                 val open = stringResource(R.string.cleanup_open)
                 Text(
