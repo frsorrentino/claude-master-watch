@@ -1,8 +1,8 @@
-# Privacy — Claude Master App and Claude Master Watch
+# Privacy — Team Supervisor App and Team Supervisor Watch
 
-_Last updated: 26 September 2026._
+_Last updated: 7 October 2026._
 
-Claude Master App (phone) and Claude Master Watch (Wear OS) are an unofficial companion for Claude Code, not
+Team Supervisor App (phone) and Team Supervisor Watch (Wear OS) are an unofficial companion for Claude Code, not
 affiliated with Anthropic. They show and steer the Claude Code sessions running on your own computer through the
 claude-master plugin. They have no account of their own, no analytics, no advertising and no server run by the author.
 
@@ -42,6 +42,6 @@ Demo mode runs on sample data inside the app. Nothing leaves the device.
 ## Changes and contact
 
 Changes to this page are versioned in the
-[GitHub repository](https://github.com/frsorrentino/claude-master-watch). Questions: an issue at
-<https://github.com/frsorrentino/claude-master-watch/issues>. The plugin on the computer has its own page:
+[GitHub repository](https://github.com/frsorrentino/team-supervisor-app). Questions: an issue at
+<https://github.com/frsorrentino/team-supervisor-app/issues>. The plugin on the computer has its own page:
 [claude-master privacy](https://github.com/frsorrentino/claude-master/blob/main/PRIVACY.md).

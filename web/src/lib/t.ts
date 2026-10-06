@@ -78,7 +78,7 @@ export const t = {
   regTonight: 'Stanotte', regAdd: 'Aggiungi', regQueueEmpty: 'Nessun lavoro in coda', regQueued: (n: number) => (n === 1 ? '1 lavoro in coda' : `${n} lavori in coda`),
   regToday: 'Oggi', regYesterday: 'Ieri', regQuota: 'Quota', regMinutes: (n: number) => `${n} min`, regProjects: (n: number) => (n === 1 ? '1 progetto' : `${n} progetti`),
   diaryEmpty: 'Il diario arriva alle 20:00', nightRunning: (x: string) => `In corso: ${x}`, nightStarted: 'partito', nightRemove: 'Togli',
-  nightUpdatePc: 'Aggiorna claude-master sul PC per gestire la coda da qui', nightAddTitle: 'Aggiungi alla notte',
+  nightUpdatePc: 'Aggiorna team-supervisor sul PC per gestire la coda da qui', nightAddTitle: 'Aggiungi alla notte',
   ovQuota: 'Quota', ovWork: 'Lavoro', ovNoQuota: 'Nessuna lettura della quota per ora', ovFiveHours: '5 ore',
   ovWeek: (p: number) => `settimana ${p}%`, ovWeekReset: (p: number, when: string) => `settimana ${p}% · ${when}`,
   ovPace: (p: number, hm: string) => `a questo ritmo ${p}% alle ${hm}`, ovNow: 'Adesso', ovNoneLive: 'Nessuna sessione aperta',

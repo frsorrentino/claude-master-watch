@@ -1,7 +1,7 @@
 <resources>
     <!-- English, for the public README cards (Franz, 14/09/2026 22:39). The default stays Italian in values/. -->
     <string name="unit_days">d</string>
-    <string name="app_name">Claude Master</string>
+    <string name="app_name">Team Supervisor</string>
     <string name="sessions_title">Sessions</string>
     <string name="sessions_empty">No sessions</string>
     <string name="sessions_label">sessions</string>
@@ -31,8 +31,8 @@
     <string name="question_retry">Retry</string>
     <string name="pairing_title">Pair the PC</string>
     <string name="pairing_enter_code">Use the code</string>
-    <string name="pairing_hint_phone">On your phone, open claude-master and tap Pair.</string>
-    <string name="pairing_hint_both">On your phone, open claude-master and tap Pair, or use the code from relay pair.</string>
+    <string name="pairing_hint_phone">On your phone, open Team Supervisor and tap Pair.</string>
+    <string name="pairing_hint_both">On your phone, open Team Supervisor and tap Pair, or use the code from relay pair.</string>
     <string name="pairing_open_phone">Open on phone</string>
     <string name="pairing_continue_phone">Continue on phone</string>
     <string name="pairing_demo">Try the demo</string>
@@ -58,7 +58,7 @@
     <string name="channel_quota">Quota</string>
     <string name="channel_follow">Followed session</string>
     <string name="complication_stale">PC offline</string>
-    <string name="complication_name">Claude Master</string>
+    <string name="complication_name">Team Supervisor</string>
     <string name="tile_name">Claude sessions</string>
     <string name="tile_open">Open</string>
     <string name="tile_sessions">Sessions</string>
@@ -150,7 +150,7 @@
     <string name="state_awaiting_prompt">prompt from the watch in progress</string>
     <string name="badge_personal">personal account</string>
     <string name="badge_work">work account</string>
-    <string name="tile_title">Claude Master</string>
+    <string name="tile_title">Team Supervisor</string>
     <string name="tile_all_idle">All idle</string>
     <string name="tile_quota_pct">5h %1$d%%</string>
     <string name="tile_quota_pct_reset">5h %1$d%% · reset %2$s</string>

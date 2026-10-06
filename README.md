@@ -1,4 +1,4 @@
-# claude-master-watch
+# Team Supervisor App
 
 ![Status: beta](https://img.shields.io/badge/status-beta-orange) ![Wear OS 4+](https://img.shields.io/badge/Wear%20OS-4%2B-3ddc84) ![Needs claude-master](https://img.shields.io/badge/needs-claude--master-8A5CF6)
 

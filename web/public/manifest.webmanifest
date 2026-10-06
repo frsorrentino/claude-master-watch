@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "claude-master",
-  "short_name": "claude-master",
+  "name": "Team Supervisor",
+  "short_name": "Team Supervisor",
   "description": "Le sessioni Claude Code del PC: chi ti aspetta, chi ha finito, la chat di ognuna.",
   "lang": "it",
   "start_url": "/",
