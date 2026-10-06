@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { decodeState, type Session, type State } from './contract'
 import { MASTER } from './summary'
 import {
-  adviceOf, approveText, canClear, cleanupOf, closeStateOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
+  adviceOf, approveText, canClear, cleanupOf, CLEANUP_QUIET_S, closeStateOf, clearDue, ctxBand, ctxNudge, decisionDraft, decisionProject, DECISION_MAX, handoffPrompt, tokens,
 } from './masterService'
 
 const st: State = decodeState(readFileSync(new URL('../../../contract/state-1-question.json', import.meta.url), 'utf8'))
@@ -84,18 +84,22 @@ describe('D. salva come decisione', () => {
 })
 
 describe('E. pulizia', () => {
+  const LATER = field.since + CLEANUP_QUIET_S
+  it('chi ha appena finito non si propone di chiudere: aspetta mezz\'ora ferma', () => {
+    expect(cleanupOf({ ...field, state: 'idle', attached: false }, true, field.since + CLEANUP_QUIET_S - 1)).toBeNull()
+  })
   it('ferma col compito chiuso: «Chiudi» solo senza finestra', () => {
-    expect(cleanupOf({ ...field, state: 'idle', attached: false }, true)).toEqual({ kind: 'finished', of: null, canClose: true })
-    expect(cleanupOf({ ...field, state: 'idle', attached: true }, true)).toEqual({ kind: 'finished', of: null, canClose: false })
+    expect(cleanupOf({ ...field, state: 'idle', attached: false }, true, LATER)).toEqual({ kind: 'finished', of: null, canClose: true })
+    expect(cleanupOf({ ...field, state: 'idle', attached: true }, true, LATER)).toEqual({ kind: 'finished', of: null, canClose: false })
   })
   it('un doppione, anche senza compito chiuso', () => {
-    expect(cleanupOf({ ...field, finished: false, duplicate_of: 'field-notes', name: 'field-notes-2', state: 'idle' }, true))
+    expect(cleanupOf({ ...field, finished: false, duplicate_of: 'field-notes', name: 'field-notes-2', state: 'idle' }, true, LATER))
       .toEqual({ kind: 'duplicate', of: 'field-notes', canClose: true })
   })
   it('mai a metà turno, mai senza /exit permesso', () => {
-    expect(cleanupOf({ ...field, state: 'busy' }, true)).toBeNull()
-    expect(cleanupOf({ ...field, state: 'idle', attached: false }, false)).toEqual({ kind: 'finished', of: null, canClose: false })
-    expect(cleanupOf({ ...atlas, finished: false }, true)).toBeNull()
+    expect(cleanupOf({ ...field, state: 'busy' }, true, LATER)).toBeNull()
+    expect(cleanupOf({ ...field, state: 'idle', attached: false }, false, LATER)).toEqual({ kind: 'finished', of: null, canClose: false })
+    expect(cleanupOf({ ...atlas, finished: false }, true, LATER)).toBeNull()
   })
 })
 

@@ -86,10 +86,13 @@ export function closeStateOf(s: Session): CloseState {
   return { kind: 'still', of: null, at: null }
 }
 
-export function cleanupOf(s: Session, canExit: boolean): Cleanup | null {
+/** Chi ha finito il compito si propone di chiudere solo dopo mezz'ora ferma: prima la si può ancora usare (Franz, 06/10 12:40). */
+export const CLEANUP_QUIET_S = 30 * 60
+
+export function cleanupOf(s: Session, canExit: boolean, now: number): Cleanup | null {
   if (s.state !== 'idle') return null
   const canClose = canExit && !s.attached
   if (s.duplicate_of) return { kind: 'duplicate', of: s.duplicate_of, canClose }
-  if (s.finished) return { kind: 'finished', of: null, canClose }
+  if (s.finished && now - s.since >= CLEANUP_QUIET_S) return { kind: 'finished', of: null, canClose }
   return null
 }

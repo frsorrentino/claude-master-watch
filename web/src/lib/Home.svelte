@@ -1,5 +1,4 @@
 <script lang="ts">
-  import CloseDialog from './CloseDialog.svelte'
   import { flip } from 'svelte/animate'
   import type { Approval, State } from './contract'
   import { cleanupOf } from './masterService'
@@ -35,7 +34,11 @@
   let pending = $state<Approval | null>(null)
   let note = $state('')
   let approveDlg: HTMLDialogElement | undefined = $state()
-  let closer: CloseDialog | undefined = $state()
+  let confirming = $state<string | null>(null)
+  // Il tasto di un passo toccato resta segnato «mandato» finché la sessione non cambia esito (Franz, 06/10 12:32): la card
+  // risponde subito, poi la sessione al lavoro la aggiorna.
+  let sentSteps = $state(new Set<string>())
+  const stepKey = (s: { name: string; outcome?: { at: number } | null }, step: string) => `${s.name}@${s.outcome?.at ?? 0}:${step}`
   function askApprove(a: Approval) { pending = a; note = ''; approveDlg?.showModal() }
   const ctxTone = (p: number) => (p >= 90 ? 'var(--b-alert)' : p >= 75 ? 'var(--b-warn)' : 'var(--b-ring)')
   function text(r: Row) {
@@ -70,7 +73,7 @@
       {@const s = r.session}
       {@const x = text(r)}
       {@const open = expanded === s.name}
-      {@const c = cleanupOf(s, canExit)}
+      {@const c = cleanupOf(s, canExit, st.ts)}
       <div class="card" class:waiting={group === 'waiting'} class:on={selected.includes(s.name)} animate:flip={{ duration: 250 }}
         role="button" tabindex="0" onclick={() => onPick(s.name)} onkeydown={(e) => e.key === 'Enter' && onPick(s.name)}>
         <div class="top">
@@ -91,19 +94,27 @@
         {/if}
         {#if x.steps.length}
           <div class="chips">
-            {#each x.steps as step}<button class="chip" class:unblock={x.blocking.has(step)} onclick={(e) => { e.stopPropagation(); onStep(s.name, step) }}>{#if x.blocking.has(step)}<svg class="lock" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--wait)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>{/if}{step}</button>{/each}
+            {#each x.steps as step}{@const k = stepKey(s, step)}<button class="chip" class:unblock={x.blocking.has(step)} class:sent={sentSteps.has(k)} disabled={sentSteps.has(k)} aria-label={sentSteps.has(k) ? t.stepSent(step) : undefined} onclick={(e) => { e.stopPropagation(); sentSteps = new Set([...sentSteps, k]); onStep(s.name, step) }}>{#if sentSteps.has(k)}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--good)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>{:else if x.blocking.has(step)}<svg class="lock" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--wait)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>{/if}{step}</button>{/each}
           </div>
         {/if}
         {#if c}
           <div class="clean">
             <!-- Chi ha finito o è un doppione resta qui e dice di essere aperta (Franz, 06/10 10:57). -->
             <span>{#if s.attached}{t.cleanupAttached}{:else}<b class="alive">● {t.cleanupOpen}</b> · {c.kind === 'duplicate' ? t.cleanupDuplicate(c.of ?? '') : s.outcome?.at ? t.cleanupFinishedAt(new Date(s.outcome.at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })) : t.cleanupFinished}{/if}</span>
-            {#if c.canClose}
-              <button class="close" onclick={(e) => { e.stopPropagation(); closer?.ask(s) }}>
+            {#if c.canClose && confirming !== s.name}
+              <button class="close" onclick={(e) => { e.stopPropagation(); confirming = s.name }}>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--b-alert)" stroke-width="2" stroke-linecap="round"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0" /></svg>{t.cleanupClose(s.name)}
               </button>
             {/if}
           </div>
+          <!-- La conferma sta nella card, senza finestre (Franz, 06/10 12:40): il secondo tocco, col nome, chiude. -->
+          {#if c.canClose && confirming === s.name}
+            <div class="confirm" role="group" aria-label={t.closeTitle(s.name)}>
+              <span>{t.closeInline}</span>
+              <button class="keep" onclick={(e) => { e.stopPropagation(); confirming = null }}>{t.closeKeep}</button>
+              <button class="danger" onclick={(e) => { e.stopPropagation(); confirming = null; onClose(s.name) }}>{t.closeOk(s.name)}</button>
+            </div>
+          {/if}
         {/if}
         {#if s.context != null}
           <div class="track"><div class="fill" style="width:{Math.min(100, s.context)}%;background:{ctxTone(s.context)}"></div></div>
@@ -141,7 +152,6 @@
   {/if}
 </dialog>
 
-<CloseDialog bind:this={closer} onConfirm={onClose} />
 
 <style>
   .alive { color: var(--idle); font-weight: 500; }
@@ -172,6 +182,12 @@
   .approve { align-self: stretch; margin-top: 4px; background: var(--primary); color: var(--on-primary); border-radius: 999px; padding: 11px 20px; font-weight: 500; }
   .clean { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--text2); }
   .clean span { flex: 1; min-width: 0; }
+  .confirm { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; color: var(--text2); }
+  .confirm span { flex: 1 1 160px; min-width: 0; }
+  .confirm button { border-radius: 999px; padding: 8px 14px; font-weight: 500; flex: none; }
+  .confirm .keep { color: var(--icon); }
+  .confirm .keep:hover { background: var(--high); }
+  .confirm .danger { background: var(--gone); color: #fff; }
   .close { display: flex; align-items: center; gap: 8px; background: var(--high); border-radius: 999px; padding: 8px 14px; color: var(--text); font-weight: 500; flex: none; }
   dialog.alert { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 22px; width: min(400px, 92vw); border-radius: 28px; }
   dialog.alert::backdrop { background: rgb(0 0 0 / .55); }
@@ -186,6 +202,7 @@
   .chip { border-radius: 999px; padding: 8px 14px; font-size: 14px; background: color-mix(in srgb, var(--primary) 12%, transparent); }
   .chip:hover { filter: brightness(1.15); }
   /* Contratto 1.38, variante 2 (Franz, 05/10 22:06): il Prossimo che sblocca ha un filo ambra e il lucchetto aperto. */
+  .chip.sent { display: inline-flex; align-items: center; gap: 6px; background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--text2); cursor: default; }
   .chip.unblock { display: inline-flex; align-items: center; gap: 6px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wait) 65%, transparent); }
   .track { margin-right: 4px; height: 3px; border-radius: 2px; background: var(--b-track); overflow: hidden; }
   .fill { height: 100%; }
