@@ -33,9 +33,11 @@
   .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; background: var(--low); border-radius: 26px 26px 0 0; border-top: 1px solid var(--line); cursor: pointer; outline: none; }
   /* Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto: aperta, non rivoltata (Franz, 06/10 08:48). */
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
-  /* La master ha il bordo nel corallo del logo di Claude, sempre: la si riconosce a colpo d'occhio senza un fondo acceso
-     (Franz, 06/10 08:45-08:49). */
-  .dock { border: 2px solid var(--opus); border-bottom: 0; }
+  /* La master si riconosce dal corallo del logo di Claude, sempre: un filo sul bordo in alto, la riga e le icone dei tasti
+     nello stesso tono, il fondo resta scuro (variante 3 «filo corallo», Franz, 06/10 08:45-09:44). */
+  .dock { border-top-color: transparent; box-shadow: inset 0 3px 0 var(--opus); }
+  .dock .mono { color: var(--opus); }
+  .dock .ib { color: #E2A58C; }
   .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .col > * { white-space: nowrap; overflow: hidden; }
   b { font-size: 16px; font-weight: 600; }
