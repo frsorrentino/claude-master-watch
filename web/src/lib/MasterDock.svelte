@@ -32,26 +32,17 @@
 </div>
 
 <style>
-  /* La master è un foglio sollevato, un passo più chiaro delle card grigio-blu: la luce batte sul bordo in alto della
-     linguetta (un filo, più vivo al centro), una piega la separa dal fondo del campo (Profondità, Franz 06/10 20:12).
-     Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (08:48). */
-  .dock { position: relative; display: flex; align-items: center; gap: 12px; padding: 11px 12px 8px 16px; border-radius: 26px 26px 0 0; cursor: pointer; outline: none;
-    background: radial-gradient(55% 110% at 50% 0%, rgb(226 236 255 / .09), transparent 72%), linear-gradient(180deg, var(--master-lip) 0%, var(--master-tab) 62%);
-    box-shadow: inset 0 1px 0 var(--master-rim), inset 0 -1px 0 var(--master-crease); transition: translate .18s cubic-bezier(.2, .8, .2, 1); }
-  .dock::after { content: ''; position: absolute; top: 0; left: 18%; right: 18%; height: 1px; pointer-events: none;
-    background: linear-gradient(90deg, transparent, var(--master-glint) 50%, transparent); animation: glint .7s .12s cubic-bezier(.16, 1, .3, 1) both; }
-  @keyframes glint { from { translate: -55% 0; opacity: 0; } }
-  .dock:active { translate: 0 1px; transition-duration: .09s; }
+  /* La master è la superficie più alta dell'app, velata del celeste d'accento, piatta come il resto (Celeste velato, Franz
+     06/10 21:23). Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (08:48). */
+  .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; border-radius: 26px 26px 0 0; cursor: pointer; outline: none; background: var(--master-tab); }
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
-  .dock.expanded { z-index: 1; box-shadow: inset 0 1px 0 var(--master-rim), inset 0 -1px 0 var(--master-crease), 0 8px 16px -8px rgb(0 0 0 / .8); }
   .spark { display: inline-block; width: 11px; height: 11px; margin: 0 7px 0 1px; vertical-align: -1px; color: var(--opus); }
   .spark.spin { animation: spin 2.4s linear infinite; }
   @keyframes spin { to { rotate: 360deg; } }
-  @media (prefers-reduced-motion: reduce) { .dock::after, .spark.spin { animation: none; } .dock, .dock:active { transition: none; translate: none; } }
+  @media (prefers-reduced-motion: reduce) { .spark.spin { animation: none; } }
   .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .col > * { white-space: nowrap; overflow: hidden; }
   b { font-size: 16px; font-weight: 600; }
-  .ib { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--master-disc); color: var(--text);
-    box-shadow: inset 0 1px 0 rgb(226 236 255 / .12), 0 1px 2px rgb(0 0 0 / .55); }
+  .ib { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--master-disc); color: var(--text); }
   .ib:hover { filter: brightness(1.15); }
 </style>

@@ -31,9 +31,8 @@
 <style>
   .pane { height: 100%; display: flex; flex-direction: column; min-height: 0; }
   .slide { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: up .3s cubic-bezier(.2, .8, .2, 1); }
-  /* Il foglio della master chiusa: sta sopra la lista e le getta l'ombra (Profondità, 06/10 20:12). */
-  .closed { position: relative; border-radius: 26px 26px 0 0; background: linear-gradient(180deg, var(--master-sheet) 0%, var(--master-sheet-low) 100%);
-    box-shadow: 0 -2px 3px rgb(0 0 0 / .7), 0 -14px 28px -6px rgb(0 0 0 / .8), 0 -34px 56px -18px rgb(0 0 0 / .6); }
+  /* La master chiusa: linguetta e campo su un solo fondo, velato di celeste (Celeste velato, 06/10 21:23). */
+  .closed { border-radius: 26px 26px 0 0; background: var(--master-sheet); }
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   /* La master sale dal basso, dalla sua barra. */
   @keyframes up { from { translate: 0 40px; opacity: 0; } }

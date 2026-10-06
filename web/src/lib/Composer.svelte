@@ -160,11 +160,9 @@
   .field { display: flex; align-items: center; gap: 4px; border: 1px solid rgb(255 255 255 / .25); border-radius: 28px; padding: 0 8px 0 4px; min-height: 56px; }
   .field:focus-within { border-color: var(--icon); border-width: 2px; padding: 0 7px 0 3px; }
   /* Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45). */
-  /* Il campo della master è un incavo morbido nel suo foglio, del tono delle card: niente bordo, un'ombra interna in alto e un
-     labbro chiaro in basso; scrivendo, un anello chiaro dentro il bordo (variante B, Franz 06/10 20:48). */
-  .field.master { background: var(--master-well); border: 0; padding: 0 8px 0 4px; caret-color: var(--opus);
-    box-shadow: inset 0 2px 6px rgb(0 0 0 / .6), inset 0 0 0 1px rgb(0 0 0 / .3), 0 1px 0 rgb(222 233 255 / .08); }
-  .field.master:focus-within { border: 0; padding: 0 8px 0 4px; box-shadow: inset 0 0 0 2px var(--text2), inset 0 2px 6px rgb(0 0 0 / .6); }
+  /* Il campo della master sul suo fondo velato di celeste, piatto e senza bordo; scrivendo, un anello chiaro (Franz, 06/10 21:23). */
+  .field.master { background: var(--master-well); border: 0; padding: 0 8px 0 4px; caret-color: var(--opus); }
+  .field.master:focus-within { box-shadow: inset 0 0 0 2px var(--text2); }
   .field.master .round:not(.filled) { background: var(--master-raise); }
   .anchor { position: relative; flex: none; }
   .plus { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
