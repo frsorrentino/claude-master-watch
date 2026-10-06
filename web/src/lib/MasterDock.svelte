@@ -33,10 +33,9 @@
   .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; background: var(--low); border-radius: 26px 26px 0 0; border-top: 1px solid var(--line); cursor: pointer; outline: none; }
   /* Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto: aperta, non rivoltata (Franz, 06/10 08:48). */
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
-  /* La master ha il corallo del logo di Claude, sempre: la si riconosce a colpo d'occhio (Franz, 06/10 08:45). */
-  .dock { background: var(--opus); border-color: transparent; color: #1A0F0A; }
-  .dock .mono { color: rgb(26 15 10 / .72); }
-  .dock .ib { background: rgb(26 15 10 / .16); color: #1A0F0A; }
+  /* La master ha il bordo nel corallo del logo di Claude, sempre: la si riconosce a colpo d'occhio senza un fondo acceso
+     (Franz, 06/10 08:45-08:49). */
+  .dock { border: 2px solid var(--opus); border-bottom: 0; }
   .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .col > * { white-space: nowrap; overflow: hidden; }
   b { font-size: 16px; font-weight: 600; }
