@@ -39,6 +39,9 @@
   const inline = $derived(width >= 480)
   // Una colonna molto stretta: «62%» senza «ctx», così il menu ⋮ resta in vista.
   const compact = $derived(width > 0 && width < 300)
+  // Web app installata in una colonna stretta: due righe in ordine, stato con contesto e menu sopra, modello con la quota
+  // sotto, senza sovrapposizioni (Franz, 06/10 08:27-08:29).
+  const stacked = $derived(!!status && width > 0 && width < 600)
   const ring: Record<Tone, string> = { neutral: 'var(--b-ring)', warn: 'var(--b-warn)', alert: 'var(--b-alert)' }
   const arc = (pct: number) => `${Math.max(0, Math.min(100, pct)) * 0.4712} 100`
 
@@ -56,11 +59,9 @@
 <svelte:window onkeydown={(e) => e.key === 'Escape' && (menu = false)} />
 
 <header bind:clientWidth={width}>
-  <div class="row">
+  <div class="row" class:stack={stacked}>
     {#if onBack}<button class="ib back" onclick={onBack} aria-label={t.back}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>{/if}
-    <!-- Web app installata in una colonna stretta: lo stato sopra, modello e effort sotto (Franz, 06/10 08:27). -->
-    <span class="sm" class:stack={!!status && width > 0 && width < 600}>
-    {#if status}{@render status()}{/if}
+    {#if status}<span class="st">{@render status()}</span>{/if}
     {#if wide}
       <span class="lead"><Badge {s} size={26} /><h1>{s.name}</h1></span>
     {/if}
@@ -69,13 +70,12 @@
       {#if tunable}<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10l5 5 5-5z" fill="var(--text2)" /></svg>{/if}
       {#if tunable && advice?.dot}<span class="dot" title={t.adviceDot} aria-label={t.adviceDot}></span>{/if}
     </button>
-    </span>
     {#if !wide}<span class="sp"></span>{/if}
     <!-- In una colonna stretta la quota lascia il posto a modello, contesto e menu (è anche nella home). -->
     {#if quota?.h5 != null && (width === 0 || width >= 340)}
-      <span class="meter" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined}>
+      <span class="meter q" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined}>
         <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(quota.h5)} style="stroke:{quota.stale ? 'var(--wait)' : ring[tone(quota.h5)]}" class="arc" /></svg>
-        <span class="mcol" class:inline>
+        <span class="mcol" class:inline={inline || stacked}>
           <span class="ml" class:stale={quota.stale}>{t.quota5h(quota.h5)}</span>
           {#if reset}<span class="reset"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{reset}</span>{/if}
         </span>
@@ -170,8 +170,14 @@
   header { border-bottom: 1px solid var(--line); padding: 4px 0 8px; background: var(--bg); }
   .row { display: flex; align-items: center; gap: 8px; padding: 0 0 0 16px; min-height: 52px; }
   .row:has(.back) { padding-left: 2px; gap: 6px; }
-  .sm { display: contents; }
-  .sm.stack { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0; min-width: 0; }
+  .st { display: flex; align-items: center; min-width: 0; }
+  .row.stack { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'st ctx menu' 'pill q q'; column-gap: 8px; row-gap: 2px; padding: 4px 0 8px 16px; }
+  .row.stack .st { grid-area: st; }
+  .row.stack .pill { grid-area: pill; justify-self: start; min-width: 0; max-width: 100%; }
+  .row.stack .q { grid-area: q; justify-self: end; padding-right: 12px; }
+  .row.stack .ctxb { grid-area: ctx; }
+  .row.stack .anchor { grid-area: menu; }
+  .row.stack .sp { display: none; }
   .lead { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; }
   h1 { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; }
   .sp { flex: 1; }
