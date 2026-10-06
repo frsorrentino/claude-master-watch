@@ -194,6 +194,7 @@
   let wco = $state(wcoForced || !!wcoApi?.visible)
   wcoApi?.addEventListener('geometrychange', () => { wco = wcoForced || !!wcoApi?.visible })
   $effect(() => { document.body.classList.toggle('wco', wco) })
+  $effect(() => { document.body.classList.toggle('wcodesk', wco && wide) })
   // Il clic su una scheda porta il cursore nel campo di quella colonna.
   const focusColumn = (name: string) => document.querySelector<HTMLTextAreaElement>(`[data-col="${CSS.escape(name)}"] textarea`)?.focus()
   // I dettagli della prima colonna accanto alle colonne: dalle Impostazioni, spenti di default (Franz, 04/10 14:40).
