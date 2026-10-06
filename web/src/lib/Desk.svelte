@@ -13,7 +13,7 @@
     /** Al posto delle colonne, per esempio il Registro aperto dal menu della home (TabletDesk.override). */
     override?: Snippet | null
     /** La linguetta sopra ogni colonna nella barra del titolo della web app installata: posata e animata con la colonna. */
-    tab?: Snippet<[string]> | null
+    tab?: Snippet<[string, (e: PointerEvent) => void]> | null
     /** I dettagli della prima colonna, dall'altra parte della home (TabletInspector). */
     details?: Snippet | null
   } = $props()
@@ -104,7 +104,7 @@
           {@render column(name, (e) => grabColumn(i, e))}
         </div>
         {#if tab}
-          <div class="tabslot" class:dragging={dragged === i} style="left:{dragged === i ? lefts[i] + draggedPx : lefts[k]}px;max-width:{live[k] ?? 0}px">{@render tab(name)}</div>
+          <div class="tabslot" class:dragging={dragged === i} style="left:{dragged === i ? lefts[i] + draggedPx : lefts[k]}px;max-width:{live[k] ?? 0}px">{@render tab(name, (e) => grabColumn(i, e))}</div>
         {/if}
       {/each}
       {#each cols.slice(0, -1) as _, i}
