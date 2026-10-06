@@ -76,7 +76,7 @@
 </script>
 
 {#snippet heroCard()}
-  <div class="glass hero" role="button" tabindex="0" onclick={onConversation} onkeydown={(e) => e.key === 'Enter' && onConversation()}>
+  <div class="glass hero" class:lit={master.state === 'busy'} role="button" tabindex="0" onclick={onConversation} onkeydown={(e) => e.key === 'Enter' && onConversation()}>
     <div class="label" style="--c:var(--idle)">
       <span>{(h?.at ? t.homeLast(hm(h.at)) : t.homeLastBare).toUpperCase()}</span><span class="sp"></span>
       <i class="led" style="background:{dot[master.state]}"></i>
@@ -202,6 +202,9 @@
   .foryou { border-color: color-mix(in srgb, var(--wait) 75%, transparent); background: linear-gradient(rgb(255 255 255 / .06), transparent 45%), color-mix(in srgb, var(--wait) 6%, var(--bg)); gap: 4px; }
   .hero { cursor: pointer; outline: none; }
   .hero:focus-visible { border-color: var(--icon); }
+  /* Luce (variante D): l'ultimo esito si accende di corallo mentre la master lavora. */
+  .hero.lit { border-color: rgba(217, 119, 87, .30); box-shadow: 0 0 40px rgba(217, 119, 87, .10); }
+  .hero.lit .label { --c: #F2C1A8 !important; }
   .label { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--c); }
   .label i:not(.led) { flex: 1; height: 1px; background: color-mix(in srgb, var(--c) 40%, transparent); }
   .foryou .label { padding-bottom: 6px; }

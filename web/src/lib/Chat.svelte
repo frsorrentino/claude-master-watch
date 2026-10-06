@@ -116,7 +116,7 @@
   })
 </script>
 
-<section class="chat" class:dragging aria-label={s.name}
+<section class="chat" class:dragging class:lit={s.name === MASTER && s.state === 'busy'} aria-label={s.name}
   ondragover={(e) => { if (hasFiles(e)) { e.preventDefault(); dragging = true } }} ondragleave={(e) => { if (e.currentTarget === e.target) dragging = false }} ondrop={onDrop}>
   {#if dragging}<div class="dropzone">{t.dropHere}</div>{/if}
   <Header {st} {s} wide={wide} {onBack} {onCmd} onPrompt={onSend} {onHandoff} />
@@ -178,6 +178,10 @@
 </dialog>
 
 <style>
+  /* Luce (variante D) nella conversazione della master mentre lavora: filo sotto la testata, barra accanto alle risposte, alone sul campo. */
+  .lit > :global(header)::after { content: ''; display: block; height: 2px; margin: 6px 16px 0; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--opus) 20%, #F6C9AE 50%, var(--opus) 80%, transparent); }
+  .lit :global(.claude) { border-left: 2px solid rgba(217, 119, 87, .75); padding-left: 12px; }
+  .lit :global(.field) { border-color: rgba(217, 119, 87, .55); box-shadow: 0 0 24px rgba(217, 119, 87, .18); }
   .chat { display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; container-type: inline-size; }
   .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
