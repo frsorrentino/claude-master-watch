@@ -94,7 +94,7 @@
     {#if narrow && field && !draft.trim()}
       <button type="button" class="sugrow" onclick={() => { draft = field ?? ''; area?.focus() }}><i>{field}</i><span>{t.use}</span></button>
     {/if}
-    <form class="field" onsubmit={(e) => { e.preventDefault(); send() }}>
+    <form class="field" class:master={toMaster} onsubmit={(e) => { e.preventDefault(); send() }}>
       <span class="anchor">
         <button type="button" class="plus" aria-label={t.attach} aria-expanded={menu} onclick={() => (menu = !menu)}>
           <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 5v14M5 12h14" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round" /></svg>
@@ -153,6 +153,9 @@
   .chip:hover { background: var(--surface); }
   .field { display: flex; align-items: center; gap: 4px; border: 1px solid rgb(255 255 255 / .25); border-radius: 28px; padding: 0 8px 0 4px; min-height: 56px; }
   .field:focus-within { border-color: var(--icon); border-width: 2px; padding: 0 7px 0 3px; }
+  /* Il campo della master nel corallo di Claude, come il filo della sua barra (Franz, 06/10 09:45). */
+  .field.master { border: 2px solid rgb(217 119 87 / .75); padding: 0 7px 0 3px; }
+  .field.master:focus-within { border-color: var(--opus); }
   .anchor { position: relative; flex: none; }
   .plus { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
   .plus:hover { background: var(--surface); }
