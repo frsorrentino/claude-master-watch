@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -602,7 +603,7 @@ private fun Composer(
         }
         OutlinedTextField(
             state = fieldState, lineLimits = androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
-            modifier = Modifier.fillMaxWidth().onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
+            modifier = Modifier.fillMaxWidth().then(if (toMaster) Modifier.masterWell() else Modifier).onSizeChanged { if (lineH == 0 || it.height < lineH) lineH = it.height; fieldW = it.width }
                 .contentReceiver { content ->
                     if (!canAttach) return@contentReceiver content
                     content.consume { item ->
@@ -629,10 +630,10 @@ private fun Composer(
                 else Text(when { s.question != null -> stringResource(R.string.answer_free); toMaster -> stringResource(R.string.master_placeholder); else -> stringResource(if (it.pixelbox.cmwatch.rules.Preposition.ad(s.name)) R.string.write_to_ad else R.string.write_to, s.name) }, maxLines = 2)
             },
             shape = MaterialTheme.shapes.extraLarge,
-            // Il campo della master è un incavo nel suo foglio, senza cornice colorata (Profondità, Franz 06/10 20:12).
+            // Il campo della master è un incavo morbido nel suo foglio, del tono delle card, senza bordo (variante B, Franz 06/10 20:48).
             colors = if (toMaster)
                 androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MasterLine, focusedBorderColor = CmColors.text2,
+                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent, focusedBorderColor = CmColors.text2,
                     unfocusedContainerColor = MasterWell, focusedContainerColor = MasterWell, cursorColor = CmColors.modelOpus,
                 )
             else androidx.compose.material3.OutlinedTextFieldDefaults.colors(),
@@ -1926,4 +1927,24 @@ private fun elapsed(s: Long): String = when {
     s < 60 -> stringResource(R.string.live_s, s)
     s < 3600 -> stringResource(R.string.live_ms, s / 60, s % 60)
     else -> stringResource(R.string.live_hm, s / 3600, (s % 3600) / 60)
+}
+
+/** L'incavo del campo della master: un'ombra interna in alto e un labbro chiaro sotto, come nella web app (Franz, 06/10 20:48). */
+private fun Modifier.masterWell(): Modifier = drawBehind {
+    // Gli angoli del campo: `shapes.extraLarge`, 28 dp, mai più della metà dell'altezza.
+    val r = minOf(28.dp.toPx(), size.height / 2f)
+    drawRoundRect(
+        androidx.compose.ui.graphics.Color(0x14DEE9FF),
+        topLeft = androidx.compose.ui.geometry.Offset(0f, 1.dp.toPx()), size = size,
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
+    )
+}.drawWithContent {
+    drawContent()
+    val r = minOf(28.dp.toPx(), size.height / 2f)
+    val path = androidx.compose.ui.graphics.Path().apply {
+        addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, 0f, size.width, size.height, androidx.compose.ui.geometry.CornerRadius(r, r)))
+    }
+    clipPath(path) {
+        drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f), 1f to androidx.compose.ui.graphics.Color.Transparent, startY = 0f, endY = 7.dp.toPx()))
+    }
 }
