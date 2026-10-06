@@ -262,7 +262,7 @@ fun SessionSheet(
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
         val masterVoice = home != null && LocalMasterLook.current.voice
-        val chatArea: @Composable ColumnScope.() -> Unit = { androidx.compose.runtime.CompositionLocalProvider(LocalVoiceAccent provides masterVoice) {
+        val chatArea: @Composable ColumnScope.() -> Unit = { androidx.compose.runtime.CompositionLocalProvider(LocalVoiceAccent provides masterVoice, LocalBubble provides (if (home != null) MasterRaise else null)) {
             // Fissa sopra la chat e compatta (Franz, 30/09 22:01: scorreva con la chat ed era troppo grande).
             bar?.invoke()
             if (header) SheetHeader(
@@ -785,6 +785,8 @@ val MasterGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(listO
 fun MasterThread(modifier: Modifier = Modifier) = Box(modifier.fillMaxWidth().height(2.dp).background(MasterGradient))
 /** La voce della master: la barra a sinistra delle sue risposte. */
 internal val LocalVoiceAccent = androidx.compose.runtime.staticCompositionLocalOf { false }
+/** Il fondo delle bolle di Franz: nella chat della master un passo sopra il suo celeste velato, come nella web app (06/10 21:23). */
+internal val LocalBubble = androidx.compose.runtime.staticCompositionLocalOf<androidx.compose.ui.graphics.Color?> { null }
 val LocalMasterChatStyle = androidx.compose.runtime.staticCompositionLocalOf { MasterChatStyle.DEPTH }
 
 internal val MasterNight = androidx.compose.ui.graphics.Color(0xFF0E0B18)
@@ -1007,7 +1009,7 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
     // Tutta la larghezza meno un margine a sinistra, non una colonna stretta (Franz, 30/09 22:17).
     Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
         Surface(
-            color = CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
+            color = LocalBubble.current ?: CmColors.surfaceHigh, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
             modifier = Modifier,
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1044,7 +1046,7 @@ private fun UserBubble(e: TranscriptEntry, onResend: (String) -> Unit) {
     val clip = LocalClipboardManager.current
     val text = e.text.orEmpty()
     Column(Modifier.fillMaxWidth().padding(start = 40.dp), horizontalAlignment = Alignment.End) {
-        Surface(color = CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)) {
+        Surface(color = LocalBubble.current ?: CmColors.surface, shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)) {
             SelectionContainer { Text(linked(text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
