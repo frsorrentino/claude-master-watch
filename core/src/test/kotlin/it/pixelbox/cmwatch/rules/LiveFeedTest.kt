@@ -211,6 +211,10 @@ class LiveFeedTest {
         fun low(s: State) = s.copy(sessions = s.sessions.map { it.copy(lowPriority = "active") })
         assertEquals(1, plan(Feed(), withOutcome("A", 50), withOutcome("B", 100)).items.size)
         assertTrue(plan(Feed(), low(withOutcome("A", 50)), low(withOutcome("B", 100))).items.isEmpty())
+        // anche la chiusura, sia con lo stato «gone» sia sparendo dalla lista
+        val lowQ = low(q.copy(sessions = q.sessions.map { if (it.name == "orbit-docs") it.copy(state = SessionState.IDLE) else it }))
+        assertTrue(plan(Feed(), lowQ, low(q)).items.none { it.kind == Kind.GONE })
+        assertTrue(plan(Feed(), lowQ, low(idle)).items.none { it.kind == Kind.GONE })
     }
 
     @Test fun theFullRoundGoesWaitingThenWorkingThenFollowedIdle() {

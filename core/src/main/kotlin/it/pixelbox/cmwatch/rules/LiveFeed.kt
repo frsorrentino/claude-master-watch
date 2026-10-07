@@ -76,7 +76,7 @@ object LiveFeed {
         }
         for (s in cur.sessions) sessionNews(s, before[s.name], prev == null, now, l)?.let(::put)
         val names = cur.sessions.map { it.name }.toSet()
-        for (p in before.values) if (p.name !in names && p.state != SessionState.GONE) put(goneNews(p.name, now, l))
+        for (p in before.values) if (p.name !in names && p.state != SessionState.GONE && !low(p)) put(goneNews(p.name, now, l))
         for (a in cur.approvals) if (prev?.approvals?.none { it.task == a.task } != false) {
             put(News("ok:${a.task}", 1, Kind.APPROVAL, null, approvalText(a, l), at = now))
         }
