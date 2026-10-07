@@ -298,7 +298,7 @@ class ContractTest {
 
     // Contratto 1.19 (29/09, richiesta R5): «Condividi» verso una sessione. `share` nello stato dice che il relay lo supporta.
     @Test fun reportAndShareSignal() {
-        assertEquals(1_500_000, ContractJson.decodeState(Fixtures.stateIdle).share!!.maxBytes)
+        assertEquals(10_000_000, ContractJson.decodeState(Fixtures.stateIdle).share!!.maxBytes)
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
