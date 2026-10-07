@@ -120,7 +120,7 @@
       </span>
       <input bind:this={images} type="file" accept="image/*" multiple hidden onchange={picked} />
       <input bind:this={camera} type="file" accept="image/*" capture="environment" hidden onchange={picked} />
-      <input bind:this={any} type="file" hidden onchange={picked} />
+      <input bind:this={any} type="file" multiple hidden onchange={picked} />
       <textarea bind:this={area} rows="1" class:sug={!!inField} bind:value={draft} onkeydown={key} onpaste={paste} {placeholder}></textarea>
       {#if inField && !draft.trim()}<button type="button" class="use" onclick={() => { draft = field ?? ''; area?.focus() }}>{t.use}</button>{/if}
       {#if md === 'stop'}

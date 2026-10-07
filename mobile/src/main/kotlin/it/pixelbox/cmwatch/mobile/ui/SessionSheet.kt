@@ -895,8 +895,9 @@ private fun AttachButton(files: Boolean = false, attach: Boolean = true, onRecur
     // Franz, 03/10 17:34: anche una foto scattata ora. La fotocamera di sistema la scrive nella cache dell'app, dietro il
     // FileProvider; poi segue la strada delle immagini (ridotta, caricata, `report`).
     var shot by rememberSaveable { mutableStateOf<String?>(null) }
-    // Contratto 1.28: un file di qualunque formato, solo con un relay che li accetta (`share.any`).
-    val document = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { onPicked(listOf(it)) } }
+    // Contratto 1.28: file di qualunque formato, solo con un relay che li accetta (`share.any`); più d'uno insieme, fino
+    // al limite delle immagini (Franz, 07/10 19:46).
+    val document = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isNotEmpty()) onPicked(uris.take(MAX_IMAGES)) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> shot?.let { u -> if (ok) onPicked(listOf(Uri.parse(u))) }; shot = null }
     Box {
         IconButton(onClick = { menu = true }, modifier = Modifier.handCursor(), content = icon)
