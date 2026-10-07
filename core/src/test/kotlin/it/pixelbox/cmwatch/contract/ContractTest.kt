@@ -27,6 +27,23 @@ class ContractTest {
         assertEquals("2026-09-12", s.recap.date); assertEquals(2, s.recap.items.size)
     }
 
+    /** Contratto 1.42: `voice` sul prompt alla master, `via` e `confirmations` sugli ok della modalità live. */
+    @Test fun liveCommandsCarryVoiceAndTheDoubleConfirmation() {
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val results = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+        val ask = cmds.single { it.voice == true }
+        assertEquals(CmdOp.PROMPT, ask.op); assertEquals("master", ask.session)
+        val live = cmds.filter { it.via == "live" }
+        assertEquals(listOf(2, 1), live.map { it.confirmations }); assertTrue(live.all { it.op == CmdOp.APPROVE })
+        assertEquals(listOf(true, false), live.map { c -> results.single { it.id == c.id }.ok })
+        // Un comando senza i campi nuovi si scrive come prima: nessuna chiave in più per un relay vecchio.
+        val plain = ContractJson.json.encodeToString(Cmd.serializer(), Cmd("x", CmdOp.APPROVE, null, "t", 1, "p"))
+        listOf("voice", "via", "confirmations").forEach { assertFalse(it, "\"$it\"" in plain) }
+        val sent = ContractJson.json.encodeToString(Cmd.serializer(), live[0])
+        assertTrue("\"via\":\"live\"" in sent); assertTrue("\"confirmations\":2" in sent)
+    }
+
     @Test fun quotaCarriesTheFiveHourReset() {
         // Contratto 1.3: `reset_h5` è la ripartenza della finestra di 5 ore; `reset_w7` resta quella settimanale.
         val q = ContractJson.decodeState(Fixtures.stateQuestion).quota
@@ -108,7 +125,8 @@ class ContractTest {
         // Contratto 1.31: un pair_add riuscito, il QR della 1.30 e il codice a 6 cifre.
         // Contratto 1.36: un prompt dalla web app, con `device` "web". Contratto 1.37: due approve (uno rifiutato) e un decision.
         // Contratto 1.39: due unpair, uno riuscito e uno rifiutato.
-        assertEquals(37, results.size); assertEquals(9, results.count { !it.ok })
+        // Contratto 1.42: un prompt a voce alla master e due approve dalla live, uno rifiutato con una conferma sola.
+        assertEquals(40, results.size); assertEquals(10, results.count { !it.ok })
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
@@ -309,7 +327,7 @@ class ContractTest {
     // Contratto 1.36: la web app manda `device` "web".
     @Test fun webPromptCarriesItsDevice() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
-        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.last { it.op == CmdOp.PROMPT }
+        val cmd = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }.single { it.op == CmdOp.PROMPT && it.device == "web" }
         assertEquals("web", cmd.device); assertEquals("web", cmd.by)
     }
 

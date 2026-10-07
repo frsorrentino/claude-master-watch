@@ -250,6 +250,17 @@ enum class CmdOp {
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
     val parts: Boolean? = null,
+    /** Contratto 1.42: `prompt` dettato nella modalità live; il relay aggiunge il testo d'istruzioni vocale. Assente, non scritto. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val voice: Boolean? = null,
+    /** Contratto 1.42: `approve` dalla modalità live ("live"), con le conferme date; il relay rifiuta un live con meno di 2. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val via: String? = null,
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val confirmations: Int? = null,
 )
 
 /**
