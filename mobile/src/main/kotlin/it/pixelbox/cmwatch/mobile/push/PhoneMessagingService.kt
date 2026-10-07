@@ -17,7 +17,9 @@ class PhoneMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val app = application as PhoneApp
-        runBlocking { withTimeoutOrNull(8_000) { app.repo.refresh() } }
+        val ok = runBlocking { withTimeoutOrNull(8_000) { app.repo.refresh() } } == true
+        // Un GET non riuscito si riprova dopo, fuori dal tempo concesso a onMessageReceived (piano prestazioni, Task 11).
+        if (!ok) PhoneWakeWorker.enqueue(this)
         // Contratto 1.18: diario e resoconto della notte arrivano con il push; si avvisa in silenzio, il testo è nel Diario.
         when (message.data["kind"]) {
             "recap" -> app.notifier.diary(getString(R.string.notif_diary))

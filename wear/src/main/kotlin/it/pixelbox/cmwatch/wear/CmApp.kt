@@ -195,7 +195,8 @@ class CmApp : Application() {
         runCatching { ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) }.getOrDefault(false)
 
     /** Sveglia (FCM): un GET; le notifiche partono dal diff sullo stream (react). */
-    suspend fun onWake(notify: Boolean) { repo.refresh() }
+    /** Il GET della sveglia FCM; false se non è riuscito, così il worker riprova (piano prestazioni, Task 11). */
+    suspend fun onWake(notify: Boolean): Boolean = repo.refresh()
 
     /** Ciò che è cambiato fra due /state → notifiche (solo con l'app non in primo piano), tile, complication. */
     suspend fun react(prev: State?, cur: State) {
