@@ -343,7 +343,9 @@ private fun <T> resilient(block: suspend FlowCollector<T>.() -> Unit): Flow<T> =
   - Negli stream `if (ev.event == "auth_revoked" || ev.event == "cancel") throw TransportException.Network(ev.event)`.
     Così si riapre con un token fresco, come già fa il relay.
   - In `Rtdb`: `execute()` diventa `await()` cancellabile (`suspendCancellableCoroutine` con `call.enqueue` e
-    `cont.invokeOnCancellation { call.cancel() }`); `callTimeout` da 30 a 10 s per le REST brevi. Lo streaming non cambia.
+    `cont.invokeOnCancellation { call.cancel() }`); `callTimeout` da 30 a 10 s per le REST brevi. Lo streaming non cambia,
+    e nemmeno la PUT di `/share/<id>`: con il tetto degli allegati a 10 MB (richiesta del 07/10 19:55) un caricamento su
+    LTE può durare più di 10 s, quindi tiene un `callTimeout` di 120 s.
   - Cambio di rete: in `onAvailable` e in `onLost`, `repo.reconnect()` oltre a `flushQueue()`.
 - [ ] **Passo 3:** test verdi su win; `:mobile:assembleDebug :wear:assembleDebug`.
 - [ ] **Passo 4: prova dal vivo:** sul telefono in primo piano, si spegne il Wi-Fi. Lo stato deve tornare in meno di
