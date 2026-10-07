@@ -82,25 +82,29 @@ fun TunePanel(
     }
 }
 
-/** Il consiglio sul compito: fondo lilla tenue, il motivo sotto; il costo e «Usa il consiglio» solo se è diverso. */
+/**
+ * Il consiglio sul compito: fondo lilla tenue, il motivo sotto; il costo e «Usa il consiglio» solo se è diverso. Uguale
+ * alla scelta, verde con ✓: è una conferma, non un suggerimento (Franz, 07/10 21:21). Senza motivo, nessuna riga vuota.
+ */
 @Composable
 private fun AdviceCard(a: MasterService.AdviceView, choices: Choices, model: String?, effort: String?, onUse: (MasterService.AdviceSteps) -> Unit) {
     val go = MasterService.adviceSteps(a, choices, model, effort)
     val same = go.model == null && go.effort == null
     val m = choices.models.firstOrNull { Tune.sameModel(it.id, a.model) }
     val label = "${m?.label ?: ModelText.short(m) ?: a.model} · ${a.effort}"
+    val tint = if (same) CmColors.briefGood else CmColors.advice
     Column(
         Modifier.padding(horizontal = 12.dp, vertical = 2.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp))
-            .background(CmColors.advice.copy(alpha = .10f)).padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
+            .background(tint.copy(alpha = .10f)).padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(Modifier.size(40.dp).clip(CircleShape).background(CmColors.advice.copy(alpha = .22f)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.AutoAwesome, null, tint = CmColors.advice, modifier = Modifier.size(22.dp))
+            Box(Modifier.size(40.dp).clip(CircleShape).background(tint.copy(alpha = .22f)), contentAlignment = Alignment.Center) {
+                Icon(if (same) Icons.Rounded.Check else Icons.Rounded.AutoAwesome, null, tint = tint, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.advice_head).uppercase(), style = MonoSmall.copy(color = CmColors.advice, fontWeight = FontWeight.SemiBold))
+                Text(stringResource(R.string.advice_head).uppercase(), style = MonoSmall.copy(color = tint, fontWeight = FontWeight.SemiBold))
                 Text(if (same) stringResource(R.string.advice_same, label) else label, style = MaterialTheme.typography.titleMedium, color = CmColors.text)
-                Text(a.reason, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+                if (a.reason.isNotBlank()) Text(a.reason, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
             }
         }
         if (!same) {
@@ -157,7 +161,8 @@ private fun EffortGroup(efforts: List<String>, effort: String?, recommended: Str
             efforts.forEachIndexed { i, e ->
                 ToggleButton(
                     checked = e == effort, onCheckedChange = { onPick(e) },
-                    modifier = Modifier.weight(1f).heightIn(min = 44.dp).handCursor().semantics { role = Role.RadioButton },
+                    // Larghi quanto la loro parola (Franz, 07/10 21:16: «medium» usciva dal suo tasto a larghezze uguali).
+                    modifier = Modifier.weight((e.length + 2).toFloat()).heightIn(min = 44.dp).handCursor().semantics { role = Role.RadioButton },
                     shapes = when (i) {
                         0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                         efforts.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()

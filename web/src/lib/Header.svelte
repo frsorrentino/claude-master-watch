@@ -153,10 +153,11 @@
       {@const label = `${am?.label ?? shortModel(am) ?? advice.model} · ${advice.effort}`}
       {@const steps = adviceSteps(advice, st.choices, model?.id, effort)}
       {@const same = !steps.model && !steps.effort}
-      <div class="adv">
+      <!-- Consiglio uguale alla scelta: verde con ✓, una conferma e non un suggerimento (Franz, 07/10 21:21). -->
+      <div class="adv" class:same>
         <div class="advr">
-          <span class="circ adc"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="currentColor" /></svg></span>
-          <span class="tx"><span class="ov">{t.adviceHead}</span><span class="at">{same ? t.adviceSame(label) : label}</span><span class="aw">{advice.reason}</span></span>
+          <span class="circ adc">{#if same}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>{:else}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="currentColor" /></svg>{/if}</span>
+          <span class="tx"><span class="ov">{t.adviceHead}</span><span class="at">{same ? t.adviceSame(label) : label}</span>{#if advice.reason?.trim()}<span class="aw">{advice.reason}</span>{/if}</span>
         </div>
         {#if !same && advice.cost}
           <p class="cost"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{t.adviceCost(tokens(advice.cost))}</p>
@@ -183,7 +184,7 @@
     <p class="grp">{t.effortTitle}</p>
     <div class="bgp" role="radiogroup" aria-label={t.effortTitle}>
       {#each st.choices?.efforts ?? [] as e}
-        <button class:on={e === effort} role="radio" aria-checked={e === effort} onclick={() => setEffort(e)}>{e}{#if e !== effort && advice?.effort === e}<i title={t.adviceTag}></i>{/if}</button>
+        <button class:on={e === effort} role="radio" aria-checked={e === effort} style:flex-grow={e.length + 2} onclick={() => setEffort(e)}>{e}{#if e !== effort && advice?.effort === e}<i title={t.adviceTag}></i>{/if}</button>
       {/each}
     </div>
     {#if effort}<p class="ed">{[effort, t.effortSub[effort]].filter(Boolean).join(' · ')}</p>{/if}
@@ -235,6 +236,9 @@
   .advr { display: flex; gap: 14px; align-items: flex-start; }
   .adc { background: color-mix(in srgb, var(--advice) 22%, transparent); color: var(--advice); }
   .ov { font: 600 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--advice); }
+  .adv.same { background: color-mix(in srgb, var(--good) 10%, transparent); }
+  .adv.same .adc { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+  .adv.same .ov { color: var(--good); }
   .at { font-size: 16.5px; font-weight: 500; }
   .aw { font-size: 13.5px; line-height: 1.35; color: var(--text2); }
   .cost { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0 54px; font-size: 13px; line-height: 1.35; color: var(--b-warn); }
@@ -251,7 +255,8 @@
   .rec { font: 600 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--advice); background: color-mix(in srgb, var(--advice) 14%, transparent); border-radius: 999px; padding: 3px 9px; }
   /* L'effort come gruppo di tasti connessi (ButtonGroup dell'app): la scelta si arrotonda tutta. */
   .bgp { display: flex; gap: 2px; margin: 4px 20px 0; }
-  .bgp button { position: relative; flex: 1; height: 44px; border-radius: 8px; background: var(--high); font-size: 14px; font-weight: 500; transition: border-radius .2s cubic-bezier(.2, .8, .2, 1), background-color .2s; }
+  /* Larghi quanto la loro parola (Franz, 07/10 21:16: «medium» usciva dal suo tasto a larghezze uguali). */
+  .bgp button { position: relative; flex: 1 1 0; min-width: 0; height: 44px; border-radius: 8px; background: var(--high); font-size: 14px; font-weight: 500; transition: border-radius .2s cubic-bezier(.2, .8, .2, 1), background-color .2s; }
   .bgp button:first-child { border-radius: 22px 8px 8px 22px; }
   .bgp button:last-child { border-radius: 8px 22px 22px 8px; }
   .bgp button.on { border-radius: 22px; background: var(--primary); color: var(--on-primary); }
