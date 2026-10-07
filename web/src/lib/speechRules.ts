@@ -50,18 +50,23 @@ export function chunks(text: string, max = MAX_CHUNK): string[] {
 /** La domanda con le opzioni numerate: «Deploy now? 1, yes. 2, no.». */
 export const question = (q: Question) => [q.text.trim(), ...q.options.map(o => `${o.n}, ${optionText(o.label)}.`)].join(' ')
 
-export const RATE_CHOICES = [0.7, 0.8, 0.9, 1.0, 1.25, 1.5, 2.0]
-export const RATE_PILL = [1.0, 1.25, 1.5, 2.0]
-/** A ogni tocco la più veloce dopo, da 2× di nuovo 1×; da una lenta si torna a 1×. */
-export function nextRate(current: number): number {
-  if (current < 1) return 1
-  return RATE_PILL.find(r => r > current + 0.01) ?? 1
+// La velocità continua (SpeechRate.kt, slider approvato da Franz il 07/10 alle 22:06): da 0,5× a 2× a passi di 0,05,
+// con uno scatto su 1× per ritrovare la velocità normale al tatto.
+export const RATE_MIN = 0.5
+export const RATE_MAX = 2
+export const RATE_STEP = 0.05
+export function snapRate(v: number): number {
+  const c = Math.min(RATE_MAX, Math.max(RATE_MIN, v))
+  if (Math.abs(c - 1) < 0.035) return 1
+  return (Math.round(c / RATE_STEP) * 5) / 100
 }
-/** Il valore salvato portato alla scelta più vicina; senza scelta o rovinato, 1. */
+/** Il valore salvato portato sul passo; senza scelta o rovinato, 1. */
 export function rateOf(saved: number | null | undefined): number {
   if (saved == null || !Number.isFinite(saved) || saved <= 0) return 1
-  return RATE_CHOICES.reduce((a, b) => (Math.abs(b - saved) < Math.abs(a - saved) ? b : a))
+  return snapRate(saved)
 }
+/** Dove sta `v` sulla corsa dello slider, da 0 a 1: per il segno di 1×. */
+export const rateFraction = (v: number) => (v - RATE_MIN) / (RATE_MAX - RATE_MIN)
 
 /** La voce dopo `current`: dalla predefinita alla prima, poi in ordine, dopo l'ultima di nuovo la predefinita (null). */
 export function nextVoice(voices: string[], current: string | null): string | null {

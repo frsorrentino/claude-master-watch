@@ -64,7 +64,7 @@ export const t = {
   recurring: 'Ricorrenti', recurringOpen: 'Azioni ricorrenti', attach: 'Allega', attachGallery: 'Foto dalla galleria', attachCamera: 'Scatta una foto',
   attachFile: 'File', removeImage: "Togli l'immagine", reopen: 'Riapri', stop: 'Ferma', masterPlaceholder: 'Scrivi alla master',
   slashConfirmTitle: (c: string, n: string) => `Mandare /${c} a ${n}?`, slashConfirmClear: 'La conversazione della sessione si svuota: il contesto riparte da zero.',
-  codeLabel: 'segue un blocco di codice', readingNow: 'IN LETTURA', readingOpen: (n: string) => `Torna a ${n}`,
+  codeLabel: 'segue un blocco di codice', readingNow: 'IN LETTURA', readingPaused: 'in pausa', readingPause: 'Pausa', readingResume: 'Riprendi la lettura', readingOpen: (n: string) => `Torna a ${n}`,
   rateChange: (r: string) => `Velocità di lettura ${r}: tocca per cambiarla`, voiceChange: (v: string) => `Cambia voce, ora: ${v}`, voiceDefault: 'Predefinita del telefono',
   tabletState: { waiting: 'ti aspetta', finished: 'ha finito', working: 'al lavoro', still: 'ferma' } as Record<string, string>,
   tabletClose: (n: string) => `Togli ${n} dalle colonne`, tabletHomeLeft: 'Porta la home a sinistra', tabletHomeRight: 'Porta la home a destra',

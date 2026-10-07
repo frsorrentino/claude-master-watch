@@ -1,4 +1,4 @@
-import { chunks, forPhone, nextRate, nextVoice, rankVoices, rateOf } from './speechRules'
+import { chunks, forPhone, nextVoice, rankVoices, rateOf } from './speechRules'
 import { t } from './t'
 
 // La lettura a voce, una per volta (Speech.kt): ▶ legge, lo stesso tasto sullo stesso testo la ferma. Il testo si pulisce
@@ -6,8 +6,8 @@ import { t } from './t'
 const load = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
 const store = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v) } catch { /* resta per la sessione */ } }
 
-export const speech = $state<{ text: string | null; source: string | null; rate: number; voice: string | null; voices: string[] }>({
-  text: null, source: null, rate: rateOf(Number(load('cm.rate') ?? NaN)), voice: load('cm.voice'), voices: [],
+export const speech = $state<{ text: string | null; source: string | null; paused: boolean; rate: number; voice: string | null; voices: string[] }>({
+  text: null, source: null, paused: false, rate: rateOf(Number(load('cm.rate') ?? NaN)), voice: load('cm.voice'), voices: [],
 })
 let parts: string[] = []
 let at = 0
@@ -40,27 +40,30 @@ function play(from: number) {
   next()
 }
 
-/** Legge `text` (grezzo, col markdown) o, se lo sta già leggendo, si ferma. `source`: la sessione, per il controller. */
+/** Legge `text` (grezzo, col markdown); se lo sta già leggendo si ferma, se è in pausa riprende. `source`: la sessione. */
 export function toggle(text: string, source: string | null = null) {
-  if (speech.text === text) { stop(); return }
+  if (speech.text === text) { if (speech.paused) resume(); else stop(); return }
   parts = chunks(forPhone(text, t.codeLabel))
   if (!parts.length) return
   speech.text = text
   speech.source = source
+  speech.paused = false
   play(0)
 }
-export function stop() { run++; speechSynthesis.cancel(); speech.text = null; speech.source = null }
-export function cycleRate() {
-  speech.rate = nextRate(speech.rate)
-  store('cm.rate', String(speech.rate))
-  if (speech.text) play(at)
-}
+export function stop() { run++; speechSynthesis.cancel(); speech.text = null; speech.source = null; speech.paused = false }
+/**
+ * Pausa (Franz, 07/10, barra approvata alle 22:06): come sul telefono si ferma la voce e si tiene il pezzo, circa una
+ * frase; la ripresa riparte da lì. La pausa del browser non è affidabile ovunque.
+ */
+export function pause() { if (!speech.text || speech.paused) return; run++; speechSynthesis.cancel(); speech.paused = true }
+export function resume() { if (!speech.paused) return; speech.paused = false; if (speech.text) play(at) }
 export function cycleVoice() {
   speech.voice = nextVoice(speech.voices, speech.voice)
   store('cm.voice', speech.voice)
-  if (speech.text) play(at)
+  if (speech.text && !speech.paused) play(at)
 }
 
 /** Dalle Impostazioni: una velocità e una voce scelte (null = la migliore italiana). */
-export function setRate(r: number) { speech.rate = rateOf(r); store('cm.rate', String(speech.rate)); if (speech.text) play(at) }
-export function setVoice(v: string | null) { speech.voice = v; store('cm.voice', v); if (speech.text) play(at) }
+// In pausa velocità e voce nuove valgono alla ripresa.
+export function setRate(r: number) { speech.rate = rateOf(r); store('cm.rate', String(speech.rate)); if (speech.text && !speech.paused) play(at) }
+export function setVoice(v: string | null) { speech.voice = v; store('cm.voice', v); if (speech.text && !speech.paused) play(at) }

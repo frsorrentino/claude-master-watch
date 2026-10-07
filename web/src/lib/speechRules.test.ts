@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { decodeState } from './contract'
-import { chunks, clean, excerpt, rankVoices, nextRate, nextVoice, question, RATE_CHOICES, RATE_PILL, rateOf, voicePosition } from './speechRules'
+import { chunks, clean, excerpt, rankVoices, nextVoice, question, RATE_MAX, RATE_MIN, rateFraction, rateOf, snapRate, voicePosition } from './speechRules'
 
 // Gli stessi casi di SpeechTextTest, SpeechRateTest, VoiceRulesTest e ReadingBarTest in Kotlin.
 const code = 'segue un blocco di codice'
@@ -31,16 +31,14 @@ describe('testo per la voce', () => {
   })
 })
 describe('velocità', () => {
-  it('senza scelta quella del motore, una scelta salvata resta', () => { expect(rateOf(null)).toBe(1); expect(rateOf(0.9)).toBe(0.9) })
-  it('un valore strano va alla scelta più vicina', () => {
-    expect(rateOf(0.86)).toBe(0.9); expect(rateOf(5)).toBe(RATE_CHOICES[RATE_CHOICES.length - 1]); expect(rateOf(NaN)).toBe(1); expect(rateOf(-1)).toBe(1)
-    expect(rateOf(1.2)).toBe(1.25)
+  // Dal 07/10 (approvata alle 22:06) è continua, come SpeechRate.kt: slider da 0,5× a 2× a passi di 0,05, scatto su 1×.
+  it('senza scelta quella del motore, una scelta salvata resta', () => {
+    expect(rateOf(null)).toBe(1); expect(rateOf(0.9)).toBe(0.9); expect(rateOf(1.35)).toBe(1.35); expect(rateOf(1.25)).toBe(1.25)
   })
-  it('più lente del motore', () => expect(RATE_CHOICES.filter(r => r < 1).length >= 2 && RATE_CHOICES.includes(1)).toBe(true))
-  it('la pillola gira', () => {
-    expect([1, 1.25, 1.5, 2].map(nextRate)).toEqual([1.25, 1.5, 2, 1]); expect(nextRate(0.8)).toBe(1)
-    expect(RATE_PILL.every(r => RATE_CHOICES.includes(r))).toBe(true)
-  })
+  it('a passi di 0,05', () => { expect(snapRate(0.86)).toBe(0.85); expect(snapRate(1.41)).toBe(1.4); expect(rateOf(1.2)).toBe(1.2) })
+  it('vicino a 1 si ferma su 1, 1,05 resta raggiungibile', () => { expect(snapRate(1.03)).toBe(1); expect(snapRate(0.97)).toBe(1); expect(snapRate(1.05)).toBe(1.05) })
+  it('fuori dalla corsa o rovinato', () => { expect(rateOf(5)).toBe(RATE_MAX); expect(rateOf(0.1)).toBe(RATE_MIN); expect(rateOf(NaN)).toBe(1); expect(rateOf(-1)).toBe(1) })
+  it('la corsa va da metà al doppio', () => { expect(RATE_MIN).toBe(0.5); expect(RATE_MAX).toBe(2); expect(rateFraction(1)).toBeCloseTo(1 / 3) })
 })
 describe('voce', () => {
   const v = ['it-it-x-itb-local', 'it-it-x-itc-local', 'it-it-x-itd-local']

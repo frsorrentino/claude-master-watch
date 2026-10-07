@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DevicesModel, Linked, Tone } from './devices'
-  import { RATE_CHOICES } from './speechRules'
+  import RateSlider from './RateSlider.svelte'
   import { speech, toggle } from './speech.svelte'
   import { t } from './t'
 
@@ -107,10 +107,10 @@
     <div class="srow plain">
       <span class="sic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round"><path d="m12 14 4-4M3.34 19a10 10 0 1 1 17.32 0" /></svg></span>
       <span class="st"><b>{t.speechRate}</b><small>{t.rateHint}</small></span>
+      <b class="rv">{rate(speech.rate)}</b>
     </div>
-    <div class="rates">
-      {#each RATE_CHOICES as r}<button class="rate" class:on={r === speech.rate} aria-pressed={r === speech.rate} onclick={() => onRate(r)}>{rate(r)}</button>{/each}
-    </div>
+    <!-- Lo stesso slider della barra di lettura (Franz, 07/10, approvato alle 22:06): vale al rilascio. -->
+    <div class="rates"><RateSlider value={speech.rate} onDone={onRate} /></div>
   </div>
 
   <div class="gh"><span>{t.secInfo.toUpperCase()}</span><i></i></div>
@@ -177,9 +177,8 @@
   .switch::after { content: ''; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--stale); transition: all .15s; }
   .switch:checked { background: var(--icon); border-color: var(--icon); }
   .switch:checked::after { left: 24px; top: 2px; width: 24px; height: 24px; background: var(--on-primary); }
-  .rates { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 14px 70px; }
-  .rate { min-width: 44px; height: 36px; padding: 0 10px; border-radius: 18px; background: var(--low); border: 1px solid var(--line); font-size: 14px; font-weight: 500; }
-  .rate.on { background: var(--icon); border-color: var(--icon); color: var(--on-primary); }
+  .rates { display: flex; padding: 0 16px 14px 70px; }
+  .rv { flex: none; font-weight: 600; }
   dialog { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 22px; width: min(440px, 92vw); max-height: 80vh; border-radius: 28px; }
   dialog::backdrop { background: rgb(0 0 0 / .55); }
   dialog h3 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
