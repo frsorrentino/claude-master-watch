@@ -10,11 +10,16 @@
   import type { IconName } from './icons'
   import { t } from './t'
   import Icon from './Icon.svelte'
+  import { canShare, type FileAct } from './fileActions'
   import Md from './Md.svelte'
 
   // La conversazione della scheda (SessionSheet.kt): i messaggi a destra con lo stato, Claude a tutta larghezza con Copia
   // e ▶, i passaggi raccolti in una card, i file come chip, il costo del turno, e in fondo la riga dal vivo.
-  let { s, items, now, onFile = () => {}, onDecision }: { s: Session; items: Item[]; now: number; onFile?: (path: string) => void; onDecision?: (text: string) => void } = $props()
+  let { s, items, now, onFile = () => {}, onDecision }: { s: Session; items: Item[]; now: number; onFile?: (path: string, act: FileAct | 'prepare') => void; onDecision?: (text: string) => void } = $props()
+
+  // Un file: sotto il nome i tasti apri, scarica, copia e condividi (condividi solo dove il browser lo sa fare; Franz, 07/10
+  // 15:48). Il file si chiede al PC appena il puntatore ci arriva, così il tocco trova i byte pronti.
+  const fileActs: [FileAct, string, IconName][] = [['open', t.fileOpen, 'external'], ['download', t.fileDownload, 'download'], ['copy', t.fileCopy, 'copy'], ...(canShare() ? [['share', t.fileShare, 'share'] as [FileAct, string, IconName]] : [])]
 
   const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   const copy = (x: string) => navigator.clipboard?.writeText(x)
@@ -97,7 +102,10 @@
 {#snippet files(fs: TranscriptFile[])}
   <div class="files">
     {#each fs as f}
-      <button class="fchip" title={f.path} onclick={() => onFile(f.path)}><Icon name={fileIcon(f)} color="var(--icon)" /><span class="fname">{f.path.split('/').pop()}</span>{#if f.size != null}<span class="fsize">{size(f.size)}</span>{/if}</button>
+      <div class="fcard" role="group" aria-label={f.path.split('/').pop()} onpointerenter={() => onFile(f.path, 'prepare')} onfocusin={() => onFile(f.path, 'prepare')}>
+        <button class="fchip" title={f.path} onclick={() => onFile(f.path, 'open')}><Icon name={fileIcon(f)} color="var(--icon)" /><span class="fname">{f.path.split('/').pop()}</span>{#if f.size != null}<span class="fsize">{size(f.size)}</span>{/if}</button>
+        <div class="acts">{#each fileActs as [a, label, icon]}<button class="sm" aria-label={label} title={label} onclick={() => onFile(f.path, a)}><Icon name={icon} /></button>{/each}</div>
+      </div>
     {/each}
   </div>
 {/snippet}
@@ -214,6 +222,7 @@
   code { font: 12.5px/1.4 var(--mono); color: var(--stale); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .indent { padding-left: 28px; }
   .files { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fcard { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; max-width: 100%; }
   .fchip { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 12px; padding: 8px 12px; text-align: left; max-width: 100%; }
   .steps .fchip { background: rgb(255 255 255 / .06); }
   .fname { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }

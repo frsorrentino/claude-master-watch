@@ -5,6 +5,7 @@
   import Header from './Header.svelte'
   import type { CmdOp, Event } from './contract'
   import type { Scheduled } from './masterHome'
+  import type { FileAct } from './fileActions'
   import type { TranscriptEntry } from './contract'
   import { merge, group } from './chatFeed'
   import type { Sent, Status } from './chatRules'
@@ -28,7 +29,7 @@
     /** Allegati del «+»: prima /share, poi `report` (contratti 1.19 e 1.28). */
     onAttach: (files: File[], text: string) => void
     /** Un file della conversazione (contratto 1.24): il PC lo manda e si apre in una scheda. */
-    onFile: (path: string) => void
+    onFile: (path: string, act: FileAct | 'prepare') => void
     /** Contratto 1.37: «Handoff, poi /clear» (prompt e /clear a turno finito, li gestisce App) e «Salva come decisione». */
     onHandoff: () => void; onDecision: (text: string, project: string | null) => void
     /** L'avviso delle altre sessioni sotto la barra (Elsewhere). */

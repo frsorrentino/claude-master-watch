@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as files from './lib/fileActions'
+  import type { FileAct, Fetched } from './lib/fileActions'
   import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
   import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
@@ -276,24 +278,46 @@
       } catch { pend = { ...pend, [m.id]: 'failed' } }
     }
   }
-  // Un file della chat: il comando `file`, poi i byte da /api/file/<id> in una scheda nuova. HTML, SVG e XML si scaricano
-  // invece di aprirsi: dalla stessa origine della pagina leggerebbero il token.
-  async function openFile(name: string, path: string) {
-    if (!tr) { say(t.fileDemo); return }
-    say(t.fileOpening(path.split('/').pop() ?? path))
-    const c = newCmd('file', name, path)
-    const r = await run(c)
-    if (!r?.ok) return
-    const f = await tr.fetchFile(c.id).catch(() => null)
-    if (!f) { say(`✗ ${t.noAnswer}`); return }
-    const url = URL.createObjectURL(new Blob([f.data as Uint8Array<ArrayBuffer>], { type: f.mime }))
-    const fileName = f.name ?? path.split('/').pop() ?? 'file'
-    if (/html|svg|xml/.test(f.mime)) {
-      const a = Object.assign(document.createElement('a'), { href: url, download: fileName })
-      a.click()
-    } else window.open(url, '_blank')
+  // Un file della chat: il comando `file`, poi i byte da /api/file/<id>; il menu del file li chiede appena si apre
+  // («prepare»), così apri, scarica, copia e condividi partono subito dal tocco (copia e condividi lo vogliono fresco).
+  const fileCache = new Map<string, Promise<Fetched | null>>()
+  function getFile(name: string, path: string): Promise<Fetched | null> {
+    const key = `${name}\n${path}`
+    let p = fileCache.get(key)
+    if (!p) {
+      p = (async () => {
+        if (!tr) return null
+        const c = newCmd('file', name, path)
+        const r = await run(c)
+        if (!r?.ok) return null
+        const f = await tr.fetchFile(c.id).catch(() => null)
+        if (!f) { say(`✗ ${t.noAnswer}`); return null }
+        return { blob: new Blob([f.data as Uint8Array<ArrayBuffer>], { type: f.mime }), name: f.name ?? path.split('/').pop() ?? 'file', mime: f.mime }
+      })()
+      fileCache.set(key, p)
+      p.then(v => { if (!v) fileCache.delete(key); else setTimeout(() => fileCache.delete(key), 120_000) })
+    }
+    return p
+  }
+  async function fileAction(name: string, path: string, act: FileAct | 'prepare') {
+    if (!tr) { if (act !== 'prepare') say(t.fileDemo); return }
+    if (act === 'prepare') { void getFile(name, path); return }
+    const short = path.split('/').pop() ?? path
+    say(t.fileOpening(short))
+    const f = await getFile(name, path)
+    if (!f) return
     notice = null
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    try {
+      if (act === 'open') files.open(f)
+      else if (act === 'download') files.download(f)
+      else if (act === 'copy') say(t.fileCopied(await files.copy(f, path)))
+      else await files.share(f, path)
+    } catch (e) {
+      // Copia e condividi vogliono un tocco recente: se il file è arrivato tardi, al secondo tocco è già pronto.
+      const n = (e as Error)?.name
+      if (n === 'NotAllowedError') say(t.fileTapAgain)
+      else if (n !== 'AbortError') say(`✗ ${act === 'share' ? t.fileShareFailed : t.fileCopyFailed}`)
+    }
   }
   // «Chiedi alla master» arriva come `prompt` della sessione: va alla master, come messaggio nella sua chat.
   const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => {
@@ -326,7 +350,7 @@
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
-    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p) => openFile(name, p)} onHandoff={() => handoff(name)} onDecision={decide}
+    onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p, a) => fileAction(name, p, a)} onHandoff={() => handoff(name)} onDecision={decide}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
 {/snippet}
