@@ -1209,8 +1209,8 @@ class MainActivity : ComponentActivity() {
                 if (c.moveToFirst()) (c.getString(0) ?: "file") to (if (c.isNull(1)) -1L else c.getLong(1)) else null
             }
         }.getOrNull() ?: ("file" to -1L)
-        // La busta cifrata pesa circa 4/3 del file (base64): il file deve stare sotto i 3/4 del limite.
-        val limit = maxBytes.toLong() * 3 / 4 - 2048
+        // La busta codifica il file due volte in base64 (circa 16/9 del file): il conto sta in ShareLimits.
+        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(maxBytes)
         if (size > limit) {
             android.widget.Toast.makeText(this, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this, limit)), android.widget.Toast.LENGTH_LONG).show()
             return
