@@ -61,6 +61,8 @@ fun AppShell(
     onLaunch: () -> Unit = {},
     /** Il collegamento in testa al menu: il PC, «aggiornato ora» o «… min fa», ambra se fermo. */
     host: String? = null, updated: String = "", stale: Boolean = false,
+    /** La pagina Notte nel menu ≡ (specifica del 07/10); null = la voce non c'è. */
+    onNight: (() -> Unit)? = null,
     /** Le sessioni aperte, per «N aperte» accanto al titolo. */
     openCount: Int = 0,
     /** La quota in una riga sotto la barra, solo sul riepilogo. */
@@ -79,7 +81,7 @@ fun AppShell(
     content: @Composable (Tab) -> Unit,
 ) {
     val summary = current == null && tab == Tab.OVERVIEW
-    val menu = MenuActions(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch, onSettings)
+    val menu = MenuActions(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch, onSettings, onNight = onNight)
     Scaffold(
         containerColor = CmColors.bg,
         topBar = {
@@ -228,6 +230,8 @@ private fun SessionMenuRow(s: Session, group: it.pixelbox.cmwatch.rules.Summary.
 data class MenuActions(
     val host: String?, val updated: String, val stale: Boolean, val onLaunch: () -> Unit, val onRegister: () -> Unit,
     val onQuadro: () -> Unit, val onSearch: (() -> Unit)?, val onSettings: () -> Unit,
+    /** La pagina Notte (specifica del 07/10); null = la voce non c'è. */
+    val onNight: (() -> Unit)? = null,
 )
 
 /**
@@ -268,5 +272,5 @@ fun PageHeader(
 private fun AppMenu(menu: MenuActions, startOpen: Boolean) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
     IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
-    if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false })
+    if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false }, onNight = menu.onNight)
 }

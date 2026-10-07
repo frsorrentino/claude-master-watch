@@ -306,6 +306,8 @@ class FakeTransport(
                 ok("approved ${cmd.arg}")
             }
             CmdOp.DECISION -> if (cmd.text.isNullOrBlank()) ko("empty decision") else ok("decision sent to the master")
+            // Contratto 1.44: la demo legge la fixture inventata del rapporto della notte.
+            CmdOp.NIGHT -> runCatching { load("night-report-sample") }.map { ok(it) }.getOrElse { ko("no night report yet") }
             // Contratto 1.39: la demo toglie il dispositivo dalla lista, come il relay.
             CmdOp.UNPAIR -> s.devices?.firstOrNull { it.uid == cmd.arg }?.let { d ->
                 current.value = current.value.let { st -> st.copy(devices = st.devices?.filter { it.uid != d.uid }) }

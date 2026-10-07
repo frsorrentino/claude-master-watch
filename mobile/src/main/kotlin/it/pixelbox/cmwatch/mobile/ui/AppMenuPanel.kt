@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
@@ -149,6 +150,8 @@ fun AppMenuPanel(
     host: String?, updated: String, stale: Boolean,
     onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit,
     onDismiss: () -> Unit,
+    /** La pagina Notte (specifica del 07/10); null = la voce non c'è. */
+    onNight: (() -> Unit)? = null,
 ) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val live by it.pixelbox.cmwatch.mobile.live.LiveService.running.collectAsState()
@@ -157,6 +160,9 @@ fun AppMenuPanel(
         entries = listOf(
             MenuEntry(Icons.Rounded.RocketLaunch, stringResource(R.string.menu_launch), stringResource(R.string.menu_launch_sub), accent = true, onClick = onLaunch),
             MenuEntry(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.menu_register), stringResource(R.string.menu_register_sub), onClick = onRegister),
+        ) + listOfNotNull(
+            onNight?.let { n -> MenuEntry(Icons.Rounded.Bedtime, stringResource(R.string.night_menu), stringResource(R.string.night_menu_sub), onClick = n) },
+        ) + listOf(
             MenuEntry(Icons.Rounded.Dashboard, stringResource(R.string.menu_quadro), stringResource(R.string.menu_quadro_sub), onClick = onQuadro),
             MenuEntry(Icons.Rounded.Search, stringResource(R.string.menu_search), stringResource(R.string.menu_search_sub), onClick = onSearch),
             // Modalità live (specifica 06/10): notiziario in cuffia, comandi dal watch; lo stesso tocco la spegne.

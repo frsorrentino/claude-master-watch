@@ -194,6 +194,7 @@ class MainActivity : ComponentActivity() {
         // La Panoramica in un foglio dal basso sopra la scheda (Franz, 01/10 12:34): si guarda la quota e si torna.
         var overviewSheet by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
+        var nightOpen by rememberSaveable { mutableStateOf(false) }
         // Il tocco sul testo del mini-controller riporta alla sessione da cui legge; la master si apre nella home.
         val readingBar: (@Composable () -> Unit)? = readingNow?.let { text ->
             {
@@ -231,8 +232,9 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
 
-        BackHandler(enabled = settingsOpen || terminal != null || queueOpen || searchOpen) {
+        BackHandler(enabled = settingsOpen || terminal != null || queueOpen || searchOpen || nightOpen) {
             when {
+                nightOpen -> nightOpen = false
                 searchOpen -> searchOpen = false
                 settingsOpen -> settingsOpen = false
                 terminal != null -> { terminal = null; screenId = null }
@@ -370,6 +372,48 @@ class MainActivity : ComponentActivity() {
             TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it } }
             })
+            return
+        }
+        if (nightOpen) {
+            // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto con l'op `night` (contratto 1.44), chiesto
+            // all'apertura e con «Aggiorna»; prima che il relay la conosca, la pagina dice di aggiornare team-supervisor.
+            var nightId by remember { mutableStateOf<String?>(null) }
+            var nightReport by remember { mutableStateOf<it.pixelbox.cmwatch.contract.NightReport?>(null) }
+            val nightResult = nightId?.let { results[it] }
+            val askNight: () -> Unit = {
+                scope.launch {
+                    nightId?.let { app.repo.forget(it) }
+                    nightId = runCatching { app.repo.command(CmdOp.NIGHT, null, null) }.getOrNull()
+                }
+            }
+            LaunchedEffect(Unit) { askNight() }
+            LaunchedEffect(nightResult) {
+                nightResult?.takeIf { it.ok }?.let { r -> runCatching { ContractJson.decodeNightReport(r.text) }.getOrNull()?.let { nightReport = it } }
+            }
+            val nightError = nightResult?.takeIf { !it.ok }?.text?.let { t ->
+                when {
+                    "not allowed" in t -> getString(R.string.night_old)
+                    t.startsWith("no night report") -> getString(R.string.night_none)
+                    else -> t
+                }
+            }
+            val zone = java.time.ZoneId.systemDefault()
+            NightScreen(
+                page = remember(nightReport) { nightReport?.let { r -> it.pixelbox.cmwatch.rules.NightPage.of(r, zone) } },
+                error = nightError, loading = nightId != null && nightResult == null,
+                onBack = { nightOpen = false }, onRefresh = askNight,
+                onChat = { n ->
+                    nightOpen = false; tab = StartRoute.Tab.OVERVIEW
+                    if (n == it.pixelbox.cmwatch.rules.ContextActions.MASTER) { open = null; masterChat = true } else open = n
+                },
+                onAnswer = { n, x -> scope.launch { runCatching { app.repo.answer(n, x) } } },
+                onApprove = { task -> scope.launch { runCatching { app.repo.command(CmdOp.APPROVE, null, task, it.pixelbox.cmwatch.rules.MasterService.approveText("")) } } },
+                onSend = { n, text ->
+                    scope.launch {
+                        runCatching { app.repo.prompt(n, text) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, n, text, System.currentTimeMillis() / 1000)) }
+                    }
+                },
+            )
             return
         }
         if (searchOpen) {
@@ -795,6 +839,7 @@ class MainActivity : ComponentActivity() {
             host, if (snap.freshness is Freshness.Stale) getString(R.string.menu_updated_ago, (snap.freshness as Freshness.Stale).minutes) else getString(R.string.menu_updated_now),
             snap.freshness is Freshness.Stale, onLaunch = { launching = true }, onRegister = { tab = StartRoute.Tab.DIARY; open = null },
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
+            onNight = { nightOpen = true },
         )
         val pageHeader: @Composable (String?) -> Unit = { page ->
             PageHeader(
@@ -1027,6 +1072,7 @@ class MainActivity : ComponentActivity() {
             // La master dal menu in alto apre la sua chat come le altre (design 03/10); «Tutte le sessioni» torna al riepilogo.
             current = open, onPick = { n -> open = n; if (n == null) tab = StartRoute.Tab.OVERVIEW },
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
+            onNight = { nightOpen = true },
             host = host, stale = snap.freshness is Freshness.Stale,
             updated = when (val f = snap.freshness) { is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes); else -> getString(R.string.menu_updated_now) },
             openCount = summary?.open ?: 0,

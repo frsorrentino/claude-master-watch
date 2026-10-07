@@ -80,6 +80,8 @@ enum class CmdOp {
     @SerialName("decision") DECISION,
     /** Contratto 1.39: togliere un dispositivo accoppiato; `arg` = uid. Solo «Scollega questo browser», col proprio uid. */
     @SerialName("unpair") UNPAIR,
+    /** Contratto 1.44: il rapporto della notte (pagina Notte). */
+    @SerialName("night") NIGHT,
 }
 
 @Serializable data class Option(val n: Int, val label: String)

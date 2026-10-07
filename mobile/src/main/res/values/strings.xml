@@ -697,4 +697,36 @@
     <string name="live_nothing_new">Niente da dire.</string>
     <string name="live_failed">Non riuscito: %1$s</string>
     <string-array name="live_numbers"><item>uno</item><item>due</item><item>tre</item><item>quattro</item><item>cinque</item><item>sei</item><item>sette</item><item>otto</item><item>nove</item><item>dieci</item></string-array>
+    <!-- La pagina Notte (specifica del 07/10, approvata alle 21:50). -->
+    <string name="night_menu">Notte</string>
+    <string name="night_menu_sub">Lavori e sessioni di stanotte</string>
+    <string name="night_title">Notte del %1$d-%2$d %3$s</string>
+    <string name="night_window">Dalle %1$s, ultimo tuo messaggio, alle %2$s · %3$s</string>
+    <string name="night_window_plain">Dalle %1$s alle %2$s · %3$s</string>
+    <plurals name="night_hours"><item quantity="one">%d ora</item><item quantity="other">%d ore</item></plurals>
+    <plurals name="night_minutes"><item quantity="one">%d minuto</item><item quantity="other">%d minuti</item></plurals>
+    <string name="night_and">%1$s e %2$s</string>
+    <string name="night_short_min">%1$d min</string>
+    <string name="night_short_h">%1$d h</string>
+    <string name="night_short_hm">%1$d h %2$d min</string>
+    <string name="night_since">dalle %1$s · in corso</string>
+    <string name="night_needs">Serve a te</string>
+    <string name="night_items">Lavori e sessioni</string>
+    <string name="night_projects">Progetti</string>
+    <string name="night_queue_tag">CODA</string>
+    <string name="night_conversation">Conversazione</string>
+    <string name="night_approve">Approva</string>
+    <string name="night_send">Manda %1$s</string>
+    <string name="night_count_commits">%1$d commit</string>
+    <string name="night_count_tests">%1$d test</string>
+    <string name="night_count_prompts">%1$d prompt</string>
+    <string name="night_parts">%1$d di %2$d parti</string>
+    <string name="night_no_parts">nessuna parte</string>
+    <string name="night_waiting">Aspetta: %1$s</string>
+    <string name="night_next">Prossimo: %1$s</string>
+    <string name="night_refresh">Aggiorna</string>
+    <string name="night_loading">Leggo il rapporto della notte</string>
+    <string name="night_old">Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor</string>
+    <string name="night_none">Nessun rapporto della notte</string>
+    <string name="night_failed">Il rapporto non è arrivato: riprova</string>
 </resources>
