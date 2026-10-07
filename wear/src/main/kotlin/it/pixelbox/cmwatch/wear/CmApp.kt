@@ -52,6 +52,8 @@ class CmApp : Application() {
     val speaker: Speaker by lazy { Speaker(this) }
     val reader: Reader by lazy { Reader(this) }
     val pairReceiver by lazy { it.pixelbox.cmwatch.wear.pair.PairReceiver(this) }
+    /** La modalità live: la scheda che manda il telefono e i tocchi che gli tornano. */
+    val live by lazy { it.pixelbox.cmwatch.wear.live.LiveLink(this, scope) }
 
     /**
      * Dopo aver risposto `restart` al telefono: il processo si chiude, e il messaggio seguente lo riavvia con la configurazione nuova.

@@ -228,4 +228,22 @@
     <string name="notif_state_busy">working</string>
     <string name="notif_state_idle">idle</string>
     <string name="notif_state_gone">closed</string>
+    <!-- Modalità live: la scheda (specifica 06/10, fase 3) -->
+    <string name="live_title">Live</string>
+    <string name="live_off">Live mode is off: turn it on from the phone menu.</string>
+    <string name="live_idle">No news: all quiet.</string>
+    <string name="live_repeat">Repeat</string>
+    <string name="live_later">Later</string>
+    <string name="live_skip">Skip</string>
+    <string name="live_talk">Talk</string>
+    <string name="live_round">Full round</string>
+    <string name="live_only_blocking">Blocking only</string>
+    <string name="live_all">All news</string>
+    <string name="live_stop">Turn live off</string>
+    <string name="live_approve">Approve</string>
+    <string name="live_hold">Hold for 2 s</string>
+    <string name="live_hold_left">%1$d s left to confirm</string>
+    <string name="live_cancel">Cancel</string>
+    <string name="live_leaving">Sending in %1$d s</string>
+    <string name="live_talk_label">What do you want to say?</string>
 </resources>

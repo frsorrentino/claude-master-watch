@@ -231,4 +231,22 @@
     <string name="notif_state_busy">al lavoro</string>
     <string name="notif_state_idle">ferma</string>
     <string name="notif_state_gone">chiusa</string>
+    <!-- Modalità live: la scheda (specifica 06/10, fase 3) -->
+    <string name="live_title">Live</string>
+    <string name="live_off">Live spenta: accendila dal telefono, dal menu.</string>
+    <string name="live_idle">Nessuna notizia: tutto tranquillo.</string>
+    <string name="live_repeat">Ripeti</string>
+    <string name="live_later">Dopo</string>
+    <string name="live_skip">Salta</string>
+    <string name="live_talk">Parla</string>
+    <string name="live_round">Giro completo</string>
+    <string name="live_only_blocking">Solo bloccanti</string>
+    <string name="live_all">Tutte le notizie</string>
+    <string name="live_stop">Spegni la live</string>
+    <string name="live_approve">Approva</string>
+    <string name="live_hold">Tieni premuto 2 s</string>
+    <string name="live_hold_left">Ancora %1$d s per confermare</string>
+    <string name="live_cancel">Annulla</string>
+    <string name="live_leaving">Parte fra %1$d s</string>
+    <string name="live_talk_label">Cosa vuoi dire?</string>
 </resources>

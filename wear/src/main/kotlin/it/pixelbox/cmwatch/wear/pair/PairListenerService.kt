@@ -10,6 +10,13 @@ import kotlinx.coroutines.launch
 
 /** Le richieste del telefono (`/cmwatch/pair/…`) arrivano anche ad app chiusa: il servizio si avvia da sé (spike C). */
 class PairListenerService : WearableListenerService() {
+    /** La scheda della modalità live, dal telefono (anche ad app chiusa). */
+    override fun onMessageReceived(event: com.google.android.gms.wearable.MessageEvent) {
+        if (event.path != it.pixelbox.cmwatch.rules.LiveWire.CARD) return
+        runCatching { (application as CmApp).live.receive(it.pixelbox.cmwatch.rules.LiveWire.card(event.data)) }
+            .onFailure { android.util.Log.w("cmwatch", "live card", it) }
+    }
+
     override fun onRequest(nodeId: String, path: String, request: ByteArray): Task<ByteArray> {
         val app = application as CmApp
         val done = TaskCompletionSource<ByteArray>()
