@@ -59,7 +59,8 @@ class LiveService : Service() {
     private var desk = LiveDesk.Desk()
     private var state: State? = null
     private var seen: Set<String> = emptySet()
-    private val pending = mutableMapOf<String, LiveDesk.Tag>()
+    // Letta anche dal collettore dei risultati, su un altro thread.
+    private val pending = java.util.concurrent.ConcurrentHashMap<String, LiveDesk.Tag>()
     private var headset = true
     private var focus = true
     private var userPaused = false
@@ -113,7 +114,7 @@ class LiveService : Service() {
         scope.launch { for (i in inbox) handle(i) }
         scope.launch { app.repo.snapshot.collect { s -> s.state?.let { inbox.send(Input.Snap(it, s.freshness is Freshness.Fresh)) } } }
         scope.launch { app.repo.events.collect { ev -> inbox.send(Input.Events(ev)) } }
-        scope.launch { app.repo.resultsById.collect { m -> m.forEach { (id, r) -> if (id in pending) inbox.send(Input.Result(id, r.ok, r.text)) } } }
+        scope.launch { app.repo.resultsById.collect { m -> m.forEach { (id, r) -> if (pending.containsKey(id)) inbox.send(Input.Result(id, r.ok, r.text)) } } }
         scope.launch { taps.collect { inbox.send(Input.Tap(it)) } }
         scope.launch {
             while (isActive) {
