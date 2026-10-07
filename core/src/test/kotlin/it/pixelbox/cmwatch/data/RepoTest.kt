@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -406,6 +407,26 @@ class RepoTest {
         assertEquals(1234L, repo.snapshot.value.receivedAt)
     }
 
+
+    // Piano prestazioni, Task 10: nello stream arrivano sempre gli ultimi 200; in Room si scrivono solo quelli nuovi.
+    private class CountingStore(val base: MemoryStore) : Store by base { var saved = 0; override suspend fun saveEvents(ev: List<Event>) { saved += ev.size; base.saveEvents(ev) } }
+    private class Twice(base: FakeTransport, first: List<Event>, more: Event) : Transport by base {
+        override val events: Flow<List<Event>> = kotlinx.coroutines.flow.flowOf(first, first + more)
+    }
+
+    @Test fun onlyNewEventsAreWritten() = runTest {
+        val store = CountingStore(MemoryStore())
+        val base = fake()
+        val extra = Event("k-new", EventKind.OUTCOME, "atlas-shop", ts = clock, title = "✓ atlas-shop")
+        val first = base.events.first()
+        val repo = Repo(store, Twice(base, first, extra), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.loadFromStore(); repo.start(); idle()
+        val n = first.size
+        assertEquals(n + 1, store.saved)              // la prima volta tutti, la seconda solo quello nuovo
+        assertEquals(n + 1, repo.events.value.size)
+        assertTrue(repo.events.value.any { it.key == "k-new" })
+        assertTrue(repo.events.value.zipWithNext().all { (a, b) -> a.ts >= b.ts })   // sempre dal più recente
+    }
 }
 
 class MemoryStore : Store {

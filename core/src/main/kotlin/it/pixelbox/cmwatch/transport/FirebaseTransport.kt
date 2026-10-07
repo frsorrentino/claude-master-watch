@@ -113,11 +113,10 @@ class FirebaseTransport(
         val all = LinkedHashMap<String, Event>()
         fun decode(e: JsonElement): Event? = if (isBlob(e)) runCatching { ContractJson.json.decodeFromString(Event.serializer(), open(e)) }.getOrNull() else null
         fun snapshot() = all.values.sortedByDescending { it.ts }
-        rtdb.get("events", mapOf("orderBy" to "\"\$key\"", "limitToLast" to "200"))?.let { body ->
-            (Json.parseToJsonElement(body) as? JsonObject)?.forEach { (key, v) -> decode(v)?.let { all[key] = it } }
-        }
-        emit(snapshot())
-        rtdb.stream("events").collect { ev ->
+        // Gli ultimi 200 in un solo stream filtrato: prima un GET degli ultimi 200 e poi lo stream dell'intero nodo, cioè
+        // tutta la cronologia scaricata e decifrata a ogni apertura (piano prestazioni, Task 10). Il primo `put` porta i 200,
+        // i successivi le voci nuove; le uscite dalla finestra (`null`) non tolgono niente: restano in Room.
+        rtdb.stream("events", mapOf("orderBy" to "\"\$key\"", "limitToLast" to "200")).collect { ev ->
             if (endsTheStream(ev)) throw TransportException.Network("stream events: ${ev.event}")
             if (ev.event != "put" && ev.event != "patch") return@collect
             val (path, d) = putEvent(ev.data) ?: return@collect

@@ -92,8 +92,8 @@ class Rtdb(
         try { block() } catch (e: IOException) { throw TransportException.Network("$what: ${e.message}") }
 
     /** Eventi SSE di RTDB (`put`, `patch`, `keep-alive`, `cancel`, `auth_revoked`). Si chiude con errore alla caduta della connessione. */
-    fun stream(path: String): Flow<SseEvent> = callbackFlow {
-        val request = Request.Builder().url(url(path)).header("Accept", "text/event-stream").build()
+    fun stream(path: String, query: Map<String, String> = emptyMap()): Flow<SseEvent> = callbackFlow {
+        val request = Request.Builder().url(url(path, query)).header("Accept", "text/event-stream").build()
         val source: EventSource = EventSources.createFactory(streaming).newEventSource(request, object : EventSourceListener() {
             override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
                 trySend(SseEvent(type ?: "message", data))

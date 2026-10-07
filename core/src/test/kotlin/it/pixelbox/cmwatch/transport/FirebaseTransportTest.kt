@@ -138,11 +138,13 @@ class FirebaseTransportTest {
     @Test fun eventsAreListedNewestFirst() = runBlocking {
         val ev = ContractJson.decodeEvents(Fixtures.events)
         val obj = JsonObject(ev.associate { it.key to Json.parseToJsonElement(blobOf(ContractJson.json.encodeToString(Event.serializer(), it))) })
-        store["events"] = obj.toString()
-        streamBody = ""
+        // Piano prestazioni, Task 10: un solo stream filtrato agli ultimi 200, niente GET e niente nodo intero.
+        streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":$obj}\n\n"
         val got = transport().events.first()
         assertEquals(10, got.size); assertTrue(got[0].ts >= got[1].ts)
-        assertTrue(requests.any { it.requestUrl!!.encodedPath == "/events.json" && it.requestUrl!!.queryParameter("orderBy") == "\"\$key\"" })
+        val stream = requests.single { it.requestUrl!!.encodedPath == "/events.json" }
+        assertEquals("text/event-stream", stream.getHeader("Accept"))
+        assertEquals("\"\$key\"", stream.requestUrl!!.queryParameter("orderBy")); assertEquals("200", stream.requestUrl!!.queryParameter("limitToLast"))
     }
 
     @Test fun pairingDerivesTheSameKeyAsThePc() = runBlocking {

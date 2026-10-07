@@ -80,6 +80,8 @@ class Repo(
     }
 
     private val loaded = CompletableDeferred<Unit>()
+    /** L'ultima potatura degli eventi in Room: una al giorno basta. */
+    @Volatile private var prunedAt = 0L
     private var streams: Job? = null
 
     /**
@@ -111,8 +113,16 @@ class Repo(
             loaded.await()
             launch { transport.state.collect { s -> accept(s) } }
             launch {
+                // Solo le chiavi nuove in Room, unite in memoria; la potatura una volta al giorno (piano prestazioni, Task 10):
+                // prima a ogni evento si riscrivevano tutti gli eventi e si rileggeva tutta la tabella.
                 transport.events.collect { ev ->
-                    store.saveEvents(ev); store.pruneEvents(now() - EVENTS_KEEP_S); _events.value = store.loadEvents()
+                    val known = _events.value.mapTo(HashSet()) { it.key }
+                    val fresh = ev.filter { it.key !in known }
+                    if (fresh.isEmpty()) return@collect
+                    store.saveEvents(fresh)
+                    val t = now()
+                    _events.value = (_events.value + fresh).filter { it.ts >= t - EVENTS_KEEP_S }.sortedByDescending { it.ts }
+                    if (t - prunedAt >= 86_400) { store.pruneEvents(t - EVENTS_KEEP_S); prunedAt = t }
                 }
             }
         }
