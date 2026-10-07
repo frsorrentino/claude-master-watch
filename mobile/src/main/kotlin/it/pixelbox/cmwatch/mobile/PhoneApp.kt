@@ -77,6 +77,8 @@ class PhoneApp : Application() {
     }
 
     /** La Demo (design 29/09): le fixture del contratto con i testi della demo, come sull'orologio. */
+    /** Le conversazioni già lette, per processo e su disco (piano prestazioni, Task 13). */
+    val feeds: it.pixelbox.cmwatch.data.FeedCache by lazy { it.pixelbox.cmwatch.data.FeedCache(java.io.File(cacheDir, "feeds")) }
     val fake: FakeTransport by lazy { FakeTransport(load = { DemoText.dress(assets.open("contract/$it.json").bufferedReader().readText()) }) }
 
     /** Contratto 1.32: che dispositivo è, per lo schema dei collegamenti di tutti (Android del Chromebook, tablet, telefono). */

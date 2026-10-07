@@ -57,6 +57,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -495,7 +496,15 @@ class MainActivity : ComponentActivity() {
         // la sua pagina restava nera).
         var leaving by remember { mutableStateOf<String?>(null) }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
-        val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>() }
+        // Riparte dalle conversazioni già lette, tenute dal processo e su disco (piano prestazioni, Task 13): prima una finestra
+        // ridimensionata o ruotata svuotava tutte le chat. I cambiamenti si salvano un secondo dopo l'ultimo.
+        val feedCache = remember { mutableStateMapOf<String, List<it.pixelbox.cmwatch.contract.TranscriptEntry>>().apply { putAll(app.feeds.all()) } }
+        LaunchedEffect(feedCache) {
+            androidx.compose.runtime.snapshotFlow { feedCache.toMap() }.collectLatest { m ->
+                delay(1_000)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.feeds.save(m) }
+            }
+        }
         var more by remember { mutableStateOf(false) }
         var olderId by remember { mutableStateOf<String?>(null) }
         var unsupported by remember { mutableStateOf(false) }
