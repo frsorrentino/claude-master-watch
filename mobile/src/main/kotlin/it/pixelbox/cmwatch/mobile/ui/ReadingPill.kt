@@ -24,7 +24,6 @@ import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -55,6 +54,12 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import it.pixelbox.cmwatch.mobile.R
@@ -231,17 +236,49 @@ fun rateLabel(r: Float): String {
  * Lo slider della velocità, da 0,5× a 2× a passi di 0,05, con le scritte 0,5×, 1× e 2× sotto (Franz, 07/10 22:06). Lo usano
  * la barra di lettura e le impostazioni. `onDone` arriva al rilascio: la voce riparte una volta sola, dalla frase in corso.
  */
+/** La parte della traccia dopo il cursore, visibile sul fondo della barra (#292F3A) e delle impostazioni. */
+private val SLIDER_TRACK = androidx.compose.ui.graphics.Color(0xFF4A5468)
+
 @Composable
 fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier) {
     val r = it.pixelbox.cmwatch.rules.SpeechRate
+    val label = rateLabel(value)
+    val desc = stringResource(R.string.speech_rate)
+    // I gesti si registrano una volta: leggono sempre le funzioni di adesso.
+    val change by androidx.compose.runtime.rememberUpdatedState(onChange)
+    val done by androidx.compose.runtime.rememberUpdatedState(onDone)
     Column(modifier) {
-        Slider(
-            value = value, onValueChange = { onChange(r.snap(it)) }, onValueChangeFinished = onDone,
-            // Senza `steps`: Material 3 disegnerebbe un puntino per ognuno dei 29 passi. Il valore va a scatti di 0,05 lo
-            // stesso, perché `onValueChange` passa da `SpeechRate.snap`.
-            valueRange = r.MIN..r.MAX, modifier = Modifier.fillMaxWidth().height(28.dp),
-        )
-        Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+        // Disegnato qui, come nel mockup approvato: traccia sottile e pallino tondo. Lo slider di Material 3 Expressive ha
+        // una traccia spessa, il cursore a stanghetta e la parte dopo il cursore quasi invisibile sul fondo della barra.
+        BoxWithConstraints(
+            Modifier.fillMaxWidth().height(28.dp)
+                .semantics {
+                    contentDescription = desc
+                    stateDescription = label
+                    progressBarRangeInfo = androidx.compose.ui.semantics.ProgressBarRangeInfo(value, r.MIN..r.MAX)
+                    setProgress { v -> change(r.snap(v)); done(); true }
+                }
+                .pointerInput(Unit) {
+                    fun at(x: Float) = r.snap(r.MIN + (x / size.width).coerceIn(0f, 1f) * (r.MAX - r.MIN))
+                    detectTapGestures(onTap = { o -> change(at(o.x)); done() })
+                }
+                .pointerInput(Unit) {
+                    fun at(x: Float) = r.snap(r.MIN + (x / size.width).coerceIn(0f, 1f) * (r.MAX - r.MIN))
+                    detectHorizontalDragGestures(
+                        onDragStart = { o -> change(at(o.x)) },
+                        onDragEnd = { done() }, onDragCancel = { done() },
+                        onHorizontalDrag = { c, _ -> change(at(c.position.x)) },
+                    )
+                },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            val f = r.fraction(value).coerceIn(0f, 1f)
+            Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(SLIDER_TRACK))
+            Box(Modifier.width(maxWidth * f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.actionIcon))
+            Box(Modifier.offset(x = maxWidth * r.fraction(r.NORMAL) - 1.dp).width(2.dp).height(14.dp).clip(RoundedCornerShape(1.dp)).background(CmColors.text2))
+            Box(Modifier.offset(x = maxWidth * f - 10.dp).size(20.dp).clip(CircleShape).background(CmColors.actionIcon))
+        }
+        Box(Modifier.fillMaxWidth()) {
             val small = MaterialTheme.typography.labelSmall.copy(color = CmColors.text2)
             Text(rateLabel(r.MIN), style = small, modifier = Modifier.align(Alignment.TopStart))
             Text(rateLabel(r.NORMAL), style = small, modifier = Modifier.align(androidx.compose.ui.BiasAlignment(2 * r.fraction(r.NORMAL) - 1, -1f)))
