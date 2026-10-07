@@ -1046,33 +1046,39 @@ class MainActivity : ComponentActivity() {
                         val pages = remember(state?.sessions, target) { it.pixelbox.cmwatch.rules.SwipePages.of(state, target) }
                         val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(target).coerceAtLeast(0)) { pages.size }
                         val currentPages by rememberUpdatedState(pages)
-                        // Solo uno scorrimento cambia la sessione aperta (`SwipePages.afterSettle`): la pagina vista quando il
-                        // contenuto si riattiva è quella vecchia e non deve annullare la scelta del menu in alto (dal vivo 03/10 16:40).
+                        // Una decisione sola fra lo scorrimento del dito e il riallineamento alla sessione aperta (`SwipePages.step`).
+                        // Solo uno scorrimento cambia la sessione aperta; la pagina vista quando il contenuto si riattiva è quella
+                        // vecchia e non annulla la scelta del menu in alto (dal vivo 03/10 16:40). Dopo un riordino delle pagine il
+                        // pager poteva restare su un'altra sessione, e la chat a schermo non si rileggeva più (07/10 16:09).
                         LaunchedEffect(pager, active) {
                             if (!active) return@LaunchedEffect
-                            var initial = true
-                            androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { p ->
-                                val move = it.pixelbox.cmwatch.rules.SwipePages.afterSettle(currentPages, p, open, initial)
-                                initial = false
-                                if (move is it.pixelbox.cmwatch.rules.SwipePages.Move.Open) {
-                                    swipeSet = true
-                                    open = move.name
-                                    // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
-                                    if (move.name == null) tab = StartRoute.Tab.OVERVIEW
+                            var prev: Int? = null
+                            androidx.compose.runtime.snapshotFlow { Pair(pager.settledPage, pager.isScrollInProgress) to Pair(currentPages, open) }
+                                .collect { (pos, sel) ->
+                                    val (p, scrolling) = pos
+                                    val (pp, o) = sel
+                                    val settledMoved = prev != p
+                                    when (val step = it.pixelbox.cmwatch.rules.SwipePages.step(prev, p, scrolling, pp, o)) {
+                                        is it.pixelbox.cmwatch.rules.SwipePages.Step.Open -> {
+                                            swipeSet = true
+                                            open = step.name
+                                            // Sul riepilogo si torna anche dal Registro: la prima pagina è sempre il riepilogo.
+                                            if (step.name == null) tab = StartRoute.Tab.OVERVIEW
+                                        }
+                                        // Una pagina accanto si raggiunge scorrendo, come col dito; una lontana subito, senza attraversare le altre.
+                                        is it.pixelbox.cmwatch.rules.SwipePages.Step.ScrollTo ->
+                                            if (kotlin.math.abs(step.page - pager.currentPage) == 1) pager.animateScrollToPage(step.page) else pager.scrollToPage(step.page)
+                                        it.pixelbox.cmwatch.rules.SwipePages.Step.None -> Unit
+                                    }
+                                    if (!scrolling) prev = p
+                                    if (settledMoved) {
+                                        // Il cursore segue la pagina che si vede (Franz, 04/10 20:53): il pager teneva viva quella di prima
+                                        // e il testo scritto finiva lì. Sul riepilogo, che non ha campo, la tastiera si chiude.
+                                        val shown = pp.getOrNull(p)
+                                        val owner = fieldFocus.owner
+                                        if (owner != null && owner != shown) { if (shown != null) fieldFocus.target = shown else focusManager.clearFocus() }
+                                    }
                                 }
-                                // Il cursore segue la pagina che si vede (Franz, 04/10 20:53): il pager teneva viva quella di prima
-                                // e il testo scritto finiva lì. Sul riepilogo, che non ha campo, la tastiera si chiude.
-                                val shown = currentPages.getOrNull(p)
-                                val owner = fieldFocus.owner
-                                if (owner != null && owner != shown) { if (shown != null) fieldFocus.target = shown else focusManager.clearFocus() }
-                            }
-                        }
-                        LaunchedEffect(open, pages, active) {
-                            val i = pages.indexOf(open)
-                            // Una pagina accanto si raggiunge scorrendo, come col dito; una lontana subito, senza attraversare le altre.
-                            if (active && i >= 0 && i != pager.currentPage && !pager.isScrollInProgress) {
-                                if (kotlin.math.abs(i - pager.currentPage) == 1) pager.animateScrollToPage(i) else pager.scrollToPage(i)
-                            }
                         }
                         androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
                             val n = pages[page]

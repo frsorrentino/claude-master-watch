@@ -42,4 +42,33 @@ class SwipePagesTest {
 
     @Test fun settlingOnTheOpenSessionChangesNothing() =
         assertEquals(SwipePages.Move.Stay, SwipePages.afterSettle(listOf(null, "a", "b"), settled = 2, open = "b", initial = false))
+
+    // Segnalazione del 07/10 16:09: dopo un riordino il pager restava sulla pagina di una sessione mentre quella aperta era
+    // un'altra, e la chat a schermo non si rileggeva più. `step` decide in un punto solo fra lo scorrimento del dito e il
+    // riallineamento, così l'uno non annulla l'altro.
+    private val pp = listOf(null, "team-supervisor-app", "motion-graphic-video")
+
+    @Test fun aReorderLeavingThePagerOnAnotherSessionGoesBackToTheOpenOne() =
+        assertEquals(SwipePages.Step.ScrollTo(1), SwipePages.step(prevSettled = 2, settled = 2, scrolling = false, pages = pp, open = "team-supervisor-app"))
+
+    @Test fun aSwipeOpensTheSessionItStopsOn() =
+        assertEquals(SwipePages.Step.Open("motion-graphic-video"), SwipePages.step(prevSettled = 1, settled = 2, scrolling = false, pages = pp, open = "team-supervisor-app"))
+
+    @Test fun aSwipeBackToTheSummaryOpensIt() =
+        assertEquals(SwipePages.Step.Open(null), SwipePages.step(prevSettled = 1, settled = 0, scrolling = false, pages = pp, open = "team-supervisor-app"))
+
+    @Test fun theMenuChoiceMovesThePager() =
+        assertEquals(SwipePages.Step.ScrollTo(2), SwipePages.step(prevSettled = 1, settled = 1, scrolling = false, pages = pp, open = "motion-graphic-video"))
+
+    @Test fun whenTheContentComesBackTheOldPageDoesNotUndoTheChoice() =
+        assertEquals(SwipePages.Step.ScrollTo(2), SwipePages.step(prevSettled = null, settled = 1, scrolling = false, pages = pp, open = "motion-graphic-video"))
+
+    @Test fun whileTheFingerScrollsNothingMoves() =
+        assertEquals(SwipePages.Step.None, SwipePages.step(prevSettled = 1, settled = 1, scrolling = true, pages = pp, open = "motion-graphic-video"))
+
+    @Test fun alignedNothingToDo() =
+        assertEquals(SwipePages.Step.None, SwipePages.step(prevSettled = 1, settled = 1, scrolling = false, pages = pp, open = "team-supervisor-app"))
+
+    @Test fun anOpenSessionThatIsNoPageIsLeftAlone() =
+        assertEquals(SwipePages.Step.None, SwipePages.step(prevSettled = 1, settled = 1, scrolling = false, pages = pp, open = "zeta"))
 }

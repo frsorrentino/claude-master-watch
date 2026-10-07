@@ -31,4 +31,31 @@ object SwipePages {
         val n = pages[settled]
         return if (n == open) Move.Stay else Move.Open(n)
     }
+
+    /** Che cosa fa il pager a ogni cambio di pagina ferma, pagine, sessione aperta o scorrimento. */
+    sealed interface Step {
+        data object None : Step
+        /** Uno scorrimento del dito si è fermato su un'altra pagina: quella diventa la sessione aperta. */
+        data class Open(val name: String?) : Step
+        /** La pagina ferma non è quella della sessione aperta: il pager ci torna. */
+        data class ScrollTo(val page: Int) : Step
+    }
+
+    /**
+     * Una decisione sola fra scorrimento e riallineamento (segnalazione del 07/10 16:09). Le pagine seguono lo stato delle
+     * sessioni e si riordinano spesso: il pager poteva restare sulla pagina di una sessione mentre quella aperta, e quindi
+     * riletta, era un'altra, e la chat a schermo non si aggiornava più. Se la pagina ferma è cambiata per uno scorrimento,
+     * comanda la pagina (`afterSettle`); altrimenti il pager si riallinea alla sessione aperta, ma mai mentre scorre.
+     * `prevSettled` null = il contenuto si è appena riattivato: la pagina vista è quella di prima e non annulla la scelta
+     * del menu (dal vivo 03/10 16:40).
+     */
+    fun step(prevSettled: Int?, settled: Int, scrolling: Boolean, pages: List<String?>, open: String?): Step {
+        if (scrolling) return Step.None
+        if (prevSettled != null && prevSettled != settled) {
+            val move = afterSettle(pages, settled, open, initial = false)
+            if (move is Move.Open) return Step.Open(move.name)
+        }
+        val i = pages.indexOf(open)
+        return if (i < 0 || i == settled) Step.None else Step.ScrollTo(i)
+    }
 }
