@@ -19,6 +19,7 @@ export const demoState = {
 }
 
 import eventsRaw from '../../../contract/events-sample.json?raw'
+import nightRaw from '../../../contract/night-report-sample.json?raw'
 import type { Event } from './contract'
 export const demoEvents: Event[] = JSON.parse(eventsRaw)
 
@@ -92,3 +93,6 @@ export const demoTimeline: TimelinePage = { since: d0, sessions: [
   { session: 'ledger-api', live: true, events: [{ at: d0 + 600, kind: 'prompt', text: 'Prepare the deploy of 2.4', ref: 'ledger-api' }, { at: d0 + 4000, kind: 'commit', text: 'bump version to 2.4.0', ref: '4c1e9a2' }, { at: d0 + 9000, kind: 'test', text: 'migration suite', ok: true }] },
   { session: 'atlas-shop', live: true, events: [{ at: d0 + 1200, kind: 'commit', text: 'fix the cart totals', ref: '4be1c2a' }, { at: d0 + 2400, kind: 'prompt', text: 'ok, run the checkout tests', ref: 'atlas-shop' }, { at: d0 + 6000, kind: 'test', text: 'checkout suite', ok: true }, { at: d0 + 12000, kind: 'test', text: 'payment suite', ok: false }, { at: d0 + 15000, kind: 'outcome', text: 'release candidate tagged, payments to fix' }] },
 ] }
+
+/** La notte della demo: la fixture inventata del contratto 1.44 (il rapporto vero ha dati personali). */
+export const demoNight: import('./night').NightReport = JSON.parse(nightRaw)

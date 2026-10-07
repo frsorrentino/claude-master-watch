@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as files from './lib/fileActions'
   import type { FileAct, Fetched } from './lib/fileActions'
-  import { demoEvents, demoMine, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
+  import { demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
   import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
   import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
@@ -20,6 +20,8 @@
   import Page from './lib/Page.svelte'
   import Launch from './lib/Launch.svelte'
   import Diary from './lib/Diary.svelte'
+  import NightPage from './lib/NightPage.svelte'
+  import { page as nightPage, type NightReport } from './lib/night'
   import Overview from './lib/Overview.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
@@ -219,8 +221,28 @@
   // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
   // `?page=diary` apre una pagina (link diretto, e i provini).
   const asked = new URLSearchParams(location.search).get('page')
-  let page = $state<PageName | null>(asked && ['launch', 'diary', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
-  const pageTitle: Record<PageName, string> = { launch: t.menuLaunch, diary: t.menuRegister, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle }
+  let page = $state<PageName | null>(asked && ['launch', 'diary', 'night', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
+  // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto si chiede al PC con l'op `night` (contratto 1.44)
+  // quando la pagina si apre e col tasto aggiorna; nella demo è la fixture inventata.
+  let night = $state<{ report: NightReport | null; error: string | null; loading: boolean }>({ report: null, error: null, loading: false })
+  const nightZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const nightModel = $derived(night.report ? nightPage(night.report, nightZone) : null)
+  const nightTitle = $derived.by(() => {
+    if (!nightModel) return t.menuNight
+    const d = new Date(`${nightModel.day}T12:00:00Z`), b = new Date(`${nightModel.dayBefore}T12:00:00Z`)
+    return t.nightPageTitle(b.getUTCDate(), d.getUTCDate(), new Intl.DateTimeFormat('it-IT', { month: 'long', timeZone: 'UTC' }).format(d))
+  })
+  async function loadNight() {
+    if (!tr) { night = { report: demoNight, error: null, loading: false }; return }
+    night = { ...night, loading: true, error: null }
+    try {
+      const r = await tr.send(newCmd('night', null, null))
+      if (r.ok) night = { report: JSON.parse(r.text), error: null, loading: false }
+      else night = { report: night.report, error: /unknown|not allowed|unsupported/i.test(r.text) ? t.nightOld : r.text.startsWith('no night report') ? t.nightNone : r.text, loading: false }
+    } catch { night = { ...night, error: t.noAnswer, loading: false } }
+  }
+  $effect(() => { if (page === 'night' && !night.report && !night.loading) untrack(() => loadNight()) })
+  const pageTitle: Record<PageName, string> = $derived({ launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
   const overview = $derived(overviewOf(st, events, samples, now, undefined, down))
@@ -415,6 +437,10 @@
     {:else if p === 'diary'}
       <Diary {st} {events} rings={overview.rings} now={now} onAdd={() => nightDlg?.showModal()} onRemove={(id) => cmd('')('night_remove', id)}
         onQuadro={() => openPage('overview')} onSession={(n) => { openPage(null); pick(n) }} />
+    {:else if p === 'night'}
+      <NightPage model={nightModel} error={night.error} loading={night.loading} onRefresh={loadNight}
+        onChat={(n) => { openPage(null); pick(n) }} onAnswer={(n, x) => cmd(n)('answer', String(x))}
+        onApprove={(task) => approve(task, '')} onSend={(n, text) => sendTo(n, text)} />
     {:else if p === 'overview'}
       <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
         onQuestion={() => openPage('queue')} />

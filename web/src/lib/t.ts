@@ -1,5 +1,17 @@
 // I testi visibili, in un posto solo come strings.xml dell'app Android.
 const pl = (n: number, one: string, other: string) => `${n === 1 ? one : other} · ${n}`
+// Le durate della pagina Notte: «2 ore e 3 minuti» nella testata, «1 h 4 min» sulle card.
+function nightLong(s: number): string {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+  const hs = h === 1 ? '1 ora' : `${h} ore`, ms = m === 1 ? '1 minuto' : `${m} minuti`
+  return h && m ? `${hs} e ${ms}` : h ? hs : ms
+}
+function nightShort(s: number): string {
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60)
+  if (!h) return `${Math.max(1, m)} min`
+  return m ? `${h} h ${m} min` : `${h} h`
+}
+
 export const t = {
   summary: {
     waiting: (n: number) => pl(n, 'Ti aspetta', 'Ti aspettano'), finished: (n: number) => pl(n, 'Ha finito', 'Hanno finito'),
@@ -73,6 +85,16 @@ export const t = {
   updatedNow: 'aggiornato ora', updatedAgo: (m: number) => `aggiornato ${m}\u00A0min fa`, menuPc: 'PC',
   menuConnected: (host: string, upd: string) => `Collegato a ${host} · ${upd}`, quotaLineStale: 'non aggiornata',
   badgePersonal: 'account personale', badgeWork: 'account di lavoro',
+  // La pagina Notte (specifica del 07/10, approvata alle 21:50).
+  menuNight: 'Notte', menuNightSub: 'Lavori e sessioni di stanotte',
+  nightPageTitle: (d1: number, d2: number, month: string) => `Notte del ${d1}-${d2} ${month}`,
+  nightLong, nightShort,
+  nightWindow: (from: string, to: string, s: number, fromLast: boolean) => `Dalle ${from}${fromLast ? ', ultimo tuo messaggio,' : ''} alle ${to} · ${nightLong(s)}`,
+  nightSince: (from: string) => `dalle ${from} · in corso`, nightNeeds: 'Serve a te', nightItems: 'Lavori e sessioni', nightProjects: 'Progetti',
+  nightQueueTag: 'CODA', nightConversation: 'Conversazione', nightApprove: 'Approva', nightSend: (text: string) => `Manda ${text}`,
+  nightCount: (n: number, what: string) => `${n} ${what}`, nightParts: (done: number, total: number) => `${done} di ${total} parti`,
+  nightNoParts: 'nessuna parte', nightWaiting: 'Aspetta', nightNext: 'Prossimo', nightRefresh: 'Aggiorna', nightLoading: 'Leggo il rapporto della notte',
+  nightOld: 'Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor', nightNone: 'Nessun rapporto della notte',
   menuLaunch: 'Lancia una sessione', menuLaunchSub: 'Un progetto, con il primo messaggio', menuRegister: 'Registro',
   menuRegisterSub: 'Stanotte, i giorni, la coda della notte', menuQuadro: 'Utilizzo e limiti', menuQuadroSub: 'Finestre di 5 ore e settimana, ritmo',
   menuSearch: 'Cerca nelle conversazioni', menuSearchSub: 'Messaggi, esiti e registro', settingsTitle: 'Impostazioni',

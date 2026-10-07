@@ -1,5 +1,5 @@
 <script module lang="ts">
-  export type Page = 'launch' | 'diary' | 'overview' | 'search' | 'settings' | 'queue'
+  export type Page = 'launch' | 'diary' | 'night' | 'overview' | 'search' | 'settings' | 'queue'
 </script>
 
 <script lang="ts">
@@ -26,6 +26,7 @@
   const entries: { page: Page; title: string; sub: string; accent?: boolean; d: string[] }[] = [
     { page: 'launch', title: t.menuLaunch, sub: t.menuLaunchSub, accent: true, d: ['M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z', 'm12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z', 'M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0', 'M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5'] },
     { page: 'diary', title: t.menuRegister, sub: t.menuRegisterSub, d: ['M12 7v14', 'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z'] },
+    { page: 'night', title: t.menuNight, sub: t.menuNightSub, d: ['M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z'] },
     { page: 'overview', title: t.menuQuadro, sub: t.menuQuadroSub, d: ['M3 3h7v9H3z', 'M14 3h7v5h-7z', 'M14 12h7v9h-7z', 'M3 16h7v5H3z'] },
     { page: 'search', title: t.menuSearch, sub: t.menuSearchSub, d: ['m21 21-4.34-4.34', 'M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0'] },
   ]

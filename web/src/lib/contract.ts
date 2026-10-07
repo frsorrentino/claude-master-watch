@@ -72,7 +72,7 @@ export type State = {
 
 export type CmdOp = 'answer' | 'prompt' | 'launch' | 'follow' | 'unfollow' | 'resume' | 'screen' | 'allow_all' | 'last' | 'reopen'
   | 'model' | 'effort' | 'night_add' | 'night_remove' | 'report' | 'interrupt' | 'transcript' | 'file' | 'slash' | 'projects'
-  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair'
+  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair' | 'night'
 export type Cmd = { id: string; op: CmdOp; session?: string | null; arg?: string | null; issued: number; by: string; text?: string; device?: string; parts?: boolean }
 export type CmdResult = { id: string; ok: boolean; text: string; at: number; session?: string | null; job?: string | null }
 
