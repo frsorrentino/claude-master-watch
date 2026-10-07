@@ -131,8 +131,10 @@ Atteso: `transcript da web (locale)` intorno a 900/h (il report ne conta 902 nel
   - **Età dello stato:** una riga `cmwatch state age: <now - ts> s` in `Repo.accept` (Task 6), su telefono e orologio,
     durante un'ora d'uso normale. Fa da base per il «dopo».
   - **Prompt dal telefono:** dal log del relay, il tempo fra `issued` del comando e la sua riga `cmd … prompt … → ok`.
-    Serve che il relay scriva `issued` nella riga: è una richiesta a team-supervisor. Se non c'è, questa misura si
-    salta e si dice.
+    La riga con `issued`, l'arrivo dallo stream, l'attesa in fila, l'esecuzione e la scrittura dell'esito arriva con la
+    fase 0 del piano relay. `issued` è l'ora del telefono, quindi conta la differenza fra i passi del relay e non fra
+    due orologi. Prima di quella fase questa misura non c'è, e si dice. Lo script del Passo 1 va esteso per leggere i
+    campi nuovi, e deve continuare a leggere anche le righe di oggi.
 
 - [ ] **Passo 4: commit**
 
