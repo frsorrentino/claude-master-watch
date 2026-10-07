@@ -111,7 +111,8 @@ class PhoneApp : Application() {
         // I comandi scritti senza rete partono quando torna (revisione 29/09: prima restavano in coda per sempre).
         runCatching {
             getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: android.net.Network) { scope.launch { repo.flushQueue() } }
+                // Una rete nuova: i comandi in coda partono e gli stream si riaprono subito (piano prestazioni, Task 4).
+                override fun onAvailable(network: android.net.Network) { repo.reconnect(); scope.launch { repo.flushQueue() } }
             })
         }
         notifier = PhoneNotifier(this).also { it.ensureChannels() }

@@ -5,6 +5,8 @@ import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.crypto.Blob
 import it.pixelbox.cmwatch.crypto.Pairing
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -285,6 +287,28 @@ class FirebaseTransportTest {
         refuseSeen = true
         store["state"] = blobOf(Fixtures.stateIdle)
         assertEquals(1, transport().fetchState().sessions.size)
+    }
+
+    // Piano prestazioni, Task 4: `auth_revoked` chiude lo stream e lo si riapre (con un token fresco), invece di restare
+    // aperti e sordi; i dati arrivati prima valgono.
+    @Test fun authRevokedReopensTheStream() = runBlocking {
+        streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":${blobOf(Fixtures.stateQuestion)}}\n\nevent: auth_revoked\ndata: credential is no longer valid\n\n"
+        val got = kotlinx.coroutines.withTimeout(5_000) { transport().state.take(2).toList() }
+        assertEquals(2, got.size)
+        assertTrue("the stream was opened again", requests.count { it.getHeader("Accept") == "text/event-stream" } >= 2)
+    }
+
+    // Piano prestazioni, Task 4: il conto della ripresa riparte dal primo dato ricevuto. Con 1-2-5-15-30 s dopo tante cadute
+    // ogni ripresa aspettava 30 s; qui, dopo un dato, la ripresa usa di nuovo il primo gradino.
+    @Test fun theBackoffStartsAgainAfterData() = runBlocking {
+        // un dato buono, poi uno che non si decifra: lo stream cade con un errore dopo aver consegnato
+        val other = ByteArray(32).also { SecureRandom().nextBytes(it) }
+        streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":${blobOf(Fixtures.stateQuestion)}}\n\n" +
+            "event: put\ndata: {\"path\":\"/\",\"data\":${Blob.seal(Fixtures.stateIdle, other)}}\n\n"
+        val t = FirebaseTransport(Rtdb(server.url("/").toString().removeSuffix("/"), { "t0k" }), { key }, { "u1" }, { Pairing.newKeyPair() }, { clock },
+            pollMs = 10, backoffMs = listOf(10, 5_000))
+        val got = kotlinx.coroutines.withTimeout(3_000) { t.state.take(3).toList() }
+        assertEquals(3, got.size)   // con il conto che non ripartiva, la terza ripresa avrebbe aspettato 5 s
     }
 }
 

@@ -101,7 +101,8 @@ class CmApp : Application() {
         // I comandi dati senza rete partono quando torna (revisione 29/09: nessuno chiamava flushQueue, restavano in coda).
         runCatching {
             getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: android.net.Network) { scope.launch { repo.flushQueue() } }
+                // Una rete nuova: i comandi in coda partono e gli stream si riaprono subito (piano prestazioni, Task 4).
+                override fun onAvailable(network: android.net.Network) { repo.reconnect(); scope.launch { repo.flushQueue() } }
             })
         }
         follow = FollowOngoing(this)

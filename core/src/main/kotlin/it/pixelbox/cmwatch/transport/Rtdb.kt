@@ -30,7 +30,10 @@ class Rtdb(
      */
     streamSilenceMs: Long = 90_000,
 ) {
-    private val http = client.newBuilder().callTimeout(30, TimeUnit.SECONDS).build()
+    // Le REST brevi entro 10 s (piano prestazioni, Task 4: con 30 s i limiti di tile, sveglia e comandi non valevano);
+    // caricamenti e pezzi di file, fino a 10 MB su LTE, entro 120 s.
+    private val http = client.newBuilder().callTimeout(10, TimeUnit.SECONDS).build()
+    private val slowHttp = client.newBuilder().callTimeout(120, TimeUnit.SECONDS).build()
     private val streaming = client.newBuilder().readTimeout(streamSilenceMs, TimeUnit.MILLISECONDS).build()
     private val json = "application/json; charset=utf-8".toMediaType()
 
@@ -39,33 +42,46 @@ class Rtdb(
         return "$baseUrl/$path.json?$q"
     }
 
-    /** Corpo della risposta, o null se il nodo non esiste (RTDB risponde `null`). */
-    suspend fun get(path: String, query: Map<String, String> = emptyMap()): String? = withContext(Dispatchers.IO) {
+    /**
+     * Una chiamata che la coroutine può interrompere: `execute()` dentro `withContext(IO)` non si fermava alla
+     * cancellazione, e una rete lenta teneva ferma la tile o la sveglia fino al timeout (piano prestazioni, Task 4).
+     * Il corpo si legge sul thread di OkHttp; la cancellazione chiude la chiamata.
+     */
+    private suspend fun <T> exec(client: OkHttpClient, request: Request, read: (Response) -> T): T =
+        kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+            val call = client.newCall(request)
+            cont.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: IOException) { cont.resumeWith(Result.failure(e)) }
+                override fun onResponse(call: okhttp3.Call, response: Response) { cont.resumeWith(runCatching { response.use(read) }) }
+            })
+        }
+
+    /** Corpo della risposta, o null se il nodo non esiste (RTDB risponde `null`). `slow`: i pezzi dei file. */
+    suspend fun get(path: String, query: Map<String, String> = emptyMap(), slow: Boolean = false): String? =
         net("GET $path") {
-            http.newCall(Request.Builder().url(url(path, query)).get().build()).execute().use { r ->
+            exec(if (slow) slowHttp else http, Request.Builder().url(url(path, query)).get().build()) { r ->
                 val body = r.body.string()
                 if (!r.isSuccessful) { android.util.Log.w("cmwatch", "GET $path: HTTP ${r.code} $body"); throw TransportException.Network("GET $path: HTTP ${r.code}") }
                 body.takeIf { it != "null" && it.isNotBlank() }
             }
         }
-    }
 
-    suspend fun put(path: String, body: String): String = withContext(Dispatchers.IO) {
+    /** `slow`: il caricamento di /share, fino a 10 MB. */
+    suspend fun put(path: String, body: String, slow: Boolean = false): String =
         net("PUT $path") {
-            http.newCall(Request.Builder().url(url(path)).put(body.toRequestBody(json)).build()).execute().use { r ->
+            exec(if (slow) slowHttp else http, Request.Builder().url(url(path)).put(body.toRequestBody(json)).build()) { r ->
                 if (!r.isSuccessful) { android.util.Log.w("cmwatch", "PUT $path: HTTP ${r.code}"); throw TransportException.Network("PUT $path: HTTP ${r.code}") }
                 r.body.string()
             }
         }
-    }
 
-    suspend fun delete(path: String) = withContext(Dispatchers.IO) {
+    suspend fun delete(path: String) =
         net("DELETE $path") {
-            http.newCall(Request.Builder().url(url(path)).delete().build()).execute().use { r ->
+            exec(http, Request.Builder().url(url(path)).delete().build()) { r ->
                 if (!r.isSuccessful) throw TransportException.Network("DELETE $path: HTTP ${r.code}")
             }
         }
-    }
 
     /**
      * Gli errori di rete di Java (timeout, connessione caduta) diventano `TransportException.Network`, l'unico errore che

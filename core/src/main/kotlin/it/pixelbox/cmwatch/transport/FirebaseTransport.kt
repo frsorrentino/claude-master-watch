@@ -60,18 +60,32 @@ class FirebaseTransport(
 
     private fun isBlob(e: JsonElement) = e is JsonObject && e.containsKey("enc")
 
-    /** Riconnessione con backoff 1-2-5-15-30 s (design, sezione 4). */
+    /**
+     * Riconnessione con backoff 1-2-5-15-30 s (design, sezione 4). Il conto riparte dal primo dato ricevuto, non solo da
+     * una chiusura pulita: prima, dopo quattro cadute nella vita del processo ogni ripresa aspettava 30 s (piano
+     * prestazioni, Task 4). Un po' di caso (±20 %) evita che telefono e orologio riprovino insieme.
+     */
     private fun <T> resilient(block: suspend kotlinx.coroutines.flow.FlowCollector<T>.() -> Unit): Flow<T> = flow {
         var attempt = 0
+        val out = this
+        val counting = kotlinx.coroutines.flow.FlowCollector<T> { v -> attempt = 0; out.emit(v) }
         while (true) {
-            try { block(); attempt = 0 } catch (e: CancellationException) { throw e } catch (e: Exception) { /* riprova */ }
-            delay(backoffMs[minOf(attempt, backoffMs.size - 1)]); attempt++
+            try { counting.block(); attempt = 0 } catch (e: CancellationException) { throw e } catch (e: Exception) { /* riprova */ }
+            val base = backoffMs[minOf(attempt, backoffMs.size - 1)]
+            delay(base + (base * (kotlin.random.Random.nextDouble() - 0.5) * 0.4).toLong()); attempt++
         }
     }
+
+    /**
+     * `auth_revoked` (token scaduto, circa ogni ora) e `cancel` chiudono lo stream: si riapre con un token fresco, come fa
+     * il relay. Prima si ignoravano, e lo stream poteva restare aperto ma sordo (piano prestazioni, Task 4).
+     */
+    private fun endsTheStream(ev: SseEvent) = ev.event == "auth_revoked" || ev.event == "cancel"
 
     override val state: Flow<State> = resilient {
         var marked = false
         rtdb.stream("state").collect { ev ->
+            if (endsTheStream(ev)) throw TransportException.Network("stream state: ${ev.event}")
             if (ev.event != "put" && ev.event != "patch") return@collect
             val (path, d) = putEvent(ev.data) ?: return@collect
             if (path == "/" && isBlob(d)) {
@@ -104,6 +118,7 @@ class FirebaseTransport(
         }
         emit(snapshot())
         rtdb.stream("events").collect { ev ->
+            if (endsTheStream(ev)) throw TransportException.Network("stream events: ${ev.event}")
             if (ev.event != "put" && ev.event != "patch") return@collect
             val (path, d) = putEvent(ev.data) ?: return@collect
             when {
@@ -132,7 +147,7 @@ class FirebaseTransport(
         val doc = seal(plain)
         val enc = Json.parseToJsonElement(doc).jsonObject.getValue("enc").jsonPrimitive.content
         if (enc.length > maxBytes) throw TransportException.TooLarge(enc.length, maxBytes)
-        rtdb.put("share/$id", doc)
+        rtdb.put("share/$id", doc, slow = true)
     }
 
     /**
@@ -146,7 +161,7 @@ class FirebaseTransport(
             val out = java.io.ByteArrayOutputStream(meta.size.coerceIn(0, Int.MAX_VALUE.toLong()).toInt())
             try {
                 for (k in 0 until meta.n) {
-                    val part = rtdb.get("file/$id/parts/$k") ?: throw TransportException.Network("file $id: part $k missing")
+                    val part = rtdb.get("file/$id/parts/$k", slow = true) ?: throw TransportException.Network("file $id: part $k missing")
                     out.write(openBytes(Json.parseToJsonElement(part)))
                 }
             } finally { runCatching { rtdb.delete("file/$id") } }
@@ -155,7 +170,7 @@ class FirebaseTransport(
             if (bytes.size.toLong() != meta.size || hex != meta.sha256) throw TransportException.Network("file $id: size or sha256 mismatch")
             return FileBlob(meta.mime, bytes)
         }
-        val body = rtdb.get("file/$id") ?: return null
+        val body = rtdb.get("file/$id", slow = true) ?: return null
         val plain = Json.parseToJsonElement(open(Json.parseToJsonElement(body))).jsonObject
         runCatching { rtdb.delete("file/$id") }
         return FileBlob(plain.getValue("mime").jsonPrimitive.content, java.util.Base64.getDecoder().decode(plain.getValue("data").jsonPrimitive.content))

@@ -118,6 +118,16 @@ class Repo(
         }
     }
 
+    /**
+     * Al cambio di rete gli stream aperti si riaprono subito: una connessione rimasta mezza aperta si scopriva solo dopo
+     * 90 s di silenzio, più l'attesa della ripresa (piano prestazioni, Task 4). Con gli stream chiusi non fa niente.
+     */
+    @Synchronized fun reconnect() {
+        if (streams?.isActive != true) return
+        streams?.cancel(); streams = null
+        live(true)
+    }
+
     /** Toglie dal Diario gli eventi della Demo (`FakeTransport.eventKeys`), fuori dalla Demo. */
     suspend fun dropEvents(keys: Collection<String>) {
         store.dropEvents(keys)
