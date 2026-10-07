@@ -122,7 +122,9 @@
   .desk.right.details { grid-template-columns: 341px minmax(0, 1fr) 28px 400px; grid-template-areas: 'det cols handle home'; }
   .det { grid-area: det; min-height: 0; border-left: 1px solid var(--line); }
   .desk.right .det { border-left: 0; border-right: 1px solid var(--line); }
-  .home { grid-area: home; min-height: 0; display: flex; flex-direction: column; view-transition-name: desk-home; }
+  /* view-transition-name fa della home un contesto di impilamento: senza z-index il menu ≡ (z-index 21 dentro la home)
+     resta sotto .cols, che viene dopo nel DOM, quando la home è a sinistra. */
+  .home { grid-area: home; min-height: 0; display: flex; flex-direction: column; view-transition-name: desk-home; position: relative; z-index: 1; }
   .handle { grid-area: handle; position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 10px; }
   .handle > i { position: absolute; inset: 0 auto 0 50%; width: 1px; background: var(--line); }
   .hb { position: relative; width: 28px; height: 28px; border-radius: 50%; background: var(--surface); color: var(--text2); display: grid; place-items: center; }

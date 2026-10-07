@@ -14,6 +14,9 @@
   // (QuotaLine): per ogni account la sua forma, una barra fina delle 5 ore e la percentuale; ambra da 75 %, rossa da 90 %.
   let { st, now, openCount, onPage }: { st: State; now: number; openCount: number; onPage: (p: Page) => void } = $props()
   let menu = $state(false)
+  // Il pannello scende dal tasto ≡, non dal bordo dello schermo: sulla plancia con la home a sinistra resta accanto al tasto.
+  let panelRight = $state(12)
+  function openMenu(e: MouseEvent) { panelRight = Math.max(12, innerWidth - (e.currentTarget as HTMLElement).getBoundingClientRect().right); menu = true }
   const fresh = $derived(freshness(st.ts, now))
   const updated = $derived(fresh.stale ? t.updatedAgo(fresh.minutes) : t.updatedNow)
   // Con un account non aggiornato si vede solo l'altro, a tutta larghezza e con l'ora in cui si azzera.
@@ -36,7 +39,7 @@
     <button class="ib" aria-label={t.search} title={t.search} onclick={() => onPage('search')}>
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
     </button>
-    <button class="ib" aria-label={t.menu} title={t.menu} aria-expanded={menu} onclick={() => (menu = true)}>
+    <button class="ib" aria-label={t.menu} title={t.menu} aria-expanded={menu} onclick={openMenu}>
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
     </button>
   </div>
@@ -62,7 +65,7 @@
 
 {#if menu}
   <div class="scrim" role="presentation" onclick={() => (menu = false)}></div>
-  <div class="panel" role="menu">
+  <div class="panel" role="menu" style:right="{panelRight}px">
     <div class="ph">
       <i class="led" class:stale={fresh.stale}></i>
       <span>{t.menuConnected(st.host || t.menuPc, updated)}</span>

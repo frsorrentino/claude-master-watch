@@ -97,7 +97,9 @@
   let settled = false
   let atEnd = $state(true)
   let auto = false
-  $effect.pre(() => { s.name; settled = false; atEnd = true })
+  // Solo un cambio vero di sessione riporta in fondo: `s` è un oggetto nuovo a ogni stato del relay (Franz, 07/10 14:53).
+  let shownName: string | undefined
+  $effect.pre(() => { if (s.name !== shownName) { shownName = s.name; settled = false; atEnd = true } })
   $effect(() => {
     items.length; s.question
     if (home || !list) return
@@ -115,8 +117,17 @@
   $effect(() => {
     if (!list) return
     const el = list
-    const onScroll = () => { if (!auto) atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
-    const onEnd = () => { auto = false; atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }
+    // Conta la direzione: salire lascia il fondo (anche durante un nostro scorrimento), solo scendere ci torna. Senza, la testata
+    // della master che si chiude allunga la lista, la distanza dal fondo scende sotto 40, la testata riappare e si salta in fondo.
+    let lastTop = el.scrollTop
+    const gap = () => el.scrollHeight - el.scrollTop - el.clientHeight
+    const onScroll = () => {
+      const dir = el.scrollTop - lastTop
+      lastTop = el.scrollTop
+      if (dir < 0 && gap() > 2) atEnd = false
+      else if (dir > 0 && !auto && gap() < 40) atEnd = true
+    }
+    const onEnd = () => { lastTop = el.scrollTop; if (auto) { auto = false; if (gap() < 40) atEnd = true } }
     const ro = new ResizeObserver(() => { if (atEnd && !home) el.scrollTop = el.scrollHeight })
     el.addEventListener('scroll', onScroll, { passive: true })
     el.addEventListener('scrollend', onEnd)
@@ -141,6 +152,11 @@
     {#if s.question}
       <QuestionCard q={s.question} source={s.name} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
     {/if}
+    {/if}
+    {#if !atEnd && !home}
+      <div class="toend"><button aria-label={t.toLatest} title={t.toLatest} onclick={() => { if (!list) return; atEnd = true; auto = true; list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' }) }}>
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button></div>
     {/if}
   </div>
 
@@ -206,9 +222,18 @@
   .dropzone { position: absolute; inset: 8px; z-index: 20; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--icon) 60%, transparent); border-radius: 24px; background: rgb(0 0 0 / .6); color: var(--icon); font-weight: 500; pointer-events: none; }
   .tohome { align-self: flex-start; margin: 8px 12px 0; color: var(--icon); padding: 6px 12px; border-radius: 16px; }
   .tohome:hover { background: var(--surface); }
+  /* Gli hover nella master: un passo sopra il suo fondo celeste, non il grigio delle altre sessioni (Franz, 07/10 14:49). */
+  .chat.master .tohome:hover { background: var(--master-high); }
+  .chat.master > :global(header .ib:hover), .chat.master > :global(header .ctxb:not(:disabled):hover),
+  .chat.master :global(.bar :is(.plus, .use, .chip, .sugrow):hover), .chat.master .lines :global(.sm:hover) { background: var(--master-highest); }
   /* La griglia di puntini dietro la casa della master (TechStyle.dotGrid): un'immagine ripetuta, niente ridisegni. */
   .lines.dots { padding: 16px max(10px, calc((100% - 760px) / 2)); }
   .dots { background-image: radial-gradient(rgb(255 255 255 / .07) 1px, transparent 1.4px); background-size: 16px 16px; }
+  /* «Torna all'ultimo messaggio»: incollato al fondo visibile della lista, alto zero per non cambiarne la misura. */
+  .toend { position: sticky; bottom: 0; height: 0; margin-top: -16px; align-self: flex-end; }
+  .toend button { position: absolute; right: 0; bottom: 8px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--high); color: var(--icon); box-shadow: 0 4px 16px rgb(0 0 0 / .4); }
+  .toend button:hover { filter: brightness(1.15); }
+  .chat.master .toend button { background: var(--master-highest); }
   .lines { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .nudge { display: flex; align-items: center; gap: 12px; margin: 0 12px 8px; padding: 10px 6px 10px 14px; border-radius: 20px; background: var(--high); }
   .nudge .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; color: var(--text2); }
