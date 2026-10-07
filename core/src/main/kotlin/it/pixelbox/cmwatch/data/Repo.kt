@@ -23,7 +23,8 @@ import java.util.UUID
 /** SENDING = si sta scrivendo; SENT = il comando è sul canale, il PC non ha ancora risposto; QUEUED = senza rete. */
 enum class PendingStatus { SENDING, SENT, QUEUED, FAILED }
 data class Pending(val cmd: Cmd, val status: PendingStatus)
-data class Snapshot(val state: State?, val freshness: Freshness, val pending: List<Pending> = emptyList())
+/** `receivedAt`: quando il dispositivo ha ricevuto lo stato in uso, epoch in secondi (piano prestazioni, Task 6). */
+data class Snapshot(val state: State?, val freshness: Freshness, val pending: List<Pending> = emptyList(), val receivedAt: Long? = null)
 
 /**
  * La verità sull'orologio: ultimo /state (subito da Room, poi dal Transport), comandi ottimistici con
@@ -72,7 +73,7 @@ class Repo(
     /** Apertura da Room: l'ultimo stato è leggibile anche senza rete, prima che il Transport risponda. */
     suspend fun loadFromStore() {
         // Solo se non è già arrivato uno stato più nuovo: una sveglia FCM a freddo può precedere la lettura (revisione 29/09).
-        store.loadState()?.let { (s, _) -> _snapshot.update { if (it.state != null) it else it.copy(state = s, freshness = Freshness.of(s.ts, now())) } }
+        store.loadState()?.let { (s, at) -> _snapshot.update { if (it.state != null) it else it.copy(state = s, freshness = Freshness.of(s.ts, now()), receivedAt = at) } }
         _events.value = store.loadEvents()
         _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
         _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
@@ -124,9 +125,19 @@ class Repo(
     }
 
     private suspend fun accept(s: State) {
+        val t = now()
+        val cur = _snapshot.value.state
+        // Un GET lento (sveglia FCM, tile) può arrivare dopo lo stream con uno stato più vecchio: resta quello in uso, e si
+        // segna solo che il PC ha risposto. Più indietro di 10 minuti, o da un altro PC, vale il nuovo: l'orologio del PC
+        // è stato spostato o c'è un nuovo accoppiamento (piano prestazioni, Task 6).
+        if (cur != null && cur.host == s.host && s.ts < cur.ts && cur.ts - s.ts <= OLDER_IGNORED_S) {
+            _snapshot.update { it.copy(receivedAt = t) }
+            return
+        }
         val ordered = s.copy(sessions = Order.sessions(s.sessions))
-        store.saveState(ordered, now())
-        _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered.ts, now())) }
+        store.saveState(ordered, t)
+        _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered.ts, t), receivedAt = t) }
+        android.util.Log.i("cmwatch", "state age: ${t - ordered.ts} s")
         recordQuota(ordered)
     }
 
@@ -321,6 +332,8 @@ class Repo(
 
     companion object {
         const val MAX_QUEUE = 10
+        /** Uno stato più vecchio di quello in uso, dallo stesso PC, entro questo tempo: si ignora (Task 6). */
+        const val OLDER_IGNORED_S = 600L
         const val MAX_QUEUE_AGE_S = 600L
         const val EVENTS_KEEP_S = 30L * 86400
         const val FRESHNESS_TICK_MS = 30_000L

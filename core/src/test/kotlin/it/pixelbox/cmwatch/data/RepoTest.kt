@@ -363,6 +363,49 @@ class RepoTest {
         assertEquals(Repo.Delivery.NotSent, repo.deliver(CmdOp.PROMPT, "atlas-shop", "x", "s3"))
         assertTrue(repo.snapshot.value.pending.isEmpty())
     }
+    // Piano prestazioni, Task 6: l'ora di ricezione, e un GET lento con uno stato più vecchio non riporta indietro lo schermo.
+    private class Fetch(var next: State, base: FakeTransport) : Transport by base {
+        override suspend fun fetchState(): State = next
+    }
+    private fun idleState() = ContractJson.decodeState(Fixtures.stateIdle)
+
+    @Test fun aSlowGetWithAnOlderStateDoesNotUndoTheNewerOne() = runTest {
+        val tr = Fetch(idleState().copy(ts = 1000), fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        clock = 2000; repo.refresh()
+        tr.next = idleState().copy(ts = 900, sessions = emptyList()); clock = 2010; repo.refresh()
+        assertEquals(1000L, repo.snapshot.value.state!!.ts)
+        assertEquals(1, repo.snapshot.value.state!!.sessions.size)
+        assertEquals(2010L, repo.snapshot.value.receivedAt)   // il PC ha risposto
+    }
+
+    @Test fun aMuchOlderStateOrAnotherPcIsTaken() = runTest {
+        val tr = Fetch(idleState().copy(ts = 1000), fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.refresh()
+        tr.next = idleState().copy(ts = 100); repo.refresh()          // 15 minuti indietro: orologio del PC spostato
+        assertEquals(100L, repo.snapshot.value.state!!.ts)
+        tr.next = idleState().copy(ts = 50, host = "altro-pc"); repo.refresh()   // un altro PC accoppiato
+        assertEquals("altro-pc", repo.snapshot.value.state!!.host)
+    }
+
+    @Test fun aNewerStateIsTakenWithItsReceiveTime() = runTest {
+        val tr = Fetch(idleState().copy(ts = 1000), fake())
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        clock = 5000; repo.refresh()
+        tr.next = idleState().copy(ts = 1030); clock = 5030; repo.refresh()
+        assertEquals(1030L, repo.snapshot.value.state!!.ts)
+        assertEquals(5030L, repo.snapshot.value.receivedAt)
+    }
+
+    @Test fun theReceiveTimeComesBackFromTheStore() = runTest {
+        val store = MemoryStore()
+        store.saveState(idleState(), 1234)
+        val repo = Repo(store, fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.loadFromStore()
+        assertEquals(1234L, repo.snapshot.value.receivedAt)
+    }
+
 }
 
 class MemoryStore : Store {
