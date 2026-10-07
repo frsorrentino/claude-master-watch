@@ -18,16 +18,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +68,13 @@ import it.pixelbox.cmwatch.ui.tokens.CmColors
  */
 class ReadingOverlay {
     var bar by mutableStateOf<(@Composable () -> Unit)?>(null)
+    /**
+     * Lo slider della velocità aperto nella barra (Franz, 07/10, approvata alle 22:06). Sta qui perché lo apre anche la
+     * pillola «1,5×» accanto al ▶ di un messaggio: c'è una barra sola, e un comando solo per la velocità.
+     */
+    var rateOpen by mutableStateOf(false)
+    /** L'ultimo tocco sullo slider: senza tocchi per 3 s si richiude in pillola. */
+    var rateTouched by mutableLongStateOf(0L)
     /** La sessione da cui legge: sul tablet, con più campi in vista, il controller va sopra il suo. */
     var source by mutableStateOf<String?>(null)
     internal var heightPx by mutableIntStateOf(0)
@@ -142,32 +154,96 @@ fun ReadingPill(
     /** La voce di adesso (null = la predefinita) e il tocco che passa alla dopo; null senza voci italiane da scegliere. */
     voice: String?, onVoice: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    /** In pausa: ⏸ diventa ▶ pieno, le barrette si fermano, sopra il testo «in pausa» (Franz, 07/10 22:06). */
+    paused: Boolean = false, onPause: () -> Unit = {}, onResume: () -> Unit = {},
 ) {
+    val overlay = LocalReadingOverlay.current
+    var localOpen by remember { mutableStateOf(false) }
+    val open = overlay?.rateOpen ?: localOpen
+    fun setOpen(v: Boolean) { if (overlay != null) { overlay.rateOpen = v; overlay.rateTouched = System.currentTimeMillis() } else localOpen = v }
+    var touched by remember { mutableLongStateOf(0L) }
+    val lastTouch = overlay?.rateTouched ?: touched
+    // Senza tocchi per 3 s lo slider torna pillola.
+    LaunchedEffect(open, lastTouch) { if (open) { kotlinx.coroutines.delay(3_000); setOpen(false) } }
+    var draft by remember(rate) { mutableFloatStateOf(rate) }
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
         BoxWithConstraints {
             // In una colonna stretta del tablet restano i tasti: la riga del testo si vede già nella colonna.
             val roomy = maxWidth >= 300.dp
             Row(
-                Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                Modifier.heightIn(min = 60.dp).padding(start = if (open) 8.dp else 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Bars()
-                val openLabel = source?.let { stringResource(R.string.reading_open, it) }
-                if (roomy) Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                        .then(if (onOpen != null) Modifier.handCursor().clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
-                        .padding(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
-                ) {
-                    Text(source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
-                    Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
-                } else Spacer(Modifier.weight(1f))
-                RatePill(rate, onRate)
-                if (onVoice != null) VoicePill(voice, onVoice)
-                FilledTonalIconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
+                if (open) {
+                    // La velocità aperta: il valore, lo slider da 0,5× a 2× con il segno di 1×, poi pausa e stop.
+                    RateValue(draft, onClick = { setOpen(false) })
+                    RateSlider(
+                        draft,
+                        onChange = { v -> draft = v; if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis() },
+                        onDone = { onRate(it.pixelbox.cmwatch.rules.SpeechRate.snap(draft)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    Bars(still = paused)
+                    val openLabel = source?.let { stringResource(R.string.reading_open, it) }
+                    if (roomy) Column(
+                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                            .then(if (onOpen != null) Modifier.handCursor().clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier)
+                            .padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        Text(if (paused) stringResource(R.string.reading_paused) else source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
+                        Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
+                    } else Spacer(Modifier.weight(1f))
+                    RatePill(rate) { setOpen(true) }
+                    if (onVoice != null) VoicePill(voice, onVoice)
+                }
+                if (paused) FilledIconButton(onClick = onResume, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.PlayArrow, stringResource(R.string.reading_resume))
+                } else FilledTonalIconButton(onClick = onPause, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.Pause, stringResource(R.string.reading_pause), tint = CmColors.actionIcon)
+                }
+                IconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
                     Icon(Icons.Rounded.Stop, stringResource(R.string.stop_reading), tint = CmColors.actionIcon)
                 }
             }
+        }
+    }
+}
+
+/** Il valore della velocità mentre lo slider è aperto, su fondo pieno: il tocco richiude lo slider. */
+@Composable
+private fun RateValue(rate: Float, onClick: () -> Unit) {
+    Surface(onClick = onClick, color = MaterialTheme.colorScheme.primary, shape = CircleShape, modifier = Modifier.handCursor()) {
+        Text(rateLabel(rate), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+    }
+}
+
+/** «1,35×» con la virgola della lingua dell'app. */
+@Composable
+fun rateLabel(r: Float): String {
+    val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+        .apply { maximumFractionDigits = 2 }.format(r)
+    return stringResource(R.string.speech_rate_short, n)
+}
+
+/**
+ * Lo slider della velocità, da 0,5× a 2× a passi di 0,05, con le scritte 0,5×, 1× e 2× sotto (Franz, 07/10 22:06). Lo usano
+ * la barra di lettura e le impostazioni. `onDone` arriva al rilascio: la voce riparte una volta sola, dalla frase in corso.
+ */
+@Composable
+fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier) {
+    val r = it.pixelbox.cmwatch.rules.SpeechRate
+    Column(modifier) {
+        Slider(
+            value = value, onValueChange = { onChange(r.snap(it)) }, onValueChangeFinished = onDone,
+            valueRange = r.MIN..r.MAX, steps = r.SLIDER_STEPS, modifier = Modifier.fillMaxWidth().height(28.dp),
+        )
+        Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            val small = MaterialTheme.typography.labelSmall.copy(color = CmColors.text2)
+            Text(rateLabel(r.MIN), style = small, modifier = Modifier.align(Alignment.TopStart))
+            Text(rateLabel(r.NORMAL), style = small, modifier = Modifier.align(androidx.compose.ui.BiasAlignment(2 * r.fraction(r.NORMAL) - 1, -1f)))
+            Text(rateLabel(r.MAX), style = small, modifier = Modifier.align(Alignment.TopEnd))
         }
     }
 }
@@ -184,18 +260,18 @@ private fun VoicePill(voice: String?, onClick: () -> Unit) {
     }
 }
 
-/** Tre barrette che salgono e scendono mentre legge; ferme con le animazioni spente. */
+/** Tre barrette che salgono e scendono mentre legge; ferme con le animazioni spente, basse e grigie in pausa. */
 @Composable
-private fun Bars() {
-    val off = animationsOff()
+private fun Bars(still: Boolean = false) {
+    val off = animationsOff() || still
     val flow = if (off) null else rememberInfiniteTransition(label = "bars")
     Row(Modifier.height(20.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         listOf(0, 180, 360).forEach { delay ->
             val h = flow?.let {
                 val v by it.animateFloat(0.35f, 1f, infiniteRepeatable(tween(520, delayMillis = delay, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "bar$delay")
                 v
-            } ?: 0.6f
-            Box(Modifier.width(4.dp).fillMaxHeight(h).clip(RoundedCornerShape(2.dp)).background(CmColors.actionIcon))
+            } ?: if (still) 0.45f else 0.6f
+            Box(Modifier.width(4.dp).fillMaxHeight(h).clip(RoundedCornerShape(2.dp)).background(if (still) CmColors.text2 else CmColors.actionIcon))
         }
     }
 }

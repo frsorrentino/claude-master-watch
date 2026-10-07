@@ -202,6 +202,9 @@
     <string name="ctx_short">ctx %1$d%%</string>
     <string name="quota_h5_short">5h %1$d%%</string>
     <string name="reading_now">READING</string>
+    <string name="reading_paused">paused</string>
+    <string name="reading_pause">Pause</string>
+    <string name="reading_resume">Resume reading</string>
     <string name="reading_open">Back to %1$s</string>
     <string name="outside_title">Outside the sessions</string>
     <string name="outside_sub">What is not in an open session</string>

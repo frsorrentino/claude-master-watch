@@ -51,7 +51,7 @@ fun SettingsScreen(
     language: AppLanguage.Choice = AppLanguage.Choice.SYSTEM, onLanguage: (AppLanguage.Choice) -> Unit = {},
     /** La voce che legge (Franz, 02/10 00:01): le voci italiane del motore, quella scelta (null = predefinita), la prova. */
     voices: List<String> = emptyList(), voice: String? = null, onVoice: (String?) -> Unit = {}, onTryVoice: () -> Unit = {},
-    /** La velocità della voce (Franz, 02/10 15:49: «un po' troppo rapida»), una delle `SpeechRate.choices`. */
+    /** La velocità della voce (Franz, 02/10 15:49: «un po' troppo rapida»), da 0,5× a 2× (slider del 07/10). */
     rate: Float = SpeechRate.NORMAL, onRate: (Float) -> Unit = {},
     /** Lo stato dei dispositivi per lo schema; senza, quello che si sa dall'abbinamento. */
     devices: SettingsDevices.Model = SettingsDevices.build(host, null, null, 0, phoneName, version, true, watchName, watchPending, null),
@@ -107,23 +107,15 @@ fun SettingsScreen(
             GroupHeader(stringResource(R.string.sec_reading), CmColors.text2)
             SectionCard {
                 SettingsRow(Icons.Rounded.GraphicEq, stringResource(R.string.voice), voice ?: stringResource(R.string.voice_default), onClick = { choosingVoice = true })
-                SettingsRow(Icons.Rounded.Speed, stringResource(R.string.speech_rate), stringResource(R.string.rate_hint), onClick = null)
-                // Le velocità come pillole, la scelta vale subito (mockup A): niente dialogo da aprire e chiudere.
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(start = 76.dp, end = 16.dp, bottom = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    SpeechRate.choices.forEach { r ->
-                        val on = r == rate
-                        Box(
-                            Modifier.heightIn(min = 36.dp).widthIn(min = 44.dp).clip(CircleShape)
-                                .background(if (on) CmColors.actionIcon else CmColors.surfaceLow)
-                                .border(1.dp, if (on) CmColors.actionIcon else CmColors.line, CircleShape)
-                                .handCursor().clickable { onRate(r) }.padding(horizontal = 10.dp),
-                            contentAlignment = Alignment.Center,
-                        ) { Text(rateShort(r), style = MaterialTheme.typography.labelLarge, color = if (on) CmColors.onPrimary else CmColors.text) }
-                    }
+                SettingsRow(Icons.Rounded.Speed, stringResource(R.string.speech_rate), stringResource(R.string.rate_hint), onClick = null) {
+                    Text(rateLabel(rate), style = MaterialTheme.typography.titleSmall, color = CmColors.text)
                 }
+                // Lo stesso slider della barra di lettura (Franz, 07/10, approvato alle 22:06): da 0,5× a 2×, vale al rilascio.
+                var draft by remember(rate) { mutableFloatStateOf(rate) }
+                RateSlider(
+                    draft, onChange = { draft = it }, onDone = { onRate(draft) },
+                    modifier = Modifier.fillMaxWidth().padding(start = 64.dp, end = 16.dp, bottom = 14.dp),
+                )
             }
 
             GroupHeader(stringResource(R.string.sec_app), CmColors.text2)
@@ -213,14 +205,6 @@ private fun SettingsRow(
             onClick != null -> Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.text2)
         }
     }
-}
-
-/** «1,25×» con la virgola della lingua dell'app, come la pillola accanto a ■. */
-@Composable
-private fun rateShort(r: Float): String {
-    val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
-        .apply { maximumFractionDigits = 2 }.format(r)
-    return stringResource(R.string.speech_rate_short, n)
 }
 
 @Composable

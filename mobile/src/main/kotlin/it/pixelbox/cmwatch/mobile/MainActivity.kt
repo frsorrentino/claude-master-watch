@@ -202,8 +202,10 @@ class MainActivity : ComponentActivity() {
                 val rate by speech.rate.collectAsStateWithLifecycle()
                 val voices by speech.voices.collectAsStateWithLifecycle()
                 val voice by speech.voice.collectAsStateWithLifecycle()
+                val paused by speech.paused.collectAsStateWithLifecycle()
                 ReadingPill(
                     src, text,
+                    paused = paused, onPause = speech::pause, onResume = speech::resume,
                     rate = rate, onRate = speech::setRateNow,
                     voice = voice, onVoice = if (voices.isEmpty()) null else ({ speech.setVoiceNow(it.pixelbox.cmwatch.rules.VoiceRules.next(voices, voice)) }),
                     onOpen = if (!live) null else ({

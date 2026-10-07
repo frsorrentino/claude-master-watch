@@ -3,30 +3,41 @@ package it.pixelbox.cmwatch.rules
 import org.junit.Assert.*
 import org.junit.Test
 
-/** La velocità della voce (Franz, 02/10 15:49: «un po' troppo rapida»): una scelta delle impostazioni, ricordata. */
+/**
+ * La velocità della voce (Franz, 02/10 15:49: «un po' troppo rapida»), ricordata. Dal 07/10 (approvata alle 22:06) è
+ * continua: uno slider da 0,5× a 2× a passi di 0,05, con uno scatto su 1×.
+ */
 class SpeechRateTest {
     @Test fun withoutAChoiceTheEngineSpeed() = assertEquals(1.0f, SpeechRate.of(null))
 
-    @Test fun aSavedChoiceStays() = assertEquals(0.9f, SpeechRate.of(0.9f))
+    @Test fun aSavedChoiceStays() {
+        assertEquals(0.9f, SpeechRate.of(0.9f))
+        assertEquals(1.35f, SpeechRate.of(1.35f))
+        assertEquals(1.25f, SpeechRate.of(1.25f))   // le scelte di prima restano quelle
+    }
 
-    // Un valore salvato fuori dalle scelte va alla più vicina; uno rovinato torna alla velocità del motore.
-    @Test fun anythingElseGoesToTheNearestChoice() {
-        assertEquals(0.9f, SpeechRate.of(0.86f))
-        assertEquals(SpeechRate.choices.last(), SpeechRate.of(5f))
+    @Test fun theSliderMovesInStepsOfFiveHundredths() {
+        assertEquals(0.85f, SpeechRate.snap(0.86f))
+        assertEquals(1.4f, SpeechRate.snap(1.41f))
+        assertEquals(1.2f, SpeechRate.of(1.2f))
+    }
+
+    @Test fun nearOneItSnapsToOne() {
+        assertEquals(1.0f, SpeechRate.snap(1.03f))
+        assertEquals(1.0f, SpeechRate.snap(0.97f))
+        assertEquals(1.05f, SpeechRate.snap(1.05f))   // 1,05× resta raggiungibile
+    }
+
+    @Test fun outsideTheRangeOrBrokenValues() {
+        assertEquals(SpeechRate.MAX, SpeechRate.of(5f))
+        assertEquals(SpeechRate.MIN, SpeechRate.of(0.1f))
         assertEquals(1.0f, SpeechRate.of(Float.NaN))
         assertEquals(1.0f, SpeechRate.of(-1f))
     }
 
-    @Test fun slowerChoicesThanTheEngine() = assertTrue(SpeechRate.choices.count { it < 1.0f } >= 2 && 1.0f in SpeechRate.choices)
-
-    // Franz, 03/10 21:16: la pillola accanto a ■ cambia velocità mentre legge, 1× → 1,25× → 1,5× → 2× → 1×; da una
-    // velocità lenta delle impostazioni il primo tocco porta a 1×.
-    @Test fun theReadingPillGoesFasterThenBackToNormal() {
-        assertEquals(listOf(1.25f, 1.5f, 2.0f, 1.0f), listOf(1.0f, 1.25f, 1.5f, 2.0f).map { SpeechRate.next(it) })
-        assertEquals(1.0f, SpeechRate.next(0.8f))
-        assertTrue(SpeechRate.pill.all { it in SpeechRate.choices })
+    @Test fun theSliderSpansHalfToDouble() {
+        assertEquals(0.5f, SpeechRate.MIN); assertEquals(2.0f, SpeechRate.MAX)
+        assertEquals(29, SpeechRate.SLIDER_STEPS)   // 30 intervalli da 0,05 fra 0,5 e 2
+        assertEquals(1f / 3f, SpeechRate.fraction(1.0f), 1e-6f)
     }
-
-    // La vecchia scelta 1,2× salvata va alla più vicina delle nuove.
-    @Test fun theOldFastChoiceMovesToTheNearest() = assertEquals(1.25f, SpeechRate.of(1.2f))
 }

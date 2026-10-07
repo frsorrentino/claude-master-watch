@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import it.pixelbox.cmwatch.mobile.ui.CmPhoneTheme
+import it.pixelbox.cmwatch.mobile.ui.LocalReadingOverlay
+import it.pixelbox.cmwatch.mobile.ui.ReadingOverlay
 import it.pixelbox.cmwatch.mobile.ui.ReadingPill
 import it.pixelbox.cmwatch.ui.tokens.CmColors
 import org.junit.Rule
@@ -43,6 +45,27 @@ class ReadingPillTest {
         CmPhoneTheme(still = true) {
             Box(Modifier.background(CmColors.bg).padding(12.dp)) {
                 ReadingPill(null, text, onOpen = null, onStop = {}, rate = 1f, onRate = {}, voice = null, onVoice = null)
+            }
+        }
+    }
+
+    /** In pausa (Franz, 07/10 22:06): barrette ferme, «in pausa» sopra il testo, ▶ pieno per riprendere. */
+    @Test fun paused() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                ReadingPill("fable-director", text, onOpen = {}, onStop = {}, rate = 1.5f, onRate = {}, voice = "it-it-x-itd-local", onVoice = {}, paused = true)
+            }
+        }
+    }
+
+    /** La velocità aperta: il valore pieno, lo slider da 0,5× a 2× con il segno di 1×, poi pausa e stop. */
+    @Test fun rateOpen() = paparazzi.snapshot {
+        val overlay = ReadingOverlay().apply { rateOpen = true }
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(LocalReadingOverlay provides overlay) {
+                Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                    ReadingPill("fable-director", text, onOpen = {}, onStop = {}, rate = 1.35f, onRate = {}, voice = "it-it-x-itd-local", onVoice = {})
+                }
             }
         }
     }

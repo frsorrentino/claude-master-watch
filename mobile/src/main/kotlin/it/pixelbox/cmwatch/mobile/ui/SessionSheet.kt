@@ -1826,21 +1826,22 @@ val LocalFieldFocus = androidx.compose.runtime.staticCompositionLocalOf<FieldFoc
 val LocalSetSpeechRate = androidx.compose.runtime.staticCompositionLocalOf<(Float) -> Unit> { {} }
 
 /**
- * La pillola «1,25×» accanto a ■ durante la lettura (Franz, 03/10 21:16): ogni tocco passa alla velocità dopo
- * (`SpeechRate.next`) e la voce riparte dal pezzo che stava dicendo.
+ * La pillola «1,25×» accanto a ■ durante la lettura (Franz, 03/10 21:16). Dal 07/10 (approvata alle 22:06) il tocco apre
+ * lo slider della velocità nella barra di lettura, che durante la lettura è sempre in vista: un comando solo.
  */
 @Composable
-fun RatePill() = RatePill(LocalSpeechRate.current, LocalSetSpeechRate.current)
+fun RatePill() {
+    val overlay = LocalReadingOverlay.current
+    RatePill(LocalSpeechRate.current) { overlay?.let { it.rateOpen = true; it.rateTouched = System.currentTimeMillis() } }
+}
 
-/** La stessa pillola con velocità e comando espliciti: il mini-controller sta fuori dal provider della lettura. */
+/** La stessa pillola con velocità e tocco espliciti: la barra di lettura sta fuori dal provider della lettura. */
 @Composable
-fun RatePill(rate: Float, set: (Float) -> Unit) {
-    val n = java.text.NumberFormat.getInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
-        .apply { maximumFractionDigits = 2 }.format(rate)
-    val label = stringResource(R.string.speech_rate_short, n)
+fun RatePill(rate: Float, onClick: () -> Unit) {
+    val label = rateLabel(rate)
     val desc = stringResource(R.string.speech_rate_change, label)
     Surface(
-        onClick = { set(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }, color = CmColors.surface, shape = CircleShape,
+        onClick = onClick, color = CmColors.surface, shape = CircleShape,
         modifier = Modifier.handCursor().semantics { contentDescription = desc },
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))

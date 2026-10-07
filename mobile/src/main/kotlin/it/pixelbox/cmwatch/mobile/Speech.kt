@@ -41,6 +41,9 @@ class Speech(ctx: Context) {
     private val _rate = MutableStateFlow(SpeechRate.of(if (prefs.contains("rate")) prefs.getFloat("rate", SpeechRate.NORMAL) else null))
     /** La velocità scelta nelle impostazioni (Franz, 02/10 15:49), in multipli di quella del motore. */
     val rate: StateFlow<Float> = _rate
+    private val _paused = MutableStateFlow(false)
+    /** In pausa (Franz, 07/10, barra approvata alle 22:06): la lettura resta aperta e riparte dal pezzo fermato. */
+    val paused: StateFlow<Boolean> = _paused
     private var current: String? = null
     @Volatile private var prefix = "-"
     /** I pezzi della lettura in corso (paragrafo, testo) e quello che il motore sta dicendo, per ripartire da lì. */
@@ -65,7 +68,8 @@ class Speech(ctx: Context) {
             }
             // Solo l'ultimo pezzo chiude la lettura: il tasto resta ■ per tutto il testo.
             override fun onDone(utteranceId: String?) { if (utteranceId?.startsWith(prefix) == true && utteranceId.endsWith("-end")) finished() }
-            @Deprecated("Deprecated in Java") override fun onError(utteranceId: String?) { finished() }
+            // Solo gli errori della lettura di adesso la chiudono: quelli dei pezzi fermati dalla pausa no.
+            @Deprecated("Deprecated in Java") override fun onError(utteranceId: String?) { if (utteranceId?.startsWith(prefix) != false) finished() }
             // Un testo nuovo interrompe il vecchio: si spegne solo se è stato fermato il testo che sta leggendo adesso.
             override fun onStop(utteranceId: String?, interrupted: Boolean) { if (utteranceId?.startsWith(prefix) == true) finished() }
         })
@@ -79,6 +83,7 @@ class Speech(ctx: Context) {
      */
     fun speakBlocks(text: String, from: Int, source: String? = null) {
         if (!ready) return
+        _paused.value = false
         _source.value = source
         // Letta a ogni lettura: la lingua si cambia nelle impostazioni mentre l'app è aperta.
         useLanguageAndVoice()
@@ -108,8 +113,34 @@ class Speech(ctx: Context) {
         AnswerText.blocks(it.pixelbox.cmwatch.rules.MarkdownTable.spoken(OutcomeLine.forPhone(NextSteps.parse(text).text, app.getString(R.string.outcome_label))))
 
     /** Lo stesso tasto: legge, o ferma se sta già leggendo quel testo. */
-    fun toggle(text: String, source: String? = null) { if (_speaking.value == text) stop() else speak(text, source) }
+    /** Lo stesso tasto: legge, riprende se quel testo è in pausa, o ferma se lo sta già leggendo. */
+    fun toggle(text: String, source: String? = null) {
+        when {
+            _speaking.value == text && _paused.value -> resume()
+            _speaking.value == text -> stop()
+            else -> speak(text, source)
+        }
+    }
     fun stop() { tts.stop(); finished() }
+
+    /**
+     * Pausa (Franz, 07/10 21:15): il motore di Android sa solo fermarsi. Si tiene il pezzo che stava dicendo, circa una
+     * frase, e i suoi callback non chiudono la lettura: il prefisso cambia, come a ogni ripartenza.
+     */
+    fun pause() {
+        if (_speaking.value == null || _paused.value) return
+        generation++
+        prefix = "cm-paused-$generation-"
+        _paused.value = true
+        tts.stop()
+    }
+
+    /** Riprende dall'inizio del pezzo fermato, con la velocità e la voce di adesso. */
+    fun resume() {
+        if (!_paused.value) return
+        _paused.value = false
+        if (ready && _speaking.value != null && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex)) else finished()
+    }
     fun shutdown() { tts.shutdown() }
 
     /** La voce scelta nelle impostazioni, ricordata; null = la predefinita. */
@@ -131,7 +162,8 @@ class Speech(ctx: Context) {
      */
     fun setRateNow(r: Float) {
         setRate(r)
-        if (ready && _speaking.value != null && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex))
+        // In pausa la velocità nuova vale alla ripresa.
+        if (ready && _speaking.value != null && !_paused.value && items.isNotEmpty()) startAt(chunk.coerceIn(0, items.lastIndex))
     }
 
     /**
@@ -140,7 +172,7 @@ class Speech(ctx: Context) {
      */
     fun setVoiceNow(name: String?) {
         setVoice(name)
-        if (ready && _speaking.value != null && items.isNotEmpty()) { useLanguageAndVoice(); startAt(chunk.coerceIn(0, items.lastIndex)) }
+        if (ready && _speaking.value != null && !_paused.value && items.isNotEmpty()) { useLanguageAndVoice(); startAt(chunk.coerceIn(0, items.lastIndex)) }
     }
 
     /** La lingua dell'app e poi la voce scelta: la lingua rimette la predefinita, così anche il ritorno a quella vale subito. */
@@ -149,7 +181,7 @@ class Speech(ctx: Context) {
         applyVoice()
     }
 
-    private fun finished() { _speaking.value = null; _block.value = null; _source.value = null }
+    private fun finished() { _speaking.value = null; _block.value = null; _source.value = null; _paused.value = false }
 
     private fun applyVoice() {
         val v = _voice.value?.let { n -> runCatching { tts.voices }.getOrNull()?.firstOrNull { it.name == n } }
