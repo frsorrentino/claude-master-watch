@@ -385,4 +385,12 @@ object TileTexts {
     }
 
     fun staleLine(f: Freshness.Stale, pattern: String): String = pattern.format(f.minutes)
+
+    /**
+     * La tile disegna subito con quello che ha e, se lo stato è stato ricevuto più di un minuto fa, lo richiede al PC in
+     * background (piano prestazioni, Task 3). Conta l'ora di ricezione dell'orologio, non `ts` del PC: niente confronto fra
+     * due orologi, e un PC lento non fa ripetere la richiesta a ogni disegno.
+     */
+    fun needsRefresh(receivedAtS: Long?, nowS: Long): Boolean = receivedAtS == null || nowS - receivedAtS > REFRESH_AFTER_S
+    const val REFRESH_AFTER_S = 60L
 }

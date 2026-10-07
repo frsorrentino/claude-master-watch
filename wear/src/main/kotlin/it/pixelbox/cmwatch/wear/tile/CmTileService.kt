@@ -30,6 +30,9 @@ import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import com.google.common.util.concurrent.ListenableFuture
 import it.pixelbox.cmwatch.R
 import it.pixelbox.cmwatch.contract.Durations
@@ -70,31 +73,53 @@ open class CmTileService : TileService() {
         background = 0xFF000000.toInt().argb, onBackground = 0xFFFFFFFF.toInt().argb,
     )
 
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
+    private val refreshing = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Disegna subito con quello che c'è in memoria, poi, se serve, rinfresca in background e chiede un nuovo disegno (piano
+     * prestazioni, Task 3). Prima un `runBlocking` sul thread principale aspettava fino a 2,5 s un GET di /state, che con
+     * il PC lento non portava niente di nuovo. La tile può essere disegnata con l'app spenta: la fotografia arriva da Room
+     * e può essere di ore prima (Franz, 14/09 08:10), quindi a freddo si aspetta Room per un attimo, mai la rete.
+     */
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> =
         CallbackToFutureAdapter.getFuture { completer ->
             val app = application as CmApp
-            val prefs = kotlinx.coroutines.runBlocking { app.prefs.current() }
-            // La tile può essere disegnata con l'app spenta: la fotografia arriva da Room e può essere di ore prima
-            // (Franz, 14/09 08:10: «mostra sempre la stessa sessione di ieri»). Se è vecchia la si richiede al PC e
-            // si aspetta al massimo due secondi e mezzo, dentro il tempo che il sistema concede alla tile.
-            val snap = kotlinx.coroutines.runBlocking {
-                val cur = app.repo.snapshot.value
-                val vecchia = cur.state == null || (System.currentTimeMillis() / 1000 - cur.state!!.ts) > 60
-                if (vecchia) kotlinx.coroutines.withTimeoutOrNull(2500) { app.repo.refresh() }
-                app.repo.snapshot.value
+            scope.launch {
+                val t0 = android.os.SystemClock.elapsedRealtime()
+                try {
+                    val prefs = app.prefs.current()
+                    if (app.repo.snapshot.value.state == null) kotlinx.coroutines.withTimeoutOrNull(800) { app.repo.snapshot.first { it.state != null } }
+                    val snap = app.repo.snapshot.value
+                    val state = snap.state
+                    val nowS = System.currentTimeMillis() / 1000
+                    val root = root(requestParams.deviceConfiguration, state, snap.freshness, prefs.seenQuestions, prefs.complicationAccount, nowS)
+                    completer.set(
+                        TileBuilders.Tile.Builder()
+                            .setResourcesVersion(resourcesVersion(state))
+                            .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(root))
+                            .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it, snap.freshness) } ?: 15 * 60_000L)
+                            .build()
+                    )
+                    android.util.Log.i("cmwatch", "tile: ${android.os.SystemClock.elapsedRealtime() - t0} ms")
+                    if (TileTexts.needsRefresh(snap.receivedAt, nowS) && refreshing.compareAndSet(false, true)) {
+                        try {
+                            if (kotlinx.coroutines.withTimeoutOrNull(10_000) { app.repo.refresh() } == true) runCatching { requestUpdate(app) }
+                        } finally { refreshing.set(false) }
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    completer.setCancelled(); throw e
+                } catch (e: Exception) {
+                    completer.setException(e)
+                }
             }
-            val state = snap.state
-            val root = root(requestParams.deviceConfiguration, state, snap.freshness, prefs.seenQuestions, prefs.complicationAccount, System.currentTimeMillis() / 1000)
-
-            completer.set(
-                TileBuilders.Tile.Builder()
-                    .setResourcesVersion(resourcesVersion(state))
-                    .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(root))
-                    .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it, snap.freshness) } ?: 15 * 60_000L)
-                    .build()
-            )
             "tile"
         }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
 
     /**
      * Il layout della tile a partire dai dati, senza il repository: lo usa `onTileRequest` e lo usa il test Paparazzi,

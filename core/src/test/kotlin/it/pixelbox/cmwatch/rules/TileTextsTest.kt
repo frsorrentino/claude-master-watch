@@ -5,6 +5,8 @@ import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.contract.SessionState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TileTextsTest {
@@ -55,4 +57,10 @@ class TileTextsTest {
         assertEquals(TileTexts.extra(atlas, busy = true, now = now), TileTexts.extra(atlas.copy(goal = null), busy = true, now = now, goal = "Obiettivo"))
         assertEquals(null, TileTexts.extra(atlas, busy = false, now = now, goal = "Obiettivo"))
     }
+
+    // Piano prestazioni, Task 3 (A3): la tile si rinfresca in background se lo stato è stato ricevuto più di un minuto fa;
+    // conta l'ora di ricezione dell'orologio, non `ts` del PC, quindi nessun confronto fra due orologi.
+    @Test fun refreshWhenNothingWasReceived() = assertTrue(TileTexts.needsRefresh(null, 1000))
+    @Test fun noRefreshWithinAMinute() = assertFalse(TileTexts.needsRefresh(950, 1000))
+    @Test fun refreshAfterAMinute() = assertTrue(TileTexts.needsRefresh(939, 1000))
 }
