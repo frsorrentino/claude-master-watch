@@ -654,3 +654,23 @@ override suspend fun withdraw(id: String): Withdraw {
 Fase 1 in questo ordine: Task 0, 1, 6, 2, 3, 5, 4. Prima i guasti visibili a Franz (chat ferma, tile), poi il carico
 web, che è il più grande sul relay. La fase 2 parte appena team-supervisor rilascia la 1.43; la fase 3 può andare in
 parallelo alla 2.
+
+## Stato al 07/10 alle 23:20
+
+Fatti, verificati su win con i test (falliscono solo i 5 di `ChatLogTest`, noti su Windows) e in CI:
+- **Fase 1:** Task 0 (`fcc6093`), 1 (`a3618ce`), 2 (`96af37b`), 3 (`05697a0`), 4 (`807d954`), 5 (`b977f67`, web pubblicata), 6 (`b644175`).
+- **Fase 3:** Task 10 (`47d92b5`), 11 (`29ca7dd`), 12 (`d849f64`), 13 (`1e546eb`).
+
+Deviazioni dal testo dei task, decise durante il lavoro:
+- **Task 4:** l'esito di un comando si legge ancora una volta al secondo. Le attese crescenti avrebbero ritardato di
+  qualche secondo la risposta che si vede dopo un prompt; lo stream dell'esito resta da fare.
+- **Task 10:** Room tiene ancora 30 giorni e non 7, perché il Registro mostra i giorni passati. Cambia solo il modo:
+  uno stream filtrato agli ultimi 200 e solo le chiavi nuove scritte.
+- **Task 11:** sveglie FCM con `REPLACE` e non `KEEP`: con `KEEP` si perderebbe uno stato nuovo arrivato mentre il GET
+  di prima era già partito, e la chiamata in corso ora si può interrompere.
+
+Da fare:
+- **Fase 2** (Task 7, 8, 9): aspetta il relay; `published_at` arriva con la sua fase 1, `tx` e il ritiro con la fase 2.
+- **Task 14:** misure del «dopo». La web va misurata quando torna aperta. Tile ed età dello stato vanno misurate col debug
+  wireless dell'orologio acceso.
+- **Task 15:** rilascio finale e prove dal vivo con Franz (chat che segue, tile veloce, cambio di rete).
