@@ -6,6 +6,7 @@ import it.pixelbox.cmwatch.crypto.BlobException
 import it.pixelbox.cmwatch.crypto.Pairing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withTimeoutOrNull
@@ -33,6 +34,8 @@ class FirebaseTransport(
     private val pollMs: Long = 1000,
     private val backoffMs: List<Long> = listOf(1000, 2000, 5000, 15000, 30000),
     private val pairTimeoutMs: Long = 30_000,
+    /** Dove parte la ricevuta di /seen, a lato della lettura (piano prestazioni, Task 2). */
+    private val seenScope: kotlinx.coroutines.CoroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO),
 ) : Transport {
 
     private fun k(): ByteArray = key() ?: throw TransportException.NotPaired()
@@ -73,7 +76,9 @@ class FirebaseTransport(
             val (path, d) = putEvent(ev.data) ?: return@collect
             if (path == "/" && isBlob(d)) {
                 val st = ContractJson.decodeState(open(d))
-                if (!marked) { marked = true; markSeen() }   // prima di emit: chi prende solo il primo stato chiude il flusso
+                // Lanciata prima di emit e fuori dal flusso: chi prende solo il primo stato lo chiude, e la ricevuta non deve
+                // nemmeno ritardarlo (piano prestazioni, Task 2: una PUT lenta di /seen teneva fermo il primo stato).
+                if (!marked) { marked = true; markSeenLater() }
                 emit(st)
             }
         }
@@ -87,6 +92,8 @@ class FirebaseTransport(
         val id = uid() ?: return
         runCatching { rtdb.put("seen/$id", "{\".sv\":\"timestamp\"}") }
     }
+
+    private fun markSeenLater() { seenScope.launch { markSeen() } }
 
     override val events: Flow<List<Event>> = resilient {
         val all = LinkedHashMap<String, Event>()
@@ -111,7 +118,7 @@ class FirebaseTransport(
     override suspend fun fetchState(): State {
         k()   // non accoppiato: errore subito, senza rete
         val body = rtdb.get("state") ?: throw TransportException.Network("no state on the bus")
-        return ContractJson.decodeState(open(Json.parseToJsonElement(body))).also { markSeen() }
+        return ContractJson.decodeState(open(Json.parseToJsonElement(body))).also { markSeenLater() }
     }
 
     /** Busta come /cmd, in chiaro {mime, data}; il limite vale sulla stringa `enc` (contratto 1.19). Nulla si scrive oltre il limite. */

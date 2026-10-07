@@ -30,6 +30,7 @@ class FirebaseTransportTest {
     private var streamBody = ""
     private var clock = 1789210800L
     private var refuseSeen = false
+    private var slowSeenMs = 0L
 
     @Before fun up() {
         server.dispatcher = object : Dispatcher() {
@@ -41,6 +42,10 @@ class FirebaseTransportTest {
                     return MockResponse().setHeader("Content-Type", "text/event-stream").setBody(streamBody)
                 }
                 if (refuseSeen && path.startsWith("seen/")) return MockResponse().setResponseCode(401)
+                if (slowSeenMs > 0 && path.startsWith("seen/")) {
+                    store[path] = request.body.readUtf8()
+                    return MockResponse().setBody(store[path]!!).setHeadersDelay(slowSeenMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                }
                 return when (request.method) {
                     "GET" -> MockResponse().setBody(store[path] ?: "null")
                     "PUT" -> { store[path] = request.body.readUtf8(); MockResponse().setBody(store[path]!!) }
@@ -245,16 +250,34 @@ class FirebaseTransportTest {
     }
 
     // Contratto 1.20 (R6): chi riceve lo dice in /seen/<uid> con l'ora del server; il relay ripiega su Telegram solo se nessuno legge.
+    /** La ricevuta parte a lato (piano prestazioni, Task 2): la si aspetta qui, non nella lettura. */
+    private suspend fun awaitSeen() = kotlinx.coroutines.withTimeout(5_000) { while (store["seen/u1"] == null) kotlinx.coroutines.delay(10) }
+
     @Test fun fetchStateMarksSeen() = runBlocking {
         store["state"] = blobOf(Fixtures.stateIdle)
         transport().fetchState()
+        awaitSeen()
         assertEquals("{\".sv\":\"timestamp\"}", store["seen/u1"]!!.replace(" ", ""))
     }
 
     @Test fun streamMarksSeenWhenItOpens() = runBlocking {
         streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":${blobOf(Fixtures.stateQuestion)}}\n\nevent: keep-alive\ndata: null\n\n"
         transport().state.first()
+        awaitSeen()
         assertNotNull(store["seen/u1"])
+    }
+
+    // Piano prestazioni, Task 2 (A1): una ricevuta lenta non ritarda né il primo stato dello stream né la lettura.
+    @Test fun aSlowReceiptDoesNotDelayTheState() = runBlocking {
+        slowSeenMs = 3_000
+        store["state"] = blobOf(Fixtures.stateIdle)
+        val t0 = System.nanoTime()
+        transport().fetchState()
+        assertTrue("fetchState waited for /seen", (System.nanoTime() - t0) / 1_000_000 < 1_500)
+        streamBody = "event: put\ndata: {\"path\":\"/\",\"data\":${blobOf(Fixtures.stateQuestion)}}\n\nevent: keep-alive\ndata: null\n\n"
+        val t1 = System.nanoTime()
+        transport().state.first()
+        assertTrue("the first state waited for /seen", (System.nanoTime() - t1) / 1_000_000 < 1_500)
     }
 
     /** Regole RTDB precedenti: la scrittura di /seen viene rifiutata, e la lettura dello stato non ne soffre. */
