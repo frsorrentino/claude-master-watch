@@ -24,6 +24,12 @@ object QuestionRules {
         options.size in 2..3 && options.all { optionText(it.label).length <= INLINE_CHARS }
 
     /** L'etichetta senza il riquadro: la stessa per tasto, notifica e voce. */
+    /**
+     * Il testo da mostrare: quello della domanda se ha almeno una lettera o una cifra, altrimenti `fallback`. Il relay ha
+     * mandato «-: -» per i prompt di permesso della master, e sull'orologio la domanda sembrava vuota (Franz, 07/10 18:01).
+     */
+    fun shownText(text: String, fallback: String): String = if (text.any { it.isLetterOrDigit() }) text else fallback
+
     fun optionText(label: String): String = label.lines()
         .map { it.replace(DISEGNO, " ").replace(SPAZI, " ").trim() }
         .firstOrNull { it.isNotEmpty() } ?: label.trim()

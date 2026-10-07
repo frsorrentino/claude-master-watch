@@ -22,6 +22,7 @@ import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 import it.pixelbox.cmwatch.rules.NotificationPlan
+import it.pixelbox.cmwatch.rules.QuestionRules
 import it.pixelbox.cmwatch.rules.NotificationPlan.Act
 
 /** Wear OS scarta le azioni senza icona: ogni azione ha la sua (Franz, 13/09 09:32: «non mostra le opzioni come tasti»). */
@@ -71,6 +72,7 @@ class Notifier(private val ctx: Context) {
         sessions = ctx.getString(R.string.sessions_label), goneText = ctx.getString(R.string.notif_gone_text),
         waiting = ctx.getString(R.string.notif_state_waiting), busy = ctx.getString(R.string.notif_state_busy),
         idle = ctx.getString(R.string.notif_state_idle), gone = ctx.getString(R.string.notif_state_gone),
+        noQuestionText = ctx.getString(R.string.question_no_text),
     )
 
     fun ensureChannels() {
@@ -149,15 +151,16 @@ class Notifier(private val ctx: Context) {
     fun question(s: Session) {
         val q = s.question ?: return
         val plan = NotificationPlan.question(s, labels, history[s.name].orEmpty())
-        lastQuestion[s.name] = q.id to q.text
+        val text = QuestionRules.shownText(q.text, labels.noQuestionText)
+        lastQuestion[s.name] = q.id to text
         val me = Person.Builder().setName(ctx.getString(R.string.notif_me)).setKey("me").build()
         val them = person(plan.person ?: s.name, s, SessionState.WAITING)
         val style = NotificationCompat.MessagingStyle(me).setConversationTitle(plan.title)
         val hist = history[s.name].orEmpty()
         hist.forEach { style.addMessage(it.question, it.at * 1000, them).addMessage(it.answer, it.at * 1000 + 1, me) }
-        style.addMessage(q.text, q.askedAt * 1000, them)
+        style.addMessage(text, q.askedAt * 1000, them)
         val b = base(plan).setLargeIcon(badge(s)).setStyle(style).setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setContentText(q.text)
+            .setContentText(text)
             .setContentIntent(open("cmwatch://question/${s.name}", id(s.name)))
             .setDeleteIntent(broadcast(ReplyReceiver.ACTION_SEEN, s.name, id(s.name) * 10 + 8) { putExtra(ReplyReceiver.QUESTION_ID, q.id) })
         for ((i, a) in plan.actions.withIndex()) when (a) {

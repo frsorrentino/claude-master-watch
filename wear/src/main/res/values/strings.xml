@@ -250,4 +250,5 @@
     <string name="live_cancel">Annulla</string>
     <string name="live_leaving">Parte fra %1$d s</string>
     <string name="live_talk_label">Cosa vuoi dire?</string>
+    <string name="question_no_text">Ti chiede di scegliere</string>
 </resources>

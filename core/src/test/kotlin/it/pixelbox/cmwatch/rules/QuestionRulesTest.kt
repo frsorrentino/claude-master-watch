@@ -47,4 +47,13 @@ class QuestionRulesTest {
     @Test fun fourOptionsStack() =
         assertFalse(QuestionRules.inline((1..4).map { Option(it, "o$it") }))
     @Test fun oneOptionStacks() = assertFalse(QuestionRules.inline(listOf(Option(1, "ok"))))
+
+    // Franz, 07/10 18:01: il relay mandava «-: -» come testo e sull'orologio la domanda sembrava vuota.
+    @Test fun aTextWithoutWordsGivesWayToTheFallback() {
+        for (t in listOf("-: -", "", "   ", "──── ", "?")) assertEquals(t, "Ti chiede di scegliere", QuestionRules.shownText(t, "Ti chiede di scegliere"))
+    }
+
+    @Test fun aRealTextStays() {
+        for (t in listOf("Deploy now?", "Procedo con il push?", "1 o 2?")) assertEquals(t, t, QuestionRules.shownText(t, "x"))
+    }
 }

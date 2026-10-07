@@ -24,6 +24,8 @@ object NotificationPlan {
         val goneText: String = "",
         /** Lo stato a parole nel riepilogo, al posto degli emoji (Franz, 16/09 16:30): «in attesa», «al lavoro», «ferma», «chiusa». */
         val waiting: String = "", val busy: String = "", val idle: String = "", val gone: String = "",
+        /** Al posto di un testo di domanda senza parole («-: -» dal relay, Franz 07/10 18:01). */
+        val noQuestionText: String = "",
     )
 
     sealed class Act {
@@ -63,7 +65,7 @@ object NotificationPlan {
             // Niente emoji nel titolo né nelle righe (Franz, 16/09 16:30: «? e x un po' grossolani»): lo stato lo dice
             // l'icona grande, il fumetto ambra.
             session = s.name, title = s.name, person = "${dot(s)} ${s.name}",
-            messages = history.map { "${it.question} → ${it.answer}" } + q.text, bigText = null,
+            messages = history.map { "${it.question} → ${it.answer}" } + QuestionRules.shownText(q.text, l.noQuestionText), bigText = null,
             actions = actions, choices = if (high) emptyList() else q.options.map { optionLabel(it.n, it.label) },
             freeForm = !high, channel = CH_QUESTIONS, whenS = q.askedAt, chronometer = true, subText = s.account,
             autoCancel = false, timeoutMs = null, progress = null, accent = SessionState.WAITING,
