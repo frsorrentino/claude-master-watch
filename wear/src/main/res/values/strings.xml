@@ -232,6 +232,7 @@
     <string name="notif_state_idle">ferma</string>
     <string name="notif_state_gone">chiusa</string>
     <!-- Modalità live: la scheda (specifica 06/10, fase 3) -->
+    <string name="live_channel_alert">Live: serve te</string>
     <string name="live_title">Live</string>
     <string name="live_off">Live spenta: accendila dal telefono, dal menu.</string>
     <string name="live_idle">Nessuna notizia: tutto tranquillo.</string>

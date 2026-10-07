@@ -85,6 +85,8 @@ class Notifier(private val ctx: Context) {
         nm.createNotificationChannel(ch(NotificationPlan.CH_GONE, R.string.channel_gone, NotificationManager.IMPORTANCE_DEFAULT, longArrayOf(0, 200)))
         nm.createNotificationChannel(ch(NotificationPlan.CH_QUOTA, R.string.channel_quota, NotificationManager.IMPORTANCE_LOW, null))
         nm.createNotificationChannel(ch(CHANNEL_FOLLOW, R.string.channel_follow, NotificationManager.IMPORTANCE_LOW, null))
+        // Modalità live: le notizie che servono Franz salgono in primo piano; la vibrazione la dà già `LiveLink`.
+        nm.createNotificationChannel(ch(CHANNEL_LIVE, R.string.live_channel_alert, NotificationManager.IMPORTANCE_HIGH, null))
     }
 
     fun enabled(): Boolean = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
@@ -258,5 +260,5 @@ class Notifier(private val ctx: Context) {
         runCatching { NotificationManagerCompat.from(ctx).notify(id, b.build()) }
     }
 
-    companion object { const val CHANNEL_FOLLOW = "follow"; const val SUMMARY_ID = 7000 }
+    companion object { const val CHANNEL_LIVE = "live"; const val CHANNEL_FOLLOW = "follow"; const val SUMMARY_ID = 7000 }
 }
