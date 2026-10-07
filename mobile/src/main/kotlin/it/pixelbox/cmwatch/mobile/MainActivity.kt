@@ -656,6 +656,10 @@ class MainActivity : ComponentActivity() {
                                             if (src.isFile) app.scope.launch { sendFile(session.name, src.readBytes(), f.name, f.mime, f.text, state?.share?.maxBytes ?: 0) }
                                             else android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_gone), android.widget.Toast.LENGTH_LONG).show()
                                         }
+                                        // Un file mandato prima del 07/10 sera non ha la copia: rimandare il testo «File: nome» come prompt
+                                        // direbbe alla sessione di un file che non arriva. Si chiede di allegarlo di nuovo.
+                                        m != null && m.attachment == null && m.text.startsWith(getString(R.string.attached_file, "")) ->
+                                            android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_gone), android.widget.Toast.LENGTH_LONG).show()
                                         // Un'immagine rifiutata si rimanda dalla sua copia locale, con lo stesso testo.
                                         m?.attachment != null -> attachImage(session.name, Uri.fromFile(java.io.File(m.attachment!!)), m.text, state?.share?.maxBytes ?: 0)
                                         m != null -> sendAndLog(PhonePrimary.Target.PROMPT, m.text)
