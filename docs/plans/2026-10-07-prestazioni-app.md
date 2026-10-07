@@ -44,14 +44,15 @@ campi del modello.
 | 3. Pulizia del carico | A7 eventi, widget e tick, A8 cache delle chat | fase 1 |
 | 4. Misure dopo e rilascio | stesso script, confronto, APK e web | tutte |
 
-## Scelta aperta presso Franz (A5)
+## Scelta A5, decisa da Franz il 07/10 alle 21:42: «A5 come proposto»
 
 Quando un comando non ha risposta dopo 20 s, si sceglie fra **rifiuto** e **«in ritardo»**. Il piano propone
 tutte e due, decise da un fatto e non da un orologio:
 - se il relay **non ha ancora preso** il comando, l'app lo ritira da `/cmd`: «non consegnato», con Riprova;
 - se il relay **l'ha già preso**, l'app non lo ritira più e mostra «in esecuzione sul PC»; aspetta fino a 10 minuti, senza Riprova.
 
-Se Franz preferisce il rifiuto sempre, il secondo ramo diventa «non consegnato» senza Riprova: cambia una riga in `Repo.dispatch`.
+Il contratto 1.43 concordato con team-supervisor copre già i due rami: il relay «prende» il comando con la sua DELETE
+condizionata prima di eseguirlo, quindi il ritiro del client riesce solo se il relay non l'ha ancora preso.
 
 ## Punti delicati da controllare in revisione
 

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>Barra di lettura</title>
+<style>
+  :root { --bg:#000; --low:#1B1F26; --surface:#23272E; --high:#292F3A; --line:#2A2E35; --text:#F2F4F7; --text2:#B0B8C4; --icon:#A8C7FA; --primary:#D3E3FD; --on-primary:#0A2050; --stale:#98A2B3; }
+  * { box-sizing:border-box; margin:0; }
+  body { width:390px; height:844px; background:var(--bg); color:var(--text); font:15px/1.45 Roboto, "Noto Sans", sans-serif; overflow:hidden; position:relative; }
+  .top { height:56px; display:flex; align-items:center; gap:14px; padding:0 16px; }
+  .top b { font-size:20px; font-weight:500; }
+  .dot { width:22px; height:22px; border-radius:50%; background:#4C7DFF; }
+  .meta { display:flex; gap:10px; padding:2px 16px 10px; border-bottom:1px solid var(--line); }
+  .meta span { background:var(--surface); border-radius:999px; padding:6px 12px; font-size:14px; }
+  .chat { padding:14px 18px; display:flex; flex-direction:column; gap:12px; }
+  .chat p { font-size:16px; line-height:1.5; letter-spacing:.02em; }
+  .chat p.reading { background:rgba(168,199,250,.12); border-radius:10px; margin:0 -8px; padding:4px 8px; }
+  .me { align-self:flex-end; background:var(--high); border-radius:22px 22px 6px 22px; padding:10px 16px; max-width:80%; }
+  .composer { position:absolute; left:12px; right:12px; bottom:22px; height:56px; border:1px solid rgba(255,255,255,.25); border-radius:28px; display:flex; align-items:center; padding:0 10px 0 16px; color:var(--text2); font-size:16px; gap:14px; }
+  .composer .plus { color:var(--icon); font-size:26px; line-height:1; }
+  /* la barra */
+  .bar { position:absolute; left:12px; right:12px; bottom:92px; min-height:60px; border-radius:28px; background:var(--high); box-shadow:0 6px 18px rgba(0,0,0,.55); display:flex; align-items:center; gap:10px; padding:6px 8px 6px 16px; }
+  .bars { display:flex; gap:3px; align-items:center; height:18px; }
+  .bars i { width:4px; border-radius:2px; background:var(--icon); }
+  .bars i:nth-child(1){height:12px} .bars i:nth-child(2){height:18px} .bars i:nth-child(3){height:9px}
+  .paused .bars i { background:var(--stale); height:10px !important; }
+  .txt { flex:1; min-width:0; overflow:hidden; white-space:nowrap; }
+  .src { font:12px/1.3 "JetBrains Mono", "DejaVu Sans Mono", monospace; color:var(--text2); }
+  .exc { font-size:14px; color:var(--text); }
+  .pill { flex:none; height:34px; min-width:40px; padding:0 10px; border-radius:17px; background:var(--surface); display:grid; place-items:center; font-weight:500; font-size:14px; }
+  .pill.open { background:var(--primary); color:var(--on-primary); }
+  .ib { flex:none; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; }
+  .ib.tonal { background:#33405A; }
+  .ib.play { background:var(--primary); }
+  svg { display:block; }
+  /* lo slider dentro la barra */
+  .rate { flex:none; font-weight:600; font-size:16px; width:56px; text-align:center; }
+  .sl { flex:1; position:relative; height:44px; }
+  .track { position:absolute; left:6px; right:6px; top:20px; height:4px; border-radius:2px; background:#4A5468; }
+  .fill { position:absolute; left:6px; top:20px; height:4px; border-radius:2px; background:var(--icon); }
+  .tick { position:absolute; top:15px; width:2px; height:14px; border-radius:1px; background:var(--text2); }
+  .thumb { position:absolute; top:12px; width:20px; height:20px; margin-left:-10px; border-radius:50%; background:var(--icon); box-shadow:0 0 0 6px rgba(168,199,250,.18); }
+  .lab { position:absolute; top:31px; font-size:11px; color:var(--text2); transform:translateX(-50%); }
+  /* impostazioni */
+  .set { padding:8px 0; }
+  .set h2 { font-size:22px; font-weight:400; padding:6px 20px 14px; }
+  .row { display:flex; gap:18px; padding:14px 20px; align-items:flex-start; }
+  .row .ic { width:24px; color:var(--icon); flex:none; padding-top:2px; }
+  .row .t { flex:1; }
+  .row .t b { font-weight:400; font-size:16px; display:block; }
+  .row .t small { color:var(--text2); font-size:14px; }
+  .row .v { font-weight:600; }
+  .setsl { position:relative; height:44px; margin:6px 0 0; }
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const v = location.hash.slice(1) || 'lettura'
+const pauseIc = '<svg viewBox="0 0 24 24" width="22" height="22"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="#A8C7FA"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="#A8C7FA"/></svg>'
+const playIc = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="#0A2050"/></svg>'
+const stopIc = '<svg viewBox="0 0 24 24" width="20" height="20"><rect x="6" y="6" width="12" height="12" rx="2" fill="#A8C7FA"/></svg>'
+const voiceIc = '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="9" cy="8" r="3.5" fill="#F2F4F7"/><path d="M2.5 19c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5z" fill="#F2F4F7"/><path d="M17 6.5a5 5 0 0 1 0 7M19.5 4a8.5 8.5 0 0 1 0 12" stroke="#F2F4F7" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>'
+const chat = `
+  <div class="top"><span style="font-size:22px">←</span><span class="dot"></span><b>rino</b></div>
+  <div class="meta"><span>Fable 5.1 · max ▾</span><span>5h 8%</span><span>ctx 27%</span></div>
+  <div class="chat">
+    <div class="me">Riassumi il verbale del 03/03</div>
+    <p>Il verbale del 03/03/2025 descrive il sopralluogo sul tratto della condotta vicino alla rete fognaria cittadina.</p>
+    <p class="reading">La relazione del CNR ricorda che la condotta di scarico era già segnalata nel 2019 e che il tratto finale non è mai stato collaudato.</p>
+    <p>Restano da recuperare due allegati: l'avviso 692191_107 e il verbale di identificazione.</p>
+  </div>
+  <div class="composer"><span class="plus">+</span>Scrivi a rino</div>`
+function slider(val) {
+  // 0,5× .. 2×: posizione in percentuale della corsa
+  const p = (x) => ((x - 0.5) / 1.5) * 100
+  return `<div class="sl">
+    <div class="track"></div><div class="fill" style="width:calc((100% - 12px) * ${p(val) / 100})"></div>
+    <div class="tick" style="left:calc(6px + (100% - 12px) * ${p(1) / 100} - 1px)"></div>
+    <div class="thumb" style="left:calc(6px + (100% - 12px) * ${p(val) / 100})"></div>
+    <span class="lab" style="left:6px;transform:none">0,5×</span>
+    <span class="lab" style="left:calc(6px + (100% - 12px) * ${p(1) / 100})">1×</span>
+    <span class="lab" style="right:6px;left:auto;transform:none">2×</span>
+  </div>`
+}
+let html = ''
+if (v === 'lettura') html = chat + `<div class="bar">
+    <div class="bars"><i></i><i></i><i></i></div>
+    <div class="txt"><div class="src">rino</div><div class="exc">La relazione del CNR ricorda</div></div>
+    <div class="pill">1,5×</div><div class="pill">${voiceIc}</div>
+    <div class="ib tonal" title="Pausa">${pauseIc}</div><div class="ib">${stopIc}</div></div>`
+if (v === 'pausa') html = chat + `<div class="bar paused">
+    <div class="bars"><i></i><i></i><i></i></div>
+    <div class="txt"><div class="src">in pausa</div><div class="exc">La relazione del CNR ricorda</div></div>
+    <div class="pill">1,5×</div><div class="pill">${voiceIc}</div>
+    <div class="ib play" title="Riprendi">${playIc}</div><div class="ib">${stopIc}</div></div>`
+if (v === 'velocita') html = chat + `<div class="bar">
+    <div class="pill open rate" style="width:64px">1,35×</div>
+    ${slider(1.35)}
+    <div class="ib tonal">${pauseIc}</div><div class="ib">${stopIc}</div></div>`
+if (v === 'impostazioni') html = `
+  <div class="top"><span style="font-size:22px">←</span><b>Impostazioni</b></div>
+  <div class="set">
+    <div class="row"><span class="ic">🔊</span><div class="t"><b>Voce</b><small>Italiano</small></div></div>
+    <div class="row"><span class="ic"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 4a9 9 0 0 0-8 13.1M12 4a9 9 0 0 1 8 13.1M12 13l4-5" stroke="#A8C7FA" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+      <div class="t"><b>Velocità di lettura <span class="v" style="float:right">1,35×</span></b>
+        <div class="setsl">${slider(1.35)}</div>
+        <small>Anche dalla pillola accanto a ■ mentre legge</small></div></div>
+  </div>`
+document.getElementById('app').innerHTML = html
+</script>
+</body></html>
