@@ -126,7 +126,11 @@ class ContractTest {
         // Contratto 1.36: un prompt dalla web app, con `device` "web". Contratto 1.37: due approve (uno rifiutato) e un decision.
         // Contratto 1.39: due unpair, uno riuscito e uno rifiutato.
         // Contratto 1.42: un prompt a voce alla master e due approve dalla live, uno rifiutato con una conferma sola.
-        assertEquals(40, results.size); assertEquals(10, results.count { !it.ok })
+        // Contratto 1.44: due night, il rapporto e uno rifiutato perché quel giorno non c'è.
+        assertEquals(42, results.size); assertEquals(11, results.count { !it.ok })
+        val night = cmds.first { it.op == CmdOp.NIGHT }
+        assertNull(night.arg)
+        assertEquals("2026-10-07", ContractJson.decodeNightReport(results.first { it.id == night.id }.text).date)
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)
