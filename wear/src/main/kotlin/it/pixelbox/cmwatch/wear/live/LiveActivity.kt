@@ -32,7 +32,9 @@ class LiveActivity : ComponentActivity() {
             CmTheme {
                 val card by live.card.collectAsStateWithLifecycle()
                 var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-                LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(250) } }
+                // Ogni 250 ms solo con un conto alla rovescia o una doppia conferma aperti, se no ogni secondo: la scheda
+                // ricomponeva quattro volte al secondo anche senza niente che si muovesse (piano prestazioni, Task 12).
+                LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(if ((card?.until ?: 0L) > now) 250 else 1_000) } }
                 val talk = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
                     live.send(LiveTap(LiveTap.Action.SAY, text = Keyboard.result(r.data).orEmpty()))
                 }

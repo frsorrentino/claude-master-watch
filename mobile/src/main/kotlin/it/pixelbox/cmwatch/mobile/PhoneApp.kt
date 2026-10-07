@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.coroutines.FlowPreview::class)
+
 package it.pixelbox.cmwatch.mobile
 
 import androidx.glance.appwidget.updateAll
@@ -41,6 +43,7 @@ import it.pixelbox.cmwatch.transport.Transport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -133,13 +136,19 @@ class PhoneApp : Application() {
         if (chatLog.messages.value.any { it.scheduledFor != null }) ScheduledSend.sweep(this)
         // Il diff che decide le notifiche gira su ogni nuovo /state, come sull'orologio (CmApp.react).
         scope.launch {
+            // I widget si ridisegnano quando cambia quello che mostrano, al più uno ogni 2 s, e almeno ogni 5 minuti per l'ora
+            // dell'aggiornamento (piano prestazioni, Task 12): prima a ogni stato, 40 volte in 5 minuti quasi tutte uguali.
+            launch {
+                repo.snapshot.map { it.state }.filterNotNull().map { st -> st.copy(ts = 0) to st.ts / 300 }.distinctUntilChanged()
+                    .debounce(2_000).collect { _ ->
+                        runCatching { CmWidget().updateAll(this@PhoneApp) }
+                        runCatching { it.pixelbox.cmwatch.mobile.widget.MasterWidget().updateAll(this@PhoneApp) }
+                    }
+            }
             repo.snapshot.map { it.state }.filterNotNull().distinctUntilChanged().collect { cur ->
                 val prev = lastState; lastState = cur
                 // I passaggi dei messaggi della chat (in coda, in lavorazione, elaborato) si vedono a ogni stato.
                 chatLog.advance(cur)
-                // Il widget si ridisegna a ogni stato che arriva (spec «Widget»), non ogni 30 minuti.
-                launch { runCatching { CmWidget().updateAll(this@PhoneApp) } }
-                launch { runCatching { it.pixelbox.cmwatch.mobile.widget.MasterWidget().updateAll(this@PhoneApp) } }
                 if (prev != null) react(prev, cur)
             }
         }
