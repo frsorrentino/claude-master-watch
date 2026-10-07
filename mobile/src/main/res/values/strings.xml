@@ -92,6 +92,12 @@
     <string name="file_refused_large_max">Il file è di %1$s: il trasferimento dal PC arriva a %2$s</string>
     <string name="file_failed">File non arrivato: riprova</string>
     <string name="file_no_app">Nessuna app per aprire questo file</string>
+    <string name="file_open">Apri</string>
+    <string name="file_download">Scarica</string>
+    <string name="file_copy">Copia</string>
+    <string name="file_share">Condividi</string>
+    <string name="file_saved">%1$s salvato in Download</string>
+    <string name="file_save_failed">%1$s non salvato</string>
     <string name="slash_confirm_title">Mandare /%1$s a %2$s?</string>
     <string name="slash_confirm_exit">La sessione si chiude.</string>
     <string name="slash_confirm_clear">La conversazione della sessione si svuota: il contesto riparte da zero.</string>

@@ -103,7 +103,15 @@ import java.time.format.DateTimeFormatter
  * Contratto 1.24: aprire i file della chat. `local` = dove sta sul telefono un file già scaricato (per percorso sul PC),
  * `loading` = quelli in arrivo. Senza un fornitore i chip restano come prima.
  */
-data class FileOpener(val open: (TranscriptFile) -> Unit = {}, val loading: Set<String> = emptySet(), val local: Map<String, String> = emptyMap())
+/** Le quattro azioni sotto un file della chat (Franz, 07/10 16:07). */
+enum class FileAct { OPEN, DOWNLOAD, COPY, SHARE }
+
+data class FileOpener(
+    val open: (TranscriptFile) -> Unit = {},
+    val loading: Set<String> = emptySet(),
+    val local: Map<String, String> = emptyMap(),
+    val act: (TranscriptFile, FileAct) -> Unit = { _, _ -> },
+)
 val LocalFileOpener = compositionLocalOf { FileOpener() }
 
 data class SheetActions(
@@ -1136,6 +1144,20 @@ private fun FileChip(f: TranscriptFile) {
                 // nome lungo il peso finiva in colonna, una lettera per riga).
                 Text(f.path.substringAfterLast('/'), style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.weight(1f, fill = false))
                 f.size?.let { Text(sizeLabel(it), style = MaterialTheme.typography.labelMedium, color = CmColors.text2, softWrap = false) }
+            }
+        }
+        // Sotto il nome i quattro tasti, come Copia e ▶ sotto le risposte (Franz, 07/10 16:07).
+        Row {
+            for ((act, icon, label) in listOf(
+                Triple(FileAct.OPEN, Icons.AutoMirrored.Rounded.OpenInNew, R.string.file_open),
+                Triple(FileAct.DOWNLOAD, Icons.Rounded.Download, R.string.file_download),
+                Triple(FileAct.COPY, Icons.Rounded.ContentCopy, R.string.file_copy),
+                Triple(FileAct.SHARE, Icons.Rounded.Share, R.string.file_share),
+            )) {
+                val desc = stringResource(label)
+                IconButton(onClick = { opener.act(f, act) }, modifier = Modifier.size(40.dp).handCursor()) {
+                    Icon(icon, desc, tint = CmColors.text2, modifier = Modifier.size(20.dp))
+                }
             }
         }
         if (local != null && f.mime?.startsWith("image/") == true) AttachmentThumb(local)

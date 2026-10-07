@@ -548,9 +548,10 @@ class MainActivity : ComponentActivity() {
         // compare come miniatura sotto il suo chip, gli altri file vanno all'app di sistema (Franz, 02/10 10:48).
         val fileLocal = remember { mutableStateMapOf<String, String>() }
         val fileLoading = remember { androidx.compose.runtime.mutableStateListOf<String>() }
-        val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
+        // Il file in cache se c'è, se no chiesto al PC; poi `ready` con il file locale e il suo tipo.
+        val withFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile, (java.io.File, String?) -> Unit) -> Unit = { name, f, ready ->
             val known = fileLocal[f.path]
-            if (known != null) { if (f.mime?.startsWith("image/") != true) viewFile(java.io.File(known), f.mime) }
+            if (known != null) ready(java.io.File(known), f.mime)
             else if (f.path !in fileLoading) {
                 fileLoading.add(f.path)
                 scope.launch {
@@ -563,7 +564,7 @@ class MainActivity : ComponentActivity() {
                                 java.io.File(dir, Integer.toHexString(f.path.hashCode()) + "-" + f.path.substringAfterLast('/')).apply { writeBytes(r.file.bytes) }
                             }
                             fileLocal[f.path] = out.path
-                            if (!r.file.mime.startsWith("image/")) viewFile(out, r.file.mime)
+                            ready(out, r.file.mime)
                         }
                         is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> {
                             // «too large: <byte>» in chiaro (Franz, 04/10 21:55): la misura del file e, se il PC lo dice, il limite.
@@ -575,6 +576,21 @@ class MainActivity : ComponentActivity() {
                         }
                         it.pixelbox.cmwatch.data.Repo.Opened.Failed -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_failed), android.widget.Toast.LENGTH_LONG).show()
                     }
+                }
+            }
+        }
+        // Il tocco sul chip: un'immagine si vede sotto il chip, gli altri file vanno all'app di sistema.
+        val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
+            withFile(name, f) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
+        }
+        // I tasti sotto il file (Franz, 07/10 16:07): apri, scarica, copia, condividi.
+        val fileAct: (String, it.pixelbox.cmwatch.contract.TranscriptFile, FileAct) -> Unit = { name, f, act ->
+            withFile(name, f) { file, mime ->
+                when (act) {
+                    FileAct.OPEN -> viewFile(file, mime)
+                    FileAct.DOWNLOAD -> scope.launch { saveToDownloads(file, f.path.substringAfterLast('/'), mime) }
+                    FileAct.COPY -> copyFile(file, f.path.substringAfterLast('/'), mime)
+                    FileAct.SHARE -> shareFile(file, mime)
                 }
             }
         }
@@ -616,7 +632,7 @@ class MainActivity : ComponentActivity() {
                                 Slash.panel(r.sent, results[r.sent.id])?.let { p -> app.chatLog.markPanel(r.sent.id, p) }
                             }
                         }
-                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap())) {
+                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) })) {
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
                             allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
@@ -1135,6 +1151,42 @@ class MainActivity : ComponentActivity() {
      * Un'immagine dalla barra di scrittura: ridotta come in «Condividi» (contratto 1.19), mandata con `report`, e una copia
      * locale per l'anteprima nel fumetto della chat.
      */
+    private fun fileUri(file: java.io.File): Uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
+
+    /** «Scarica»: una copia nella cartella Download del telefono, con il nome del file. */
+    private suspend fun saveToDownloads(file: java.io.File, name: String, mime: String?) {
+        val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
+                    put(android.provider.MediaStore.Downloads.MIME_TYPE, mime ?: "application/octet-stream")
+                }
+                val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("insert")
+                contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("open")
+            }.isSuccess
+        }
+        android.widget.Toast.makeText(this, getString(if (ok) R.string.file_saved else R.string.file_save_failed, name), android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    /** «Copia»: il testo dei file di testo, degli altri il file stesso (si incolla nelle app che lo sanno leggere). */
+    private fun copyFile(file: java.io.File, name: String, mime: String?) {
+        val cm = getSystemService(android.content.ClipboardManager::class.java)
+        val clip = when (it.pixelbox.cmwatch.rules.FileActions.copyKind(mime)) {
+            it.pixelbox.cmwatch.rules.FileActions.CopyKind.TEXT -> android.content.ClipData.newPlainText(name, file.readText())
+            it.pixelbox.cmwatch.rules.FileActions.CopyKind.FILE -> android.content.ClipData.newUri(contentResolver, name, fileUri(file))
+        }
+        cm.setPrimaryClip(clip)
+        // Da Android 13 il sistema mostra già la sua conferma della copia.
+    }
+
+    /** «Condividi»: il foglio di sistema con il file. */
+    private fun shareFile(file: java.io.File, mime: String?) {
+        val uri = fileUri(file)
+        val send = Intent(Intent.ACTION_SEND).setType(mime ?: "*/*").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        send.clipData = android.content.ClipData.newRawUri(null, uri)
+        startActivity(Intent.createChooser(send, null))
+    }
+
     /** Un file scaricato dalla chat all'app di sistema che lo apre; senza un'app adatta, lo si dice. */
     private fun viewFile(file: java.io.File, mime: String?) {
         val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
