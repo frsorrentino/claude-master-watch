@@ -228,6 +228,9 @@ object LiveDesk {
         }
     }.out()
 
+    /** Un avviso del servizio (batteria, live accesa): detto subito, come una risposta a Franz. */
+    fun notice(desk: Desk, text: String, nowMs: Long, lang: Lang): Out = Run(desk, nowMs, lang).apply { reply(text) }.out()
+
     /** Pausa (auricolari scollegati, audio di una chiamata) e ripresa, con un suono e la notizia interrotta da capo. */
     fun pause(desk: Desk, on: Boolean, state: State, nowMs: Long, lang: Lang): Out = Run(desk, nowMs, lang).apply {
         if (on && !d.paused) {

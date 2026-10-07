@@ -259,6 +259,16 @@ class LiveDeskTest {
         assertTrue(r.said().isEmpty())
     }
 
+    @Test fun aServiceNoticeIsSaidAndShown() {
+        val r = started()
+        r.go(LiveDesk.notice(r.desk, "Batteria al 20 per cento.", t0 + 1_000, lang))
+        assertTrue(r.fx.first() is Hush)
+        assertEquals(listOf("Batteria al 20 per cento."), r.said())
+        assertEquals(LiveCard.Kind.NEWS, r.card().kind)
+        // La domanda interrotta resta in coda e si rilegge subito: il livello 1 non aspetta la scheda dell'avviso.
+        assertEquals(listOf(ledgerQ), r.spoken(t0 + 2_000).said())
+    }
+
     companion object {
         val WORDS = LiveDesk.Words(
             alreadyAnswered = "Già risposto.",

@@ -171,8 +171,12 @@ class Repo(
 
     /** Ritorna l'id del comando (uuid): stesso id in Riprova, il PC ignora i duplicati. */
     /** `text`: il primo messaggio di un `launch` (contratto 1.13); per gli altri comandi resta null. */
-    suspend fun command(op: CmdOp, session: String?, arg: String?, text: String? = null, id: String = UUID.randomUUID().toString()): String {
-        val cmd = Cmd(id, op, session, arg, now(), by, text = text, device = device)
+    /** `voice`, `via`, `confirmations`: contratto 1.42, i comandi della modalità live; null = non scritti. */
+    suspend fun command(
+        op: CmdOp, session: String?, arg: String?, text: String? = null, id: String = UUID.randomUUID().toString(),
+        voice: Boolean? = null, via: String? = null, confirmations: Int? = null,
+    ): String {
+        val cmd = Cmd(id, op, session, arg, now(), by, text = text, device = device, voice = voice, via = via, confirmations = confirmations)
         if (!online()) {
             // Le letture delle schermate non entrano nella coda dei comandi dell'utente (revisione 30/09).
             if (op in PASSIVE) throw TransportException.Network("offline")

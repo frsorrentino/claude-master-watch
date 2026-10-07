@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -148,6 +150,8 @@ fun AppMenuPanel(
     onLaunch: () -> Unit, onRegister: () -> Unit, onQuadro: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val live by it.pixelbox.cmwatch.mobile.live.LiveService.running.collectAsState()
     MenuPanel(
         onDismiss,
         entries = listOf(
@@ -155,6 +159,12 @@ fun AppMenuPanel(
             MenuEntry(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.menu_register), stringResource(R.string.menu_register_sub), onClick = onRegister),
             MenuEntry(Icons.Rounded.Dashboard, stringResource(R.string.menu_quadro), stringResource(R.string.menu_quadro_sub), onClick = onQuadro),
             MenuEntry(Icons.Rounded.Search, stringResource(R.string.menu_search), stringResource(R.string.menu_search_sub), onClick = onSearch),
+            // Modalità live (specifica 06/10): notiziario in cuffia, comandi dal watch; lo stesso tocco la spegne.
+            MenuEntry(
+                Icons.Rounded.Headphones, stringResource(R.string.live_menu),
+                stringResource(if (live) R.string.live_menu_on else R.string.live_menu_sub),
+                onClick = { it.pixelbox.cmwatch.mobile.live.LiveService.toggle(ctx); onDismiss() },
+            ),
         ),
         footer = MenuEntry(Icons.Rounded.Settings, stringResource(R.string.settings), "", onClick = onSettings),
     ) {

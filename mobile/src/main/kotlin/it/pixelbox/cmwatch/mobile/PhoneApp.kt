@@ -56,6 +56,14 @@ class PhoneApp : Application() {
     lateinit var notifier: PhoneNotifier
     private val watch by lazy { WatchPresence(this) }
     @Volatile private var lastState: State? = null
+    @Volatile private var foreground = false
+    @Volatile private var liveOn = false
+
+    /** Gli stream di /state e /events: aperti con l'app in primo piano e con la modalità live accesa. */
+    private fun streams() = repo.live(foreground || liveOn)
+
+    /** La modalità live accesa o spenta (`LiveService`): tiene aperti gli stream anche ad app chiusa. */
+    fun liveStreams(on: Boolean) { liveOn = on; streams() }
     val phoneName: String by lazy {
         android.provider.Settings.Global.getString(contentResolver, android.provider.Settings.Global.DEVICE_NAME) ?: android.os.Build.MODEL
     }
@@ -97,8 +105,8 @@ class PhoneApp : Application() {
         // Fuori dalla Demo i suoi eventi non restano nel Registro (segnalazione 02/10: storefront e payments-api).
         if (!settings.demoMode) scope.launch { repo.dropEvents(fake.eventKeys) }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) { repo.live(true); scope.launch { repo.flushQueue() } }
-            override fun onStop(owner: LifecycleOwner) = repo.live(false)
+            override fun onStart(owner: LifecycleOwner) { foreground = true; streams(); scope.launch { repo.flushQueue() } }
+            override fun onStop(owner: LifecycleOwner) { foreground = false; streams() }
         })
         // I comandi scritti senza rete partono quando torna (revisione 29/09: prima restavano in coda per sempre).
         runCatching {
