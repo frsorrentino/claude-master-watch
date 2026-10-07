@@ -240,6 +240,46 @@ class LiveFeedTest {
         assertTrue(LiveFeed.round(idle, IT).isEmpty())
     }
 
+    // Livello 3 (Franz, 07/10 mattina): «sessione avviata» e i riepiloghi non entrano in coda, ma il giro completo li legge.
+    @Test fun launchedAndRecapAreKeptForTheFullRound() {
+        val now = 1_789_237_000L
+        val feed = plan(Feed(), idle, idle, now, events)
+        assertTrue(feed.items.none { it.level == 3 })
+        // launched (1789198000) è più vecchio di 2 ore: resta fuori; il recap (1789236000) entra.
+        assertEquals(listOf("Riepilogo: Recap 12/09/2026, 3 projects, 1 waiting on a question."), feed.info.map { it.text })
+        val fresh = events.single { it.kind == EventKind.LAUNCHED }.copy(ts = now - 60)
+        val both = plan(feed, idle, idle, now, listOf(fresh))
+        assertEquals(listOf(Kind.RECAP, Kind.LAUNCHED), both.info.map { it.kind })
+        assertEquals("atlas shop avviata.", both.info[1].text)
+        // Lo stesso evento due volte resta uno.
+        assertEquals(2, plan(both, idle, idle, now, listOf(fresh)).info.size)
+        assertEquals(listOf("Riepilogo: Recap 12/09/2026, 3 projects, 1 waiting on a question.", "atlas shop avviata."), LiveFeed.round(idle, IT, both))
+        assertTrue(LiveFeed.heard(both).info.isEmpty())
+    }
+
+    @Test fun atMostFiveInfoNewsStay() {
+        val now = 1_789_237_000L
+        val launched = events.single { it.kind == EventKind.LAUNCHED }
+        val many = (1..7).map { launched.copy(key = "k$it", session = "s$it", ts = now - 100 + it) }
+        val feed = plan(Feed(), idle, idle, now, many)
+        assertEquals(listOf("s3 avviata.", "s4 avviata.", "s5 avviata.", "s6 avviata.", "s7 avviata."), feed.info.map { it.text })
+    }
+
+    @Test fun statusWaitingAndQuotaPhrases() {
+        val ledger = q.sessions.single { it.name == "ledger-api" }
+        assertEquals("ledger api chiede: Deploy ready, waiting for the client's ok. Deploy now? Uno: yes. Due: no.", LiveFeed.status(ledger, IT))
+        assertEquals("field notes ha finito: README rewritten.", LiveFeed.status(q.sessions.single { it.name == "field-notes" }, IT))
+        assertEquals("orbit docs si è chiusa.", LiveFeed.status(q.sessions.single { it.name == "orbit-docs" }, IT))
+        val busy = idle.sessions.single().copy(state = SessionState.BUSY)
+        assertEquals("atlas shop è al lavoro.", LiveFeed.status(busy, IT))
+        assertEquals(LiveFeed.round(q, IT), LiveFeed.waiting(q, IT))
+        assertTrue(LiveFeed.waiting(idle, IT).isEmpty())
+        assertEquals(
+            listOf("Quota personal al 36 per cento, si azzera alle 04:00.", "Quota work al 75 per cento, si azzera alle 06:00."),
+            LiveFeed.quotaAll(q, IT, zone),
+        )
+    }
+
     companion object {
         /** Le frasi italiane della specifica (§5), come arriveranno da strings.xml. */
         val IT = LiveFeed.Labels(
@@ -259,6 +299,8 @@ class LiveFeedTest {
             quotaNoReset = "Quota %1\$s al %2\$d per cento.",
             busy = "%1\$s è al lavoro.",
             idle = "%1\$s è ferma.",
+            launched = "%1\$s avviata.",
+            recap = "Riepilogo: %1\$s.",
         )
     }
 }

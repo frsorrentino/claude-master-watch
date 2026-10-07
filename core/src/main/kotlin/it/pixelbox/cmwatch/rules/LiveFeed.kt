@@ -34,11 +34,15 @@ object LiveFeed {
     /** Una domanda più lunga si legge fino all'ultima frase intera entro questo limite, poi «continua sul watch». */
     const val QUESTION_MAX = 300
 
+    /** Le informazioni (livello 3) per il giro completo: al massimo 5, dalle ultime 2 ore. */
+    const val INFO_MAX = 5
+    const val INFO_KEEP_S = 7_200L
+
     private const val LOW_ACTIVE = "active"
     private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
     private val FINE_FRASE = Regex("[.!?](?=\\s)")
 
-    enum class Kind { QUESTION, APPROVAL, OUTCOME, GONE, RESTART_FAILED, QUOTA }
+    enum class Kind { QUESTION, APPROVAL, OUTCOME, GONE, RESTART_FAILED, QUOTA, LAUNCHED, RECAP, MASTER }
 
     /**
      * Una notizia pronta per la voce. `key`: `s:<sessione>` per domanda, esito e chiusura (una notizia per sessione, con
@@ -49,8 +53,13 @@ object LiveFeed {
         val questionId: String? = null, val at: Long, val notBefore: Long = 0,
     )
 
-    /** La coda e, per sessione, quando si è letta la sua ultima notizia di livello 2 (l'attesa di 3 minuti). */
-    data class Feed(val items: List<News> = emptyList(), val spokenAt: Map<String, Long> = emptyMap())
+    /**
+     * La coda e, per sessione, quando si è letta la sua ultima notizia di livello 2 (l'attesa di 3 minuti). `info` = le
+     * notizie di livello 3 (`launched`, `recap`), che non entrano in coda: le legge il giro completo.
+     */
+    data class Feed(
+        val items: List<News> = emptyList(), val spokenAt: Map<String, Long> = emptyMap(), val info: List<News> = emptyList(),
+    )
 
     /**
      * Le frasi, da strings.xml. `numbers` = i numeri in parole dall'uno («uno», «due»); `code` = cosa dice la voce al
@@ -60,7 +69,7 @@ object LiveFeed {
         val code: String, val numbers: List<String>, val question: String, val option: String, val more: String,
         val approval: String, val where: String, val outcome: String, val next: String, val step: String,
         val gone: String, val restartFailed: String, val quota: String, val quotaNoReset: String,
-        val busy: String, val idle: String,
+        val busy: String, val idle: String, val launched: String, val recap: String,
     )
 
     /**
@@ -90,7 +99,7 @@ object LiveFeed {
         val answered = events.filter { it.kind == EventKind.ANSWERED }.mapNotNull { it.ref }.toSet()
         val byName = cur.sessions.associateBy { it.name }
         val tasks = cur.approvals.map { it.task }.toSet()
-        return feed.copy(items = items.filterNot { n ->
+        return feed.copy(info = info(feed.info, events, now, l), items = items.filterNot { n ->
             when (n.kind) {
                 Kind.QUESTION -> n.questionId in answered || n.session?.let { byName[it] }?.question?.id != n.questionId
                 Kind.APPROVAL -> n.key.removePrefix("ok:") !in tasks
@@ -130,7 +139,7 @@ object LiveFeed {
      * richieste di ok, poi quelle al lavoro, poi quelle seguite e ferme. Le sessioni in bassa priorità attiva restano
      * fuori, salvo quando aspettano Franz: il livello 1 non ha limiti.
      */
-    fun round(state: State, l: Labels): List<String> {
+    fun round(state: State, l: Labels, feed: Feed = Feed()): List<String> {
         val open = state.sessions.filter { it.state != SessionState.GONE }
         val waiting = open.filter { it.question != null || blocking(it) }
         val working = open.filter { it !in waiting && it.state == SessionState.BUSY && !low(it) }
@@ -138,7 +147,44 @@ object LiveFeed {
         return waiting.map { if (it.question != null) questionText(it, l) else outcomeText(it, l) } +
             state.approvals.map { approvalText(it, l) } +
             working.map { l.busy.format(SpeakableName.of(it.name)) } +
-            stopped.map { if (it.outcome != null) outcomeText(it, l) else l.idle.format(SpeakableName.of(it.name)) }
+            stopped.map { if (it.outcome != null) outcomeText(it, l) else l.idle.format(SpeakableName.of(it.name)) } +
+            feed.info.map { it.text }
+    }
+
+    /** Il giro completo è stato letto: le informazioni non si ripetono al giro dopo. */
+    fun heard(feed: Feed): Feed = feed.copy(info = emptyList())
+
+    /** «com'è messa nome»: la domanda aperta, l'esito, al lavoro, chiusa o ferma. */
+    fun status(s: Session, l: Labels): String = when {
+        s.question != null -> questionText(s, l)
+        s.state == SessionState.GONE -> l.gone.format(SpeakableName.of(s.name))
+        s.state == SessionState.BUSY && !blocking(s) -> l.busy.format(SpeakableName.of(s.name))
+        s.outcome != null -> outcomeText(s, l)
+        else -> l.idle.format(SpeakableName.of(s.name))
+    }
+
+    /** «chi mi aspetta»: le domande, i Prossimi con «!» e le richieste di ok; vuota se nessuno aspetta. */
+    fun waiting(state: State, l: Labels): List<String> {
+        val open = state.sessions.filter { it.state != SessionState.GONE && (it.question != null || blocking(it)) }
+        return open.map { if (it.question != null) questionText(it, l) else outcomeText(it, l) } + state.approvals.map { approvalText(it, l) }
+    }
+
+    /** «quanta quota»: una frase per account, nell'ordine dello stato. */
+    fun quotaAll(state: State, l: Labels, zone: ZoneId): List<String> = state.quota.map { (account, q) -> quotaText(account, q, l, zone) }
+
+    /** Le informazioni nuove dagli eventi, senza doppioni, al massimo [INFO_MAX] dalle ultime [INFO_KEEP_S]. */
+    private fun info(kept: List<News>, events: List<Event>, now: Long, l: Labels): List<News> {
+        val fresh = events.mapNotNull { e ->
+            when (e.kind) {
+                EventKind.LAUNCHED -> e.session?.let { News("info:${e.key}", 3, Kind.LAUNCHED, it, l.launched.format(SpeakableName.of(it)), at = e.ts) }
+                EventKind.RECAP -> e.body.lineSequence().firstOrNull { it.isNotBlank() }?.let {
+                    News("info:${e.key}", 3, Kind.RECAP, null, l.recap.format(bare(it.replace(" · ", ", "), l)), at = e.ts)
+                }
+                else -> null
+            }
+        }
+        return (kept + fresh.filter { f -> kept.none { it.key == f.key } })
+            .filter { it.at >= now - INFO_KEEP_S }.sortedBy { it.at }.takeLast(INFO_MAX)
     }
 
     private fun sessionNews(s: Session, p: Session?, first: Boolean, now: Long, l: Labels): News? {
