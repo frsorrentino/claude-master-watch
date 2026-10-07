@@ -11,6 +11,8 @@ object ContractJson {
     fun decodeResult(raw: String): CmdResult = json.decodeFromString(CmdResult.serializer(), raw)
     /** Contratto 1.22: il `text` di un risultato `transcript` è a sua volta JSON. */
     fun decodeTranscript(raw: String): TranscriptPage = json.decodeFromString(TranscriptPage.serializer(), raw)
+    /** Contratto 1.44: il rapporto della notte, il `text` dell'op `night`. */
+    fun decodeNightReport(raw: String): NightReport = json.decodeFromString(NightReport.serializer(), raw)
     fun decodeProjects(raw: String): ProjectsPage = json.decodeFromString(ProjectsPage.serializer(), raw)
     fun decodeSearch(raw: String): SearchPage = json.decodeFromString(SearchPage.serializer(), raw)
     fun decodeTimeline(raw: String): TimelinePage = json.decodeFromString(TimelinePage.serializer(), raw)
