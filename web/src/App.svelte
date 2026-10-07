@@ -35,6 +35,7 @@
   import ReadingPill from './lib/ReadingPill.svelte'
   import { build, MASTER } from './lib/summary'
   import { add, columns, columnsFromPref, columnsPref, inspect, sharesFromPref, sharesPref, timelineArg, toggle as toggleCol, wide as isWide } from './lib/tablet'
+  import { shouldRead, type LastRead } from './lib/readPlan'
 
   const load = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
   const save = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* resta per la sessione */ } }
@@ -324,10 +325,29 @@
     if (op === 'prompt' && arg) sendTo(MASTER, arg)
     else run(newCmd(op, name || null, arg, text))
   }
-  // La conversazione di quello che è a schermo, a ogni stato nuovo; la master sempre (vive nella home).
+  // La conversazione di quello che è a schermo, la master sempre (vive nella home), alla cadenza del telefono e una lettura
+  // alla volta per la pagina (piano prestazioni, Task 5: 888 letture all'ora il 07/10). Il passo dei 5 s fa partire le
+  // letture a cadenza anche senza uno stato nuovo; la fine di una lettura fa partire la prossima.
+  const reads = new Map<string, LastRead & { key: string }>()
+  let readTick = $state(0)
+  if (tr) setInterval(() => readTick++, 5_000)
   $effect(() => {
-    void st.ts
-    for (const n of new Set([MASTER, ...slots])) if (n && st.sessions.some(x => x.name === n)) untrack(() => loadTranscript(n))
+    void st.ts; void readTick
+    const names = [...new Set([MASTER, ...slots])]
+    untrack(() => {
+      if (loadingT.size) return
+      const now = nowS()
+      for (const n of names) {
+        const s = n ? st.sessions.find(x => x.name === n) : undefined
+        if (!n || !s) continue
+        const key = `${s.state}|${s.turn_started ?? ''}`
+        const last = reads.get(n)
+        if (!shouldRead(s, last, !!last && last.key !== key, now)) continue
+        reads.set(n, { at: now, answered: false, key })
+        loadTranscript(n).finally(() => { const r = reads.get(n); if (r) r.answered = true; readTick++ })
+        return
+      }
+    })
   })
   // La ricerca (1.27) e la cronologia di oggi per i dettagli della prima colonna (1.29).
   async function search(q: string) {
@@ -336,11 +356,16 @@
     if (r?.ok) searchPage = JSON.parse(r.text)
   }
   let timeline = $state<TimelinePage | null>(tr ? null : demoTimeline)
+  // Al massimo una al minuto per la stessa sessione, subito per una sessione nuova (piano prestazioni, Task 5).
+  let timelineAsked = { name: '', at: 0 }
   $effect(() => {
     if (!tr || !details || !cols[0]) return
     const name = cols[0]
     void st.ts
-    untrack(() => run(newCmd('timeline', name, timelineArg(nowS())))).then(r => { if (r?.ok) timeline = JSON.parse(r.text) })
+    const now = nowS()
+    if (timelineAsked.name === name && now - timelineAsked.at < 60) return
+    timelineAsked = { name, at: now }
+    untrack(() => run(newCmd('timeline', name, timelineArg(now)))).then(r => { if (r?.ok) timeline = JSON.parse(r.text) })
   })
   const answer = (n: string, x: number) => { pick(n); cmd(n)('answer', String(x)) }
 </script>
