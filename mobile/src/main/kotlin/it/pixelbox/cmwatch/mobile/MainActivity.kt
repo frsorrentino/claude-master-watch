@@ -648,6 +648,14 @@ class MainActivity : ComponentActivity() {
                                     val m = chatLog.firstOrNull { it.id == id }
                                     when {
                                         app.repo.snapshot.value.pending.any { it.cmd.id == id } -> app.repo.retry(id)
+                                        // Un file non consegnato si rimanda dalla sua copia nella cache, con il suo testo; se il sistema
+                                        // ha svuotato la cache, si chiede di allegarlo di nuovo (07/10 20:21).
+                                        m?.file != null -> {
+                                            val f = m.file!!
+                                            val src = java.io.File(f.path)
+                                            if (src.isFile) app.scope.launch { sendFile(session.name, src.readBytes(), f.name, f.mime, f.text, state?.share?.maxBytes ?: 0) }
+                                            else android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_gone), android.widget.Toast.LENGTH_LONG).show()
+                                        }
                                         // Un'immagine rifiutata si rimanda dalla sua copia locale, con lo stesso testo.
                                         m?.attachment != null -> attachImage(session.name, Uri.fromFile(java.io.File(m.attachment!!)), m.text, state?.share?.maxBytes ?: 0)
                                         m != null -> sendAndLog(PhonePrimary.Target.PROMPT, m.text)
@@ -1223,11 +1231,29 @@ class MainActivity : ComponentActivity() {
         }
         app.scope.launch {
             val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() ?: return@launch
-            val id = java.util.UUID.randomUUID().toString()
-            val shown = listOfNotNull(getString(R.string.attached_file, name), text.takeIf { it.isNotBlank() }).joinToString("\n")
-            app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000))
-            runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name) }
+            sendFile(session, bytes, name, mime, text, maxBytes)
         }
+    }
+
+    /**
+     * Un file verso una sessione, con una copia nella cache per «Riprova» (07/10 20:21: senza copia, Riprova rimandava solo
+     * il testo «File: nome»). Il messaggio compare subito nella chat; caricamento, invio e rifiuto sono suoi passaggi.
+     */
+    private suspend fun sendFile(session: String, bytes: ByteArray, name: String, mime: String, text: String, maxBytes: Int) {
+        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(maxBytes)
+        if (bytes.size > limit) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this@MainActivity, limit)), android.widget.Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        val id = java.util.UUID.randomUUID().toString()
+        val copy = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { java.io.File(java.io.File(cacheDir, "sent-files").apply { mkdirs() }, id).apply { writeBytes(bytes) } }.getOrNull()
+        }
+        val shown = listOfNotNull(getString(R.string.attached_file, name), text.takeIf { it.isNotBlank() }).joinToString("\n")
+        app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000, file = copy?.let { c -> it.pixelbox.cmwatch.rules.SentFile(c.path, name, mime, text) }))
+        runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name) }
     }
 
     private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {

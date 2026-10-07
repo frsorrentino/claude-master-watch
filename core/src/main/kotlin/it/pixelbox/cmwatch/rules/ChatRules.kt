@@ -24,7 +24,15 @@ import kotlinx.serialization.Serializable
     val scheduledFor: Long? = null,
     /** Il pannello che un comando slash ha aperto sul PC (`Slash.panel`), salvato quando arriva; null senza. */
     val panel: String? = null,
+    /** Un file allegato (non un'immagine): quello che serve a «Riprova» per rimandarlo (07/10 20:21); null senza. */
+    val file: SentFile? = null,
 )
+
+/**
+ * La copia di un file allegato, nella cache dell'app, con il nome, il tipo e il testo scritto con lui. Nella cache perché
+ * un file può arrivare a 5,6 MB e il sistema la può svuotare; se manca, «Riprova» chiede di allegarlo di nuovo.
+ */
+@Serializable data class SentFile(val path: String, val name: String, val mime: String, val text: String)
 
 /**
  * Lo stato dei messaggi della chat (design 30/09): dalla conferma del comando e dai turni della sessione. Lo stato del

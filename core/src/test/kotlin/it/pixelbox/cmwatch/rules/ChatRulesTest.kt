@@ -151,4 +151,17 @@ class ChatRulesTest {
         assertEquals("/home/demo/workspaces/work/clients/ledger-api", ChatRules.nightDir(st, ledger))
         assertNull(ChatRules.nightDir(st, ledger.copy(project = "work/other")))
     }
+
+    // 07/10 20:21: «Riprova» su un file non consegnato rimandava solo il testo «File: nome». Il messaggio ora tiene dove sta
+    // la copia del file, il nome, il tipo e il testo scritto; i messaggi salvati prima si leggono come prima.
+    @Test fun aSentFileKeepsWhatRetryNeeds() {
+        val m = Sent("id1", "rino", "File: a.pdf\necco", 100, file = SentFile("/cache/sent-files/id1", "a.pdf", "application/pdf", "ecco"))
+        val back = ContractJson.json.decodeFromString(Sent.serializer(), ContractJson.json.encodeToString(Sent.serializer(), m))
+        assertEquals(m, back)
+    }
+
+    @Test fun aMessageSavedBeforeHasNoFile() {
+        val old = """{"id":"id0","session":"rino","text":"ciao","sentAt":1}"""
+        assertNull(ContractJson.json.decodeFromString(Sent.serializer(), old).file)
+    }
 }

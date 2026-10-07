@@ -297,6 +297,7 @@
     <string name="write_to_ad">Scrivi ad %1$s</string>
     <string name="attached_file">File: %1$s</string>
     <string name="file_too_big">Il file è troppo grande: il limite è %1$s</string>
+    <string name="file_gone">Il file non c\'è più sul telefono: allegalo di nuovo</string>
     <string name="stop">Ferma</string>
     <string name="copy">Copia</string>
     <string name="edit">Modifica</string>
