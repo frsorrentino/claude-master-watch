@@ -37,7 +37,6 @@ class SpeechRateTest {
 
     @Test fun theSliderSpansHalfToDouble() {
         assertEquals(0.5f, SpeechRate.MIN); assertEquals(2.0f, SpeechRate.MAX)
-        assertEquals(29, SpeechRate.SLIDER_STEPS)   // 30 intervalli da 0,05 fra 0,5 e 2
         assertEquals(1f / 3f, SpeechRate.fraction(1.0f), 1e-6f)
     }
 }

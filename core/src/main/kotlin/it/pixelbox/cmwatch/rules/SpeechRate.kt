@@ -13,8 +13,6 @@ object SpeechRate {
     const val MIN = 0.5f
     const val MAX = 2.0f
     private const val STEP = 0.05f
-    /** I punti dello slider fra gli estremi (30 intervalli da 0,05). */
-    const val SLIDER_STEPS = 29
 
     /** Al passo di 0,05 più vicino, dentro 0,5-2; vicino a 1 si ferma su 1, così la velocità normale si ritrova al tatto. */
     fun snap(v: Float): Float {

@@ -237,7 +237,9 @@ fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modi
     Column(modifier) {
         Slider(
             value = value, onValueChange = { onChange(r.snap(it)) }, onValueChangeFinished = onDone,
-            valueRange = r.MIN..r.MAX, steps = r.SLIDER_STEPS, modifier = Modifier.fillMaxWidth().height(28.dp),
+            // Senza `steps`: Material 3 disegnerebbe un puntino per ognuno dei 29 passi. Il valore va a scatti di 0,05 lo
+            // stesso, perché `onValueChange` passa da `SpeechRate.snap`.
+            valueRange = r.MIN..r.MAX, modifier = Modifier.fillMaxWidth().height(28.dp),
         )
         Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             val small = MaterialTheme.typography.labelSmall.copy(color = CmColors.text2)
