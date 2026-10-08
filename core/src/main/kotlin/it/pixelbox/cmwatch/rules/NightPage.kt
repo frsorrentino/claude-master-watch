@@ -21,9 +21,11 @@ object NightPage {
     /** Una barra più corta di così non si vedrebbe: un lavoro di un minuto resta un punto. */
     const val MIN_BAR = 0.012
 
+    /** Quante voci per esito, per le pillole in testa (Franz, 08/10 12:30: «non capisco cosa è da fare o fatto»). */
+    data class Counts(val done: Int, val running: Int, val stopped: Int, val asking: Int)
     data class Page(
         val day: LocalDate, val dayBefore: LocalDate, val start: Long, val end: Long, val windowS: Int,
-        val fromLastMessage: Boolean, val needs: List<Need>, val cards: List<Card>, val axis: List<Tick>, val projects: List<Project>,
+        val fromLastMessage: Boolean, val needs: List<Need>, val cards: List<Card>, val axis: List<Tick>, val projects: List<Project>, val counts: Counts = Counts(0, 0, 0, 0),
     )
     data class Need(val kind: NeedKind, val session: String, val text: String, val options: List<Option> = emptyList(), val task: String? = null)
     data class Tick(val label: String, val at: Double)
@@ -83,6 +85,10 @@ object NightPage {
         return Page(
             day = day, dayBefore = day.minusDays(1), start = start, end = end, windowS = (end - start).toInt(),
             fromLastMessage = r.window.startSource == "last_message", needs = needs, cards = cards, axis = axis, projects = projects,
+            counts = Counts(
+                done = cards.count { it.icon == Icon.OK }, running = cards.count { it.icon == Icon.RUNNING },
+                stopped = cards.count { it.icon == Icon.STOPPED }, asking = cards.count { it.icon == Icon.QUESTION },
+            ),
         )
     }
 

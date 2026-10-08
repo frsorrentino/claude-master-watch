@@ -16,6 +16,11 @@ class NightPageTest {
     private val report = ContractJson.decodeNightReport(Fixtures.read("night-report-sample.json"))
     private val page = NightPage.of(report, zone)
 
+    /** Franz, 08/10 12:30: «non capisco cosa è da fare o fatto»: in testa i conteggi per esito, a parole. */
+    @Test fun countsByOutcomeForTheChips() {
+        assertEquals(NightPage.Counts(done = 2, running = 2, stopped = 1, asking = 1), page.counts)
+    }
+
     @Test fun theNightIsNamedByItsTwoDays() {
         assertEquals(LocalDate.of(2026, 10, 6), page.dayBefore)
         assertEquals(LocalDate.of(2026, 10, 7), page.day)
