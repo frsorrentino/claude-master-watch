@@ -13,9 +13,13 @@ object RecapActions {
 
     /**
      * `text` = quello che si legge, `send` = quello che parte, `to` = la sessione che lo riceve, `from` = da dove viene;
-     * `recap` = viene dal recap del giorno (l'etichetta del tasto dice «recap dd/mm», il foglio «Dal recap del …»).
+     * `recap` = viene dal recap del giorno (l'etichetta del tasto dice «recap dd/mm», il foglio «Dal recap del …»);
+     * `agenda` = un «Fallo» di una riga dell'agenda, che va alla master.
      */
-    data class Action(val text: String, val send: String, val to: String, val from: String, val viaMaster: Boolean, val recap: Boolean = false)
+    data class Action(
+        val text: String, val send: String, val to: String, val from: String, val viaMaster: Boolean,
+        val recap: Boolean = false, val agenda: Boolean = false,
+    )
 
     fun of(state: State, resume: String = "Riprendi %1\$s: %2\$s"): List<Action> {
         val live = state.sessions.filter { it.state != SessionState.GONE && it.name != ContextActions.MASTER }

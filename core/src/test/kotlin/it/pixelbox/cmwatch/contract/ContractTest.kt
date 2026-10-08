@@ -140,10 +140,24 @@ class ContractTest {
         // Contratto 1.39: due unpair, uno riuscito e uno rifiutato.
         // Contratto 1.42: un prompt a voce alla master e due approve dalla live, uno rifiutato con una conferma sola.
         // Contratto 1.44: due night, il rapporto e uno rifiutato perché quel giorno non c'è.
-        assertEquals(42, results.size); assertEquals(11, results.count { !it.ok })
+        // Contratto 1.46: due agenda, le righe e uno rifiutato senza file.
+        assertEquals(44, results.size); assertEquals(12, results.count { !it.ok })
+        val agenda = cmds.filter { it.op == CmdOp.AGENDA }
+        assertEquals(2, agenda.size); assertNull(agenda[0].session); assertNull(agenda[0].arg)
+        val agendaPage = ContractJson.decodeAgenda(results.first { it.id == agenda[0].id }.text)
+        assertFalse(agendaPage.more)
+        assertEquals(listOf("aperto", "aperto", "sospeso", "fatto"), agendaPage.rows.map { it.state })
+        assertEquals(listOf("agenzia", "personale", "agenzia", "postazione"), agendaPage.rows.map { it.scope })
+        assertEquals("orbit-docs", agendaPage.rows[1].ref); assertEquals("", agendaPage.rows[2].ref)
+        assertEquals("no agenda file", results.first { it.id == agenda[1].id }.let { assertFalse(it.ok); it.text })
+        assertTrue("agenda" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
         val night = cmds.first { it.op == CmdOp.NIGHT }
         assertNull(night.arg)
-        assertEquals("2026-10-07", ContractJson.decodeNightReport(results.first { it.id == night.id }.text).date)
+        val nightRep = ContractJson.decodeNightReport(results.first { it.id == night.id }.text)
+        assertEquals("2026-10-07", nightRep.date)
+        // Contratto 1.46: il prompt di ogni voce della notte, null dove non c'è.
+        assertNull(nightRep.timeline.single { it.id == "atlas-shop" }.prompt)
+        assertEquals("Dati del registro dei pagamenti per la pagina mensile.", nightRep.timeline.single { it.id == "e5f6a7b8" }.prompt)
         val invite = cmds.single { it.op == CmdOp.PAIR_ADD }
         assertNull(invite.session); assertNull(invite.arg)
         val offer = ContractJson.decodePairAdd(results.first { it.id == invite.id }.text)

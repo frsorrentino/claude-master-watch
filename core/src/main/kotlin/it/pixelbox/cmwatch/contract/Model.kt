@@ -84,6 +84,11 @@ enum class CmdOp {
     @SerialName("unpair") UNPAIR,
     /** Contratto 1.44: il rapporto della notte (pagina Notte). */
     @SerialName("night") NIGHT,
+    /**
+     * Contratto 1.46: le decisioni e i lavori aperti dell'agenda, a richiesta come `projects`, mai nello stato. `session` e
+     * `arg` null; il testo è un `AgendaPage`; senza file «no agenda file».
+     */
+    @SerialName("agenda") AGENDA,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -314,6 +319,14 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
 @Serializable data class TranscriptFile(val path: String, val mime: String? = null, val size: Long? = null)
 
 /** Contratto 1.26: il risultato di `projects`, dal più recente (`last_used` null in fondo); `more` oltre i 60 KB. */
+/**
+ * Contratto 1.46: una riga dell'agenda come nel TSV. Tutti testo libero: `state` aperto/fatto/sospeso (o altro), `scope`
+ * agenzia/personale/postazione, `blocks` chi deve muoversi (franz, claude, terzi, nessuno), `ref` un rimando o "".
+ */
+@Serializable data class AgendaRow(val state: String = "", val scope: String = "", val blocks: String = "", val title: String = "", val ref: String = "")
+/** Contratto 1.46: le righe nell'ordine del file; `more` = tagliate sopra i 60 KB. */
+@Serializable data class AgendaPage(val rows: List<AgendaRow> = emptyList(), val more: Boolean = false)
+
 @Serializable data class ProjectsPage(val projects: List<Project> = emptyList(), val more: Boolean = false)
 
 /**

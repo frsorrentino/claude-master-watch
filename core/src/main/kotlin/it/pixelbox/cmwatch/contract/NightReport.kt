@@ -56,6 +56,8 @@ import kotlinx.serialization.encoding.Encoder
     /** `ok`, `stopped`, `failed`, `running`; altri valori si mostrano come «fermo». */
     val outcome: String = "", val detail: String? = null, val report: String? = null,
     val live: Boolean = false, val counts: NightCounts? = null,
+    /** Contratto 1.46: il testo della voce della coda o il primo prompt della notte, entro 400 caratteri; null se non c'è. */
+    val prompt: String? = null,
 ) {
     enum class Kind { SESSION, NIGHT_JOB, OTHER }
 }

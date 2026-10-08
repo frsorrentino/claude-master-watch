@@ -308,6 +308,16 @@ class FakeTransport(
             CmdOp.DECISION -> if (cmd.text.isNullOrBlank()) ko("empty decision") else ok("decision sent to the master")
             // Contratto 1.44: la demo legge la fixture inventata del rapporto della notte.
             CmdOp.NIGHT -> runCatching { load("night-report-sample") }.map { ok(it) }.getOrElse { ko("no night report yet") }
+            // Contratto 1.46: la demo ha un'agenda inventata con un gruppo per ognuno di chi deve muoversi.
+            CmdOp.AGENDA -> ok(ContractJson.json.encodeToString(AgendaPage.serializer(), AgendaPage(listOf(
+                AgendaRow("aperto", "agenzia", "franz", "Confirm the 6 client ids with a candidate", ".claude/to-decide-client-id.md"),
+                AgendaRow("aperto", "personale", "franz", "Renew the domain of the docs site", "orbit-docs"),
+                AgendaRow("aperto", "personale", "claude", "Move the docs site to the new host", "orbit-docs"),
+                AgendaRow("aperto", "postazione", "claude", "Clear the orphan plugin caches", "after restarting every session"),
+                AgendaRow("sospeso", "agenzia", "terzi", "Staging of atlas-shop not reachable from the CLI", ""),
+                AgendaRow("aperto", "agenzia", "terzi", "Client answer on the domain", ""),
+                AgendaRow("fatto", "postazione", "nessuno", "Backups of the workstation every night", "crontab"),
+            ))))
             // Contratto 1.39: la demo toglie il dispositivo dalla lista, come il relay.
             CmdOp.UNPAIR -> s.devices?.firstOrNull { it.uid == cmd.arg }?.let { d ->
                 current.value = current.value.let { st -> st.copy(devices = st.devices?.filter { it.uid != d.uid }) }
