@@ -536,7 +536,9 @@ fun SessionSheet(
         var ctxDismissed by rememberSaveable(s.name) { mutableStateOf<Int?>(null) }
         val nudge = if (home != null && homeOpen) null else it.pixelbox.cmwatch.rules.ContextActions.nudge(s, ctxDismissed)
         if (nudge != null) ContextNudge(s.context ?: nudge, onGo = actions.handoff, onDismiss = { ctxDismissed = nudge })
-        if (!imeOpen) ReadingSlot(s.name, Modifier.padding(top = 6.dp))
+        // Nella master aperta il posto del controller ha il fondo della sua conversazione, non il nero della pagina (Franz, 08/10 20:28).
+        val slotBg = if (home != null && !homeOpen && LocalMasterChatStyle.current == MasterChatStyle.DEPTH) Modifier.background(MasterLow) else Modifier
+        if (!imeOpen) ReadingSlot(s.name, slotBg.padding(top = 6.dp))
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
