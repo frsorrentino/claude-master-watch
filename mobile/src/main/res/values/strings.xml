@@ -798,4 +798,8 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="tonight_queued">IN CODA</string>
     <string name="tonight_last">Notte del %1$d-%2$d:</string>
     <string name="tonight_report">Rapporto</string>
+    <!-- Le azioni vecchie e tolte (Franz, 08/10 20:50). -->
+    <plurals name="steps_old"><item quantity="one">+%d vecchia</item><item quantity="other">+%d vecchie</item></plurals>
+    <string name="steps_unblock">sblocca</string>
+    <string name="steps_dismiss">Tolta</string>
 </resources>

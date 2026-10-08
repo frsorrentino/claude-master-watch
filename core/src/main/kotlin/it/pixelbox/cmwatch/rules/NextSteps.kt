@@ -7,6 +7,9 @@ package it.pixelbox.cmwatch.rules
  * riga per l'orologio («Watch:»), che la master chiede dopo tutto il resto.
  */
 object NextSteps {
+    /** Dopo quante risposte di fila con la stessa azione questa diventa vecchia. */
+    const val STALE_AFTER = 3
+
     const val MAX = 3
     const val MAX_CHARS = 40
     private const val PREFIX = "Prossimi:"
@@ -45,6 +48,24 @@ object NextSteps {
         val field = all.first().takeIf { draft.isBlank() }
         return Box(field, all.filter { it != field && !inDraft(draft, it) }.take(MAX))
     }
+
+    /**
+     * Le azioni attuali e quelle vecchie (Franz, 08/10 20:50: «persistono anche se l'argomento è passato»). Quelle tolte a
+     * mano (`dismissed`) non tornano; una che ricompare uguale nelle due risposte prima di questa, cioè in tre di fila, è
+     * vecchia: sta in fondo, chiusa in una riga. `earlier` = le azioni delle risposte precedenti, dalla più recente.
+     */
+    data class Split(val fresh: List<String>, val old: List<String>)
+
+    fun split(rows: List<String>, earlier: List<List<String>>, dismissed: Set<String>): Split {
+        val gone = dismissed.map(::norm).toSet()
+        val kept = rows.filter { norm(it) !in gone }
+        val prev = earlier.take(STALE_AFTER - 1).map { l -> l.map(::norm).toSet() }
+        val old = if (prev.size < STALE_AFTER - 1) emptyList() else kept.filter { r -> prev.all { norm(r) in it } }
+        return Split(kept - old.toSet(), old)
+    }
+
+    /** Il testo con cui un'azione si ricorda come tolta: lo stesso confronto dei doppioni. */
+    fun key(text: String): String = norm(text)
 
     /** Un testo già nel campo, a meno di maiuscole, spazi e punteggiatura. */
     fun inDraft(draft: String, text: String): Boolean = norm(text).let { it.isNotEmpty() && it in norm(draft) }

@@ -240,6 +240,17 @@ fun SessionSheet(
     val stepsBox by remember(steps, s.suggestion, idle, draftHolder) {
         derivedStateOf { if (idle) NextSteps.box(steps, s.suggestion, draftHolder.value) else NextSteps.Box(null, emptyList()) }
     }
+    // Le azioni tolte a mano e quelle vecchie (Franz, 08/10 20:50): le tolte non tornano per questa sessione, quelle ripetute
+    // in tre risposte di fila vanno in fondo, chiuse in una riga.
+    val stepsCtx = androidx.compose.ui.platform.LocalContext.current
+    val dismissPrefs = remember { stepsCtx.getSharedPreferences("dismissed_steps", android.content.Context.MODE_PRIVATE) }
+    var dismissed by remember(s.name) { mutableStateOf(dismissPrefs.getStringSet(s.name, emptySet()).orEmpty()) }
+    val earlierSteps = remember(groupedFeed) {
+        groupedFeed.orEmpty().filterIsInstance<ChatFeed.Item.Claude>().dropLast(1).reversed()
+            .map { c -> NextSteps.parse(c.entry.text.orEmpty()).steps }.filter { it.isNotEmpty() }
+    }
+    val stepsSplit = remember(stepsBox.rows, earlierSteps, dismissed) { NextSteps.split(stepsBox.rows, earlierSteps, dismissed) }
+    val dismissStep: (String) -> Unit = { t -> dismissed = dismissed + NextSteps.key(t); dismissPrefs.edit().putStringSet(s.name, dismissed).apply() }
     val draftBlank by remember(draftHolder) { derivedStateOf { draftHolder.value.isBlank() } }
     val boxes = LocalPromptBoxes.current
     val then = stringResource(R.string.next_then)
@@ -410,8 +421,9 @@ fun SessionSheet(
             // Il box «Prossimi» (variante A del 03/10 15:20, rivista il 04/10 20:21): sopra la barra con la sessione ferma,
             // anche scrivendo; il tocco porta la riga nel campo, accodata con «e poi» se c'è già testo, ↗ la manda subito a
             // campo vuoto. Si chiude a una riga, e resta chiuso finché non lo si riapre.
-            if (stepsBox.rows.isNotEmpty()) PromptBox(
-                stringResource(R.string.next_steps), stepsBox.rows.map { PromptRow(it, it, direct = true, blocking = it in stepsBlocking) },
+            if (stepsSplit.fresh.isNotEmpty() || stepsSplit.old.isNotEmpty()) PromptBox(
+                stringResource(R.string.next_steps), stepsSplit.fresh.map { PromptRow(it, it, direct = true, blocking = it in stepsBlocking) },
+                old = stepsSplit.old.map { PromptRow(it, it, direct = true, blocking = it in stepsBlocking) }, onDismiss = { r -> dismissStep(r.text) },
                 open = boxes.stepsOpen, onOpen = boxes::steps, draftBlank = draftBlank,
                 onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
@@ -803,7 +815,10 @@ private data class PromptRow(val label: String, val text: String, val direct: Bo
 private fun PromptBox(
     title: String, rows: List<PromptRow>, open: Boolean, onOpen: (Boolean) -> Unit, draftBlank: Boolean,
     onPick: (PromptRow) -> Unit, onSend: (PromptRow) -> Unit, modifier: Modifier = Modifier,
+    /** Le azioni vecchie, chiuse in «+N vecchie» in fondo; `onDismiss` toglie un'azione trascinandola o tenendola premuta. */
+    old: List<PromptRow> = emptyList(), onDismiss: ((PromptRow) -> Unit)? = null,
 ) {
+    var showOld by remember(old) { mutableStateOf(false) }
     Column(
         modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surfaceLow)
             .border(1.dp, CmColors.line, RoundedCornerShape(18.dp)),
@@ -813,28 +828,65 @@ private fun PromptBox(
             Modifier.fillMaxWidth().handCursor().clickable(onClickLabel = toggle) { onOpen(!open) }.handCursor().padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.box_title, title.uppercase(), rows.size), style = MonoSmall, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.box_title, title.uppercase(), rows.size + old.size), style = MonoSmall, modifier = Modifier.weight(1f))
             // Il box sta sopra il campo e si apre verso l'alto: chiuso la freccia sale, aperto scende.
             Icon(if (open) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
         }
-        if (open) rows.forEach { r ->
-            androidx.compose.material3.HorizontalDivider(color = CmColors.line)
-            Row(
-                Modifier.fillMaxWidth().handCursor().clickable { onPick(r) }.handCursor()
-                    .then(if (r.blocking) Modifier.drawBehind { drawRect(CmColors.waiting, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) } else Modifier)
-                    .padding(start = 14.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (r.blocking) Icon(Icons.Rounded.LockOpen, null, tint = CmColors.waiting, modifier = Modifier.size(18.dp))
-                Text(r.label, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
-                if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }, modifier = Modifier.handCursor()) {
-                    Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
-                } else IconButton(onClick = { onPick(r) }, modifier = Modifier.handCursor()) {
-                    Icon(Icons.Rounded.Add, stringResource(R.string.box_append), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
-                }
+        if (open) {
+            (rows + if (showOld) old else emptyList()).forEach { r ->
+                androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+                PromptBoxRow(r, draftBlank, onPick, onSend, onDismiss, faded = r in old)
+            }
+            if (old.isNotEmpty() && !showOld) {
+                androidx.compose.material3.HorizontalDivider(color = CmColors.line)
+                Text(
+                    androidx.compose.ui.res.pluralStringResource(R.plurals.steps_old, old.size, old.size), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                    modifier = Modifier.fillMaxWidth().handCursor().clickable { showOld = true }.padding(horizontal = 14.dp, vertical = 10.dp),
+                )
             }
         }
     }
+}
+
+/**
+ * Una riga di un box: tocco = nel campo, ↗ = manda. Si toglie trascinandola via o tenendola premuta (Franz, 08/10 20:50).
+ * Quelle che sbloccano un lavoro fermo hanno l'etichetta «sblocca» e lo stesso colore delle altre: l'ambra si leggeva come
+ * un avviso.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun PromptBoxRow(
+    r: PromptRow, draftBlank: Boolean, onPick: (PromptRow) -> Unit, onSend: (PromptRow) -> Unit, onDismiss: ((PromptRow) -> Unit)?, faded: Boolean,
+) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val row: @Composable () -> Unit = {
+        Row(
+            Modifier.fillMaxWidth().background(CmColors.surfaceLow).handCursor()
+                .combinedClickable(onClick = { onPick(r) }, onLongClick = onDismiss?.let { d -> { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); d(r) } })
+                .padding(start = 14.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(r.label, style = MaterialTheme.typography.bodyLarge, color = if (faded) CmColors.text2 else CmColors.text, modifier = Modifier.weight(1f, fill = false).padding(vertical = 10.dp))
+                if (r.blocking) Text(
+                    stringResource(R.string.steps_unblock), style = MonoSmall.copy(color = CmColors.text2),
+                    modifier = Modifier.border(1.dp, CmColors.line, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
+            if (draftBlank && r.direct) IconButton(onClick = { onSend(r) }, modifier = Modifier.handCursor()) {
+                Icon(Icons.Rounded.NorthEast, stringResource(R.string.send), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+            } else IconButton(onClick = { onPick(r) }, modifier = Modifier.handCursor()) {
+                Icon(Icons.Rounded.Add, stringResource(R.string.box_append), tint = CmColors.actionIcon, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+    if (onDismiss == null) { row(); return }
+    val state = rememberSwipeToDismissBoxState(confirmValueChange = { v -> if (v != SwipeToDismissBoxValue.Settled) { onDismiss(r); true } else false })
+    SwipeToDismissBox(state, backgroundContent = {
+        Box(Modifier.fillMaxSize().background(CmColors.surface).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
+            Text(stringResource(R.string.steps_dismiss), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
+        }
+    }) { row() }
 }
 
 /** I box sopra il campo aperti o chiusi, ricordati dall'app (Franz, 04/10 20:21): Prossimi aperto, Ricorrenti chiuso. */

@@ -786,4 +786,7 @@ It starts at your last message to the master.</string>
     <string name="tonight_queued">QUEUED</string>
     <string name="tonight_last">Night of %1$d-%2$d:</string>
     <string name="tonight_report">Report</string>
+    <plurals name="steps_old"><item quantity="one">+%d old</item><item quantity="other">+%d old</item></plurals>
+    <string name="steps_unblock">unblocks</string>
+    <string name="steps_dismiss">Removed</string>
 </resources>

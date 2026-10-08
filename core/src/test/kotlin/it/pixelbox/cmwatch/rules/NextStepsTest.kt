@@ -72,4 +72,15 @@ class NextStepsTest {
         assertEquals(listOf("ok release claude-master 0.6.9", "aggiorna il changelog", "x".repeat(40)), p.steps)
         assertEquals(setOf("ok release claude-master 0.6.9", "x".repeat(40)), p.blocking)
     }
+
+    // Franz, 08/10 20:50: le azioni tolte a mano non tornano; una ripetuta in tre risposte di fila va in fondo, chiusa.
+    @Test fun dismissedActionsStayAwayAndRepeatedOnesGetOld() {
+        val rows = listOf("Scrivi una bozza per il cliente di rfml", "Lascia così, l'avviso basta", "Aggiungi 30 GB a Charlie")
+        val earlier = listOf(listOf("scrivi una bozza per il cliente di rfml.", "altro"), listOf("Scrivi una bozza per il cliente di rfml", "Lascia così, l'avviso basta"))
+        val s = NextSteps.split(rows, earlier, dismissed = setOf("Aggiungi 30 GB a Charlie"))
+        assertEquals(listOf("Lascia così, l'avviso basta"), s.fresh)
+        assertEquals(listOf("Scrivi una bozza per il cliente di rfml"), s.old)
+        // Con una sola risposta prima nessuna è vecchia.
+        assertEquals(emptyList<String>(), NextSteps.split(rows, earlier.take(1), emptySet()).old)
+    }
 }
