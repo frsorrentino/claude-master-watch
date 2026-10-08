@@ -20,7 +20,7 @@ class FeedCache(private val dir: File) {
 
     init {
         dir.listFiles { f -> f.isFile && f.name.endsWith(".json") }.orEmpty().forEach { f ->
-            runCatching { ContractJson.json.decodeFromString(serializer, f.readText()) }.getOrNull()?.let { (name, list) -> mem[name] = list }
+            runCatching { ContractJson.json.decodeFromString(serializer, f.readText()) }.getOrNull()?.let { (name, list) -> if (!cutByOldRelay(list)) mem[name] = list }
         }
     }
 
@@ -46,5 +46,14 @@ class FeedCache(private val dir: File) {
 
     companion object {
         const val KEEP = 50
+        /** Il tetto di una voce della chat fino al 08/10 (contratto 1.22); poi 20000 caratteri (team-supervisor `c95b20b`). */
+        const val OLD_CUT_CHARS = 4000
+
+        /**
+         * Una voce tagliata dal tetto vecchio: la conversazione salvata non vale più, e si rilegge da capo con le voci intere
+         * (Franz, 08/10 08:05: le risposte lunghe finivano a metà parola). Il relay contava i caratteri come code point.
+         */
+        fun cutByOldRelay(list: List<TranscriptEntry>): Boolean =
+            list.any { e -> e.cut && e.text.orEmpty().let { it.codePointCount(0, it.length) } <= OLD_CUT_CHARS }
     }
 }

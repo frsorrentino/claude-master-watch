@@ -35,6 +35,20 @@ class FeedCacheTest {
         assertEquals(entries(1), FeedCache(dir).all()["rino/fiscale: 2026"])
     }
 
+    /**
+     * Segnalazione di Franz, 08/10 08:05: le risposte lunghe finivano a 4000 caratteri. Il relay ora ne manda fino a 20000
+     * (team-supervisor `c95b20b`); una conversazione salvata con una voce tagliata dal tetto vecchio si rilegge da capo.
+     */
+    @Test fun aConversationCutByTheOldRelayIsReadAgain() {
+        val dir = tmp.newFolder()
+        val old = TranscriptEntry("a1", "assistant", text = "x".repeat(4000), at = 1, cut = true)
+        val new = TranscriptEntry("a2", "assistant", text = "y".repeat(19_990), at = 2, cut = true)
+        FeedCache(dir).save(mapOf("rino" to entries(2) + old, "atlas" to entries(2) + new, "master" to entries(3)))
+        val again = FeedCache(dir).all()
+        assertTrue("rino" !in again)
+        assertEquals(entries(2) + new, again["atlas"]); assertEquals(entries(3), again["master"])
+    }
+
     @Test fun aBrokenFileIsIgnored() {
         val dir = tmp.newFolder()
         java.io.File(dir, "x.json").writeText("{ non è json")
