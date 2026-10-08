@@ -7,7 +7,7 @@ import { MASTER } from './summary'
 export const MAX = 8
 
 /** `text` = quello che si legge, `send` = quello che parte, `to` = chi lo riceve, `from` = da dove viene; `recap` = dal recap. */
-export type RecapAction = { text: string; send: string; to: string; from: string; viaMaster: boolean; recap: boolean }
+export type RecapAction = { text: string; send: string; to: string; from: string; viaMaster: boolean; recap: boolean; agenda?: boolean }
 
 const key = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 

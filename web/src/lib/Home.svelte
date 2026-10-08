@@ -11,12 +11,15 @@
   import Badge from './Badge.svelte'
   import Options from './Options.svelte'
   import { recapActions, type RecapAction } from './recapActions'
+  import { agendaModel, doIt } from './recapAgenda'
+  import AgendaItem from './AgendaItem.svelte'
+  import RecapSend from './RecapSend.svelte'
 
   // La home del telefono (SummaryList.kt): ogni sessione una card nei gruppi del bisogno; il tocco apre la sessione, ▼ la
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
   import type { NightPage } from './night'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {} }: {
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {} }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -33,6 +36,8 @@
     justClosed?: { s: Session; line: string } | null
     /** La sezione Recap (mockup approvato l'08/10, Franz 20:41): l'azione confermata con «Manda». */
     onRecapAction?: (a: RecapAction) => void
+    /** Contratto 1.46: le righe dell'agenda (null = non ancora arrivate); «Tutto il recap» apre la pagina. */
+    agenda?: import('./contract').AgendaPage | null; onRecapPage?: () => void
   } = $props()
   // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate, anche alla prossima apertura.
   const SEC = 'home-sections'
@@ -42,10 +47,10 @@
   const actions = $derived(recapActions(st, t.recapResume))
   const recapDay = $derived(/^\d{4}-\d{2}-\d{2}$/.test(st.recap.date) ? `${st.recap.date.slice(8, 10)}/${st.recap.date.slice(5, 7)}` : '')
   let asking = $state<RecapAction | null>(null)
-  let sendDlg: HTMLDialogElement | undefined = $state()
   let sentActions = $state(new Set<string>())
   const actionKey = (a: RecapAction) => `${a.to}\n${a.send}`
-  function askSend(a: RecapAction) { asking = a; sendDlg?.showModal() }
+  function askSend(a: RecapAction) { asking = a }
+  const ag = $derived(agendaModel(agenda))
   const hhmm = (s: number) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s * 1000))
   const model = $derived(build(st, [], st.ts, new Set()))
   let expanded = $state<string | null>(null)
@@ -180,19 +185,33 @@
   {/each}
 
   {/if}
-  {#if actions.length}
-    {@render sec('recap', t.homeRecap, String(actions.length))}
+  <!-- Il Recap (tavola 1): chiuso i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due cose
+       che aspettano te, la prima che può fare Claude, e «Tutto il recap». -->
+  {#if actions.length || ag.you.length || ag.claude.length}
+    {@render sec('recap', t.homeRecap, `${actions.length} · ${ag.you.length} · ${ag.claude.length}`)}
     {#if open.recap}
-      <h2 class="gh" style="--t:var(--text)"><span>{t.recapActions(actions.length).toUpperCase()}</span><i></i></h2>
-      <div class="chips">
-        {#each actions as a (actionKey(a))}
-          {@const done = sentActions.has(actionKey(a))}
-          <button class="act" class:sent={done} disabled={done} onclick={() => askSend(a)}>
-            {#if done}<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12l5 5 9-10" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" /></svg>{/if}
-            <span>{a.text}</span><small>{a.recap ? t.recapFrom(recapDay) : a.from}</small>
-          </button>
-        {/each}
-      </div>
+      {#if actions.length}
+        <h2 class="gh" style="--t:var(--text)"><span>{t.recapActions(actions.length).toUpperCase()}</span><i></i></h2>
+        <div class="chips">
+          {#each actions as a (actionKey(a))}
+            {@const done = sentActions.has(actionKey(a))}
+            <button class="act" class:sent={done} disabled={done} onclick={() => askSend(a)}>
+              {#if done}<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12l5 5 9-10" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" /></svg>{/if}
+              <span>{a.text}</span><small>{a.recap ? t.recapFrom(recapDay) : a.from}</small>
+            </button>
+          {/each}
+        </div>
+      {/if}
+      {#if ag.you.length}
+        <h2 class="gh" style="--t:var(--b-warn)"><span>{t.recapYou(ag.you.length).toUpperCase()}</span><i></i></h2>
+        {#each ag.you.slice(0, 2) as r}<AgendaItem row={r} />{/each}
+      {/if}
+      {#if ag.claude.length}
+        <h2 class="gh" style="--t:var(--icon)"><span>{t.recapClaude(ag.claude.length).toUpperCase()}</span><i></i></h2>
+        <AgendaItem row={ag.claude[0]} onDo={() => askSend(doIt(ag.claude[0], t.recapDoText))} />
+      {/if}
+      <button class="all" onclick={onRecapPage}><span>{t.recapAll}</span>
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
     {/if}
   {/if}
   {#if usage}
@@ -231,18 +250,7 @@
   {/if}
 </dialog>
 
-<dialog bind:this={sendDlg} class="alert sheet" onclick={(e) => e.target === e.currentTarget && sendDlg?.close()}>
-  {#if asking}
-    <h3>{t.recapSendTitle}</h3>
-    <p class="sub">{asking.recap ? t.recapSendFromRecap(recapDay, asking.from) : t.recapSendFromSession(asking.from)}</p>
-    <p class="what">{asking.send}</p>
-    <p class="sub">{asking.viaMaster ? t.recapGoesMaster : t.recapGoes} <b>{asking.to}</b>{asking.viaMaster ? ': ' + t.recapSendToMaster : ', ' + t.recapSendToSession}</p>
-    <div class="btns">
-      <button class="text2" onclick={() => sendDlg?.close()}>{t.cancel}</button>
-      <button class="filled" onclick={() => { const a = asking!; sentActions = new Set([...sentActions, actionKey(a)]); onRecapAction(a); sendDlg?.close() }}>{t.recapSend}</button>
-    </div>
-  {/if}
-</dialog>
+<RecapSend action={asking} day={recapDay} onClose={() => (asking = null)} onSend={(a) => { sentActions = new Set([...sentActions, actionKey(a)]); onRecapAction(a) }} />
 
 <style>
   .alive { color: var(--idle); font-weight: 500; }
@@ -325,10 +333,7 @@
   .act:hover { filter: brightness(1.15); }
   .act small { font-size: 12.5px; color: var(--text2); }
   .act.sent { align-items: center; background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--text2); cursor: default; }
-  dialog .what { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: var(--low); font-size: 16px; }
-  dialog .sub b { color: var(--text); font-weight: 600; }
-  /* Sul telefono il foglio sale dal basso, come quello dell'app (tavola 3 del mockup). */
-  dialog.sheet { outline: none; }
-  @media (max-width: 600px) { dialog.sheet { margin: auto 0 0; width: 100%; max-width: none; border-radius: 28px 28px 0 0; } }
+  .act small { white-space: nowrap; }
+  .all { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; color: var(--text2); font-size: 15px; text-align: left; }
   .footer { display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
 </style>

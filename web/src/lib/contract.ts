@@ -37,6 +37,9 @@ export type NightItem = { id: string; dir: string; name: string; prompt: string;
 /** `report` (contratto 1.44): l'ultimo rapporto della notte; assente senza rapporto o con un relay precedente. */
 export type NightReportRef = { date: string; generated_at: number }
 export type Night = { queued: number; running?: string | null; items?: NightItem[] | null; report?: NightReportRef | null }
+/** Contratto 1.46: una riga dell'agenda, tutta testo libero; le righe nell'ordine del file, `more` = tagliate sopra i 60 KB. */
+export type AgendaRow = { state: string; scope: string; blocks: string; title: string; ref: string }
+export type AgendaPage = { rows: AgendaRow[]; more: boolean }
 export type RecapItem = { project: string; done: string; next?: string | null }
 export type Recap = { date: string; items: RecapItem[] }
 export type EventKind = 'question' | 'answered' | 'outcome' | 'gone' | 'launched' | 'quota' | 'resumed' | 'recap' | 'night_report' | 'restart_failed' | 'relay_stale'
@@ -76,7 +79,7 @@ export type State = {
 
 export type CmdOp = 'answer' | 'prompt' | 'launch' | 'follow' | 'unfollow' | 'resume' | 'screen' | 'allow_all' | 'last' | 'reopen'
   | 'model' | 'effort' | 'night_add' | 'night_remove' | 'report' | 'interrupt' | 'transcript' | 'file' | 'slash' | 'projects'
-  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair' | 'night'
+  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair' | 'night' | 'agenda'
 export type Cmd = { id: string; op: CmdOp; session?: string | null; arg?: string | null; issued: number; by: string; text?: string; device?: string; parts?: boolean }
 export type CmdResult = { id: string; ok: boolean; text: string; at: number; session?: string | null; job?: string | null }
 

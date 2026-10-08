@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as files from './lib/fileActions'
   import type { FileAct, Fetched } from './lib/fileActions'
-  import { demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
+  import { demoAgenda, demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
-  import type { Cmd, CmdOp, CmdResult, Event, SearchPage, Session, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
+  import type { AgendaPage, Cmd, CmdOp, CmdResult, Event, SearchPage, Session, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
   import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
   import type { Sample } from './lib/quotaHistory'
   import { LocalTransport, localAccess, newCmd } from './lib/transport'
@@ -15,6 +15,8 @@
   import ColumnHead from './lib/ColumnHead.svelte'
   import { t } from './lib/t'
   import HomePane from './lib/HomePane.svelte'
+  import RecapPage from './lib/RecapPage.svelte'
+  import { recapActions } from './lib/recapActions'
   import Composer from './lib/Composer.svelte'
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
@@ -271,7 +273,7 @@
   // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
   // `?page=diary` apre una pagina (link diretto, e i provini).
   const asked = new URLSearchParams(location.search).get('page')
-  let page = $state<PageName | null>(asked && ['launch', 'diary', 'night', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
+  let page = $state<PageName | null>(asked && ['launch', 'diary', 'night', 'recap', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
   // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto si chiede al PC con l'op `night` (contratto 1.44)
   // quando la pagina si apre e col tasto aggiorna; nella demo è la fixture inventata.
   let night = $state<{ report: NightReport | null; error: string | null; loading: boolean }>({ report: null, error: null, loading: false })
@@ -302,7 +304,24 @@
     const d = st.night?.report?.date
     if (page === 'night' && d && d !== nightSeen) { nightSeen = d; try { localStorage.setItem('night-opened', d) } catch { /* solo per questa visita */ } }
   })
-  const pageTitle: Record<PageName, string> = $derived({ launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
+  // Il Recap (Franz, 08/10 20:41): le Azioni e le righe dell'agenda (contratto 1.46), chieste quando il relay le conosce, a
+  // ogni recap nuovo e all'apertura della pagina; nella demo un'agenda inventata.
+  const actions = $derived(recapActions(st, t.recapResume))
+  const recapDay = $derived(/^\d{4}-\d{2}-\d{2}$/.test(st.recap.date) ? `${st.recap.date.slice(8, 10)}/${st.recap.date.slice(5, 7)}` : '')
+  let agenda = $state<{ page: AgendaPage | null; error: string | null; loading: boolean }>({ page: null, error: null, loading: false })
+  const canAgenda = $derived(!tr || !!st.ops?.includes('agenda'))
+  async function loadAgenda() {
+    if (!tr) { agenda = { page: demoAgenda, error: null, loading: false }; return }
+    agenda = { ...agenda, loading: true, error: null }
+    try {
+      const r = await tr.send(newCmd('agenda', null, null))
+      if (r.ok) agenda = { page: JSON.parse(r.text), error: null, loading: false }
+      else agenda = { page: agenda.page, error: r.text.startsWith('no agenda file') ? t.recapAgendaNone : r.text, loading: false }
+    } catch { agenda = { ...agenda, error: t.noAnswer, loading: false } }
+  }
+  $effect(() => { void st.recap.date; if (canAgenda) untrack(() => loadAgenda()) })
+  $effect(() => { if (page === 'recap' && canAgenda) untrack(() => loadAgenda()) })
+  const pageTitle: Record<PageName, string> = $derived({ recap: t.homeRecap, launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
   const overview = $derived(overviewOf(st, events, samples, now, undefined, down))
@@ -478,7 +497,7 @@
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} usage={quotaPanels}
         night={nightBoxShown ? nightModel : undefined} {nightTitle} {justClosed} onNight={() => openPage('night')}
-        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} onRecapAction={(a) => sendTo(a.to, a.send)} /></div>
+        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} onRecapAction={(a) => sendTo(a.to, a.send)} agenda={agenda.page} onRecapPage={() => openPage('recap')} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}
@@ -511,6 +530,9 @@
       <NightPage model={nightModel} error={night.error} loading={night.loading} onRefresh={loadNight}
         onChat={(n) => { openPage(null); pick(n) }} onAnswer={(n, x) => cmd(n)('answer', String(x))}
         onApprove={(task) => approve(task, '')} onSend={(n, text) => sendTo(n, text)} />
+    {:else if p === 'recap'}
+      <RecapPage {actions} day={recapDay} agenda={agenda.page} loading={agenda.loading}
+        error={canAgenda ? agenda.error : t.recapAgendaOld} onSend={(a) => sendTo(a.to, a.send)} />
     {:else if p === 'overview'}
       <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
         onQuestion={() => openPage('queue')} />
