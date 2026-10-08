@@ -3,7 +3,7 @@
   import type { FileAct, Fetched } from './lib/fileActions'
   import { demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { untrack } from 'svelte'
-  import type { Cmd, CmdOp, CmdResult, Event, SearchPage, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
+  import type { Cmd, CmdOp, CmdResult, Event, SearchPage, Session, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
   import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
   import type { Sample } from './lib/quotaHistory'
   import { LocalTransport, localAccess, newCmd } from './lib/transport'
@@ -35,6 +35,8 @@
   import { setRate, setVoice } from './lib/speech.svelte'
   import { build as overviewOf } from './lib/overview'
   import ReadingPill from './lib/ReadingPill.svelte'
+  import CloseSplash from './lib/CloseSplash.svelte'
+  import { closeSplash, type Leaving } from './lib/closeSplash'
   import { build, MASTER } from './lib/summary'
   import { add, columns, columnsFromPref, columnsPref, inspect, sharesFromPref, sharesPref, timelineArg, toggle as toggleCol, wide as isWide } from './lib/tablet'
   import { shouldRead, type LastRead } from './lib/readPlan'
@@ -184,15 +186,40 @@
   let masterHalf = $state(false)
   // Telefono: la sessione aperta, o la home.
   let open = $state<string | null>(known(linked) && linked !== MASTER ? linked : null)
-  const session = $derived(st.sessions.find(s => s.name === open) ?? null)
+  // Chiusa una sessione, la sua pagina non sparisce (Franz, 08/10 18:06): resta com'era l'ultima volta, chiusa, sotto il
+  // pannello di chiusura (`CloseSplash`), che dopo 3 s riporta alla home o toglie la colonna.
+  let leaving = $state<Leaving | null>(null)
+  let lastSeen = $state<Record<string, Session>>({})
+  $effect(() => { const next = { ...untrack(() => lastSeen) }; for (const x of st.sessions) next[x.name] = x; lastSeen = next })
+  const ghost = (n: string): Session | null => { const x = lastSeen[n]; return x ? { ...x, state: 'gone', question: null } : null }
+  const session = $derived(st.sessions.find(s => s.name === open) ?? (open && open !== MASTER ? ghost(open) : null))
+  const splashOf = (n: string, column = false) => {
+    // In colonna una gone non resta: conta come chiusa.
+    const ss = column ? st.sessions.filter(x => x.state !== 'gone') : st.sessions
+    const g = st.sessions.find(x => x.name === n && x.state === 'gone')
+    return closeSplash(n, ss, leaving, g ?? lastSeen[n] ?? null, now)
+  }
+  const splashHome = () => smooth(() => { if (leaving?.name === open) leaving = null; open = null })
 
   // Plancia: le colonne scelte (le prime tre senza una scelta salvata), le larghezze in dodicesimi, il lato della home.
   // Le colonne sono le sessioni della lista, senza la master: una master rimasta fra le scelte salvate si toglie da sé.
   const summary = $derived(build(st, sent, now, read))
   const live = $derived(summary.rows.map(r => r.session.name).filter(n => n !== MASTER))
+  // La colonna di una sessione appena chiusa resta sotto il pannello di chiusura finché il pannello non la toglie.
+  let heldCols = $state<string[]>([])
+  let shownCols: string[] = []
+  $effect.pre(() => {
+    const l = live
+    untrack(() => {
+      const next = [...heldCols.filter(n => !l.includes(n)), ...shownCols.filter(n => !l.includes(n) && !heldCols.includes(n))]
+      if (next.length !== heldCols.length || next.some((n, i) => n !== heldCols[i])) heldCols = next
+    })
+  })
+  const dropCol = (n: string) => { heldCols = heldCols.filter(x => x !== n); if (leaving?.name === n) leaving = null }
   let pinned = $state<string[] | null>(columnsFromPref(load('cm.columns')))
   if (known(linked) && linked !== MASTER) pinned = add(pinned ?? columns(null, live), linked)
-  const cols = $derived(columns(pinned, live))
+  const cols = $derived(columns(pinned, [...live, ...heldCols]))
+  $effect(() => { shownCols = cols })
   let shares = $state(sharesFromPref(load('cm.shares'), 0))
   $effect(() => { if (shares.length !== cols.length) shares = sharesFromPref(load('cm.shares'), cols.length) })
   let homeRight = $state(load('cm.home_right') === '1')
@@ -208,6 +235,10 @@
   // I dettagli della prima colonna accanto alle colonne: dalle Impostazioni, spenti di default (Franz, 04/10 14:40).
   let details = $state(load('cm.details') === '1')
   const rowOf = $derived(Object.fromEntries(summary.rows.map(r => [r.session.name, r])))
+  // La riga di una colonna appena chiusa, com'era: la sua testata resta finché il pannello non toglie la colonna.
+  let rowSeen = $state<Record<string, (typeof summary.rows)[number]>>({})
+  $effect(() => { rowSeen = { ...untrack(() => rowSeen), ...rowOf } })
+  const headRow = (n: string) => rowOf[n] ?? (heldCols.includes(n) && rowSeen[n] ? { ...rowSeen[n], session: ghost(n) ?? rowSeen[n].session } : null)
 
   // Il cambio con la transizione del browser, quando c'è (Chrome): niente ridisegni continui.
   const smooth = (go: () => void) => { if (document.startViewTransition) document.startViewTransition(go); else go() }
@@ -357,7 +388,11 @@
   // «Chiedi alla master» arriva come `prompt` della sessione: va alla master, come messaggio nella sua chat.
   const cmd = (name: string) => (op: CmdOp, arg?: string, text?: string) => {
     if (op === 'prompt' && arg) sendTo(MASTER, arg)
-    else run(newCmd(op, name || null, arg, text))
+    else if (op === 'slash' && arg === 'exit' && name && name !== MASTER) {
+      const l: Leaving = { name, sentAt: nowS(), delivered: false }
+      leaving = l
+      run(newCmd(op, name, arg, text)).then(r => { if (r && leaving?.name === name && leaving.sentAt === l.sentAt) leaving = { ...l, delivered: true } })
+    } else run(newCmd(op, name || null, arg, text))
   }
   // La conversazione di quello che è a schermo, la master sempre (vive nella home), alla cadenza del telefono e una lettura
   // alla volta per la pagina (piano prestazioni, Task 5: 888 letture all'ora il 07/10). Il passo dei 5 s fa partire le
@@ -410,7 +445,7 @@
 <svelte:window bind:innerWidth={width} />
 
 {#snippet chatOf(name: string, inColumn: boolean)}
-  {@const s = st.sessions.find(x => x.name === name)!}
+  {@const s = (st.sessions.find(x => x.name === name) ?? ghost(name))!}
   <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick} waitingSince={waitSince[name] ?? null}
     onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p, a) => fileAction(name, p, a)} onHandoff={() => handoff(name)} onDecision={decide}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
@@ -496,16 +531,26 @@
     onHomeSide={() => smooth(() => { homeRight = !homeRight; save('cm.home_right', homeRight ? '1' : '0') })}>
     {#snippet home()}{@render homePane()}{/snippet}
     {#snippet column(name, grab)}
+      {@const held = heldCols.includes(name)}
+      {@const phase = splashOf(name, true)}
+      {@const hr = headRow(name)}
       <div class="column" data-col={name}>
-        {#if rowOf[name] && !wco}<ColumnHead r={rowOf[name]} now={now} onClose={() => setCols(cols.filter(c => c !== name))} onGrab={grab} />{/if}
-        <div class="cbody">{@render chatOf(name, true)}</div>
+        {#if hr && !wco}<ColumnHead r={hr} now={now} onClose={() => (held ? dropCol(name) : setCols(cols.filter(c => c !== name)))} onGrab={grab} />{/if}
+        <div class="cbody">{@render chatOf(name, true)}
+          {#if phase}<CloseSplash {phase} column onHome={() => dropCol(name)} onReopen={phase.kind === 'closed' && st.ops?.includes('reopen') ? () => { cmd(name)('reopen'); dropCol(name) } : null} />{/if}
+        </div>
       </div>
     {/snippet}
     {#snippet empty()}<p>{t.tabletDeskEmpty}</p>{/snippet}
   </Desk>
 {:else}
   <div class="phone">
-    {#if page}{@render pageView(page)}{:else if session}{@render chatOf(session.name, false)}{:else}{@render homePane()}{/if}
+    {#if page}{@render pageView(page)}{:else if session}
+      {@const phase = splashOf(session.name)}
+      <div class="cbody">{@render chatOf(session.name, false)}
+        {#if phase}<CloseSplash {phase} onHome={splashHome} onReopen={phase.kind === 'closed' && st.ops?.includes('reopen') ? () => { cmd(session.name)('reopen'); splashHome() } : null} />{/if}
+      </div>
+    {:else}{@render homePane()}{/if}
   </div>
 {/if}
 {#if !tr}<span class="demo mono">{t.demo}</span>{:else if !ready || down}<span class="demo mono">{ready ? t.relayDown : t.relayConnecting}</span>{/if}
@@ -524,7 +569,7 @@
   .reading:empty { display: none; }
   .reading { padding: 8px 0; }
   .column { height: 100%; display: flex; flex-direction: column; }
-  .cbody { flex: 1; min-height: 0; }
+  .cbody { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
   .soon { color: var(--text2); padding: 24px; }
   .sheet { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 0 0; width: min(600px, 100vw); max-height: 90vh; border-radius: 28px; }
   .sheet::backdrop { background: rgb(0 0 0 / .55); }
