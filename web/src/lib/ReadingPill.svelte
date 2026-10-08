@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { excerpt } from './speechRules'
+  import { excerpt, nextRate } from './speechRules'
   import { cycleVoice, pause, resume, setRate, speech, stop } from './speech.svelte'
   import RateSlider from './RateSlider.svelte'
   import { t } from './t'
@@ -16,6 +16,16 @@
   let closer: ReturnType<typeof setTimeout> | undefined
   function touch() { clearTimeout(closer); closer = setTimeout(() => (rateOpen = false), 3_000) }
   function openRate() { draft = speech.rate; rateOpen = true; touch() }
+  // Il tocco sulla pillola passa alla velocità dopo, la pressione lunga apre lo slider (Franz, 08/10 19:50).
+  let holdTimer: ReturnType<typeof setTimeout> | undefined
+  let held = false
+  function holdStart() { held = false; clearTimeout(holdTimer); holdTimer = setTimeout(() => { held = true; navigator.vibrate?.(15); openRate() }, 450) }
+  function holdEnd() { clearTimeout(holdTimer) }
+  function chipClick() { if (held) { held = false; return } setRate(nextRate(speech.rate)) }
+  // Mentre si trascina la voce cambia velocità quando il dito si ferma un attimo: il motore non cambia velocità a metà
+  // frase, quindi riparte dal pezzo che sta dicendo.
+  let live: ReturnType<typeof setTimeout> | undefined
+  function liveRate(v: number) { clearTimeout(live); live = setTimeout(() => { if (v !== speech.rate) setRate(v) }, 300) }
   const draftLabel = $derived(`${draft.toLocaleString('it-IT', { maximumFractionDigits: 2 })}×`)
 </script>
 
@@ -23,7 +33,7 @@
   <div class="pill" class:open={rateOpen} role="region" aria-label={t.readingNow}>
     {#if rateOpen}
       <button class="chip val" aria-label={t.rateChange(draftLabel)} onclick={() => (rateOpen = false)}>{draftLabel}</button>
-      <RateSlider value={speech.rate} onInput={(v) => { draft = v; touch() }} onDone={(v) => { setRate(v); touch() }} />
+      <RateSlider value={speech.rate} onInput={(v) => { draft = v; touch(); liveRate(v) }} onDone={(v) => { clearTimeout(live); if (v !== speech.rate) setRate(v); touch() }} />
     {:else}
       <span class="bars" class:still={speech.paused} aria-hidden="true"><i></i><i></i><i></i></span>
       <button class="what" disabled={!speech.source || !onOpen} aria-label={speech.source ? t.readingOpen(speech.source) : undefined}
@@ -31,7 +41,8 @@
         <span class="mono">{speech.paused ? t.readingPaused : speech.source ?? t.readingNow}</span>
         <span class="line">{excerpt(speech.text)}</span>
       </button>
-      <button class="chip" aria-label={t.rateChange(rate)} title={t.rateChange(rate)} onclick={openRate}>{rate}</button>
+      <button class="chip" aria-label={t.rateChange(rate)} title={t.rateChange(rate)} onclick={chipClick}
+        onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} oncontextmenu={(e) => { e.preventDefault(); holdEnd(); held = true; openRate() }}>{rate}</button>
       {#if speech.voices.length}
         <button class="chip" aria-label={t.voiceChange(speech.voice ?? t.voiceDefault)} title={t.voiceChange(speech.voice ?? t.voiceDefault)} onclick={cycleVoice}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M17.5 4.5a5 5 0 0 1 0 7M20.5 2a9 9 0 0 1 0 12.5" /></svg>

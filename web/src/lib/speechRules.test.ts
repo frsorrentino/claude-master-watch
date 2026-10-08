@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { decodeState } from './contract'
-import { chunks, clean, excerpt, rankVoices, nextVoice, question, RATE_MAX, RATE_MIN, rateFraction, rateOf, snapRate, voicePosition } from './speechRules'
+import { chunks, clean, excerpt, rankVoices, nextVoice, nextRate, question, RATE_MAX, RATE_MIN, rateFraction, rateOf, snapRate, voicePosition } from './speechRules'
 
 // Gli stessi casi di SpeechTextTest, SpeechRateTest, VoiceRulesTest e ReadingBarTest in Kotlin.
 const code = 'segue un blocco di codice'
@@ -34,6 +34,9 @@ describe('velocità', () => {
   // Dal 07/10 (approvata alle 22:06) è continua, come SpeechRate.kt: slider da 0,5× a 2× a passi di 0,05, scatto su 1×.
   it('senza scelta quella del motore, una scelta salvata resta', () => {
     expect(rateOf(null)).toBe(1); expect(rateOf(0.9)).toBe(0.9); expect(rateOf(1.35)).toBe(1.35); expect(rateOf(1.25)).toBe(1.25)
+  })
+  it('un tocco passa alla velocità dopo, e dopo 2× torna a 0,75×', () => {
+    expect(nextRate(1)).toBe(1.25); expect(nextRate(1.3)).toBe(1.5); expect(nextRate(2)).toBe(0.75); expect(nextRate(0.5)).toBe(0.75); expect(nextRate(0.75)).toBe(1)
   })
   it('a passi di 0,05', () => { expect(snapRate(0.86)).toBe(0.85); expect(snapRate(1.41)).toBe(1.4); expect(rateOf(1.2)).toBe(1.2) })
   it('vicino a 1 si ferma su 1, 1,05 resta raggiungibile', () => { expect(snapRate(1.03)).toBe(1); expect(snapRate(0.97)).toBe(1); expect(snapRate(1.05)).toBe(1.05) })

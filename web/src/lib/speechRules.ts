@@ -65,6 +65,10 @@ export function rateOf(saved: number | null | undefined): number {
   if (saved == null || !Number.isFinite(saved) || saved <= 0) return 1
   return snapRate(saved)
 }
+// Il giro del tocco sulla pillola (SpeechRate.kt; Franz, 08/10 19:50): un tocco passa alla velocità dopo, dopo 2× torna
+// a 0,75×; tenuta premuta apre lo slider.
+export const RATE_CYCLE = [0.75, 1, 1.25, 1.5, 1.75, 2]
+export const nextRate = (v: number) => RATE_CYCLE.find(r => r > v + 0.001) ?? RATE_CYCLE[0]
 /** Dove sta `v` sulla corsa dello slider, da 0 a 1: per il segno di 1×. */
 export const rateFraction = (v: number) => (v - RATE_MIN) / (RATE_MAX - RATE_MIN)
 
