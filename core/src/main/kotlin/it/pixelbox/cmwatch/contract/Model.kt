@@ -23,6 +23,8 @@ enum class EventKind {
     @SerialName("recap") RECAP, @SerialName("night_report") NIGHT_REPORT,
     /** Contratto 1.40: un riavvio di sessione non riuscito; `ref` = nome della sessione, `session` null. */
     @SerialName("restart_failed") RESTART_FAILED,
+    /** Contratto 1.45: lo stato del PC è rimasto fermo (codice vecchio, push ferme, lock occupato); `session`, `account` e `ref` null. */
+    @SerialName("relay_stale") RELAY_STALE,
 }
 
 @Serializable
