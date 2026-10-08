@@ -756,4 +756,19 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="night_old">Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor</string>
     <string name="night_none">Nessun rapporto della notte</string>
     <string name="night_failed">Il rapporto non è arrivato: riprova</string>
+    <!-- Il pannello di chiusura di una sessione (Franz, 08/10 18:29, variante A). -->
+    <string name="splash_closing">%1$s si sta chiudendo</string>
+    <string name="splash_sent_at">Hai mandato /exit alle %1$s.</string>
+    <string name="splash_step_delivered">/exit consegnato al PC</string>
+    <string name="splash_step_confirmed">il PC conferma la sessione chiusa</string>
+    <string name="splash_usually">di solito pochi secondi</string>
+    <string name="splash_slow">Ci sta mettendo più del solito</string>
+    <string name="splash_closed">%1$s è chiusa</string>
+    <string name="splash_closed_line">alle %1$s · la trovi in «Chiuse» e si può riaprire</string>
+    <string name="splash_closed_line_other">alle %1$s · non da te · si può riaprire da «Chiuse»</string>
+    <string name="splash_back_soon">torno alla home tra 3 s</string>
+    <string name="splash_reopen">Riapri</string>
+    <string name="splash_home">Torna alla home</string>
+    <string name="splash_drop_column">Togli la colonna</string>
+    <string name="splash_drop_soon">la colonna si toglie tra 3 s</string>
 </resources>

@@ -217,6 +217,21 @@ class SessionSheetTest {
     @Test fun masterScreenPhone() = masterSize(half = false)
     @Test fun masterHalfTablet() = masterSize(half = true)
 
+    // Il pannello di chiusura sopra la pagina (Franz, 08/10 18:29, variante A).
+    private fun closeSplash(phase: it.pixelbox.cmwatch.rules.CloseSplash.Phase, column: Boolean = false) = paparazzi.snapshot {
+        val s = st.sessions.first { it.state == SessionState.IDLE }
+        CmPhoneTheme(still = true) {
+            androidx.compose.foundation.layout.Box {
+                SessionSheet(s.copy(state = if (phase is it.pixelbox.cmwatch.rules.CloseSplash.Phase.Closed) SessionState.GONE else s.state), st.ts, emptyList(), 120, none)
+                it.pixelbox.cmwatch.mobile.ui.CloseSplashOverlay(phase, onHome = {}, onReopen = {}, column = column)
+            }
+        }
+    }
+    @Test fun closeSplashClosing() = closeSplash(it.pixelbox.cmwatch.rules.CloseSplash.Phase.Closing("atlas-shop", sentAt = st.ts - 3, delivered = true, slow = false))
+    @Test fun closeSplashSlow() = closeSplash(it.pixelbox.cmwatch.rules.CloseSplash.Phase.Closing("atlas-shop", sentAt = st.ts - 30, delivered = true, slow = true))
+    @Test fun closeSplashClosed() = closeSplash(it.pixelbox.cmwatch.rules.CloseSplash.Phase.Closed("atlas-shop", at = st.ts, byMe = true))
+    @Test fun closeSplashClosedColumn() = closeSplash(it.pixelbox.cmwatch.rules.CloseSplash.Phase.Closed("atlas-shop", at = st.ts, byMe = false), column = true)
+
     @Test fun masterLookToday() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook())
     @Test fun masterLookSignature() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(signature = true))
     @Test fun masterLookThread() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(thread = true))

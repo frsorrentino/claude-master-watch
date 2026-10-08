@@ -747,4 +747,19 @@ It starts at your last message to the master.</string>
     <string name="night_old">The PC cannot read the night report yet: update team-supervisor</string>
     <string name="night_none">No night report</string>
     <string name="night_failed">The report did not arrive: try again</string>
+    <!-- The closing panel of a session (08/10, variant A). -->
+    <string name="splash_closing">%1$s is closing</string>
+    <string name="splash_sent_at">You sent /exit at %1$s.</string>
+    <string name="splash_step_delivered">/exit delivered to the PC</string>
+    <string name="splash_step_confirmed">the PC confirms the session closed</string>
+    <string name="splash_usually">usually a few seconds</string>
+    <string name="splash_slow">Taking longer than usual</string>
+    <string name="splash_closed">%1$s is closed</string>
+    <string name="splash_closed_line">at %1$s · it is in «Closed» and can be reopened</string>
+    <string name="splash_closed_line_other">at %1$s · not by you · it can be reopened from «Closed»</string>
+    <string name="splash_back_soon">back home in 3 s</string>
+    <string name="splash_reopen">Reopen</string>
+    <string name="splash_home">Back home</string>
+    <string name="splash_drop_column">Remove the column</string>
+    <string name="splash_drop_soon">the column goes in 3 s</string>
 </resources>

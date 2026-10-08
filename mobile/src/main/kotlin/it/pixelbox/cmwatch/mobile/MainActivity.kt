@@ -18,6 +18,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import it.pixelbox.cmwatch.contract.CmdOp
+import it.pixelbox.cmwatch.contract.SessionState
+import it.pixelbox.cmwatch.rules.CloseSplash
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
@@ -482,8 +484,16 @@ class MainActivity : ComponentActivity() {
         // La casa della master (design 01/10): sulla prima scheda, senza schede aperte, la chat è quella della master.
         val masterName = it.pixelbox.cmwatch.rules.ContextActions.master(state)?.name
         val liveNames = state?.sessions?.filter { x -> x.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { x -> x.name }.orEmpty()
+        // La colonna di una sessione appena chiusa resta, sotto il pannello di chiusura, finché il pannello non la toglie
+        // (Franz, 08/10 18:06: «non voglio pagine che scompaiono»).
+        val heldCols = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+        val shownCols = remember { androidx.compose.runtime.mutableStateOf(emptyList<String>()) }
+        val justClosed = shownCols.value.filter { n -> n !in liveNames && n !in heldCols }
+        // Una riaperta torna una colonna come le altre.
+        androidx.compose.runtime.SideEffect { heldCols.addAll(justClosed); heldCols.removeAll { n -> n in liveNames } }
         // La master sta nella home: non diventa una colonna.
-        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, liveNames.filter { n -> n != it.pixelbox.cmwatch.rules.ContextActions.MASTER })
+        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, (liveNames + heldCols + justClosed).distinct().filter { n -> n != it.pixelbox.cmwatch.rules.ContextActions.MASTER })
+        androidx.compose.runtime.SideEffect { shownCols.value = tabletCols }
         val tabletShares = it.pixelbox.cmwatch.rules.Tablet.Shares.fromPref(sharesRaw, tabletCols.size)
         val columnsOn = wide
         val saveCols: (List<String>) -> Unit = { next -> pinned = next; tabletPrefs.edit().putString("tablet_columns", it.pixelbox.cmwatch.rules.Tablet.columnsPref(next)).apply() }
@@ -522,7 +532,10 @@ class MainActivity : ComponentActivity() {
         var entriesOwner by remember { mutableStateOf<String?>(null) }
         // La sessione chiusa dal telefono con «Chiudi la sessione»: appena è chiusa si torna alla home (dal vivo 03/10 19:57:
         // la sua pagina restava nera).
-        var leaving by remember { mutableStateOf<String?>(null) }
+        var leaving by remember { mutableStateOf<CloseSplash.Leaving?>(null) }
+        // Le sessioni com'erano l'ultima volta nello stato: la pagina di una sessione appena uscita resta sotto il pannello di
+        // chiusura invece di sparire (Franz, 08/10 18:06).
+        val lastSeen = remember { mutableStateMapOf<String, it.pixelbox.cmwatch.contract.Session>() }
         // L'ultima conversazione letta di ogni sessione: riaprendo compare subito, poi si aggiorna.
         // Riparte dalle conversazioni già lette, tenute dal processo e su disco (piano prestazioni, Task 13): prima una finestra
         // ridimensionata o ruotata svuotava tutte le chat. I cambiamenti si salvano un secondo dopo l'ultimo.
@@ -771,8 +784,11 @@ class MainActivity : ComponentActivity() {
                             } },
                             interrupt = { scope.launch { app.repo.command(CmdOp.INTERRUPT, session.name, null) } },
                             // Contratto 1.25: il comando resta nella chat come un messaggio, con l'esito del PC.
-                            slash = { c, a -> if (c == "exit") leaving = session.name; scope.launch {
+                            slash = { c, a -> val at = System.currentTimeMillis() / 1000
+                                if (c == "exit") leaving = CloseSplash.Leaving(session.name, at, null)
+                                scope.launch {
                                 runCatching { app.repo.command(CmdOp.SLASH, session.name, c, a) }.getOrNull()?.let { id ->
+                                    if (c == "exit" && leaving?.name == session.name) leaving = leaving?.copy(cmd = id)
                                     app.chatLog.add(Sent(id, session.name, "/$c" + (a?.let { t -> " $t" } ?: ""), System.currentTimeMillis() / 1000))
                                 }
                             } },
@@ -869,15 +885,15 @@ class MainActivity : ComponentActivity() {
             }
         }
         var closedOpen by rememberSaveable { mutableStateOf(false) }
-        // Lo stesso se la sessione aperta sparisce dallo stato.
-        LaunchedEffect(open, state?.sessions, leaving) {
-            val o = open ?: return@LaunchedEffect
-            val st = state ?: return@LaunchedEffect
-            if (!StartRoute.stillOpen(o, st.sessions, leaving)) {
-                if (leaving == o) leaving = null
-                open = null; tab = StartRoute.Tab.OVERVIEW
+        // Se la sessione aperta si chiude, la pagina non sparisce (Franz, 08/10 18:06): resta sotto il pannello di chiusura, che
+        // riporta alla home da solo dopo 3 s o col suo tasto (`CloseSplash`).
+        LaunchedEffect(state?.sessions) { state?.sessions?.forEach { x -> lastSeen[x.name] = x } }
+        val splash = open?.let { o ->
+            state?.let { st ->
+                CloseSplash.of(o, st.sessions, leaving, lastSeen[o], now, delivered = leaving?.cmd?.let { id -> results[id] != null } == true)
             }
         }
+        val splashHome = { if (leaving?.name == open) leaving = null; open = null; tab = StartRoute.Tab.OVERVIEW }
         // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
         val menuActions = MenuActions(
             host, updatedLabel(snap.freshness),
@@ -1077,6 +1093,8 @@ class MainActivity : ComponentActivity() {
         val tabletDesk: @Composable (it.pixelbox.cmwatch.contract.State, it.pixelbox.cmwatch.rules.Summary.Model) -> Unit = { st, sm ->
             val zone = java.time.ZoneId.systemDefault()
             val rows = remember(sm) { it.pixelbox.cmwatch.rules.Tablet.groups(sm).flatMap { g -> g.second } }
+            val lastRows = remember { mutableStateMapOf<String, it.pixelbox.cmwatch.rules.Summary.Row>() }
+            androidx.compose.runtime.SideEffect { rows.forEach { r -> lastRows[r.session.name] = r } }
             val first = inspected?.let { n -> st.sessions.firstOrNull { x -> x.name == n } }
             TabletDesk(
                 home = { summaryPage() }, homeRight = homeRight,
@@ -1089,13 +1107,34 @@ class MainActivity : ComponentActivity() {
                 },
                 onShares = saveShares,
                 column = { name, drag ->
-                    rows.firstOrNull { r -> r.session.name == name }?.let { r ->
-                        sessionPage(
-                            // La testata della sessione resta anche in colonna (Franz, 05/10 10:13): modello, quota, contesto e il
-                            // menu ⋮ con Segui, Terminale e Chiudi la sessione.
-                            r.session, ChatFeed.pageEntries(name, chatName, entriesOwner, entries, feedCache), null, true, null, null, true,
-                            { TabletColumnHeader(r, now, onClose = { saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, name)) }, drag) }, null,
+                    val held = name in heldCols
+                    (rows.firstOrNull { r -> r.session.name == name } ?: lastRows[name]?.takeIf { held })?.let { r ->
+                        // In colonna una gone non resta: conta come chiusa, e il pannello dice da chi e quando.
+                        val gone = st.sessions.firstOrNull { x -> x.name == name && x.state == SessionState.GONE }
+                        val ses = if (held) (gone ?: lastSeen[name] ?: r.session).copy(state = SessionState.GONE, question = null) else r.session
+                        val phase = CloseSplash.of(
+                            name, st.sessions.filter { x -> x.state != SessionState.GONE }, leaving, gone ?: lastSeen[name], now,
+                            delivered = leaving?.cmd?.let { id -> results[id] != null } == true,
                         )
+                        val drop = { heldCols.remove(name); if (leaving?.name == name) leaving = null }
+                        Box(Modifier.fillMaxSize()) {
+                            sessionPage(
+                                // La testata della sessione resta anche in colonna (Franz, 05/10 10:13): modello, quota, contesto e il
+                                // menu ⋮ con Segui, Terminale e Chiudi la sessione.
+                                ses, ChatFeed.pageEntries(name, chatName, entriesOwner, entries, feedCache), null, true, null, null, true,
+                                { TabletColumnHeader(r.copy(session = ses), now, onClose = { if (held) drop() else saveCols(it.pixelbox.cmwatch.rules.Tablet.toggle(tabletCols, name)) }, drag) }, null,
+                            )
+                            phase?.let { ph ->
+                                CloseSplashOverlay(
+                                    ph, onHome = drop,
+                                    onReopen = if (ph is CloseSplash.Phase.Closed && st.ops?.contains("reopen") == true) ({
+                                        scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, name, null) } }
+                                        drop()
+                                    }) else null,
+                                    column = true,
+                                )
+                            }
+                        }
                     }
                 },
                 empty = { Text(getString(R.string.tablet_desk_empty), color = it.pixelbox.cmwatch.ui.tokens.CmColors.text2, modifier = Modifier.padding(32.dp)) },
@@ -1203,7 +1242,8 @@ class MainActivity : ComponentActivity() {
                         }
                         androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
                             val n = pages[page]
-                            val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } }
+                            // La sessione aperta appena uscita dallo stato resta com'era, chiusa, sotto il pannello di chiusura.
+                            val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } ?: lastSeen[x]?.takeIf { x == open }?.copy(state = SessionState.GONE, question = null) }
                             if (session == null) {
                                 // Il riepilogo; sotto la scheda, durante il gesto indietro, è questa pagina.
                                 if (n == null) summaryPage()
@@ -1211,7 +1251,19 @@ class MainActivity : ComponentActivity() {
                             }
                             // La conversazione della pagina: quella dal vivo per la sessione aperta, l'ultima letta per le vicine.
                             val pageEntries = ChatFeed.pageEntries(session.name, open, entriesOwner, entries, feedCache)
-                            sessionPage(session, pageEntries, null, true, null, null, true, { pageHeader(session.name) }, null)
+                            Box(Modifier.fillMaxSize()) {
+                                sessionPage(session, pageEntries, null, true, null, null, true, { pageHeader(session.name) }, null)
+                                if (session.name == open) splash?.let { ph ->
+                                    CloseSplashOverlay(
+                                        ph, onHome = splashHome,
+                                        onReopen = if (ph is CloseSplash.Phase.Closed && state?.ops?.contains("reopen") == true) ({
+                                            val name = ph.name
+                                            scope.launch { runCatching { app.repo.command(CmdOp.REOPEN, name, null) } }
+                                            splashHome()
+                                        }) else null,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
