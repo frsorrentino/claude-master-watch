@@ -201,6 +201,7 @@ class MainActivity : ComponentActivity() {
         var overviewSheet by rememberSaveable { mutableStateOf(false) }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
         var nightOpen by rememberSaveable { mutableStateOf(false) }
+        var recapPage by rememberSaveable { mutableStateOf(false) }
         // Il tocco sul testo del mini-controller riporta alla sessione da cui legge; la master si apre nella home.
         val readingBar: (@Composable () -> Unit)? = readingNow?.let { text ->
             {
@@ -257,8 +258,9 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() / 1000 } }
         val state = snap.state
 
-        BackHandler(enabled = settingsOpen || terminal != null || queueOpen || searchOpen || nightOpen) {
+        BackHandler(enabled = settingsOpen || terminal != null || queueOpen || searchOpen || nightOpen || recapPage) {
             when {
+                recapPage -> recapPage = false
                 nightOpen -> nightOpen = false
                 searchOpen -> searchOpen = false
                 settingsOpen -> settingsOpen = false
@@ -421,6 +423,42 @@ class MainActivity : ComponentActivity() {
                 }
             }
             boxId?.let { id -> if (boxResult != null) app.repo.forget(id) }
+        }
+        // Il Recap (Franz, 08/10 20:41): le Azioni delle sessioni vive e del recap, e le righe dell'agenda (contratto 1.46),
+        // chieste quando il relay le conosce, a ogni recap nuovo e all'apertura della pagina.
+        val recapActs = remember(state) { state?.let { st -> it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) }.orEmpty() }
+        val canAgenda = state?.ops?.contains("agenda") == true
+        var agendaId by remember { mutableStateOf<String?>(null) }
+        var agenda by remember { mutableStateOf<it.pixelbox.cmwatch.contract.AgendaPage?>(null) }
+        val askAgenda: () -> Unit = {
+            scope.launch {
+                agendaId?.let { app.repo.forget(it) }
+                agendaId = runCatching { app.repo.command(CmdOp.AGENDA, null, null) }.getOrNull()
+            }
+        }
+        LaunchedEffect(canAgenda, state?.recap?.date) { if (canAgenda) askAgenda() }
+        val agendaResult = agendaId?.let { results[it] }
+        LaunchedEffect(agendaResult) {
+            agendaResult?.takeIf { it.ok }?.let { r -> runCatching { ContractJson.decodeAgenda(r.text) }.getOrNull()?.let { agenda = it } }
+        }
+        if (recapPage) {
+            LaunchedEffect(Unit) { if (canAgenda) askAgenda() }
+            RecapScreen(
+                recapActs, state?.recap?.date.orEmpty(), agenda,
+                error = when {
+                    state != null && !canAgenda -> getString(R.string.recap_agenda_old)
+                    agendaResult?.ok == false -> agendaResult.text.let { t -> if (t.startsWith("no agenda file")) getString(R.string.recap_agenda_none) else t }
+                    else -> null
+                },
+                loading = agendaId != null && agendaResult == null,
+                onBack = { recapPage = false },
+                onSend = { a ->
+                    scope.launch {
+                        runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
+                    }
+                },
+            )
+            return
         }
         if (nightOpen) {
             LaunchedEffect(nightRef?.date) { nightRef?.date?.let { d -> nightSeen = d; homePrefs.edit().putString("night_opened", d).apply() } }
@@ -933,7 +971,7 @@ class MainActivity : ComponentActivity() {
             host, updatedLabel(snap.freshness),
             snap.freshness is Freshness.Stale, onLaunch = { launching = true }, onRegister = { tab = StartRoute.Tab.DIARY; open = null },
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
-            onNight = { nightOpen = true },
+            onNight = { nightOpen = true }, onRecap = { recapPage = true },
         )
         val pageHeader: @Composable (String?) -> Unit = { page ->
             PageHeader(
@@ -996,9 +1034,9 @@ class MainActivity : ComponentActivity() {
                     justClosed = justClosed,
                     tonight = st.night.items?.let { _ -> it.pixelbox.cmwatch.rules.TonightCard.of(st.night, now) },
                     // La sezione Recap (Franz, 08/10 20:41): le Azioni delle sessioni vive e del recap, ognuna alla sua sessione.
-                    recapActions = remember(st) { it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) },
-                    recapDate = st.recap.date,
+                    recapActions = recapActs, recapDate = st.recap.date,
                     onRecapAction = { a -> sendPrompt(a.to, a.send) },
+                    agenda = agenda, onRecapPage = { recapPage = true },
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {
@@ -1213,7 +1251,7 @@ class MainActivity : ComponentActivity() {
             // La master dal menu in alto apre la sua chat come le altre (design 03/10); «Tutte le sessioni» torna al riepilogo.
             current = open, onPick = { n -> open = n; if (n == null) tab = StartRoute.Tab.OVERVIEW },
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
-            onNight = { nightOpen = true },
+            onNight = { nightOpen = true }, onRecap = { recapPage = true },
             host = host, stale = snap.freshness is Freshness.Stale,
             staleMinutes = (snap.freshness as? Freshness.Stale)?.minutes.takeIf { state != null },
             updated = updatedLabel(snap.freshness),

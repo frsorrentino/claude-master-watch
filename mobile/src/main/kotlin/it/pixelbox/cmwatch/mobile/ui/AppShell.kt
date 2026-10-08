@@ -65,6 +65,8 @@ fun AppShell(
     staleMinutes: Int? = null,
     /** La pagina Notte nel menu ≡ (specifica del 07/10); null = la voce non c'è. */
     onNight: (() -> Unit)? = null,
+    /** La pagina Recap (mockup approvato l'08/10); null = la voce non c'è. */
+    onRecap: (() -> Unit)? = null,
     /** Le sessioni aperte, per «N aperte» accanto al titolo. */
     openCount: Int = 0,
     /** La quota in una riga sotto la barra, solo sul riepilogo. */
@@ -85,7 +87,7 @@ fun AppShell(
     content: @Composable (Tab) -> Unit,
 ) {
     val summary = current == null && tab == Tab.OVERVIEW
-    val menu = MenuActions(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch, onSettings, onNight = onNight)
+    val menu = MenuActions(host, updated, stale, onLaunch, onRegister = { onTab(Tab.DIARY) }, onQuadro, onSearch, onSettings, onNight = onNight, onRecap = onRecap)
     Scaffold(
         containerColor = CmColors.bg,
         topBar = {
@@ -244,6 +246,7 @@ data class MenuActions(
     val onQuadro: () -> Unit, val onSearch: (() -> Unit)?, val onSettings: () -> Unit,
     /** La pagina Notte (specifica del 07/10); null = la voce non c'è. */
     val onNight: (() -> Unit)? = null,
+    val onRecap: (() -> Unit)? = null,
 )
 
 /**
@@ -284,5 +287,5 @@ fun PageHeader(
 internal fun AppMenu(menu: MenuActions, startOpen: Boolean = false) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
     IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
-    if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false }, onNight = menu.onNight)
+    if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false }, onNight = menu.onNight, onRecap = menu.onRecap)
 }

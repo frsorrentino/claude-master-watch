@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
@@ -152,6 +153,8 @@ fun AppMenuPanel(
     onDismiss: () -> Unit,
     /** La pagina Notte (specifica del 07/10); null = la voce non c'è. */
     onNight: (() -> Unit)? = null,
+    /** La pagina Recap (mockup approvato l'08/10); null = la voce non c'è. */
+    onRecap: (() -> Unit)? = null,
 ) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val live by it.pixelbox.cmwatch.mobile.live.LiveService.running.collectAsState()
@@ -162,6 +165,7 @@ fun AppMenuPanel(
             MenuEntry(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.menu_register), stringResource(R.string.menu_register_sub), onClick = onRegister),
         ) + listOfNotNull(
             onNight?.let { n -> MenuEntry(Icons.Rounded.Bedtime, stringResource(R.string.night_menu), stringResource(R.string.night_menu_sub), onClick = n) },
+            onRecap?.let { r -> MenuEntry(Icons.Rounded.Checklist, stringResource(R.string.menu_recap), stringResource(R.string.menu_recap_sub), onClick = r) },
         ) + listOf(
             MenuEntry(Icons.Rounded.Dashboard, stringResource(R.string.menu_quadro), stringResource(R.string.menu_quadro_sub), onClick = onQuadro),
             MenuEntry(Icons.Rounded.Search, stringResource(R.string.menu_search), stringResource(R.string.menu_search_sub), onClick = onSearch),

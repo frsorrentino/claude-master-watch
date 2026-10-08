@@ -97,6 +97,8 @@ fun SummaryList(
      */
     recapActions: List<it.pixelbox.cmwatch.rules.RecapActions.Action> = emptyList(), recapDate: String = "",
     onRecapAction: (it.pixelbox.cmwatch.rules.RecapActions.Action) -> Unit = {},
+    /** Contratto 1.46: le righe dell'agenda (null = non ancora arrivate); «Tutto il recap» apre la pagina. */
+    agenda: it.pixelbox.cmwatch.contract.AgendaPage? = null, onRecapPage: () -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -156,21 +158,43 @@ fun SummaryList(
                 }
             }
         }
-        if (recapActions.isNotEmpty()) {
+        // Il Recap (tavola 1): chiuso dice i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due
+        // cose che aspettano te, la prima che può fare Claude, e «Tutto il recap».
+        val ag = it.pixelbox.cmwatch.rules.RecapAgenda.of(agenda)
+        if (recapActions.isNotEmpty() || ag.you.isNotEmpty() || ag.claude.isNotEmpty()) {
             item(key = "sec-recap") {
                 Box(moving()) {
-                    HomeSection(stringResource(R.string.home_sec_recap), recapActions.size.toString().takeIf { !recapOpen }, recapOpen) { recapOpen = !recapOpen; save("recap", recapOpen) }
+                    HomeSection(
+                        stringResource(R.string.home_sec_recap),
+                        listOf(recapActions.size, ag.you.size, ag.claude.size).joinToString(" · ").takeIf { !recapOpen }, recapOpen,
+                    ) { recapOpen = !recapOpen; save("recap", recapOpen) }
                 }
             }
             if (recapOpen) {
-                item(key = "h-recap-actions") { Box(moving()) { GroupHeader(stringResource(R.string.recap_actions, recapActions.size), CmColors.text) } }
-                item(key = "recap-actions") {
+                if (recapActions.isNotEmpty()) {
+                    item(key = "h-recap-actions") { Box(moving()) { GroupHeader(stringResource(R.string.recap_actions, recapActions.size), CmColors.text) } }
+                    item(key = "recap-actions") { Box(moving()) { RecapActionChips(recapActions, day, sent) { asking = it } } }
+                }
+                if (ag.you.isNotEmpty()) {
+                    item(key = "h-recap-you") { Box(moving()) { GroupHeader(stringResource(R.string.recap_you, ag.you.size), CmColors.waiting) } }
+                    ag.you.take(2).forEachIndexed { i, r -> item(key = "recap-you-$i") { Box(moving()) { AgendaRowCard(r) } } }
+                }
+                if (ag.claude.isNotEmpty()) {
+                    item(key = "h-recap-claude") { Box(moving()) { GroupHeader(stringResource(R.string.recap_claude, ag.claude.size), CmColors.actionIcon) } }
+                    item(key = "recap-claude-0") {
+                        val r = ag.claude.first()
+                        val doText = stringResource(R.string.recap_do_text); val doRef = stringResource(R.string.recap_do_ref)
+                        Box(moving()) { AgendaRowCard(r) { asking = it.pixelbox.cmwatch.rules.RecapAgenda.doIt(r, doText, doRef) } }
+                    }
+                }
+                item(key = "recap-all") {
                     Box(moving()) {
-                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            recapActions.forEach { a ->
-                                val k = a.to + "\n" + a.send
-                                RecapActionChip(a, day, k in sent) { asking = a }
-                            }
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 4.dp).handCursor().clickable(onClick = onRecapPage).padding(horizontal = 4.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(R.string.recap_all), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
+                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = CmColors.text2)
                         }
                     }
                 }
@@ -198,7 +222,7 @@ fun SummaryList(
         }
         footer?.let { f -> item(key = "footer") { f() } }
     }
-    asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + (a.to + "\n" + a.send); onRecapAction(a) } }
+    asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + sentKey(a); onRecapAction(a) } }
 }
 
 internal fun groupLabel(g: Summary.Group) = when (g) {
