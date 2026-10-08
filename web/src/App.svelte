@@ -180,6 +180,8 @@
 
   // La master vive nella home: ridotta è la barra in fondo, espansa occupa la home (mai una colonna o una pagina a parte).
   let masterOpen = $state(linked === MASTER)
+  // Sulla plancia la misura a metà fra barra e tutto schermo (Franz, 08/10 18:15); conta solo con `masterOpen`.
+  let masterHalf = $state(false)
   // Telefono: la sessione aperta, o la home.
   let open = $state<string | null>(known(linked) && linked !== MASTER ? linked : null)
   const session = $derived(st.sessions.find(s => s.name === open) ?? null)
@@ -416,7 +418,9 @@
 {/snippet}
 
 {#snippet homePane()}
-  <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o })} onSpeak={(x) => toggle(x, MASTER)}>
+  <HomePane {master} entries={transcripts[MASTER] ?? []} open={masterOpen} onToggle={(o) => smooth(() => { masterOpen = o; masterHalf = o && wide })} onSpeak={(x) => toggle(x, MASTER)}
+    halfStops={wide} half={masterHalf} onHalf={(h) => (masterHalf = h)}>
+    {#snippet menu()}<AppBar {st} now={now} openCount={summary.open} onPage={openPage} menuOnly />{/snippet}
     {#snippet quick()}{@render masterQuick()}{/snippet}
     {#snippet list()}
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />

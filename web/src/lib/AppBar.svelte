@@ -12,7 +12,8 @@
 
   // La testata della home (PageHeader dell'app): «Master · N aperte», la lente e il menu ≡; sotto, la quota in una riga
   // (QuotaLine): per ogni account la sua forma, una barra fina delle 5 ore e la percentuale; ambra da 75 %, rossa da 90 %.
-  let { st, now, openCount, onPage }: { st: State; now: number; openCount: number; onPage: (p: Page) => void } = $props()
+  // `menuOnly`: solo il tasto ≡ col suo pannello, nella testata della master a tutto schermo (Franz, 08/10 18:15).
+  let { st, now, openCount, onPage, menuOnly = false }: { st: State; now: number; openCount: number; onPage: (p: Page) => void; menuOnly?: boolean } = $props()
   let menu = $state(false)
   // Il pannello scende dal tasto ≡, non dal bordo dello schermo: sulla plancia con la home a sinistra resta accanto al tasto.
   let panelRight = $state(12)
@@ -34,6 +35,11 @@
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && (menu = false)} />
 
+{#if menuOnly}
+  <button class="ib only" aria-label={t.menu} title={t.menu} aria-expanded={menu} onclick={(e) => { e.stopPropagation(); openMenu(e) }}>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+  </button>
+{:else}
 <header>
   <div class="bar">
     <span class="title"><b>{t.summaryTitle}</b><span class="open">{t.summaryOpen(openCount)}</span></span>
@@ -64,10 +70,12 @@
   {/if}
 </header>
 {#if fresh.stale}<p class="stalebar">{t.staleBanner(fresh.minutes)}</p>{/if}
+{/if}
 
 {#if menu}
-  <div class="scrim" role="presentation" onclick={() => (menu = false)}></div>
-  <div class="panel" role="menu" style:right="{panelRight}px">
+  <div class="scrim" role="presentation" onclick={(e) => { e.stopPropagation(); menu = false }}></div>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div class="panel" role="menu" tabindex="-1" style:right="{panelRight}px" onclick={(e) => e.stopPropagation()}>
     <div class="ph">
       <i class="led" class:stale={fresh.stale}></i>
       <span>{t.menuConnected(st.host || t.menuPc, updated)}</span>
@@ -96,6 +104,7 @@
   .open { font-size: 14px; color: var(--text2); white-space: nowrap; }
   .ib { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; }
   .ib:hover { background: var(--surface); }
+  .ib.only:hover { background: var(--master-key); }
   .win { color: var(--text2); }
   .quota { display: flex; gap: 16px; width: calc(100% - 16px); margin: 0 8px; padding: 4px 0; border-radius: 8px; }
   .q { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }

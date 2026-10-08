@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import type { Session } from './contract'
   import { hero as heroOf, type Entry } from './masterHome'
   import { t } from './t'
@@ -6,9 +7,15 @@
   import { breathes } from './badge'
   // La master nella home (MasterDock.kt): ridotta è la barra agganciata in fondo, «MASTER · ora · modello · contesto» e il
   // titolo dell'ultimo esito, ▶ per ascoltarlo e ▲ per espanderla; espansa la stessa barra sta in cima con ▼ e la riduce.
-  let { master, entries, onToggle, onSpeak, expanded = false }: {
+  // `screen`: la master a tutto schermo sul telefono (Franz, 08/10 18:15), una testata sola: ⌄ a sinistra, angoli dritti, a
+  // destra il menu ≡ della home (`trailing`). `toggleUp` e `onToggleKey`: il tasto tondo nelle tre misure della plancia,
+  // dove a metà dice ▲ e porta a tutto schermo.
+  let { master, entries, onToggle, onSpeak, expanded = false, screen = false, trailing, toggleUp, onToggleKey }: {
     master: Session; entries: Entry[]; onToggle: () => void; onSpeak: (text: string) => void; expanded?: boolean
+    screen?: boolean; trailing?: Snippet; toggleUp?: boolean; onToggleKey?: () => void
   } = $props()
+  const up = $derived(toggleUp ?? !expanded)
+  const key = $derived(onToggleKey ?? onToggle)
   const h = $derived(heroOf(entries, master))
   const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   // Aperta, il modello e il contesto stanno già nella riga sotto la linguetta: qui resta l'ora. Chiusa, l'ora e il contesto,
@@ -19,7 +26,14 @@
   const attention = $derived(master.state === 'waiting' || master.state === 'gone')
 </script>
 
-<div class="dock" class:expanded role="button" tabindex="0" aria-expanded={expanded} onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle()}>
+{#snippet toggleKey()}
+  <button class="ib" aria-label={up ? t.dockConversation : t.dockCollapse} title={up ? t.dockConversation : t.dockCollapse} onclick={(e) => { e.stopPropagation(); key() }}>
+    <svg viewBox="0 0 24 24" width="22" height="22"><path d={up ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </button>
+{/snippet}
+
+<div class="dock" class:expanded class:screen role="button" tabindex="0" aria-expanded={expanded} onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle()}>
+  {#if screen}{@render toggleKey()}{/if}
   {#if attention}<Badge s={master} size={20} />{:else}<svg class="spark lead" class:spin={breathes(master.state)} viewBox="0 0 18 18" role="img" aria-label={master.state}><path d="M11.2 9H17.3M10.56 10.56L14.87 14.87M9 11.2V17.3M7.44 10.56L3.13 14.87M6.8 9H.7M7.44 7.44L3.13 3.13M9 6.8V.7M10.56 7.44L14.87 3.13" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></svg>{/if}
   <span class="col">
     <span class="mono">{label}</span>
@@ -30,15 +44,17 @@
       <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
     </button>
   {/if}
-  <button class="ib" aria-label={expanded ? t.dockCollapse : t.dockConversation} title={expanded ? t.dockCollapse : t.dockConversation} onclick={(e) => { e.stopPropagation(); onToggle() }}>
-    <svg viewBox="0 0 24 24" width="22" height="22"><path d={expanded ? 'M7 10l5 5 5-5' : 'M7 14l5-5 5 5'} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-  </button>
+  {#if !screen}{@render toggleKey()}{/if}
+  {@render trailing?.()}
 </div>
 
 <style>
   /* La master è la superficie più alta dell'app, velata del celeste d'accento, piatta come il resto (Celeste velato, Franz
      06/10 21:23). Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (08:48). */
   .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; border-radius: 26px 26px 0 0; cursor: pointer; outline: none; background: var(--master-highest); }
+  /* Il filtro dell'hover farebbe da contenitore al pannello del menu ≡, che è fisso: a tutto schermo niente filtro. */
+  .dock.screen { border-radius: 0; padding: 10px 4px 8px 8px; }
+  .dock.screen:hover, .dock.screen:focus-visible { filter: none; }
   .dock:hover, .dock:focus-visible { filter: brightness(1.08); }
   .spark { flex: none; display: block; width: 20px; height: 20px; color: var(--opus); }
   .spark.spin { animation: spin 2.4s linear infinite; }
