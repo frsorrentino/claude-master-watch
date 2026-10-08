@@ -50,7 +50,7 @@ export const t = {
   splashClosedLine: (hm: string) => `alle ${hm} · la trovi in «Chiuse» e si può riaprire`,
   splashClosedOther: (hm: string) => `alle ${hm} · non da te · si può riaprire da «Chiuse»`,
   splashBackSoon: 'torno alla home tra 3 s', splashDropSoon: 'la colonna si toglie tra 3 s', splashReopen: 'Riapri',
-  splashHome: 'Torna alla home', splashDrop: 'Togli la colonna',
+  splashHome: 'Torna alla home', justClosedLine: (hm: string) => `chiusa alle ${hm} · ora in «Chiuse»`, splashDrop: 'Togli la colonna',
   closeTitle: (n: string) => `Chiudere ${n}?`, closeInline: 'Riceve /exit e va in «Chiuse», da dove si riapre.', closeKeep: 'Lascia aperta', closeOk: (n: string) => `Chiudi ${n}`,
   closeWorking: (n: string) => `${n} è aperta e sta lavorando.`, closeStill: (n: string) => `${n} è aperta e ferma.`,
   closeFinished: (n: string) => `${n} è aperta e ferma: ha finito il compito.`,

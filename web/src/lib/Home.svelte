@@ -1,6 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate'
-  import type { Approval, State } from './contract'
+  import type { Approval, Session, State } from './contract'
   import { cleanupOf } from './masterService'
   import { since } from './durations'
   import { build, type Group, type Row } from './summary'
@@ -15,7 +15,7 @@
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
   import type { NightPage } from './night'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage }: {
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -27,6 +27,9 @@
     night?: NightPage | null | undefined; nightTitle?: string; onNight?: () => void
     /** «Utilizzo»: i pannelli della quota in una sezione richiudibile. */
     usage?: Snippet
+    /** La sessione appena chiusa dal pannello di chiusura (Franz, 08/10 18:59): la sua card in cima alle sessioni è dove la
+     *  pagina atterra tornando alla home (`view-transition-name: page-fly`), poi si richiude da sola. */
+    justClosed?: { s: Session; line: string } | null
   } = $props()
   // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate, anche alla prossima apertura.
   const SEC = 'home-sections'
@@ -85,6 +88,11 @@
     {/if}
   {/if}
   {@render sec('sessions', t.homeSessions(model.rows.length))}
+  {#if justClosed}
+    <div class="card just" style:view-transition-name="page-fly">
+      <div class="jrow"><Badge s={justClosed.s} size={24} /><span class="jcol"><b>{justClosed.s.name}</b><small>{justClosed.line}</small></span></div>
+    </div>
+  {/if}
   {#if open.sessions}
   {#if approvals.length}
     <h2 class="gh" style="--t:var(--advice)"><span>{t.approvalsGroup(approvals.length).toUpperCase()}</span><i></i></h2>
@@ -203,6 +211,11 @@
   .home { padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; height: 100%; }
   .gh { display: flex; align-items: center; gap: 8px; margin: 6px 8px 0; font: 500 12px/1.4 var(--mono); letter-spacing: .08em; color: var(--t); }
   .gh i { flex: 1; height: 1px; background: color-mix(in srgb, var(--t) 25%, transparent); }
+  .card.just { background: var(--surface); outline: 1.5px solid color-mix(in srgb, var(--icon) 70%, transparent); cursor: default; padding: 14px; }
+  .jrow { display: flex; align-items: center; gap: 12px; }
+  .jcol { display: flex; flex-direction: column; min-width: 0; }
+  .jcol b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+  .jcol small { font-size: 14px; color: var(--text2); white-space: nowrap; overflow: hidden; }
   .card { background: var(--low); border-radius: 20px; padding: 8px 10px 12px 14px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: background .15s, box-shadow .15s; outline: none; }
   .card.waiting { background: color-mix(in srgb, var(--low) 94%, var(--b-warn)); }
   .card:hover, .card:focus-visible { box-shadow: inset 0 0 0 1px var(--line); }

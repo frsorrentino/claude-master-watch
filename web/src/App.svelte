@@ -199,7 +199,24 @@
     const g = st.sessions.find(x => x.name === n && x.state === 'gone')
     return closeSplash(n, ss, leaving, g ?? lastSeen[n] ?? null, now)
   }
-  const splashHome = () => smooth(() => { if (leaving?.name === open) leaving = null; open = null })
+  // Tornando alla home la pagina vola al contrario verso la card della sessione appena chiusa, in cima alle sessioni, che resta
+  // un attimo e poi si richiude (Franz, 08/10 18:59): le due hanno lo stesso view-transition-name.
+  let justClosed = $state<{ s: Session; line: string } | null>(null)
+  let justTimer: ReturnType<typeof setTimeout> | undefined
+  const splashHome = () => {
+    const o = open
+    const ph = o ? splashOf(o) : null
+    const x = o ? (st.sessions.find(y => y.name === o) ?? lastSeen[o]) : null
+    smooth(() => {
+      if (ph?.kind === 'closed' && x) {
+        justClosed = { s: { ...x, state: 'gone', question: null }, line: t.justClosedLine(new Date(ph.at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })) }
+        clearTimeout(justTimer)
+        justTimer = setTimeout(() => smooth(() => { justClosed = null }), 2_500)
+      }
+      if (leaving?.name === o) leaving = null
+      open = null
+    })
+  }
 
   // Plancia: le colonne scelte (le prime tre senza una scelta salvata), le larghezze in dodicesimi, il lato della home.
   // Le colonne sono le sessioni della lista, senza la master: una master rimasta fra le scelte salvate si toglie da sé.
@@ -215,7 +232,7 @@
       if (next.length !== heldCols.length || next.some((n, i) => n !== heldCols[i])) heldCols = next
     })
   })
-  const dropCol = (n: string) => { heldCols = heldCols.filter(x => x !== n); if (leaving?.name === n) leaving = null }
+  const dropCol = (n: string) => smooth(() => { heldCols = heldCols.filter(x => x !== n); if (leaving?.name === n) leaving = null })
   let pinned = $state<string[] | null>(columnsFromPref(load('cm.columns')))
   if (known(linked) && linked !== MASTER) pinned = add(pinned ?? columns(null, live), linked)
   const cols = $derived(columns(pinned, [...live, ...heldCols]))
@@ -460,7 +477,7 @@
     {#snippet list()}
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} usage={quotaPanels}
-        night={nightBoxShown ? nightModel : undefined} {nightTitle} onNight={() => openPage('night')}
+        night={nightBoxShown ? nightModel : undefined} {nightTitle} {justClosed} onNight={() => openPage('night')}
         onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
@@ -547,7 +564,7 @@
   <div class="phone">
     {#if page}{@render pageView(page)}{:else if session}
       {@const phase = splashOf(session.name)}
-      <div class="cbody">{@render chatOf(session.name, false)}
+      <div class="cbody" style:view-transition-name="page-fly">{@render chatOf(session.name, false)}
         {#if phase}<CloseSplash {phase} onHome={splashHome} onReopen={phase.kind === 'closed' && st.ops?.includes('reopen') ? () => { cmd(session.name)('reopen'); splashHome() } : null} />{/if}
       </div>
     {:else}{@render homePane()}{/if}
