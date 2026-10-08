@@ -33,7 +33,8 @@
 {/snippet}
 
 <div class="dock" class:expanded class:screen role="button" tabindex="0" aria-expanded={expanded} onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle()}>
-  {#if screen}{@render toggleKey()}{/if}
+  <!-- La freccia sempre a sinistra, aperta o chiusa (Franz, 08/10 20:42). -->
+  {@render toggleKey()}
   {#if attention}<Badge s={master} size={20} />{:else}<svg class="spark lead" class:spin={breathes(master.state)} viewBox="0 0 18 18" role="img" aria-label={master.state}><path d="M11.2 9H17.3M10.56 10.56L14.87 14.87M9 11.2V17.3M7.44 10.56L3.13 14.87M6.8 9H.7M7.44 7.44L3.13 3.13M9 6.8V.7M10.56 7.44L14.87 3.13" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></svg>{/if}
   <span class="col">
     <span class="mono">{label}</span>
@@ -44,14 +45,13 @@
       <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
     </button>
   {/if}
-  {#if !screen}{@render toggleKey()}{/if}
   {@render trailing?.()}
 </div>
 
 <style>
   /* La master è la superficie più alta dell'app, velata del celeste d'accento, piatta come il resto (Celeste velato, Franz
      06/10 21:23). Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (08:48). */
-  .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 16px; border-radius: 26px 26px 0 0; cursor: pointer; outline: none; background: var(--master-highest); }
+  .dock { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px 8px; border-radius: 26px 26px 0 0; cursor: pointer; outline: none; background: var(--master-highest); }
   /* Il filtro dell'hover farebbe da contenitore al pannello del menu ≡, che è fisso: a tutto schermo niente filtro. */
   .dock.screen { border-radius: 0; padding: 10px 4px 8px 8px; }
   .dock.screen:hover, .dock.screen:focus-visible { filter: none; }

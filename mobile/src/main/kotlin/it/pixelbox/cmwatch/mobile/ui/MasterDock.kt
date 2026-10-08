@@ -141,7 +141,7 @@ fun MasterDock(
         Row(
             Modifier.fillMaxWidth().clip(shape).background(MasterHighest)
                 .then(drag)
-                .handCursor().clickable(onClick = onToggle).padding(start = if (screen) 8.dp else 16.dp, end = if (screen) 4.dp else 12.dp, top = 10.dp, bottom = 8.dp),
+                .handCursor().clickable(onClick = onToggle).padding(start = 8.dp, end = if (screen) 4.dp else 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val toggleKey: @Composable () -> Unit = {
@@ -153,7 +153,8 @@ fun MasterDock(
                     )
                 }
             }
-            if (screen) toggleKey()
+            // La freccia sempre a sinistra, aperta o chiusa (Franz, 08/10 20:42: cambiava lato e non la ritrovava).
+            toggleKey()
             // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).
             // Il badge di stato solo quando la master ti aspetta o è chiusa; altrimenti la scintilla di Claude, che gira mentre
             // lavora. Il cerchio rosso era l'elemento più saturo della schermata e nel Material 3 il rosso è «errore» (22:27).
@@ -179,7 +180,6 @@ fun MasterDock(
                     stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.text,
                 )
             }
-            if (!screen) toggleKey()
             trailing?.invoke(this)
         }
         if (expanded && look.thread) MasterThread()
