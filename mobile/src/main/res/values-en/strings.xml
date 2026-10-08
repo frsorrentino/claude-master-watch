@@ -719,10 +719,10 @@ It starts at your last message to the master.</string>
     <string name="night_no_parts">no parts</string>
     <string name="night_waiting">Waiting on: %1$s</string>
     <string name="night_next">Next: %1$s</string>
-    <string name="night_c_done">✓ %1$d done</string>
-    <string name="night_c_running">▶ %1$d running</string>
-    <string name="night_c_stopped">✗ %1$d stopped</string>
-    <string name="night_c_asking">❓ %1$d asking</string>
+    <plurals name="night_c_done"><item quantity="one">✓ %1$d done</item><item quantity="other">✓ %1$d done</item></plurals>
+    <plurals name="night_c_running"><item quantity="one">▶ %1$d running</item><item quantity="other">▶ %1$d running</item></plurals>
+    <plurals name="night_c_stopped"><item quantity="one">✗ %1$d stopped</item><item quantity="other">✗ %1$d stopped</item></plurals>
+    <plurals name="night_c_asking"><item quantity="one">❓ %1$d asking</item><item quantity="other">❓ %1$d asking</item></plurals>
     <string name="night_needs_title">For you to do · %1$d</string>
     <string name="night_needs_expl">Things waiting for an action of yours.</string>
     <string name="night_items_title">What happened · %1$d</string>

@@ -92,7 +92,7 @@ export const t = {
   nightPageTitle: (d1: number, d2: number, month: string) => `Notte del ${d1}-${d2} ${month}`,
   nightLong, nightShort,
   nightWindow: (from: string, to: string, s: number) => `Dalle ${from} alle ${to}, ${nightLong(s)}.`, nightFromLast: 'Parte dal tuo ultimo messaggio alla master.',
-  nightDone: (n: number) => `✓ ${n} finiti`, nightRunningN: (n: number) => `▶ ${n} in corso`, nightStopped: (n: number) => `✗ ${n} fermi`, nightAsking: (n: number) => `❓ ${n} con domanda`,
+  nightDone: (n: number) => `✓ ${n} ${n === 1 ? 'finito' : 'finiti'}`, nightRunningN: (n: number) => `▶ ${n} in corso`, nightStopped: (n: number) => `✗ ${n} ${n === 1 ? 'fermo' : 'fermi'}`, nightAsking: (n: number) => `❓ ${n} con domanda`,
   nightNeedsTitle: (n: number) => `Da fare per te · ${n}`, nightNeedsExpl: 'Cose che aspettano una tua azione.',
   nightItemsTitle: (n: number) => `Cosa è successo · ${n}`, nightItemsExpl: 'Una scheda per sessione o lavoro della coda, dal primo partito. Tocca per i passi e la conversazione.',
   nightProjectsTitle: (n: number) => `Progetti · ${n}`, nightProjectsExpl: 'parti fatte sul totale',

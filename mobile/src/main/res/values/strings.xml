@@ -728,10 +728,10 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="night_no_parts">nessuna parte</string>
     <string name="night_waiting">Aspetta: %1$s</string>
     <string name="night_next">Prossimo: %1$s</string>
-    <string name="night_c_done">✓ %1$d finiti</string>
-    <string name="night_c_running">▶ %1$d in corso</string>
-    <string name="night_c_stopped">✗ %1$d fermi</string>
-    <string name="night_c_asking">❓ %1$d con domanda</string>
+    <plurals name="night_c_done"><item quantity="one">✓ %1$d finito</item><item quantity="other">✓ %1$d finiti</item></plurals>
+    <plurals name="night_c_running"><item quantity="one">▶ %1$d in corso</item><item quantity="other">▶ %1$d in corso</item></plurals>
+    <plurals name="night_c_stopped"><item quantity="one">✗ %1$d fermo</item><item quantity="other">✗ %1$d fermi</item></plurals>
+    <plurals name="night_c_asking"><item quantity="one">❓ %1$d con domanda</item><item quantity="other">❓ %1$d con domanda</item></plurals>
     <string name="night_needs_title">Da fare per te · %1$d</string>
     <string name="night_needs_expl">Cose che aspettano una tua azione.</string>
     <string name="night_items_title">Cosa è successo · %1$d</string>

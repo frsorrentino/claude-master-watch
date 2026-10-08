@@ -508,10 +508,10 @@ private fun NightHomeCard(date: java.time.LocalDate, page: it.pixelbox.cmwatch.r
             @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val c = page.counts
-                if (c.done > 0) NightCount(stringResource(R.string.night_c_done, c.done), CmColors.briefGood)
-                if (c.running > 0) NightCount(stringResource(R.string.night_c_running, c.running), CmColors.actionIcon)
-                if (c.stopped > 0) NightCount(stringResource(R.string.night_c_stopped, c.stopped), CmColors.goneDim)
-                if (c.asking > 0) NightCount(stringResource(R.string.night_c_asking, c.asking), CmColors.advice)
+                if (c.done > 0) NightCount(pluralStringResource(R.plurals.night_c_done, c.done, c.done), CmColors.briefGood)
+                if (c.running > 0) NightCount(pluralStringResource(R.plurals.night_c_running, c.running, c.running), CmColors.actionIcon)
+                if (c.stopped > 0) NightCount(pluralStringResource(R.plurals.night_c_stopped, c.stopped, c.stopped), CmColors.goneDim)
+                if (c.asking > 0) NightCount(pluralStringResource(R.plurals.night_c_asking, c.asking, c.asking), CmColors.advice)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

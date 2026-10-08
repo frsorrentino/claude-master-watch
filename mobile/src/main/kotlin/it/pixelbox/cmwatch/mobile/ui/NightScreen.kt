@@ -111,10 +111,10 @@ private fun Section(title: String, explain: String, open: Boolean, onToggle: () 
 private fun CountChips(c: NightPage.Counts) {
     @OptIn(ExperimentalLayoutApi::class)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (c.done > 0) CountChip(stringResource(R.string.night_c_done, c.done), CmColors.briefGood)
-        if (c.running > 0) CountChip(stringResource(R.string.night_c_running, c.running), CmColors.actionIcon)
-        if (c.stopped > 0) CountChip(stringResource(R.string.night_c_stopped, c.stopped), CmColors.goneDim)
-        if (c.asking > 0) CountChip(stringResource(R.string.night_c_asking, c.asking), CmColors.advice)
+        if (c.done > 0) CountChip(pluralStringResource(R.plurals.night_c_done, c.done, c.done), CmColors.briefGood)
+        if (c.running > 0) CountChip(pluralStringResource(R.plurals.night_c_running, c.running, c.running), CmColors.actionIcon)
+        if (c.stopped > 0) CountChip(pluralStringResource(R.plurals.night_c_stopped, c.stopped, c.stopped), CmColors.goneDim)
+        if (c.asking > 0) CountChip(pluralStringResource(R.plurals.night_c_asking, c.asking, c.asking), CmColors.advice)
     }
 }
 
