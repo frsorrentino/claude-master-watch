@@ -38,7 +38,11 @@ object NightPage {
     )
     data class Project(val name: String, val done: Int, val total: Int, val parts: List<String>, val waiting: List<String>, val next: String?)
 
-    fun of(r: NightReport, zone: ZoneId): Page {
+    /**
+     * `live` e `pending`: le sessioni vive e le approvazioni in attesa adesso; con tutti e due, «Da fare per te» tiene solo
+     * quello ancora vero (Franz, 08/10 14:20). Null = il rapporto com'è.
+     */
+    fun of(r: NightReport, zone: ZoneId, live: Set<String>? = null, pending: Set<String>? = null): Page {
         val start = r.window.start
         val end = maxOf(r.window.end, start + 60)
         val span = (end - start).toDouble()
@@ -75,6 +79,12 @@ object NightPage {
         val needs = r.attention.questions.map { q -> Need(NeedKind.QUESTION, q.session, q.text, q.options) } +
             r.attention.approvals.map { a -> Need(NeedKind.APPROVAL, a.project?.substringAfterLast('/').orEmpty(), a.title, task = a.task) } +
             r.attention.unblock.map { u -> Need(NeedKind.UNBLOCK, u.session, u.text) }
+        val stillTrue = needs.filter { n ->
+            when (n.kind) {
+                NeedKind.APPROVAL -> pending == null || n.task in pending
+                else -> live == null || n.session in live
+            }
+        }
         val projects = r.projects.map { p ->
             Project(
                 name = p.name, done = p.parts.count { it.state == "done" }, total = maxOf(p.partsTotal, p.parts.size),
@@ -84,7 +94,7 @@ object NightPage {
         val day = Instant.ofEpochSecond(end).atZone(zone).toLocalDate()
         return Page(
             day = day, dayBefore = day.minusDays(1), start = start, end = end, windowS = (end - start).toInt(),
-            fromLastMessage = r.window.startSource == "last_message", needs = needs, cards = cards, axis = axis, projects = projects,
+            fromLastMessage = r.window.startSource == "last_message", needs = stillTrue, cards = cards, axis = axis, projects = projects,
             counts = Counts(
                 done = cards.count { it.icon == Icon.OK }, running = cards.count { it.icon == Icon.RUNNING },
                 stopped = cards.count { it.icon == Icon.STOPPED }, asking = cards.count { it.icon == Icon.QUESTION },

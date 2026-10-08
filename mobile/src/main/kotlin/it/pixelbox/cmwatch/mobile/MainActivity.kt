@@ -390,7 +390,10 @@ class MainActivity : ComponentActivity() {
         val boxResult = boxId?.let { results[it] }
         LaunchedEffect(boxResult) {
             boxResult?.takeIf { it.ok }?.let { r ->
-                runCatching { ContractJson.decodeNightReport(r.text) }.getOrNull()?.let { rep -> boxPage = it.pixelbox.cmwatch.rules.NightPage.of(rep, java.time.ZoneId.systemDefault()) }
+                runCatching { ContractJson.decodeNightReport(r.text) }.getOrNull()?.let { rep ->
+                    val st = app.repo.snapshot.value.state
+                    boxPage = it.pixelbox.cmwatch.rules.NightPage.of(rep, java.time.ZoneId.systemDefault(), live = st?.sessions?.filter { s -> s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { s -> s.name }?.toSet(), pending = st?.approvals?.map { a -> a.task }?.toSet())
+                }
             }
             boxId?.let { id -> if (boxResult != null) app.repo.forget(id) }
         }
@@ -420,7 +423,10 @@ class MainActivity : ComponentActivity() {
             }
             val zone = java.time.ZoneId.systemDefault()
             NightScreen(
-                page = remember(nightReport) { nightReport?.let { r -> it.pixelbox.cmwatch.rules.NightPage.of(r, zone) } },
+                // Fra le cose da fare solo quello ancora vero adesso (Franz, 08/10 14:20: /clear chiesto a una sessione chiusa).
+                page = remember(nightReport, state) {
+                    nightReport?.let { r -> it.pixelbox.cmwatch.rules.NightPage.of(r, zone, live = state?.sessions?.filter { s -> s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { s -> s.name }?.toSet(), pending = state?.approvals?.map { a -> a.task }?.toSet()) }
+                },
                 error = nightError, loading = nightId != null && nightResult == null,
                 onBack = { nightOpen = false }, onRefresh = askNight,
                 onChat = { n ->

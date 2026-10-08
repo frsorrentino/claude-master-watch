@@ -226,7 +226,8 @@
   // quando la pagina si apre e col tasto aggiorna; nella demo è la fixture inventata.
   let night = $state<{ report: NightReport | null; error: string | null; loading: boolean }>({ report: null, error: null, loading: false })
   const nightZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const nightModel = $derived(night.report ? nightPage(night.report, nightZone) : null)
+  // Fra le cose da fare solo quello ancora vero adesso (Franz, 08/10 14:20: /clear chiesto a una sessione chiusa).
+  const nightModel = $derived(night.report ? nightPage(night.report, nightZone, { live: new Set(st.sessions.filter(s => s.state !== 'gone').map(s => s.name)), pending: new Set((st.approvals ?? []).map(a => a.task)) }) : null)
   const nightTitle = $derived.by(() => {
     if (!nightModel) return t.menuNight
     const d = new Date(`${nightModel.day}T12:00:00Z`), b = new Date(`${nightModel.dayBefore}T12:00:00Z`)

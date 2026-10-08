@@ -7,6 +7,11 @@ const report: NightReport = JSON.parse(readFileSync(new URL('../../../contract/n
 const p = pageOf(report, 'Europe/Rome')
 
 describe('pagina Notte', () => {
+  it('fra le cose da fare solo quello ancora vero: sessioni vive, approvazioni in attesa (Franz, 08/10 14:20)', () => {
+    const now = pageOf(report, 'Europe/Rome', { live: new Set(['ledger-api']), pending: new Set() })
+    expect(now.needs.map(n => n.kind)).toEqual(['question'])
+    expect(p.needs).toHaveLength(3)
+  })
   it('in testa i conteggi per esito, a parole (Franz, 08/10 12:30)', () => {
     expect(p.counts).toEqual({ done: 2, running: 2, stopped: 1, asking: 1 })
   })
