@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import it.pixelbox.cmwatch.contract.Session
 import it.pixelbox.cmwatch.mobile.R
 import it.pixelbox.cmwatch.rules.MasterHome
@@ -73,8 +75,23 @@ fun SummaryList(
     /** Contratto 1.37: «Chiudi» per le sessioni finite o doppie senza finestra; `canExit` = il PC accetta /exit. */
     canExit: Boolean = false, onClose: (String) -> Unit = {},
     now: Long = System.currentTimeMillis() / 1000,
+    /** Il riquadro Notte (mockup approvato l'08/10 alle 12:57): il giorno del rapporto, e la pagina quando è arrivata. */
+    nightDate: java.time.LocalDate? = null, nightPage: it.pixelbox.cmwatch.rules.NightPage.Page? = null, onNight: () -> Unit = {},
+    /** «Utilizzo»: le schede della quota, nella sua sezione richiudibile. */
+    usage: (@Composable () -> Unit)? = null,
+    /** Le sezioni aperte la prima volta, prima che tu le apra o chiuda. */
+    startOpen: Set<String> = setOf("night", "sessions"),
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
+    // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { runCatching { ctx.getSharedPreferences("home_sections", android.content.Context.MODE_PRIVATE) }.getOrNull() }
+    fun section(key: String) = mutableStateOf(runCatching { prefs?.getBoolean(key, key in startOpen) }.getOrNull() ?: (key in startOpen))
+    var sessionsOpen by remember { section("sessions") }
+    var usageOpen by remember { section("usage") }
+    var otherOpen by remember { section("other") }
+    var nightOpen by remember { section("night") }
+    fun save(key: String, v: Boolean) { runCatching { prefs?.edit()?.putBoolean(key, v)?.apply() } }
     // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
     // «Ha finito») la sua card scivola al posto nuovo e le altre si spostano (osservazioni del 03/10, transizione 4).
     val off = animationsOff()
@@ -92,12 +109,19 @@ fun SummaryList(
         Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (nightDate != null) {
+            item(key = "sec-night") { Box(moving()) { HomeSection(stringResource(R.string.home_sec_night), null, nightOpen) { nightOpen = !nightOpen; save("night", nightOpen) } } }
+            if (nightOpen) item(key = "night-box") { Box(moving()) { NightHomeCard(nightDate, nightPage, onNight) } }
+        }
+        item(key = "sec-sessions") {
+            Box(moving()) { HomeSection(stringResource(R.string.home_sec_sessions, model.rows.size), null, sessionsOpen) { sessionsOpen = !sessionsOpen; save("sessions", sessionsOpen) } }
+        }
         // Contratto 1.37: «Da approvare» prima di «Ti aspetta» (mockup approvato il 05/10 21:07).
-        if (approvals.isNotEmpty()) {
+        if (sessionsOpen && approvals.isNotEmpty()) {
             item(key = "h-approvals") { Box(moving()) { GroupHeader(stringResource(R.string.approvals_group) + " · " + approvals.size, CmColors.advice) } }
             items(approvals, key = { "a-" + it.task }) { a -> Box(moving()) { ApprovalCard(a, now, onApprove) } }
         }
-        model.rows.groupBy { it.group }.forEach { (group, rows) ->
+        if (sessionsOpen) model.rows.groupBy { it.group }.forEach { (group, rows) ->
             item(key = "h-${group.name}") { Box(moving()) { GroupHeader(pluralStringResource(groupLabel(group), rows.size, rows.size), groupTone(group)) } }
             items(rows, key = { "s-" + it.session.name }) { r ->
                 val s = r.session
@@ -113,10 +137,18 @@ fun SummaryList(
         }
         // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): un titolo vero che separa le sessioni dal resto, poi le
         // categorie con icona e conteggio, dalla più urgente; ognuna nella sua card.
+        usage?.let { u ->
+            item(key = "sec-usage") { Box(moving()) { HomeSection(stringResource(R.string.home_sec_usage), null, usageOpen) { usageOpen = !usageOpen; save("usage", usageOpen) } } }
+            if (usageOpen) item(key = "usage") { Box(moving()) { u() } }
+        }
         val outside = OutsideSessions.groups(model.service, model.closed)
         if (outside.isNotEmpty()) {
-            item(key = "out-head") { Box(moving()) { OutsideHeader() } }
-            outside.forEach { g ->
+            item(key = "out-head") {
+                Box(moving()) {
+                    HomeSection(stringResource(R.string.home_sec_other), outside.joinToString(" · ") { g -> g.rows.size.takeIf { it > 0 }?.toString() ?: g.closed.size.toString() }.takeIf { !otherOpen }, otherOpen) { otherOpen = !otherOpen; save("other", otherOpen) }
+                }
+            }
+            if (otherOpen) outside.forEach { g ->
                 item(key = "out-${g.category}") { Box(moving()) { CategoryHeader(g) } }
                 item(key = "out-${g.category}-card") {
                     Box(moving()) { if (g.category == OutsideSessions.Category.CLOSED) ClosedCard(g.closed, onClosed) else OutsideCard(g.rows, onService) }
@@ -434,3 +466,67 @@ private fun ApprovalCard(a: it.pixelbox.cmwatch.contract.Approval, now: Long, on
         dismissButton = { androidx.compose.material3.TextButton(onClick = { ask = false }) { Text(stringResource(R.string.cancel), color = CmColors.text2) } },
     )
 }
+
+/** Titolo di sezione della home: si apre e si chiude al tocco; chiusa, a destra un riassunto se c'è. */
+@Composable
+private fun HomeSection(title: String, summary: String?, open: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().handCursor().clickable(onClick = onToggle).padding(start = 4.dp, end = 4.dp, top = 14.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        androidx.compose.material3.Icon(
+            if (open) androidx.compose.material.icons.Icons.Rounded.ExpandMore else androidx.compose.material.icons.Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            null, tint = CmColors.actionIcon, modifier = Modifier.size(18.dp),
+        )
+        Text(title.uppercase(), style = MonoSmall.copy(color = CmColors.text2, letterSpacing = 1.8.sp))
+        Box(Modifier.weight(1f).height(1.dp).background(CmColors.line))
+        summary?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = CmColors.text2) }
+    }
+}
+
+/** Il riquadro Notte: la finestra, i conteggi per esito, la prima cosa che serve a te e «Apri». */
+@Composable
+private fun NightHomeCard(date: java.time.LocalDate, page: it.pixelbox.cmwatch.rules.NightPage.Page?, onOpen: () -> Unit) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val day = page?.day ?: date
+    val before = page?.dayBefore ?: date.minusDays(1)
+    val hm = remember { java.time.format.DateTimeFormatter.ofPattern("HH:mm").withZone(java.time.ZoneId.systemDefault()) }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(CmColors.surface).handCursor().clickable(onClick = onOpen).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            stringResource(R.string.night_title, before.dayOfMonth, day.dayOfMonth, day.month.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, locale)),
+            style = MaterialTheme.typography.titleMedium, color = CmColors.text,
+        )
+        if (page == null) Text(stringResource(R.string.night_loading), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+        else {
+            Text(
+                stringResource(R.string.home_night_window, hm.format(java.time.Instant.ofEpochSecond(page.start)), hm.format(java.time.Instant.ofEpochSecond(page.end)), page.cards.size),
+                style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+            )
+            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val c = page.counts
+                if (c.done > 0) NightCount(pluralStringResource(R.plurals.night_c_done, c.done, c.done), CmColors.briefGood)
+                if (c.running > 0) NightCount(pluralStringResource(R.plurals.night_c_running, c.running, c.running), CmColors.actionIcon)
+                if (c.stopped > 0) NightCount(pluralStringResource(R.plurals.night_c_stopped, c.stopped, c.stopped), CmColors.goneDim)
+                if (c.asking > 0) NightCount(pluralStringResource(R.plurals.night_c_asking, c.asking, c.asking), CmColors.advice)
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val need = page?.needs?.firstOrNull()
+            Text(
+                need?.let { pluralStringResource(R.plurals.home_night_needs, page.needs.size, page.needs.size, it.session, it.text) }.orEmpty(),
+                style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, modifier = Modifier.weight(1f),
+            )
+            androidx.compose.material3.Button(onClick = onOpen) { Text(stringResource(R.string.home_night_open)) }
+        }
+    }
+}
+
+@Composable
+private fun NightCount(text: String, tone: Color) = Text(
+    text, style = MaterialTheme.typography.labelLarge, color = tone,
+    modifier = Modifier.clip(CircleShape).background(CmColors.surfaceHigh).padding(horizontal = 12.dp, vertical = 6.dp),
+)

@@ -13,21 +13,40 @@
   const hm = (s: number) => new Intl.DateTimeFormat('it-IT', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s * 1000))
   let opened = $state<string | null>(null)
   const times = (c: Card) => (c.end == null ? t.nightSince(hm(c.start)) : `${hm(c.start)}–${hm(c.end)} · ${t.nightShort(c.durationS ?? 0)}`)
-  const iconColor = { ok: 'var(--good)', stopped: 'var(--gone-dim)', running: 'var(--icon)', question: 'var(--advice)' }
-  const barColor = { ok: 'var(--good)', stopped: 'var(--gone-dim)', running: 'var(--icon)', question: 'var(--advice)' }
+  const tone: Record<string, string> = { ok: 'var(--good)', stopped: 'var(--gone-dim)', running: 'var(--icon)', question: 'var(--advice)' }
+  // Sezioni richiudibili (Franz, 08/10 12:30): «Progetti» parte chiusa.
+  let needsOpen = $state(true)
+  let itemsOpen = $state(true)
+  let projectsOpen = $state(false)
 </script>
 
 <div class="night">
   {#if model}
     <div class="win">
-      <p>{t.nightWindow(hm(model.start), hm(model.end), model.windowS, model.fromLastMessage)}</p>
+      <div class="wt">
+        <p>{t.nightWindow(hm(model.start), hm(model.end), model.windowS)}{#if model.fromLastMessage}<br />{t.nightFromLast}{/if}</p>
+        <div class="chips">
+          {#if model.counts.done}<span style:color="var(--good)">{t.nightDone(model.counts.done)}</span>{/if}
+          {#if model.counts.running}<span style:color="var(--icon)">{t.nightRunningN(model.counts.running)}</span>{/if}
+          {#if model.counts.stopped}<span style:color="var(--gone-dim)">{t.nightStopped(model.counts.stopped)}</span>{/if}
+          {#if model.counts.asking}<span style:color="var(--advice)">{t.nightAsking(model.counts.asking)}</span>{/if}
+        </div>
+      </div>
       <button class="ib" aria-label={t.nightRefresh} title={t.nightRefresh} disabled={loading} onclick={onRefresh}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5" /></svg>
       </button>
     </div>
 
+    {#snippet section(title: string, explain: string, open: boolean, toggle: () => void)}
+      <button class="sec" aria-expanded={open} onclick={toggle}>
+        <span class="h2"><svg viewBox="0 0 24 24" width="16" height="16"><path d={open ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} fill="none" stroke="var(--icon)" stroke-width="2.4" stroke-linecap="round" /></svg>{title}</span>
+        <small>{explain}</small>
+      </button>
+    {/snippet}
+
     {#if model.needs.length}
-      <h2>{t.nightNeeds}</h2>
+      {@render section(t.nightNeedsTitle(model.needs.length), t.nightNeedsExpl, needsOpen, () => (needsOpen = !needsOpen))}
+      {#if needsOpen}
       {#each model.needs as n, i}
         <div class="need">
           <span class="ni" style:color={n.kind === 'question' ? 'var(--advice)' : 'var(--wait)'}>{n.kind === 'question' ? '?' : '!'}</span>
@@ -43,51 +62,37 @@
           </span>
         </div>
       {/each}
+      {/if}
     {/if}
 
-    <h2>{t.nightItems}</h2>
-    <div class="axis" aria-hidden="true">{#each model.axis as a}<span style:left="{a.at * 100}%">{a.label}</span>{/each}</div>
+    {@render section(t.nightItemsTitle(model.cards.length), t.nightItemsExpl, itemsOpen, () => (itemsOpen = !itemsOpen))}
+    {#if itemsOpen}
     {#each model.cards as c (c.id)}
       {@const open = opened === c.id}
-      <div class="card" class:open>
-        <button class="head" aria-expanded={open} onclick={() => (opened = open ? null : c.id)}>
-          <span class="ic" style:color={iconColor[c.icon]}>
-            {#if c.icon === 'ok'}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            {:else if c.icon === 'stopped'}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
-            {:else if c.icon === 'running'}<svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" /></svg>
-            {:else}<b>?</b>{/if}
-          </span>
-          <span class="tx">
-            <span class="tt">{c.title}{#if c.queue}<i class="tag">{t.nightQueueTag}</i>{/if}</span>
-            <small>{times(c)}</small>
-            {#if open || !c.detail}{#if c.folder}<small>{c.folder}</small>{/if}{/if}
-            {#if !open && c.detail}<span class="line">{c.detail}</span>{/if}
-            <span class="track"><i style:left="{c.from * 100}%" style:width="{(c.to - c.from) * 100}%" style:background={barColor[c.icon]}></i></span>
-          </span>
-          <svg class="chev" viewBox="0 0 24 24" width="22" height="22"><path d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" /></svg>
-        </button>
+      <button class="card" aria-expanded={open} onclick={() => (opened = open ? null : c.id)}>
+        <span class="hd"><b class="tt">{c.title}</b><i class="st" style:color={tone[c.icon]}>{t.nightState[c.icon]}</i></span>
+        <small>{c.queue ? t.nightKindJob : t.nightKindSession} · {times(c)}</small>
+        {#if c.folder}<small>{c.folder}</small>{/if}
+        {#if c.detail}<span class="out">{c.detail}</span>{/if}
+        {#if c.commits != null}<small>{t.nightCount(c.commits, 'commit')} · {t.nightCount(c.tests ?? 0, 'test')} · {t.nightCount(c.prompts ?? 0, 'prompt')}</small>{/if}
         {#if open}
-          <div class="more">
-            {#if c.detail}<p>{c.detail}</p>{/if}
-            {#if c.commits != null}
-              <div class="counts"><span>{t.nightCount(c.commits, 'commit')}</span><span>{t.nightCount(c.tests ?? 0, 'test')}</span><span>{t.nightCount(c.prompts ?? 0, 'prompt')}</span></div>
-            {/if}
-            {#if c.steps.length}
-              <ol class="steps">{#each c.steps as s}<li><span class="mono">{hm(s.at)}</span> {s.text}</li>{/each}</ol>
-            {/if}
-            {#if c.chat}
-              <button class="tonal" onclick={() => c.chat && onChat(c.chat)}>
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                {t.nightConversation}
-              </button>
-            {/if}
-          </div>
+          {#if c.steps.length}
+            <ol class="steps">{#each c.steps as s}<li><span class="mono">{hm(s.at)}</span> {s.text}</li>{/each}</ol>
+          {/if}
+          {#if c.chat}
+            <span class="tonal" role="button" tabindex="0" onclick={(e) => { e.stopPropagation(); if (c.chat) onChat(c.chat) }} onkeydown={(e) => { if (e.key === 'Enter' && c.chat) onChat(c.chat) }}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              {t.nightConversation}
+            </span>
+          {/if}
         {/if}
-      </div>
+      </button>
     {/each}
+    {/if}
 
     {#if model.projects.length}
-      <h2>{t.nightProjects}</h2>
+      {@render section(t.nightProjectsTitle(model.projects.length), t.nightProjectsExpl, projectsOpen, () => (projectsOpen = !projectsOpen))}
+      {#if projectsOpen}
       {#each model.projects as p}
         <div class="proj">
           <div class="ph"><b>{p.name}</b><small>{p.total ? t.nightParts(p.done, p.total) : t.nightNoParts}</small></div>
@@ -96,6 +101,7 @@
           {#if p.next}<small>{t.nightNext}: {p.next}</small>{/if}
         </div>
       {/each}
+      {/if}
     {/if}
   {:else if error}
     <p class="msg">{error}</p>
@@ -106,11 +112,15 @@
 
 <style>
   .night { padding: 0 12px 24px; display: flex; flex-direction: column; gap: 10px; max-width: 760px; }
-  .win { display: flex; align-items: flex-start; gap: 8px; padding: 0 4px 0 44px; color: var(--text2); font-size: 15px; }
-  .win p { flex: 1; }
+  .win { display: flex; align-items: flex-start; gap: 8px; padding: 0 4px 0 8px; color: var(--text2); font-size: 15px; }
+  .wt { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chips span { padding: 6px 12px; border-radius: 999px; background: var(--high); font-weight: 500; font-size: 14px; }
   .ib { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; margin-top: -10px; }
   .ib:hover { background: var(--surface); }
-  h2 { margin: 14px 8px 2px; font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+  .sec { display: flex; flex-direction: column; gap: 4px; margin: 14px 0 2px; padding: 0 8px; text-align: left; }
+  .sec .h2 { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+  .sec small { color: var(--text2); font-size: 14px; }
   .need { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 24px; background: var(--surface); }
   .ni { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--high); font-weight: 700; }
   .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -120,24 +130,13 @@
   .nb { padding: 10px 16px; border-radius: 22px; background: var(--high); color: var(--icon); font-weight: 500; font-size: 14.5px; white-space: nowrap; }
   .nb.filled { background: var(--primary); color: var(--on-primary); }
   .nb:hover { filter: brightness(1.12); }
-  .axis { position: relative; height: 18px; margin: 0 52px 0 64px; font: 12px/1 var(--mono); color: var(--text2); }
-  .axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-  .card { border-radius: 24px; background: var(--surface); }
-  .head { display: flex; align-items: flex-start; gap: 14px; width: 100%; padding: 14px 10px 14px 14px; text-align: left; border-radius: 24px; }
-  .head:hover { background: rgb(255 255 255 / .03); }
-  .ic { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--high); }
-  .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-  .tt { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
-  .tag { font: 600 11px/1 var(--mono); font-style: normal; letter-spacing: .08em; color: var(--advice); background: color-mix(in srgb, var(--advice) 16%, transparent); border-radius: 999px; padding: 4px 8px; margin-left: 8px; vertical-align: 3px; }
-  .tx small { color: var(--text2); font-size: 14px; }
-  .line { color: var(--text2); font-size: 14.5px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .track { position: relative; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--high); }
-  .track i { position: absolute; top: 0; bottom: 0; border-radius: 3px; min-width: 5px; }
-  .chev { flex: none; margin-top: 6px; }
-  .more { padding: 0 18px 16px 68px; display: flex; flex-direction: column; gap: 12px; }
-  .more p { font-size: 16px; line-height: 1.5; }
-  .counts { display: flex; gap: 8px; flex-wrap: wrap; }
-  .counts span { padding: 6px 12px; border-radius: 10px; background: var(--high); color: var(--text2); font-size: 14px; }
+  .card { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 14px 18px; border-radius: 24px; background: var(--surface); text-align: left; }
+  .card:hover { filter: brightness(1.06); }
+  .hd { display: flex; align-items: center; gap: 8px; }
+  .tt { flex: 1; font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
+  .st { font-style: normal; font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); white-space: nowrap; }
+  .card small { color: var(--text2); font-size: 14px; }
+  .out { font-size: 15.5px; line-height: 1.45; }
   .steps { list-style: none; margin: 0; padding: 0 0 0 12px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
   .steps .mono { color: var(--text2); }
   .tonal { align-self: flex-start; display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 22px; background: var(--high); color: var(--icon); font-weight: 500; }

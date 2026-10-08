@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Event, Question, Session, State } from './contract'
 import { finishedKey, FINISHED_S } from './summary'
-import { forYou, forYouFirst, hero, nextKey, working, type Scheduled } from './masterHome'
+import { forYou, forYouFirst, hero, nextKey, working, workingText, type Scheduled } from './masterHome'
 
 // Gli stessi casi di MasterHomeTest in Kotlin (le righe che la web app già legge).
 const at = (h: number, m = 0) => Date.UTC(2026, 9, 2, h - 2, m) / 1000
@@ -126,5 +126,11 @@ describe('ultimo esito', () => {
   it("senza conversazione l'esito del relay", () => {
     expect(hero([], { ...s('master'), outcome: { short: 'corto', full: 'Esito: dal relay', at: at(7) } })!.headline).toBe('dal relay')
     expect(hero([], s('master'))).toBeNull()
+  })
+  it('partito un turno dopo l\'esito, la card al lavoro dice cosa fa adesso (Franz, 08/10 14:03)', () => {
+    const x = { ...s('a', 'awaiting'), outcome: { short: 'Fatto', full: 'Prossimi: ok, procedi con 1 e 2', at: 1000 }, turn_started: 1060, tool: 'Bash', tool_note: 'git merge' }
+    expect(workingText(x)).toBe('Bash · git merge')
+    expect(workingText({ ...x, tool: null, tool_note: null })).toBeNull()
+    expect(workingText({ ...x, turn_started: 900 })).toBe('Prossimi: ok, procedi con 1 e 2')
   })
 })

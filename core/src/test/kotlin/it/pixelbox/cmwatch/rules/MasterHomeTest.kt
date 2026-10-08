@@ -145,6 +145,15 @@ class MasterHomeTest {
         assertNull(MasterHome.working(st(s("a", SessionState.BUSY).copy(tool = "Bash", toolNote = "cat /tmp/x"))).single().detail)
     }
 
+    // Franz, 08/10 14:03: dopo «ok, procedi con 1 e 2» la card mostrava ancora i Prossimi già scelti. Partito un turno dopo
+    // l'esito, la card dice cosa fa la sessione adesso.
+    @Test fun aTurnStartedAfterTheOutcomeShowsWhatItDoesNow() {
+        val o = Outcome("Fatto", "Test verdi.\nProssimi: ok, procedi con 1 e 2", at(14))
+        val now = s("a", SessionState.AWAITING).copy(outcome = o, turnStarted = at(14) + 60, tool = "Bash", toolNote = "git merge")
+        assertEquals("Bash · git merge", MasterHome.working(st(now)).single().detail)
+        assertNull(MasterHome.working(st(now.copy(tool = null, toolNote = null))).single().detail)
+    }
+
     // Consulenza del 02/10 (Codex e Antigravity, approvata da Franz il 03/10): con una domanda aperta «Per te» va prima
     // dell'ultimo esito; senza, l'esito resta in testa.
     @Test fun aQuestionPutsForYouFirst() {

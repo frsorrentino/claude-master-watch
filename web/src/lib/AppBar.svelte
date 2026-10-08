@@ -63,6 +63,7 @@
     </button>
   {/if}
 </header>
+{#if fresh.stale}<p class="stalebar">{t.staleBanner(fresh.minutes)}</p>{/if}
 
 {#if menu}
   <div class="scrim" role="presentation" onclick={() => (menu = false)}></div>
@@ -87,6 +88,7 @@
 {/if}
 
 <style>
+  .stalebar { margin: 0; padding: 6px 20px; background: var(--brief-warn, #5a4300); color: var(--brief-warn-ink, #ffd77a); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; }
   header { padding: 4px 8px 6px; }
   .bar { display: flex; align-items: center; min-height: 56px; }
   .title { flex: 1; display: flex; align-items: baseline; gap: 10px; padding-left: 12px; min-width: 0; }

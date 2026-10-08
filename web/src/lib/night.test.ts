@@ -1,12 +1,27 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { MIN_BAR, page as pageOf, shortTitle, type NightReport } from './night'
+import { MIN_BAR, page as pageOf, shortTitle, showHomeNight, type NightReport } from './night'
 
 // La pagina Notte dal rapporto (specifica del 07/10, approvata alle 21:50): gli stessi casi di NightPageTest.kt.
 const report: NightReport = JSON.parse(readFileSync(new URL('../../../contract/night-report-sample.json', import.meta.url), 'utf8'))
 const p = pageOf(report, 'Europe/Rome')
 
 describe('pagina Notte', () => {
+  it('fra le cose da fare solo quello ancora vero: sessioni vive, approvazioni in attesa (Franz, 08/10 14:20)', () => {
+    const now = pageOf(report, 'Europe/Rome', { live: new Set(['ledger-api']), pending: new Set() })
+    expect(now.needs.map(n => n.kind)).toEqual(['question'])
+    expect(p.needs).toHaveLength(3)
+  })
+  it('in testa i conteggi per esito, a parole (Franz, 08/10 12:30)', () => {
+    expect(p.counts).toEqual({ done: 2, running: 2, stopped: 1, asking: 1 })
+  })
+  it('il riquadro in home resta finché quella notte non si apre', () => {
+    const ref = { date: '2026-10-07', generated_at: 1791346889 }
+    expect(showHomeNight(ref, null)).toBe(true)
+    expect(showHomeNight(ref, '2026-10-06')).toBe(true)
+    expect(showHomeNight(ref, '2026-10-07')).toBe(false)
+    expect(showHomeNight(undefined, null)).toBe(false)
+  })
   it('la notte prende il nome dai suoi due giorni', () => {
     expect([p.dayBefore, p.day]).toEqual(['2026-10-06', '2026-10-07'])
     expect(p.fromLastMessage).toBe(true)

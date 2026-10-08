@@ -16,6 +16,21 @@ class NightPageTest {
     private val report = ContractJson.decodeNightReport(Fixtures.read("night-report-sample.json"))
     private val page = NightPage.of(report, zone)
 
+    /** Franz, 08/10 12:30: «non capisco cosa è da fare o fatto»: in testa i conteggi per esito, a parole. */
+    /**
+     * Franz, 08/10 14:20: «perché mi chiede /clear su fiscale se la sessione è chiusa?». Il rapporto è una fotografia
+     * della notte: fra le cose da fare restano solo le sessioni ancora vive e le approvazioni ancora in attesa.
+     */
+    @Test fun onlyWhatIsStillTrueIsForYou() {
+        val now = NightPage.of(report, zone, live = setOf("ledger-api"), pending = emptySet())
+        assertEquals(listOf(NightPage.NeedKind.QUESTION), now.needs.map { it.kind })
+        assertEquals(3, page.needs.size)
+    }
+
+    @Test fun countsByOutcomeForTheChips() {
+        assertEquals(NightPage.Counts(done = 2, running = 2, stopped = 1, asking = 1), page.counts)
+    }
+
     @Test fun theNightIsNamedByItsTwoDays() {
         assertEquals(LocalDate.of(2026, 10, 6), page.dayBefore)
         assertEquals(LocalDate.of(2026, 10, 7), page.day)

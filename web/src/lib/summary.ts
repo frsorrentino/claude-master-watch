@@ -1,3 +1,4 @@
+import { workingText } from './masterHome'
 import type { QuotaAccount, Session, State } from './contract'
 
 // Il riepilogo unico della home, porta di Summary.kt: ogni sessione una volta, nell'ordine del bisogno (ti aspetta, ha
@@ -29,7 +30,7 @@ export function build(state: State, sent: Sent[], now: number, read: Set<string>
     .sort((a, b) => b.outcome!.at - a.outcome!.at)
     .map(s => ({ group: 'finished', session: s, text: s.outcome!.full, at: s.outcome!.at, key: finishedKey(s.name, s.outcome!.at) }))
   const working: Row[] = others.filter(s => (s.state === 'busy' || s.state === 'awaiting') && !asking.has(s.name))
-    .map(s => ({ group: 'working', session: s, text: s.outcome?.full ?? null, at: s.turn_started ?? s.since }))
+    .map(s => ({ group: 'working', session: s, text: workingText(s), at: s.turn_started ?? s.since }))
   const taken = new Set([...waiting, ...finished, ...working].map(r => r.session.name))
   const still: Row[] = others.filter(s => !taken.has(s.name)).sort((a, b) => b.since - a.since)
     .map(s => ({ group: 'still', session: s, text: s.outcome?.full ?? null, at: s.since }))

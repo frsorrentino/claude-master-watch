@@ -26,7 +26,10 @@ export type Card = {
 }
 export type Need = { kind: 'question' | 'approval' | 'unblock'; session: string; text: string; options: Option[]; task?: string }
 export type Project = { name: string; done: number; total: number; parts: string[]; waiting: string[]; next: string | null }
+/** Quante voci per esito, per le pillole in testa (Franz, 08/10 12:30: «non capisco cosa è da fare o fatto»). */
+export type Counts = { done: number; running: number; stopped: number; asking: number }
 export type NightPage = {
+  counts: Counts
   day: string; dayBefore: string; start: number; end: number; windowS: number; fromLastMessage: boolean
   needs: Need[]; cards: Card[]; axis: { label: string; at: number }[]; projects: Project[]
 }
@@ -34,7 +37,8 @@ export type NightPage = {
 const ymd = (t: number, timeZone: string) => new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t * 1000))
 const hm = (t: number, timeZone: string) => new Intl.DateTimeFormat('it-IT', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(t * 1000))
 
-export function page(r: NightReport, timeZone: string): NightPage {
+/** `now`: sessioni vive e approvazioni in attesa adesso; «Da fare per te» tiene solo quello ancora vero (Franz, 08/10 14:20). */
+export function page(r: NightReport, timeZone: string, now?: { live: Set<string>; pending: Set<string> }): NightPage {
   const start = r.window.start
   const end = Math.max(r.window.end, start + 60)
   const span = end - start
@@ -66,10 +70,13 @@ export function page(r: NightReport, timeZone: string): NightPage {
     ...(r.attention?.approvals ?? []).map(a => ({ kind: 'approval' as const, session: (a.project ?? '').split('/').pop() ?? '', text: a.title, options: [], task: a.task })),
     ...(r.attention?.unblock ?? []).map(u => ({ kind: 'unblock' as const, session: u.session, text: u.text, options: [] })),
   ]
+    .filter(n => !now || (n.kind === 'approval' ? !!n.task && now.pending.has(n.task) : now.live.has(n.session)))
   const day = ymd(end, timeZone)
   const before = new Date(`${day}T12:00:00Z`); before.setUTCDate(before.getUTCDate() - 1)
+  const counts: Counts = { done: 0, running: 0, stopped: 0, asking: 0 }
+  for (const c of cards) counts[c.icon === 'ok' ? 'done' : c.icon === 'running' ? 'running' : c.icon === 'question' ? 'asking' : 'stopped']++
   return {
-    day, dayBefore: before.toISOString().slice(0, 10), start, end, windowS: end - start,
+    counts, day, dayBefore: before.toISOString().slice(0, 10), start, end, windowS: end - start,
     fromLastMessage: r.window.start_source === 'last_message', needs, cards, axis,
     projects: projects.map(p => ({
       name: p.name, done: (p.parts ?? []).filter(x => x.state === 'done').length, total: Math.max(p.parts_total ?? 0, (p.parts ?? []).length),
@@ -92,3 +99,6 @@ export function shortTitle(raw: string): string {
   if (!cut) return body.replace(/\.+$/, '')
   return body.slice(0, body.lastIndexOf(' ')).replace(/[,;: ]+$/, '')
 }
+
+/** Il riquadro Notte in home (mockup approvato l'08/10 alle 12:57): finché quella notte non è stata aperta. */
+export const showHomeNight = (ref: { date: string } | null | undefined, opened: string | null): boolean => !!ref && ref.date !== opened

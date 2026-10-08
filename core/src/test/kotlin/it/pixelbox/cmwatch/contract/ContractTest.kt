@@ -96,6 +96,12 @@ class ContractTest {
         assertNull(ev.first { it.kind == EventKind.QUOTA }.session)
     }
 
+    // Contratto 1.45 (08/10): lo stato del PC fermo, segnalato dal guardiano del relay; session, account e ref null.
+    @Test fun relayStaleEvent() {
+        val e = ContractJson.decodeEvents(Fixtures.events).single { it.kind == EventKind.RELAY_STALE }
+        assertNull(e.session); assertNull(e.account); assertNull(e.ref); assertTrue(e.title.startsWith("⚠"))
+    }
+
     // Contratto 1.32: i dispositivi accoppiati, nell'ordine del PC; kind e seen null quando non si sanno.
     @Test fun stateCarriesThePairedDevices() {
         val d = ContractJson.decodeState(Fixtures.stateIdle).devices!!

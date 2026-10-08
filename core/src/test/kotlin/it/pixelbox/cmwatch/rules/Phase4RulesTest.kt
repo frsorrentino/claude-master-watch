@@ -27,7 +27,7 @@ class TimelineTextTest {
     @Test fun groupedByDayNewestFirst() {
         val g = TimelineText.groups(ev, zone)
         assertEquals(listOf("12 set"), g.map { it.day })
-        assertEquals(8, g[0].rows.size)   // 1.18: in più la ripresa della quota; 1.40: il riavvio fallito; diario e notte restano fuori
+        assertEquals(9, g[0].rows.size)   // 1.18: in più la ripresa della quota; 1.40: il riavvio fallito; 1.45: lo stato fermo; diario e notte restano fuori
         // 1.18: la ripresa della quota è la più recente; del corpo su più righe resta la prima (una riga sul polso).
         assertEquals("14:10 · ✓ quota personal back · reset 13:10", g[0].rows[0])
         assertEquals("13:01 · 1 yes · ledger-api · answered from watch-pixel5", g[0].rows[1])

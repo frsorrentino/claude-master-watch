@@ -21,7 +21,7 @@
   import Launch from './lib/Launch.svelte'
   import Diary from './lib/Diary.svelte'
   import NightPage from './lib/NightPage.svelte'
-  import { page as nightPage, type NightReport } from './lib/night'
+  import { page as nightPage, showHomeNight, type NightReport } from './lib/night'
   import Overview from './lib/Overview.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
@@ -226,7 +226,8 @@
   // quando la pagina si apre e col tasto aggiorna; nella demo è la fixture inventata.
   let night = $state<{ report: NightReport | null; error: string | null; loading: boolean }>({ report: null, error: null, loading: false })
   const nightZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const nightModel = $derived(night.report ? nightPage(night.report, nightZone) : null)
+  // Fra le cose da fare solo quello ancora vero adesso (Franz, 08/10 14:20: /clear chiesto a una sessione chiusa).
+  const nightModel = $derived(night.report ? nightPage(night.report, nightZone, { live: new Set(st.sessions.filter(s => s.state !== 'gone').map(s => s.name)), pending: new Set((st.approvals ?? []).map(a => a.task)) }) : null)
   const nightTitle = $derived.by(() => {
     if (!nightModel) return t.menuNight
     const d = new Date(`${nightModel.day}T12:00:00Z`), b = new Date(`${nightModel.dayBefore}T12:00:00Z`)
@@ -242,6 +243,15 @@
     } catch { night = { ...night, error: t.noAnswer, loading: false } }
   }
   $effect(() => { if (page === 'night' && !night.report && !night.loading) untrack(() => loadNight()) })
+  // Il riquadro Notte in home (mockup approvato l'08/10 alle 12:57): finché quella notte non si apre; il rapporto si chiede
+  // una volta, per i conteggi. Il giorno aperto si ricorda nel browser.
+  let nightSeen = $state<string | null>((() => { try { return localStorage.getItem('night-opened') } catch { return null } })())
+  const nightBoxShown = $derived(showHomeNight(st.night?.report, nightSeen))
+  $effect(() => { if (nightBoxShown && !night.report && !night.loading && !night.error) untrack(() => loadNight()) })
+  $effect(() => {
+    const d = st.night?.report?.date
+    if (page === 'night' && d && d !== nightSeen) { nightSeen = d; try { localStorage.setItem('night-opened', d) } catch { /* solo per questa visita */ } }
+  })
   const pageTitle: Record<PageName, string> = $derived({ launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
@@ -410,7 +420,8 @@
     {#snippet quick()}{@render masterQuick()}{/snippet}
     {#snippet list()}
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
-      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} footer={wide ? quotaPanels : undefined}
+      <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} usage={quotaPanels}
+        night={nightBoxShown ? nightModel : undefined} {nightTitle} onNight={() => openPage('night')}
         onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}

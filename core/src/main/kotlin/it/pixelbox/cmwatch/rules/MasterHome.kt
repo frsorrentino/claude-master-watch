@@ -138,7 +138,9 @@ object MasterHome {
      */
     fun working(state: State): List<Running> =
         running(state).filter { it.session.state == SessionState.BUSY || it.session.state == SessionState.AWAITING }
-            .map { it.copy(detail = it.session.outcome?.full) }
+            // L'ultimo esito con i suoi Prossimi finché il turno è quello; partito un turno dopo l'esito (una risposta già
+            // data, Franz 08/10 14:03), cosa fa adesso.
+            .map { r -> val o = r.session.outcome; if (o != null && (r.session.turnStarted ?: 0) > o.at) r else r.copy(detail = o?.full) }
 
     fun running(state: State): List<Running> =
         PhoneBoard.sections(state, withMaster = false).filter { it.group != PhoneBoard.Group.CLOSED }.flatMap { it.sessions }.map { s ->
