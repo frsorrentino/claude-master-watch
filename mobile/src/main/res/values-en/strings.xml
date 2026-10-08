@@ -762,4 +762,5 @@ It starts at your last message to the master.</string>
     <string name="splash_home">Back home</string>
     <string name="splash_drop_column">Remove the column</string>
     <string name="splash_drop_soon">the column goes in 3 s</string>
+    <string name="just_closed_line">closed at %1$s · now in «Closed»</string>
 </resources>

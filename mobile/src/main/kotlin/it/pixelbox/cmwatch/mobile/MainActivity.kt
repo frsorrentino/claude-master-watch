@@ -488,11 +488,11 @@ class MainActivity : ComponentActivity() {
         // (Franz, 08/10 18:06: «non voglio pagine che scompaiono»).
         val heldCols = remember { androidx.compose.runtime.mutableStateListOf<String>() }
         val shownCols = remember { androidx.compose.runtime.mutableStateOf(emptyList<String>()) }
-        val justClosed = shownCols.value.filter { n -> n !in liveNames && n !in heldCols }
+        val colsJustClosed = shownCols.value.filter { n -> n !in liveNames && n !in heldCols }
         // Una riaperta torna una colonna come le altre.
-        androidx.compose.runtime.SideEffect { heldCols.addAll(justClosed); heldCols.removeAll { n -> n in liveNames } }
+        androidx.compose.runtime.SideEffect { heldCols.addAll(colsJustClosed); heldCols.removeAll { n -> n in liveNames } }
         // La master sta nella home: non diventa una colonna.
-        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, (liveNames + heldCols + justClosed).distinct().filter { n -> n != it.pixelbox.cmwatch.rules.ContextActions.MASTER })
+        val tabletCols = it.pixelbox.cmwatch.rules.Tablet.columns(pinned, (liveNames + heldCols + colsJustClosed).distinct().filter { n -> n != it.pixelbox.cmwatch.rules.ContextActions.MASTER })
         androidx.compose.runtime.SideEffect { shownCols.value = tabletCols }
         val tabletShares = it.pixelbox.cmwatch.rules.Tablet.Shares.fromPref(sharesRaw, tabletCols.size)
         val columnsOn = wide
@@ -893,7 +893,20 @@ class MainActivity : ComponentActivity() {
                 CloseSplash.of(o, st.sessions, leaving, lastSeen[o], now, delivered = leaving?.cmd?.let { id -> results[id] != null } == true)
             }
         }
-        val splashHome = { if (leaving?.name == open) leaving = null; open = null; tab = StartRoute.Tab.OVERVIEW }
+        // Tornando alla home la pagina vola al contrario verso la card della sessione appena chiusa, in cima alle sessioni, che
+        // resta un attimo e poi si richiude (Franz, 08/10 18:59).
+        var justClosed by remember { mutableStateOf<Pair<it.pixelbox.cmwatch.contract.Session, String>?>(null) }
+        LaunchedEffect(justClosed) { if (justClosed != null) { delay(JUST_CLOSED_MS); justClosed = null } }
+        val splashHome = {
+            val o = open
+            (splash as? CloseSplash.Phase.Closed)?.let { c ->
+                (state?.sessions?.firstOrNull { x -> x.name == o } ?: o?.let { lastSeen[it] })?.let { x ->
+                    val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.Instant.ofEpochSecond(c.at).atZone(java.time.ZoneId.systemDefault()))
+                    justClosed = x.copy(state = SessionState.GONE, question = null) to getString(R.string.just_closed_line, hm)
+                }
+            }
+            if (leaving?.name == o) leaving = null; open = null; tab = StartRoute.Tab.OVERVIEW
+        }
         // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
         val menuActions = MenuActions(
             host, updatedLabel(snap.freshness),
@@ -959,6 +972,7 @@ class MainActivity : ComponentActivity() {
                     now = now,
                     nightDate = nightRef?.date?.takeIf { showNightBox }?.let { d -> runCatching { java.time.LocalDate.parse(d) }.getOrNull() },
                     nightPage = boxPage, onNight = { nightOpen = true },
+                    justClosed = justClosed,
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {
@@ -1243,7 +1257,7 @@ class MainActivity : ComponentActivity() {
                         androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
                             val n = pages[page]
                             // La sessione aperta appena uscita dallo stato resta com'era, chiusa, sotto il pannello di chiusura.
-                            val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } ?: lastSeen[x]?.takeIf { x == open }?.copy(state = SessionState.GONE, question = null) }
+                            val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } ?: lastSeen[x]?.takeIf { x == target }?.copy(state = SessionState.GONE, question = null) }
                             if (session == null) {
                                 // Il riepilogo; sotto la scheda, durante il gesto indietro, è questa pagina.
                                 if (n == null) summaryPage()
@@ -1485,6 +1499,8 @@ class MainActivity : ComponentActivity() {
         private const val KEY_ROTATING = "cm.rotating"
         /** La chiave della prima pagina dello scorrimento, il riepilogo: nessun nome di sessione la può avere. */
         private const val SUMMARY_PAGE = "\u0000summary"
+        /** Quanto resta in cima alle sessioni la card della sessione appena chiusa, dopo il volo di ritorno. */
+        private const val JUST_CLOSED_MS = 2_500L
         private const val KEY_LAUNCH = "cm.launch"
         /** Extra dell'intent delle notifiche con domanda: apre la coda «Ti aspettano». */
         const val EXTRA_QUEUE = "cm.queue"

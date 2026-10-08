@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,6 +82,11 @@ fun SummaryList(
     usage: (@Composable () -> Unit)? = null,
     /** Le sezioni aperte la prima volta, prima che tu le apra o chiuda. */
     startOpen: Set<String> = setOf("night", "sessions"),
+    /**
+     * La sessione appena chiusa dal pannello di chiusura, con la riga «chiusa alle …» (Franz, 08/10 18:59, volo al contrario):
+     * la sua card in cima alle sessioni è dove la pagina atterra tornando alla home; poi si richiude da sola.
+     */
+    justClosed: Pair<it.pixelbox.cmwatch.contract.Session, String>? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -116,6 +122,7 @@ fun SummaryList(
         item(key = "sec-sessions") {
             Box(moving()) { HomeSection(stringResource(R.string.home_sec_sessions, model.rows.size), null, sessionsOpen) { sessionsOpen = !sessionsOpen; save("sessions", sessionsOpen) } }
         }
+        justClosed?.let { (js, line) -> item(key = "just-closed") { Box(moving()) { JustClosedCard(js, line) } } }
         // Contratto 1.37: «Da approvare» prima di «Ti aspetta» (mockup approvato il 05/10 21:07).
         if (sessionsOpen && approvals.isNotEmpty()) {
             item(key = "h-approvals") { Box(moving()) { GroupHeader(stringResource(R.string.approvals_group) + " · " + approvals.size, CmColors.advice) } }
@@ -387,6 +394,22 @@ private fun OutsideRow(row: MasterHome.Row, onAction: (MasterHome.Row) -> Unit) 
 private val OUT_HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
 /** Le sessioni chiuse in una riga: i primi tre nomi e quante altre; il tocco apre l'elenco. */
+/** La card della sessione appena chiusa: stessa chiave di volo della sua pagina, bordo d'accento finché resta. */
+@Composable
+private fun JustClosedCard(s: it.pixelbox.cmwatch.contract.Session, line: String) {
+    Row(
+        Modifier.fly("card-${s.id}").fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surface)
+            .border(1.5.dp, CmColors.actionIcon.copy(alpha = 0.7f), RoundedCornerShape(20.dp)).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SessionBadge(s, 22.dp)
+        Column(Modifier.weight(1f)) {
+            Text(s.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+            Text(line, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+        }
+    }
+}
+
 @Composable
 private fun ClosedCard(closed: List<Session>, onClick: () -> Unit) {
     val names = closed.take(3).joinToString(", ") { it.name } + if (closed.size > 3) " " + stringResource(R.string.closed_more, closed.size - 3) else ""

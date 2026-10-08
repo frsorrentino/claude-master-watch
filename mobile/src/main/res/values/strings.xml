@@ -771,4 +771,5 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="splash_home">Torna alla home</string>
     <string name="splash_drop_column">Togli la colonna</string>
     <string name="splash_drop_soon">la colonna si toglie tra 3 s</string>
+    <string name="just_closed_line">chiusa alle %1$s · ora in «Chiuse»</string>
 </resources>
