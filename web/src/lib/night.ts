@@ -60,7 +60,8 @@ export function page(r: NightReport, timeZone: string, now?: { live: Set<string>
       durationS: i.end != null ? Math.max(0, i.end - i.start) : null, detail: i.detail ?? null, from, to,
       chat: i.kind === 'session' && i.live ? i.id : null,
       prompts: i.counts?.prompts ?? null, tests: i.counts?.tests ?? null, commits: i.counts?.commits ?? null,
-      steps: (project?.events ?? []).filter(e => e.at >= i.start - 60 && e.at <= until).map(e => ({ at: e.at, kind: e.kind, text: e.text, ok: e.ok ?? null })),
+      // Il passo che ripete l'esito, già scritto sopra, non torna fra i passi (Franz, 08/10 19:55).
+      steps: (project?.events ?? []).filter(e => e.at >= i.start - 60 && e.at <= until && e.text.trim() !== (i.detail ?? '').trim()).map(e => ({ at: e.at, kind: e.kind, text: e.text, ok: e.ok ?? null })),
     }
   })
   const axis: { label: string; at: number }[] = []

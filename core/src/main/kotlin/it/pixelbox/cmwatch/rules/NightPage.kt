@@ -70,7 +70,9 @@ object NightPage {
                 detail = i.detail, from = from, to = to,
                 chat = i.id.takeIf { i.kind == NightEntry.Kind.SESSION && i.live },
                 prompts = i.counts?.prompts, tests = i.counts?.tests, commits = i.counts?.commits,
-                steps = project?.events.orEmpty().filter { e -> e.at >= i.start - 60 && e.at <= until }.map { e -> Step(e.at, e.kind, e.text, e.ok) },
+                // Il passo che ripete l'esito, già scritto sopra, non torna fra i passi (Franz, 08/10 19:55).
+                steps = project?.events.orEmpty().filter { e -> e.at >= i.start - 60 && e.at <= until && e.text.trim() != i.detail?.trim() }
+                    .map { e -> Step(e.at, e.kind, e.text, e.ok) },
             )
         }
         val hm = DateTimeFormatter.ofPattern("HH:mm")

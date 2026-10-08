@@ -50,7 +50,8 @@ describe('pagina Notte', () => {
     expect(p.cards[1].title).toBe('ledger-api'); expect(p.cards[1].folder).toBeNull(); expect(p.cards[1].chat).toBe('ledger-api')
     expect(p.cards[2].chat).toBeNull(); expect(p.cards[3].chat).toBeNull()
   })
-  it('i passi sono gli eventi del progetto dentro la voce', () => expect(p.cards[1].steps.map(s => s.kind)).toEqual(['commit', 'test', 'outcome']))
+  // Senza il passo uguale all'esito, che la card mostra già sopra (Franz, 08/10 19:55: «inutile la ripetizione»).
+  it('i passi sono gli eventi del progetto dentro la voce, senza quello uguale all\'esito', () => expect(p.cards[1].steps.map(s => s.kind)).toEqual(['commit', 'test']))
   it('l\'asse sulle ore piene e mezze', () => expect(p.axis.map(t => t.label)).toEqual(['01:00', '01:30', '02:00', '02:30']))
   it('quello che serve a Franz viene prima, con la domanda', () => {
     expect(p.needs.map(n => n.kind)).toEqual(['question', 'approval', 'unblock']); expect(p.needs[2].session).toBe('field-notes')

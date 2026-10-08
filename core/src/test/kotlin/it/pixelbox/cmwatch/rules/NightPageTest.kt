@@ -82,8 +82,9 @@ class NightPageTest {
         assertNull(page.cards[3].chat)
     }
 
+    // Senza il passo uguale all'esito, che la card mostra già sopra (Franz, 08/10 19:55: «inutile la ripetizione»).
     @Test fun theStepsAreTheProjectEventsInsideTheItem() =
-        assertEquals(listOf("commit", "test", "outcome"), page.cards[1].steps.map { it.kind })
+        assertEquals(listOf("commit", "test"), page.cards[1].steps.map { it.kind })
 
     @Test fun axisTicksOnTheFullAndHalfHours() =
         assertEquals(listOf("01:00", "01:30", "02:00", "02:30"), page.axis.map { it.label })
