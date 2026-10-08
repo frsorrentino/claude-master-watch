@@ -36,6 +36,7 @@
     <string name="tab_diary">Registro</string>
     <string name="settings">Impostazioni</string>
     <string name="demo_banner">Demo: sessioni di esempio, nessun PC collegato</string>
+    <string name="stale_banner">PC fermo da %1$d min: lo stato mostrato è vecchio</string>
     <string name="launch">Lancia</string>
     <string name="closed_n">Chiuse (%1$d)</string>
     <string name="quota_resets_at">si azzera alle %1$s</string>

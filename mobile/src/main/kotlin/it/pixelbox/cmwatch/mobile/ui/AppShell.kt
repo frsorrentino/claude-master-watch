@@ -61,6 +61,8 @@ fun AppShell(
     onLaunch: () -> Unit = {},
     /** Il collegamento in testa al menu: il PC, «aggiornato ora» o «… min fa», ambra se fermo. */
     host: String? = null, updated: String = "", stale: Boolean = false,
+    /** Da quanti minuti il PC non pubblica lo stato; null se è fresco (Franz, 08/10 11:51: lo stato fermo un'ora non si vedeva). */
+    staleMinutes: Int? = null,
     /** La pagina Notte nel menu ≡ (specifica del 07/10); null = la voce non c'è. */
     onNight: (() -> Unit)? = null,
     /** Le sessioni aperte, per «N aperte» accanto al titolo. */
@@ -98,6 +100,13 @@ fun AppShell(
                     else -> PageHeader(
                         current, sessions, openCount, now, onPick, onClosed, menu, quota = quota, showQuota = summary && !masterChat,
                         menuStartOpen = menuStartOpen, sessionMenuStartOpen = sessionMenuStartOpen,
+                    )
+                }
+                if (staleMinutes != null && !demo) {
+                    Text(
+                        stringResource(R.string.stale_banner, staleMinutes), color = CmColors.briefWarnInk, style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1, overflow = TextOverflow.Clip,
+                        modifier = Modifier.fillMaxWidth().background(CmColors.briefWarn).padding(horizontal = 20.dp, vertical = 6.dp),
                     )
                 }
                 if (demo) {

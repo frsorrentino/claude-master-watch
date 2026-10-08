@@ -1090,6 +1090,7 @@ class MainActivity : ComponentActivity() {
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
             onNight = { nightOpen = true },
             host = host, stale = snap.freshness is Freshness.Stale,
+            staleMinutes = (snap.freshness as? Freshness.Stale)?.minutes.takeIf { state != null },
             updated = updatedLabel(snap.freshness),
             openCount = summary?.open ?: 0,
             // Con la master espansa la quota sotto la barra lascia spazio alla sua conversazione.
