@@ -195,6 +195,28 @@ class SessionSheetTest {
             }
         }
     }
+    // La master a tutto schermo sul telefono e a metà sul tablet (Franz, 08/10 18:15).
+    private fun masterSize(half: Boolean) = paparazzi.snapshot {
+        val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Come va la fase 2.2 di atlas-shop?", at = t, origin = "phone"),
+            TranscriptEntry("a1.0", "assistant", text = "Lanciata la fase 2.2 su atlas-shop: test verdi, 40 su 40. Solo commit locali: push e release con il tuo ok.\n\nEsito: fase 2.2 avviata su atlas-shop\nProssimi: fai il push · prova dal vivo", at = t + 40),
+        )
+        val hero = it.pixelbox.cmwatch.rules.MasterHome.hero(entries, m)
+        val menu = it.pixelbox.cmwatch.mobile.ui.MenuActions(null, "", false, {}, {}, {}, {}, {})
+        CmPhoneTheme(still = true) {
+            SessionSheet(m, st.ts, emptyList(), 120, none, grid = true,
+                home = { _, _ -> st.sessions.take(4).forEach { s -> androidx.compose.material3.Text(s.name, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text, modifier = androidx.compose.ui.Modifier.padding(16.dp)) } },
+                homeOpen = false, halfStops = half, half = half,
+                appBar = { it.pixelbox.cmwatch.mobile.ui.PageHeader(null, st.sessions, 3, st.ts, {}, {}, menu) },
+                bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true, toggleUp = half, screen = !half, trailing = if (half) null else ({ it.pixelbox.cmwatch.mobile.ui.AppMenu(menu) })) },
+                feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
+        }
+    }
+    @Test fun masterScreenPhone() = masterSize(half = false)
+    @Test fun masterHalfTablet() = masterSize(half = true)
+
     @Test fun masterLookToday() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook())
     @Test fun masterLookSignature() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(signature = true))
     @Test fun masterLookThread() = masterLook(it.pixelbox.cmwatch.mobile.ui.MasterLook(thread = true))

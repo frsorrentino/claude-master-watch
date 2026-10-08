@@ -194,6 +194,11 @@ fun SessionSheet(
     bar: (@Composable () -> Unit)? = null,
     /** Con `home`: true la lista della home con `dock` in basso, false la conversazione con `bar` e l'intestazione. */
     homeOpen: Boolean = true,
+    /**
+     * Le tre misure della master sul tablet (Franz, 08/10 18:15): `halfStops` le accende, `half` con `homeOpen` false è la
+     * misura a metà, con la home sopra e la conversazione sotto. Sul telefono restano due: barra e tutto schermo.
+     */
+    halfStops: Boolean = false, half: Boolean = false,
     /** La testata della pagina (`PageHeader`), in cima e dentro la parte che vola: scorre e vola con la sessione. */
     appBar: (@Composable () -> Unit)? = null,
     /** Contratto 1.28: nel «+» anche «File», di qualunque formato. */
@@ -273,7 +278,15 @@ fun SessionSheet(
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
-        appBar?.invoke()
+        // A tutto schermo la master ha una testata sola, la sua (Franz, 08/10 18:15): quella della home rientra mentre il pannello sale.
+        if (home == null) appBar?.invoke()
+        else appBar?.let { ab ->
+            androidx.compose.animation.AnimatedVisibility(
+                visible = homeOpen || (halfStops && half),
+                enter = androidx.compose.animation.expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + androidx.compose.animation.fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                exit = androidx.compose.animation.shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + androidx.compose.animation.fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
+            ) { ab() }
+        }
         val ime = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         // Tutto quello che sta sopra il campo in una sessione: barra, intestazione, avviso, conversazione, consigli.
         val masterVoice = home != null && LocalMasterLook.current.voice
@@ -403,7 +416,44 @@ fun SessionSheet(
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
             )
         } }
-        if (home == null) { chatArea(); dock?.invoke() } else {
+        if (home == null) { chatArea(); dock?.invoke() } else if (halfStops) {
+            // Il tablet (Franz, 08/10 18:15): la home resta sotto, ferma; la conversazione è un foglio che cresce dal basso fino
+            // a una delle tre misure: la barra, metà della colonna, tutta. Cresce dalla barra, così la sua barra in cima parte
+            // dal posto di quella in basso; a metà la home sopra resta da toccare.
+            val h = home
+            val off = animationsOff()
+            var dockPx by remember { mutableIntStateOf(0) }
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
+                val full = constraints.maxHeight.toFloat()
+                val target = when {
+                    homeOpen -> dockPx.toFloat()
+                    half -> full * HALF_SHARE
+                    else -> full
+                }
+                val height = remember { androidx.compose.animation.core.Animatable(if (homeOpen) 0f else target) }
+                LaunchedEffect(target, off) {
+                    if (height.value < dockPx && !homeOpen) height.snapTo(dockPx.toFloat())
+                    if (off) height.snapTo(target) else height.animateTo(target, androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
+                }
+                // Il foglio c'è finché non è tornato nella barra: solo allora ricompare la barra della home.
+                val sheet = !homeOpen || height.value > dockPx + 1f
+                Column(Modifier.fillMaxSize()) {
+                    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
+                    }
+                    Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = if (sheet) 0f else 1f }) { dock?.invoke() }
+                }
+                if (sheet) {
+                    val px = height.value.coerceIn(0f, full)
+                    val sh = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    Column(
+                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                            .height(with(androidx.compose.ui.platform.LocalDensity.current) { px.toDp() })
+                            .clip(sh).masterChat(LocalMasterChatStyle.current, sh),
+                    ) { chatArea() }
+                }
+            }
+        } else {
             // Nella home della master (Franz, 03/10 17:10) si anima solo la parte sopra il campo: la lista con la barra in
             // basso lascia il posto, salendo dal basso, a barra in cima, intestazione e conversazione. Il campo resta fermo,
             // con la bozza.
@@ -1439,6 +1489,9 @@ private fun ImageViewer(path: String, onClose: () -> Unit) {
  * in Claude e Terminale; sotto modello ed effort toccabili (contratto 1.12) e, se ci sono, obiettivo e bassa priorità. Il
  * nome e la forma dell'account stanno nel menu delle sessioni in alto.
  */
+/** La misura a metà della master sul tablet: la parte di colonna che prende il foglio della conversazione. */
+private const val HALF_SHARE = 0.55f
+
 @Composable
 private fun SheetHeader(
     s: Session, now: Long, choices: Choices?, canTune: Boolean, actions: SheetActions, showTerminal: Boolean,

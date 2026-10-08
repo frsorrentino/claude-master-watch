@@ -71,6 +71,8 @@ fun AppShell(
     quota: (@Composable () -> Unit)? = null,
     /** La master espansa a tutta pagina nella home (Franz, 03/10 16:44): la quota sotto la barra si toglie per farle spazio. */
     masterChat: Boolean = false,
+    /** La master a tutto schermo sul telefono (Franz, 08/10 18:15): la barra di stato prende il colore della sua testata. */
+    masterScreen: Boolean = false,
     /** Per l'età delle sessioni nel menu in alto; «Chiuse · N» del menu apre l'elenco delle chiuse. */
     now: Long = 0, onClosed: () -> Unit = {},
     /** Solo per i provini: il menu già aperto, o quello delle sessioni. */
@@ -87,7 +89,8 @@ fun AppShell(
     Scaffold(
         containerColor = CmColors.bg,
         topBar = {
-            Column(Modifier.background(CmColors.bg).statusBarsPadding()) {
+            val top by androidx.compose.animation.animateColorAsState(if (masterScreen) MasterHighest else CmColors.bg, label = "status")
+            Column(Modifier.background(top).statusBarsPadding()) {
                 when {
                     // Ogni pagina della home e delle sessioni ha la sua testata, anche una sessione aperta dal Registro (dal vivo
                     // 03/10 20:01: due testate uguali).
@@ -278,7 +281,7 @@ fun PageHeader(
 
 /** Il menu ≡ dell'app: apre il pannello (`AppMenuPanel`) al posto della vecchia tendina. */
 @Composable
-private fun AppMenu(menu: MenuActions, startOpen: Boolean) {
+internal fun AppMenu(menu: MenuActions, startOpen: Boolean = false) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(startOpen) }
     IconButton(onClick = { open = true }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu), tint = CmColors.actionIcon) }
     if (open) AppMenuPanel(menu.host, menu.updated, menu.stale, menu.onLaunch, menu.onRegister, menu.onQuadro, menu.onSearch ?: {}, menu.onSettings, onDismiss = { open = false }, onNight = menu.onNight)

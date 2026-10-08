@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloat
@@ -94,34 +95,65 @@ internal fun MasterSpark(state: it.pixelbox.cmwatch.contract.SessionState, size:
  * pagina, dove la stessa barra sta in cima con ▼, e un altro tocco la riduce; lo stesso col trascinamento in su e in giù.
  */
 @Composable
-fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Unit, onToggle: () -> Unit, expanded: Boolean = false) {
+fun MasterDock(
+    master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Unit, onToggle: () -> Unit, expanded: Boolean = false,
+    /**
+     * Le tre misure del tablet (Franz, 08/10 18:15): il trascinamento in su e in giù va alla misura vicina, non solo aperta e
+     * chiusa. Null = il tocco basta, come sul telefono.
+     */
+    onUp: (() -> Unit)? = null, onDown: (() -> Unit)? = null,
+    /** Il tasto tondo a destra: ▲ apre di più; null = segue `expanded`. A metà dice ▲ e porta a tutto schermo. */
+    toggleUp: Boolean = !expanded, onToggleKey: () -> Unit = onToggle,
+    /**
+     * La master a tutto schermo sul telefono (Franz, 08/10 18:15): una testata sola, nel colore della master fino alla barra di
+     * stato. ⌄ va a sinistra, al posto della freccia indietro, e a destra il menu ≡ della home (`trailing`); angoli dritti.
+     */
+    screen: Boolean = false, trailing: (@Composable RowScope.() -> Unit)? = null,
+) {
     val time = hero?.at?.let { DOCK_HM.format(Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())) }
     val ctx = master.context?.let { stringResource(R.string.ctx_short, it) }
     // Aperta, modello e contesto stanno già nella riga sotto la linguetta: qui resta l'ora. Chiusa, l'ora e il contesto, che
     // conta per l'handoff: il modello cambia di rado, e con lui la riga non stava nella larghezza (Franz, 06/10 22:27).
     val label = (if (expanded) listOfNotNull(stringResource(R.string.dock_master), time) else listOfNotNull(stringResource(R.string.dock_master), time, ctx)).joinToString(" · ")
     // Aperta resta una linguetta col verso di quando è chiusa, angoli tondi in alto (Franz, 06/10 08:48).
-    val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    val shape = if (screen) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     Column(Modifier.fillMaxWidth()) {
         val look = LocalMasterLook.current
         if (!expanded && look.thread) MasterThread()
         // Franz, 03/10 17:05: anche col gesto. Trascinare in su la barra ridotta la espande, trascinarla in giù da espansa la
         // riduce. Sulla barra e non dal bordo dello schermo, dove Android tiene il gesto per la schermata Home.
         val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
+        val up by androidx.compose.runtime.rememberUpdatedState(onUp)
+        val down by androidx.compose.runtime.rememberUpdatedState(onDown)
         val drag = Modifier.pointerInput(expanded) {
             var total = 0f
             detectVerticalDragGestures(
                 onDragStart = { total = 0f },
-                onDragEnd = { if ((!expanded && total < -threshold) || (expanded && total > threshold)) onToggle() },
+                onDragEnd = {
+                    when {
+                        total < -threshold -> up?.invoke() ?: run { if (!expanded) onToggle() }
+                        total > threshold -> down?.invoke() ?: run { if (expanded) onToggle() }
+                    }
+                },
                 onVerticalDrag = { change, dy -> total += dy; change.consume() },
             )
         }
         Row(
             Modifier.fillMaxWidth().clip(shape).background(MasterHighest)
                 .then(drag)
-                .handCursor().clickable(onClick = onToggle).padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
+                .handCursor().clickable(onClick = onToggle).padding(start = if (screen) 8.dp else 16.dp, end = if (screen) 4.dp else 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            val toggleKey: @Composable () -> Unit = {
+                val toggleSrc = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                FilledTonalIconButton(onClick = onToggleKey, modifier = Modifier.size(44.dp), shape = rememberMorphShape(toggleSrc), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterKey), interactionSource = toggleSrc) {
+                    Icon(
+                        if (toggleUp) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        stringResource(if (toggleUp) R.string.dock_conversation else R.string.dock_collapse), tint = CmColors.text,
+                    )
+                }
+            }
+            if (screen) toggleKey()
             // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).
             // Il badge di stato solo quando la master ti aspetta o è chiusa; altrimenti la scintilla di Claude, che gira mentre
             // lavora. Il cerchio rosso era l'elemento più saturo della schermata e nel Material 3 il rosso è «errore» (22:27).
@@ -147,13 +179,8 @@ fun MasterDock(master: Session, hero: MasterHome.Hero?, onSpeak: (String) -> Uni
                     stringResource(if (reading) R.string.stop_reading else R.string.dock_listen), tint = CmColors.text,
                 )
             }
-            val toggleSrc = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            FilledTonalIconButton(onClick = onToggle, modifier = Modifier.size(44.dp), shape = rememberMorphShape(toggleSrc), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterKey), interactionSource = toggleSrc) {
-                Icon(
-                    if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
-                    stringResource(if (expanded) R.string.dock_collapse else R.string.dock_conversation), tint = CmColors.text,
-                )
-            }
+            if (!screen) toggleKey()
+            trailing?.invoke(this)
         }
         if (expanded && look.thread) MasterThread()
     }

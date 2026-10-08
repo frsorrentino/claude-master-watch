@@ -182,6 +182,8 @@ class MainActivity : ComponentActivity() {
         // La master espansa nella home (Franz, 03/10 16:30-16:44): dal basso a tutta pagina, ridotta con un tocco sulla sua barra.
         val masterChatState = rememberSaveable { mutableStateOf(false) }
         var masterChat by masterChatState
+        // Sul tablet la misura a metà fra barra e tutto schermo (Franz, 08/10 18:15); conta solo con `masterChat`.
+        var masterHalf by rememberSaveable { mutableStateOf(false) }
         // Nome della sessione aperta; la master non è mai una pagina: aprirla, da qualunque strada, porta la home sulla sua chat.
         val openState = rememberSaveable { mutableStateOf<String?>(null) }
         val route = remember { OpenRoute(openState, tabState, masterChatState) }
@@ -831,7 +833,7 @@ class MainActivity : ComponentActivity() {
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
-                            home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar,
+                            home = home, grid = home != null && homeOpen, header = header, dock = dock, bar = bar, homeOpen = homeOpen, appBar = appBar, halfStops = home != null && wide, half = masterHalf,
                             headerLead = lead, draftState = drafts.state(session),
                             // Con l'ispettore obiettivo e bassa priorità stanno lì: in testata non si ripetono (revisione della master, 04/10).
                             notesInHeader = lead == null || !inspectorOn,
@@ -904,7 +906,7 @@ class MainActivity : ComponentActivity() {
         // Il Registro si apre dal menu a tutto schermo; Indietro torna al riepilogo.
         BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
         // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home.
-        BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false }
+        BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false; masterHalf = false }
         // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.
         val summaryPage: @Composable () -> Unit = summaryPage@{
             val st = state
@@ -961,8 +963,21 @@ class MainActivity : ComponentActivity() {
                 // Una pagina sola: si anima la parte sopra il campo, il campo resta fermo (`SessionSheet` con `homeOpen`).
                 sessionPage(
                     master, masterEntries, homeList, true,
-                    { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = true }) },
-                    { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterChat = false }, expanded = true) },
+                    // Sul tablet il tocco sulla barra porta a metà, il trascinamento alla misura vicina; sul telefono barra e tutto schermo.
+                    { MasterDock(master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) }, onToggle = { masterHalf = wide; masterChat = true }) },
+                    {
+                        val half = wide && masterHalf
+                        val collapse = { masterChat = false; masterHalf = false }
+                        MasterDock(
+                            master, hero, onSpeak = { t -> speech.toggle(t, it.pixelbox.cmwatch.rules.ContextActions.MASTER) },
+                            onToggle = if (wide && !half) ({ masterHalf = true }) else collapse, expanded = true,
+                            onUp = if (half) ({ masterHalf = false }) else null,
+                            onDown = if (wide && !half) ({ masterHalf = true }) else collapse,
+                            toggleUp = half, onToggleKey = if (half) ({ masterHalf = false }) else if (wide) ({ masterHalf = true }) else collapse,
+                            // Il telefono a tutto schermo: una testata sola, col menu ≡ della home (Franz, 08/10 18:15).
+                            screen = !wide, trailing = if (wide) null else ({ AppMenu(menuActions) }),
+                        )
+                    },
                     !masterChat, { pageHeader(null) }, null,
                 )
             } else Column(Modifier.fillMaxSize()) {
@@ -1123,7 +1138,7 @@ class MainActivity : ComponentActivity() {
             updated = updatedLabel(snap.freshness),
             openCount = summary?.open ?: 0,
             // Con la master espansa la quota sotto la barra lascia spazio alla sua conversazione.
-            masterChat = masterChat && masterName != null, now = now, onClosed = { closedOpen = true }, pagedHeaders = true,
+            masterChat = masterChat && masterName != null, masterScreen = masterChat && masterName != null && !wide && open == null && tab == StartRoute.Tab.OVERVIEW, now = now, onClosed = { closedOpen = true }, pagedHeaders = true,
             quota = state?.let { st -> {
                 val rings = remember(st, events, samples, now, snap.freshness) {
                     PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
