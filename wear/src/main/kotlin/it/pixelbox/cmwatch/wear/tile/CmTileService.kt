@@ -88,12 +88,18 @@ open class CmTileService : TileService() {
             scope.launch {
                 val t0 = android.os.SystemClock.elapsedRealtime()
                 try {
+                    // Il tempo per fase (indagine sulla tile lenta, 08/10: mediana 153 ms contro 50): preferenze, attesa di Room
+                    // a freddo, layout; `cold` = processo nato da meno di 3 s, cioè la tile ha avviato l'app.
+                    val cold = android.os.SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime() < 3_000
                     val prefs = app.prefs.current()
+                    val t1 = android.os.SystemClock.elapsedRealtime()
                     if (app.repo.snapshot.value.state == null) kotlinx.coroutines.withTimeoutOrNull(800) { app.repo.snapshot.first { it.state != null } }
+                    val t2 = android.os.SystemClock.elapsedRealtime()
                     val snap = app.repo.snapshot.value
                     val state = snap.state
                     val nowS = System.currentTimeMillis() / 1000
                     val root = root(requestParams.deviceConfiguration, state, snap.freshness, prefs.seenQuestions, prefs.complicationAccount, nowS)
+                    val t3 = android.os.SystemClock.elapsedRealtime()
                     completer.set(
                         TileBuilders.Tile.Builder()
                             .setResourcesVersion(resourcesVersion(state))
@@ -101,7 +107,8 @@ open class CmTileService : TileService() {
                             .setFreshnessIntervalMillis(state?.let { TileTexts.freshnessMs(it, snap.freshness) } ?: 15 * 60_000L)
                             .build()
                     )
-                    android.util.Log.i("cmwatch", "tile: ${android.os.SystemClock.elapsedRealtime() - t0} ms")
+                    val t4 = android.os.SystemClock.elapsedRealtime()
+                    android.util.Log.i("cmwatch", "tile: ${t4 - t0} ms (prefs ${t1 - t0}, room ${t2 - t1}, layout ${t3 - t2}, build ${t4 - t3}, cold $cold)")
                     if (TileTexts.needsRefresh(snap.receivedAt, nowS) && refreshing.compareAndSet(false, true)) {
                         try {
                             if (kotlinx.coroutines.withTimeoutOrNull(10_000) { app.repo.refresh() } == true) runCatching { requestUpdate(app) }
@@ -436,7 +443,11 @@ open class CmTileService : TileService() {
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> =
         CallbackToFutureAdapter.getFuture { c ->
-            c.set(tileResources((application as CmApp).repo.snapshot.value.state)); "res"
+            val t0 = android.os.SystemClock.elapsedRealtime()
+            val state = (application as CmApp).repo.snapshot.value.state
+            c.set(tileResources(state))
+            android.util.Log.i("cmwatch", "tile res: ${android.os.SystemClock.elapsedRealtime() - t0} ms (${state?.sessions?.size ?: 0} sessions)")
+            "res"
         }
 
     /** Le immagini della tile: orologio, segni degli account e badge delle sessioni. Servono anche al test Paparazzi. */
