@@ -1,6 +1,6 @@
 <resources>
     <string name="unit_days">g</string>
-    <string name="app_name">Team Supervisor</string>
+    <string name="app_name">Supervisor</string>
     <string name="sessions_title">Sessioni</string>
     <string name="sessions_empty">Nessuna sessione</string>
     <string name="sessions_label">sessioni</string>
@@ -31,8 +31,8 @@
     <string name="question_retry">Riprova</string>
     <string name="pairing_title">Accoppia il PC</string>
     <string name="pairing_enter_code">Usa il codice</string>
-    <string name="pairing_hint_phone">Sul telefono apri Team Supervisor e tocca Accoppia.</string>
-    <string name="pairing_hint_both">Sul telefono apri Team Supervisor e tocca Accoppia, oppure usa il codice di relay pair.</string>
+    <string name="pairing_hint_phone">Sul telefono apri Supervisor e tocca Accoppia.</string>
+    <string name="pairing_hint_both">Sul telefono apri Supervisor e tocca Accoppia, oppure usa il codice di relay pair.</string>
     <string name="pairing_open_phone">Apri sul telefono</string>
     <string name="pairing_continue_phone">Continua sul telefono</string>
     <string name="pairing_demo">Prova la demo</string>
@@ -58,7 +58,7 @@
     <string name="channel_quota">Quota</string>
     <string name="channel_follow">Sessione seguita</string>
     <string name="complication_stale">PC fermo</string>
-    <string name="complication_name">Team Supervisor</string>
+    <string name="complication_name">Supervisor</string>
     <string name="tile_name">Sessioni Claude</string>
     <string name="tile_open">Apri</string>
     <string name="tile_sessions">Sessioni</string>
@@ -150,7 +150,7 @@
     <string name="state_awaiting_prompt">prompt dal polso in corso</string>
     <string name="badge_personal">account personale</string>
     <string name="badge_work">account di lavoro</string>
-    <string name="tile_title">Team Supervisor</string>
+    <string name="tile_title">Supervisor</string>
     <string name="tile_all_idle">Tutto a riposo</string>
     <string name="tile_quota_pct">5h %1$d %%</string>
     <string name="tile_quota_pct_reset">5h %1$d %% · reset %2$s</string>

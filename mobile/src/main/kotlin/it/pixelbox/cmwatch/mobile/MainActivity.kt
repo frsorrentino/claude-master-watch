@@ -425,7 +425,7 @@ class MainActivity : ComponentActivity() {
         if (nightOpen) {
             LaunchedEffect(nightRef?.date) { nightRef?.date?.let { d -> nightSeen = d; homePrefs.edit().putString("night_opened", d).apply() } }
             // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto con l'op `night` (contratto 1.44), chiesto
-            // all'apertura e con «Aggiorna»; prima che il relay la conosca, la pagina dice di aggiornare team-supervisor.
+            // all'apertura e con «Aggiorna»; prima che il relay la conosca, la pagina dice di aggiornare supervisor.
             var nightId by remember { mutableStateOf<String?>(null) }
             var nightReport by remember { mutableStateOf<it.pixelbox.cmwatch.contract.NightReport?>(null) }
             val nightResult = nightId?.let { results[it] }

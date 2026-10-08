@@ -1,35 +1,35 @@
-# Team Supervisor App
+# Supervisor App
 
-![Status: beta](https://img.shields.io/badge/status-beta-orange) ![Wear OS 4+](https://img.shields.io/badge/Wear%20OS-4%2B-3ddc84) ![Needs claude-master](https://img.shields.io/badge/needs-claude--master-8A5CF6)
+![Status: beta](https://img.shields.io/badge/status-beta-orange) ![Wear OS 4+](https://img.shields.io/badge/Wear%20OS-4%2B-3ddc84) ![Needs supervisor](https://img.shields.io/badge/needs-supervisor-8A5CF6)
 
-![claude-master on your wrist: on the left the three steps — the claude-master plugin on the PC, the relay paired with your Firebase, the 6-digit code on the watch; on the right three real screens of the app on the demo set: the sessions, a question, a session's card.](docs/readme/card-hero.png)
+![supervisor on your wrist: on the left the three steps — the supervisor plugin on the PC, the relay paired with your Firebase, the 6-digit code on the watch; on the right three real screens of the app on the demo set: the sessions, a question, a session's card.](docs/readme/card-hero.png)
 
 **The Claude Code sessions of your computer, on your Wear OS watch.** The one waiting
 for an answer comes first: read its question, tap an option or dictate a reply, and the
 session goes on. See what the others are doing, follow one, launch a project, check the
 quota, all without going back to the desk.
 
-> **Just want to try it?** Start from [«Try it» in the claude-master README](https://github.com/frsorrentino/claude-master#try-it):
+> **Just want to try it?** Start from [«Try it» in the supervisor README](https://github.com/frsorrentino/supervisor#try-it):
 > it has everything for a first run. This page is for building the phone and watch apps from source.
 
-## It needs claude-master on your PC
+## It needs supervisor on your PC
 
-This app is the wrist of [**claude-master**](https://github.com/frsorrentino/claude-master),
+This app is the wrist of [**supervisor**](https://github.com/frsorrentino/supervisor),
 the Claude Code plugin that runs many sessions on one machine: one tab per project, one list
 of what is running, prompts from one session to another, restore after a reboot. The app
 shows what the plugin knows and sends back what you decide; without the plugin there is
 nothing to show.
 
 ```bash
-claude plugin marketplace add frsorrentino/claude-master
-claude plugin install claude-master@claude-master-dev --scope user
-claude-master init --yes --shim --shell
+claude plugin marketplace add frsorrentino/supervisor
+claude plugin install supervisor@supervisor-dev --scope user
+supervisor init --yes --shim --shell
 ```
 
 The full quickstart, and everything the plugin does from the terminal, is in
-[its README](https://github.com/frsorrentino/claude-master#try-it).
+[its README](https://github.com/frsorrentino/supervisor#try-it).
 
-**No Wear OS watch?** claude-master works without this app, from the terminal. watchOS is
+**No Wear OS watch?** supervisor works without this app, from the terminal. watchOS is
 not supported yet. Telegram, if you set it up in the plugin, only sends notifications: long
 texts, and a fallback when the watch is unreachable.
 
@@ -47,7 +47,7 @@ texts, and a fallback when the watch is unreachable.
     <td align="center"><img src="docs/readme/quota.png" width="220" alt="Quota in the style of the Wear OS morning brief: 5-hour window, week, resets"><br>Quota</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/readme/pairing.png" width="220" alt="Pairing: run claude-master relay pair on the PC, then enter the 6-digit code on the watch"><br>Pairing</td>
+    <td align="center"><img src="docs/readme/pairing.png" width="220" alt="Pairing: run supervisor relay pair on the PC, then enter the 6-digit code on the watch"><br>Pairing</td>
     <td align="center"><img src="docs/readme/stale.png" width="220" alt="A list that is no longer fresh says how old it is and never looks live"><br>Stale data</td>
     <td align="center"><img src="docs/readme/complication.png" width="220" alt="The quota ring complication on a watch face: 13 % of the 5-hour window, the window's tag 5h under the number"><br>Complication</td>
   </tr>
@@ -81,9 +81,9 @@ Pixel Watch 5. Texts grow with the system font size and are read by TalkBack:
 
 ## How it connects
 
-![Your PC, your Firebase, your wrist: the claude-master plugin and its relay on the PC push the state and run the commands; your Firebase Realtime Database and Cloud Messaging hold only AES-256-GCM encrypted blobs; the watch keeps the key in its Keystore, paired over X25519 with a 6-digit code.](docs/readme/card-bus.png)
+![Your PC, your Firebase, your wrist: the supervisor plugin and its relay on the PC push the state and run the commands; your Firebase Realtime Database and Cloud Messaging hold only AES-256-GCM encrypted blobs; the watch keeps the key in its Keystore, paired over X25519 with a 6-digit code.](docs/readme/card-bus.png)
 
-There is no server of ours in between. The relay (`claude-master relay`, part of the plugin)
+There is no server of ours in between. The relay (`supervisor relay`, part of the plugin)
 publishes the state of your sessions to **your own** Firebase project and runs the commands
 the watch sends: answers, prompts, launches, reopenings. Every document is encrypted end to
 end with AES-256-GCM; the key is agreed at pairing over X25519 and lives in the Keystore of
@@ -93,9 +93,9 @@ the phone and of the watch. Firebase sees blobs, never your prompts or your proj
 
 - **PC**: Linux or macOS, always on and awake (the relay covers «sessions closed», not
   «machine off»); `bash`, `tmux`, `python3` ≥ 3.8 with the `cryptography` module, `crontab`;
-  Claude Code ≥ 2.1.263 with the [claude-master](https://github.com/frsorrentino/claude-master)
+  Claude Code ≥ 2.1.263 with the [supervisor](https://github.com/frsorrentino/supervisor)
   plugin; the Firebase CLI (`npm install -g firebase-tools`, `firebase login`) for `relay setup`.
-- **Firebase**: a project of your own. `claude-master relay setup` creates or picks it and sets
+- **Firebase**: a project of your own. `supervisor relay setup` creates or picks it and sets
   up Realtime Database, the rules, anonymous sign-in, the Android app and the service account.
 - **Phone**: Android 13 or newer (minSdk 33), paired with the watch as Wear OS requires. It
   scans the pairing QR and hands the key to the watch.
@@ -111,10 +111,10 @@ the application id `com.francescosorrentino.cmaster`, as one Play listing does (
 packages keep the older `it.pixelbox.cmwatch` name).
 
 1. **The plugin** on your PC: see above.
-2. **Firebase, guided**: `claude-master relay setup` (`--dry-run` first to see the steps). It
+2. **Firebase, guided**: `supervisor relay setup` (`--dry-run` first to see the steps). It
    saves the Android app's `google-services.json` in the relay's folder; the apps do not need
-   it, the QR carries the same data. Then `claude-master relay install` for the relay's
-   crontab. Details: [Relay for the Wear OS app](https://github.com/frsorrentino/claude-master#relay-for-the-wear-os-app).
+   it, the QR carries the same data. Then `supervisor relay install` for the relay's
+   crontab. Details: [Relay for the Wear OS app](https://github.com/frsorrentino/supervisor#relay-for-the-wear-os-app).
 3. **Build and sign** both apps with the same key. Release builds read it from the environment:
 
    ```bash
@@ -127,7 +127,7 @@ packages keep the older `it.pixelbox.cmwatch` name).
 
    Keep one key for good: an app signed with another key cannot be updated in place, and
    uninstalling it wipes the pairing. Debug builds work too, with the same caveat.
-4. **Pair**: on the PC `claude-master relay pair` shows a QR. On the phone tap «Pair» and scan
+4. **Pair**: on the PC `supervisor relay pair` shows a QR. On the phone tap «Pair» and scan
    it (or «Paste the code» with `relay pair --text`). The phone joins your Firebase project,
    agrees the AES key with the PC over X25519, then passes it to the watch, which keeps it in
    its Keystore and works on its own over Wi-Fi or LTE. The screen shows the three steps,

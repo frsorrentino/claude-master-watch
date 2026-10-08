@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">Team Supervisor</string>
+    <string name="app_name">Supervisor</string>
     <string name="not_paired_title">Connect the computer</string>
-    <string name="not_paired_body">On the computer run team-supervisor relay pair and scan the QR. The phone pairs the watch too.</string>
+    <string name="not_paired_body">On the computer run supervisor relay pair and scan the QR. The phone pairs the watch too.</string>
     <string name="pair_button">Pair</string>
     <string name="paste_code">Paste the code</string>
     <string name="pair_title">Pairing</string>
@@ -20,7 +20,7 @@
     <string name="pair_err_expired">Code expired: run the same command on the PC again. For one more device next to the others it is relay pair --add.</string>
     <string name="pair_err_invalid">Invalid code: scan the QR, or paste the relay pair --text line that starts with {\"v\":1.</string>
     <string name="pair_err_no_watch">Watch not found: is it connected to the phone?</string>
-    <string name="pair_err_watch_app">Team Supervisor is missing on the watch.</string>
+    <string name="pair_err_watch_app">Supervisor is missing on the watch.</string>
     <string name="pair_err_network">No network: retry.</string>
     <string name="pair_err_pc">The computer did not confirm: check relay pair and retry.</string>
     <string name="pair_err_watch">The watch did not answer: retry.</string>
@@ -84,7 +84,7 @@
     <string name="night_add">Add to tonight</string>
     <string name="night_remove">Remove</string>
     <string name="night_started">started</string>
-    <string name="night_update_pc">Update team-supervisor on the computer to manage the queue from here</string>
+    <string name="night_update_pc">Update supervisor on the computer to manage the queue from here</string>
     <string name="diary_previous">Previous days</string>
     <string name="file_refused">The PC did not send the file: %1$s</string>
     <string name="file_refused_large">The file is %1$s: too big to transfer from the PC</string>
@@ -122,7 +122,7 @@
     <string name="share_message">Message</string>
     <string name="share_with_image">With the shared image</string>
     <string name="share_send">Send</string>
-    <string name="share_update_pc">Update team-supervisor on the computer to send texts and images to sessions</string>
+    <string name="share_update_pc">Update supervisor on the computer to send texts and images to sessions</string>
     <string name="share_sent">Sent to %1$s</string>
     <string name="share_unreadable">Image unreadable: not sent</string>
     <string name="share_too_large">Image too large even reduced: not sent</string>
@@ -313,7 +313,7 @@
     <string name="effort_title">Effort</string>
     <string name="all_sessions">All sessions</string>
     <string name="connect_pc">Connect the PC</string>
-    <string name="connect_pc_sub">Scan the QR the PC shows with team-supervisor relay pair</string>
+    <string name="connect_pc_sub">Scan the QR the PC shows with supervisor relay pair</string>
     <string name="load_older">Load earlier messages</string>
     <string name="origin_pc">from the PC</string>
     <string name="origin_watch">from the watch</string>
@@ -542,7 +542,7 @@
     <string name="add_device">Add a device</string>
     <string name="add_device_sub">A tablet next to the phone and the watch, with the QR on this phone</string>
     <string name="add_device_asking">Asking the PC for an invitation</string>
-    <string name="add_device_how">On the new device open Team Supervisor, tap Pair and scan this QR.</string>
+    <string name="add_device_how">On the new device open Supervisor, tap Pair and scan this QR.</string>
     <string name="add_device_how_code">The PC has no data for the QR: type this code on the new device.</string>
     <string name="add_device_code">Code %1$s</string>
     <string name="add_device_left">Expires in\u00A0%1$s</string>
@@ -744,7 +744,7 @@ It starts at your last message to the master.</string>
     <plurals name="home_night_needs"><item quantity="one">%1$d thing for you: %2$s, %3$s</item><item quantity="other">%1$d things for you, first %2$s: %3$s</item></plurals>
     <string name="night_refresh">Refresh</string>
     <string name="night_loading">Reading the night report</string>
-    <string name="night_old">The PC cannot read the night report yet: update team-supervisor</string>
+    <string name="night_old">The PC cannot read the night report yet: update supervisor</string>
     <string name="night_none">No night report</string>
     <string name="night_failed">The report did not arrive: try again</string>
     <!-- The closing panel of a session (08/10, variant A). -->

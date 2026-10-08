@@ -34,7 +34,7 @@ class NightScreenTest {
     /** Un relay che non conosce l'op `night`: la pagina lo dice. */
     @Test fun anOldRelay() = paparazzi.snapshot {
         CmPhoneTheme(still = true) {
-            NightScreen(null, "Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor", false,
+            NightScreen(null, "Il PC non sa ancora leggere il rapporto della notte: aggiorna supervisor", false,
                 onBack = {}, onRefresh = {}, onChat = {}, onAnswer = { _, _ -> }, onApprove = {}, onSend = { _, _ -> }, zone = zone)
         }
     }
