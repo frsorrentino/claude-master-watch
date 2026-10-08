@@ -183,7 +183,7 @@
     <string name="menu_pc">PC</string>
     <string name="menu_updated_now">updated now</string>
     <string name="menu_updated_ago">updated %1$d min ago</string>
-    <string name="menu_updated_slow">slow PC · state from %1$d s ago</string>
+    <string name="menu_updated_slow">PC %1$d s behind</string>
     <string name="menu_launch">Launch a session</string>
     <string name="menu_launch_sub">A project, with the first message</string>
     <string name="menu_register">Register</string>

@@ -27,7 +27,7 @@ class ShellScreensTest {
 
     // Contratto 1.43: col PC lento il collegamento dice di quanti secondi era vecchio lo stato pubblicato.
     @Test fun menuOpenSlowPc() = paparazzi.snapshot {
-        CmPhoneTheme(still = true) { AppShell(Tab.OVERVIEW, demo = false, {}, {}, onSearch = {}, host = "penguin", updated = "PC lento · stato di 45 s fa", openCount = 3, menuStartOpen = true) { Text("contenuto") } }
+        CmPhoneTheme(still = true) { AppShell(Tab.OVERVIEW, demo = false, {}, {}, onSearch = {}, host = "penguin", updated = "PC lento di 45 s", openCount = 3, menuStartOpen = true) { Text("contenuto") } }
     }
 
     // Il menu delle sessioni al posto del titolo, con una scheda aperta: niente schede in basso.
