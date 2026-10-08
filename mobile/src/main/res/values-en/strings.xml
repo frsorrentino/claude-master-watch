@@ -746,6 +746,7 @@ It starts at your last message to the master.</string>
     <string name="recap_send_from_session">From %1$s</string>
     <string name="recap_send_to_session">Goes to %1$s, the session open on the project</string>
     <string name="recap_send_to_master">Goes to the %1$s: the project has no open session</string>
+    <string name="recap_send_to_master_agenda">Goes to the %1$s, which starts it</string>
     <string name="recap_send">Send</string>
     <string name="recap_resume">Resume the %1$s project: %2$s</string>
     <string name="recap_send_from_agenda">From the agenda, work Claude can do</string>

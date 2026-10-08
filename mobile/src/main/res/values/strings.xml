@@ -756,6 +756,7 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="recap_send_from_session">Da %1$s</string>
     <string name="recap_send_to_session">Va a %1$s, la sessione aperta sul progetto</string>
     <string name="recap_send_to_master">Va alla %1$s: il progetto non ha una sessione aperta</string>
+    <string name="recap_send_to_master_agenda">Va alla %1$s, che lo fa partire</string>
     <string name="recap_send">Manda</string>
     <string name="recap_resume">Riprendi il progetto %1$s: %2$s</string>
     <string name="recap_send_from_agenda">Dall\'agenda, un lavoro che può fare Claude</string>

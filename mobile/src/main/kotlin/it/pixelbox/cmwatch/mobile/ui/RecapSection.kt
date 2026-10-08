@@ -101,7 +101,7 @@ internal fun RecapSendSheet(a: RecapActions.Action, day: String, onDismiss: () -
                 a.send, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surfaceLow).padding(horizontal = 18.dp, vertical = 14.dp),
             )
-            val to = stringResource(if (a.viaMaster) R.string.recap_send_to_master else R.string.recap_send_to_session, a.to)
+            val to = stringResource(if (a.agenda) R.string.recap_send_to_master_agenda else if (a.viaMaster) R.string.recap_send_to_master else R.string.recap_send_to_session, a.to)
             Text(
                 buildAnnotatedString {
                     val i = to.indexOf(a.to)
