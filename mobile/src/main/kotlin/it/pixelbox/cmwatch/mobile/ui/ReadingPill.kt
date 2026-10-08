@@ -40,6 +40,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInWindow
@@ -415,16 +416,26 @@ fun LivePill(
                     Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).handCursor().clickable(onClickLabel = recapLabel, onClick = onRecap).padding(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
-                    Text(
-                        stringResource(
-                            when {
-                                paused -> R.string.live_panel_paused
-                                onlyBlocking -> R.string.live_panel_blocking
-                                else -> R.string.live_panel_all
-                            }
-                        ),
-                        style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip,
-                    )
+                    // Il pallino rosso accanto a «LIVE» (Franz, 08/10 21:30): pulsa mentre la live è accesa, fermo in pausa.
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val pulse = androidx.compose.animation.core.rememberInfiniteTransition(label = "live")
+                        val a by pulse.animateFloat(
+                            1f, 0.25f,
+                            androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900), androidx.compose.animation.core.RepeatMode.Reverse),
+                            label = "dot",
+                        )
+                        Box(Modifier.size(8.dp).graphicsLayer { alpha = if (paused) 1f else a }.clip(CircleShape).background(CmColors.gone))
+                        Text(
+                            stringResource(
+                                when {
+                                    paused -> R.string.live_panel_paused
+                                    onlyBlocking -> R.string.live_panel_blocking
+                                    else -> R.string.live_panel_all
+                                }
+                            ),
+                            style = MonoSmall.copy(color = CmColors.gone), maxLines = 1, overflow = TextOverflow.Clip,
+                        )
+                    }
                     Text(
                         // Senza cuffie la riga sotto dice perché tace, in chiaro: in alto non ci stava.
                         if (noHeadset) stringResource(R.string.live_panel_no_headset) else last?.let { ReadingBar.excerpt(it) } ?: stringResource(R.string.live_panel_quiet),

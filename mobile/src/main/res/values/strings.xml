@@ -775,7 +775,7 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <!-- Il pannello della live nell'app (Franz, 08/10 20:03). -->
     <string name="live_panel_all">LIVE</string>
     <string name="live_panel_blocking">LIVE</string>
-    <string name="live_panel_paused">LIVE · in pausa</string>
+    <string name="live_panel_paused">LIVE · pausa</string>
     <string name="live_panel_no_headset">Collega le cuffie</string>
     <string name="live_panel_quiet">In ascolto, niente da dire per ora</string>
     <string name="live_chip_all">Tutte</string>
