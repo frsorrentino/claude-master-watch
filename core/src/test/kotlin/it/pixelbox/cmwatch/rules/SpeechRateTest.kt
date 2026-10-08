@@ -39,4 +39,13 @@ class SpeechRateTest {
         assertEquals(0.5f, SpeechRate.MIN); assertEquals(2.0f, SpeechRate.MAX)
         assertEquals(1f / 3f, SpeechRate.fraction(1.0f), 1e-6f)
     }
+
+    // Franz, 08/10 19:50: un tocco sulla pillola passa alla velocità dopo, tenuta premuta apre lo slider.
+    @Test fun aTapGoesToTheNextSpeedAndWrapsAround() {
+        assertEquals(1.25f, SpeechRate.next(1.0f))
+        assertEquals(1.5f, SpeechRate.next(1.3f))
+        assertEquals(0.75f, SpeechRate.next(2.0f))
+        assertEquals(0.75f, SpeechRate.next(0.5f))
+        assertEquals(1.0f, SpeechRate.next(0.75f))
+    }
 }

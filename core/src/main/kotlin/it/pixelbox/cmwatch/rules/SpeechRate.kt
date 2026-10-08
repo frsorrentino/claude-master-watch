@@ -24,6 +24,15 @@ object SpeechRate {
     /** Il valore salvato, portato sul passo; senza scelta o con un valore rovinato, la velocità del motore. */
     fun of(saved: Float?): Float = saved?.takeIf { it.isFinite() && it > 0f }?.let { snap(it) } ?: NORMAL
 
+    /**
+     * Le velocità del tocco sulla pillola (Franz, 08/10 19:50): un tocco passa alla prossima, dopo 2× torna a 0,75×; tenuta
+     * premuta apre lo slider per le altre.
+     */
+    val CYCLE = listOf(0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
+
+    /** La velocità dopo `v` nel giro del tocco: la prima più alta, o la prima del giro dopo l'ultima. */
+    fun next(v: Float): Float = CYCLE.firstOrNull { it > v + 0.001f } ?: CYCLE.first()
+
     /** Dove sta `v` sulla corsa dello slider, da 0 a 1: per il segno di 1×. */
     fun fraction(v: Float): Float = (v - MIN) / (MAX - MIN)
 }

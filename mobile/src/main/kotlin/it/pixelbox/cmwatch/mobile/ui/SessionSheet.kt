@@ -1895,23 +1895,30 @@ val LocalFieldFocus = androidx.compose.runtime.staticCompositionLocalOf<FieldFoc
 val LocalSetSpeechRate = androidx.compose.runtime.staticCompositionLocalOf<(Float) -> Unit> { {} }
 
 /**
- * La pillola «1,25×» accanto a ■ durante la lettura (Franz, 03/10 21:16). Dal 07/10 (approvata alle 22:06) il tocco apre
- * lo slider della velocità nella barra di lettura, che durante la lettura è sempre in vista: un comando solo.
+ * La pillola «1,25×» accanto a ■ durante la lettura (Franz, 03/10 21:16). Dal 08/10 (19:50) il tocco passa alla velocità
+ * dopo (`SpeechRate.next`) e la voce la usa subito; tenuta premuta apre lo slider nella barra di lettura.
  */
 @Composable
 fun RatePill() {
     val overlay = LocalReadingOverlay.current
-    RatePill(LocalSpeechRate.current) { overlay?.let { it.rateOpen = true; it.rateTouched = System.currentTimeMillis() } }
+    val rate = LocalSpeechRate.current
+    val setRate = LocalSetSpeechRate.current
+    RatePill(rate, onClick = { setRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }) {
+        overlay?.let { it.rateOpen = true; it.rateTouched = System.currentTimeMillis() }
+    }
 }
 
-/** La stessa pillola con velocità e tocco espliciti: la barra di lettura sta fuori dal provider della lettura. */
+/** La stessa pillola con velocità, tocco e pressione lunga espliciti: la barra di lettura sta fuori dal provider della lettura. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun RatePill(rate: Float, onClick: () -> Unit) {
+fun RatePill(rate: Float, onClick: () -> Unit, onLongClick: () -> Unit) {
     val label = rateLabel(rate)
     val desc = stringResource(R.string.speech_rate_change, label)
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Surface(
-        onClick = onClick, color = CmColors.surface, shape = CircleShape,
-        modifier = Modifier.handCursor().semantics { contentDescription = desc },
+        color = CmColors.surface, shape = CircleShape,
+        modifier = Modifier.clip(CircleShape).handCursor().semantics { contentDescription = desc }
+            .combinedClickable(onClick = onClick, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() }),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
     }

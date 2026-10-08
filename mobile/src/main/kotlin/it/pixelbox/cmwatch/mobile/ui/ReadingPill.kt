@@ -170,7 +170,15 @@ fun ReadingPill(
     val lastTouch = overlay?.rateTouched ?: touched
     // Senza tocchi per 3 s lo slider torna pillola.
     LaunchedEffect(open, lastTouch) { if (open) { kotlinx.coroutines.delay(3_000); setOpen(false) } }
-    var draft by remember(rate) { mutableFloatStateOf(rate) }
+    var draft by remember(open) { mutableFloatStateOf(rate) }
+    // Mentre si trascina la voce cambia velocità quando il dito si ferma un attimo (Franz, 08/10 19:50: «sentirla variare
+    // in tempo reale»): il motore non cambia velocità a metà frase, quindi riparte dal pezzo che sta dicendo.
+    LaunchedEffect(draft, open) {
+        if (!open) return@LaunchedEffect
+        kotlinx.coroutines.delay(LIVE_RATE_MS)
+        val v = it.pixelbox.cmwatch.rules.SpeechRate.snap(draft)
+        if (v != rate) onRate(v)
+    }
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
         BoxWithConstraints {
             // In una colonna stretta del tablet restano i tasti: la riga del testo si vede già nella colonna.
@@ -185,7 +193,7 @@ fun ReadingPill(
                     RateSlider(
                         draft,
                         onChange = { v -> draft = v; if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis() },
-                        onDone = { onRate(it.pixelbox.cmwatch.rules.SpeechRate.snap(draft)) },
+                        onDone = { it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRate(v) } },
                         modifier = Modifier.weight(1f),
                     )
                 } else {
@@ -200,7 +208,7 @@ fun ReadingPill(
                         Text(if (paused) stringResource(R.string.reading_paused) else source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
                         Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
                     } else Spacer(Modifier.weight(1f))
-                    RatePill(rate) { setOpen(true) }
+                    RatePill(rate, onClick = { onRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }) { setOpen(true) }
                     if (onVoice != null) VoicePill(voice, onVoice)
                 }
                 if (paused) FilledIconButton(onClick = onResume, modifier = Modifier.size(44.dp)) {
@@ -314,3 +322,6 @@ private fun Bars(still: Boolean = false) {
         }
     }
 }
+
+/** Quanto il dito resta fermo sullo slider prima che la voce riparta con la velocità nuova. */
+private const val LIVE_RATE_MS = 300L
