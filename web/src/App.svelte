@@ -529,7 +529,8 @@
   </Page>
 {/snippet}
 
-{#snippet quotaPanels()}{#each overview.rings as r (r.account)}<QuotaPanel ring={r} now={now} />{/each}{/snippet}
+<!-- Un account fermo (dato vecchio) non ha il suo riquadro se l'altro è aggiornato, come nella riga in alto (Franz, 08/10 20:32). -->
+{#snippet quotaPanels()}{#each overview.rings.some(r => !r.stale) ? overview.rings.filter(r => !r.stale) : overview.rings as r (r.account)}<QuotaPanel ring={r} now={now} />{/each}{/snippet}
 
 {#snippet inspector()}
   {@const first = st.sessions.find(x => x.name === cols[0])}

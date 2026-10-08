@@ -995,7 +995,9 @@ class MainActivity : ComponentActivity() {
                             PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
                         }
                         Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            rings.forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
+                            // Un account fermo (dato vecchio) non ha il suo riquadro se l'altro è aggiornato, come nella riga in alto
+                            // (Franz, 08/10 20:32: «inutile mostrare anche il suo box»).
+                            PhoneOverview.lineRings(rings).forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
                         }
                     },
                 )
