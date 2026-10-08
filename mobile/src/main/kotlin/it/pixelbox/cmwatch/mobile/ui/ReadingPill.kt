@@ -22,6 +22,11 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Checklist
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -400,10 +405,17 @@ internal fun Bars(still: Boolean = false) {
 @Composable
 fun LivePill(
     last: String?, speaking: Boolean, paused: Boolean, noHeadset: Boolean, onlyBlocking: Boolean,
-    onPause: () -> Unit, onFilter: () -> Unit, onRecap: () -> Unit = {}, onStop: () -> Unit, modifier: Modifier = Modifier,
+    onPause: () -> Unit, onFilter: () -> Unit, onRecap: () -> Unit = {},
+    /** Aperta (B2, Franz 08/10 21:47): una riga per sessione, il filtro e i tasti Recap, Azioni, Ripeti, Salta. */
+    rows: List<it.pixelbox.cmwatch.rules.LivePanel.Row> = emptyList(), onActions: () -> Unit = {}, onRepeat: () -> Unit = {},
+    onSkip: () -> Unit = {}, onStatus: (String) -> Unit = {},
+    /** Solo per i provini: la pillola già aperta. */
+    startOpen: Boolean = false, onStop: () -> Unit, modifier: Modifier = Modifier,
 ) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
-        BoxWithConstraints {
+    var expanded by remember { mutableStateOf(startOpen) }
+    Surface(modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(if (expanded) 24.dp else 28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
+        if (expanded) LiveOpen(rows, speaking, paused, noHeadset, onlyBlocking, onPause, onFilter, onStop, onRecap, onActions, onRepeat, onSkip, onStatus) { expanded = false }
+        else BoxWithConstraints {
             val roomy = maxWidth >= 300.dp
             Row(
                 Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
@@ -413,7 +425,7 @@ fun LivePill(
                 // Il tocco sul testo chiede il recap delle sessioni (Franz, 08/10 20:15), come il tasto Recap del watch.
                 val recapLabel = stringResource(R.string.live_recap_now)
                 if (roomy) Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).handCursor().clickable(onClickLabel = recapLabel, onClick = onRecap).padding(vertical = 4.dp),
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).handCursor().clickable(onClickLabel = recapLabel) { expanded = true }.padding(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
                     // Il pallino rosso accanto a «LIVE» (Franz, 08/10 21:30): pulsa mentre la live è accesa, fermo in pausa.
@@ -458,5 +470,77 @@ fun LivePill(
                 }
             }
         }
+    }
+}
+
+/** La pillola della live aperta (B2): il tocco sulla riga in alto la richiude. */
+@Composable
+private fun LiveOpen(
+    rows: List<it.pixelbox.cmwatch.rules.LivePanel.Row>, speaking: Boolean, paused: Boolean, noHeadset: Boolean, onlyBlocking: Boolean,
+    onPause: () -> Unit, onFilter: () -> Unit, onStop: () -> Unit, onRecap: () -> Unit, onActions: () -> Unit, onRepeat: () -> Unit,
+    onSkip: () -> Unit, onStatus: (String) -> Unit, onClose: () -> Unit,
+) {
+    val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).handCursor().clickable(onClick = onClose), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Bars(still = !speaking || paused)
+            Box(Modifier.size(8.dp).clip(CircleShape).background(CmColors.gone))
+            Text(stringResource(if (paused) R.string.live_panel_paused else R.string.live_panel_all), style = MonoSmall.copy(color = CmColors.gone), modifier = Modifier.weight(1f))
+            if (paused) FilledIconButton(onClick = onPause, modifier = Modifier.size(44.dp), enabled = !noHeadset) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.reading_resume)) }
+            else FilledTonalIconButton(onClick = onPause, modifier = Modifier.size(44.dp)) { Icon(Icons.Rounded.Pause, stringResource(R.string.reading_pause), tint = CmColors.actionIcon) }
+            IconButton(onClick = onStop, modifier = Modifier.size(44.dp)) { Icon(Icons.Rounded.Stop, stringResource(R.string.live_stop), tint = CmColors.actionIcon) }
+        }
+        if (noHeadset) Text(stringResource(R.string.live_panel_no_headset), style = MaterialTheme.typography.bodyMedium, color = CmColors.waiting)
+        Column {
+            rows.take(6).forEachIndexed { i, r ->
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line))
+                Row(
+                    Modifier.fillMaxWidth().handCursor().clickable { onStatus(r.name) }.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    val tone = when (r.kind) {
+                        it.pixelbox.cmwatch.rules.LivePanel.Kind.ASKING -> CmColors.advice
+                        it.pixelbox.cmwatch.rules.LivePanel.Kind.WORKING -> CmColors.busy
+                        it.pixelbox.cmwatch.rules.LivePanel.Kind.STILL -> CmColors.text2
+                    }
+                    Box(Modifier.size(12.dp).clip(CircleShape).background(tone))
+                    Text(r.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.width(118.dp))
+                    Text(
+                        r.what ?: stringResource(if (r.kind == it.pixelbox.cmwatch.rules.LivePanel.Kind.WORKING) R.string.live_thinking else R.string.state_idle),
+                        style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        r.minutes?.let { stringResource(R.string.live_panel_min, it) } ?: r.at?.let { hm.format(java.time.Instant.ofEpochSecond(it).atZone(java.time.ZoneId.systemDefault())) }.orEmpty(),
+                        style = MonoSmall,
+                    )
+                }
+            }
+        }
+        // Il filtro come scelta a due: quello acceso è tonale, così l'unico tasto pieno resta Recap.
+        Row(Modifier.fillMaxWidth().clip(CircleShape).background(CmColors.surface).padding(3.dp)) {
+            listOf(false to R.string.live_all, true to R.string.live_only_blocking).forEach { (blocking, label) ->
+                val on = onlyBlocking == blocking
+                Text(
+                    stringResource(label), style = MaterialTheme.typography.labelLarge, color = if (on) CmColors.text else CmColors.text2, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.weight(1f).clip(CircleShape).background(if (on) CmColors.actionIcon.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
+                        .handCursor().clickable(enabled = !on, onClick = onFilter).padding(vertical = 7.dp),
+                )
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            LiveKey(Icons.Rounded.Refresh, R.string.live_key_recap, primary = true, onRecap)
+            LiveKey(Icons.Rounded.Checklist, R.string.live_key_actions, primary = false, onActions)
+            LiveKey(Icons.Rounded.Replay, R.string.live_key_repeat, primary = false, onRepeat)
+            LiveKey(Icons.Rounded.SkipNext, R.string.live_key_skip, primary = false, onSkip)
+        }
+    }
+}
+
+@Composable
+private fun LiveKey(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Int, primary: Boolean, onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.width(72.dp)) {
+        if (primary) FilledIconButton(onClick = onClick, modifier = Modifier.size(48.dp)) { Icon(icon, null) }
+        else FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(48.dp)) { Icon(icon, null, tint = CmColors.actionIcon) }
+        Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
     }
 }

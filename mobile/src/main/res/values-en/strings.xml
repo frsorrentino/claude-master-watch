@@ -789,4 +789,9 @@ It starts at your last message to the master.</string>
     <plurals name="steps_old"><item quantity="one">+%d old</item><item quantity="other">+%d old</item></plurals>
     <string name="steps_unblock">unblocks</string>
     <string name="steps_dismiss">Removed</string>
+    <string name="live_panel_min">%1$d min</string>
+    <string name="live_key_recap">Recap</string>
+    <string name="live_key_actions">Actions</string>
+    <string name="live_key_repeat">Repeat</string>
+    <string name="live_key_skip">Skip</string>
 </resources>

@@ -802,4 +802,10 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <plurals name="steps_old"><item quantity="one">+%d vecchia</item><item quantity="other">+%d vecchie</item></plurals>
     <string name="steps_unblock">sblocca</string>
     <string name="steps_dismiss">Tolta</string>
+    <!-- La pillola della live aperta (B2, 08/10 21:47). -->
+    <string name="live_panel_min">%1$d min</string>
+    <string name="live_key_recap">Recap</string>
+    <string name="live_key_actions">Azioni</string>
+    <string name="live_key_repeat">Ripeti</string>
+    <string name="live_key_skip">Salta</string>
 </resources>

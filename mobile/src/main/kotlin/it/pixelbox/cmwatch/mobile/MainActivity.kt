@@ -234,6 +234,11 @@ class MainActivity : ComponentActivity() {
                 onPause = { it.pixelbox.cmwatch.mobile.live.LiveService.pause(ctx) },
                 onFilter = { it.pixelbox.cmwatch.mobile.live.LiveService.onlyBlocking(ctx) },
                 onRecap = { it.pixelbox.cmwatch.mobile.live.LiveService.recap(ctx) },
+                rows = snap.state?.let { st -> it.pixelbox.cmwatch.rules.LivePanel.rows(st, System.currentTimeMillis() / 1000) }.orEmpty(),
+                onActions = { it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.ACTIONS) },
+                onRepeat = { it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.REPEAT) },
+                onSkip = { it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.SKIP) },
+                onStatus = { n -> it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.SAY, "com'e messa $n") },
                 onStop = { it.pixelbox.cmwatch.mobile.live.LiveService.toggle(ctx) },
             )
         })

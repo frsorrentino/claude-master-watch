@@ -131,6 +131,9 @@ class LiveService : Service() {
             ACTION_ONLY_BLOCKING -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ONLY_BLOCKING)))
             ACTION_PAUSE -> { userPaused = !userPaused; inbox.trySend(Input.Audio) }
             ACTION_RECAP -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ROUND)))
+            ACTION_TAP -> intent.getStringExtra(EXTRA_TAP)?.let { a -> runCatching { LiveTap.Action.valueOf(a) }.getOrNull() }?.let { a ->
+                inbox.trySend(Input.Tap(LiveTap(a, text = intent.getStringExtra(EXTRA_TEXT))))
+            }
         }
         return START_NOT_STICKY
     }
@@ -294,6 +297,9 @@ class LiveService : Service() {
         private const val ACTION_ONLY_BLOCKING = "it.pixelbox.cmwatch.live.ONLY_BLOCKING"
         private const val ACTION_PAUSE = "it.pixelbox.cmwatch.live.PAUSE"
         private const val ACTION_RECAP = "it.pixelbox.cmwatch.live.RECAP"
+        private const val ACTION_TAP = "it.pixelbox.cmwatch.live.TAP"
+        private const val EXTRA_TAP = "tap"
+        private const val EXTRA_TEXT = "text"
 
         /**
          * Quello che il pannello della live nell'app mostra (Franz, 08/10 20:03: «un box di controllo proprio come quello
@@ -308,6 +314,10 @@ class LiveService : Service() {
 
         /** I tasti del pannello: pausa e ripresa, solo bloccanti o tutte; spegni è `toggle`. */
         fun pause(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_PAUSE)) }
+        /** Un tasto della pillola aperta (Azioni, Ripeti, Salta) o una frase («com'è messa nome»), come dal watch. */
+        fun tap(ctx: Context, action: LiveTap.Action, text: String? = null) {
+            ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_TAP).putExtra(EXTRA_TAP, action.name).putExtra(EXTRA_TEXT, text))
+        }
         fun recap(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_RECAP)) }
         fun onlyBlocking(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_ONLY_BLOCKING)) }
 

@@ -85,4 +85,15 @@ class ReadingPillTest {
             }
         }
     }
+
+    // La pillola della live aperta (B2, Franz 08/10 21:47): una riga per sessione, filtro, tasti.
+    @Test fun liveOpen() = paparazzi.snapshot {
+        val st = it.pixelbox.cmwatch.contract.ContractJson.decodeState(java.io.File("../contract/state-1-question.json").readText())
+        CmPhoneTheme(still = true) {
+            Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                it.pixelbox.cmwatch.mobile.ui.LivePill("ledger-api chiede: deploy now?", speaking = true, paused = false, noHeadset = false, onlyBlocking = false, onPause = {}, onFilter = {}, onStop = {},
+                    rows = it.pixelbox.cmwatch.rules.LivePanel.rows(st, 1_789_210_700L + 12 * 60), startOpen = true)
+            }
+        }
+    }
 }
