@@ -21,6 +21,9 @@ export function closeSplash(name: string, sessions: Session[], leaving: Leaving 
   const at = s?.since ?? (lastSeen?.state === 'gone' ? lastSeen.since : now)
   if (!s) return { kind: 'closed', name, at, byMe: mine }
   if (s.state === 'gone') return mine ? { kind: 'closed', name, at, byMe: true } : null
+  // Dal vivo 08/10 19:29: dopo /exit Claude Code può chiedere cosa fare dei lavori in background; il pannello non copre la
+  // domanda, e torna quando è risposta.
+  if (mine && s.question) return null
   if (mine) return { kind: 'closing', name, sentAt: leaving!.sentAt, delivered: leaving!.delivered, slow: now - leaving!.sentAt >= SLOW_S }
   return null
 }

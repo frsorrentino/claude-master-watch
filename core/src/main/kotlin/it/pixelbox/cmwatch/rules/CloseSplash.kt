@@ -36,6 +36,9 @@ object CloseSplash {
         return when {
             s == null -> Phase.Closed(name, at, byMe = mine)
             s.state == SessionState.GONE -> if (mine) Phase.Closed(name, at, byMe = true) else null
+            // Dal vivo 08/10 19:29: dopo /exit Claude Code può chiedere cosa fare dei lavori in background; il pannello non
+            // copre la domanda, e torna quando è risposta.
+            mine && s.question != null -> null
             mine -> Phase.Closing(name, leaving!!.sentAt, delivered, slow = now - leaving.sentAt >= SLOW_S)
             else -> null
         }

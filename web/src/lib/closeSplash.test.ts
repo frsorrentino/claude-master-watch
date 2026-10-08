@@ -21,5 +21,7 @@ describe('closeSplash', () => {
   it('gone on its own stays as a page', () => expect(closeSplash('kb', [s('kb', 'gone')], null, null, 1_005)).toBeNull())
   it('vanished on its own is closed not by me, now', () =>
     expect(closeSplash('kb', [], null, s('kb', 'idle', 900), 1_005)).toEqual({ kind: 'closed', name: 'kb', at: 1_005, byMe: false }))
+  it('a question after exit shows the question, not the panel', () =>
+    expect(closeSplash('kb', [{ ...s('kb', 'waiting'), question: { id: 'q1', kind: 'ask', text: 'Background tasks are running', options: [{ n: 3, label: 'Stay' }], tier: 'low', asked_at: 1_010 } }], sent(true), null, 1_030)).toBeNull())
   it("another session's exit does not count", () => expect(closeSplash('atlas', [s('atlas', 'idle')], sent(), null, 1_005)).toBeNull())
 })
