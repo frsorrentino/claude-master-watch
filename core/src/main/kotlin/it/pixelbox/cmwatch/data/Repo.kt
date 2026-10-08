@@ -73,7 +73,7 @@ class Repo(
     /** Apertura da Room: l'ultimo stato è leggibile anche senza rete, prima che il Transport risponda. */
     suspend fun loadFromStore() {
         // Solo se non è già arrivato uno stato più nuovo: una sveglia FCM a freddo può precedere la lettura (revisione 29/09).
-        store.loadState()?.let { (s, at) -> _snapshot.update { if (it.state != null) it else it.copy(state = s, freshness = Freshness.of(s.ts, now()), receivedAt = at) } }
+        store.loadState()?.let { (s, at) -> _snapshot.update { if (it.state != null) it else it.copy(state = s, freshness = Freshness.of(s, now()), receivedAt = at) } }
         _events.value = store.loadEvents()
         _quotaSamples.value = store.loadQuotaSamples(now() - SAMPLES_KEEP_S)
         _snapshot.update { it.copy(pending = store.loadPending().map { c -> Pending(c, PendingStatus.QUEUED) }) }
@@ -97,7 +97,7 @@ class Repo(
         if (freshnessTickMs > 0) scope.launch {
             while (isActive) {
                 delay(freshnessTickMs)
-                _snapshot.update { it.copy(freshness = it.state?.let { s -> Freshness.of(s.ts, now()) } ?: Freshness.Stale(0)) }
+                _snapshot.update { it.copy(freshness = it.state?.let { s -> Freshness.of(s, now()) } ?: Freshness.Stale(0)) }
             }
         }
     }
@@ -156,7 +156,7 @@ class Repo(
         }
         val ordered = s.copy(sessions = Order.sessions(s.sessions))
         store.saveState(ordered, t)
-        _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered.ts, t), receivedAt = t) }
+        _snapshot.update { it.copy(state = ordered, freshness = Freshness.of(ordered, t), receivedAt = t) }
         android.util.Log.i("cmwatch", "state age: ${t - ordered.ts} s")
         recordQuota(ordered)
     }

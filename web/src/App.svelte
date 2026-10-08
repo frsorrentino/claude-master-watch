@@ -351,6 +351,8 @@
   // alla volta per la pagina (piano prestazioni, Task 5: 888 letture all'ora il 07/10). Il passo dei 5 s fa partire le
   // letture a cadenza anche senza uno stato nuovo; la fine di una lettura fa partire la prossima.
   const reads = new Map<string, LastRead & { key: string }>()
+  // Da quando la lettura in volo di ogni conversazione aspetta il PC (ms): la riga «in attesa del PC» della chat (Task 7).
+  let waitSince = $state<Record<string, number>>({})
   let readTick = $state(0)
   if (tr) setInterval(() => readTick++, 5_000)
   $effect(() => {
@@ -366,7 +368,8 @@
         const last = reads.get(n)
         if (!shouldRead(s, last, !!last && last.key !== key, now)) continue
         reads.set(n, { at: now, answered: false, key })
-        loadTranscript(n).finally(() => { const r = reads.get(n); if (r) r.answered = true; readTick++ })
+        waitSince[n] ??= Date.now()
+        loadTranscript(n).finally(() => { const r = reads.get(n); if (r) r.answered = true; delete waitSince[n]; readTick++ })
         return
       }
     })
@@ -396,7 +399,7 @@
 
 {#snippet chatOf(name: string, inColumn: boolean)}
   {@const s = st.sessions.find(x => x.name === name)!}
-  <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick}
+  <Chat {st} {s} entries={transcripts[name] ?? []} mine={mine.filter(([m]) => m.session === name)} onSend={(x) => sendTo(name, x)} onPick={pick} waitingSince={waitSince[name] ?? null}
     onAnswer={answer} onCmd={cmd(name)} {events} {sent} {read} onRead={(k) => (read = new Set([...read, k]))} onPromptTo={sendTo} onAttach={(fs, x) => attach(name, fs, x)} onFile={(p, a) => fileAction(name, p, a)} onHandoff={() => handoff(name)} onDecision={decide}
     wide={false} {slots} elsewhere={elsewhereFor(name)} onElsewhere={() => { const a = elsewhereFor(name); if (a) openAlert(a) }}
     onElsewhereDismiss={() => { const a = elsewhereFor(name); if (a) seenAlerts = new Set([...seenAlerts, alertKey(a)]) }} onBack={inColumn ? undefined : () => smooth(() => { open = null })} />
@@ -448,7 +451,7 @@
       <Search {sent} {events} remote onQuery={search} page={searchPage}
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
     {:else if p === 'settings'}
-      <Settings m={devicesOf(st.host, st, freshness(st.ts, now), now, '', __APP_VERSION__, true, null, false, null)}
+      <Settings m={devicesOf(st.host, st, freshness(st, now), now, '', __APP_VERSION__, true, null, false, null)}
         devices={linkedDevices(st, null, now) ?? []} now={now} channel={tr ? t.channelLocal : t.channelDemo} onRate={setRate} onVoice={setVoice}
         details={wide ? details : null} onDetails={(on) => { details = on; save('cm.details', on ? '1' : '0') }} />
     {:else if p === 'queue'}

@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.publishedTs
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 
@@ -65,5 +66,5 @@ object WorkPanel {
 
     /** Età dello stato in minuti e nome della macchina, per la riga in fondo; `stale` la fa diventare rossa. */
     fun updated(state: State, freshness: Freshness, now: Long): Updated =
-        Updated(((now - state.ts) / 60).toInt().coerceAtLeast(0), state.host, freshness is Freshness.Stale)
+        Updated(((now - state.publishedTs) / 60).toInt().coerceAtLeast(0), state.host, freshness is Freshness.Stale)
 }

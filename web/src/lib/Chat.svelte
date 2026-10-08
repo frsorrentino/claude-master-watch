@@ -21,8 +21,9 @@
   import PromptBox from './PromptBox.svelte'
   import { blockingOf, parseSteps } from './nextSteps'
   import { t } from './t'
+  import { waitingPc } from './durations'
   import { ctxNudge, decisionDraft, decisionProject, DECISION_MAX } from './masterService'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {} }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {}, waitingSince = null }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
@@ -34,6 +35,8 @@
     onHandoff: () => void; onDecision: (text: string, project: string | null) => void
     /** L'avviso delle altre sessioni sotto la barra (Elsewhere). */
     elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
+    /** Da quando (ms) una lettura della conversazione aspetta il PC; null se nessuna è in volo (piano prestazioni, Task 7). */
+    waitingSince?: number | null
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
   // Franz, 06/10 08:46: la master si apre sulla conversazione; la sua casa resta a un tocco («Casa»).
@@ -47,6 +50,15 @@
   $effect.pre(() => { const name = s.name; if (name !== shown) { drafts[shown] = draft; draft = drafts[name] ?? ''; shown = name } })
   let list: HTMLElement | undefined = $state()
   const items = $derived(group(merge(entries, mine)))
+  // La riga «in attesa del PC»: l'orologio gira solo con una lettura in volo.
+  let waitNow = $state(Date.now())
+  $effect(() => {
+    if (waitingSince == null) return
+    waitNow = Date.now()
+    const id = setInterval(() => (waitNow = Date.now()), 1_000)
+    return () => clearInterval(id)
+  })
+  const waitS = $derived(waitingPc(entries.length > 0, waitingSince, waitNow))
   // I consigli dell'ultima risposta di Claude, se dopo non c'è altro che passaggi.
   const last = $derived.by(() => { const it = [...items].reverse().find(i => i.type !== 'tool' && i.type !== 'steps'); return it?.type === 'claude' ? it.entry : null })
   const lastParsed = $derived(last ? parseSteps(last.text ?? '') : null)
@@ -150,6 +162,8 @@
         {onAnswer} onSession={onPick} onSpeak={(x) => toggle(x, s.name)} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
     <Feed {s} {items} now={st.ts} {onFile} onDecision={canDecide ? openDecision : undefined} />
+    <!-- A chat già piena la rotella non c'è: una riga sottile dice da quanto la lettura aspetta il PC. -->
+    {#if waitS != null}<p class="waitpc">{t.chatWaitingPc(waitS)}</p>{/if}
     {#if s.question}
       <QuestionCard q={s.question} source={s.name} onAnswer={(n) => onCmd('answer', String(n))} onChat={() => onCmd('answer', CHAT_ARG)} onAllowAll={() => onCmd('allow_all')} />
     {/if}
@@ -236,6 +250,7 @@
   .toend button:hover { filter: brightness(1.15); }
   .chat.master .toend button { background: var(--master-highest); }
   .lines { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .waitpc { margin: 0; text-align: center; font-size: 12.5px; color: var(--text2); }
   .nudge { display: flex; align-items: center; gap: 12px; margin: 0 12px 8px; padding: 10px 6px 10px 14px; border-radius: 20px; background: var(--high); }
   .nudge .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; color: var(--text2); }
   .nudge .nt b { font-weight: 500; font-size: 14.5px; color: var(--text); white-space: nowrap; }

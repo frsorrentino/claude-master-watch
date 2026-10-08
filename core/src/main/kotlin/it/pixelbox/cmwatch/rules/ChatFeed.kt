@@ -73,6 +73,15 @@ object ChatFeed {
     fun loading(entries: List<TranscriptEntry>, answered: Boolean): Boolean = entries.isEmpty() && !answered
 
     /**
+     * Da quanti secondi una lettura aspetta il PC, quando la chat ha già voci e l'attesa supera [WAITING_PC_MS]; null se
+     * non c'è niente da dire. A chat vuota c'è la rotella (piano prestazioni, Task 7).
+     */
+    fun waitingPc(hasEntries: Boolean, askedAtMs: Long?, nowMs: Long): Int? =
+        if (askedAtMs == null || !hasEntries || nowMs - askedAtMs <= WAITING_PC_MS) null else ((nowMs - askedAtMs) / 1000).toInt()
+
+    const val WAITING_PC_MS = 10_000L
+
+    /**
      * La conversazione di una pagina dello scorrimento: quella dal vivo solo se è la sessione aperta e le voci sono sue
      * ([owner]); se no l'ultima copia letta. Dal vivo 03/10 17:49: appena fermata la pagina, le voci dal vivo erano ancora
      * quelle della sessione di prima e la pagina nuova le mostrava per un attimo.

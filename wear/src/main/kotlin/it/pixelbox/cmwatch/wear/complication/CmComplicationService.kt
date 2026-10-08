@@ -35,7 +35,7 @@ class CmComplicationService : SuspendingComplicationDataSourceService() {
         val app = application as CmApp
         val snap = app.repo.snapshot.value
         val prefs = app.prefs.current()
-        return build(request.complicationType, snap.state, snap.freshness is Freshness.Fresh, prefs.complicationAccount, prefs.seenQuestions)
+        return build(request.complicationType, snap.state, snap.freshness !is Freshness.Stale, prefs.complicationAccount, prefs.seenQuestions)
     }
 
     private fun build(type: ComplicationType, state: State?, fresh: Boolean, chosen: String, seen: Set<String>): ComplicationData? {

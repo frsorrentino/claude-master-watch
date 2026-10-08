@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.publishedTs
 import it.pixelbox.cmwatch.contract.Night
 import it.pixelbox.cmwatch.contract.SessionState
 import org.junit.Assert.*
@@ -67,7 +68,10 @@ class WorkPanelTest {
     @Test fun rigaDellAggiornamento() {
         val fresco = WorkPanel.updated(state, Freshness.Fresh, now)
         assertEquals(0, fresco.minutes); assertEquals("crostini-demo", fresco.host); assertFalse(fresco.stale)
-        val fermo = WorkPanel.updated(state, Freshness.Stale(7), now + 7 * 60)
+        val fermo = WorkPanel.updated(state, Freshness.Stale(7), state.publishedTs + 7 * 60)
         assertEquals(7, fermo.minutes); assertTrue(fermo.stale)
+        // 1.43: col PC lento l'età si conta dalla pubblicazione (10 s fa), non dalla raccolta (100 s fa).
+        val lento = WorkPanel.updated(state.copy(publishedAt = state.ts + 90.0), Freshness.Slow(90), state.ts + 100)
+        assertEquals(0, lento.minutes); assertFalse(lento.stale)
     }
 }

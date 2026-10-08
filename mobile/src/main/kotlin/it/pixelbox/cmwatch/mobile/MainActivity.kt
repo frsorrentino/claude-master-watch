@@ -508,6 +508,8 @@ class MainActivity : ComponentActivity() {
         var more by remember { mutableStateOf(false) }
         var olderId by remember { mutableStateOf<String?>(null) }
         var unsupported by remember { mutableStateOf(false) }
+        // Da quando la lettura in volo aspetta il PC: la riga «in attesa del PC» della chat (piano prestazioni, Task 7).
+        var readSince by remember { mutableStateOf<Long?>(null) }
         val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
         LaunchedEffect(chatName, transcriptOk, unsupported) {
             entries = chatName?.let { feedCache[it] }.orEmpty(); entriesOwner = chatName; more = false
@@ -518,6 +520,7 @@ class MainActivity : ComponentActivity() {
                 var pendingId: String? = null
                 var mode = ChatFeed.Page.FRESH
                 var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
+                readSince = null
                 while (true) {
                     val cur = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
                     pendingId?.let { app.repo.resultsById.value[it] }?.let { r ->
@@ -535,6 +538,7 @@ class MainActivity : ComponentActivity() {
                         // Anche una risposta vuota o un errore chiudono la rotella (segnalazione 02/10).
                         feedCache[name] = entries
                         pendingId = null
+                        readSince = null
                     }
                     val answered = pendingId == null
                     val moved = answered && TerminalLive.next(prev, cur) != null
@@ -547,6 +551,8 @@ class MainActivity : ComponentActivity() {
                         // Una lettura persa non resta fra i comandi in sospeso (revisione 30/09).
                         pendingId?.let { app.repo.forget(it) }
                         pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(ChatFeed.anchor(entries))) }.getOrNull()
+                        // Una lettura persa e richiesta di nuovo non azzera l'attesa: si aspetta il PC dalla prima.
+                        readSince = if (pendingId == null) null else readSince ?: t
                     }
                     delay(1_000)
                 }
@@ -795,6 +801,7 @@ class MainActivity : ComponentActivity() {
                             slash = state?.slash?.takeIf { state?.ops?.contains("slash") == true },
                             feed = if (transcriptOk && !unsupported && pageEntries.isNotEmpty()) ChatFeed.merge(pageEntries, rows.map { it.sent to it.status }, more) else null,
                             loadingFeed = transcriptOk && !unsupported && ChatFeed.loading(pageEntries, answered = session.name in feedCache),
+                            waitingSince = readSince.takeIf { session.name == chatName },
                             more = more && session.name == chatName,
                             model = tunePicks[session.name + "/model"].let { p -> Tune.model(session, p, p?.let { results[it.cmd] }, now) },
                             effort = tunePicks[session.name + "/effort"].let { p -> Tune.effort(session, p, p?.let { results[it.cmd] }, now) },
@@ -845,7 +852,7 @@ class MainActivity : ComponentActivity() {
         }
         // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
         val menuActions = MenuActions(
-            host, if (snap.freshness is Freshness.Stale) getString(R.string.menu_updated_ago, (snap.freshness as Freshness.Stale).minutes) else getString(R.string.menu_updated_now),
+            host, updatedLabel(snap.freshness),
             snap.freshness is Freshness.Stale, onLaunch = { launching = true }, onRegister = { tab = StartRoute.Tab.DIARY; open = null },
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
             onNight = { nightOpen = true },
@@ -1083,7 +1090,7 @@ class MainActivity : ComponentActivity() {
             onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
             onNight = { nightOpen = true },
             host = host, stale = snap.freshness is Freshness.Stale,
-            updated = when (val f = snap.freshness) { is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes); else -> getString(R.string.menu_updated_now) },
+            updated = updatedLabel(snap.freshness),
             openCount = summary?.open ?: 0,
             // Con la master espansa la quota sotto la barra lascia spazio alla sua conversazione.
             masterChat = masterChat && masterName != null, now = now, onClosed = { closedOpen = true }, pagedHeaders = true,
@@ -1226,6 +1233,13 @@ class MainActivity : ComponentActivity() {
      * Un'immagine dalla barra di scrittura: ridotta come in «Condividi» (contratto 1.19), mandata con `report`, e una copia
      * locale per l'anteprima nel fumetto della chat.
      */
+    /** Il «aggiornato» del menu; col PC lento (contratto 1.43) dice di quanti secondi era vecchio lo stato pubblicato. */
+    private fun updatedLabel(f: Freshness): String = when (f) {
+        is Freshness.Stale -> getString(R.string.menu_updated_ago, f.minutes)
+        is Freshness.Slow -> getString(R.string.menu_updated_slow, f.lagS)
+        Freshness.Fresh -> getString(R.string.menu_updated_now)
+    }
+
     private fun fileUri(file: java.io.File): Uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
 
     /** «Scarica»: una copia nella cartella Download del telefono, con il nome del file. */

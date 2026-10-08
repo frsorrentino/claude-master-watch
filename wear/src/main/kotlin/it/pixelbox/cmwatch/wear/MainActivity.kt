@@ -106,7 +106,7 @@ class MainActivity : ComponentActivity() {
                     AppScaffold(timeText = {
                         // Accanto all'ora, curvo, quante sessioni aspettano una risposta (B10, 15/09 23:40).
                         val snap by app.repo.snapshot.collectAsStateWithLifecycle()
-                        CmTimeText(waiting = if (snap.freshness is Freshness.Fresh) snap.state?.sessions?.count { it.question != null } ?: 0 else 0)
+                        CmTimeText(waiting = if (snap.freshness !is Freshness.Stale) snap.state?.sessions?.count { it.question != null } ?: 0 else 0)
                     }) { App(app) }
                 }
             }
@@ -510,7 +510,7 @@ class MainActivity : ComponentActivity() {
             }
             composable(Routes.LAUNCH) {
                 LaunchScreen(
-                    snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness is Freshness.Fresh,
+                    snapshot.state?.projects.orEmpty(), enabled = snapshot.freshness !is Freshness.Stale,
                     onLaunch = { path -> launch(path, null); nav.go(Screen.Sessions) },
                     onWrite = { p ->
                         val dettato = app.demoDictation

@@ -73,6 +73,19 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, choices = st.choices, ops = st.ops, canAttach = true, feed = feed, more = true) }
     }
 
+    // Piano prestazioni, Task 7: una lettura aspetta il PC da 15 s con la chat già piena: la riga sottile in fondo.
+    @Test fun sheetChatWaitingPc() = paparazzi.snapshot {
+        val t = st.ts - 120
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Add the Tuesday meeting notes to the draft", at = t, origin = "phone"),
+            TranscriptEntry("a1.0", "assistant", text = "The notes are in the draft, under the Tuesday heading.", at = t + 40, turn = TranscriptTurn(t, t + 45, 4020, 130)),
+        )
+        val s = st.sessions.first { it.state == SessionState.BUSY }
+        CmPhoneTheme(still = true) {
+            SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()), waitingSince = 985_000L, clockMs = { 1_000_000L })
+        }
+    }
+
     // Consigli A (Franz, 03/10 15:20): la lista «Prossimi» sopra la barra, dall'ultima risposta di una sessione ferma.
     @Test fun sheetNextSteps() = paparazzi.snapshot {
         val t = st.ts - 600

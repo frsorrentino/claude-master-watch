@@ -46,7 +46,7 @@ fun SessionsScreen(snapshot: Snapshot, now: Long, onOpen: (String) -> Unit, onSe
     it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val sessions = snapshot.state?.sessions.orEmpty()
-    val fresh = snapshot.freshness is Freshness.Fresh
+    val fresh = snapshot.freshness !is Freshness.Stale
     // Scorre solo la riga al centro, e solo se il sistema permette le animazioni.
     val center = rememberCenterIndex(listState)
     val canScroll = !ambient && !animationsOff()

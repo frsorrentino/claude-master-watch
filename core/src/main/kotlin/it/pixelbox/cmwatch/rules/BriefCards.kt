@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.rules
 
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.publishedTs
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.contract.State
 import java.time.Instant
@@ -160,7 +161,7 @@ object BriefCards {
                 glyph = Glyph.NIGHT,
             )
         }
-        val age = ((now - state.ts) / 60).toInt()
+        val age = ((now - state.publishedTs) / 60).toInt()
         cards += Card(
             key = "update",
             label = l.update,
@@ -168,9 +169,9 @@ object BriefCards {
             unit = if (age <= 0) null else l.minutes,
             secondary = if (freshness is Freshness.Stale) l.stopped else null,
             pill = state.host.takeIf { it.isNotBlank() },
-            tone = if (freshness is Freshness.Fresh) Tone.GOOD else Tone.STALE,
+            tone = if (freshness is Freshness.Stale) Tone.STALE else Tone.GOOD,
             // Il gauge si riempie mentre il dato invecchia: pieno = PC fermo, e allora pulsa.
-            progress = (((now - state.ts).toFloat() / Freshness.STALE_AFTER_S)).coerceIn(0f, 1f),
+            progress = (((now - state.publishedTs).toFloat() / Freshness.STALE_AFTER_S)).coerceIn(0f, 1f),
             glyph = Glyph.SYNC,
         )
         return cards

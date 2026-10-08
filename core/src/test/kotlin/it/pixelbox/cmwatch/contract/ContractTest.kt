@@ -74,6 +74,13 @@ class ContractTest {
         }
     }
 
+    /** 1.43: `published_at` alla radice, decimali ammessi; assente con un relay precedente. */
+    @Test fun publishedAtFromTheFixtures() {
+        assertEquals(1789210801.5, ContractJson.decodeState(Fixtures.stateQuestion).publishedAt!!, 0.0)
+        assertEquals(1789214401.5, ContractJson.decodeState(Fixtures.stateIdle).publishedAt!!, 0.0)
+        assertNull(ContractJson.decodeState(Fixtures.stateIdle.replace("\"published_at\": 1789214401.5,", "")).publishedAt)
+    }
+
     @Test fun roundTripKeepsEveryValue() {
         for (raw in all) {
             val s = ContractJson.decodeState(raw)

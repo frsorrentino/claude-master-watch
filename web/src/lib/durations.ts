@@ -10,12 +10,24 @@ export const orderSessions = (list: Session[]) =>
   [...list].sort((a, b) => rank[a.state] - rank[b.state] || a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 
 export const STALE_AFTER_S = 180
-export type Freshness = { stale: false } | { stale: true; minutes: number }
-/** Lo stato è vecchio da tre minuti senza aggiornamenti. */
-export function freshness(stateTs: number, now: number): Freshness {
-  const age = now - stateTs
-  return age < STALE_AFTER_S ? { stale: false } : { stale: true, minutes: Math.floor(age / 60) }
+export const SLOW_LAG_S = 30
+/** `slowS` (contratto 1.43): stato arrivato da poco, ma raccolto tanti secondi prima della pubblicazione, «PC lento». */
+export type Freshness = { stale: false; slowS?: number } | { stale: true; minutes: number }
+type Stamped = { ts: number; published_at?: number | null }
+/** Da quando lo stato vale per il PC: la pubblicazione (1.43), o `ts` con un relay precedente. */
+export const publishedTs = (s: Stamped) => Math.trunc(s.published_at ?? s.ts)
+/** Lo stato è vecchio da tre minuti senza pubblicazioni; col PC lento resta fresco, e il menu lo dice. */
+export function freshness(s: Stamped, now: number): Freshness {
+  const pub = publishedTs(s)
+  if (now - pub >= STALE_AFTER_S) return { stale: true, minutes: Math.floor((now - pub) / 60) }
+  const lag = pub - s.ts
+  return s.published_at != null && lag >= SLOW_LAG_S ? { stale: false, slowS: lag } : { stale: false }
 }
+
+export const WAITING_PC_MS = 10_000
+/** Da quanti secondi una lettura aspetta il PC, con la chat già piena e oltre 10 s; null se non c'è niente da dire. */
+export const waitingPc = (hasEntries: boolean, askedAtMs: number | null, nowMs: number): number | null =>
+  askedAtMs == null || !hasEntries || nowMs - askedAtMs <= WAITING_PC_MS ? null : Math.floor((nowMs - askedAtMs) / 1000)
 
 /** «2 m», «1 h 05», «3 g»: da `from` a `now`, epoch in secondi. */
 export function since(from: number, now: number, days = 'g'): string {

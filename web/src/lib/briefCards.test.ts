@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { decodeState, type QuotaAccount } from './contract'
-import { since } from './durations'
+import { publishedTs, since, STALE_AFTER_S } from './durations'
 import { quota, work, type Labels } from './briefCards'
 
 // Gli stessi casi di BriefCardsTest, BriefQuotaAlertTest e BriefQuotaWeekToneTest in Kotlin.
@@ -94,9 +94,15 @@ describe('card del lavoro', () => {
   it('aggiornamento in minuti e grigio quando il PC è fermo', () => {
     const fresco = work(state, fresh, state.ts, labels).find(c => c.key === 'update')!
     expect(fresco.value).toBe('ora'); expect(fresco.unit).toBeNull(); expect(fresco.tone).toBe('good')
-    const fermo = work(state, { stale: true, minutes: 12 }, state.ts + 12 * 60, labels).find(c => c.key === 'update')!
+    const fermo = work(state, { stale: true, minutes: 12 }, publishedTs(state) + 12 * 60, labels).find(c => c.key === 'update')!
     expect(fermo.value).toBe('12'); expect(fermo.unit).toBe('min')
     expect(fermo.secondary).toBe('PC fermo'); expect(fermo.tone).toBe('stale')
+  })
+  it('1.43: col PC lento la card resta verde, con l\'età contata dalla pubblicazione', () => {
+    const lento = { ...state, published_at: state.ts + 45 }
+    const c = work(lento, { stale: false, slowS: 45 }, state.ts + 45 + 20, labels).find(x => x.key === 'update')!
+    expect(c.value).toBe('ora'); expect(c.secondary).toBeNull(); expect(c.tone).toBe('good')
+    expect(c.progress).toBeCloseTo(20 / STALE_AFTER_S, 3)
   })
   it('la coda della notte compare solo quando c\'è qualcosa', () => {
     expect(work({ ...state, night: { queued: 0 } }, fresh, state.ts, labels).some(c => c.key === 'night')).toBe(false)

@@ -17,8 +17,8 @@
   // Il pannello scende dal tasto ≡, non dal bordo dello schermo: sulla plancia con la home a sinistra resta accanto al tasto.
   let panelRight = $state(12)
   function openMenu(e: MouseEvent) { panelRight = Math.max(12, innerWidth - (e.currentTarget as HTMLElement).getBoundingClientRect().right); menu = true }
-  const fresh = $derived(freshness(st.ts, now))
-  const updated = $derived(fresh.stale ? t.updatedAgo(fresh.minutes) : t.updatedNow)
+  const fresh = $derived(freshness(st, now))
+  const updated = $derived(fresh.stale ? t.updatedAgo(fresh.minutes) : fresh.slowS != null ? t.updatedSlow(fresh.slowS) : t.updatedNow)
   // Con un account non aggiornato si vede solo l'altro, a tutta larghezza e con l'ora in cui si azzera.
   const rings = $derived(shown(Object.entries(st.quota)))
   const tone = (pct: number, stale: boolean) => (stale ? 'var(--text2)' : pct >= 90 ? 'var(--b-alert)' : pct >= 75 ? 'var(--b-warn)' : 'var(--b-ring)')

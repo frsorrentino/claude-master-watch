@@ -186,6 +186,7 @@
     <string name="menu_pc">PC</string>
     <string name="menu_updated_now">aggiornato ora</string>
     <string name="menu_updated_ago">aggiornato %1$d min fa</string>
+    <string name="menu_updated_slow">PC lento · stato di %1$d s fa</string>
     <string name="menu_launch">Lancia una sessione</string>
     <string name="menu_launch_sub">Un progetto, con il primo messaggio</string>
     <string name="menu_register">Registro</string>
@@ -322,6 +323,7 @@
     <string name="origin_phone">dal telefono</string>
     <string name="origin_web">dalla web app</string>
     <string name="text_cut">testo accorciato dal PC</string>
+    <string name="chat_waiting_pc">in attesa del PC da %1$d s</string>
     <string name="turn_tokens">%1$d token scritti</string>
     <string name="remove_image">Togli l\'immagine</string>
     <string name="close">Chiudi</string>

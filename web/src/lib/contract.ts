@@ -61,6 +61,8 @@ export type TimelinePage = { since: number; sessions: TimelineSession[]; more?: 
 
 export type State = {
   v: number; ts: number; host: string
+  /** 1.43: epoch s della pubblicazione (decimali ammessi); assente con un relay precedente. */
+  published_at?: number | null
   sessions: Session[]; quota: Record<string, QuotaAccount>
   projects: Project[]; night: Night; recap: Recap
   ops?: string[] | null; slash?: string[] | null

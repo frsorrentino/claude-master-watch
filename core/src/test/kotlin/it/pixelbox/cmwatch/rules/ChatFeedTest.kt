@@ -185,4 +185,12 @@ class ChatFeedTest {
         assertEquals(b, ChatFeed.pageEntries("B", open = "A", owner = "A", live = a, cache = cache))
         assertEquals(emptyList<it.pixelbox.cmwatch.contract.TranscriptEntry>(), ChatFeed.pageEntries("C", open = "C", owner = "A", live = a, cache = cache))
     }
+
+    /** Piano prestazioni, Task 7: una lettura in volo da più di 10 s, con la chat già piena, dice da quanto aspetta il PC. */
+    @Test fun attesaDelPcSoloConVociEOltreDieciSecondi() {
+        assertNull(ChatFeed.waitingPc(true, null, 50_000))
+        assertNull(ChatFeed.waitingPc(true, 40_000, 50_000))
+        assertEquals(11, ChatFeed.waitingPc(true, 39_000, 50_000))
+        assertNull(ChatFeed.waitingPc(false, 0, 50_000))
+    }
 }

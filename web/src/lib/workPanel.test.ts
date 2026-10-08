@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { decodeState } from './contract'
+import { publishedTs } from './durations'
 import { contexts, night, now as nowSeg, questions, updated } from './workPanel'
 
 // Gli stessi casi di WorkPanelTest in Kotlin. Fixture: ledger-api aspetta una risposta (ctx 62), atlas-shop lavora (18),
@@ -47,7 +48,10 @@ describe('pannello Lavoro', () => {
   it('riga dell\'aggiornamento', () => {
     const fresco = updated(state, { stale: false }, now)
     expect([fresco.minutes, fresco.host, fresco.stale]).toEqual([0, 'crostini-demo', false])
-    const fermo = updated(state, { stale: true, minutes: 7 }, now + 7 * 60)
+    const fermo = updated(state, { stale: true, minutes: 7 }, publishedTs(state) + 7 * 60)
     expect([fermo.minutes, fermo.stale]).toEqual([7, true])
+    // 1.43: col PC lento l'età si conta dalla pubblicazione (10 s fa), non dalla raccolta (100 s fa).
+    const lento = updated({ ...state, published_at: state.ts + 90 }, { stale: false, slowS: 90 }, state.ts + 100)
+    expect([lento.minutes, lento.stale]).toEqual([0, false])
   })
 })

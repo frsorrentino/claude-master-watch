@@ -1,5 +1,5 @@
 import type { QuotaAccount, State } from './contract'
-import { since, STALE_AFTER_S, type Freshness } from './durations'
+import { publishedTs, since, STALE_AFTER_S, type Freshness } from './durations'
 
 // Contenuto della schermata «brief mattutino», porta di BriefCards.kt (e di Accounts.isPersonalQuota, QuotaText.fraction):
 // una card per dato. Qui si decide cosa si vede e con che testo; le card a zero non si mostrano.
@@ -126,7 +126,7 @@ export function work(state: State | null, fresh: Freshness, now: number, l: Labe
       glyph: 'night',
     }))
   }
-  const age = Math.trunc((now - state.ts) / 60)
+  const age = Math.trunc((now - publishedTs(state)) / 60)
   cards.push(card({
     key: 'update', label: l.update,
     value: age <= 0 ? l.now : String(age),
@@ -135,7 +135,7 @@ export function work(state: State | null, fresh: Freshness, now: number, l: Labe
     pill: state.host.trim() ? state.host : null,
     tone: fresh.stale ? 'stale' : 'good',
     // Il gauge si riempie mentre il dato invecchia: pieno = PC fermo, e allora pulsa.
-    progress: Math.min(1, Math.max(0, (now - state.ts) / STALE_AFTER_S)),
+    progress: Math.min(1, Math.max(0, (now - publishedTs(state)) / STALE_AFTER_S)),
     glyph: 'sync',
   }))
   return cards

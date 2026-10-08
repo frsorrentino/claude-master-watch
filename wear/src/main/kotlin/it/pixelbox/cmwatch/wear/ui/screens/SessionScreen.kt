@@ -89,7 +89,7 @@ fun SessionScreen(
     it.pixelbox.cmwatch.wear.ui.components.DemoScroll(listState)   // solo per i video promozionali, via adb
     val spec = rememberTransformationSpec()
     val s = snapshot.state?.sessions?.firstOrNull { it.name == name }
-    val enabled = snapshot.freshness is Freshness.Fresh
+    val enabled = snapshot.freshness !is Freshness.Stale
     // Azione contestuale: «Rispondi» se c'è una domanda, «Riavvia» se la sessione è chiusa, altrimenti «Scrivi». È l'ultima
     // voce della lista, curva sul bordo come in Sessioni: nello slot fisso restava piena sopra la card mentre si scorreva
     // (video 16/09 18:48).

@@ -13,12 +13,18 @@ object Order {
 
 sealed class Freshness {
     data object Fresh : Freshness()
+    /** 1.43: stato arrivato da poco, ma raccolto [lagS] secondi prima della pubblicazione. Vale come fresco ovunque, tranne nel menu. */
+    data class Slow(val lagS: Int) : Freshness()
     data class Stale(val minutes: Int) : Freshness()
     companion object {
         const val STALE_AFTER_S = 180L
-        fun of(stateTs: Long, now: Long): Freshness {
-            val age = now - stateTs
-            return if (age < STALE_AFTER_S) Fresh else Stale((age / 60).toInt())
+        const val SLOW_LAG_S = 30L
+        /** L'età si conta dalla pubblicazione (1.43), o da `ts` con un relay precedente. */
+        fun of(s: State, now: Long): Freshness {
+            val pub = s.publishedTs
+            if (now - pub >= STALE_AFTER_S) return Stale(((now - pub) / 60).toInt())
+            val lag = pub - s.ts
+            return if (s.publishedAt != null && lag >= SLOW_LAG_S) Slow(lag.toInt()) else Fresh
         }
     }
 }

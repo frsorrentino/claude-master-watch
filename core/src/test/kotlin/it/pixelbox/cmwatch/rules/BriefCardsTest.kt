@@ -4,6 +4,7 @@ import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.ContractJson
 import it.pixelbox.cmwatch.contract.Durations
 import it.pixelbox.cmwatch.contract.Freshness
+import it.pixelbox.cmwatch.contract.publishedTs
 import it.pixelbox.cmwatch.contract.Night
 import org.junit.Assert.*
 import org.junit.Test
@@ -121,9 +122,17 @@ class BriefCardsTest {
     @Test fun aggiornamentoInMinutiEGrigioQuandoIlPcEFermo() {
         val fresco = BriefCards.work(state, Freshness.Fresh, state.ts, labels).first { it.key == "update" }
         assertEquals("ora", fresco.value); assertNull(fresco.unit); assertEquals(BriefCards.Tone.GOOD, fresco.tone)
-        val fermo = BriefCards.work(state, Freshness.Stale(12), state.ts + 12 * 60, labels).first { it.key == "update" }
+        val fermo = BriefCards.work(state, Freshness.Stale(12), state.publishedTs + 12 * 60, labels).first { it.key == "update" }
         assertEquals("12", fermo.value); assertEquals("min", fermo.unit)
         assertEquals("PC fermo", fermo.secondary); assertEquals(BriefCards.Tone.STALE, fermo.tone)
+    }
+
+    /** 1.43: col PC lento lo stato è appena arrivato: card verde, età contata dalla pubblicazione e non dalla raccolta. */
+    @Test fun pcLentoNonEFermo() {
+        val lento = state.copy(publishedAt = state.ts + 45.0)
+        val c = BriefCards.work(lento, Freshness.Slow(45), state.ts + 45 + 20, labels).first { it.key == "update" }
+        assertEquals("ora", c.value); assertNull(c.secondary); assertEquals(BriefCards.Tone.GOOD, c.tone)
+        assertEquals(20f / Freshness.STALE_AFTER_S, c.progress!!, 0.001f)
     }
 
     @Test fun laCodaDellaNotteCompareSoloQuandoCeQualcosa() {

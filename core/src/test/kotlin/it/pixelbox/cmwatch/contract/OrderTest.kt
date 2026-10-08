@@ -23,10 +23,25 @@ class OrderTest {
         assertEquals(listOf("ledger-api", "aaa-await", "atlas-shop", "field-notes", "orbit-docs"), Order.sessions(s.sessions + awaiting).map { it.name })
     }
 
+    private fun state(ts: Long, published: Double?) = ContractJson.decodeState(Fixtures.stateIdle).copy(ts = ts, publishedAt = published)
+
+    /** Senza `published_at` (relay precedente alla 1.43) l'età si conta da `ts`, come prima. */
     @Test fun freshnessThreeMinutes() {
-        assertEquals(Freshness.Fresh, Freshness.of(1000, 1000 + 179))
-        assertEquals(Freshness.Stale(3), Freshness.of(1000, 1000 + 180))
-        assertEquals(Freshness.Stale(65), Freshness.of(1000, 1000 + 65 * 60 + 5))
+        assertEquals(Freshness.Fresh, Freshness.of(state(1000, null), 1000 + 179))
+        assertEquals(Freshness.Stale(3), Freshness.of(state(1000, null), 1000 + 180))
+        assertEquals(Freshness.Stale(65), Freshness.of(state(1000, null), 1000 + 65 * 60 + 5))
+    }
+
+    /** 1.43: l'età si conta dalla pubblicazione; «PC lento» quando la raccolta ha preso 30 s o più. */
+    @Test fun freshnessFromPublishedAt() {
+        assertEquals(Freshness.Fresh, Freshness.of(state(1000, 1005.0), 1005 + 10))
+        assertEquals(Freshness.Slow(45), Freshness.of(state(1000, 1045.0), 1045 + 10))
+        assertEquals(Freshness.Stale(3), Freshness.of(state(1000, 1010.0), 1010 + 200))
+    }
+
+    @Test fun publishedTsFallsBackToTs() {
+        assertEquals(1045L, state(1000, 1045.7).publishedTs)
+        assertEquals(1000L, state(1000, null).publishedTs)
     }
 
     @Test fun durations() {

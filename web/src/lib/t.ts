@@ -83,6 +83,7 @@ export const t = {
   tabletResetWidths: 'Colonne di nuovo uguali', tabletDeskEmpty: 'Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.',
   summaryTitle: 'Master', summaryOpen: (n: number) => `${n}\u00A0${n === 1 ? 'aperta' : 'aperte'}`, search: 'Cerca', menu: 'Menu',
   updatedNow: 'aggiornato ora', updatedAgo: (m: number) => `aggiornato ${m}\u00A0min fa`, menuPc: 'PC',
+  updatedSlow: (s: number) => `PC lento · stato di ${s}\u00A0s fa`, chatWaitingPc: (s: number) => `in attesa del PC da ${s}\u00A0s`,
   menuConnected: (host: string, upd: string) => `Collegato a ${host} · ${upd}`, quotaLineStale: 'non aggiornata',
   badgePersonal: 'account personale', badgeWork: 'account di lavoro',
   // La pagina Notte (specifica del 07/10, approvata alle 21:50).

@@ -1,5 +1,5 @@
 import type { State } from './contract'
-import { since, type Freshness } from './durations'
+import { publishedTs, since, type Freshness } from './durations'
 import { tone } from './header'
 import type { Tone } from './briefCards'
 
@@ -53,4 +53,4 @@ export function night(state: State): NightQueue | null {
 export type Updated = { minutes: number; host: string; stale: boolean }
 /** Età dello stato in minuti e nome della macchina, per la riga in fondo; `stale` la fa diventare rossa. */
 export const updated = (state: State, fresh: Freshness, nowTs: number): Updated =>
-  ({ minutes: Math.max(0, Math.trunc((nowTs - state.ts) / 60)), host: state.host, stale: fresh.stale })
+  ({ minutes: Math.max(0, Math.trunc((nowTs - publishedTs(state)) / 60)), host: state.host, stale: fresh.stale })

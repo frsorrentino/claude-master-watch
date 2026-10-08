@@ -64,7 +64,7 @@ fun QuestionScreen(
     val spec = rememberTransformationSpec()
     val s: Session? = snapshot.state?.sessions?.firstOrNull { it.name == name }
     val q = s?.question
-    val enabled = snapshot.freshness is Freshness.Fresh
+    val enabled = snapshot.freshness !is Freshness.Stale
     val pending = snapshot.pending.firstOrNull { it.cmd.id == sentId }
     var holdHint by rememberSaveable { mutableStateOf(false) }
     // Il bordo rosso del rischio alto fa un respiro solo all'arrivo della domanda, poi resta fermo (proposta 20, fase 1):

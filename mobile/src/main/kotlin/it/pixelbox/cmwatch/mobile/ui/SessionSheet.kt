@@ -163,6 +163,10 @@ fun SessionSheet(
     feed: List<ChatFeed.Item>? = null, more: Boolean = false, onOlder: () -> Unit = {},
     /** La conversazione vera sta arrivando: niente chat di ripiego nel frattempo, che poi salterebbe (dal vivo 30/09 23:36). */
     loadingFeed: Boolean = false,
+    /** Da quando (ms) una lettura della conversazione aspetta il PC; null se nessuna è in volo (piano prestazioni, Task 7). */
+    waitingSince: Long? = null,
+    /** L'orologio della riga d'attesa, in ms. */
+    clockMs: () -> Long = System::currentTimeMillis,
     /** La finestra di 5 ore dell'account della sessione sta finendo (`QuotaWarning`); null = nessun avviso. */
     quota: QuotaWarning.Warn? = null,
     /** Le frasi rapide del progetto (`QuickPhrases`), come chip sopra la barra. */
@@ -203,6 +207,9 @@ fun SessionSheet(
     /** Obiettivo e bassa priorità in testata; il tablet con l'ispettore li mostra lì e in testata non si ripetono. */
     notesInHeader: Boolean = true,
 ) {
+    // L'orologio dell'attesa del PC gira solo con una lettura in volo, e si legge solo dentro la lista: il tic di ogni
+    // secondo non ricompone la scheda (la digitazione lenta del 05/10 veniva da letture in cima).
+    val waitClock = produceState(clockMs(), waitingSince) { while (waitingSince != null) { value = clockMs(); kotlinx.coroutines.delay(1_000) } }
     // Legata anche alla domanda: una domanda nuova non eredita la bozza scritta per quella di prima (revisione 29/09).
     val ownDraft = rememberSaveable(s.id, s.question?.id) { mutableStateOf("") }
     // La bozza si legge solo dove serve (Franz, 05/10 10:45: «la digitazione risulta ancora molto lenta»): letta qui in
@@ -330,6 +337,15 @@ fun SessionSheet(
                             )
                             is ChatFeed.Item.Tool -> ToolLine(it.entry)
                             is ChatFeed.Item.Steps -> StepsCard(it)
+                        }
+                    }
+                    // A chat già piena la rotella non c'è: una riga sottile dice da quanto la lettura aspetta il PC.
+                    ChatFeed.waitingPc(true, waitingSince, waitClock.value)?.let { secs ->
+                        item(key = "waiting-pc") {
+                            Text(
+                                stringResource(R.string.chat_waiting_pc, secs), style = MaterialTheme.typography.bodySmall, color = CmColors.text2,
+                                modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
                         }
                     }
                 } else if (loadingFeed) {

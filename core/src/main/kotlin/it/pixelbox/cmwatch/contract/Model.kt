@@ -188,6 +188,8 @@ enum class CmdOp {
 
 @Serializable data class State(
     val v: Int, val ts: Long, val host: String,
+    /** Contratto 1.43: epoch s della pubblicazione (decimali ammessi); `ts` resta l'ora di raccolta. Null con un relay precedente. */
+    @SerialName("published_at") val publishedAt: Double? = null,
     val sessions: List<Session> = emptyList(),
     val quota: Map<String, QuotaAccount> = emptyMap(),
     val projects: List<Project> = emptyList(),
@@ -207,6 +209,9 @@ enum class CmdOp {
     /** Contratto 1.37: i compiti che aspettano l'ok, dal più vecchio; vuota con un relay precedente. */
     val approvals: List<Approval> = emptyList(),
 )
+
+/** Contratto 1.43: da quando lo stato vale per il PC, cioè la pubblicazione; `ts` con un relay precedente. */
+val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
 
 /**
  * Contratto 1.32: un dispositivo accoppiato come lo vede il PC. `kind` = phone, watch, tablet, chromebook o null se non si

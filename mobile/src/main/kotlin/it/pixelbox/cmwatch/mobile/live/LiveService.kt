@@ -112,7 +112,7 @@ class LiveService : Service() {
         app.liveStreams(true)
         seen = app.repo.events.value.map { it.key }.toSet()
         scope.launch { for (i in inbox) handle(i) }
-        scope.launch { app.repo.snapshot.collect { s -> s.state?.let { inbox.send(Input.Snap(it, s.freshness is Freshness.Fresh)) } } }
+        scope.launch { app.repo.snapshot.collect { s -> s.state?.let { inbox.send(Input.Snap(it, s.freshness !is Freshness.Stale)) } } }
         scope.launch { app.repo.events.collect { ev -> inbox.send(Input.Events(ev)) } }
         scope.launch { app.repo.resultsById.collect { m -> m.forEach { (id, r) -> if (pending.containsKey(id)) inbox.send(Input.Result(id, r.ok, r.text)) } } }
         scope.launch { taps.collect { inbox.send(Input.Tap(it)) } }
