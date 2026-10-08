@@ -130,6 +130,7 @@ class LiveService : Service() {
             ACTION_STOP -> stopSelf()
             ACTION_ONLY_BLOCKING -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ONLY_BLOCKING)))
             ACTION_PAUSE -> { userPaused = !userPaused; inbox.trySend(Input.Audio) }
+            ACTION_RECAP -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ROUND)))
         }
         return START_NOT_STICKY
     }
@@ -167,6 +168,9 @@ class LiveService : Service() {
             is Input.Tap -> if (st == null) null else LiveDesk.tap(desk, i.tap, st, now, lang)
             Input.Spoken -> { _panel.value = _panel.value.copy(speaking = false); if (st == null) null else LiveDesk.spoken(desk, st, now, lang) }
             Input.Tick -> {
+                // L'intervallo del recap dalle impostazioni, letto a ogni tic: cambia anche a live accesa.
+                val every = getSharedPreferences("live", MODE_PRIVATE).getInt("recap_min", LiveDesk.RECAP_DEFAULT_MIN) * 60_000L
+                if (every != desk.recapEveryMs) desk = desk.copy(recapEveryMs = every)
                 // Fine della chiamata: il focus torna da sé quando il telefono non è più in conversazione.
                 if (!focus && getSystemService(AudioManager::class.java).mode == AudioManager.MODE_NORMAL) focus = true
                 if (!headset && headsetGoneAt > 0 && now - headsetGoneAt >= HEADSET_WAIT_MS) { stopSelf(); return }
@@ -289,6 +293,7 @@ class LiveService : Service() {
         private const val ACTION_STOP = "it.pixelbox.cmwatch.live.STOP"
         private const val ACTION_ONLY_BLOCKING = "it.pixelbox.cmwatch.live.ONLY_BLOCKING"
         private const val ACTION_PAUSE = "it.pixelbox.cmwatch.live.PAUSE"
+        private const val ACTION_RECAP = "it.pixelbox.cmwatch.live.RECAP"
 
         /**
          * Quello che il pannello della live nell'app mostra (Franz, 08/10 20:03: «un box di controllo proprio come quello
@@ -303,6 +308,7 @@ class LiveService : Service() {
 
         /** I tasti del pannello: pausa e ripresa, solo bloccanti o tutte; spegni è `toggle`. */
         fun pause(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_PAUSE)) }
+        fun recap(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_RECAP)) }
         fun onlyBlocking(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_ONLY_BLOCKING)) }
 
         /** Auricolari scollegati: se non tornano entro 10 minuti la live si chiude. */

@@ -70,6 +70,12 @@ object LiveFeed {
         val approval: String, val where: String, val outcome: String, val next: String, val step: String,
         val gone: String, val restartFailed: String, val quota: String, val quotaNoReset: String,
         val busy: String, val idle: String, val launched: String, val recap: String,
+        /** Il recap di una sessione al lavoro (Franz, 08/10 20:15): nome, da quanto, cosa fa adesso. */
+        val recapBusy: String = "%1\$s lavora da %2\$s, ora: %3\$s.",
+        /** Cosa deve fare: l'obiettivo di /goal, o il prossimo passo detto. */
+        val recapTask: String = "Obiettivo: %1\$s.",
+        val thinking: String = "sta pensando",
+        val minute: String = "1 minuto", val minutes: String = "%1\$d minuti",
     )
 
     /**
@@ -139,16 +145,29 @@ object LiveFeed {
      * richieste di ok, poi quelle al lavoro, poi quelle seguite e ferme. Le sessioni in bassa priorità attiva restano
      * fuori, salvo quando aspettano Franz: il livello 1 non ha limiti.
      */
-    fun round(state: State, l: Labels, feed: Feed = Feed()): List<String> {
+    fun round(state: State, l: Labels, feed: Feed = Feed(), now: Long? = null): List<String> {
         val open = state.sessions.filter { it.state != SessionState.GONE }
         val waiting = open.filter { it.question != null || blocking(it) }
         val working = open.filter { it !in waiting && it.state == SessionState.BUSY && !low(it) }
         val stopped = open.filter { it !in waiting && it.state != SessionState.BUSY && it.followed && !low(it) }
         return waiting.map { if (it.question != null) questionText(it, l) else outcomeText(it, l) } +
             state.approvals.map { approvalText(it, l) } +
-            working.map { l.busy.format(SpeakableName.of(it.name)) } +
+            working.map { if (now == null) l.busy.format(SpeakableName.of(it.name)) else busyRecap(it, now, l) } +
             stopped.map { if (it.outcome != null) outcomeText(it, l) else l.idle.format(SpeakableName.of(it.name)) } +
             feed.info.map { it.text }
+    }
+
+    /**
+     * Una sessione al lavoro nel recap (Franz, 08/10 20:11): da quanto lavora a questo turno, cosa fa adesso (la nota dello
+     * strumento, o «sta pensando») e cosa deve fare (l'obiettivo di /goal, o il prossimo passo detto). Il testo del prompt
+     * del turno arriverà dal relay (`turn_prompt`, richiesta in attesa).
+     */
+    private fun busyRecap(s: Session, now: Long, l: Labels): String {
+        val min = ((now - (s.turnStarted ?: s.since)) / 60).coerceAtLeast(1).toInt()
+        val since = if (min == 1) l.minute else l.minutes.format(min)
+        val doing = s.toolNote?.takeIf { it.isNotBlank() } ?: l.thinking
+        val task = (s.goal?.text ?: s.next)?.takeIf { it.isNotBlank() }?.let { " " + l.recapTask.format(bare(it, l)) }.orEmpty()
+        return l.recapBusy.format(SpeakableName.of(s.name), since, bare(doing, l)) + task
     }
 
     /** Il giro completo è stato letto: le informazioni non si ripetono al giro dopo. */

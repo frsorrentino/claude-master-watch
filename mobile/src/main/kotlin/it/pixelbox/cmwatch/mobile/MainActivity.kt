@@ -193,6 +193,7 @@ class MainActivity : ComponentActivity() {
         var terminal by rememberSaveable { mutableStateOf<String?>(null) }   // nome della sessione del terminale
         var screenId by rememberSaveable { mutableStateOf<String?>(null) }
         var settingsOpen by rememberSaveable { mutableStateOf(false) }
+        var liveRecap by remember { mutableIntStateOf(getSharedPreferences("live", MODE_PRIVATE).getInt("recap_min", it.pixelbox.cmwatch.rules.LiveDesk.RECAP_DEFAULT_MIN)) }
         var launching by rememberSaveable { mutableStateOf(false) }
         var nightAdding by rememberSaveable { mutableStateOf(false) }
         var queueOpen by rememberSaveable { mutableStateOf(false) }
@@ -232,6 +233,7 @@ class MainActivity : ComponentActivity() {
                 p.last, p.speaking, p.paused, p.noHeadset, p.onlyBlocking,
                 onPause = { it.pixelbox.cmwatch.mobile.live.LiveService.pause(ctx) },
                 onFilter = { it.pixelbox.cmwatch.mobile.live.LiveService.onlyBlocking(ctx) },
+                onRecap = { it.pixelbox.cmwatch.mobile.live.LiveService.recap(ctx) },
                 onStop = { it.pixelbox.cmwatch.mobile.live.LiveService.toggle(ctx) },
             )
         })
@@ -354,6 +356,7 @@ class MainActivity : ComponentActivity() {
                 voices = speech.voices.collectAsStateWithLifecycle().value, voice = speech.voice.collectAsStateWithLifecycle().value,
                 onVoice = speech::setVoice, onTryVoice = { speech.toggle(getString(R.string.voice_sample)) },
                 rate = speech.rate.collectAsStateWithLifecycle().value, onRate = speech::setRate,
+                liveRecap = liveRecap, onLiveRecap = { m -> liveRecap = m; getSharedPreferences("live", MODE_PRIVATE).edit().putInt("recap_min", m).apply() },
                 onAddDevice = if (!demo && state?.ops?.contains("pair_add") == true) askInvite else null,
                 tabletDetails = tabletDetails.takeIf { wide },
                 onTabletDetails = { on -> tabletDetails = on; tabletPrefs.edit().putBoolean("tablet_details", on).apply() },

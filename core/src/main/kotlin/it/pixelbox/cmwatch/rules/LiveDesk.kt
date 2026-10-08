@@ -21,6 +21,11 @@ import java.time.ZoneId
  * coda aspetta e la scheda resta quella dell'interazione.
  */
 object LiveDesk {
+    /** Il recap della live (Franz, 08/10 20:15): ogni 4 minuti di partenza; il tocco nelle impostazioni passa al valore dopo, 0 = spento. */
+    const val RECAP_DEFAULT_MIN = 4
+    val RECAP_CHOICES = listOf(3, 4, 5, 10, 15, 0)
+    fun nextRecap(min: Int): Int = RECAP_CHOICES.getOrElse(RECAP_CHOICES.indexOf(min) + 1) { RECAP_CHOICES.first() }
+
     /** «Mando a nome: testo» e Annulla per 5 secondi, poi parte. */
     const val TELL_MS = 5_000L
 
@@ -87,6 +92,8 @@ object LiveDesk {
         val confirm: DoubleConfirm.Machine = DoubleConfirm.Machine(), val tell: Tell? = null, val pick: Route.Pick? = null,
         val askingFor: String? = null, val ask: Ask? = null, val onlyBlocking: Boolean = false, val linked: Boolean = true,
         val paused: Boolean = false, val card: LiveCard? = null, val seq: Long = 0,
+        /** Ogni quanto il recap (Franz, 08/10 20:15), 0 = spento; `lastRecap` l'ultima volta, o l'accensione. */
+        val recapEveryMs: Long = 0, val lastRecap: Long = 0,
     )
 
     data class Out(val desk: Desk, val effects: List<Effect>)
@@ -188,6 +195,7 @@ object LiveDesk {
         confirmTick(state)
         askTick(state)
         advance(state)
+        recapTick(state)
     }.out()
 
     /** La risposta del relay a un comando mandato con `tag`. */
@@ -284,6 +292,16 @@ object LiveDesk {
             show(LiveCard(0, LiveCard.Kind.NEWS, text = text))
         }
 
+        /** Il recap a intervalli: a voce zitta, senza notizia in corso né interazioni; se non c'è niente da dire, tace. */
+        fun recapTick(state: State) {
+            if (d.recapEveryMs <= 0) return
+            if (d.lastRecap == 0L) { d = d.copy(lastRecap = now); return }
+            if (now - d.lastRecap < d.recapEveryMs || d.paused || !d.linked || d.speaking || busy() || d.current != null || d.ask != null) return
+            val all = LiveFeed.round(state, lang.feed, d.feed, now / 1000)
+            d = d.copy(feed = LiveFeed.heard(d.feed), lastRecap = now)
+            if (all.isNotEmpty()) reply(all.joinToString(" "))
+        }
+
         fun busy() = d.tell != null || d.pick != null || d.askingFor != null ||
             d.confirm.phase == DoubleConfirm.Phase.ARMED || d.confirm.phase == DoubleConfirm.Phase.CONFIRMING
 
@@ -375,8 +393,8 @@ object LiveDesk {
                 Route.Waiting -> reply(LiveFeed.waiting(state, l).joinToString(" ").ifEmpty { w.nobodyWaiting })
                 Route.Quota -> reply(LiveFeed.quotaAll(state, l, lang.zone).joinToString(" ").ifEmpty { w.nothingNew })
                 Route.Round -> {
-                    val all = LiveFeed.round(state, l, d.feed)
-                    d = d.copy(feed = LiveFeed.heard(d.feed))
+                    val all = LiveFeed.round(state, l, d.feed, now / 1000)
+                    d = d.copy(feed = LiveFeed.heard(d.feed), lastRecap = now)
                     reply(all.joinToString(" ").ifEmpty { w.nothingNew })
                 }
                 is Route.Approve -> arm(r.task, state)

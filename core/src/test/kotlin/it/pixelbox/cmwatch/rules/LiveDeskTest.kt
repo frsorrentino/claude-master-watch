@@ -153,6 +153,27 @@ class LiveDeskTest {
         assertEquals(listOf(WORDS.nothingNew), r.tap(Action.SAY, now + 2_000, text = "giro completo").said())
     }
 
+    // Il recap ogni tot (Franz, 08/10 20:15: «ogni 3-5 minuti di default, modificabile»): a voce zitta e coda vuota, dopo
+    // l'intervallo dall'ultimo; mai mentre parla o durante un'interazione; spento con 0.
+    @Test fun theRecapComesBackEveryIntervalWhenTheVoiceIsQuiet() {
+        val busy = idle.sessions.single().copy(followed = true, name = "pix-news-it", state = it.pixelbox.cmwatch.contract.SessionState.BUSY, outcome = null, toolNote = "Run the tests", turnStarted = 1_789_219_700L)
+        val st = idle.copy(sessions = listOf(busy))
+        val r = Run(LiveDesk.Desk(recapEveryMs = 240_000), st).state(st, t0)
+        r.spoken(t0 + 1_000)
+        assertTrue(r.tick(t0 + 2_000).said().isEmpty())
+        assertTrue(r.tick(t0 + 200_000).said().isEmpty())
+        assertTrue(r.tick(t0 + 241_000).said().isEmpty())   // 239 s dal primo tic, che fa partire il conto
+        assertEquals(listOf("news lavora da 9 minuti, ora: Run the tests. Obiettivo: Test deploy on staging."), r.tick(t0 + 243_000).said())
+        r.spoken(t0 + 247_000)
+        assertTrue(r.tick(t0 + 300_000).said().isEmpty())
+        assertEquals(1, r.tick(t0 + 484_000).said().size)
+        assertTrue(Run(LiveDesk.Desk(recapEveryMs = 0), st).state(st, t0).also { it.spoken(t0 + 1_000) }.tick(t0 + 900_000).said().isEmpty())
+    }
+
+    @Test fun theRecapIntervalCyclesAndEndsOff() {
+        assertEquals(5, LiveDesk.nextRecap(4)); assertEquals(0, LiveDesk.nextRecap(15)); assertEquals(3, LiveDesk.nextRecap(0)); assertEquals(3, LiveDesk.nextRecap(7))
+    }
+
     @Test fun aFreeQuestionGoesToTheMasterAndItsAnswerIsReadFirst() {
         // Su state-2 non c'è altro da leggere: il suono d'attesa si sente solo quando la voce tace.
         val st = idle.copy(sessions = idle.sessions + master(1_789_210_000))

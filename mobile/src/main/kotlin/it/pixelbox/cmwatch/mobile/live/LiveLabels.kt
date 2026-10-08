@@ -21,6 +21,8 @@ object LiveLabels {
         quota = ctx.getString(R.string.live_quota), quotaNoReset = ctx.getString(R.string.live_quota_no_reset),
         busy = ctx.getString(R.string.live_busy), idle = ctx.getString(R.string.live_idle),
         launched = ctx.getString(R.string.live_launched), recap = ctx.getString(R.string.live_recap),
+        recapBusy = ctx.getString(R.string.live_recap_busy), recapTask = ctx.getString(R.string.live_recap_task),
+        thinking = ctx.getString(R.string.live_thinking), minute = ctx.getString(R.string.live_recap_minute), minutes = ctx.getString(R.string.live_recap_minutes),
     )
 
     fun words(ctx: Context) = LiveDesk.Words(

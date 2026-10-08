@@ -237,7 +237,7 @@
     <string name="live_later">Later</string>
     <string name="live_skip">Skip</string>
     <string name="live_talk">Talk</string>
-    <string name="live_round">Full round</string>
+    <string name="live_round">Recap</string>
     <string name="live_only_blocking">Blocking only</string>
     <string name="live_all">All news</string>
     <string name="live_stop">Turn live off</string>

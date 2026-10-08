@@ -780,4 +780,14 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="live_panel_quiet">In ascolto, niente da dire per ora</string>
     <string name="live_chip_all">Tutte</string>
     <string name="live_chip_blocking">Bloccanti</string>
+    <!-- Il recap della live (Franz, 08/10 20:15). -->
+    <string name="live_recap_busy">%1$s lavora da %2$s, ora: %3$s.</string>
+    <string name="live_recap_task">Obiettivo: %1$s.</string>
+    <string name="live_recap_minute">1 minuto</string>
+    <string name="live_recap_minutes">%1$d minuti</string>
+    <string name="live_recap_now">Recap delle sessioni</string>
+    <string name="live_recap_setting">Recap della live</string>
+    <string name="live_recap_setting_sub">Ogni quanto la live dice cosa fa ogni sessione</string>
+    <string name="live_recap_every">ogni %1$d min</string>
+    <string name="live_recap_off">spento</string>
 </resources>

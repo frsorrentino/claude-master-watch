@@ -240,6 +240,22 @@ class LiveFeedTest {
         assertTrue(LiveFeed.round(idle, IT).isEmpty())
     }
 
+    // Il recap (Franz, 08/10 20:11-20:15): per una sessione al lavoro cosa deve fare e cosa sta facendo, da quanto.
+    @Test fun theRecapSaysWhatABusySessionMustDoAndIsDoing() {
+        val atlas = q.sessions.single { it.name == "atlas-shop" }.copy(lowPriority = null, outcome = null)
+        val state = q.copy(sessions = listOf(atlas), approvals = emptyList())
+        assertEquals(
+            listOf("atlas shop lavora da 12 minuti, ora: Run the test suite. Obiettivo: All checkout tests green and the release tagged."),
+            LiveFeed.round(state, IT, now = 1_789_210_700L + 12 * 60),
+        )
+        // Senza nota dello strumento, senza obiettivo: il prossimo passo detto, e «pensa».
+        val bare = atlas.copy(toolNote = null, tool = null, goal = null, turnStarted = 1_789_210_700L)
+        assertEquals(
+            listOf("atlas shop lavora da 1 minuto, ora: sta pensando. Obiettivo: Review the seeds and the admin page."),
+            LiveFeed.round(state.copy(sessions = listOf(bare)), IT, now = 1_789_210_700L + 70),
+        )
+    }
+
     // Livello 3 (Franz, 07/10 mattina): «sessione avviata» e i riepiloghi non entrano in coda, ma il giro completo li legge.
     @Test fun launchedAndRecapAreKeptForTheFullRound() {
         val now = 1_789_237_000L

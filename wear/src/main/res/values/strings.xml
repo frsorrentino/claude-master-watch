@@ -240,7 +240,7 @@
     <string name="live_later">Dopo</string>
     <string name="live_skip">Salta</string>
     <string name="live_talk">Parla</string>
-    <string name="live_round">Giro completo</string>
+    <string name="live_round">Recap</string>
     <string name="live_only_blocking">Solo bloccanti</string>
     <string name="live_all">Tutte le notizie</string>
     <string name="live_stop">Spegni la live</string>

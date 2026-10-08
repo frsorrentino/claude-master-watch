@@ -335,7 +335,7 @@ private const val LIVE_RATE_MS = 300L
 @Composable
 fun LivePill(
     last: String?, speaking: Boolean, paused: Boolean, noHeadset: Boolean, onlyBlocking: Boolean,
-    onPause: () -> Unit, onFilter: () -> Unit, onStop: () -> Unit, modifier: Modifier = Modifier,
+    onPause: () -> Unit, onFilter: () -> Unit, onRecap: () -> Unit = {}, onStop: () -> Unit, modifier: Modifier = Modifier,
 ) {
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
         BoxWithConstraints {
@@ -345,7 +345,12 @@ fun LivePill(
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Bars(still = !speaking || paused)
-                if (roomy) Column(Modifier.weight(1f).padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                // Il tocco sul testo chiede il recap delle sessioni (Franz, 08/10 20:15), come il tasto Recap del watch.
+                val recapLabel = stringResource(R.string.live_recap_now)
+                if (roomy) Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).handCursor().clickable(onClickLabel = recapLabel, onClick = onRecap).padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
                     Text(
                         stringResource(
                             when {
