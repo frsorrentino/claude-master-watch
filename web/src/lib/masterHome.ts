@@ -103,5 +103,14 @@ export function hero(entries: Entry[], master: Session): Hero | null {
 /** Il gruppo «al lavoro» dentro «Per te»: solo chi lavora adesso, senza la master, con l'ultimo esito intero. */
 export function working(state: State): { session: Session; detail: string | null }[] {
   return state.sessions.filter(s => s.name !== MASTER && (s.state === 'busy' || s.state === 'awaiting'))
-    .map(s => ({ session: s, detail: s.outcome?.full ?? null }))
+    .map(s => ({ session: s, detail: workingText(s) }))
+}
+
+/**
+ * L'ultimo esito con i suoi Prossimi finché il turno è quello; partito un turno dopo l'esito (una risposta già data, Franz
+ * 08/10 14:03), cosa fa adesso: strumento e nota, o niente.
+ */
+export function workingText(s: Session): string | null {
+  if (s.outcome && (s.turn_started ?? 0) > s.outcome.at) return [s.tool, s.tool_note].filter(Boolean).join(' · ') || null
+  return s.outcome?.full ?? null
 }
