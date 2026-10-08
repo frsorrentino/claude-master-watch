@@ -179,7 +179,14 @@ enum class CmdOp {
  * Contratto 1.17: `items` = i lavori di stanotte nell'ordine di esecuzione, sempre presente (anche vuoto) per un relay
  * che la supporta; null = relay precedente, l'app chiede di aggiornare claude-master.
  */
-@Serializable data class Night(val queued: Int = 0, val running: String? = null, val items: List<NightItem>? = null)
+@Serializable data class Night(
+    val queued: Int = 0, val running: String? = null, val items: List<NightItem>? = null,
+    /** Contratto 1.44: l'ultimo rapporto della notte; null senza rapporto o con un relay precedente. */
+    val report: NightReportRef? = null,
+)
+
+/** Contratto 1.44: `date` = giorno ISO del rapporto, `generated_at` = epoch s. */
+@Serializable data class NightReportRef(val date: String, @SerialName("generated_at") val generatedAt: Long)
 
 /** Un lavoro della notte (1.17): `prompt` su una riga, tagliato a fine parola entro 160; `started` null finché non parte. */
 @Serializable data class NightItem(

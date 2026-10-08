@@ -375,7 +375,27 @@ class MainActivity : ComponentActivity() {
             })
             return
         }
+        // Il riquadro Notte in home (mockup approvato l'08/10 alle 12:57): finché il rapporto più recente non è stato aperto;
+        // il rapporto si chiede una volta per giorno, per i conteggi del riquadro.
+        val homePrefs = remember { getSharedPreferences("home_sections", MODE_PRIVATE) }
+        var nightSeen by remember { mutableStateOf(homePrefs.getString("night_opened", null)) }
+        val nightRef = state?.night?.report
+        val showNightBox = it.pixelbox.cmwatch.rules.HomeNight.show(nightRef, nightSeen)
+        var boxId by remember { mutableStateOf<String?>(null) }
+        var boxPage by remember { mutableStateOf<it.pixelbox.cmwatch.rules.NightPage.Page?>(null) }
+        LaunchedEffect(nightRef?.date, showNightBox) {
+            if (!showNightBox || boxPage?.day?.toString() == nightRef?.date) return@LaunchedEffect
+            boxId = runCatching { app.repo.command(CmdOp.NIGHT, null, nightRef?.date) }.getOrNull()
+        }
+        val boxResult = boxId?.let { results[it] }
+        LaunchedEffect(boxResult) {
+            boxResult?.takeIf { it.ok }?.let { r ->
+                runCatching { ContractJson.decodeNightReport(r.text) }.getOrNull()?.let { rep -> boxPage = it.pixelbox.cmwatch.rules.NightPage.of(rep, java.time.ZoneId.systemDefault()) }
+            }
+            boxId?.let { id -> if (boxResult != null) app.repo.forget(id) }
+        }
         if (nightOpen) {
+            LaunchedEffect(nightRef?.date) { nightRef?.date?.let { d -> nightSeen = d; homePrefs.edit().putString("night_opened", d).apply() } }
             // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto con l'op `night` (contratto 1.44), chiesto
             // all'apertura e con «Aggiorna»; prima che il relay la conosca, la pagina dice di aggiornare team-supervisor.
             var nightId by remember { mutableStateOf<String?>(null) }
@@ -913,14 +933,17 @@ class MainActivity : ComponentActivity() {
                     canExit = state?.ops?.contains("slash") == true && state.slash?.contains("exit") == true,
                     onClose = { n -> scope.launch { runCatching { app.repo.command(CmdOp.SLASH, n, "exit", null) } } },
                     now = now,
-                    footer = if (wide) ({
+                    nightDate = nightRef?.date?.takeIf { showNightBox }?.let { d -> runCatching { java.time.LocalDate.parse(d) }.getOrNull() },
+                    nightPage = boxPage, onNight = { nightOpen = true },
+                    // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
+                    usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {
                             PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
                         }
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             rings.forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
                         }
-                    }) else null,
+                    },
                 )
             }
             if (master != null) {

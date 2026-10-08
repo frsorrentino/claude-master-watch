@@ -34,7 +34,9 @@ export type Recurring = { id: string; label: string; prompt: string; param?: boo
 
 export type Project = { path: string; name: string; account: string; last_used?: number | null }
 export type NightItem = { id: string; dir: string; name: string; prompt: string; added: number; started?: number | null }
-export type Night = { queued: number; running?: string | null; items?: NightItem[] | null }
+/** `report` (contratto 1.44): l'ultimo rapporto della notte; assente senza rapporto o con un relay precedente. */
+export type NightReportRef = { date: string; generated_at: number }
+export type Night = { queued: number; running?: string | null; items?: NightItem[] | null; report?: NightReportRef | null }
 export type RecapItem = { project: string; done: string; next?: string | null }
 export type Recap = { date: string; items: RecapItem[] }
 export type EventKind = 'question' | 'answered' | 'outcome' | 'gone' | 'launched' | 'quota' | 'resumed' | 'recap' | 'night_report' | 'restart_failed' | 'relay_stale'

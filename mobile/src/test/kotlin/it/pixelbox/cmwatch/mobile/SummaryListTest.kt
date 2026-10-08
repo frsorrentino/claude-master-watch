@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.mobile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -53,7 +54,18 @@ class SummaryListTest {
             ),
             closed = st.sessions.map { it.copy(state = SessionState.GONE) },
         )
-        CmPhoneTheme(still = true) { Column(Modifier.background(CmColors.bg)) { SummaryList(m, {}, { _, _ -> }, { _, _ -> }, {}, {}) } }
+        CmPhoneTheme(still = true) { Column(Modifier.background(CmColors.bg)) { SummaryList(m, {}, { _, _ -> }, { _, _ -> }, {}, {}, startOpen = setOf("sessions", "other")) } }
+    }
+
+    // Mockup approvato da Franz l'08/10 alle 12:57: sezioni richiudibili e in testa il riquadro Notte.
+    @Test fun summaryWithNight() = paparazzi.snapshot {
+        val rep = ContractJson.decodeNightReport(File("../contract/night-report-sample.json").readText())
+        val night = it.pixelbox.cmwatch.rules.NightPage.of(rep, java.time.ZoneId.of("Europe/Rome"))
+        CmPhoneTheme(still = true) {
+            Column(Modifier.background(CmColors.bg)) {
+                SummaryList(model(st), {}, { _, _ -> }, { _, _ -> }, {}, {}, nightDate = night.day, nightPage = night, usage = { Text("quota") })
+            }
+        }
     }
 
     @Test fun dockMaster() = paparazzi.snapshot {

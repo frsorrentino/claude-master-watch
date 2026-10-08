@@ -14,7 +14,8 @@
   // La home del telefono (SummaryList.kt): ogni sessione una card nei gruppi del bisogno; il tocco apre la sessione, ▼ la
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {} }: {
+  import type { NightPage } from './night'
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -22,7 +23,16 @@
     onAnswer: (session: string, n: number) => void; onStep: (session: string, text: string) => void
     /** Contratto 1.37: l'ok a un compito (`approve`) e «Chiudi» per una sessione finita o doppione (/exit). */
     onApprove?: (task: string, note: string) => void; onClose?: (name: string) => void
+    /** Il riquadro Notte (mockup approvato l'08/10 alle 12:57): `undefined` = nascosto, null = rapporto in arrivo. */
+    night?: NightPage | null | undefined; nightTitle?: string; onNight?: () => void
+    /** «Utilizzo»: i pannelli della quota in una sezione richiudibile. */
+    usage?: Snippet
   } = $props()
+  // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate, anche alla prossima apertura.
+  const SEC = 'home-sections'
+  let open = $state<Record<string, boolean>>((() => { try { return { night: true, sessions: true, usage: false, other: false, ...JSON.parse(localStorage.getItem(SEC) ?? '{}') } } catch { return { night: true, sessions: true, usage: false, other: false } } })())
+  function toggleSec(k: string) { open = { ...open, [k]: !open[k] }; try { localStorage.setItem(SEC, JSON.stringify(open)) } catch { /* senza memoria resta per questa visita */ } }
+  const hhmm = (s: number) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s * 1000))
   const model = $derived(build(st, [], st.ts, new Set()))
   let expanded = $state<string | null>(null)
   const tone: Record<Group, string> = { waiting: 'var(--b-warn)', finished: 'var(--b-good)', working: 'var(--b-ring)', still: 'var(--text2)' }
@@ -48,7 +58,34 @@
   }
 </script>
 
+{#snippet sec(key: string, title: string, summary: string | null = null)}
+  <button class="sec" aria-expanded={open[key]} onclick={() => toggleSec(key)}>
+    <svg viewBox="0 0 24 24" width="16" height="16"><path d={open[key] ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} fill="none" stroke="var(--icon)" stroke-width="2.4" stroke-linecap="round" /></svg>
+    <span>{title.toUpperCase()}</span><i></i>{#if summary && !open[key]}<small>{summary}</small>{/if}
+  </button>
+{/snippet}
+
 <section class="home">
+  {#if night !== undefined}
+    {@render sec('night', t.homeNight)}
+    {#if open.night}
+      <button class="nightbox" onclick={onNight}>
+        <b>{nightTitle}</b>
+        {#if night}
+          <small>{t.homeNightWindow(hhmm(night.start), hhmm(night.end), night.cards.length)}</small>
+          <span class="nchips">
+            {#if night.counts.done}<span style:color="var(--good)">{t.nightDone(night.counts.done)}</span>{/if}
+            {#if night.counts.running}<span style:color="var(--icon)">{t.nightRunningN(night.counts.running)}</span>{/if}
+            {#if night.counts.stopped}<span style:color="var(--gone-dim)">{t.nightStopped(night.counts.stopped)}</span>{/if}
+            {#if night.counts.asking}<span style:color="var(--advice)">{t.nightAsking(night.counts.asking)}</span>{/if}
+          </span>
+          <span class="nrow"><small>{night.needs.length ? t.homeNightNeeds(night.needs.length, night.needs[0].session, night.needs[0].text) : ''}</small><span class="open">{t.homeNightOpen}</span></span>
+        {:else}<small>{t.nightLoading}</small>{/if}
+      </button>
+    {/if}
+  {/if}
+  {@render sec('sessions', t.homeSessions(model.rows.length))}
+  {#if open.sessions}
   {#if approvals.length}
     <h2 class="gh" style="--t:var(--advice)"><span>{t.approvalsGroup(approvals.length).toUpperCase()}</span><i></i></h2>
     {#each approvals as a (a.task)}
@@ -123,7 +160,15 @@
     {/each}
   {/each}
 
+  {/if}
+  {#if usage}
+    {@render sec('usage', t.homeUsage)}
+    {#if open.usage}<div class="footer">{@render usage()}</div>{/if}
+  {/if}
   {#if model.closed.length}
+    {@render sec('other', t.homeOther, t.closedCat(model.closed.length))}
+  {/if}
+  {#if model.closed.length && open.other}
     <div class="outside">
       <div class="oh"><h3>{t.outsideTitle}</h3><i></i></div>
       <div class="osub">{t.outsideSub}</div>
@@ -206,6 +251,17 @@
   .chip.unblock { display: inline-flex; align-items: center; gap: 6px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wait) 65%, transparent); }
   .track { margin-right: 4px; height: 3px; border-radius: 2px; background: var(--b-track); overflow: hidden; }
   .fill { height: 100%; }
+  .sec { display: flex; align-items: center; gap: 8px; width: 100%; margin: 14px 0 4px; padding: 0 4px; font: 500 12px/1 var(--mono); letter-spacing: .14em; color: var(--text2); text-align: left; }
+  .sec i { flex: 1; height: 1px; background: var(--line); }
+  .sec small { font: 13px/1 var(--sans, inherit); letter-spacing: 0; }
+  .nightbox { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 16px; border-radius: 24px; background: var(--surface); text-align: left; }
+  .nightbox b { font-size: 17px; font-weight: 500; }
+  .nightbox small { color: var(--text2); font-size: 14px; }
+  .nchips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nchips span { padding: 6px 12px; border-radius: 999px; background: var(--high); font-weight: 500; font-size: 14px; }
+  .nrow { display: flex; align-items: center; gap: 12px; }
+  .nrow small { flex: 1; }
+  .open { padding: 10px 18px; border-radius: 22px; background: var(--primary); color: var(--on-primary); font-weight: 500; }
   .outside { margin: 18px 4px 0; }
   .oh { display: flex; align-items: center; gap: 12px; }
   .oh h3 { font-size: 16px; font-weight: 600; }

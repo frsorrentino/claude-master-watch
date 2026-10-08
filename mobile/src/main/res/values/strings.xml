@@ -704,8 +704,9 @@
     <string name="night_menu">Notte</string>
     <string name="night_menu_sub">Lavori e sessioni di stanotte</string>
     <string name="night_title">Notte del %1$d-%2$d %3$s</string>
-    <string name="night_window">Dalle %1$s, ultimo tuo messaggio, alle %2$s · %3$s</string>
-    <string name="night_window_plain">Dalle %1$s alle %2$s · %3$s</string>
+    <string name="night_window">Dalle %1$s alle %2$s, %3$s.
+Parte dal tuo ultimo messaggio alla master.</string>
+    <string name="night_window_plain">Dalle %1$s alle %2$s, %3$s.</string>
     <plurals name="night_hours"><item quantity="one">%d ora</item><item quantity="other">%d ore</item></plurals>
     <plurals name="night_minutes"><item quantity="one">%d minuto</item><item quantity="other">%d minuti</item></plurals>
     <string name="night_and">%1$s e %2$s</string>
@@ -727,6 +728,29 @@
     <string name="night_no_parts">nessuna parte</string>
     <string name="night_waiting">Aspetta: %1$s</string>
     <string name="night_next">Prossimo: %1$s</string>
+    <string name="night_c_done">✓ %1$d finiti</string>
+    <string name="night_c_running">▶ %1$d in corso</string>
+    <string name="night_c_stopped">✗ %1$d fermi</string>
+    <string name="night_c_asking">❓ %1$d con domanda</string>
+    <string name="night_needs_title">Da fare per te · %1$d</string>
+    <string name="night_needs_expl">Cose che aspettano una tua azione.</string>
+    <string name="night_items_title">Cosa è successo · %1$d</string>
+    <string name="night_items_expl">Una scheda per sessione o lavoro della coda, dal primo partito. Tocca per i passi e la conversazione.</string>
+    <string name="night_projects_title">Progetti · %1$d</string>
+    <string name="night_projects_expl">parti fatte sul totale</string>
+    <string name="night_st_ok">✓ finito</string>
+    <string name="night_st_running">▶ in corso</string>
+    <string name="night_st_stopped">✗ fermo</string>
+    <string name="night_st_asking">❓ domanda</string>
+    <string name="night_kind_session">Sessione</string>
+    <string name="night_kind_job">Lavoro della coda</string>
+    <string name="home_sec_night">Notte</string>
+    <string name="home_sec_sessions">Sessioni · %1$d</string>
+    <string name="home_sec_usage">Utilizzo</string>
+    <string name="home_sec_other">Altro</string>
+    <string name="home_night_window">Dalle %1$s alle %2$s: %3$d tra sessioni e lavori</string>
+    <string name="home_night_open">Apri</string>
+    <plurals name="home_night_needs"><item quantity="one">%1$d cosa per te: %2$s, %3$s</item><item quantity="other">%1$d cose per te, prima %2$s: %3$s</item></plurals>
     <string name="night_refresh">Aggiorna</string>
     <string name="night_loading">Leggo il rapporto della notte</string>
     <string name="night_old">Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor</string>

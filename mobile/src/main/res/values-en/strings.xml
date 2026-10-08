@@ -695,8 +695,9 @@
     <string name="night_menu">Night</string>
     <string name="night_menu_sub">Tonight\'s jobs and sessions</string>
     <string name="night_title">Night of %3$s %1$d-%2$d</string>
-    <string name="night_window">From %1$s, your last message, to %2$s · %3$s</string>
-    <string name="night_window_plain">From %1$s to %2$s · %3$s</string>
+    <string name="night_window">From %1$s to %2$s, %3$s.
+It starts at your last message to the master.</string>
+    <string name="night_window_plain">From %1$s to %2$s, %3$s.</string>
     <plurals name="night_hours"><item quantity="one">%d hour</item><item quantity="other">%d hours</item></plurals>
     <plurals name="night_minutes"><item quantity="one">%d minute</item><item quantity="other">%d minutes</item></plurals>
     <string name="night_and">%1$s and %2$s</string>
@@ -718,6 +719,29 @@
     <string name="night_no_parts">no parts</string>
     <string name="night_waiting">Waiting on: %1$s</string>
     <string name="night_next">Next: %1$s</string>
+    <string name="night_c_done">✓ %1$d done</string>
+    <string name="night_c_running">▶ %1$d running</string>
+    <string name="night_c_stopped">✗ %1$d stopped</string>
+    <string name="night_c_asking">❓ %1$d asking</string>
+    <string name="night_needs_title">For you to do · %1$d</string>
+    <string name="night_needs_expl">Things waiting for an action of yours.</string>
+    <string name="night_items_title">What happened · %1$d</string>
+    <string name="night_items_expl">One card per session or queued job, from the first one started. Tap for the steps and the conversation.</string>
+    <string name="night_projects_title">Projects · %1$d</string>
+    <string name="night_projects_expl">parts done out of the total</string>
+    <string name="night_st_ok">✓ done</string>
+    <string name="night_st_running">▶ running</string>
+    <string name="night_st_stopped">✗ stopped</string>
+    <string name="night_st_asking">❓ question</string>
+    <string name="night_kind_session">Session</string>
+    <string name="night_kind_job">Queued job</string>
+    <string name="home_sec_night">Night</string>
+    <string name="home_sec_sessions">Sessions · %1$d</string>
+    <string name="home_sec_usage">Usage</string>
+    <string name="home_sec_other">Other</string>
+    <string name="home_night_window">From %1$s to %2$s: %3$d sessions and jobs</string>
+    <string name="home_night_open">Open</string>
+    <plurals name="home_night_needs"><item quantity="one">%1$d thing for you: %2$s, %3$s</item><item quantity="other">%1$d things for you, first %2$s: %3$s</item></plurals>
     <string name="night_refresh">Refresh</string>
     <string name="night_loading">Reading the night report</string>
     <string name="night_old">The PC cannot read the night report yet: update team-supervisor</string>
