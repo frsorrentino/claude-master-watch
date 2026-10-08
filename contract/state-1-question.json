@@ -312,7 +312,8 @@
     "pair_add",
     "approve",
     "decision",
-    "unpair"
+    "unpair",
+    "night"
   ],
   "slash": [
     "compact",
