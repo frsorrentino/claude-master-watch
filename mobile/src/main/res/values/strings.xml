@@ -65,7 +65,7 @@
     <string name="launch_project">Progetto</string>
     <string name="launch_first">Primo messaggio</string>
     <string name="diary_title">Diario del %1$s</string>
-    <string name="diary_next">Prossimo passo: %1$s</string>
+    <string name="diary_next">Azione: %1$s</string>
     <string name="night_queued">Stanotte in coda: %1$d</string>
     <string name="night_running">In corso: %1$s</string>
     <string name="night_empty">Nessun lavoro in coda per stanotte</string>
@@ -409,7 +409,7 @@
     <string name="outcome_label">Esito</string>
     <string name="launch_recent">Recenti</string>
     <string name="launch_open">Apri</string>
-    <string name="next_steps">Prossimi</string>
+    <string name="next_steps">Azioni</string>
     <string name="recurring">Ricorrenti</string>
     <string name="recurring_open">Azioni ricorrenti</string>
     <string name="next_then">e poi</string>
@@ -435,7 +435,7 @@
     <string name="fy_night_queued">Notte: %1$d in coda</string>
     <string name="fy_night_empty">Notte: niente in coda</string>
     <string name="fy_night_detail">Puoi lasciare un lavoro per stanotte</string>
-    <string name="fy_next">%1$s · prossimo passo</string>
+    <string name="fy_next">%1$s · azione</string>
     <string name="fy_scheduled_detail">Il primo parte alle %1$s</string>
     <string name="fy_btn_answer">Rispondi</string>
     <string name="fy_btn_handoff">Handoff e riavvio</string>
@@ -673,7 +673,7 @@
     <string name="live_approval">Richiesta di ok: %1$s. Serve la doppia conferma.</string>
     <string name="live_where">su %1$s</string>
     <string name="live_outcome">%1$s ha finito: %2$s.</string>
-    <string name="live_next">Prossimi: %1$s.</string>
+    <string name="live_next">Azioni: %1$s.</string>
     <string name="live_step">%1$s, %2$s</string>
     <string name="live_gone">%1$s si è chiusa.</string>
     <string name="live_restart_failed">Il riavvio di %1$s non è riuscito.</string>
@@ -727,7 +727,7 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="night_parts">%1$d di %2$d parti</string>
     <string name="night_no_parts">nessuna parte</string>
     <string name="night_waiting">Aspetta: %1$s</string>
-    <string name="night_next">Prossimo: %1$s</string>
+    <string name="night_next">Azione: %1$s</string>
     <plurals name="night_c_done"><item quantity="one">✓ %1$d finito</item><item quantity="other">✓ %1$d finiti</item></plurals>
     <plurals name="night_c_running"><item quantity="one">▶ %1$d in corso</item><item quantity="other">▶ %1$d in corso</item></plurals>
     <plurals name="night_c_stopped"><item quantity="one">✗ %1$d fermo</item><item quantity="other">✗ %1$d fermi</item></plurals>

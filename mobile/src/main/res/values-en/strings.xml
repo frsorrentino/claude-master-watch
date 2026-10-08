@@ -65,7 +65,7 @@
     <string name="launch_project">Project</string>
     <string name="launch_first">First message</string>
     <string name="diary_title">Diary of %1$s</string>
-    <string name="diary_next">Next step: %1$s</string>
+    <string name="diary_next">Action: %1$s</string>
     <string name="night_queued">Queued for tonight: %1$d</string>
     <string name="night_running">Running: %1$s</string>
     <string name="night_empty">Nothing queued for tonight</string>
@@ -412,7 +412,7 @@
     <string name="box_open">Open %1$s</string>
     <string name="box_close">Close %1$s</string>
     <string name="box_append">Append to the field</string>
-    <string name="next_steps">Next</string>
+    <string name="next_steps">Actions</string>
     <string name="suggestion_use">Use</string>
     <string name="tts_code">Code</string>
     <string name="quota_reset_desc">5-hour quota at %1$d%%, resets %2$s</string>
@@ -431,7 +431,7 @@
     <string name="fy_night_queued">Night: %1$d queued</string>
     <string name="fy_night_empty">Night: nothing queued</string>
     <string name="fy_night_detail">You can leave a job for tonight</string>
-    <string name="fy_next">%1$s · next step</string>
+    <string name="fy_next">%1$s · action</string>
     <string name="fy_scheduled_detail">The first one leaves at %1$s</string>
     <string name="fy_btn_answer">Answer</string>
     <string name="fy_btn_handoff">Handoff and restart</string>
@@ -664,7 +664,7 @@
     <string name="live_approval">Approval request: %1$s. It needs the double confirmation.</string>
     <string name="live_where">on %1$s</string>
     <string name="live_outcome">%1$s is done: %2$s.</string>
-    <string name="live_next">Next: %1$s.</string>
+    <string name="live_next">Actions: %1$s.</string>
     <string name="live_step">%1$s, %2$s</string>
     <string name="live_gone">%1$s has closed.</string>
     <string name="live_restart_failed">The restart of %1$s failed.</string>
@@ -718,7 +718,7 @@ It starts at your last message to the master.</string>
     <string name="night_parts">%1$d of %2$d parts</string>
     <string name="night_no_parts">no parts</string>
     <string name="night_waiting">Waiting on: %1$s</string>
-    <string name="night_next">Next: %1$s</string>
+    <string name="night_next">Action: %1$s</string>
     <plurals name="night_c_done"><item quantity="one">✓ %1$d done</item><item quantity="other">✓ %1$d done</item></plurals>
     <plurals name="night_c_running"><item quantity="one">▶ %1$d running</item><item quantity="other">▶ %1$d running</item></plurals>
     <plurals name="night_c_stopped"><item quantity="one">✗ %1$d stopped</item><item quantity="other">✗ %1$d stopped</item></plurals>

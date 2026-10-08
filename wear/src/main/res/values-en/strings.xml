@@ -68,7 +68,7 @@
     <string name="tts_reading">Reading aloud</string>
     <string name="tts_code">a code block follows</string>
     <string name="tts_option">%1$d, %2$s.</string>
-    <string name="tts_recap_next">Next: %1$s.</string>
+    <string name="tts_recap_next">Action: %1$s.</string>
     <string name="card_listen">Listen to the reply</string>
     <string name="recap_listen">Listen to the recap</string>
     <string name="settings_tts_voice">Voice %1$d of %2$d</string>
