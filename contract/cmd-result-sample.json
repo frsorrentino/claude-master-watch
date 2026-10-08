@@ -640,7 +640,7 @@
     {
       "id": "6f1c2d3e-0386-4000-8000-000000000386",
       "ok": true,
-      "text": "{\"rows\": [{\"state\": \"aperto\", \"scope\": \"agenzia\", \"blocks\": \"franz\", \"title\": \"Confirm the 6 client ids with a candidate\", \"ref\": \".claude/to-decide-client-id.md\"}, {\"state\": \"aperto\", \"scope\": \"personale\", \"blocks\": \"claude\", \"title\": \"Move the docs site to the new host\", \"ref\": \"orbit-docs\"}, {\"state\": \"sospeso\", \"scope\": \"agenzia\", \"blocks\": \"terzi\", \"title\": \"Staging of atlas-shop not reachable from the CLI\", \"ref\": \"\"}, {\"state\": \"fatto\", \"scope\": \"postazione\", \"blocks\": \"nessuno\", \"title\": \"Backups of the workstation every night\", \"ref\": \"crontab\"}], \"more\": false}",
+      "text": "{\"rows\": [{\"state\": \"aperto\", \"scope\": \"agenzia\", \"blocks\": \"owner\", \"title\": \"Confirm the 6 client ids with a candidate\", \"ref\": \".claude/to-decide-client-id.md\"}, {\"state\": \"aperto\", \"scope\": \"personale\", \"blocks\": \"claude\", \"title\": \"Move the docs site to the new host\", \"ref\": \"orbit-docs\"}, {\"state\": \"sospeso\", \"scope\": \"agenzia\", \"blocks\": \"terzi\", \"title\": \"Staging of atlas-shop not reachable from the CLI\", \"ref\": \"\"}, {\"state\": \"fatto\", \"scope\": \"postazione\", \"blocks\": \"nessuno\", \"title\": \"Backups of the workstation every night\", \"ref\": \"crontab\"}], \"more\": false}",
       "at": 1789211061
     },
     {
