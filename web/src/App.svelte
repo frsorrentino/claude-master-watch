@@ -478,7 +478,7 @@
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} usage={quotaPanels}
         night={nightBoxShown ? nightModel : undefined} {nightTitle} {justClosed} onNight={() => openPage('night')}
-        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} /></div>
+        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} onRecapAction={(a) => sendTo(a.to, a.send)} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}
