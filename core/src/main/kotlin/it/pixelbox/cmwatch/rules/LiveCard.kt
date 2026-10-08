@@ -23,7 +23,7 @@ import kotlinx.serialization.json.Json
 
 /** Un tocco sul watch. `index` = l'opzione, il Prossimo o il candidato, da 1; `text` = il dettato di «Parla». */
 @Serializable data class LiveTap(val action: Action, val index: Int = 0, val text: String? = null) {
-    enum class Action { OPTION, STEP, PICK, REPEAT, LATER, SKIP, SAY, APPROVE, PRESS, RELEASE, CANCEL, ROUND, ONLY_BLOCKING, STOP }
+    enum class Action { OPTION, STEP, PICK, REPEAT, LATER, SKIP, SAY, APPROVE, PRESS, RELEASE, CANCEL, ROUND, ONLY_BLOCKING, STOP, ACTIONS }
 }
 
 /** I messaggi fra telefono e watch (MessageClient di Wear OS). */

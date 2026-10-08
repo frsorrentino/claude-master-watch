@@ -12,7 +12,7 @@ import java.text.Normalizer
  */
 object LiveRoute {
     /** Cosa si stava chiedendo quando un nome ha più candidati. */
-    enum class Intent { TELL, STATUS, APPROVE }
+    enum class Intent { TELL, STATUS, APPROVE, ACTION }
 
     sealed class Route {
         /** «Mando a nome: testo», Annulla per 5 secondi, poi `prompt` alla sessione. */

@@ -94,6 +94,8 @@ object LiveDesk {
         val paused: Boolean = false, val card: LiveCard? = null, val seq: Long = 0,
         /** Ogni quanto il recap (Franz, 08/10 20:15), 0 = spento; `lastRecap` l'ultima volta, o l'accensione. */
         val recapEveryMs: Long = 0, val lastRecap: Long = 0,
+        /** Le azioni offerte dal tasto Azioni del watch (Franz, 08/10 21:17), nell'ordine dei tasti della scelta. */
+        val actions: List<RecapActions.Action> = emptyList(),
     )
 
     data class Out(val desk: Desk, val effects: List<Effect>)
@@ -140,6 +142,8 @@ object LiveDesk {
                         LiveRoute.Intent.TELL -> if (p.text.isEmpty()) Route.AskText(name) else Route.Tell(name, p.text)
                         LiveRoute.Intent.STATUS -> Route.Status(name)
                         LiveRoute.Intent.APPROVE -> Route.Approve(name)
+                        // Il tasto Azioni: l'azione scelta parte come un «Mando a …», con Annulla per 5 secondi.
+                        LiveRoute.Intent.ACTION -> d.actions.getOrNull(tap.index - 1)?.let { a -> Route.Tell(a.to, a.send) } ?: return@let
                     },
                     state,
                 )
@@ -162,6 +166,11 @@ object LiveDesk {
             LiveTap.Action.RELEASE -> confirmed(d.confirm, DoubleConfirm.release(d.confirm, HOLD_KEY, nowMs), state)
             LiveTap.Action.CANCEL -> cancel(state)
             LiveTap.Action.ROUND -> route(Route.Round, state)
+            LiveTap.Action.ACTIONS -> {
+                val acts = RecapActions.of(state)
+                if (acts.isEmpty()) reply(lang.words.nothingNew)
+                else { d = d.copy(actions = acts); route(Route.Pick(LiveRoute.Intent.ACTION, acts.map { it.text }), state) }
+            }
             LiveTap.Action.ONLY_BLOCKING -> {
                 d = d.copy(onlyBlocking = !d.onlyBlocking)
                 d.card?.let { show(it.copy(buzz = LiveCard.Buzz.NONE)) }
@@ -381,7 +390,11 @@ object LiveDesk {
                 }
                 is Route.Pick -> {
                     val labels = r.options.map { o ->
-                        if (r.intent == LiveRoute.Intent.APPROVE) state.approvals.firstOrNull { it.task == o }?.title ?: o else SpeakableName.of(o)
+                        when (r.intent) {
+                            LiveRoute.Intent.APPROVE -> state.approvals.firstOrNull { it.task == o }?.title ?: o
+                            LiveRoute.Intent.ACTION -> o
+                            else -> SpeakableName.of(o)
+                        }
                     }
                     val text = labels.mapIndexed { i, n -> w.pickItem.format(l.numbers.getOrNull(i) ?: (i + 1).toString(), n) }.joinToString(", ")
                     say(text)

@@ -170,6 +170,19 @@ class LiveDeskTest {
         assertTrue(Run(LiveDesk.Desk(recapEveryMs = 0), st).state(st, t0).also { it.spoken(t0 + 1_000) }.tick(t0 + 900_000).said().isEmpty())
     }
 
+    // Il tasto Azioni del watch (Franz, 08/10 21:17): le azioni in attesa come scelta; la scelta parte con Annulla per 5 s.
+    @Test fun theActionsButtonOffersThePendingActionsAndSendsThePickedOne() {
+        val r = started()
+        r.spoken(t0 + 1_000)
+        val c = r.tap(Action.ACTIONS, t0 + 2_000).card()
+        assertEquals(LiveCard.Kind.PICK, c.kind)
+        val i = c.options.indexOf("Review the seeds and the admin page")
+        assertTrue(i >= 0)
+        r.tap(Action.PICK, t0 + 3_000, index = i + 1)
+        assertEquals(LiveCard.Kind.TELL, r.card().kind)
+        assertEquals(Send(CmdOp.PROMPT, "atlas-shop", "Review the seeds and the admin page", Tag.TELL), r.tick(t0 + 3_000 + 6_000).sent().single())
+    }
+
     @Test fun theRecapIntervalCyclesAndEndsOff() {
         assertEquals(5, LiveDesk.nextRecap(4)); assertEquals(0, LiveDesk.nextRecap(15)); assertEquals(3, LiveDesk.nextRecap(0)); assertEquals(3, LiveDesk.nextRecap(7))
     }

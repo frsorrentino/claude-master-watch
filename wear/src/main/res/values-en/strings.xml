@@ -248,4 +248,5 @@
     <string name="live_leaving">Sending in %1$d s</string>
     <string name="live_talk_label">What do you want to say?</string>
     <string name="question_no_text">Asks you to choose</string>
+    <string name="live_actions">Actions</string>
 </resources>

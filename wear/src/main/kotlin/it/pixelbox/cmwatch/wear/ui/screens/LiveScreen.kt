@@ -56,6 +56,7 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
     val later = stringResource(R.string.live_later)
     val skip = stringResource(R.string.live_skip)
     val round = stringResource(R.string.live_round)
+    val actionsLabel = stringResource(R.string.live_actions)
     val blockingLabel = stringResource(if (card?.onlyBlocking == true) R.string.live_all else R.string.live_only_blocking)
     val stop = stringResource(R.string.live_stop)
     val approve = stringResource(R.string.live_approve)
@@ -106,6 +107,8 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
             }
             if (kind == Kind.IDLE || kind == Kind.NEWS) {
                 button(round, Action.ROUND)
+                // Le azioni in attesa, da scegliere e mandare (Franz, 08/10 21:17).
+                button(actionsLabel, Action.ACTIONS)
                 button(blockingLabel, Action.ONLY_BLOCKING)
                 button(stop, Action.STOP)
             }
