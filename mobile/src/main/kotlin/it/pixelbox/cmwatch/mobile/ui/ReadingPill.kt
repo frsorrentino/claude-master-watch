@@ -90,11 +90,27 @@ val LocalReadingOverlay = staticCompositionLocalOf<ReadingOverlay?> { null }
 
 /** Lo spazio sopra il campo della sessione `name` (`SessionSheet`) dove il mini-controller si posa; lo disegna l'host. */
 @Composable
-fun ReadingSlot(name: String?, modifier: Modifier = Modifier) {
+fun ReadingSlot(
+    name: String?, modifier: Modifier = Modifier,
+    /**
+     * Sovrapposto (Franz, 08/10 20:31): nessuno spazio nella pagina, il controller si posa 6 dp sopra questo segno e copre
+     * la fine della conversazione, che tiene i suoi colori; la lista lascia in fondo `readingRoom()`.
+     */
+    overlay: Boolean = false,
+) {
     val o = LocalReadingOverlay.current ?: return
     if (o.bar == null) return
     val key = remember { Any() }
     DisposableEffect(key) { onDispose { o.slots.remove(key) } }
+    if (overlay) {
+        val gap = with(LocalDensity.current) { 6.dp.toPx() }
+        Spacer(modifier.fillMaxWidth().height(0.dp).onGloballyPositioned { c ->
+            val p = c.positionInWindow()
+            val r = name to Rect(androidx.compose.ui.geometry.Offset(p.x, p.y - gap), androidx.compose.ui.geometry.Size(c.size.width.toFloat(), 0f))
+            if (o.slots[key] != r) o.slots[key] = r
+        })
+        return
+    }
     val h = with(LocalDensity.current) { if (o.heightPx > 0) o.heightPx.toDp() else 60.dp }
     // I bordi veri del posto, non quelli tagliati dallo schermo (Franz, 04/10 22:15): durante lo swipe la pagina che esce,
     // tagliata, sembrava una colonna stretta, e il controller si restringeva con lei per poi riapparire nella pagina dopo.
@@ -102,6 +118,14 @@ fun ReadingSlot(name: String?, modifier: Modifier = Modifier) {
         val r = name to Rect(c.positionInWindow(), c.size.toSize())
         if (o.slots[key] != r) o.slots[key] = r
     })
+}
+
+/** Lo spazio in fondo a una conversazione quando il controller le sta sopra: la sua altezza e il margine dal campo. */
+@Composable
+fun readingRoom(): androidx.compose.ui.unit.Dp {
+    val o = LocalReadingOverlay.current ?: return 0.dp
+    if (o.bar == null) return 0.dp
+    return with(LocalDensity.current) { (if (o.heightPx > 0) o.heightPx.toDp() else 60.dp) + 6.dp }
 }
 
 /**

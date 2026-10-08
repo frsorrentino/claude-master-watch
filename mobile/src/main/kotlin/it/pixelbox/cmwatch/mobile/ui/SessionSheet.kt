@@ -327,7 +327,8 @@ fun SessionSheet(
                 CircularWavyProgressIndicator(color = CmColors.actionIcon)
             } else ZoomedText { LazyColumn(
                 Modifier.fillMaxSize(), state = list,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+                // Con il controller in vista, in fondo lo spazio per leggere l'ultimo messaggio sopra di lui.
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp + readingRoom()), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (feed != null) {
                     if (more) item(key = "older") {
@@ -536,9 +537,9 @@ fun SessionSheet(
         var ctxDismissed by rememberSaveable(s.name) { mutableStateOf<Int?>(null) }
         val nudge = if (home != null && homeOpen) null else it.pixelbox.cmwatch.rules.ContextActions.nudge(s, ctxDismissed)
         if (nudge != null) ContextNudge(s.context ?: nudge, onGo = actions.handoff, onDismiss = { ctxDismissed = nudge })
-        // Nella master aperta il posto del controller ha il fondo della sua conversazione, non il nero della pagina (Franz, 08/10 20:28).
-        val slotBg = if (home != null && !homeOpen && LocalMasterChatStyle.current == MasterChatStyle.DEPTH) Modifier.background(MasterLow) else Modifier
-        if (!imeOpen) ReadingSlot(s.name, slotBg.padding(top = 6.dp))
+        // Il controller sta sopra la fine della conversazione, non in una fascia sua (Franz, 08/10 20:31: «elemento
+        // sovrapposto, il resto mantiene i colori suoi»): qui solo il segno di dove posarlo, sopra il campo.
+        if (!imeOpen) ReadingSlot(s.name, overlay = true)
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
