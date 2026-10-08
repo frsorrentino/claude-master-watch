@@ -995,6 +995,10 @@ class MainActivity : ComponentActivity() {
                     nightPage = boxPage, onNight = { nightOpen = true },
                     justClosed = justClosed,
                     tonight = st.night.items?.let { _ -> it.pixelbox.cmwatch.rules.TonightCard.of(st.night, now) },
+                    // La sezione Recap (Franz, 08/10 20:41): le Azioni delle sessioni vive e del recap, ognuna alla sua sessione.
+                    recapActions = remember(st) { it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) },
+                    recapDate = st.recap.date,
+                    onRecapAction = { a -> sendPrompt(a.to, a.send) },
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {

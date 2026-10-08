@@ -91,6 +91,12 @@ fun SummaryList(
     justClosed: Pair<it.pixelbox.cmwatch.contract.Session, String>? = null,
     /** La scheda Stanotte con i lavori della coda (mockup approvato l'08/10 alle 20:43); null = la riga di prima. */
     tonight: it.pixelbox.cmwatch.rules.TonightCard.Model? = null,
+    /**
+     * La sezione Recap (mockup approvato l'08/10, Franz 20:41): fra Sessioni e Utilizzo, le Azioni come tasti; il tocco
+     * apre «Mandare questa azione?» e «Manda» la fa partire. `recapDate` = il giorno ISO del recap.
+     */
+    recapActions: List<it.pixelbox.cmwatch.rules.RecapActions.Action> = emptyList(), recapDate: String = "",
+    onRecapAction: (it.pixelbox.cmwatch.rules.RecapActions.Action) -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -101,6 +107,10 @@ fun SummaryList(
     var usageOpen by remember { section("usage") }
     var otherOpen by remember { section("other") }
     var nightOpen by remember { section("night") }
+    var recapOpen by remember { section("recap") }
+    var asking by remember { mutableStateOf<it.pixelbox.cmwatch.rules.RecapActions.Action?>(null) }
+    var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
+    val day = recapDay(recapDate)
     fun save(key: String, v: Boolean) { runCatching { prefs?.edit()?.putBoolean(key, v)?.apply() } }
     // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
     // «Ha finito») la sua card scivola al posto nuovo e le altre si spostano (osservazioni del 03/10, transizione 4).
@@ -146,6 +156,26 @@ fun SummaryList(
                 }
             }
         }
+        if (recapActions.isNotEmpty()) {
+            item(key = "sec-recap") {
+                Box(moving()) {
+                    HomeSection(stringResource(R.string.home_sec_recap), recapActions.size.toString().takeIf { !recapOpen }, recapOpen) { recapOpen = !recapOpen; save("recap", recapOpen) }
+                }
+            }
+            if (recapOpen) {
+                item(key = "h-recap-actions") { Box(moving()) { GroupHeader(stringResource(R.string.recap_actions, recapActions.size), CmColors.text) } }
+                item(key = "recap-actions") {
+                    Box(moving()) {
+                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            recapActions.forEach { a ->
+                                val k = a.to + "\n" + a.send
+                                RecapActionChip(a, day, k in sent) { asking = a }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): un titolo vero che separa le sessioni dal resto, poi le
         // categorie con icona e conteggio, dalla più urgente; ognuna nella sua card.
         usage?.let { u ->
@@ -168,6 +198,7 @@ fun SummaryList(
         }
         footer?.let { f -> item(key = "footer") { f() } }
     }
+    asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + (a.to + "\n" + a.send); onRecapAction(a) } }
 }
 
 internal fun groupLabel(g: Summary.Group) = when (g) {

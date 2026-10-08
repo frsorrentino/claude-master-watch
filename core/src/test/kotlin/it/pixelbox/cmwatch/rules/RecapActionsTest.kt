@@ -18,5 +18,8 @@ class RecapActionsTest {
         assertEquals("master", orbit.to); assertEquals("Riprendi orbit-docs: Publish the pricing page", orbit.send)
         assertEquals("atlas-shop", a.first { it.text == "Review the seeds and the admin page" }.to)
         assertEquals(a.size, a.map { NextSteps.key(it.text) }.distinct().size)
+        // Il tasto dice da dove viene: le azioni del recap lo sanno, quelle delle sessioni no.
+        assertEquals(true, orbit.recap); assertEquals(true, a.first { it.text == "Review the seeds and the admin page" }.recap)
+        assertEquals(false, a.first { it.text == "ok to deploy on staging" }.recap)
     }
 }

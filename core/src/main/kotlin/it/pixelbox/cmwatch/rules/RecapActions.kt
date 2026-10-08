@@ -11,8 +11,11 @@ import it.pixelbox.cmwatch.contract.State
 object RecapActions {
     const val MAX = 8
 
-    /** `text` = quello che si legge, `send` = quello che parte, `to` = la sessione che lo riceve, `from` = da dove viene. */
-    data class Action(val text: String, val send: String, val to: String, val from: String, val viaMaster: Boolean)
+    /**
+     * `text` = quello che si legge, `send` = quello che parte, `to` = la sessione che lo riceve, `from` = da dove viene;
+     * `recap` = viene dal recap del giorno (l'etichetta del tasto dice «recap dd/mm», il foglio «Dal recap del …»).
+     */
+    data class Action(val text: String, val send: String, val to: String, val from: String, val viaMaster: Boolean, val recap: Boolean = false)
 
     fun of(state: State, resume: String = "Riprendi %1\$s: %2\$s"): List<Action> {
         val live = state.sessions.filter { it.state != SessionState.GONE && it.name != ContextActions.MASTER }
@@ -20,8 +23,8 @@ object RecapActions {
         val fromRecap = state.recap.items.mapNotNull { r ->
             val next = r.next?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val s = live.firstOrNull { it.name == r.project || it.project.substringAfterLast('/') == r.project }
-            if (s != null) Action(next, next, s.name, r.project, false)
-            else Action(next, resume.format(r.project, next), ContextActions.MASTER, r.project, true)
+            if (s != null) Action(next, next, s.name, r.project, false, recap = true)
+            else Action(next, resume.format(r.project, next), ContextActions.MASTER, r.project, true, recap = true)
         }
         return (fromSessions + fromRecap).distinctBy { NextSteps.key(it.text) }.take(MAX)
     }
