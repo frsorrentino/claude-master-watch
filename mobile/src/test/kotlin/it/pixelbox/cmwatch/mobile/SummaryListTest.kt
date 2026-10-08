@@ -68,6 +68,21 @@ class SummaryListTest {
         }
     }
 
+    // La scheda Stanotte (mockup approvato l'08/10 alle 20:43): i lavori della coda, uno in corso, e l'ultima notte.
+    @Test fun summaryTonight() = paparazzi.snapshot {
+        val rep = ContractJson.decodeNightReport(File("../contract/night-report-sample.json").readText())
+        val night = it.pixelbox.cmwatch.rules.NightPage.of(rep, java.time.ZoneId.of("Europe/Rome"))
+        val one = st.copy(sessions = st.sessions.filter { it.state == SessionState.IDLE }.take(1))
+        val items = st.night.items!!.let { l -> listOf(l[0].copy(started = st.ts - 23 * 60), l[1]) }
+        val m = model(one).copy(service = listOf(MasterHome.Row(MasterHome.Kind.NIGHT, "", null, number = 1, at = st.ts)))
+        CmPhoneTheme(still = true) {
+            Column(Modifier.background(CmColors.bg)) {
+                SummaryList(m, {}, { _, _ -> }, { _, _ -> }, {}, {}, startOpen = setOf("other"), nightPage = night,
+                    tonight = it.pixelbox.cmwatch.rules.TonightCard.of(st.night.copy(items = items), st.ts))
+            }
+        }
+    }
+
     @Test fun dockMaster() = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null)
         val reply = TranscriptEntry("a1", "assistant", "Lanciata claude-master sulla fase 2.2.\n\nEsito: Fase 2.2 avviata su claude-master\nProssimi: distilla il confronto nella kb", st.ts - 600)

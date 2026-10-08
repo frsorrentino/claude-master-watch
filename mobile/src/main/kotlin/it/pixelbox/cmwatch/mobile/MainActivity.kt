@@ -989,6 +989,7 @@ class MainActivity : ComponentActivity() {
                     nightDate = nightRef?.date?.takeIf { showNightBox }?.let { d -> runCatching { java.time.LocalDate.parse(d) }.getOrNull() },
                     nightPage = boxPage, onNight = { nightOpen = true },
                     justClosed = justClosed,
+                    tonight = st.night.items?.let { _ -> it.pixelbox.cmwatch.rules.TonightCard.of(st.night, now) },
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {

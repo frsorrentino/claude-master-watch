@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Verified
@@ -87,6 +89,8 @@ fun SummaryList(
      * la sua card in cima alle sessioni è dove la pagina atterra tornando alla home; poi si richiude da sola.
      */
     justClosed: Pair<it.pixelbox.cmwatch.contract.Session, String>? = null,
+    /** La scheda Stanotte con i lavori della coda (mockup approvato l'08/10 alle 20:43); null = la riga di prima. */
+    tonight: it.pixelbox.cmwatch.rules.TonightCard.Model? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -158,7 +162,7 @@ fun SummaryList(
             if (otherOpen) outside.forEach { g ->
                 item(key = "out-${g.category}") { Box(moving()) { CategoryHeader(g) } }
                 item(key = "out-${g.category}-card") {
-                    Box(moving()) { if (g.category == OutsideSessions.Category.CLOSED) ClosedCard(g.closed, onClosed) else OutsideCard(g.rows, onService) }
+                    Box(moving()) { if (g.category == OutsideSessions.Category.CLOSED) ClosedCard(g.closed, onClosed) else OutsideCard(g.rows, onService, tonight, nightPage, onNight) }
                 }
             }
         }
@@ -349,11 +353,72 @@ private fun CategoryHeader(g: OutsideSessions.Group) {
 
 /** Le righe di una categoria in una card, divise da un filo; ognuna con il suo tasto a destra. */
 @Composable
-private fun OutsideCard(rows: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit) {
+private fun OutsideCard(
+    rows: List<MasterHome.Row>, onAction: (MasterHome.Row) -> Unit,
+    tonight: it.pixelbox.cmwatch.rules.TonightCard.Model? = null, lastNight: it.pixelbox.cmwatch.rules.NightPage.Page? = null, onNight: () -> Unit = {},
+) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surfaceLow)) {
         rows.forEachIndexed { i, row ->
             if (i > 0) Box(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(1.dp).background(CmColors.line))
-            OutsideRow(row, onAction)
+            if (row.kind == MasterHome.Kind.NIGHT && tonight != null) TonightBlock(row, tonight, lastNight, onAction, onNight) else OutsideRow(row, onAction)
+        }
+    }
+}
+
+/**
+ * La scheda Stanotte (mockup approvato da Franz l'08/10 alle 20:43): quanti lavori e quanti in corso, poi un lavoro per riga
+ * con il progetto e le prime due righe di cosa deve fare, quello in corso con da quanto; in fondo l'ultima notte e il rapporto.
+ */
+@Composable
+private fun TonightBlock(
+    row: MasterHome.Row, m: it.pixelbox.cmwatch.rules.TonightCard.Model, last: it.pixelbox.cmwatch.rules.NightPage.Page?,
+    onAction: (MasterHome.Row) -> Unit, onNight: () -> Unit,
+) {
+    val line = @Composable { Box(Modifier.fillMaxWidth().height(1.dp).background(CmColors.line)) }
+    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    if (m.items.isEmpty()) stringResource(R.string.fy_night_empty_short) else pluralStringResource(R.plurals.tonight_title, m.items.size, m.items.size),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text,
+                )
+                Text(
+                    if (m.items.isEmpty()) stringResource(R.string.tonight_empty_sub) else stringResource(R.string.tonight_sub, m.running, m.queued),
+                    style = MaterialTheme.typography.bodyMedium, color = CmColors.text2,
+                )
+            }
+            Surface(onClick = { onAction(row) }, shape = CircleShape, color = CmColors.surface, contentColor = CmColors.primary) {
+                Text(stringResource(R.string.fy_btn_add), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
+            }
+        }
+        m.items.forEachIndexed { i, it ->
+            line()
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val running = it.runningMin != null
+                Box(Modifier.size(24.dp).clip(CircleShape).background(if (running) CmColors.busy else CmColors.surface), contentAlignment = Alignment.Center) {
+                    if (running) Icon(Icons.Rounded.PlayArrow, null, tint = CmColors.bg, modifier = Modifier.size(16.dp))
+                    else Text((i + 1).toString(), style = MaterialTheme.typography.labelMedium, color = CmColors.text2)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(it.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                    Text(it.prompt, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                }
+                Text(
+                    if (running) stringResource(R.string.tonight_running, it.runningMin ?: 0) else stringResource(R.string.tonight_queued),
+                    style = MonoSmall.copy(color = if (running) CmColors.busy else CmColors.text2),
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (running) CmColors.busy.copy(alpha = 0.14f) else CmColors.surface).padding(horizontal = 7.dp, vertical = 4.dp),
+                )
+            }
+        }
+        last?.let { p ->
+            line()
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.tonight_last, p.dayBefore.dayOfMonth, p.day.dayOfMonth), style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
+                if (p.counts.done > 0) Text(pluralStringResource(R.plurals.night_c_done, p.counts.done, p.counts.done), style = MaterialTheme.typography.bodyMedium, color = CmColors.briefGood)
+                if (p.counts.stopped > 0) Text(pluralStringResource(R.plurals.night_c_stopped, p.counts.stopped, p.counts.stopped), style = MaterialTheme.typography.bodyMedium, color = CmColors.gone)
+                Spacer(Modifier.weight(1f))
+                Text(stringResource(R.string.tonight_report), style = MaterialTheme.typography.labelLarge, color = CmColors.actionIcon, modifier = Modifier.clip(RoundedCornerShape(8.dp)).handCursor().clickable(onClick = onNight).padding(6.dp))
+            }
         }
     }
 }

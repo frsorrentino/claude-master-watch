@@ -779,4 +779,11 @@ It starts at your last message to the master.</string>
     <string name="live_recap_setting_sub">How often the live says what each session is doing</string>
     <string name="live_recap_every">every %1$d min</string>
     <string name="live_recap_off">off</string>
+    <plurals name="tonight_title"><item quantity="one">%d job for tonight</item><item quantity="other">%d jobs for tonight</item></plurals>
+    <string name="tonight_sub">%1$d running · %2$d queued, one at a time</string>
+    <string name="tonight_empty_sub">A job you add runs tonight on its own, and in the morning you find the report</string>
+    <string name="tonight_running">FOR %1$d MIN</string>
+    <string name="tonight_queued">QUEUED</string>
+    <string name="tonight_last">Night of %1$d-%2$d:</string>
+    <string name="tonight_report">Report</string>
 </resources>

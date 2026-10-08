@@ -790,4 +790,12 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="live_recap_setting_sub">Ogni quanto la live dice cosa fa ogni sessione</string>
     <string name="live_recap_every">ogni %1$d min</string>
     <string name="live_recap_off">spento</string>
+    <!-- La scheda Stanotte (mockup approvato l'08/10 alle 20:43). -->
+    <plurals name="tonight_title"><item quantity="one">%d lavoro per stanotte</item><item quantity="other">%d lavori per stanotte</item></plurals>
+    <string name="tonight_sub">%1$d in corso · %2$d in coda, partono uno alla volta</string>
+    <string name="tonight_empty_sub">Un lavoro aggiunto parte stanotte, da solo, e domattina trovi il rapporto</string>
+    <string name="tonight_running">DA %1$d MIN</string>
+    <string name="tonight_queued">IN CODA</string>
+    <string name="tonight_last">Notte del %1$d-%2$d:</string>
+    <string name="tonight_report">Rapporto</string>
 </resources>
