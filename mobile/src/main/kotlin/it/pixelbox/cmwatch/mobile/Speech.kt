@@ -65,6 +65,9 @@ class Speech(ctx: Context) {
                 val m = BLOCK.find(utteranceId)
                 _block.value = m?.groupValues?.get(1)?.toInt()
                 m?.groupValues?.get(2)?.toInt()?.let { chunk = it }
+                // La velocità cambiata trascinando: il motore la prende solo a inizio frase, quindi la frase appena partita
+                // riparte subito con quella nuova, senza ripetere quella di prima (Franz, 08/10 20:51).
+                if (rateFrom in 0 until chunk) { rateFrom = -1; startAt(chunk) }
             }
             // Solo l'ultimo pezzo chiude la lettura: il tasto resta ■ per tutto il testo.
             override fun onDone(utteranceId: String?) { if (utteranceId?.startsWith(prefix) == true && utteranceId.endsWith("-end")) finished() }
@@ -90,7 +93,7 @@ class Speech(ctx: Context) {
         current = text
         _speaking.value = text
         val code = app.getString(R.string.tts_code)
-        items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.forBlock(b.kind, b.text, code)).map { i to it } }
+        items = blocksOf(text).withIndex().drop(from).flatMap { (i, b) -> SpeechText.chunks(SpeechText.forBlock(b.kind, b.text, code), PHONE_CHUNK).map { i to it } }
         if (items.isEmpty()) { finished(); return }
         startAt(0)
     }
@@ -156,6 +159,17 @@ class Speech(ctx: Context) {
         prefs.edit().putFloat("rate", _rate.value).apply()
     }
 
+    @Volatile private var rateFrom = -1
+
+    /**
+     * La velocità mentre si trascina lo slider (Franz, 08/10 20:51: «cambiamento voce in tempo reale»): vale dalla prossima
+     * frase, senza ripetere quella che sta dicendo; i pezzi sono frasi corte apposta (`PHONE_CHUNK`).
+     */
+    fun setRateAtNextSentence(r: Float) {
+        setRate(r)
+        if (ready && _speaking.value != null && !_paused.value && items.isNotEmpty()) rateFrom = chunk
+    }
+
     /**
      * La velocità cambiata durante la lettura (Franz, 03/10 21:16): il motore la applica solo ai pezzi nuovi, quindi la
      * lettura riparte dal pezzo che sta dicendo, con la velocità nuova. Ricordata come quella delle impostazioni.
@@ -196,5 +210,9 @@ class Speech(ctx: Context) {
     }.getOrDefault(emptyList())
 
     /** Gli id dei pezzi: prefisso, «b» col paragrafo, il numero del pezzo e «-end» sull'ultimo. */
-    private companion object { val BLOCK = Regex("-b(\\d+)-(\\d+)") }
+    private companion object {
+        val BLOCK = Regex("-b(\\d+)-(\\d+)")
+        /** Pezzi corti, una frase circa: la velocità cambiata trascinando si sente già alla frase dopo. */
+        const val PHONE_CHUNK = 300
+    }
 }

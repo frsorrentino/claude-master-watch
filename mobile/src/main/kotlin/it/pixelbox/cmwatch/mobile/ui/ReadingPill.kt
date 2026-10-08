@@ -58,6 +58,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.text.style.TextOverflow
@@ -180,6 +182,8 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
 fun ReadingPill(
     source: String?, text: String, onOpen: (() -> Unit)?, onStop: () -> Unit,
     rate: Float, onRate: (Float) -> Unit,
+    /** La velocità mentre si trascina: vale dalla frase dopo, senza ripetere (Franz, 08/10 20:51). */
+    onRateLive: (Float) -> Unit = onRate,
     /** La voce di adesso (null = la predefinita) e il tocco che passa alla dopo; null senza voci italiane da scegliere. */
     voice: String?, onVoice: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -195,15 +199,52 @@ fun ReadingPill(
     // Senza tocchi per 3 s lo slider torna pillola.
     LaunchedEffect(open, lastTouch) { if (open) { kotlinx.coroutines.delay(3_000); setOpen(false) } }
     var draft by remember(open) { mutableFloatStateOf(rate) }
-    // Mentre si trascina la voce cambia velocità quando il dito si ferma un attimo (Franz, 08/10 19:50: «sentirla variare
-    // in tempo reale»): il motore non cambia velocità a metà frase, quindi riparte dal pezzo che sta dicendo.
+    // Mentre si trascina la voce prende la velocità nuova dalla frase dopo (Franz, 08/10 20:51: «in tempo reale»): il motore
+    // non la cambia a metà frase, e ripartire dalla frase detta la ripeteva.
     LaunchedEffect(draft, open) {
         if (!open) return@LaunchedEffect
-        kotlinx.coroutines.delay(LIVE_RATE_MS)
         val v = it.pixelbox.cmwatch.rules.SpeechRate.snap(draft)
-        if (v != rate) onRate(v)
+        if (v != rate) onRateLive(v)
     }
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
+    // Pressione lunga sulla pillola e, senza staccare il dito, lo spostamento sceglie la velocità (Franz, 08/10 20:51: prima
+    // bisognava alzare il dito e premere di nuovo). Il tocco breve passa alla velocità dopo. Posizioni in coordinate della barra.
+    var barWin by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    var pillWin by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    var sliderWin by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val gesture = Modifier.onGloballyPositioned { barWin = it.boundsInWindow() }.pointerInput(rate) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+            val pill = pillWin.translate(-barWin.left, -barWin.top)
+            if (open || pillWin == androidx.compose.ui.geometry.Rect.Zero || !pill.contains(down.position)) return@awaitEachGesture
+            down.consume()
+            val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                while (true) {
+                    val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                    e.changes.forEach { it.consume() }
+                    if (e.changes.none { it.pressed }) return@withTimeoutOrNull true
+                }
+                @Suppress("UNREACHABLE_CODE") false
+            }
+            if (released == true) { onRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)); return@awaitEachGesture }
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+            setOpen(true)
+            while (true) {
+                val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                val c = e.changes.first()
+                c.consume()
+                if (!c.pressed) break
+                val track = sliderWin.translate(-barWin.left, -barWin.top)
+                if (track.width > 0f) {
+                    val r = it.pixelbox.cmwatch.rules.SpeechRate
+                    draft = r.snap(r.MIN + ((c.position.x - track.left) / track.width).coerceIn(0f, 1f) * (r.MAX - r.MIN))
+                    if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis()
+                }
+            }
+            it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRateLive(v) }
+        }
+    }
+    Surface(modifier.fillMaxWidth().then(gesture), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
         BoxWithConstraints {
             // In una colonna stretta del tablet restano i tasti: la riga del testo si vede già nella colonna.
             val roomy = maxWidth >= 300.dp
@@ -217,8 +258,8 @@ fun ReadingPill(
                     RateSlider(
                         draft,
                         onChange = { v -> draft = v; if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis() },
-                        onDone = { it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRate(v) } },
-                        modifier = Modifier.weight(1f),
+                        onDone = { it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRateLive(v) } },
+                        modifier = Modifier.weight(1f).onGloballyPositioned { sliderWin = it.boundsInWindow() },
                     )
                 } else {
                     Bars(still = paused)
@@ -232,7 +273,8 @@ fun ReadingPill(
                         Text(if (paused) stringResource(R.string.reading_paused) else source ?: stringResource(R.string.reading_now), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip)
                         Text(ReadingBar.excerpt(text), style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip)
                     } else Spacer(Modifier.weight(1f))
-                    RatePill(rate, onClick = { onRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }) { setOpen(true) }
+                    // Tocco e pressione lunga li legge la barra (`gesture`), così il dito resta giù e trascina subito.
+                    Box(Modifier.onGloballyPositioned { pillWin = it.boundsInWindow() }) { RatePill(rate, onClick = {}, onLongClick = {}, interactive = false) }
                     if (onVoice != null) VoicePill(voice, onVoice)
                 }
                 if (paused) FilledIconButton(onClick = onResume, modifier = Modifier.size(44.dp)) {
@@ -347,8 +389,6 @@ internal fun Bars(still: Boolean = false) {
     }
 }
 
-/** Quanto il dito resta fermo sullo slider prima che la voce riparta con la velocità nuova. */
-private const val LIVE_RATE_MS = 300L
 
 /**
  * Il pannello della modalità live (Franz, 08/10 20:03: «un box di controllo proprio come quello audio anche nell'app»):

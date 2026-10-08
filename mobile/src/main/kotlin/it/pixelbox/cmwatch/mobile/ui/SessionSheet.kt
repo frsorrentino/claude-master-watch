@@ -1906,22 +1906,22 @@ fun RatePill() {
     val overlay = LocalReadingOverlay.current
     val rate = LocalSpeechRate.current
     val setRate = LocalSetSpeechRate.current
-    RatePill(rate, onClick = { setRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }) {
+    RatePill(rate, onClick = { setRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)) }, onLongClick = {
         overlay?.let { it.rateOpen = true; it.rateTouched = System.currentTimeMillis() }
-    }
+    })
 }
 
 /** La stessa pillola con velocità, tocco e pressione lunga espliciti: la barra di lettura sta fuori dal provider della lettura. */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun RatePill(rate: Float, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun RatePill(rate: Float, onClick: () -> Unit, onLongClick: () -> Unit, interactive: Boolean = true) {
     val label = rateLabel(rate)
     val desc = stringResource(R.string.speech_rate_change, label)
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Surface(
         color = CmColors.surface, shape = CircleShape,
         modifier = Modifier.clip(CircleShape).handCursor().semantics { contentDescription = desc }
-            .combinedClickable(onClick = onClick, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() }),
+            .then(if (interactive) Modifier.combinedClickable(onClick = onClick, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onLongClick() }) else Modifier),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
     }

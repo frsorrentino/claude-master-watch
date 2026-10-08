@@ -213,7 +213,7 @@ class MainActivity : ComponentActivity() {
                 ReadingPill(
                     src, text,
                     paused = paused, onPause = speech::pause, onResume = speech::resume,
-                    rate = rate, onRate = speech::setRateNow,
+                    rate = rate, onRate = speech::setRateNow, onRateLive = speech::setRateAtNextSentence,
                     voice = voice, onVoice = if (voices.isEmpty()) null else ({ speech.setVoiceNow(it.pixelbox.cmwatch.rules.VoiceRules.next(voices, voice)) }),
                     onOpen = if (!live) null else ({
                         settingsOpen = false; searchOpen = false; queueOpen = false; tab = StartRoute.Tab.OVERVIEW
