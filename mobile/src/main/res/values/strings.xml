@@ -772,4 +772,12 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="splash_drop_column">Togli la colonna</string>
     <string name="splash_drop_soon">la colonna si toglie tra 3 s</string>
     <string name="just_closed_line">chiusa alle %1$s · ora in «Chiuse»</string>
+    <!-- Il pannello della live nell'app (Franz, 08/10 20:03). -->
+    <string name="live_panel_all">LIVE</string>
+    <string name="live_panel_blocking">LIVE</string>
+    <string name="live_panel_paused">LIVE · in pausa</string>
+    <string name="live_panel_no_headset">Collega le cuffie</string>
+    <string name="live_panel_quiet">In ascolto, niente da dire per ora</string>
+    <string name="live_chip_all">Tutte</string>
+    <string name="live_chip_blocking">Bloccanti</string>
 </resources>

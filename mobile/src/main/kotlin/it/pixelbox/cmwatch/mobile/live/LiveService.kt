@@ -129,12 +129,14 @@ class LiveService : Service() {
         when (intent?.action) {
             ACTION_STOP -> stopSelf()
             ACTION_ONLY_BLOCKING -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ONLY_BLOCKING)))
+            ACTION_PAUSE -> { userPaused = !userPaused; inbox.trySend(Input.Audio) }
         }
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         _running.value = false
+        _panel.value = Panel()
         runCatching { getSystemService(AudioManager::class.java).unregisterAudioDeviceCallback(devices) }
         runCatching { unregisterReceiver(battery) }
         media.release()
@@ -163,7 +165,7 @@ class LiveService : Service() {
                 if (fresh.isEmpty() || st == null) null else LiveDesk.state(desk, st, fresh, now, lang)
             }
             is Input.Tap -> if (st == null) null else LiveDesk.tap(desk, i.tap, st, now, lang)
-            Input.Spoken -> if (st == null) null else LiveDesk.spoken(desk, st, now, lang)
+            Input.Spoken -> { _panel.value = _panel.value.copy(speaking = false); if (st == null) null else LiveDesk.spoken(desk, st, now, lang) }
             Input.Tick -> {
                 // Fine della chiamata: il focus torna da sé quando il telefono non è più in conversazione.
                 if (!focus && getSystemService(AudioManager::class.java).mode == AudioManager.MODE_NORMAL) focus = true
@@ -192,13 +194,14 @@ class LiveService : Service() {
         val want = !headset || !focus || userPaused
         if (want == paused) return
         paused = want
+        _panel.value = _panel.value.copy(paused = paused, noHeadset = !headset)
         state?.let { run(LiveDesk.pause(desk, want, it, now, lang)) }
     }
 
     private suspend fun run(out: LiveDesk.Out) {
         desk = out.desk
         for (e in out.effects) when (e) {
-            is LiveDesk.Effect.Say -> voice.say(e.text)
+            is LiveDesk.Effect.Say -> { voice.say(e.text); _panel.value = _panel.value.copy(last = e.text, speaking = true) }
             LiveDesk.Effect.Hush -> voice.hush()
             LiveDesk.Effect.Tone -> voice.tone()
             is LiveDesk.Effect.Show -> card(e.card)
@@ -210,6 +213,7 @@ class LiveService : Service() {
                     .onFailure { inbox.send(Input.Failed(e.tag, it.message ?: "")) }
             }
         }
+        _panel.value = _panel.value.copy(onlyBlocking = desk.onlyBlocking, paused = paused, noHeadset = !headset)
         updateNote()
     }
 
@@ -284,6 +288,22 @@ class LiveService : Service() {
         private const val NOTE_ID = 4242
         private const val ACTION_STOP = "it.pixelbox.cmwatch.live.STOP"
         private const val ACTION_ONLY_BLOCKING = "it.pixelbox.cmwatch.live.ONLY_BLOCKING"
+        private const val ACTION_PAUSE = "it.pixelbox.cmwatch.live.PAUSE"
+
+        /**
+         * Quello che il pannello della live nell'app mostra (Franz, 08/10 20:03: «un box di controllo proprio come quello
+         * audio»): l'ultima cosa detta, se sta parlando, la pausa e perché, il filtro delle notizie.
+         */
+        data class Panel(
+            val last: String? = null, val speaking: Boolean = false, val paused: Boolean = false,
+            val noHeadset: Boolean = false, val onlyBlocking: Boolean = false,
+        )
+        private val _panel = MutableStateFlow(Panel())
+        val panel: StateFlow<Panel> get() = _panel
+
+        /** I tasti del pannello: pausa e ripresa, solo bloccanti o tutte; spegni è `toggle`. */
+        fun pause(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_PAUSE)) }
+        fun onlyBlocking(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_ONLY_BLOCKING)) }
 
         /** Auricolari scollegati: se non tornano entro 10 minuti la live si chiude. */
         const val HEADSET_WAIT_MS = 600_000L

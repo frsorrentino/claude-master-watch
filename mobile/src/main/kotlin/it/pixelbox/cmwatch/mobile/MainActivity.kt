@@ -222,8 +222,21 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        // Con la modalità live accesa e nessuna lettura in corso, al posto del controller della lettura il pannello della
+        // live (Franz, 08/10 20:03).
+        val liveOn by it.pixelbox.cmwatch.mobile.live.LiveService.running.collectAsStateWithLifecycle()
+        val liveBar: (@Composable () -> Unit)? = if (!liveOn) null else ({
+            val p by it.pixelbox.cmwatch.mobile.live.LiveService.panel.collectAsStateWithLifecycle()
+            val ctx = this@MainActivity
+            it.pixelbox.cmwatch.mobile.ui.LivePill(
+                p.last, p.speaking, p.paused, p.noHeadset, p.onlyBlocking,
+                onPause = { it.pixelbox.cmwatch.mobile.live.LiveService.pause(ctx) },
+                onFilter = { it.pixelbox.cmwatch.mobile.live.LiveService.onlyBlocking(ctx) },
+                onStop = { it.pixelbox.cmwatch.mobile.live.LiveService.toggle(ctx) },
+            )
+        })
         // Nel terminale no, come prima: lì il fondo è del testo dal vivo.
-        androidx.compose.runtime.SideEffect { readingOverlay.bar = if (terminal == null) readingBar else null; readingOverlay.source = readingSource }
+        androidx.compose.runtime.SideEffect { readingOverlay.bar = if (terminal == null) readingBar ?: liveBar else null; readingOverlay.source = readingSource }
         // Gli avvisi delle altre sessioni già visti o chiusi (`Elsewhere`): un turno finito si dice una volta sola.
         val elsewhereSeen = remember { mutableStateListOf<String>() }
         LaunchedEffect(sessionAsked) {

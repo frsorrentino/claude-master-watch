@@ -309,7 +309,7 @@ private fun VoicePill(voice: String?, onClick: () -> Unit) {
 
 /** Tre barrette che salgono e scendono mentre legge; ferme con le animazioni spente, basse e grigie in pausa. */
 @Composable
-private fun Bars(still: Boolean = false) {
+internal fun Bars(still: Boolean = false) {
     val off = animationsOff() || still
     val flow = if (off) null else rememberInfiniteTransition(label = "bars")
     Row(Modifier.height(20.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -325,3 +325,58 @@ private fun Bars(still: Boolean = false) {
 
 /** Quanto il dito resta fermo sullo slider prima che la voce riparta con la velocità nuova. */
 private const val LIVE_RATE_MS = 300L
+
+/**
+ * Il pannello della modalità live (Franz, 08/10 20:03: «un box di controllo proprio come quello audio anche nell'app»):
+ * stesso posto e stessa forma del mini-controller della lettura. Le barrette si muovono mentre la live parla in cuffia;
+ * sopra «LIVE» col filtro o il perché della pausa, sotto l'ultima cosa detta; poi il filtro al posto della velocità, pausa
+ * e spegni. La notizia dopo resta sul watch: un tasto in più lasciava al testo una parola sola.
+ */
+@Composable
+fun LivePill(
+    last: String?, speaking: Boolean, paused: Boolean, noHeadset: Boolean, onlyBlocking: Boolean,
+    onPause: () -> Unit, onFilter: () -> Unit, onStop: () -> Unit, modifier: Modifier = Modifier,
+) {
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
+        BoxWithConstraints {
+            val roomy = maxWidth >= 300.dp
+            Row(
+                Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Bars(still = !speaking || paused)
+                if (roomy) Column(Modifier.weight(1f).padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        stringResource(
+                            when {
+                                paused -> R.string.live_panel_paused
+                                onlyBlocking -> R.string.live_panel_blocking
+                                else -> R.string.live_panel_all
+                            }
+                        ),
+                        style = MonoSmall, maxLines = 1, overflow = TextOverflow.Clip,
+                    )
+                    Text(
+                        // Senza cuffie la riga sotto dice perché tace, in chiaro: in alto non ci stava.
+                        if (noHeadset) stringResource(R.string.live_panel_no_headset) else last?.let { ReadingBar.excerpt(it) } ?: stringResource(R.string.live_panel_quiet),
+                        style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 1, overflow = TextOverflow.Clip,
+                    )
+                } else Spacer(Modifier.weight(1f))
+                // Il filtro come la pillola della velocità: dice quello che c'è, il tocco passa all'altro.
+                val filterLabel = stringResource(if (onlyBlocking) R.string.live_chip_blocking else R.string.live_chip_all)
+                val filterDesc = stringResource(if (onlyBlocking) R.string.live_all else R.string.live_only_blocking)
+                Surface(onClick = onFilter, color = CmColors.surface, shape = CircleShape, modifier = Modifier.handCursor().semantics { contentDescription = filterDesc }) {
+                    Text(filterLabel, style = MaterialTheme.typography.labelLarge, color = CmColors.text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                }
+                if (paused) FilledIconButton(onClick = onPause, modifier = Modifier.size(44.dp), enabled = !noHeadset) {
+                    Icon(Icons.Rounded.PlayArrow, stringResource(R.string.reading_resume))
+                } else FilledTonalIconButton(onClick = onPause, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.Pause, stringResource(R.string.reading_pause), tint = CmColors.actionIcon)
+                }
+                IconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.Stop, stringResource(R.string.live_stop), tint = CmColors.actionIcon)
+                }
+            }
+        }
+    }
+}

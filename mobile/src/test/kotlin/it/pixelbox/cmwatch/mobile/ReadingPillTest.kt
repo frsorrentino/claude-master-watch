@@ -69,4 +69,20 @@ class ReadingPillTest {
             }
         }
     }
+
+    // Il pannello della live (Franz, 08/10 20:03): mentre parla, e in pausa senza auricolari.
+    @Test fun liveSpeaking() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                it.pixelbox.cmwatch.mobile.ui.LivePill("ledger-api ha finito: migrazione committata in locale.", speaking = true, paused = false, noHeadset = false, onlyBlocking = false, onPause = {}, onFilter = {}, onStop = {})
+            }
+        }
+    }
+    @Test fun livePausedNoHeadset() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                it.pixelbox.cmwatch.mobile.ui.LivePill(null, speaking = false, paused = true, noHeadset = true, onlyBlocking = true, onPause = {}, onFilter = {}, onStop = {})
+            }
+        }
+    }
 }
