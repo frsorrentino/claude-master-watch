@@ -54,7 +54,7 @@ class LiveFeedTest {
         assertEquals(1, n.level)
         assertEquals(Kind.OUTCOME, n.kind)
         assertEquals(
-            "atlas shop ha finito: Migrations 008-011 applied, tests green. Prossimi: uno, ok to deploy on staging; due, review the test seeds.",
+            "atlas shop ha finito: Migrations 008-011 applied, tests green. Azioni: uno. ok to deploy on staging. due. review the test seeds.",
             n.text,
         )
     }
@@ -62,7 +62,7 @@ class LiveFeedTest {
     @Test fun blockingNextStepsGoFirst() {
         val steps = listOf(it.pixelbox.cmwatch.contract.NextStep("review the seeds"), it.pixelbox.cmwatch.contract.NextStep("ok to deploy", blocking = true))
         val cur = withOutcome("Done", 100).let { s -> s.copy(sessions = s.sessions.map { it.copy(nextSteps = steps) }) }
-        assertTrue(plan(Feed(), withOutcome("Old", 50), cur).byKey("s:atlas-shop").text.endsWith("Prossimi: uno, ok to deploy; due, review the seeds."))
+        assertTrue(plan(Feed(), withOutcome("Old", 50), cur).byKey("s:atlas-shop").text.endsWith("Azioni: uno. ok to deploy. due. review the seeds."))
     }
 
     @Test fun anOutcomeWithoutBlockingStepsIsLevelTwo() {
@@ -223,7 +223,7 @@ class LiveFeedTest {
         assertEquals(
             listOf(
                 "ledger api chiede: Deploy ready, waiting for the client's ok. Deploy now? Uno: yes. Due: no.",
-                "atlas shop ha finito: Migrations 008-011 applied, tests green. Prossimi: uno, ok to deploy on staging; due, review the test seeds.",
+                "atlas shop ha finito: Migrations 008-011 applied, tests green. Azioni: uno. ok to deploy on staging. due. review the test seeds.",
                 "Richiesta di ok: Release 2.4 of atlas-shop, tag v2.4 and push to origin main, su production (shop.example.com). Serve la doppia conferma.",
             ),
             LiveFeed.round(q, IT),
@@ -307,8 +307,8 @@ class LiveFeedTest {
             approval = "Richiesta di ok: %1\$s. Serve la doppia conferma.",
             where = "su %1\$s",
             outcome = "%1\$s ha finito: %2\$s.",
-            next = "Prossimi: %1\$s.",
-            step = "%1\$s, %2\$s",
+            next = "Azioni: %1\$s.",
+            step = "%1\$s. %2\$s",
             gone = "%1\$s si è chiusa.",
             restartFailed = "Il riavvio di %1\$s non è riuscito.",
             quota = "Quota %1\$s al %2\$d per cento, si azzera alle %3\$s.",

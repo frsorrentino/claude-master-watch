@@ -674,7 +674,7 @@
     <string name="live_where">su %1$s</string>
     <string name="live_outcome">%1$s ha finito: %2$s.</string>
     <string name="live_next">Azioni: %1$s.</string>
-    <string name="live_step">%1$s, %2$s</string>
+    <string name="live_step">%1$s. %2$s</string>
     <string name="live_gone">%1$s si è chiusa.</string>
     <string name="live_restart_failed">Il riavvio di %1$s non è riuscito.</string>
     <string name="live_quota">Quota %1$s al %2$d per cento, si azzera alle %3$s.</string>

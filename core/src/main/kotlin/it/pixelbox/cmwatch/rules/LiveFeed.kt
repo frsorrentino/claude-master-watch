@@ -242,7 +242,8 @@ object LiveFeed {
         val head = l.outcome.format(SpeakableName.of(s.name), bare(s.outcome?.short.orEmpty(), l))
         val steps = s.nextSteps.orEmpty().sortedBy { !it.blocking }
         if (steps.isEmpty()) return head
-        return "$head " + l.next.format(steps.mapIndexed { i, st -> l.step.format(number(i + 1, l), bare(st.text, l)) }.joinToString("; "))
+        // Un punto fra un'azione e l'altra, e fra numero e azione nel testo di `step`: la voce fa la pausa (Franz, 08/10 20:28).
+        return "$head " + l.next.format(steps.mapIndexed { i, st -> l.step.format(number(i + 1, l), bare(st.text, l)) }.joinToString(". "))
     }
 
     /** La richiesta di ok: titolo, cosa e dove. Il contratto 1.37 non dice quale sessione la chiede. */

@@ -665,7 +665,7 @@
     <string name="live_where">on %1$s</string>
     <string name="live_outcome">%1$s is done: %2$s.</string>
     <string name="live_next">Actions: %1$s.</string>
-    <string name="live_step">%1$s, %2$s</string>
+    <string name="live_step">%1$s. %2$s</string>
     <string name="live_gone">%1$s has closed.</string>
     <string name="live_restart_failed">The restart of %1$s failed.</string>
     <string name="live_quota">Quota %1$s at %2$d percent, resets at %3$s.</string>
