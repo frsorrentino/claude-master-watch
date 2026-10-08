@@ -4,5 +4,5 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
-rootProject.name = "team-supervisor-app"
+rootProject.name = "supervisor-app"
 include(":core", ":wear", ":mobile", ":ui-tokens")

@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">Team Supervisor</string>
+    <string name="app_name">Supervisor</string>
     <string name="not_paired_title">Collega il PC</string>
-    <string name="not_paired_body">Sul PC lancia team-supervisor relay pair e inquadra il QR. Il telefono accoppia anche l\'orologio.</string>
+    <string name="not_paired_body">Sul PC lancia supervisor relay pair e inquadra il QR. Il telefono accoppia anche l\'orologio.</string>
     <string name="pair_button">Accoppia</string>
     <string name="paste_code">Incolla il codice</string>
     <string name="pair_title">Accoppiamento</string>
@@ -20,7 +20,7 @@
     <string name="pair_err_expired">Codice scaduto: rilancia sul PC lo stesso comando. Per un dispositivo in più accanto agli altri è relay pair --add.</string>
     <string name="pair_err_invalid">Codice non valido: serve il QR, o la riga di relay pair --text che comincia con {\"v\":1.</string>
     <string name="pair_err_no_watch">Orologio non trovato: è collegato al telefono?</string>
-    <string name="pair_err_watch_app">Sull\'orologio manca Team Supervisor.</string>
+    <string name="pair_err_watch_app">Sull\'orologio manca Supervisor.</string>
     <string name="pair_err_network">Nessuna rete: riprova.</string>
     <string name="pair_err_pc">Il PC non ha confermato: controlla relay pair e riprova.</string>
     <string name="pair_err_watch">L\'orologio non ha risposto: riprova.</string>
@@ -76,16 +76,16 @@
     <string name="notifications">Notifiche</string>
     <string name="privacy">Privacy</string>
     <string name="version">Versione %1$s</string>
-    <string name="privacy_url" translatable="false">https://github.com/frsorrentino/team-supervisor-app/blob/master/PRIVACY.md</string>
+    <string name="privacy_url" translatable="false">https://github.com/frsorrentino/supervisor-app/blob/master/PRIVACY.md</string>
     <string name="channel_questions">Domande</string>
     <string name="channel_quiet">Avvisi silenziosi</string>
     <string name="waiting_network">In attesa di rete</string>
-    <string name="app_title" translatable="false">Team Supervisor</string>
+    <string name="app_title" translatable="false">Supervisor</string>
     <string name="notif_quota">%1$s · %2$d%%</string>
     <string name="night_add">Aggiungi alla notte</string>
     <string name="night_remove">Togli</string>
     <string name="night_started">partito</string>
-    <string name="night_update_pc">Aggiorna team-supervisor sul PC per gestire la coda da qui</string>
+    <string name="night_update_pc">Aggiorna supervisor sul PC per gestire la coda da qui</string>
     <string name="diary_previous">Giorni precedenti</string>
     <string name="file_refused">Il PC non manda il file: %1$s</string>
     <string name="file_refused_large">Il file è di %1$s: troppo grande per il trasferimento dal PC</string>
@@ -123,7 +123,7 @@
     <string name="share_message">Messaggio</string>
     <string name="share_with_image">Con l\'immagine condivisa</string>
     <string name="share_send">Manda</string>
-    <string name="share_update_pc">Aggiorna team-supervisor sul PC per mandare testi e immagini alle sessioni</string>
+    <string name="share_update_pc">Aggiorna supervisor sul PC per mandare testi e immagini alle sessioni</string>
     <string name="share_sent">Mandato a %1$s</string>
     <string name="share_unreadable">Immagine non leggibile: non mandata</string>
     <string name="share_too_large">Immagine troppo grande anche ridotta: non mandata</string>
@@ -316,7 +316,7 @@
     <string name="effort_title">Effort</string>
     <string name="all_sessions">Tutte le sessioni</string>
     <string name="connect_pc">Collega il PC</string>
-    <string name="connect_pc_sub">Inquadra il QR che il PC mostra con team-supervisor relay pair</string>
+    <string name="connect_pc_sub">Inquadra il QR che il PC mostra con supervisor relay pair</string>
     <string name="load_older">Carica i messaggi precedenti</string>
     <string name="origin_pc">dal PC</string>
     <string name="origin_watch">dall\'orologio</string>
@@ -477,7 +477,7 @@
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normale)</string>
     <!-- Il tablet (piano 04/10): plancia e colonne sugli schermi da 840 dp. -->
-    <string name="tablet_brand" translatable="false">TEAM SUPERVISOR</string>
+    <string name="tablet_brand" translatable="false">SUPERVISOR</string>
     <string name="tablet_updated_now">ora</string>
     <string name="tablet_updated_ago">%1$d\u00A0min fa</string>
     <string name="tablet_quota_stale">dato vecchio</string>
@@ -550,7 +550,7 @@
     <string name="add_device">Aggiungi un dispositivo</string>
     <string name="add_device_sub">Un tablet accanto a telefono e orologio, col QR su questo telefono</string>
     <string name="add_device_asking">Chiedo un invito al PC</string>
-    <string name="add_device_how">Sul dispositivo nuovo apri Team Supervisor, tocca Accoppia e inquadra questo QR.</string>
+    <string name="add_device_how">Sul dispositivo nuovo apri Supervisor, tocca Accoppia e inquadra questo QR.</string>
     <string name="add_device_how_code">Il PC non ha i dati per il QR: sul dispositivo nuovo scrivi questo codice.</string>
     <string name="add_device_code">Codice %1$s</string>
     <string name="add_device_left">Scade fra\u00A0%1$s</string>
@@ -728,7 +728,7 @@
     <string name="night_next">Prossimo: %1$s</string>
     <string name="night_refresh">Aggiorna</string>
     <string name="night_loading">Leggo il rapporto della notte</string>
-    <string name="night_old">Il PC non sa ancora leggere il rapporto della notte: aggiorna team-supervisor</string>
+    <string name="night_old">Il PC non sa ancora leggere il rapporto della notte: aggiorna supervisor</string>
     <string name="night_none">Nessun rapporto della notte</string>
     <string name="night_failed">Il rapporto non è arrivato: riprova</string>
 </resources>
