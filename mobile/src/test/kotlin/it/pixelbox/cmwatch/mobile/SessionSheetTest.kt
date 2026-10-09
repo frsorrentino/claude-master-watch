@@ -227,7 +227,7 @@ class SessionSheetTest {
         }
     }
     // La master a tutto schermo sul telefono e a metà sul tablet (Franz, 08/10 18:15).
-    private fun masterSize(half: Boolean) = paparazzi.snapshot {
+    private fun masterSize(half: Boolean, tablet: Boolean = half) = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)
         val t = st.ts - 600
         val entries = listOf(
@@ -239,14 +239,16 @@ class SessionSheetTest {
         CmPhoneTheme(still = true) {
             SessionSheet(m, st.ts, emptyList(), 120, none, grid = true,
                 home = { _, _ -> st.sessions.take(4).forEach { s -> androidx.compose.material3.Text(s.name, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text, modifier = androidx.compose.ui.Modifier.padding(16.dp)) } },
-                homeOpen = false, halfStops = half, half = half,
+                homeOpen = false, halfStops = tablet, half = half,
                 appBar = { it.pixelbox.cmwatch.mobile.ui.PageHeader(null, st.sessions, 3, st.ts, {}, {}, menu) },
-                bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true, toggleUp = half, onClose = if (half) ({}) else null, screen = !half, trailing = if (half) null else ({ it.pixelbox.cmwatch.mobile.ui.AppMenu(menu) })) },
+                bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true, toggleUp = half, onClose = if (half) ({}) else null, screen = !tablet, trailing = if (half) null else ({ it.pixelbox.cmwatch.mobile.ui.AppMenu(menu) })) },
                 feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
         }
     }
     @Test fun masterScreenPhone() = masterSize(half = false)
     @Test fun masterHalfTablet() = masterSize(half = true)
+    // A tutta altezza sul tablet la testata della home rientra: il ≡ sta nella barra della master (Franz, 09/10 21:26).
+    @Test fun masterFullTablet() = masterSize(half = false, tablet = true)
 
     // Il pannello di chiusura sopra la pagina (Franz, 08/10 18:29, variante A).
     private fun closeSplash(phase: it.pixelbox.cmwatch.rules.CloseSplash.Phase, column: Boolean = false) = paparazzi.snapshot {

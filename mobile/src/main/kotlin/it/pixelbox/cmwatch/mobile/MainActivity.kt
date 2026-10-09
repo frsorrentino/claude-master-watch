@@ -1149,8 +1149,10 @@ class MainActivity : ComponentActivity() {
                             onDown = if (wide && !half) ({ masterHalf = true }) else collapse,
                             toggleUp = half, onToggleKey = if (half) ({ masterHalf = false }) else if (wide) ({ masterHalf = true }) else collapse,
                             onClose = if (half) collapse else null,
-                            // Il telefono a tutto schermo: una testata sola, col menu ≡ della home (Franz, 08/10 18:15).
-                            screen = !wide, trailing = if (wide) null else ({ AppMenu(menuActions) }),
+                            // Il telefono a tutto schermo: una testata sola, col menu ≡ della home (Franz, 08/10 18:15). Sul tablet a tutta
+                            // altezza la testata della home rientra allo stesso modo, quindi il ≡ sta qui anche lì; a metà resta quello
+                            // della home, che si vede sopra (Franz, 09/10 21:26: «quando è aperta non c'è più il menu»).
+                            screen = !wide, trailing = if (half) null else ({ AppMenu(menuActions) }),
                         )
                     },
                     !masterChat, { pageHeader(null) }, null,

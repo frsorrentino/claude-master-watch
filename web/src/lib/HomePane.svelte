@@ -10,6 +10,7 @@
   // Da chiusa, sotto la barra, il campo della master: chi scrive apre la conversazione (Franz, 06/10 10:45).
   // Le misure (Franz, 08/10 18:15): sul telefono barra e tutto schermo, con una testata sola che porta il menu ≡ (`menu`);
   // sulla plancia (`halfStops`) anche la metà, con la home sopra e la conversazione sotto (`half`, cambiata da `onHalf`).
+  // A tutta altezza la testata della home non si vede: il menu ≡ va nella barra della master, come sul telefono (09/10 21:26).
   let { master, entries, open, onToggle, onSpeak, quick, list, chat, menu, halfStops = false, half = false, onHalf = () => {} }: {
     master: Session | null; entries: Entry[]; open: boolean; onToggle: (open: boolean) => void; onSpeak: (text: string) => void
     menu?: Snippet; halfStops?: boolean; half?: boolean; onHalf?: (half: boolean) => void
@@ -25,7 +26,7 @@
     <div class="body above" inert={!half}>{@render list()}</div>
     <div class="sheet" class:full={!half}>
       <MasterDock {master} {entries} expanded toggleUp={half} onToggle={() => (half ? onToggle(false) : onHalf(true))}
-        onToggleKey={() => onHalf(!half)} onClose={half ? () => onToggle(false) : undefined} {onSpeak} />
+        onToggleKey={() => onHalf(!half)} onClose={half ? () => onToggle(false) : undefined} trailing={half ? undefined : menu} {onSpeak} />
       <div class="body">{@render chat()}</div>
     </div>
   {:else if master && open}
