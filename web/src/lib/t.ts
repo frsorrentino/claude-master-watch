@@ -178,7 +178,7 @@ export const t = {
   tabletKind: { commit: 'commit', prompt: 'prompt', test: 'test', outcome: 'esito', task: 'compito' } as Record<string, string>,
   tabletDetails: 'Dettagli della sessione a destra', tabletDetailsSub: 'Progetto, turno, contesto e cronologia di oggi della prima colonna',
   soon: 'Questa pagina arriva nel prossimo passo.',
-  home: 'Casa', toLatest: "Torna all'ultimo messaggio", dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', more: 'Altro', cancel: 'Annulla',
+  home: 'Casa', toLatest: "Torna all'ultimo messaggio", dockMaster: 'MASTER', dockListen: "Ascolta l'ultimo esito della master", dockConversation: 'Apri la conversazione della master', dockCollapse: 'Riduci la master', dockClose: 'Chiudi', more: 'Altro', cancel: 'Annulla',
   notes: { goal: 'Obiettivo', lowPriority: 'bassa priorità', lowPriorityOffered: 'bassa priorità proposta', noWindow: 'senza finestra' },
   modelTitle: 'Modello', effortTitle: 'Effort', tuneHead: 'Modello ed effort · vale per questa sessione',
   modelSub: {

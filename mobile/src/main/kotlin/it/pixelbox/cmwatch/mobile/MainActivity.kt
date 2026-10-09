@@ -1058,8 +1058,9 @@ class MainActivity : ComponentActivity() {
         }
         // Il Registro si apre dal menu a tutto schermo; Indietro torna al riepilogo.
         BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
-        // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home.
-        BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false; masterHalf = false }
+        // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home. Sul tablet anche con una sessione
+        // rimasta aperta da un avviso, che lì non si vede: Indietro chiude la master a metà (Franz, 09/10 21:02).
+        BackHandler(enabled = masterChat && (open == null || wide) && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false; masterHalf = false }
         // Lo scorrimento della home sopravvive al cambio di contenuto del volo (09/10 17:23): tornati alla home scorrendo, la
         // lista riparte dove era.
         val homeScroll = remember { IntArray(2) }
@@ -1147,6 +1148,7 @@ class MainActivity : ComponentActivity() {
                             onUp = if (half) ({ masterHalf = false }) else null,
                             onDown = if (wide && !half) ({ masterHalf = true }) else collapse,
                             toggleUp = half, onToggleKey = if (half) ({ masterHalf = false }) else if (wide) ({ masterHalf = true }) else collapse,
+                            onClose = if (half) collapse else null,
                             // Il telefono a tutto schermo: una testata sola, col menu ≡ della home (Franz, 08/10 18:15).
                             screen = !wide, trailing = if (wide) null else ({ AppMenu(menuActions) }),
                         )

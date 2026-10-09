@@ -9,10 +9,11 @@
   // titolo dell'ultimo esito, ▶ per ascoltarlo e ▲ per espanderla; espansa la stessa barra sta in cima con ▼ e la riduce.
   // `screen`: la master a tutto schermo sul telefono (Franz, 08/10 18:15), una testata sola: ⌄ a sinistra, angoli dritti, a
   // destra il menu ≡ della home (`trailing`). `toggleUp` e `onToggleKey`: il tasto tondo nelle tre misure della plancia,
-  // dove a metà dice ▲ e porta a tutto schermo.
-  let { master, entries, onToggle, onSpeak, expanded = false, screen = false, trailing, toggleUp, onToggleKey }: {
+  // dove a metà dice ▲ e porta a tutto schermo. `onClose`: a metà, «Chiudi» ▼ accanto ad «Apri» ▲ (Franz, 09/10 21:02):
+  // chiudere non chiede più il trascinamento, ogni gesto ha un tocco che fa lo stesso (WCAG 2.5.1).
+  let { master, entries, onToggle, onSpeak, expanded = false, screen = false, trailing, toggleUp, onToggleKey, onClose }: {
     master: Session; entries: Entry[]; onToggle: () => void; onSpeak: (text: string) => void; expanded?: boolean
-    screen?: boolean; trailing?: Snippet; toggleUp?: boolean; onToggleKey?: () => void
+    screen?: boolean; trailing?: Snippet; toggleUp?: boolean; onToggleKey?: () => void; onClose?: () => void
   } = $props()
   const up = $derived(toggleUp ?? !expanded)
   const key = $derived(onToggleKey ?? onToggle)
@@ -35,6 +36,11 @@
 <div class="dock" class:expanded class:screen role="button" tabindex="0" aria-expanded={expanded} onclick={onToggle} onkeydown={(e) => e.key === 'Enter' && onToggle()}>
   <!-- La freccia sempre a sinistra, aperta o chiusa (Franz, 08/10 20:42). -->
   {@render toggleKey()}
+  {#if onClose}
+    <button class="ib" aria-label={t.dockClose} title={t.dockClose} onclick={(e) => { e.stopPropagation(); onClose() }}>
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+  {/if}
   {#if attention}<Badge s={master} size={20} />{:else}<svg class="spark lead" class:spin={breathes(master.state)} viewBox="0 0 18 18" role="img" aria-label={master.state}><path d="M11.2 9H17.3M10.56 10.56L14.87 14.87M9 11.2V17.3M7.44 10.56L3.13 14.87M6.8 9H.7M7.44 7.44L3.13 3.13M9 6.8V.7M10.56 7.44L14.87 3.13" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></svg>{/if}
   <span class="col">
     <span class="mono">{label}</span>
@@ -65,7 +71,9 @@
   b { font-size: 16px; font-weight: 600; }
   /* Premuti, i tasti cambiano forma come quelli del Material 3 Expressive: da cerchio a quadrato smussato, con la molla. */
   .ib { flex: none; width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: var(--master-key); color: var(--text);
-    transition: border-radius .35s var(--spring); }
+    transition: border-radius .35s var(--spring); position: relative; }
+  /* Il tocco prende 48 px, il tasto se ne vede 44 (Franz, 09/10 21:02). */
+  .ib::after { content: ''; position: absolute; inset: -2px; }
   .ib:active { border-radius: 12px; }
   .ib:hover { filter: brightness(1.15); }
 </style>

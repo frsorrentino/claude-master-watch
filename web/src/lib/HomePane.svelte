@@ -25,7 +25,7 @@
     <div class="body above" inert={!half}>{@render list()}</div>
     <div class="sheet" class:full={!half}>
       <MasterDock {master} {entries} expanded toggleUp={half} onToggle={() => (half ? onToggle(false) : onHalf(true))}
-        onToggleKey={() => onHalf(!half)} {onSpeak} />
+        onToggleKey={() => onHalf(!half)} onClose={half ? () => onToggle(false) : undefined} {onSpeak} />
       <div class="body">{@render chat()}</div>
     </div>
   {:else if master && open}

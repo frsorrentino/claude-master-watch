@@ -241,7 +241,7 @@ class SessionSheetTest {
                 home = { _, _ -> st.sessions.take(4).forEach { s -> androidx.compose.material3.Text(s.name, color = it.pixelbox.cmwatch.ui.tokens.CmColors.text, modifier = androidx.compose.ui.Modifier.padding(16.dp)) } },
                 homeOpen = false, halfStops = half, half = half,
                 appBar = { it.pixelbox.cmwatch.mobile.ui.PageHeader(null, st.sessions, 3, st.ts, {}, {}, menu) },
-                bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true, toggleUp = half, screen = !half, trailing = if (half) null else ({ it.pixelbox.cmwatch.mobile.ui.AppMenu(menu) })) },
+                bar = { it.pixelbox.cmwatch.mobile.ui.MasterDock(m, hero, {}, {}, expanded = true, toggleUp = half, onClose = if (half) ({}) else null, screen = !half, trailing = if (half) null else ({ it.pixelbox.cmwatch.mobile.ui.AppMenu(menu) })) },
                 feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
         }
     }

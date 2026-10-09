@@ -286,6 +286,7 @@
     <string name="menu_row_working">al lavoro · %1$s</string>
     <string name="menu_row_still">ferma da %1$s</string>
     <string name="dock_collapse">Riduci la master</string>
+    <string name="dock_close">Chiudi</string>
     <string name="context_pct">%1$d%% contesto</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">Rischio alto: tieni premuta l\'opzione per rispondere</string>

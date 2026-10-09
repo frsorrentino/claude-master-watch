@@ -282,6 +282,7 @@
     <string name="menu_row_working">working · %1$s</string>
     <string name="menu_row_still">idle for %1$s</string>
     <string name="dock_collapse">Collapse the master</string>
+    <string name="dock_close">Close</string>
     <string name="context_pct">%1$d%% context</string>
     <string name="effort">Effort</string>
     <string name="question_high_risk">High risk: press and hold an option to answer</string>

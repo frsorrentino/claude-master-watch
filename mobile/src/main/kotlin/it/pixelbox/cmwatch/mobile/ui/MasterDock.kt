@@ -105,6 +105,11 @@ fun MasterDock(
     /** Il tasto tondo a destra: ▲ apre di più; null = segue `expanded`. A metà dice ▲ e porta a tutto schermo. */
     toggleUp: Boolean = !expanded, onToggleKey: () -> Unit = onToggle,
     /**
+     * A metà, sul tablet, «Chiudi» ▼ accanto ad «Apri» ▲ (Franz, 09/10 21:02): chiudere non chiede più il trascinamento, ogni
+     * gesto ha un tocco che fa lo stesso (WCAG 2.5.1). Null = niente tasto.
+     */
+    onClose: (() -> Unit)? = null,
+    /**
      * La master a tutto schermo sul telefono (Franz, 08/10 18:15): una testata sola, nel colore della master fino alla barra di
      * stato. ⌄ va a sinistra, al posto della freccia indietro, e a destra il menu ≡ della home (`trailing`); angoli dritti.
      */
@@ -155,6 +160,12 @@ fun MasterDock(
             }
             // La freccia sempre a sinistra, aperta o chiusa (Franz, 08/10 20:42: cambiava lato e non la ritrovava).
             toggleKey()
+            onClose?.let { close ->
+                val closeSrc = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                FilledTonalIconButton(onClick = close, modifier = Modifier.size(44.dp), shape = rememberMorphShape(closeSrc), colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MasterKey), interactionSource = closeSrc) {
+                    Icon(Icons.Rounded.ExpandMore, stringResource(R.string.dock_close), tint = CmColors.text)
+                }
+            }
             // La firma: l'icona della master con l'anello corallo-lilla (Franz, 05/10 11:30).
             // Il badge di stato solo quando la master ti aspetta o è chiusa; altrimenti la scintilla di Claude, che gira mentre
             // lavora. Il cerchio rosso era l'elemento più saturo della schermata e nel Material 3 il rosso è «errore» (22:27).
