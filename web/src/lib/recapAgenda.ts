@@ -11,7 +11,7 @@ export const SCOPES = ['agenzia', 'personale', 'postazione'] as const
 const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase()
 export const mark = (scope: string): Mark => ({ personale: 'personal', agenzia: 'agency', postazione: 'desk' } as Record<string, Mark>)[norm(scope)] ?? 'none'
 /** `blocks` è testo libero: «franz» (e «owner» delle fixture) sei tu, «claude» è Claude, il resto è fermo su altro. */
-export const isYou = (b: string) => ['franz', 'owner'].includes(norm(b))
+export const isYou = (b: string, owner: string | null = null) => (owner ? norm(b) === norm(owner) : ['franz', 'owner'].includes(norm(b)))
 export const isClaude = (b: string) => norm(b) === 'claude'
 /** Aperta: `aperto`, o `sospeso` con `until` arrivato (contratto 1.47: la scheda rimandata torna quel giorno). `today` = AAAA-MM-GG. */
 export function isOpen(r: AgendaRow, today: string | null = null): boolean {
@@ -24,7 +24,8 @@ export function isOpen(r: AgendaRow, today: string | null = null): boolean {
 export function agendaModel(page: AgendaPage | null | undefined, scope: string | null = null, today: string | null = null): AgendaModel {
   const rows = (page?.rows ?? []).filter(r => (r.title ?? '').trim() && !['stato', 'scartato'].includes(norm(r.state))).filter(r => scope == null || norm(r.scope) === norm(scope))
   const open = rows.filter(r => isOpen(r, today))
-  return { you: open.filter(r => isYou(r.blocks)), claude: open.filter(r => isClaude(r.blocks)), other: open.filter(r => !isYou(r.blocks) && !isClaude(r.blocks)), rest: rows.filter(r => !isOpen(r, today)) }
+  const owner = page?.owner ?? null
+  return { you: open.filter(r => isYou(r.blocks, owner)), claude: open.filter(r => isClaude(r.blocks)), other: open.filter(r => !isYou(r.blocks, owner) && !isClaude(r.blocks)), rest: rows.filter(r => !isOpen(r, today)) }
 }
 
 /** Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10), come RecapAgenda.menu. */
@@ -35,13 +36,25 @@ export function menu(r: AgendaRow, canWrite: boolean, today: string | null = nul
   if (open) out.push('do')
   out.push('talk')
   if ((r.ref ?? '').trim()) out.push('open_ref')
-  if (canWrite && open) out.push('done', 'postpone', isClaude(r.blocks) ? 'pass_me' : 'pass_claude')
-  if (canWrite) out.push('remove')
+  // Senza key (relay 1.46) non si scrive: il relay non saprebbe quale riga.
+  const write = canWrite && !!(r.key ?? '').trim()
+  if (write && open) out.push('done', 'postpone', isClaude(r.blocks) ? 'pass_me' : 'pass_claude')
+  if (write) out.push('remove')
   return out
 }
 
 /** Una scrittura nell'agenda chiesta dal menu: la fa il relay con l'op del contratto 1.47. */
 export type Edit = { item: 'done' | 'postpone' | 'remove' | 'pass_claude' | 'pass_me'; row: AgendaRow; until?: string }
+
+/** Il comando `agenda_set` di una scrittura (contratto 1.47); null senza key. `owner` = tu nell'agenda. */
+export function setCmd(e: Edit, owner: string | null): { key: string; action: string; until?: string; blocks?: string } | null {
+  const key = (e.row.key ?? '').trim()
+  if (!key) return null
+  if (e.item === 'done') return { key, action: 'done' }
+  if (e.item === 'postpone') return e.until ? { key, action: 'snooze', until: e.until } : null
+  if (e.item === 'remove') return { key, action: 'remove' }
+  return { key, action: 'pass', blocks: e.item === 'pass_claude' ? 'claude' : owner ?? 'franz' }
+}
 
 const withRef = (r: AgendaRow, base: string) => ((r.ref ?? '').trim() ? `${base} (${r.ref.trim()})` : base)
 export const deepenText = (r: AgendaRow) => withRef(r, `Approfondisci: ${r.title}`)

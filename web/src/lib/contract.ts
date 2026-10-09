@@ -42,8 +42,11 @@ export type AgendaRow = {
   state: string; scope: string; blocks: string; title: string; ref: string
   /** Contratto 1.47: il dettaglio con gli a capo (null = non scritto) e `AAAA-MM-GG` fino a cui è sospesa. */
   detail?: string | null; until?: string | null
+  /** Contratto 1.47: la chiave della riga, scelta dal relay; cambia a ogni modifica. */
+  key?: string
 }
-export type AgendaPage = { rows: AgendaRow[]; more: boolean }
+/** `owner` (contratto 1.47): il valore di `blocks` che indica l'utente. */
+export type AgendaPage = { rows: AgendaRow[]; more: boolean; owner?: string | null }
 export type RecapItem = { project: string; done: string; next?: string | null }
 export type Recap = { date: string; items: RecapItem[] }
 export type EventKind = 'question' | 'answered' | 'outcome' | 'gone' | 'launched' | 'quota' | 'resumed' | 'recap' | 'night_report' | 'restart_failed' | 'relay_stale'
@@ -83,8 +86,12 @@ export type State = {
 
 export type CmdOp = 'answer' | 'prompt' | 'launch' | 'follow' | 'unfollow' | 'resume' | 'screen' | 'allow_all' | 'last' | 'reopen'
   | 'model' | 'effort' | 'night_add' | 'night_remove' | 'report' | 'interrupt' | 'transcript' | 'file' | 'slash' | 'projects'
-  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair' | 'night' | 'agenda'
-export type Cmd = { id: string; op: CmdOp; session?: string | null; arg?: string | null; issued: number; by: string; text?: string; device?: string; parts?: boolean }
+  | 'search' | 'timeline' | 'pair_add' | 'approve' | 'decision' | 'unpair' | 'night' | 'agenda' | 'agenda_set'
+export type Cmd = {
+  id: string; op: CmdOp; session?: string | null; arg?: string | null; issued: number; by: string; text?: string; device?: string; parts?: boolean
+  /** Contratto 1.47, `agenda_set`: done | snooze | remove | pass, il giorno di uno snooze, a chi passa. */
+  action?: string; until?: string; blocks?: string
+}
 export type CmdResult = { id: string; ok: boolean; text: string; at: number; session?: string | null; job?: string | null }
 
 /** Lo stato come arriva: i campi che mancano prendono i valori di default del contratto. */

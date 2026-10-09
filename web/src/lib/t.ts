@@ -123,6 +123,7 @@ export const t = {
   agendaRemoveTitle: 'Rimuovere la scheda?', agendaRemoveChange: "Nell'agenda del PC lo stato diventa «scartato»: resta nello storico ma qui non si vede più.",
   agendaPassClaudeTitle: 'Passarla a Claude?', agendaPassMeTitle: 'Passarla a te?', agendaPassChange: (b: string) => `Nell'agenda del PC la colonna «blocca» diventa «${b}».`,
   agendaFromScope: (s: string) => `Dall'agenda · ${s}`,
+  agendaChanged: "La scheda era cambiata sul PC: ho ricaricato l'agenda, riprova.", agendaBusy: "L'agenda è occupata da un'altra modifica: riprova fra poco.",
   menuRecap: 'Recap', menuRecapSub: 'Azioni, cosa aspetta te, cosa può fare Claude', recapGoes: 'Va a', recapGoesMaster: 'Va alla',
   recapResume: (p: string, n: string) => `Riprendi il progetto ${p}: ${n}`, homeOther: 'Altro', homeNightOpen: 'Apri',
   homeNightWindow: (from: string, to: string, n: number) => `Dalle ${from} alle ${to}: ${n} tra sessioni e lavori`,

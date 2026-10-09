@@ -17,6 +17,7 @@
   import HomePane from './lib/HomePane.svelte'
   import RecapPage from './lib/RecapPage.svelte'
   import { recapActions } from './lib/recapActions'
+  import { setCmd } from './lib/recapAgenda'
   import Composer from './lib/Composer.svelte'
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
@@ -323,13 +324,30 @@
   $effect(() => { if (page === 'recap' && canAgenda) untrack(() => loadAgenda()) })
   // Le Azioni sulle schede (piano del 09/10). «Parlane con la master»: la scheda citata nel campo della master, sotto quello
   // che c'era già, e la sua conversazione aperta. Le scritture (Fatto, Rimanda, Rimuovi, Passa) con l'op del contratto 1.47.
-  const canWrite = false
+  const canWrite = $derived(!tr || !!st.ops?.includes('agenda_set'))
   let masterInject = $state<{ text: string; n: number } | null>(null)
   function talk(text: string) {
     masterInject = { text, n: (masterInject?.n ?? 0) + 1 }
     smooth(() => { page = null; masterOpen = true })
   }
-  function editAgenda(_e: import('./lib/recapAgenda').Edit) { /* contratto 1.47: in arrivo */ }
+  // Contratto 1.47: la scrittura va al relay con `agenda_set`; riuscita, l'agenda si ricarica; «agenda row changed» ricarica
+  // e lo dice. Nella demo cambia la riga in memoria, come farebbe il relay.
+  async function editAgenda(e: import('./lib/recapAgenda').Edit) {
+    const c = setCmd(e, agenda.page?.owner ?? null)
+    if (!c) return
+    if (!tr) {
+      const st2 = { done: 'fatto', snooze: 'sospeso', remove: 'scartato' } as Record<string, string>
+      const rows = (agenda.page?.rows ?? []).map(r => r.key !== c.key ? r : { ...r, state: st2[c.action] ?? r.state, until: c.until ?? r.until, blocks: c.blocks ?? r.blocks, key: crypto.randomUUID().slice(0, 12) })
+      agenda = { ...agenda, page: { ...(agenda.page ?? { more: false }), rows } }
+      return
+    }
+    try {
+      const cmd = { ...newCmd('agenda_set', null, c.key), action: c.action, ...(c.until ? { until: c.until } : {}), ...(c.blocks ? { blocks: c.blocks } : {}) }
+      const r = await tr.send(cmd)
+      if (!r.ok) say(r.text.startsWith('agenda row changed') ? t.agendaChanged : r.text.startsWith('agenda busy') ? t.agendaBusy : r.text)
+      if (r.ok || r.text.startsWith('agenda row changed')) await loadAgenda()
+    } catch { say(t.noAnswer) }
+  }
   const pageTitle: Record<PageName, string> = $derived({ recap: t.homeRecap, launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
   const openPage = (p: PageName | null) => smooth(() => { page = p })
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.

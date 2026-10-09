@@ -35,7 +35,7 @@ describe('recapAgenda', () => {
 import { deepenText, menu, nextWeek, talkText, tomorrow, url } from './recapAgenda'
 describe('azioni del recap', () => {
   const today = '2026-10-09'
-  const row = (state = 'aperto', blocks = 'franz', ref = '', until: string | null = null) => ({ state, scope: 'agenzia', blocks, title: 'Revoke the API key', ref, detail: null, until })
+  const row = (state = 'aperto', blocks = 'franz', ref = '', until: string | null = null) => ({ state, scope: 'agenzia', blocks, title: 'Revoke the API key', ref, detail: null, until, key: 'k1' })
   it('le rimandate tornano il loro giorno, le scartate spariscono', () => {
     const m = agendaModel({ rows: [row('sospeso', 'franz', '', '2026-10-09'), row('sospeso', 'franz', '', '2026-10-10'), row('sospeso'), row('scartato'), row('chiuso'), row('fatto')], more: false }, null, today)
     expect(m.you).toHaveLength(1)
@@ -53,5 +53,26 @@ describe('azioni del recap', () => {
     expect(url('console.anthropic.com -> API Keys')).toBe('https://console.anthropic.com')
     expect([url('.claude/DA-DECIDERE-client-id.md'), url('orbit-docs'), url('tag-runtime.json')]).toEqual([null, null, null])
     expect([tomorrow(today), nextWeek(today), nextWeek('2026-10-12')]).toEqual(['2026-10-10', '2026-10-12', '2026-10-19'])
+  })
+})
+
+// Contratto 1.47: gli stessi casi di RecapAgendaSetTest.
+import { setCmd } from './recapAgenda'
+describe('agenda_set', () => {
+  const root = JSON.parse(readFileSync(new URL('../../../contract/cmd-result-sample.json', import.meta.url), 'utf8'))
+  const page: AgendaPage = JSON.parse(root.result.find((r: { id: string }) => r.id.endsWith('0386')).text)
+  it('owner sei tu e le key arrivano', () => {
+    expect(page.owner).toBe('owner')
+    expect(agendaModel(page).you.map(r => r.title)).toEqual(['Confirm the 6 client ids with a candidate'])
+    expect(page.rows.every(r => !!r.key)).toBe(true)
+  })
+  it('le scritture diventano i comandi della fixture', () => {
+    const r = page.rows[0]
+    const f = root.cmd.find((c: { op: string; arg: string; action: string }) => c.op === 'agenda_set' && c.arg === r.key && c.action === 'done')
+    expect(setCmd({ item: 'done', row: r }, page.owner ?? null)).toEqual({ key: f.arg, action: 'done' })
+    expect(setCmd({ item: 'postpone', row: r, until: '2026-10-20' }, 'owner')).toEqual({ key: r.key, action: 'snooze', until: '2026-10-20' })
+    expect(setCmd({ item: 'pass_me', row: r }, 'owner')?.blocks).toBe('owner')
+    expect(setCmd({ item: 'pass_claude', row: r }, 'owner')?.blocks).toBe('claude')
+    expect(setCmd({ item: 'done', row: { ...r, key: '' } }, 'owner')).toBeNull()
   })
 })
