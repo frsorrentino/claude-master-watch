@@ -11,6 +11,7 @@ import android.speech.tts.UtteranceProgressListener
 import it.pixelbox.cmwatch.rules.AppLanguage
 import it.pixelbox.cmwatch.rules.SpeechRate
 import it.pixelbox.cmwatch.rules.SpeechText
+import it.pixelbox.cmwatch.rules.VoiceGate
 import java.util.Locale
 
 /**
@@ -31,14 +32,27 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
             }
         }
         .build()
-    @Volatile private var ready = false
+    /**
+     * Le frasi dette prima che la voce sia pronta la aspettano, al massimo `READY_WAIT_MS` (dal vivo 09/10 22:25: l'avviso
+     * di partenza e il primo recap si perdevano, e la live taceva per minuti).
+     */
+    private val gate = VoiceGate()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private val createdAt = android.os.SystemClock.elapsedRealtime()
     /** Ogni Hush cambia generazione: i callback dei pezzi interrotti non contano. */
     @Volatile private var generation = 0
     @Volatile private var pending = 0
     private val tone = runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, 60) }.getOrNull()
     private val tts = TextToSpeech(app) { status ->
-        ready = status == TextToSpeech.SUCCESS
-        if (ready) setup()
+        if (status == TextToSpeech.SUCCESS) {
+            setup()
+            val waiting = gate.ready()
+            android.util.Log.i(TAG, "voce pronta in ${android.os.SystemClock.elapsedRealtime() - createdAt} ms, frasi in attesa: ${waiting.size}")
+            waiting.forEach { say(it) }
+        } else {
+            android.util.Log.w(TAG, "voce non disponibile: $status")
+            giveUp()
+        }
     }
 
     init {
@@ -48,6 +62,13 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
             @Deprecated("Deprecated in Java") override fun onError(utteranceId: String?) = done(utteranceId)
             override fun onStop(utteranceId: String?, interrupted: Boolean) = Unit
         })
+        main.postDelayed({ giveUp() }, READY_WAIT_MS)
+    }
+
+    /** La voce non è arrivata in tempo: le frasi in attesa si lasciano andare e la live va avanti. */
+    private fun giveUp() {
+        val lost = gate.giveUp()
+        if (lost > 0) { android.util.Log.w(TAG, "voce non pronta, frasi lasciate: $lost"); onIdle() }
     }
 
     private fun setup() {
@@ -65,7 +86,12 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
     fun headset(): Boolean = audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type in HEADSETS }
 
     @Synchronized fun say(text: String) {
-        if (!ready || !headset()) { onIdle(); return }
+        if (!headset()) { onIdle(); return }
+        when (gate.say(text)) {
+            VoiceGate.Say.LATER -> return
+            VoiceGate.Say.SKIP -> { onIdle(); return }
+            VoiceGate.Say.NOW -> Unit
+        }
         if (pending == 0 && audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { onFocus(false); return }
         val g = generation
         val parts = SpeechText.chunks(text)
@@ -74,6 +100,7 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
     }
 
     @Synchronized fun hush() {
+        gate.clear()
         generation++
         pending = 0
         tts.stop()
@@ -82,7 +109,7 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
 
     fun tone() { if (headset()) tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) }
 
-    fun shutdown() { hush(); tts.shutdown(); tone?.release() }
+    fun shutdown() { main.removeCallbacksAndMessages(null); hush(); tts.shutdown(); tone?.release() }
 
     private fun done(id: String?) {
         val idle = synchronized(this) {
@@ -95,6 +122,9 @@ class LiveVoice(ctx: Context, private val onIdle: () -> Unit, private val onFocu
     }
 
     companion object {
+        private const val TAG = "Live"
+        /** Quanto le frasi aspettano la voce: oltre, la live va avanti senza (com'era prima). */
+        const val READY_WAIT_MS = 10_000L
         val HEADSETS = setOf(
             AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_BLUETOOTH_SCO, AudioDeviceInfo.TYPE_BLE_HEADSET,
             AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_USB_HEADSET,

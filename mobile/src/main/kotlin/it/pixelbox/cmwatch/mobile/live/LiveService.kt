@@ -208,7 +208,11 @@ class LiveService : Service() {
     private suspend fun run(out: LiveDesk.Out) {
         desk = out.desk
         for (e in out.effects) when (e) {
-            is LiveDesk.Effect.Say -> { voice.say(e.text); _panel.value = _panel.value.copy(last = e.text, speaking = true) }
+            is LiveDesk.Effect.Say -> {
+                // Una riga per frase, senza il testo: basta per ritrovare nel log quando la live ha parlato.
+                android.util.Log.i("Live", "frase di ${e.text.length} caratteri")
+                voice.say(e.text); _panel.value = _panel.value.copy(last = e.text, speaking = true)
+            }
             LiveDesk.Effect.Hush -> voice.hush()
             LiveDesk.Effect.Tone -> voice.tone()
             is LiveDesk.Effect.Show -> card(e.card)
