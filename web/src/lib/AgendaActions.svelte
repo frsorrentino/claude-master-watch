@@ -1,7 +1,9 @@
 <script lang="ts">
   import type { AgendaRow } from './contract'
   import type { RecapAction } from './recapActions'
+  import { getContext } from 'svelte'
   import { deepenText, doIt, fileText, menu, mark, nextWeek, talkText, tomorrow, url, type Edit, type Item } from './recapAgenda'
+  import type { AgendaNight } from './agendaNight'
   import { untilLabel } from './agendaDates'
   import { MASTER } from './summary'
   import { t } from './t'
@@ -20,16 +22,18 @@
   let pickDate = $state('')
   let send = $state<RecapAction | null>(null)
   let edit = $state<Edit | null>(null)
+  // «Stanotte» (contratto 1.49): c'è quando il relay mette la master nella notte; il contesto lo dà App.
+  const night = getContext<AgendaNight | undefined>('agendaNight')
   export function menuOf(r: AgendaRow) { menuFor = r }
   export function deepen(r: AgendaRow) { deepenFor = r }
 
   const toMaster = (r: AgendaRow, text: string): RecapAction => ({ text: r.title, send: text, to: MASTER, from: 'agenda', viaMaster: true, recap: false, agenda: true, note: t.agendaFromScope(r.scope.trim()) })
   const label: Record<Item, string> = {
-    deepen: t.agendaDeepen, do: t.recapDo, talk: t.agendaTalk, open_ref: t.agendaOpenRef, done: t.agendaDone, postpone: t.agendaPostpone,
+    deepen: t.agendaDeepen, do: t.recapDo, night: t.agendaNight, talk: t.agendaTalk, open_ref: t.agendaOpenRef, done: t.agendaDone, postpone: t.agendaPostpone,
     pass_claude: t.agendaPassClaude, pass_me: t.agendaPassMe, remove: t.agendaRemove,
   }
   const icon: Record<Item, string> = {
-    deepen: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', do: 'M8 5v14l11-7z', talk: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+    deepen: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', do: 'M8 5v14l11-7z', night: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z', talk: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
     open_ref: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', done: 'M9 12l2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
     postpone: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', pass_claude: 'M12 8V4H8M4 8h16v12H4zM9 13h.01M15 13h.01',
     pass_me: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', remove: 'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14',
@@ -49,6 +53,7 @@
     remove: [t.agendaRemoveTitle, t.agendaRemoveChange, t.agendaRemove],
     pass_claude: [t.agendaPassClaudeTitle, t.agendaPassChange('claude'), t.agendaPass],
     pass_me: [t.agendaPassMeTitle, t.agendaPassChange('franz'), t.agendaPass],
+    night: [t.agendaNightTitle, t.agendaNightChange, t.agendaNight],
   })[e.item]
 
   // Nei gestori: prima il foglio nuovo, poi si chiude il vecchio. `{@const r = …}` segue il suo stato: chiuso prima, `r`
@@ -70,7 +75,7 @@
   {@const r = menuFor}
   <dialog use:modal={() => (menuFor = null)} onclick={backdrop}>
     <div class="head"><i class="mark {mark(r.scope)}"></i><h3>{r.title}</h3></div>
-    {#each menu(r, canWrite, today) as item, i}
+    {#each menu(r, canWrite, today, !!night?.can) as item, i}
       {#if i > 0 && item === 'done'}<hr />{/if}
       <button class="item" class:danger={item === 'remove'} onclick={() => pick(r, item)}>
         <svg viewBox="0 0 24 24" width="22" height="22"><path d={icon[item]} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -124,7 +129,7 @@
     <p class="sub">{change}</p>
     <div class="btns">
       <button class="text" onclick={() => (edit = null)}>{t.cancel}</button>
-      <button class="filled" class:danger={e.item === 'remove'} onclick={() => { onEdit(e); edit = null }}>{button}</button>
+      <button class="filled" class:danger={e.item === 'remove'} onclick={() => { if (e.item === 'night') night?.queue([doIt(e.row, t.recapDoText).send]); else onEdit(e); edit = null }}>{button}</button>
     </div>
   </dialog>
 {/if}

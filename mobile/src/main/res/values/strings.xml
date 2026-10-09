@@ -812,6 +812,13 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="agenda_pass_change">Nell\'agenda del PC la colonna «blocca» diventa «%1$s».</string>
     <string name="agenda_changed">La scheda era cambiata sul PC: ho ricaricato l\'agenda, riprova.</string>
     <string name="agenda_busy">L\'agenda è occupata da un\'altra modifica: riprova fra poco.</string>
+    <!-- La notte dal Recap (contratto 1.49, scelta A di Franz del 09/10 21:27). -->
+    <string name="agenda_night">Stanotte</string>
+    <string name="agenda_night_title">Farla stanotte?</string>
+    <string name="agenda_night_change">Va nella coda della notte: stanotte la fa la master, con il testo di «Fallo». L\'esito lo trovi nel resoconto della notte.</string>
+    <string name="night_from_recap">Dal recap</string>
+    <plurals name="night_agenda_queue"><item quantity="one">Metti stanotte · %d</item><item quantity="other">Metti stanotte · %d</item></plurals>
+    <plurals name="night_agenda_added"><item quantity="one">Messa nella notte</item><item quantity="other">%d messe nella notte</item></plurals>
     <string name="menu_recap">Recap</string>
     <string name="menu_recap_sub">Azioni, cosa aspetta te, cosa può fare Claude</string>
     <string name="home_sec_other">Altro</string>

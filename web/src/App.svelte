@@ -2,7 +2,7 @@
   import * as files from './lib/fileActions'
   import type { FileAct, Fetched } from './lib/fileActions'
   import { demoAgenda, demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
-  import { untrack } from 'svelte'
+  import { setContext, untrack } from 'svelte'
   import type { AgendaPage, Cmd, CmdOp, CmdResult, Event, SearchPage, Session, State, TimelinePage, TranscriptEntry, TranscriptPage } from './lib/contract'
   import { advance, prune, status, type PendingStatus, type Sent, type Status, type Upload } from './lib/chatRules'
   import type { Sample } from './lib/quotaHistory'
@@ -17,7 +17,8 @@
   import HomePane from './lib/HomePane.svelte'
   import RecapPage from './lib/RecapPage.svelte'
   import { recapActions } from './lib/recapActions'
-  import { setCmd } from './lib/recapAgenda'
+  import { NIGHT_TARGET, night as nightCards, setCmd, todayIso } from './lib/recapAgenda'
+  import NightAgendaPicker from './lib/NightAgendaPicker.svelte'
   import Composer from './lib/Composer.svelte'
   import AppBar, { type Page as PageName } from './lib/AppBar.svelte'
   import Page from './lib/Page.svelte'
@@ -351,6 +352,24 @@
       if (r.ok || r.text.startsWith('agenda row changed')) await loadAgenda()
     } catch { say(t.noAnswer) }
   }
+  // Contratto 1.49 (Franz, 09/10 21:27, scelta A): le schede del Recap stanotte, alla master, un lavoro per scheda col testo
+  // di «Fallo»; dal menu Azioni o spuntate nel foglio «Aggiungi alla notte». Un avviso solo, alla fine; nella demo solo quello.
+  const canNight = $derived(!tr || !!st.night?.master)
+  async function queueNight(prompts: string[]) {
+    if (!prompts.length) return
+    if (!tr) { say(t.nightAgendaAdded(prompts.length)); return }
+    let ok = 0
+    for (const p of prompts) {
+      try {
+        const r = await tr.send(newCmd('night_add', null, NIGHT_TARGET, p))
+        if (!r.ok) { say(r.text); return }
+        ok++
+      } catch { say(t.noAnswer); return }
+    }
+    say(t.nightAgendaAdded(ok))
+  }
+  setContext('agendaNight', { get can() { return canNight }, get rows() { return nightCards(agenda.page, todayIso()) }, queue: queueNight })
+  $effect(() => { if (canNight && canAgenda && !agenda.page && !agenda.loading) untrack(() => loadAgenda()) })
   const pageTitle: Record<PageName, string> = $derived({ recap: t.homeRecap, launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
   // «Utilizzo e limiti» (Utilizzo unito, approvato da Franz il 09/10 alle 16:17): niente più pagina. Il menu, la riga della
   // quota e il Registro portano alla sezione Utilizzo della home, che si apre e si illumina; sulla plancia senza colonne è
@@ -643,6 +662,7 @@
 <!-- «Aggiungi alla notte»: lo stesso foglio di Lancia, solo progetti (LaunchSheet con night_add). -->
 <dialog bind:this={nightDlg} class="sheet" onclick={(e) => e.target === e.currentTarget && nightDlg?.close()}>
   <h2>{t.nightAddTitle}</h2>
+  <NightAgendaPicker onDone={() => nightDlg?.close()} />
   <Launch {st} action={t.nightAddTitle} onLaunch={(pr, text) => { cmd(pr.name)('night_add', pr.path, text); nightDlg?.close() }} />
 </dialog>
 

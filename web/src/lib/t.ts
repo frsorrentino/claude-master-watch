@@ -123,6 +123,11 @@ export const t = {
   agendaRemoveTitle: 'Rimuovere la scheda?', agendaRemoveChange: "Nell'agenda del PC lo stato diventa «scartato»: resta nello storico ma qui non si vede più.",
   agendaPassClaudeTitle: 'Passarla a Claude?', agendaPassMeTitle: 'Passarla a te?', agendaPassChange: (b: string) => `Nell'agenda del PC la colonna «blocca» diventa «${b}».`,
   agendaFromScope: (s: string) => `Dall'agenda · ${s}`,
+  // La notte dal Recap (contratto 1.49, scelta A di Franz del 09/10 21:27).
+  agendaNight: 'Stanotte', agendaNightTitle: 'Farla stanotte?',
+  agendaNightChange: "Va nella coda della notte: stanotte la fa la master, con il testo di «Fallo». L'esito lo trovi nel resoconto della notte.",
+  nightFromRecap: 'Dal recap', nightAgendaQueue: (n: number) => `Metti stanotte · ${n}`,
+  nightAgendaAdded: (n: number) => (n === 1 ? 'Messa nella notte' : `${n} messe nella notte`),
   agendaChanged: "La scheda era cambiata sul PC: ho ricaricato l'agenda, riprova.", agendaBusy: "L'agenda è occupata da un'altra modifica: riprova fra poco.",
   menuRecap: 'Recap', menuRecapSub: 'Azioni, cosa aspetta te, cosa può fare Claude', recapGoes: 'Va a', recapGoesMaster: 'Va alla',
   recapResume: (p: string, n: string) => `Riprendi il progetto ${p}: ${n}`, homeOther: 'Altro', homeNightOpen: 'Apri',

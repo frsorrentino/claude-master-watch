@@ -28,12 +28,16 @@ export function agendaModel(page: AgendaPage | null | undefined, scope: string |
   return { you: open.filter(r => isYou(r.blocks, owner)), claude: open.filter(r => isClaude(r.blocks)), other: open.filter(r => !isYou(r.blocks, owner) && !isClaude(r.blocks)), rest: rows.filter(r => !isOpen(r, today)) }
 }
 
-/** Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10), come RecapAgenda.menu. */
-export type Item = 'deepen' | 'do' | 'talk' | 'open_ref' | 'done' | 'postpone' | 'pass_claude' | 'pass_me' | 'remove'
-export function menu(r: AgendaRow, canWrite: boolean, today: string | null = null): Item[] {
+/**
+ * Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10), come RecapAgenda.menu;
+ * «Stanotte» dopo «Fallo» solo con un relay che mette la master nella notte (`canNight`, contratto 1.49).
+ */
+export type Item = 'deepen' | 'do' | 'night' | 'talk' | 'open_ref' | 'done' | 'postpone' | 'pass_claude' | 'pass_me' | 'remove'
+export function menu(r: AgendaRow, canWrite: boolean, today: string | null = null, canNight = false): Item[] {
   const open = isOpen(r, today) || norm(r.state) === 'sospeso'
   const out: Item[] = ['deepen']
   if (open) out.push('do')
+  if (open && canNight) out.push('night')
   out.push('talk')
   if ((r.ref ?? '').trim()) out.push('open_ref')
   // Senza key (relay 1.46) non si scrive: il relay non saprebbe quale riga.
@@ -43,13 +47,25 @@ export function menu(r: AgendaRow, canWrite: boolean, today: string | null = nul
   return out
 }
 
-/** Una scrittura nell'agenda chiesta dal menu: la fa il relay con l'op del contratto 1.47. */
-export type Edit = { item: 'done' | 'postpone' | 'remove' | 'pass_claude' | 'pass_me'; row: AgendaRow; until?: string }
+/** Una scrittura nell'agenda chiesta dal menu: la fa il relay con l'op del contratto 1.47. «Stanotte» ha la stessa conferma. */
+export type Edit = { item: 'done' | 'postpone' | 'remove' | 'pass_claude' | 'pass_me' | 'night'; row: AgendaRow; until?: string }
+
+/** Contratto 1.49: `night_add` con questo `arg` mette il lavoro stanotte nella cartella della master. */
+export const NIGHT_TARGET = 'master'
+
+/**
+ * Le schede da spuntare nel foglio «Aggiungi alla notte» (Franz, 09/10 20:42; scelta A delle 21:27), come RecapAgenda.night:
+ * le aperte, prima quelle che può fare Claude e poi le tue; quelle ferme su altri no.
+ */
+export function night(page: AgendaPage | null | undefined, today: string | null = null): AgendaRow[] {
+  const m = agendaModel(page, null, today)
+  return [...m.claude, ...m.you]
+}
 
 /** Il comando `agenda_set` di una scrittura (contratto 1.47); null senza key. `owner` = tu nell'agenda. */
 export function setCmd(e: Edit, owner: string | null): { key: string; action: string; until?: string; blocks?: string } | null {
   const key = (e.row.key ?? '').trim()
-  if (!key) return null
+  if (!key || e.item === 'night') return null
   if (e.item === 'done') return { key, action: 'done' }
   if (e.item === 'postpone') return e.until ? { key, action: 'snooze', until: e.until } : null
   if (e.item === 'remove') return { key, action: 'remove' }

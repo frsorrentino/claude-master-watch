@@ -801,6 +801,12 @@ It starts at your last message to the master.</string>
     <string name="agenda_pass_change">In the PC agenda the «blocca» column becomes «%1$s».</string>
     <string name="agenda_changed">The card had changed on the PC: the agenda is reloaded, try again.</string>
     <string name="agenda_busy">The agenda is busy with another change: try again shortly.</string>
+    <string name="agenda_night">Tonight</string>
+    <string name="agenda_night_title">Do it tonight?</string>
+    <string name="agenda_night_change">It joins tonight\'s queue: the master does it tonight, with the text of «Do it». You find the outcome in the night report.</string>
+    <string name="night_from_recap">From the recap</string>
+    <plurals name="night_agenda_queue"><item quantity="one">Queue for tonight · %d</item><item quantity="other">Queue for tonight · %d</item></plurals>
+    <plurals name="night_agenda_added"><item quantity="one">Queued for tonight</item><item quantity="other">%d queued for tonight</item></plurals>
     <string name="menu_recap">Recap</string>
     <string name="menu_recap_sub">Actions, what waits for you, what Claude can do</string>
     <string name="home_sec_other">Other</string>

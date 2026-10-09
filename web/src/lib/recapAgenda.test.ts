@@ -76,3 +76,23 @@ describe('agenda_set', () => {
     expect(setCmd({ item: 'done', row: { ...r, key: '' } }, 'owner')).toBeNull()
   })
 })
+
+import { NIGHT_TARGET, night } from './recapAgenda'
+
+// Contratto 1.49 (Franz, 09/10 21:27, scelta A): «Stanotte» dopo «Fallo» con un relay che mette la master nella notte, e le
+// schede del foglio «Aggiungi alla notte», prima quelle che può fare Claude e poi le tue.
+describe('la notte dal Recap', () => {
+  const row = (state: string, blocks: string, title: string) => ({ state, scope: 'agenzia', blocks, title, ref: '', detail: null, until: null, key: title })
+  it('Stanotte solo con il flag e su una scheda aperta', () => {
+    expect(menu(row('aperto', 'franz', 'a'), false, null, true)).toEqual(['deepen', 'do', 'night', 'talk'])
+    expect(menu(row('aperto', 'franz', 'a'), true)).not.toContain('night')
+    expect(menu(row('fatto', 'franz', 'a'), true, null, true)).not.toContain('night')
+    expect(setCmd({ item: 'night', row: row('aperto', 'franz', 'a') }, null)).toBeNull()
+    expect(NIGHT_TARGET).toBe('master')
+  })
+  it('prima quelle di Claude, poi le tue, niente ferme su altri', () => {
+    const page = { rows: [row('aperto', 'franz', 'tua'), row('aperto', 'claude', 'di Claude'), row('aperto', 'terzi', 'ferma'), row('fatto', 'claude', 'chiusa')], more: false }
+    expect(night(page).map(r => r.title)).toEqual(['di Claude', 'tua'])
+    expect(night(null)).toEqual([])
+  })
+})

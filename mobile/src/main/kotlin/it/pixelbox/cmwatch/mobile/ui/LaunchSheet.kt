@@ -33,6 +33,8 @@ fun LaunchSheet(
     onSession: ((name: String, reopen: Boolean) -> Unit)? = null,
     /** Contratto 1.26: tutti i progetti chiesti al PC all'apertura; finché non arrivano, quelli di /state. */
     projects: List<Project> = state.projects,
+    /** Sotto il titolo, prima dei progetti: nella notte le schede del Recap da spuntare (contratto 1.49). */
+    top: (@Composable ColumnScope.() -> Unit)? = null,
     onLaunch: (project: Project, firstMessage: String) -> Unit,
 ) {
     val accounts = remember(state, projects) {
@@ -51,6 +53,7 @@ fun LaunchSheet(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(action), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold), color = CmColors.text)
+        top?.invoke(this)
         if (accounts.size > 1) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             accounts.forEach { a ->
                 val personal = state.quota[a]?.let { Accounts.isPersonalQuota(a, it) } ?: Accounts.personal(a, null)

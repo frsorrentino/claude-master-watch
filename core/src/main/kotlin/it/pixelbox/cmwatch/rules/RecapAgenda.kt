@@ -57,18 +57,26 @@ object RecapAgenda {
         )
     }
 
-    /** Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10). */
-    enum class Item { DEEPEN, DO, TALK, OPEN_REF, DONE, POSTPONE, PASS_CLAUDE, PASS_ME, REMOVE }
+    /**
+     * Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10); «Stanotte» dopo «Fallo»
+     * (contratto 1.49, scelta A di Franz del 09/10 21:27).
+     */
+    enum class Item { DEEPEN, DO, NIGHT, TALK, OPEN_REF, DONE, POSTPONE, PASS_CLAUDE, PASS_ME, REMOVE }
+
+    /** Contratto 1.49: `night_add` con questo `arg` mette il lavoro stanotte nella cartella della master. */
+    const val NIGHT_TARGET = "master"
 
     /**
      * Le voci di una scheda: leggere, farla fare, parlarne e aprire il rimando sempre (fare solo se aperta); le scritture
-     * nell'agenda solo con l'op del relay (`canWrite`), e su una scheda non aperta solo «Rimuovi».
+     * nell'agenda solo con l'op del relay (`canWrite`), e su una scheda non aperta solo «Rimuovi». «Stanotte» solo con un
+     * relay che mette la master nella notte (`canNight`, `night.master` della 1.49).
      */
-    fun menu(row: AgendaRow, canWrite: Boolean, today: java.time.LocalDate? = null): List<Item> {
+    fun menu(row: AgendaRow, canWrite: Boolean, today: java.time.LocalDate? = null, canNight: Boolean = false): List<Item> {
         val open = isOpen(row, today) || norm(row.state) == "sospeso"
         return buildList {
             add(Item.DEEPEN)
             if (open) add(Item.DO)
+            if (open && canNight) add(Item.NIGHT)
             add(Item.TALK)
             if (row.ref.isNotBlank()) add(Item.OPEN_REF)
             // Senza key (relay 1.46) non si scrive: il relay non saprebbe quale riga.
@@ -80,6 +88,13 @@ object RecapAgenda {
             if (write) add(Item.REMOVE)
         }
     }
+
+    /**
+     * Le schede da spuntare nel foglio «Aggiungi alla notte» (Franz, 09/10 20:42; scelta A delle 21:27): le aperte, prima
+     * quelle che può fare Claude e poi le tue; quelle ferme su altri no, la notte non le sblocca. Stanotte le fa la master,
+     * col testo di «Fallo».
+     */
+    fun night(page: AgendaPage?, today: java.time.LocalDate? = null): List<AgendaRow> = of(page, today = today).let { it.claude + it.you }
 
     private fun withRef(row: AgendaRow, base: String) = row.ref.trim().takeIf { it.isNotEmpty() }?.let { "$base ($it)" } ?: base
 

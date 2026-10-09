@@ -36,7 +36,8 @@ export type Project = { path: string; name: string; account: string; last_used?:
 export type NightItem = { id: string; dir: string; name: string; prompt: string; added: number; started?: number | null }
 /** `report` (contratto 1.44): l'ultimo rapporto della notte; assente senza rapporto o con un relay precedente. */
 export type NightReportRef = { date: string; generated_at: number }
-export type Night = { queued: number; running?: string | null; items?: NightItem[] | null; report?: NightReportRef | null }
+/** Contratto 1.49: `master` = `night_add` accetta la master (`NIGHT_TARGET`). */
+export type Night = { queued: number; running?: string | null; items?: NightItem[] | null; report?: NightReportRef | null; master?: boolean }
 /** Contratto 1.46: una riga dell'agenda, tutta testo libero; le righe nell'ordine del file, `more` = tagliate sopra i 60 KB. */
 export type AgendaRow = {
   state: string; scope: string; blocks: string; title: string; ref: string

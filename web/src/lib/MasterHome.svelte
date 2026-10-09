@@ -6,6 +6,7 @@
   import { PATHS } from './badge'
   import { t } from './t'
   import Options from './Options.svelte'
+  import NightAgendaPicker from './NightAgendaPicker.svelte'
 
   // La casa della master (casa A, MasterHome.kt): l'ultimo esito in grande con i consigli, «Per te» con chi ti aspetta,
   // chi ha finito e chi lavora, la quota in due barre. Con una domanda aperta «Per te» va in testa.
@@ -182,6 +183,7 @@
 
 <dialog bind:this={nightSheet} onclick={backdrop}>
   <h3>{t.nightTitle}</h3>
+  <NightAgendaPicker onDone={() => nightSheet?.close()} />
   <form class="night" onsubmit={(e) => { e.preventDefault(); if (nightDir && nightText.trim()) { onCmd('night_add', nightDir, nightText.trim()); nightSheet?.close() } }}>
     <label>{t.nightProject}
       <select bind:value={nightDir}>{#each st.projects as p}<option value={p.path}>{p.name}</option>{/each}</select>

@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,7 +18,10 @@ import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -64,6 +69,13 @@ class AgendaActions {
     fun deepen(r: AgendaRow) { deepenFor = r }
 }
 
+/**
+ * «Stanotte» sulle schede del Recap (contratto 1.49, scelta A di Franz del 09/10 21:27): c'è quando il relay mette la
+ * master nella notte; `queue` manda i testi, uno per scheda.
+ */
+class AgendaNight(val queue: (List<String>) -> Unit)
+val LocalAgendaNight = androidx.compose.runtime.compositionLocalOf<AgendaNight?> { null }
+
 /** I fogli delle Azioni; `onSend` manda un testo, `onTalk` apre la master col testo nel campo, `onEdit` scrive nell'agenda. */
 @Composable
 fun AgendaActionsLayer(
@@ -77,6 +89,7 @@ fun AgendaActionsLayer(
     val deepenT = stringResource(R.string.agenda_deepen_text); val talkT = stringResource(R.string.agenda_talk_text)
     val fileT = stringResource(R.string.agenda_file_text)
     val fromScope = stringResource(R.string.agenda_from_scope)
+    val night = LocalAgendaNight.current
     fun fromAgenda(r: AgendaRow) = fromScope.format(r.scope.trim())
     fun toMaster(r: AgendaRow, send: String) = RecapActions.Action(r.title, send, ContextActions.MASTER, "agenda", viaMaster = true, agenda = true)
     fun pick(r: AgendaRow, item: Item) {
@@ -88,10 +101,10 @@ fun AgendaActionsLayer(
             Item.OPEN_REF -> RecapAgenda.url(r.ref)?.let { u -> runCatching { uri.openUri(u) } }
                 ?: run { s.send = toMaster(r, fileT.format(r.ref.trim(), r.title)) to fromAgenda(r) }
             Item.POSTPONE -> s.postponeFor = r
-            Item.DONE, Item.REMOVE, Item.PASS_CLAUDE, Item.PASS_ME -> s.edit = RecapAgenda.Edit(item, r)
+            Item.DONE, Item.REMOVE, Item.PASS_CLAUDE, Item.PASS_ME, Item.NIGHT -> s.edit = RecapAgenda.Edit(item, r)
         }
     }
-    s.menuFor?.let { r -> AgendaMenuSheet(r, RecapAgenda.menu(r, canWrite, today), onDismiss = { s.menuFor = null }) { pick(r, it) } }
+    s.menuFor?.let { r -> AgendaMenuSheet(r, RecapAgenda.menu(r, canWrite, today, canNight = night != null), onDismiss = { s.menuFor = null }) { pick(r, it) } }
     s.deepenFor?.let { r ->
         AgendaDeepenSheet(
             r, onDismiss = { s.deepenFor = null }, onSpeak = onSpeak,
@@ -101,12 +114,19 @@ fun AgendaActionsLayer(
     }
     s.postponeFor?.let { r -> AgendaPostponeSheet(today, onDismiss = { s.postponeFor = null }) { d -> s.postponeFor = null; s.edit = RecapAgenda.Edit(Item.POSTPONE, r, d) } }
     s.send?.let { (a, from) -> RecapSendSheet(a, "", onDismiss = { s.send = null }, from = from) { s.send = null; onSend(a) } }
-    s.edit?.let { e -> AgendaEditSheet(e, onDismiss = { s.edit = null }) { s.edit = null; onEdit(e) } }
+    // «Stanotte» ha la stessa conferma delle scritture, ma va nella coda della notte e non tocca l'agenda.
+    s.edit?.let { e ->
+        AgendaEditSheet(e, onDismiss = { s.edit = null }) {
+            s.edit = null
+            if (e.item == Item.NIGHT) night?.queue?.invoke(listOf(RecapAgenda.doIt(e.row, doText, doRef).send)) else onEdit(e)
+        }
+    }
 }
 
 private fun icon(i: Item): ImageVector = when (i) {
     Item.DEEPEN -> Icons.Rounded.Info
     Item.DO -> Icons.Rounded.PlayArrow
+    Item.NIGHT -> Icons.Rounded.Bedtime
     Item.TALK -> Icons.AutoMirrored.Rounded.Chat
     Item.OPEN_REF -> Icons.AutoMirrored.Rounded.OpenInNew
     Item.DONE -> Icons.Rounded.CheckCircle
@@ -121,6 +141,7 @@ private fun label(i: Item): String = stringResource(
     when (i) {
         Item.DEEPEN -> R.string.agenda_deepen
         Item.DO -> R.string.recap_do
+        Item.NIGHT -> R.string.agenda_night
         Item.TALK -> R.string.agenda_talk
         Item.OPEN_REF -> R.string.agenda_open_ref
         Item.DONE -> R.string.agenda_done
@@ -264,6 +285,7 @@ private fun AgendaEditSheet(e: RecapAgenda.Edit, onDismiss: () -> Unit, onConfir
         Item.POSTPONE -> Triple(R.string.agenda_postpone_confirm, stringResource(R.string.agenda_postpone_change, untilLabel(e.until?.toString())), R.string.agenda_postpone)
         Item.REMOVE -> Triple(R.string.agenda_remove_title, stringResource(R.string.agenda_remove_change), R.string.agenda_remove)
         Item.PASS_CLAUDE -> Triple(R.string.agenda_pass_claude_title, stringResource(R.string.agenda_pass_change, "claude"), R.string.agenda_pass)
+        Item.NIGHT -> Triple(R.string.agenda_night_title, stringResource(R.string.agenda_night_change), R.string.agenda_night)
         else -> Triple(R.string.agenda_pass_me_title, stringResource(R.string.agenda_pass_change, "franz"), R.string.agenda_pass)
     }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = CmColors.surface) {
@@ -286,5 +308,75 @@ private fun AgendaEditSheet(e: RecapAgenda.Edit, onDismiss: () -> Unit, onConfir
                 ) { Text(stringResource(button)) }
             }
         }
+    }
+}
+
+/**
+ * Le schede del Recap nel foglio «Aggiungi alla notte» (Franz, 09/10 20:42: «vorrei vedere anche i da fare dei recap
+ * selezionabili»; scelta A delle 21:27): si spuntano, e «Metti stanotte» le manda alla master, un lavoro per scheda col testo
+ * di «Fallo». Prima quelle che può fare Claude; le tue restano chiuse sotto la loro riga e si aprono col tocco. `rows` sono
+ * quelle di `RecapAgenda.night`.
+ */
+@Composable
+fun NightAgendaPicker(
+    rows: List<AgendaRow>,
+    /** Le schede già spuntate all'apertura, per chiave (o titolo senza chiave); vuoto nell'app. */
+    initial: List<String> = emptyList(),
+    onQueue: (List<AgendaRow>) -> Unit,
+) {
+    fun id(r: AgendaRow) = r.key.ifBlank { r.title }
+    var picked by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initial) }
+    var yoursOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val claude = rows.filter { RecapAgenda.isClaude(it.blocks) }
+    val yours = rows.filterNot { RecapAgenda.isClaude(it.blocks) }
+    val toggle: (AgendaRow) -> Unit = { r -> picked = if (id(r) in picked) picked - id(r) else picked + id(r) }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(stringResource(R.string.night_from_recap).uppercase(), style = MonoSmall, modifier = Modifier.padding(bottom = 4.dp))
+        if (claude.isNotEmpty()) Text(
+            stringResource(R.string.recap_claude, claude.size), style = MaterialTheme.typography.labelLarge, color = CmColors.text2,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+        )
+        claude.forEach { r -> NightPickRow(r, id(r) in picked) { toggle(r) } }
+        if (yours.isNotEmpty()) Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).handCursor().clickable { yoursOpen = !yoursOpen }.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.recap_you, yours.size), style = MaterialTheme.typography.labelLarge, color = CmColors.text2, modifier = Modifier.weight(1f))
+            Icon(
+                if (yoursOpen) androidx.compose.material.icons.Icons.Rounded.ExpandLess else androidx.compose.material.icons.Icons.Rounded.ExpandMore,
+                null, tint = CmColors.text2, modifier = Modifier.size(20.dp),
+            )
+        }
+        if (yoursOpen) yours.forEach { r -> NightPickRow(r, id(r) in picked) { toggle(r) } }
+        // Tonale: il tasto pieno del foglio resta «Aggiungi alla notte» del progetto (un solo bottone pieno per schermata).
+        if (picked.isNotEmpty()) androidx.compose.material3.FilledTonalButton(
+            onClick = { onQueue(rows.filter { id(it) in picked }) },
+            colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.primary),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(52.dp),
+        ) {
+            Icon(Icons.Rounded.Bedtime, null, modifier = Modifier.size(20.dp))
+            Text(
+                androidx.compose.ui.res.pluralStringResource(R.plurals.night_agenda_queue, picked.size, picked.size),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+    }
+}
+
+/** Una scheda da spuntare: segno, titolo, rimando, e la casella a destra; tutta la riga si tocca. */
+@Composable
+private fun NightPickRow(r: AgendaRow, on: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).handCursor()
+            .toggleable(value = on, role = androidx.compose.ui.semantics.Role.Checkbox, onValueChange = { onToggle() })
+            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AgendaMark(r.scope)
+        Column(Modifier.weight(1f).padding(top = 1.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(r.title, style = MaterialTheme.typography.bodyLarge, color = CmColors.text)
+            if (r.ref.isNotBlank()) Text(r.ref.trim(), style = MaterialTheme.typography.bodySmall, color = CmColors.text2)
+        }
+        androidx.compose.material3.Checkbox(checked = on, onCheckedChange = null)
     }
 }

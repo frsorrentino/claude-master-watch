@@ -496,6 +496,26 @@ class MainActivity : ComponentActivity() {
             if (r.ok || r.text.startsWith("agenda row changed")) askAgenda()
             editId?.let { app.repo.forget(it) }; editId = null
         }
+        // Contratto 1.49 (Franz, 09/10 21:27, scelta A): le schede del Recap stanotte, alla master, un lavoro per scheda col
+        // testo di «Fallo»; dal menu Azioni di una scheda o spuntate nel foglio «Aggiungi alla notte». Un avviso solo, alla fine.
+        var nightAgendaIds by remember { mutableStateOf(listOf<String>()) }
+        val agendaNight = if (state?.night?.master == true) remember {
+            it.pixelbox.cmwatch.mobile.ui.AgendaNight { prompts ->
+                scope.launch {
+                    val ids = prompts.mapNotNull { p -> runCatching { app.repo.command(CmdOp.NIGHT_ADD, null, it.pixelbox.cmwatch.rules.RecapAgenda.NIGHT_TARGET, p) }.getOrNull() }
+                    nightAgendaIds = nightAgendaIds + ids
+                }
+            }
+        } else null
+        val nightAgendaDone = nightAgendaIds.mapNotNull { id -> results[id] }
+        LaunchedEffect(nightAgendaDone.size, nightAgendaIds.size) {
+            if (nightAgendaIds.isEmpty() || nightAgendaDone.size < nightAgendaIds.size) return@LaunchedEffect
+            val ok = nightAgendaDone.count { r -> r.ok }
+            val msg = nightAgendaDone.firstOrNull { r -> !r.ok }?.text ?: resources.getQuantityString(R.plurals.night_agenda_added, ok, ok)
+            android.widget.Toast.makeText(this@MainActivity, msg, android.widget.Toast.LENGTH_LONG).show()
+            nightAgendaIds.forEach { id -> app.repo.forget(id) }
+            nightAgendaIds = emptyList()
+        }
         val agendaError: String? = when {
             state != null && !canAgenda -> getString(R.string.recap_agenda_old)
             agendaResult?.ok == false -> agendaResult.text.let { t -> if (t.startsWith("no agenda file")) getString(R.string.recap_agenda_none) else t }
@@ -503,7 +523,7 @@ class MainActivity : ComponentActivity() {
         }
         if (recapPage) {
             LaunchedEffect(Unit) { if (canAgenda) askAgenda() }
-            RecapScreen(
+            CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalAgendaNight provides agendaNight) { RecapScreen(
                 recapActs, state?.recap?.date.orEmpty(), agenda,
                 error = agendaError,
                 loading = agendaId != null && agendaResult == null,
@@ -514,7 +534,7 @@ class MainActivity : ComponentActivity() {
                         runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
                     }
                 },
-            )
+            ) }
             return
         }
         if (nightOpen) {
@@ -1338,6 +1358,7 @@ class MainActivity : ComponentActivity() {
             it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides state?.recurring.orEmpty(),
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
             it.pixelbox.cmwatch.mobile.ui.LocalCardsOnScreen provides cardsOnScreen,
+            it.pixelbox.cmwatch.mobile.ui.LocalAgendaNight provides agendaNight,
         ) {
         if (wide && state != null && summary != null) tabletDesk(state, summary) else
         AppShell(
@@ -1552,8 +1573,20 @@ class MainActivity : ComponentActivity() {
         val allProjects = projectsId?.let { results[it] }?.takeIf { it.ok }
             ?.let { r -> runCatching { it.pixelbox.cmwatch.contract.ContractJson.decodeProjects(r.text).projects }.getOrNull() }
         if (nightAdding && state != null) {
+            // Le schede del Recap da spuntare (contratto 1.49): l'agenda si chiede all'apertura se non è ancora arrivata.
+            LaunchedEffect(Unit) { if (canAgenda && agenda == null) askAgenda() }
+            val nightCards = remember(agenda) { it.pixelbox.cmwatch.rules.RecapAgenda.night(agenda, java.time.LocalDate.now()) }
+            val doText = getString(R.string.recap_do_text); val doRef = getString(R.string.recap_do_ref)
             ModalBottomSheet(onDismissRequest = { nightAdding = false }) {
-                LaunchSheet(state, action = R.string.night_add, projects = allProjects ?: state.projects) { project, prompt ->
+                LaunchSheet(
+                    state, action = R.string.night_add, projects = allProjects ?: state.projects,
+                    top = agendaNight?.takeIf { nightCards.isNotEmpty() }?.let { n -> {
+                        it.pixelbox.cmwatch.mobile.ui.NightAgendaPicker(nightCards) { rows ->
+                            nightAdding = false
+                            n.queue(rows.map { r -> it.pixelbox.cmwatch.rules.RecapAgenda.doIt(r, doText, doRef).send })
+                        }
+                    } },
+                ) { project, prompt ->
                     nightAdding = false
                     if (prompt.isNotBlank()) scope.launch { app.repo.command(CmdOp.NIGHT_ADD, null, project.path, prompt) }
                 }

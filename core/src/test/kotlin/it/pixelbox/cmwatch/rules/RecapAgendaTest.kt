@@ -28,6 +28,16 @@ class RecapAgendaTest {
         assertEquals(listOf("sospeso", "fatto"), m.rest.map { it.state })
     }
 
+    // Il foglio «Aggiungi alla notte» (Franz, 09/10 20:42): le schede aperte da spuntare, prima quelle che può fare Claude,
+    // poi le tue; quelle ferme su altri no.
+    @Test fun nightCardsClaudeFirstThenYours() {
+        assertEquals(
+            listOf("Move the docs site to the new host", "Confirm the 6 client ids with a candidate"),
+            RecapAgenda.night(page).map { it.title },
+        )
+        assertTrue(RecapAgenda.night(null).isEmpty())
+    }
+
     @Test fun scopeFilterMarksAndUnknownValues() {
         val rows = page.rows + AgendaRow("chiuso", "personale", "franz", "Old thing", "") +
             AgendaRow("aperto", "Agenzia", "terzi", "Client answer on the domain", "") + AgendaRow("stato", "ambito", "blocca", "titolo", "rif")
@@ -68,11 +78,22 @@ class RecapAgendaActionsTest {
         val k = RecapAgenda.Item.entries
         assertEquals(listOf(RecapAgenda.Item.DEEPEN, RecapAgenda.Item.DO, RecapAgenda.Item.TALK), RecapAgenda.menu(row(), canWrite = false))
         val full = RecapAgenda.menu(row(ref = "orbit-docs"), canWrite = true)
-        assertEquals(k.filter { it != RecapAgenda.Item.PASS_ME }, full)
+        assertEquals(k.filter { it != RecapAgenda.Item.PASS_ME && it != RecapAgenda.Item.NIGHT }, full)
         assertTrue(RecapAgenda.Item.PASS_ME in RecapAgenda.menu(row(blocks = "claude"), canWrite = true))
         assertTrue(RecapAgenda.Item.PASS_CLAUDE !in RecapAgenda.menu(row(blocks = "claude"), canWrite = true))
         // Una scheda non aperta non si fa, non si rimanda e non si passa: si legge, se ne parla, si toglie.
         assertEquals(listOf(RecapAgenda.Item.DEEPEN, RecapAgenda.Item.TALK, RecapAgenda.Item.REMOVE), RecapAgenda.menu(row("fatto"), canWrite = true))
+    }
+
+    // Contratto 1.49 (Franz, 09/10 21:27, scelta A): «Stanotte» subito dopo «Fallo», solo con un relay che mette la master
+    // nella notte e solo su una scheda aperta.
+    @Test fun tonightOnlyWithTheMasterNightAndOnAnOpenCard() {
+        assertEquals(
+            listOf(RecapAgenda.Item.DEEPEN, RecapAgenda.Item.DO, RecapAgenda.Item.NIGHT, RecapAgenda.Item.TALK),
+            RecapAgenda.menu(row(), canWrite = false, canNight = true),
+        )
+        assertTrue(RecapAgenda.Item.NIGHT !in RecapAgenda.menu(row(), canWrite = true))
+        assertTrue(RecapAgenda.Item.NIGHT !in RecapAgenda.menu(row("fatto"), canWrite = true, canNight = true))
     }
 
     @Test fun textsReferencesAndDates() {
