@@ -474,6 +474,7 @@
     <string name="voice_try">Prova</string>
     <string name="voice_change">Cambia voce, ora: %1$s</string>
     <string name="voice_sample">Ciao Franz, questa è la voce che leggerà le risposte.</string>
+    <string name="speech_rate_bubble_normal">normale %1$s</string>
     <string name="speech_rate">Velocità di lettura</string>
     <string name="speech_rate_value">%1$s×</string>
     <string name="speech_rate_normal">%1$s× (normale)</string>

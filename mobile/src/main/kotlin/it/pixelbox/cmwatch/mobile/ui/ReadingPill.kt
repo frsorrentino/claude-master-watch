@@ -212,6 +212,8 @@ fun ReadingPill(
     // Il gesto legge sempre se lo slider è aperto adesso: con il valore vecchio un tocco sullo slider aperto, dove prima c'era
     // la pillola, lo prendeva la barra e la scelta andava persa.
     val openNow by androidx.compose.runtime.rememberUpdatedState(open)
+    // Il dito trascina dalla pressione lunga: il fumetto col valore sta sopra il pallino (variante A, Franz 09/10 09:31).
+    var pressDrag by remember { mutableStateOf(false) }
     // Mentre si trascina la voce prende la velocità nuova dalla frase dopo (Franz, 08/10 20:51: «in tempo reale»): il motore
     // non la cambia a metà frase, e ripartire dalla frase detta la ripeteva.
     LaunchedEffect(draft, open) {
@@ -248,7 +250,8 @@ fun ReadingPill(
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
             draft = rateNow
             setOpen(true)
-            while (true) {
+            pressDrag = true
+            try { while (true) {
                 val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
                 val c = e.changes.first()
                 c.consume()
@@ -259,7 +262,7 @@ fun ReadingPill(
                     draft = r.snap(r.MIN + ((c.position.x - track.left) / track.width).coerceIn(0f, 1f) * (r.MAX - r.MIN))
                     if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis()
                 }
-            }
+            } } finally { pressDrag = false }
             it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rateNow) liveNow(v) }
         }
     }
@@ -275,7 +278,7 @@ fun ReadingPill(
                     // La velocità aperta: il valore, lo slider da 0,5× a 2× con il segno di 1×, poi pausa e stop.
                     RateValue(draft, onClick = { setOpen(false) })
                     RateSlider(
-                        draft,
+                        draft, dragging = pressDrag,
                         onChange = { v -> draft = v; if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis() },
                         onDone = { it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRateLive(v) } },
                         modifier = Modifier.weight(1f).onGloballyPositioned { sliderWin = it.boundsInWindow() },
@@ -333,10 +336,24 @@ fun rateLabel(r: Float): String {
 private val SLIDER_TRACK = androidx.compose.ui.graphics.Color(0xFF4A5468)
 
 @Composable
-fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier) {
+fun RateSlider(
+    value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier,
+    /** Un trascinamento cominciato fuori dallo slider (la pressione lunga sulla pillola): mostra anche lui il fumetto. */
+    dragging: Boolean = false,
+) {
     val r = it.pixelbox.cmwatch.rules.SpeechRate
     val label = rateLabel(value)
     val desc = stringResource(R.string.speech_rate)
+    // Variante A (Franz, 09/10 09:31): mentre il dito trascina, sopra il pallino un fumetto col valore, fuori dal pollice;
+    // al passaggio su 1× uno scatto, per sentire il normale senza guardare.
+    var ownDrag by remember { mutableStateOf(false) }
+    val showBubble = dragging || ownDrag
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var last by remember { mutableFloatStateOf(value) }
+    LaunchedEffect(value) {
+        if (showBubble && last != value && (last - r.NORMAL) * (value - r.NORMAL) <= 0f) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        last = value
+    }
     // I gesti si registrano una volta: leggono sempre le funzioni di adesso.
     val change by androidx.compose.runtime.rememberUpdatedState(onChange)
     val done by androidx.compose.runtime.rememberUpdatedState(onDone)
@@ -358,8 +375,8 @@ fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modi
                 .pointerInput(Unit) {
                     fun at(x: Float) = r.snap(r.MIN + (x / size.width).coerceIn(0f, 1f) * (r.MAX - r.MIN))
                     detectHorizontalDragGestures(
-                        onDragStart = { o -> change(at(o.x)) },
-                        onDragEnd = { done() }, onDragCancel = { done() },
+                        onDragStart = { o -> ownDrag = true; change(at(o.x)) },
+                        onDragEnd = { ownDrag = false; done() }, onDragCancel = { ownDrag = false; done() },
                         onHorizontalDrag = { c, _ -> change(at(c.position.x)) },
                     )
                 },
@@ -370,12 +387,46 @@ fun RateSlider(value: Float, onChange: (Float) -> Unit, onDone: () -> Unit, modi
             Box(Modifier.width(maxWidth * f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(CmColors.actionIcon))
             Box(Modifier.offset(x = maxWidth * r.fraction(r.NORMAL) - 1.dp).width(2.dp).height(14.dp).clip(RoundedCornerShape(1.dp)).background(CmColors.text2))
             Box(Modifier.offset(x = maxWidth * f - 10.dp).size(20.dp).clip(CircleShape).background(CmColors.actionIcon))
+            if (showBubble) {
+                val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 52.dp.roundToPx() }
+                androidx.compose.ui.window.Popup(popupPositionProvider = remember(f, gap) { AboveThumb(f, gap) }) { RateBubble(value) }
+            }
         }
         Box(Modifier.fillMaxWidth()) {
             val small = MaterialTheme.typography.labelSmall.copy(color = CmColors.text2)
             Text(rateLabel(r.MIN), style = small, modifier = Modifier.align(Alignment.TopStart))
             Text(rateLabel(r.NORMAL), style = small, modifier = Modifier.align(androidx.compose.ui.BiasAlignment(2 * r.fraction(r.NORMAL) - 1, -1f)))
             Text(rateLabel(r.MAX), style = small, modifier = Modifier.align(Alignment.TopEnd))
+        }
+    }
+}
+
+/** Il fumetto sopra il pallino: centrato sul pallino, `gap` px sopra il suo centro, sempre dentro lo schermo. */
+private class AboveThumb(val fraction: Float, val gap: Int) : androidx.compose.ui.window.PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: androidx.compose.ui.unit.IntRect, windowSize: androidx.compose.ui.unit.IntSize,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection, popupContentSize: androidx.compose.ui.unit.IntSize,
+    ): IntOffset {
+        val cx = anchorBounds.left + (anchorBounds.width * fraction).roundToInt()
+        val x = (cx - popupContentSize.width / 2).coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
+        return IntOffset(x, anchorBounds.top + anchorBounds.height / 2 - gap - popupContentSize.height)
+    }
+}
+
+/** Il valore grande, sotto «normale 1×», su fondo chiaro con la punta verso il pallino (mockup A del 09/10). */
+@Composable
+internal fun RateBubble(value: Float) {
+    val r = it.pixelbox.cmwatch.rules.SpeechRate
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.width(88.dp).clip(RoundedCornerShape(16.dp)).background(CmColors.primary).padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(rateLabel(value), style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), color = CmColors.onPrimary)
+            Text(stringResource(R.string.speech_rate_bubble_normal, rateLabel(r.NORMAL)), style = MaterialTheme.typography.labelSmall, color = CmColors.onPrimary)
+        }
+        androidx.compose.foundation.Canvas(Modifier.size(width = 14.dp, height = 7.dp)) {
+            drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(size.width / 2, size.height); close() }, CmColors.primary)
         }
     }
 }

@@ -1,0 +1,37 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<style>
+:root{--bg:#000;--surface:#23272E;--high:#292F3A;--text:#F2F4F7;--text2:#B0B8C4;--icon:#A8C7FA;--primary:#D3E3FD;--onp:#0A2050;--track:#4A5468}
+*{box-sizing:border-box}body{margin:0;background:#0B0B0F;color:var(--text);font:15px/1.45 Roboto,system-ui,sans-serif}
+.board{display:flex;gap:24px;padding:20px}
+.col{width:412px}.col h2{font:600 13px/1 'Roboto Mono',monospace;letter-spacing:.14em;color:var(--text2);margin:0 0 6px}.cap{color:var(--text2);font-size:13px;margin:0 0 12px;min-height:56px}
+.phone{background:var(--bg);border:1px solid #2A2E35;border-radius:28px;height:420px;position:relative;overflow:hidden;padding:14px}
+.msg{background:var(--surface);border-radius:18px;padding:12px 14px;color:var(--text2);margin-bottom:10px}
+.bar{position:absolute;left:12px;right:12px;bottom:16px;background:var(--high);border-radius:28px;height:64px;display:flex;align-items:center;gap:10px;padding:0 8px}
+.val{background:var(--primary);color:var(--onp);border-radius:999px;padding:8px 12px;font-weight:600;font-size:14px}
+.sl{flex:1;position:relative;height:40px}
+.tr{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:2px;background:var(--track)}
+.fi{position:absolute;left:0;top:12px;height:4px;border-radius:2px;background:var(--icon)}
+.one{position:absolute;top:7px;width:2px;height:14px;background:var(--text2)}
+.th{position:absolute;top:4px;width:20px;height:20px;border-radius:50%;background:var(--icon);margin-left:-10px}
+.lab{position:absolute;top:26px;font-size:11px;color:var(--text2)}
+.ib{width:40px;height:40px;border-radius:50%;background:#2F3A4E;display:grid;place-items:center;color:var(--icon)}
+.finger{position:absolute;width:54px;height:70px;border-radius:27px 27px 22px 22px;background:rgba(230,190,160,.55);margin-left:-27px}
+.bubble{position:absolute;margin-left:-44px;width:88px;text-align:center;background:var(--primary);color:var(--onp);border-radius:16px;padding:8px 0;font:700 22px/1 Roboto,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.bubble small{display:block;font:500 11px/1.2 Roboto;margin-top:3px}
+.bubble:after{content:"";position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-bottom:0;border-top-color:var(--primary)}
+.band{position:absolute;left:12px;right:12px;bottom:88px;background:var(--surface);border-radius:20px;padding:12px 16px;display:flex;align-items:baseline;gap:12px}
+.band b{font-size:30px;font-weight:700}.band span{color:var(--text2);font-size:14px}
+</style></head><body><div class="board">
+<div class="col"><h2>A · FUMETTO SUL PALLINO</h2><p class="cap">Mentre trascini, sopra il pallino un fumetto con il valore grande che segue il dito, 56 dp più in alto: resta fuori dal pollice. A dito alzato sparisce.</p>
+<div class="phone"><div class="msg">Testo della risposta letta ad alta voce</div><div class="msg">Altra riga della conversazione</div>
+<div class="bubble" style="left:calc(12px + 8px + 62px + 10px + (100% - 12px - 12px - 8px - 62px - 10px - 10px - 40px - 10px - 40px - 8px) * .57);bottom:100px">1,35×<small>normale 1×</small></div>
+<div class="bar"><div class="val">1,35×</div><div class="sl"><div class="tr"></div><div class="fi" style="width:57%"></div><div class="one" style="left:33%"></div><div class="th" style="left:57%"></div><span class="lab" style="left:0">0,5×</span><span class="lab" style="left:31%">1×</span><span class="lab" style="right:0">2×</span></div><div class="ib">❚❚</div><div class="ib">■</div></div>
+<div class="finger" style="left:calc(12px + 8px + 62px + 10px + (100% - 12px - 12px - 8px - 62px - 10px - 10px - 40px - 10px - 40px - 8px) * .57);bottom:-14px"></div>
+</div></div>
+<div class="col"><h2>B · FASCIA SOPRA LA BARRA</h2><p class="cap">Mentre trascini, sopra tutta la barra una fascia fissa con il valore grande e quanto cambia dal normale. Non segue il dito: si legge sempre nello stesso posto.</p>
+<div class="phone"><div class="msg">Testo della risposta letta ad alta voce</div><div class="msg">Altra riga della conversazione</div>
+<div class="band"><b>1,35×</b><span>velocità · normale 1×, la frase dopo va così</span></div>
+<div class="bar"><div class="val">1,35×</div><div class="sl"><div class="tr"></div><div class="fi" style="width:57%"></div><div class="one" style="left:33%"></div><div class="th" style="left:57%"></div><span class="lab" style="left:0">0,5×</span><span class="lab" style="left:31%">1×</span><span class="lab" style="right:0">2×</span></div><div class="ib">❚❚</div><div class="ib">■</div></div>
+<div class="finger" style="left:calc(12px + 8px + 62px + 10px + (100% - 12px - 12px - 8px - 62px - 10px - 10px - 40px - 10px - 40px - 8px) * .57);bottom:-14px"></div>
+</div></div>
+</div></body></html>
