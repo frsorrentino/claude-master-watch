@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick, untrack } from 'svelte'
   import { flip } from 'svelte/animate'
   import type { Approval, Session, State } from './contract'
   import { cleanupOf } from './masterService'
@@ -20,7 +21,7 @@
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
   import type { NightPage } from './night'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {}, canWrite = false, onTalk = () => {}, onEdit = () => {} }: {
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {}, canWrite = false, onTalk = () => {}, onEdit = () => {}, showRecap = true, showUsage = true, usageFocus = 0, onSpeak = null }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -41,9 +42,26 @@
     agenda?: import('./contract').AgendaPage | null; onRecapPage?: () => void
     /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
     canWrite?: boolean; onTalk?: (text: string) => void; onEdit?: (e: Edit) => void
+    /** Sulla plancia senza colonne Recap e Utilizzo stanno nel cruscotto (variante B, 09/10): qui non si ripetono. */
+    showRecap?: boolean; showUsage?: boolean
+    /** «Utilizzo e limiti» dal menu e dalla riga della quota: a ogni nuovo valore la sezione si apre, si vede e si illumina. */
+    usageFocus?: number
+    /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
+    onSpeak?: ((text: string) => void) | null
   } = $props()
   let acts: AgendaActions | undefined = $state()
   const today = todayIso()
+  let usageEl: HTMLElement | undefined = $state()
+  let usageFlash = $state(false)
+  let usageSeen = 0
+  $effect(() => {
+    if (!usageFocus || usageFocus === usageSeen || !usage || !showUsage) return
+    usageSeen = usageFocus
+    untrack(() => {
+      if (!open.usage) toggleSec('usage')
+      tick().then(() => { usageEl?.scrollIntoView({ block: 'start', behavior: 'smooth' }); usageFlash = true; setTimeout(() => (usageFlash = false), 1200) })
+    })
+  })
   // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate, anche alla prossima apertura.
   const SEC = 'home-sections'
   let open = $state<Record<string, boolean>>((() => { try { return { night: true, sessions: true, usage: false, other: false, ...JSON.parse(localStorage.getItem(SEC) ?? '{}') } } catch { return { night: true, sessions: true, usage: false, other: false } } })())
@@ -192,7 +210,7 @@
   {/if}
   <!-- Il Recap (tavola 1): chiuso i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due cose
        che aspettano te, la prima che può fare Claude, e «Tutto il recap». -->
-  {#if actions.length || ag.you.length || ag.claude.length}
+  {#if showRecap && (actions.length || ag.you.length || ag.claude.length)}
     {@render sec('recap', t.homeRecap, `${actions.length} · ${ag.you.length} · ${ag.claude.length}`)}
     {#if open.recap}
       {#if actions.length}
@@ -219,9 +237,9 @@
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
     {/if}
   {/if}
-  {#if usage}
-    {@render sec('usage', t.homeUsage)}
-    {#if open.usage}<div class="footer">{@render usage()}</div>{/if}
+  {#if usage && showUsage}
+    <div bind:this={usageEl}>{@render sec('usage', t.homeUsage)}</div>
+    {#if open.usage}<div class="footer" class:flash={usageFlash}>{@render usage()}</div>{/if}
   {/if}
   {#if model.closed.length}
     {@render sec('other', t.homeOther, t.closedCat(model.closed.length))}
@@ -255,7 +273,7 @@
   {/if}
 </dialog>
 
-<AgendaActions bind:this={acts} {canWrite} {today} onSend={onRecapAction} {onTalk} {onEdit} />
+<AgendaActions bind:this={acts} {canWrite} {today} onSend={onRecapAction} {onTalk} {onEdit} {onSpeak} />
 <RecapSend action={asking} day={recapDay} onClose={() => (asking = null)} onSend={(a) => { sentActions = new Set([...sentActions, actionKey(a)]); onRecapAction(a) }} />
 
 <style>
@@ -341,5 +359,6 @@
   .act.sent { align-items: center; background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--text2); cursor: default; }
   .act small { white-space: nowrap; }
   .all { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; color: var(--text2); font-size: 15px; text-align: left; }
-  .footer { display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
+  .footer.flash { outline: 2px solid color-mix(in srgb, var(--icon) 80%, transparent); outline-offset: 4px; border-radius: 18px; }
+  .footer { transition: outline-color .7s; display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
 </style>

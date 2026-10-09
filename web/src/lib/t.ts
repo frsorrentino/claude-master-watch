@@ -145,7 +145,7 @@ export const t = {
   ovWeek: (p: number) => `settimana ${p}%`, ovWeekReset: (p: number, when: string) => `settimana ${p}% · ${when}`,
   ovPace: (p: number, hm: string) => `a questo ritmo ${p}% alle ${hm}`, ovNow: 'Adesso', ovNoneLive: 'Nessuna sessione aperta',
   ovQuestions: 'Ti aspettano', ovContext: 'Contesto', ovToday: 'Oggi', ovNight: 'Notte', quotaResetsAt: (hm: string) => `si azzera alle ${hm}`,
-  quotaOldWord: 'dato vecchio', staleData: (m: number) => `dati di ${m} min fa`,
+  quotaOldWord: 'dato vecchio', todayLabel: 'Oggi · eventi per ora', staleData: (m: number) => `dati di ${m} min fa`,
   ovUpdatedNow: (h: string) => `aggiornato ora · ${h}`, ovUpdatedAgo: (m: number, h: string) => `aggiornato ${m} min fa · ${h}`,
   ovStale: (m: number, h: string) => `PC fermo da ${m} min · ${h}`,
   searchHint: 'Cerca nei messaggi mandati, negli esiti e nel registro', searchHintAll: 'Cerca nelle conversazioni di tutte le sessioni',

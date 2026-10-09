@@ -8,10 +8,12 @@
   import RecapSend from './RecapSend.svelte'
   // La pagina Recap (tavola 2 del mockup approvato l'08/10): dal menu ≡ o da «Tutto il recap». Filtri per ambito in cima;
   // le Azioni; poi chi deve muoversi; in fondo, richiuso, fatto e sospeso. `agenda` null = in arrivo.
-  let { actions, day, agenda, error, loading, onSend, canWrite = false, onTalk = () => {}, onEdit = () => {}, today = todayIso() }: {
+  let { actions, day, agenda, error, loading, onSend, canWrite = false, onTalk = () => {}, onEdit = () => {}, today = todayIso(), onSpeak = null }: {
     actions: RecapAction[]; day: string; agenda: AgendaPage | null; error: string | null; loading: boolean; onSend: (a: RecapAction) => void
     /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
     canWrite?: boolean; onTalk?: (text: string) => void; onEdit?: (e: Edit) => void; today?: string
+    /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
+    onSpeak?: ((text: string) => void) | null
   } = $props()
   let acts: AgendaActions | undefined = $state()
   let scope = $state<string | null>(null)
@@ -60,7 +62,7 @@
   {#if agenda && !actions.length && !m.you.length && !m.claude.length && !m.other.length && !m.rest.length}<p class="note">{t.recapEmpty}</p>{/if}
 </div>
 
-<AgendaActions bind:this={acts} {canWrite} {today} {onSend} {onTalk} {onEdit} />
+<AgendaActions bind:this={acts} {canWrite} {today} {onSend} {onTalk} {onEdit} {onSpeak} />
 <RecapSend action={asking} {day} onClose={() => (asking = null)} onSend={(a) => { sent = new Set([...sent, key(a)]); onSend(a) }} />
 
 <style>

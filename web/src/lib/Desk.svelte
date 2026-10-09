@@ -91,7 +91,8 @@
     {/if}
   </div>
   {#if details}<aside class="det">{@render details()}</aside>{/if}
-  <div class="cols" class:resizing={border >= 0} bind:clientWidth={cw}>
+  <!-- Senza colonne lo spazio è del cruscotto (variante B, 09/10): niente puntini dietro. -->
+  <div class="cols" class:resizing={border >= 0} class:dash={!override && !cols.length} bind:clientWidth={cw}>
     {#if override}
       <div class="override">{@render override()}</div>
     {:else if !cols.length}
@@ -144,6 +145,7 @@
   .border i { width: 4px; height: 40px; border-radius: 2px; background: var(--line); }
   .border:hover i, .border.on i { background: var(--icon); }
   .override { position: absolute; inset: 10px; border-radius: 18px; border: 1px solid rgb(255 255 255 / .12); overflow: hidden; background: var(--bg); }
+  .cols.dash { background-image: none; }
   .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text2); padding: 40px; text-align: center; }
   @media (prefers-reduced-motion: reduce) { .col, .tabslot { transition: none; animation: none; } }
 </style>

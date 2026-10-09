@@ -25,7 +25,7 @@
   import Diary from './lib/Diary.svelte'
   import NightPage from './lib/NightPage.svelte'
   import { page as nightPage, showHomeNight, type NightReport } from './lib/night'
-  import Overview from './lib/Overview.svelte'
+  import TodayPanel from './lib/TodayPanel.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
   import Queue from './lib/Queue.svelte'
@@ -274,7 +274,7 @@
   // Le pagine del menu: sul telefono al posto della home, sulla plancia al posto delle colonne.
   // `?page=diary` apre una pagina (link diretto, e i provini).
   const asked = new URLSearchParams(location.search).get('page')
-  let page = $state<PageName | null>(asked && ['launch', 'diary', 'night', 'recap', 'overview', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
+  let page = $state<PageName | null>(asked && ['launch', 'diary', 'night', 'recap', 'search', 'settings', 'queue'].includes(asked) ? (asked as PageName) : null)
   // La pagina Notte (specifica del 07/10, approvata alle 21:50): il rapporto si chiede al PC con l'op `night` (contratto 1.44)
   // quando la pagina si apre e col tasto aggiorna; nella demo è la fixture inventata.
   let night = $state<{ report: NightReport | null; error: string | null; loading: boolean }>({ report: null, error: null, loading: false })
@@ -325,6 +325,8 @@
   // Le Azioni sulle schede (piano del 09/10). «Parlane con la master»: la scheda citata nel campo della master, sotto quello
   // che c'era già, e la sua conversazione aperta. Le scritture (Fatto, Rimanda, Rimuovi, Passa) con l'op del contratto 1.47.
   const canWrite = $derived(!tr || !!st.ops?.includes('agenda_set'))
+  // Il cruscotto della plancia (variante B): senza colonne né pagine, Recap e Utilizzo stanno a destra e non nella home.
+  const deskDashboard = $derived(wide && !cols.length && !page)
   let masterInject = $state<{ text: string; n: number } | null>(null)
   function talk(text: string) {
     masterInject = { text, n: (masterInject?.n ?? 0) + 1 }
@@ -349,7 +351,13 @@
     } catch { say(t.noAnswer) }
   }
   const pageTitle: Record<PageName, string> = $derived({ recap: t.homeRecap, launch: t.menuLaunch, diary: t.menuRegister, night: nightTitle, overview: t.menuQuadro, search: t.menuSearch, settings: t.settingsTitle, queue: t.queueTitle })
-  const openPage = (p: PageName | null) => smooth(() => { page = p })
+  // «Utilizzo e limiti» (Utilizzo unito, approvato da Franz il 09/10 alle 16:17): niente più pagina. Il menu, la riga della
+  // quota e il Registro portano alla sezione Utilizzo della home, che si apre e si illumina; sulla plancia senza colonne è
+  // già a destra, nel cruscotto.
+  let usageFocus = $state(0)
+  function goUsage() { smooth(() => { page = null; open = null; masterOpen = false }); usageFocus += 1 }
+  const openPage = (p: PageName | null) => { if (p === 'overview') goUsage(); else smooth(() => { page = p }) }
+  if (asked === 'overview') queueMicrotask(goUsage)
   // La quota per account, come la Panoramica; i campioni del ritmo arrivano col trasporto.
   const overview = $derived(overviewOf(st, events, samples, now, undefined, down))
   let nightDlg: HTMLDialogElement | undefined = $state()
@@ -525,7 +533,8 @@
       <AppBar {st} now={now} openCount={summary.open} onPage={openPage} />
       <div class="list"><Home {st} selected={[]} onPick={card} onAnswer={answer} onStep={(n, x) => { pick(n); sendTo(n, x) }} usage={quotaPanels}
         night={nightBoxShown ? nightModel : undefined} {nightTitle} {justClosed} onNight={() => openPage('night')}
-        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} onRecapAction={(a) => sendTo(a.to, a.send)} agenda={agenda.page} onRecapPage={() => openPage('recap')} {canWrite} onTalk={talk} onEdit={editAgenda} /></div>
+        onApprove={approve} onClose={(n) => cmd(n)('slash', 'exit')} onRecapAction={(a) => sendTo(a.to, a.send)} agenda={agenda.page} onRecapPage={() => openPage('recap')} {canWrite} onTalk={talk} onEdit={editAgenda}
+        showRecap={!deskDashboard} showUsage={!deskDashboard} {usageFocus} onSpeak={(x) => toggle(x)} /></div>
       <div class="reading"><ReadingPill {slots} here={null} onOpen={pick} /></div>
     {/snippet}
     {#snippet chat()}{@render chatOf(MASTER, true)}{/snippet}
@@ -560,10 +569,7 @@
         onApprove={(task) => approve(task, '')} onSend={(n, text) => sendTo(n, text)} />
     {:else if p === 'recap'}
       <RecapPage {actions} day={recapDay} agenda={agenda.page} loading={agenda.loading}
-        error={canAgenda ? agenda.error : t.recapAgendaOld} onSend={(a) => sendTo(a.to, a.send)} {canWrite} onTalk={talk} onEdit={editAgenda} />
-    {:else if p === 'overview'}
-      <Overview model={overview} onSession={(n) => { openPage(null); pick(n) }}
-        onQuestion={() => openPage('queue')} />
+        error={canAgenda ? agenda.error : t.recapAgendaOld} onSend={(a) => sendTo(a.to, a.send)} {canWrite} onTalk={talk} onEdit={editAgenda} onSpeak={(x) => toggle(x)} />
     {:else if p === 'search'}
       <Search {sent} {events} remote onQuery={search} page={searchPage}
         known={new Set(st.sessions.map(x => x.name))} onOpen={(n) => { if (n) { openPage(null); pick(n) } else openPage('diary') }} />
@@ -580,7 +586,7 @@
 {/snippet}
 
 <!-- Un account fermo (dato vecchio) non ha il suo riquadro se l'altro è aggiornato, come nella riga in alto (Franz, 08/10 20:32). -->
-{#snippet quotaPanels()}{#each overview.rings.some(r => !r.stale) ? overview.rings.filter(r => !r.stale) : overview.rings as r (r.account)}<QuotaPanel ring={r} now={now} />{/each}{/snippet}
+{#snippet quotaPanels()}{#each overview.rings.some(r => !r.stale) ? overview.rings.filter(r => !r.stale) : overview.rings as r (r.account)}<QuotaPanel ring={r} now={now} />{/each}<TodayPanel bars={overview.today} />{/snippet}
 
 {#snippet inspector()}
   {@const first = st.sessions.find(x => x.name === cols[0])}
@@ -609,7 +615,16 @@
         </div>
       </div>
     {/snippet}
-    {#snippet empty()}<p>{t.tabletDeskEmpty}</p>{/snippet}
+    <!-- Senza colonne il cruscotto (variante B, approvata da Franz il 09/10 alle 16:17): Recap e Utilizzo larghi. -->
+    {#snippet empty()}
+      <div class="dash">
+        <section class="dcol"><h3 class="dt"><span>{t.homeRecap.toUpperCase()}</span><i></i></h3>
+          <div class="dscroll"><RecapPage {actions} day={recapDay} agenda={agenda.page} loading={agenda.loading}
+            error={canAgenda ? agenda.error : t.recapAgendaOld} onSend={(a) => sendTo(a.to, a.send)} {canWrite} onTalk={talk} onEdit={editAgenda} onSpeak={(x) => toggle(x)} /></div></section>
+        <section class="dcol"><h3 class="dt"><span>{t.homeUsage.toUpperCase()}</span><i></i></h3>
+          <div class="dscroll usage">{@render quotaPanels()}</div></section>
+      </div>
+    {/snippet}
   </Desk>
 {:else}
   <div class="phone">
@@ -637,6 +652,13 @@
   .reading:empty { display: none; }
   .reading { padding: 8px 0; }
   .column { height: 100%; display: flex; flex-direction: column; }
+  .dash { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 0 16px 0 14px; text-align: left; place-items: stretch; color: var(--text); }
+  @media (max-width: 1240px) { .dash { grid-template-columns: 1fr; grid-template-rows: 3fr 2fr; } }
+  .dcol { min-height: 0; display: flex; flex-direction: column; }
+  .dt { display: flex; align-items: center; gap: 8px; margin: 14px 4px 8px; font: 500 12px/1 var(--mono); letter-spacing: .14em; color: var(--text2); }
+  .dt i { flex: 1; height: 1px; background: var(--line); }
+  .dscroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .dscroll.usage { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
   .cbody { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
   .soon { color: var(--text2); padding: 24px; }
   .sheet { margin: auto; border: 0; color: var(--text); background: var(--surface); padding: 20px 0 0; width: min(600px, 100vw); max-height: 90vh; border-radius: 28px; }

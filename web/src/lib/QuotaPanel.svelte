@@ -2,6 +2,7 @@
   import type { Ring } from './overview'
   import { forecast, weekProjected } from './tablet'
   import { t } from './t'
+  import QuotaRing from './QuotaRing.svelte'
 
   // Il pannello delle quote in fondo alla home della plancia (TabletQuotaPanel): la finestra di 5 ore con la previsione al
   // ritmo di adesso fino alla ripartenza (piena fino a ora, tratteggiata dopo, soglie 80 e 100), poi la settimana col
@@ -21,7 +22,15 @@
 </script>
 
 <div class="panel">
-  <div class="title"><span class="lab">{t.tabletQuotaLabel.toUpperCase()} · {ring.account.toUpperCase()}</span>{#if ring.h5 != null}<b>{ring.h5}%</b>{/if}</div>
+  <!-- In testa l'anello del polso col numero grande e l'ora di ripartenza (Utilizzo unito, 09/10). -->
+  <div class="head">
+    <QuotaRing {ring} stale={ring.stale || dataStale} />
+    <div class="hcol">
+      <span class="lab">{t.tabletQuotaLabel.toUpperCase()} · {ring.account.toUpperCase()}</span>
+      <div class="num"><b class:dim={ring.stale}>{ring.h5 != null && !ring.stale ? `${ring.h5}%` : '–'}</b>{#if ring.resetAt}<small>{t.quotaResetsAt(hm(ring.resetAt))}</small>{/if}</div>
+      {#if ring.stale}<span class="old">{t.quotaOldWord}</span>{/if}
+    </div>
+  </div>
   {#if f && ring.resetAt}
     {@const pts = f.points.map(([px, p]) => `${x(px)},${y(p)}`).join(' ')}
     <svg viewBox="0 0 300 96" class="chart" role="img" aria-label={f.projected != null ? t.tabletForecast(f.projected, hm(ring.resetAt)) : t.tabletForecastFlat(hm(ring.resetAt))}>
@@ -61,6 +70,13 @@
 </div>
 
 <style>
+  .head { display: flex; gap: 14px; align-items: center; }
+  .hcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .num { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .num b { font-size: 28px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .num b.dim { color: var(--text2); }
+  .num small { font-size: 12.5px; color: var(--text2); }
+  .old { font-size: 12.5px; color: var(--b-warn); }
   .panel { border-radius: 16px; background: var(--low); border: 1px solid rgb(255 255 255 / .12); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
   .title { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .lab { flex: 1; font: 11px var(--mono); letter-spacing: .12em; color: var(--text2); }

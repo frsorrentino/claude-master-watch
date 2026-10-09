@@ -9,8 +9,10 @@
   // Le Azioni sulle schede del Recap (piano approvato da Franz il 09/10, «Approvo, prosegui»), come AgendaActions.kt: il
   // menu, «Approfondisci» col dettaglio salvato, la scelta del giorno di «Rimanda», la conferma di ogni testo che parte e
   // di ogni scrittura nell'agenda. Il genitore chiama `menuOf(row)` e `deepen(row)`.
-  let { canWrite, today, onSend, onTalk, onEdit }: {
+  let { canWrite, today, onSend, onTalk, onEdit, onSpeak = null }: {
     canWrite: boolean; today: string; onSend: (a: RecapAction) => void; onTalk: (text: string) => void; onEdit: (e: Edit) => void
+    /** ▶ sul dettaglio (Franz, 09/10 16:31: «serve tasto play di lettura anche per le schede»). */
+    onSpeak?: ((text: string) => void) | null
   } = $props()
   let menuFor = $state<AgendaRow | null>(null)
   let deepenFor = $state<AgendaRow | null>(null)
@@ -85,7 +87,12 @@
     <div class="head"><i class="mark {mark(r.scope)}"></i><h2>{r.title}</h2></div>
     <p class="sub">{[r.scope, r.state, r.blocks && t.recapBlocks(r.blocks.trim()), r.until && t.agendaUntil(untilLabel(r.until))].filter(Boolean).join(' · ')}</p>
     {#if (r.ref ?? '').trim()}{#if u}<a class="ref" href={u} target="_blank" rel="noopener">{r.ref.trim()}</a>{:else}<p class="sub">{r.ref.trim()}</p>{/if}{/if}
-    {#if (r.detail ?? '').trim()}<p class="detail">{r.detail!.trim()}</p>{:else}<p class="none">{t.agendaNoDetail}</p>{/if}
+    {#if (r.detail ?? '').trim()}
+      <div class="detail"><p>{r.detail!.trim()}</p>
+        {#if onSpeak}<button class="play" aria-label={t.readAloud} title={t.readAloud} onclick={() => onSpeak!(`${r.title.trim()}.\n${r.detail!.trim()}`)}>
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5v14l11-7z" fill="currentColor" /></svg></button>{/if}
+      </div>
+    {:else}<p class="none">{t.agendaNoDetail}</p>{/if}
     <div class="btns">
       <button class="text" onclick={() => { menuFor = r; deepenFor = null }}>{t.agendaActions}</button>
       {#if !(r.detail ?? '').trim()}<button class="filled" onclick={() => { send = toMaster(r, deepenText(r)); deepenFor = null }}>{t.agendaAskDetail}</button>{/if}
@@ -135,7 +142,10 @@
   .head h3 { padding: 0; }
   .sub { color: var(--text2); font-size: 14px; padding: 4px 24px 0; }
   .ref { display: block; color: var(--icon); font-size: 14px; padding: 6px 24px 0; overflow-wrap: anywhere; }
-  .detail { margin: 14px 24px 0; padding: 14px 18px; border-radius: 16px; background: var(--low); font-size: 16px; white-space: pre-wrap; }
+  .detail { margin: 14px 24px 0; padding: 14px 8px 14px 18px; border-radius: 16px; background: var(--low); font-size: 16px; display: flex; gap: 6px; align-items: flex-start; }
+  .detail p { flex: 1; white-space: pre-wrap; }
+  .play { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--icon); flex: none; }
+  .play:hover { background: var(--high); }
   .none { color: var(--text2); font-size: 16px; padding: 14px 24px 0; }
   .what { margin: 14px 24px 0; padding: 14px 18px; border-radius: 16px; background: var(--low); font-size: 16px; font-weight: 500; }
   .item { display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 24px; font-size: 16px; color: var(--text); text-align: left; }
