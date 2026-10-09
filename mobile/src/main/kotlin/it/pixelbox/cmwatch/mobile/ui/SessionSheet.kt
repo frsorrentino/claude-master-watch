@@ -454,6 +454,7 @@ fun SessionSheet(
                     Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                     }
+                    if (!sheet && !imeOpenHere()) ReadingSlot(s.name, overlay = true)
                     Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = if (sheet) 0f else 1f }) { dock?.invoke() }
                 }
                 if (sheet) {
@@ -515,6 +516,8 @@ fun SessionSheet(
                                 },
                                 label = "dock",
                             ) { if (it == androidx.compose.animation.EnterExitState.Visible) 1f else 0f }
+                            // Il controller della lettura si posa sopra la barra, così la barra resta da toccare (09/10 16:50).
+                            if (!imeOpenHere()) ReadingSlot(s.name, overlay = true)
                             Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = dockAlpha }) { dock?.invoke() }
                         } else chatArea()
                     }
@@ -551,7 +554,9 @@ fun SessionSheet(
         if (nudge != null) ContextNudge(s.context ?: nudge, onGo = actions.handoff, onDismiss = { ctxDismissed = nudge })
         // Il controller sta sopra la fine della conversazione, non in una fascia sua (Franz, 08/10 20:31: «elemento
         // sovrapposto, il resto mantiene i colori suoi»): qui solo il segno di dove posarlo, sopra il campo.
-        if (!imeOpen) ReadingSlot(s.name, overlay = true)
+        // Con la home aperta il segno sta sopra la barra della master, non qui (Franz, 09/10 16:50: il controller la copriva
+        // e la master non si apriva più).
+        if (!imeOpen && !(home != null && homeOpen)) ReadingSlot(s.name, overlay = true)
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
@@ -2039,3 +2044,8 @@ private fun elapsed(s: Long): String = when {
     s < 3600 -> stringResource(R.string.live_ms, s / 60, s % 60)
     else -> stringResource(R.string.live_hm, s / 3600, (s % 3600) / 60)
 }
+
+/** La tastiera è aperta: il controller della lettura si fa da parte e i suoi segni non contano. */
+@Composable
+private fun imeOpenHere(): Boolean =
+    androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0

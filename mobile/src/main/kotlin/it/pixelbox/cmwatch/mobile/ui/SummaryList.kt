@@ -157,7 +157,8 @@ fun SummaryList(
         )
     }
     androidx.compose.foundation.lazy.LazyColumn(
-        Modifier.fillMaxSize(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        // In fondo lo spazio del controller della lettura, che si posa sopra la barra della master (09/10 16:50).
+        Modifier.fillMaxSize(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp + readingRoom()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (nightDate != null) {
