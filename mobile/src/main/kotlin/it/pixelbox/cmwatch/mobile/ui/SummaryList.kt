@@ -112,6 +112,8 @@ fun SummaryList(
     usageFocus: Int = 0,
     /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
     onSpeak: ((String) -> Unit)? = null,
+    /** Dove la lista era arrivata (primo elemento e scarto), tenuto da chi la ospita: ricreata, riparte da lì (09/10 17:23). */
+    scrollMemo: IntArray? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -128,7 +130,11 @@ fun SummaryList(
     var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
     val day = recapDay(recapDate)
     fun save(key: String, v: Boolean) { runCatching { prefs?.edit()?.putBoolean(key, v)?.apply() } }
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState(scrollMemo?.get(0) ?: 0, scrollMemo?.get(1) ?: 0)
+    if (scrollMemo != null) androidx.compose.runtime.LaunchedEffect(listState) {
+        androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (i, o) -> scrollMemo[0] = i; scrollMemo[1] = o }
+    }
     var usageFlash by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(usageFocus) {
         if (usageFocus == 0 || usage == null || !showUsage) return@LaunchedEffect

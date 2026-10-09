@@ -280,8 +280,16 @@ class MainActivity : ComponentActivity() {
         // pagina appena vista, con un lampo). `swipeSet`: l'ultimo cambio di `open` viene dallo scorrimento.
         var flyTarget by rememberSaveable { mutableStateOf(open) }
         var swipeSet by remember { mutableStateOf(false) }
-        LaunchedEffect(open) { if (swipeSet) swipeSet = false else flyTarget = open }
         val seek = remember { SeekableTransitionState(flyTarget) }
+        LaunchedEffect(open) {
+            if (!swipeSet) { flyTarget = open; return@LaunchedEffect }
+            swipeSet = false
+            // Lo scorrimento non vola, ma il volo deve sapere dove si è arrivati (Franz, 09/10 17:23: «alcune hanno un movimento,
+            // altre aprono di colpo»). Dopo un volo e uno scorrimento il bersaglio restava la sessione di prima: tornati alla home
+            // scorrendo, il tocco su una card non volava più, il pager saltava alla pagina (scivolando o di colpo). Da una
+            // sessione aperta col volo, lo scorrimento sposta il bersaglio senza animazione; dalla home resta com'era (03/10 20:00).
+            if (flyTarget != null && open != flyTarget) { flyTarget = open; seek.snapTo(open) }
+        }
         // Sempre fino in fondo: dopo un gesto completato seekTo ha già messo il bersaglio a null (revisione 29/09).
         // Senza spec la durata è quella della transizione quando parte, ancora 0 perché il volo registra i bordi al layout:
         // il tocco su una card apriva la sessione in un fotogramma (registrazione dal vivo del 03/10 20:57). Con lo spec la
@@ -1036,6 +1044,9 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = tab == StartRoute.Tab.DIARY && open == null) { tab = StartRoute.Tab.OVERVIEW }
         // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home.
         BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false; masterHalf = false }
+        // Lo scorrimento della home sopravvive al cambio di contenuto del volo (09/10 17:23): tornati alla home scorrendo, la
+        // lista riparte dove era.
+        val homeScroll = remember { IntArray(2) }
         // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.
         // Utilizzo unito (approvato da Franz il 09/10 alle 16:17): per account il pannello con l'anello del polso, la previsione
         // e la settimana, poi «Oggi»; lo stesso contenuto nella sezione della home e nel cruscotto del tablet.
@@ -1096,7 +1107,7 @@ class MainActivity : ComponentActivity() {
                     canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t }, onEdit = editAgenda,
                     // «Utilizzo» (Franz, 08/10 12:30; unito il 09/10): le schede della quota e «Oggi» in una sezione richiudibile.
                     usage = { Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { usageContent() } },
-                    showRecap = !deskDashboard, showUsage = !deskDashboard, usageFocus = usageFocus,
+                    showRecap = !deskDashboard, showUsage = !deskDashboard, usageFocus = usageFocus, scrollMemo = homeScroll,
                     onSpeak = { t -> speech.toggle(t) },
                 )
             }
