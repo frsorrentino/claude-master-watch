@@ -89,6 +89,11 @@ enum class CmdOp {
      * `arg` null; il testo è un `AgendaPage`; senza file «no agenda file».
      */
     @SerialName("agenda") AGENDA,
+    /**
+     * Contratto 1.47: una scrittura nell'agenda. `arg` = key della riga, `action` done | snooze (con `until`) | remove | pass
+     * (con `blocks`); riuscita, il testo è `{"row": …}` con la key nuova; «agenda row changed» = ricaricare.
+     */
+    @SerialName("agenda_set") AGENDA_SET,
 }
 
 @Serializable data class Option(val n: Int, val label: String)
@@ -282,6 +287,18 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
     val confirmations: Int? = null,
+    /** Contratto 1.47, `agenda_set`: done | snooze | remove | pass. Assente, non scritto. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val action: String? = null,
+    /** Contratto 1.47: `AAAA-MM-GG` di uno snooze. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val until: String? = null,
+    /** Contratto 1.47: «claude» o l'`owner` dell'agenda, per un pass. */
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val blocks: String? = null,
 )
 
 /**
@@ -329,9 +346,17 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
     val detail: String? = null,
     /** Contratto 1.47: `AAAA-MM-GG`; con stato `sospeso` da quel giorno la scheda conta come aperta. */
     val until: String? = null,
+    /** Contratto 1.47: la chiave della riga, scelta dal relay; cambia a ogni modifica. "" con un relay 1.46. */
+    val key: String = "",
 )
 /** Contratto 1.46: le righe nell'ordine del file; `more` = tagliate sopra i 60 KB. */
-@Serializable data class AgendaPage(val rows: List<AgendaRow> = emptyList(), val more: Boolean = false)
+@Serializable data class AgendaPage(
+    val rows: List<AgendaRow> = emptyList(), val more: Boolean = false,
+    /** Contratto 1.47: il valore di `blocks` che indica l'utente («franz» sul PC); null con un relay 1.46. */
+    val owner: String? = null,
+)
+/** Contratto 1.47: l'esito di `agenda_set`, la riga aggiornata con la key nuova. */
+@Serializable data class AgendaSetResult(val row: AgendaRow)
 
 @Serializable data class ProjectsPage(val projects: List<Project> = emptyList(), val more: Boolean = false)
 

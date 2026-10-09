@@ -28,8 +28,11 @@ object RecapAgenda {
         else -> Mark.NONE
     }
 
-    /** `blocks` è testo libero: «franz» (e «owner» delle fixture) sei tu, «claude» è Claude, il resto è fermo su altro. */
-    fun isYou(blocks: String) = norm(blocks) in setOf("franz", "owner")
+    /**
+     * `blocks` è testo libero: sei tu il valore `owner` dell'agenda (contratto 1.47), o con un relay 1.46 «franz» (e «owner»
+     * delle fixture); «claude» è Claude, il resto è fermo su altro.
+     */
+    fun isYou(blocks: String, owner: String? = null) = owner?.let { norm(blocks) == norm(it) } ?: (norm(blocks) in setOf("franz", "owner"))
     fun isClaude(blocks: String) = norm(blocks) == "claude"
     /** Aperta: `aperto`, o `sospeso` con `until` arrivato (contratto 1.47: la scheda rimandata torna quel giorno). */
     fun isOpen(row: AgendaRow, today: java.time.LocalDate? = null): Boolean = when (norm(row.state)) {
@@ -47,9 +50,10 @@ object RecapAgenda {
             .filter { r -> r.title.isNotBlank() && norm(r.state) != "stato" && norm(r.state) != "scartato" }
             .filter { r -> scope == null || norm(r.scope) == norm(scope) }
         val open = rows.filter { isOpen(it, today) }
+        val owner = page?.owner
         return Model(
-            you = open.filter { isYou(it.blocks) }, claude = open.filter { isClaude(it.blocks) },
-            other = open.filter { !isYou(it.blocks) && !isClaude(it.blocks) }, rest = rows.filterNot { isOpen(it, today) },
+            you = open.filter { isYou(it.blocks, owner) }, claude = open.filter { isClaude(it.blocks) },
+            other = open.filter { !isYou(it.blocks, owner) && !isClaude(it.blocks) }, rest = rows.filterNot { isOpen(it, today) },
         )
     }
 
@@ -67,11 +71,13 @@ object RecapAgenda {
             if (open) add(Item.DO)
             add(Item.TALK)
             if (row.ref.isNotBlank()) add(Item.OPEN_REF)
-            if (canWrite && open) {
+            // Senza key (relay 1.46) non si scrive: il relay non saprebbe quale riga.
+            val write = canWrite && row.key.isNotBlank()
+            if (write && open) {
                 add(Item.DONE); add(Item.POSTPONE)
                 add(if (isClaude(row.blocks)) Item.PASS_ME else Item.PASS_CLAUDE)
             }
-            if (canWrite) add(Item.REMOVE)
+            if (write) add(Item.REMOVE)
         }
     }
 
@@ -99,6 +105,17 @@ object RecapAgenda {
 
     /** Una scrittura nell'agenda chiesta dal menu (Fatto, Rimanda, Rimuovi, Passa): la fa il relay con l'op del contratto 1.47. */
     data class Edit(val item: Item, val row: AgendaRow, val until: java.time.LocalDate? = null)
+
+    /** Il comando `agenda_set` di una scrittura (contratto 1.47): azione, giorno e a chi passa. `owner` = tu nell'agenda. */
+    data class SetCmd(val key: String, val action: String, val until: String? = null, val blocks: String? = null)
+    fun setCmd(e: Edit, owner: String?): SetCmd? = when (e.item) {
+        Item.DONE -> SetCmd(e.row.key, "done")
+        Item.POSTPONE -> e.until?.let { SetCmd(e.row.key, "snooze", until = it.toString()) }
+        Item.REMOVE -> SetCmd(e.row.key, "remove")
+        Item.PASS_CLAUDE -> SetCmd(e.row.key, "pass", blocks = "claude")
+        Item.PASS_ME -> SetCmd(e.row.key, "pass", blocks = owner ?: "franz")
+        else -> null
+    }?.takeIf { it.key.isNotBlank() }
 
     /** Rimanda: domani, o il lunedì della settimana dopo. */
     fun tomorrow(today: java.time.LocalDate): java.time.LocalDate = today.plusDays(1)

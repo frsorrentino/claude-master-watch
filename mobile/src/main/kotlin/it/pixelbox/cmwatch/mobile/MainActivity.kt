@@ -431,7 +431,7 @@ class MainActivity : ComponentActivity() {
         val recapActs = remember(state) { state?.let { st -> it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) }.orEmpty() }
         val canAgenda = state?.ops?.contains("agenda") == true
         // Contratto 1.47: l'op che scrive nell'agenda (Fatto, Rimanda, Rimuovi, Passa); senza, il menu non le mostra.
-        val canAgendaWrite = false
+        val canAgendaWrite = state?.ops?.contains("agenda_set") == true
         var agendaId by remember { mutableStateOf<String?>(null) }
         var agenda by remember { mutableStateOf<it.pixelbox.cmwatch.contract.AgendaPage?>(null) }
         val askAgenda: () -> Unit = {
@@ -445,6 +445,28 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(agendaResult) {
             agendaResult?.takeIf { it.ok }?.let { r -> runCatching { ContractJson.decodeAgenda(r.text) }.getOrNull()?.let { agenda = it } }
         }
+        // Una scrittura nell'agenda (contratto 1.47): riuscita, l'agenda si ricarica; rifiutata, una riga dice perché, e con
+        // «agenda row changed» si ricarica comunque (la scheda era cambiata sul PC).
+        var editId by remember { mutableStateOf<String?>(null) }
+        val editAgenda: (it.pixelbox.cmwatch.rules.RecapAgenda.Edit) -> Unit = { e ->
+            it.pixelbox.cmwatch.rules.RecapAgenda.setCmd(e, agenda?.owner)?.let { c ->
+                scope.launch { editId = runCatching { app.repo.command(CmdOp.AGENDA_SET, null, c.key, action = c.action, until = c.until, blocks = c.blocks) }.getOrNull() }
+            }
+        }
+        val editResult = editId?.let { results[it] }
+        LaunchedEffect(editResult) {
+            val r = editResult ?: return@LaunchedEffect
+            if (!r.ok) {
+                val msg = when {
+                    r.text.startsWith("agenda row changed") -> getString(R.string.agenda_changed)
+                    r.text.startsWith("agenda busy") -> getString(R.string.agenda_busy)
+                    else -> r.text
+                }
+                android.widget.Toast.makeText(this@MainActivity, msg, android.widget.Toast.LENGTH_LONG).show()
+            }
+            if (r.ok || r.text.startsWith("agenda row changed")) askAgenda()
+            editId?.let { app.repo.forget(it) }; editId = null
+        }
         if (recapPage) {
             LaunchedEffect(Unit) { if (canAgenda) askAgenda() }
             RecapScreen(
@@ -456,7 +478,7 @@ class MainActivity : ComponentActivity() {
                 },
                 loading = agendaId != null && agendaResult == null,
                 onBack = { recapPage = false },
-                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t; recapPage = false },
+                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t; recapPage = false }, onEdit = editAgenda,
                 onSend = { a ->
                     scope.launch {
                         runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
@@ -1050,7 +1072,7 @@ class MainActivity : ComponentActivity() {
                     recapActions = recapActs, recapDate = st.recap.date,
                     onRecapAction = { a -> sendPrompt(a.to, a.send) },
                     agenda = agenda, onRecapPage = { recapPage = true },
-                    canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t },
+                    canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t }, onEdit = editAgenda,
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {

@@ -797,6 +797,8 @@ It starts at your last message to the master.</string>
     <string name="agenda_pass_claude_title">Hand it to Claude?</string>
     <string name="agenda_pass_me_title">Take it back?</string>
     <string name="agenda_pass_change">In the PC agenda the «blocca» column becomes «%1$s».</string>
+    <string name="agenda_changed">The card had changed on the PC: the agenda is reloaded, try again.</string>
+    <string name="agenda_busy">The agenda is busy with another change: try again shortly.</string>
     <string name="menu_recap">Recap</string>
     <string name="menu_recap_sub">Actions, what waits for you, what Claude can do</string>
     <string name="home_sec_other">Other</string>

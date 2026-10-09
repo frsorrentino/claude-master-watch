@@ -3,6 +3,8 @@ package it.pixelbox.cmwatch.rules
 import it.pixelbox.cmwatch.Fixtures
 import it.pixelbox.cmwatch.contract.AgendaPage
 import it.pixelbox.cmwatch.contract.AgendaRow
+import it.pixelbox.cmwatch.contract.Cmd
+import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.ContractJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -50,7 +52,7 @@ class RecapAgendaTest {
 class RecapAgendaActionsTest {
     private val today = java.time.LocalDate.of(2026, 10, 9)
     private fun row(state: String = "aperto", blocks: String = "franz", ref: String = "", detail: String? = null, until: String? = null) =
-        AgendaRow(state, "agenzia", blocks, "Revoke the API key", ref, detail, until)
+        AgendaRow(state, "agenzia", blocks, "Revoke the API key", ref, detail, until, key = "k1")
 
     @Test fun postponedRowsComeBackOnTheirDayAndDiscardedOnesDisappear() {
         val page = AgendaPage(listOf(
@@ -85,5 +87,32 @@ class RecapAgendaActionsTest {
         assertEquals(java.time.LocalDate.of(2026, 10, 10), RecapAgenda.tomorrow(today))
         assertEquals(java.time.LocalDate.of(2026, 10, 12), RecapAgenda.nextWeek(today)) // venerdì: lunedì dopo
         assertEquals(java.time.LocalDate.of(2026, 10, 19), RecapAgenda.nextWeek(java.time.LocalDate.of(2026, 10, 12))) // lunedì: quello dopo
+    }
+}
+
+// Contratto 1.47: le scritture diventano `agenda_set`, «tu» è l'owner dell'agenda.
+class RecapAgendaSetTest {
+    private val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+    private val page = root.getValue("result").jsonArray.first { it.jsonObject.getValue("id").jsonPrimitive.content.endsWith("0386") }
+        .let { ContractJson.decodeAgenda(it.jsonObject.getValue("text").jsonPrimitive.content) }
+
+    @Test fun ownerIsYouAndKeysArrive() {
+        assertEquals("owner", page.owner)
+        val m = RecapAgenda.of(page)
+        assertEquals(listOf("Confirm the 6 client ids with a candidate"), m.you.map { it.title })
+        assertTrue(page.rows.all { it.key.isNotBlank() })
+        assertTrue(RecapAgenda.isYou("Franz", "franz")); assertTrue(!RecapAgenda.isYou("owner", "franz"))
+    }
+
+    @Test fun editsBecomeTheCommandsOfTheFixture() {
+        val r = page.rows.first()
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val done = RecapAgenda.setCmd(RecapAgenda.Edit(RecapAgenda.Item.DONE, r), page.owner)!!
+        val f = cmds.first { it.op == CmdOp.AGENDA_SET && it.arg == r.key && it.action == "done" }
+        assertEquals(f.arg, done.key); assertEquals(f.action, done.action)
+        assertEquals(RecapAgenda.SetCmd(r.key, "snooze", until = "2026-10-20"), RecapAgenda.setCmd(RecapAgenda.Edit(RecapAgenda.Item.POSTPONE, r, java.time.LocalDate.of(2026, 10, 20)), page.owner))
+        assertEquals("owner", RecapAgenda.setCmd(RecapAgenda.Edit(RecapAgenda.Item.PASS_ME, r), page.owner)!!.blocks)
+        assertEquals("claude", RecapAgenda.setCmd(RecapAgenda.Edit(RecapAgenda.Item.PASS_CLAUDE, r), page.owner)!!.blocks)
+        assertEquals(null, RecapAgenda.setCmd(RecapAgenda.Edit(RecapAgenda.Item.DONE, r.copy(key = "")), page.owner))
     }
 }

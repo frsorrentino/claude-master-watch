@@ -141,13 +141,25 @@ class ContractTest {
         // Contratto 1.42: un prompt a voce alla master e due approve dalla live, uno rifiutato con una conferma sola.
         // Contratto 1.44: due night, il rapporto e uno rifiutato perché quel giorno non c'è.
         // Contratto 1.46: due agenda, le righe e uno rifiutato senza file.
-        assertEquals(44, results.size); assertEquals(12, results.count { !it.ok })
+        // Contratto 1.47: otto agenda_set, quattro riusciti, la key vecchia rifiutata e tre rifiuti di validazione.
+        assertEquals(52, results.size); assertEquals(16, results.count { !it.ok })
+        val sets = cmds.filter { it.op == CmdOp.AGENDA_SET }
+        assertEquals(8, sets.size); assertTrue(sets.all { it.session == null && !it.arg.isNullOrBlank() && it.action != null })
+        assertEquals("2026-10-20", sets.first { it.action == "snooze" }.until); assertEquals("claude", sets.first { it.action == "pass" }.blocks)
+        val done = ContractJson.decodeAgendaSet(results.first { it.id == sets[0].id }.text).row
+        assertEquals("fatto", done.state); assertTrue(done.key.isNotBlank() && done.key != sets[0].arg)
+        assertEquals("agenda row changed", results.first { it.id == sets[1].id }.text)
+        assertTrue("agenda_set" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())
+        // Un comando senza i campi 1.47 resta identico: action, until e blocks assenti non si scrivono.
+        assertFalse("action" in ContractJson.json.encodeToString(Cmd.serializer(), Cmd("x", CmdOp.AGENDA, null, null, 1, "p")))
         val agenda = cmds.filter { it.op == CmdOp.AGENDA }
         assertEquals(2, agenda.size); assertNull(agenda[0].session); assertNull(agenda[0].arg)
         val agendaPage = ContractJson.decodeAgenda(results.first { it.id == agenda[0].id }.text)
         assertFalse(agendaPage.more)
-        assertEquals(listOf("aperto", "aperto", "sospeso", "fatto"), agendaPage.rows.map { it.state })
-        assertEquals(listOf("agenzia", "personale", "agenzia", "postazione"), agendaPage.rows.map { it.scope })
+        assertEquals(listOf("aperto", "aperto", "sospeso", "fatto", "scartato"), agendaPage.rows.map { it.state })
+        assertEquals(listOf("agenzia", "personale", "agenzia", "postazione", "personale"), agendaPage.rows.map { it.scope })
+        // Contratto 1.47: dettaglio con a capo veri e data di ritorno sulla sospesa, null altrove.
+        assertEquals("2026-10-12", agendaPage.rows[2].until); assertTrue(agendaPage.rows[2].detail!!.contains('\n')); assertNull(agendaPage.rows[0].detail)
         assertEquals("orbit-docs", agendaPage.rows[1].ref); assertEquals("", agendaPage.rows[2].ref)
         assertEquals("no agenda file", results.first { it.id == agenda[1].id }.let { assertFalse(it.ok); it.text })
         assertTrue("agenda" in ContractJson.decodeState(Fixtures.stateIdle).ops.orEmpty())

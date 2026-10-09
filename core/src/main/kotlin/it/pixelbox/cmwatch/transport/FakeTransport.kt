@@ -33,6 +33,18 @@ class FakeTransport(
     private val newId = base.sessions[3].id
     private val originalQuestion = base.sessions[0].question
     private var screenGrowth = 0
+    /** L'agenda della demo (contratti 1.46 e 1.47), che `agenda_set` cambia. */
+    private var demoAgenda = listOf(
+        AgendaRow("aperto", "agenzia", "franz", "Confirm the 6 client ids with a candidate", ".claude/to-decide-client-id.md",
+            detail = "Six ids have a likely client from the invoices.\nConfirm them one by one, then the import can run.", key = "d1"),
+        AgendaRow("aperto", "personale", "franz", "Renew the domain of the docs site", "orbit-docs", key = "d2"),
+        AgendaRow("aperto", "personale", "claude", "Move the docs site to the new host", "orbit-docs", key = "d3"),
+        AgendaRow("aperto", "postazione", "claude", "Clear the orphan plugin caches", "after restarting every session", key = "d4"),
+        AgendaRow("sospeso", "agenzia", "terzi", "Staging of atlas-shop not reachable from the CLI", "", until = "2026-10-20", key = "d5"),
+        AgendaRow("aperto", "agenzia", "terzi", "Client answer on the domain", "", key = "d6"),
+        AgendaRow("fatto", "postazione", "nessuno", "Backups of the workstation every night", "crontab", key = "d7"),
+    )
+    private var demoAgendaSeq = 7
     /** Acceso da FOLLOWUP: il terminale della sessione del deploy cresce a ogni cattura e TICK fa avanzare il lavoro. */
     private var growing = false
     private val ticks = listOf("Edit CHANGELOG.md" to "Edit", "Tag v2.8.0" to "Bash", "Push the tag" to "Bash")
@@ -308,16 +320,32 @@ class FakeTransport(
             CmdOp.DECISION -> if (cmd.text.isNullOrBlank()) ko("empty decision") else ok("decision sent to the master")
             // Contratto 1.44: la demo legge la fixture inventata del rapporto della notte.
             CmdOp.NIGHT -> runCatching { load("night-report-sample") }.map { ok(it) }.getOrElse { ko("no night report yet") }
-            // Contratto 1.46: la demo ha un'agenda inventata con un gruppo per ognuno di chi deve muoversi.
-            CmdOp.AGENDA -> ok(ContractJson.json.encodeToString(AgendaPage.serializer(), AgendaPage(listOf(
-                AgendaRow("aperto", "agenzia", "franz", "Confirm the 6 client ids with a candidate", ".claude/to-decide-client-id.md"),
-                AgendaRow("aperto", "personale", "franz", "Renew the domain of the docs site", "orbit-docs"),
-                AgendaRow("aperto", "personale", "claude", "Move the docs site to the new host", "orbit-docs"),
-                AgendaRow("aperto", "postazione", "claude", "Clear the orphan plugin caches", "after restarting every session"),
-                AgendaRow("sospeso", "agenzia", "terzi", "Staging of atlas-shop not reachable from the CLI", ""),
-                AgendaRow("aperto", "agenzia", "terzi", "Client answer on the domain", ""),
-                AgendaRow("fatto", "postazione", "nessuno", "Backups of the workstation every night", "crontab"),
-            ))))
+            // Contratti 1.46 e 1.47: la demo ha un'agenda inventata, un gruppo per ognuno di chi deve muoversi, e la cambia
+            // con `agenda_set` come il relay (key nuova a ogni modifica, «agenda row changed» con una key vecchia).
+            CmdOp.AGENDA -> ok(ContractJson.json.encodeToString(AgendaPage.serializer(), AgendaPage(demoAgenda, owner = "franz")))
+            CmdOp.AGENDA_SET -> {
+                val i = demoAgenda.indexOfFirst { it.key == cmd.arg }
+                if (i < 0) ko("agenda row changed") else {
+                    val r = demoAgenda[i]
+                    val nu = when (cmd.action) {
+                        "done" -> r.copy(state = "fatto")
+                        "snooze" -> cmd.until?.takeIf { runCatching { java.time.LocalDate.parse(it) }.isSuccess }?.let { r.copy(state = "sospeso", until = it) }
+                        "remove" -> r.copy(state = "scartato")
+                        "pass" -> cmd.blocks?.takeIf { it == "claude" || it == "franz" }?.let { r.copy(blocks = it) }
+                        else -> null
+                    }
+                    when {
+                        nu == null && cmd.action !in setOf("done", "snooze", "remove", "pass") -> ko("bad agenda action: ${cmd.action}")
+                        nu == null && cmd.action == "snooze" -> ko("bad until date: ${cmd.until}")
+                        nu == null -> ko("bad blocks: ${cmd.blocks}")
+                        else -> {
+                            val k = nu.copy(key = "d" + (++demoAgendaSeq))
+                            demoAgenda = demoAgenda.toMutableList().also { it[i] = k }
+                            ok(ContractJson.json.encodeToString(AgendaSetResult.serializer(), AgendaSetResult(k)))
+                        }
+                    }
+                }
+            }
             // Contratto 1.39: la demo toglie il dispositivo dalla lista, come il relay.
             CmdOp.UNPAIR -> s.devices?.firstOrNull { it.uid == cmd.arg }?.let { d ->
                 current.value = current.value.let { st -> st.copy(devices = st.devices?.filter { it.uid != d.uid }) }

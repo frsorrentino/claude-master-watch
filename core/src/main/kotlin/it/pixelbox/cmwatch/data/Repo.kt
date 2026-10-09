@@ -206,8 +206,13 @@ class Repo(
     suspend fun command(
         op: CmdOp, session: String?, arg: String?, text: String? = null, id: String = UUID.randomUUID().toString(),
         voice: Boolean? = null, via: String? = null, confirmations: Int? = null,
+        /** Contratto 1.47, `agenda_set`: azione, giorno di uno snooze, a chi passa. */
+        action: String? = null, until: String? = null, blocks: String? = null,
     ): String {
-        val cmd = Cmd(id, op, session, arg, now(), by, text = text, device = device, voice = voice, via = via, confirmations = confirmations)
+        val cmd = Cmd(
+            id, op, session, arg, now(), by, text = text, device = device, voice = voice, via = via, confirmations = confirmations,
+            action = action, until = until, blocks = blocks,
+        )
         if (!online()) {
             // Le letture delle schermate non entrano nella coda dei comandi dell'utente (revisione 30/09).
             if (op in PASSIVE) throw TransportException.Network("offline")
@@ -369,6 +374,6 @@ class Repo(
          */
         private val OPTIMISTIC = setOf(CmdOp.ANSWER, CmdOp.PROMPT, CmdOp.FOLLOW, CmdOp.UNFOLLOW)
         /** Le letture che le schermate fanno da sole (terminale, chat): i loro risultati non sono azioni dell'utente. */
-        private val PASSIVE = setOf(CmdOp.SCREEN, CmdOp.LAST, CmdOp.TRANSCRIPT, CmdOp.PROJECTS, CmdOp.SEARCH, CmdOp.TIMELINE, CmdOp.PAIR_ADD)
+        private val PASSIVE = setOf(CmdOp.SCREEN, CmdOp.LAST, CmdOp.TRANSCRIPT, CmdOp.PROJECTS, CmdOp.SEARCH, CmdOp.TIMELINE, CmdOp.PAIR_ADD, CmdOp.AGENDA)
     }
 }

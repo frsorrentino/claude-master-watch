@@ -808,6 +808,8 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="agenda_pass_claude_title">Passarla a Claude?</string>
     <string name="agenda_pass_me_title">Passarla a te?</string>
     <string name="agenda_pass_change">Nell\'agenda del PC la colonna «blocca» diventa «%1$s».</string>
+    <string name="agenda_changed">La scheda era cambiata sul PC: ho ricaricato l\'agenda, riprova.</string>
+    <string name="agenda_busy">L\'agenda è occupata da un\'altra modifica: riprova fra poco.</string>
     <string name="menu_recap">Recap</string>
     <string name="menu_recap_sub">Azioni, cosa aspetta te, cosa può fare Claude</string>
     <string name="home_sec_other">Altro</string>
