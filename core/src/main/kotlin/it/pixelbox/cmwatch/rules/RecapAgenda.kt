@@ -31,19 +31,78 @@ object RecapAgenda {
     /** `blocks` è testo libero: «franz» (e «owner» delle fixture) sei tu, «claude» è Claude, il resto è fermo su altro. */
     fun isYou(blocks: String) = norm(blocks) in setOf("franz", "owner")
     fun isClaude(blocks: String) = norm(blocks) == "claude"
-    fun isOpen(row: AgendaRow) = norm(row.state) == "aperto"
+    /** Aperta: `aperto`, o `sospeso` con `until` arrivato (contratto 1.47: la scheda rimandata torna quel giorno). */
+    fun isOpen(row: AgendaRow, today: java.time.LocalDate? = null): Boolean = when (norm(row.state)) {
+        "aperto" -> true
+        "sospeso" -> today != null && row.until?.let { runCatching { java.time.LocalDate.parse(it.trim()) }.getOrNull() }?.let { !it.isAfter(today) } == true
+        else -> false
+    }
 
-    /** `scope` null = tutti gli ambiti. La riga d'intestazione del TSV (stato, ambito, …), se arriva, non è una riga. */
-    fun of(page: AgendaPage?, scope: String? = null): Model {
+    /**
+     * `scope` null = tutti gli ambiti. La riga d'intestazione del TSV (stato, ambito, …), se arriva, non è una riga; le
+     * `scartato` restano nello storico del file ma qui non si vedono.
+     */
+    fun of(page: AgendaPage?, scope: String? = null, today: java.time.LocalDate? = null): Model {
         val rows = page?.rows.orEmpty()
-            .filter { r -> r.title.isNotBlank() && norm(r.state) != "stato" }
+            .filter { r -> r.title.isNotBlank() && norm(r.state) != "stato" && norm(r.state) != "scartato" }
             .filter { r -> scope == null || norm(r.scope) == norm(scope) }
-        val open = rows.filter(::isOpen)
+        val open = rows.filter { isOpen(it, today) }
         return Model(
             you = open.filter { isYou(it.blocks) }, claude = open.filter { isClaude(it.blocks) },
-            other = open.filter { !isYou(it.blocks) && !isClaude(it.blocks) }, rest = rows.filterNot(::isOpen),
+            other = open.filter { !isYou(it.blocks) && !isClaude(it.blocks) }, rest = rows.filterNot { isOpen(it, today) },
         )
     }
+
+    /** Le voci del menu «Azioni» di una scheda, nell'ordine del menu (piano approvato il 09/10). */
+    enum class Item { DEEPEN, DO, TALK, OPEN_REF, DONE, POSTPONE, PASS_CLAUDE, PASS_ME, REMOVE }
+
+    /**
+     * Le voci di una scheda: leggere, farla fare, parlarne e aprire il rimando sempre (fare solo se aperta); le scritture
+     * nell'agenda solo con l'op del relay (`canWrite`), e su una scheda non aperta solo «Rimuovi».
+     */
+    fun menu(row: AgendaRow, canWrite: Boolean, today: java.time.LocalDate? = null): List<Item> {
+        val open = isOpen(row, today) || norm(row.state) == "sospeso"
+        return buildList {
+            add(Item.DEEPEN)
+            if (open) add(Item.DO)
+            add(Item.TALK)
+            if (row.ref.isNotBlank()) add(Item.OPEN_REF)
+            if (canWrite && open) {
+                add(Item.DONE); add(Item.POSTPONE)
+                add(if (isClaude(row.blocks)) Item.PASS_ME else Item.PASS_CLAUDE)
+            }
+            if (canWrite) add(Item.REMOVE)
+        }
+    }
+
+    private fun withRef(row: AgendaRow, base: String) = row.ref.trim().takeIf { it.isNotEmpty() }?.let { "$base ($it)" } ?: base
+
+    /** Quello che va alla master quando la scheda non ha ancora il dettaglio: lo scrive lei, e la prossima volta c'è. */
+    fun deepenText(row: AgendaRow, template: String = "Approfondisci: %1\$s") = withRef(row, template.format(row.title))
+
+    /** L'inizio del messaggio alla master per «Parlane con la master»: la scheda citata, poi scrivi tu. */
+    fun talkText(row: AgendaRow, template: String = "Sulla scheda «%1\$s»") = withRef(row, template.format(row.title)) + ": "
+
+    private val TLD = setOf("com", "it", "net", "org", "io", "dev", "app", "eu", "ai", "co")
+
+    /**
+     * Il rimando come indirizzo da aprire, o null se è un file o un nome (allora lo manda la master). Vale il primo pezzo:
+     * «console.anthropic.com -> API Keys» apre console.anthropic.com.
+     */
+    fun url(ref: String): String? {
+        val first = ref.trim().substringBefore(' ')
+        if (first.startsWith("https://") || first.startsWith("http://")) return first
+        val host = first.substringBefore('/')
+        val ok = Regex("^[a-z0-9-]+(\\.[a-z0-9-]+)+$", RegexOption.IGNORE_CASE).matches(host) && host.substringAfterLast('.').lowercase() in TLD
+        return if (ok) "https://$first" else null
+    }
+
+    /** Una scrittura nell'agenda chiesta dal menu (Fatto, Rimanda, Rimuovi, Passa): la fa il relay con l'op del contratto 1.47. */
+    data class Edit(val item: Item, val row: AgendaRow, val until: java.time.LocalDate? = null)
+
+    /** Rimanda: domani, o il lunedì della settimana dopo. */
+    fun tomorrow(today: java.time.LocalDate): java.time.LocalDate = today.plusDays(1)
+    fun nextWeek(today: java.time.LocalDate): java.time.LocalDate = today.with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY))
 
     /** «Fallo» su un lavoro che può fare Claude: alla master, dal foglio di conferma. `template` = «… %1$s …» col titolo e il rimando. */
     fun doIt(row: AgendaRow, template: String = "Fai questo lavoro dell'agenda: %1\$s%2\$s", refTemplate: String = " (%1\$s)"): RecapActions.Action {

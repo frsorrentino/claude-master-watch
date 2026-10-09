@@ -202,6 +202,8 @@ class MainActivity : ComponentActivity() {
         var searchOpen by rememberSaveable { mutableStateOf(false) }
         var nightOpen by rememberSaveable { mutableStateOf(false) }
         var recapPage by rememberSaveable { mutableStateOf(false) }
+        // «Parlane con la master» (piano del 09/10): il testo da mettere nel campo della master, poi la sua chat aperta.
+        var talkDraft by rememberSaveable { mutableStateOf<String?>(null) }
         // Il tocco sul testo del mini-controller riporta alla sessione da cui legge; la master si apre nella home.
         val readingBar: (@Composable () -> Unit)? = readingNow?.let { text ->
             {
@@ -428,6 +430,8 @@ class MainActivity : ComponentActivity() {
         // chieste quando il relay le conosce, a ogni recap nuovo e all'apertura della pagina.
         val recapActs = remember(state) { state?.let { st -> it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) }.orEmpty() }
         val canAgenda = state?.ops?.contains("agenda") == true
+        // Contratto 1.47: l'op che scrive nell'agenda (Fatto, Rimanda, Rimuovi, Passa); senza, il menu non le mostra.
+        val canAgendaWrite = false
         var agendaId by remember { mutableStateOf<String?>(null) }
         var agenda by remember { mutableStateOf<it.pixelbox.cmwatch.contract.AgendaPage?>(null) }
         val askAgenda: () -> Unit = {
@@ -452,6 +456,7 @@ class MainActivity : ComponentActivity() {
                 },
                 loading = agendaId != null && agendaResult == null,
                 onBack = { recapPage = false },
+                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t; recapPage = false },
                 onSend = { a ->
                     scope.launch {
                         runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
@@ -569,6 +574,14 @@ class MainActivity : ComponentActivity() {
         // Le bozze del campo sopra l'interruttore dei 840 dp (standard della master, 04/10): restano quando la finestra del
         // Chromebook cambia larghezza, in tutte e due le direzioni.
         val drafts = rememberSaveable(saver = DraftStore.Saver) { DraftStore() }
+        LaunchedEffect(talkDraft) {
+            val t = talkDraft ?: return@LaunchedEffect
+            // Sotto quello che c'era già, se c'era: la bozza non si perde.
+            app.repo.snapshot.value.state?.sessions?.firstOrNull { s -> s.name == it.pixelbox.cmwatch.rules.ContextActions.MASTER }?.let { m ->
+                drafts.state(m).let { d -> d.value = if (d.value.isBlank()) t else d.value.trimEnd() + "\n" + t }
+            }
+            open = null; tab = StartRoute.Tab.OVERVIEW; masterChat = true; talkDraft = null
+        }
         // I resoconti della notte già ascoltati e i prossimi passi già avviati: spariscono da «Per te» e non tornano,
         // nemmeno dopo la coda, una rotazione o un riavvio (revisione finale 02/10: in memoria si perdevano).
         val forYouPrefs = remember { getSharedPreferences("for-you", MODE_PRIVATE) }
@@ -1037,6 +1050,7 @@ class MainActivity : ComponentActivity() {
                     recapActions = recapActs, recapDate = st.recap.date,
                     onRecapAction = { a -> sendPrompt(a.to, a.send) },
                     agenda = agenda, onRecapPage = { recapPage = true },
+                    canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t },
                     // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
                     usage = {
                         val rings = remember(st, events, samples, now, snap.freshness) {

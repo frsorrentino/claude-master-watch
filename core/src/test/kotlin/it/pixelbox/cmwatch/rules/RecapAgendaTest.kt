@@ -45,3 +45,45 @@ class RecapAgendaTest {
         assertEquals("Fai questo lavoro dell'agenda: X", RecapAgenda.doIt(AgendaRow("aperto", "", "claude", "X", " ")).send)
     }
 }
+
+// Le Azioni sulle schede (piano approvato da Franz il 09/10, «Approvo, prosegui»; formato e contratto 1.47).
+class RecapAgendaActionsTest {
+    private val today = java.time.LocalDate.of(2026, 10, 9)
+    private fun row(state: String = "aperto", blocks: String = "franz", ref: String = "", detail: String? = null, until: String? = null) =
+        AgendaRow(state, "agenzia", blocks, "Revoke the API key", ref, detail, until)
+
+    @Test fun postponedRowsComeBackOnTheirDayAndDiscardedOnesDisappear() {
+        val page = AgendaPage(listOf(
+            row("sospeso", until = "2026-10-09"), row("sospeso", until = "2026-10-10"), row("sospeso"),
+            row("scartato"), row("chiuso"), row("fatto"),
+        ))
+        val m = RecapAgenda.of(page, today = today)
+        assertEquals(1, m.you.size)
+        assertEquals(listOf("sospeso", "sospeso", "chiuso", "fatto"), m.rest.map { it.state })
+    }
+
+    @Test fun menuHasTheWritesOnlyWithTheOpAndPassGoesTheOtherWay() {
+        val k = RecapAgenda.Item.entries
+        assertEquals(listOf(RecapAgenda.Item.DEEPEN, RecapAgenda.Item.DO, RecapAgenda.Item.TALK), RecapAgenda.menu(row(), canWrite = false))
+        val full = RecapAgenda.menu(row(ref = "orbit-docs"), canWrite = true)
+        assertEquals(k.filter { it != RecapAgenda.Item.PASS_ME }, full)
+        assertTrue(RecapAgenda.Item.PASS_ME in RecapAgenda.menu(row(blocks = "claude"), canWrite = true))
+        assertTrue(RecapAgenda.Item.PASS_CLAUDE !in RecapAgenda.menu(row(blocks = "claude"), canWrite = true))
+        // Una scheda non aperta non si fa, non si rimanda e non si passa: si legge, se ne parla, si toglie.
+        assertEquals(listOf(RecapAgenda.Item.DEEPEN, RecapAgenda.Item.TALK, RecapAgenda.Item.REMOVE), RecapAgenda.menu(row("fatto"), canWrite = true))
+    }
+
+    @Test fun textsReferencesAndDates() {
+        assertEquals("Approfondisci: Revoke the API key (console.anthropic.com)", RecapAgenda.deepenText(row(ref = "console.anthropic.com")))
+        assertEquals("Approfondisci: Revoke the API key", RecapAgenda.deepenText(row()))
+        assertEquals("Sulla scheda «Revoke the API key» (x.md): ", RecapAgenda.talkText(row(ref = "x.md")))
+        assertEquals("https://console.anthropic.com", RecapAgenda.url("console.anthropic.com -> API Keys"))
+        assertEquals("https://example.com/a", RecapAgenda.url("https://example.com/a"))
+        assertEquals(null, RecapAgenda.url(".claude/DA-DECIDERE-client-id.md"))
+        assertEquals(null, RecapAgenda.url("orbit-docs"))
+        assertEquals(null, RecapAgenda.url("tag-runtime.json"))
+        assertEquals(java.time.LocalDate.of(2026, 10, 10), RecapAgenda.tomorrow(today))
+        assertEquals(java.time.LocalDate.of(2026, 10, 12), RecapAgenda.nextWeek(today)) // venerdì: lunedì dopo
+        assertEquals(java.time.LocalDate.of(2026, 10, 19), RecapAgenda.nextWeek(java.time.LocalDate.of(2026, 10, 12))) // lunedì: quello dopo
+    }
+}

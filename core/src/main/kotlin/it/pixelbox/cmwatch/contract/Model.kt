@@ -323,7 +323,13 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
  * Contratto 1.46: una riga dell'agenda come nel TSV. Tutti testo libero: `state` aperto/fatto/sospeso (o altro), `scope`
  * agenzia/personale/postazione, `blocks` chi deve muoversi (franz, claude, terzi, nessuno), `ref` un rimando o "".
  */
-@Serializable data class AgendaRow(val state: String = "", val scope: String = "", val blocks: String = "", val title: String = "", val ref: String = "")
+@Serializable data class AgendaRow(
+    val state: String = "", val scope: String = "", val blocks: String = "", val title: String = "", val ref: String = "",
+    /** Contratto 1.47: poche righe su cos'è, perché è lì e cosa serve per chiuderla, già con gli a capo; null = non scritto. */
+    val detail: String? = null,
+    /** Contratto 1.47: `AAAA-MM-GG`; con stato `sospeso` da quel giorno la scheda conta come aperta. */
+    val until: String? = null,
+)
 /** Contratto 1.46: le righe nell'ordine del file; `more` = tagliate sopra i 60 KB. */
 @Serializable data class AgendaPage(val rows: List<AgendaRow> = emptyList(), val more: Boolean = false)
 

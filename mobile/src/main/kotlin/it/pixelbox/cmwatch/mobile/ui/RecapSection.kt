@@ -85,12 +85,12 @@ internal fun RecapActionChip(a: RecapActions.Action, day: String, sent: Boolean,
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun RecapSendSheet(a: RecapActions.Action, day: String, onDismiss: () -> Unit, onSend: () -> Unit) {
+internal fun RecapSendSheet(a: RecapActions.Action, day: String, onDismiss: () -> Unit, from: String? = null, onSend: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = CmColors.surface) {
         Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(stringResource(R.string.recap_send_title), style = MaterialTheme.typography.headlineSmall, color = CmColors.text)
             Text(
-                when {
+                from ?: when {
                     a.agenda -> stringResource(R.string.recap_send_from_agenda)
                     a.recap -> stringResource(R.string.recap_send_from_recap, day, a.from)
                     else -> stringResource(R.string.recap_send_from_session, a.from)
@@ -138,31 +138,41 @@ internal fun AgendaMark(scope: String) {
 
 /**
  * Una riga dell'agenda (tavole 1 e 2): segno, titolo, sotto il rimando — o «blocca: …» se è ferma su altro, o lo stato se
- * non è aperta; con `onDo` il tasto tonale «Fallo».
+ * non è aperta. Il tocco apre «Approfondisci» (`onOpen`), il tasto tonale «Azioni» il menu (piano approvato il 09/10).
  */
 @Composable
-internal fun AgendaRowCard(row: AgendaRow, other: Boolean = false, onDo: (() -> Unit)? = null) {
+internal fun AgendaRowCard(row: AgendaRow, other: Boolean = false, onOpen: (() -> Unit)? = null, onActions: (() -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surface).padding(horizontal = 14.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surface)
+            .then(if (onOpen != null) Modifier.handCursor().clickable(onClick = onOpen) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top,
     ) {
         AgendaMark(row.scope)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(row.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = CmColors.text)
             val sub = when {
+                row.state.trim().lowercase() == "sospeso" && !row.until.isNullOrBlank() -> stringResource(R.string.agenda_until, untilLabel(row.until))
                 !RecapAgenda.isOpen(row) -> listOf(row.state.trim(), row.ref.trim()).filter { it.isNotEmpty() }.joinToString(" · ")
                 other -> stringResource(R.string.recap_blocks, row.blocks.trim())
                 else -> row.ref.trim()
             }
             if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodyMedium, color = CmColors.text2)
         }
-        onDo?.let { d ->
+        onActions?.let { d ->
             androidx.compose.material3.FilledTonalButton(
                 onClick = d, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                 colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.primary),
-            ) { Text(stringResource(R.string.recap_do)) }
+            ) { Text(stringResource(R.string.agenda_actions)) }
         }
     }
+}
+
+/** «ven 10/10» da `AAAA-MM-GG`; com'è se non si legge. */
+@Composable
+internal fun untilLabel(until: String?): String {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    return runCatching { java.time.LocalDate.parse(until!!.trim()).format(java.time.format.DateTimeFormatter.ofPattern("EEE dd/MM", locale)) }.getOrDefault(until.orEmpty())
 }
 
 /** Il titoletto colorato di un gruppo: «ASPETTA TE · 8» ambra, «PUÒ FARLO CLAUDE · 6» celeste, gli altri grigi. */
@@ -187,14 +197,17 @@ internal fun sentKey(a: RecapActions.Action) = a.to + "\n" + a.send
 fun RecapScreen(
     actions: List<RecapActions.Action>, recapDate: String, agenda: AgendaPage?, error: String?, loading: Boolean,
     onBack: () -> Unit, onSend: (RecapActions.Action) -> Unit,
+    /** Contratto 1.47: il relay scrive nell'agenda (Fatto, Rimanda, Rimuovi, Passa). */
+    canWrite: Boolean = false, onTalk: (String) -> Unit = {}, onEdit: (RecapAgenda.Edit) -> Unit = {},
+    today: java.time.LocalDate = java.time.LocalDate.now(),
 ) {
     var scope by rememberSaveable { mutableStateOf<String?>(null) }
     var restOpen by rememberSaveable { mutableStateOf(false) }
     var asking by remember { mutableStateOf<RecapActions.Action?>(null) }
     var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
     val day = recapDay(recapDate)
-    val m = remember(agenda, scope) { RecapAgenda.of(agenda, scope) }
-    val doText = stringResource(R.string.recap_do_text); val doRef = stringResource(R.string.recap_do_ref)
+    val m = remember(agenda, scope, today) { RecapAgenda.of(agenda, scope, today) }
+    val acts = remember { AgendaActions() }
     Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
@@ -226,15 +239,15 @@ fun RecapScreen(
             }
             if (m.you.isNotEmpty()) {
                 item(key = "h-you") { RecapGroup(stringResource(R.string.recap_you, m.you.size), CmColors.waiting) }
-                items(m.you.size, key = { "you-$it" }) { i -> AgendaRowCard(m.you[i]) }
+                items(m.you.size, key = { "you-$it" }) { i -> val r = m.you[i]; AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
             }
             if (m.claude.isNotEmpty()) {
                 item(key = "h-claude") { RecapGroup(stringResource(R.string.recap_claude, m.claude.size), CmColors.actionIcon) }
-                items(m.claude.size, key = { "claude-$it" }) { i -> val r = m.claude[i]; AgendaRowCard(r) { asking = RecapAgenda.doIt(r, doText, doRef) } }
+                items(m.claude.size, key = { "claude-$it" }) { i -> val r = m.claude[i]; AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
             }
             if (m.other.isNotEmpty()) {
                 item(key = "h-other") { RecapGroup(stringResource(R.string.recap_other, m.other.size), CmColors.text2) }
-                items(m.other.size, key = { "other-$it" }) { i -> AgendaRowCard(m.other[i], other = true) }
+                items(m.other.size, key = { "other-$it" }) { i -> val r = m.other[i]; AgendaRowCard(r, other = true, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
             }
             if (m.rest.isNotEmpty()) {
                 item(key = "rest") {
@@ -246,7 +259,7 @@ fun RecapScreen(
                         Icon(if (restOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = CmColors.text2)
                     }
                 }
-                if (restOpen) items(m.rest.size, key = { "rest-$it" }) { i -> AgendaRowCard(m.rest[i]) }
+                if (restOpen) items(m.rest.size, key = { "rest-$it" }) { i -> val r = m.rest[i]; AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
             }
             if (agenda != null && m.isEmpty && actions.isEmpty()) item(key = "empty") {
                 Text(stringResource(R.string.recap_empty), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, modifier = Modifier.padding(8.dp))
@@ -254,6 +267,7 @@ fun RecapScreen(
         }
     }
     asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + sentKey(a); onSend(a) } }
+    AgendaActionsLayer(acts, canWrite, today, onSend = onSend, onTalk = onTalk, onEdit = onEdit)
 }
 
 @Composable

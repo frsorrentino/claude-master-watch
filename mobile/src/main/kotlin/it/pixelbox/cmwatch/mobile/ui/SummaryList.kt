@@ -99,6 +99,9 @@ fun SummaryList(
     onRecapAction: (it.pixelbox.cmwatch.rules.RecapActions.Action) -> Unit = {},
     /** Contratto 1.46: le righe dell'agenda (null = non ancora arrivate); «Tutto il recap» apre la pagina. */
     agenda: it.pixelbox.cmwatch.contract.AgendaPage? = null, onRecapPage: () -> Unit = {},
+    /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
+    canWrite: Boolean = false, onTalk: (String) -> Unit = {}, onEdit: (it.pixelbox.cmwatch.rules.RecapAgenda.Edit) -> Unit = {},
+    today: java.time.LocalDate = java.time.LocalDate.now(),
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -110,6 +113,7 @@ fun SummaryList(
     var otherOpen by remember { section("other") }
     var nightOpen by remember { section("night") }
     var recapOpen by remember { section("recap") }
+    val acts = remember { AgendaActions() }
     var asking by remember { mutableStateOf<it.pixelbox.cmwatch.rules.RecapActions.Action?>(null) }
     var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
     val day = recapDay(recapDate)
@@ -160,7 +164,7 @@ fun SummaryList(
         }
         // Il Recap (tavola 1): chiuso dice i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due
         // cose che aspettano te, la prima che può fare Claude, e «Tutto il recap».
-        val ag = it.pixelbox.cmwatch.rules.RecapAgenda.of(agenda)
+        val ag = it.pixelbox.cmwatch.rules.RecapAgenda.of(agenda, today = today)
         if (recapActions.isNotEmpty() || ag.you.isNotEmpty() || ag.claude.isNotEmpty()) {
             item(key = "sec-recap") {
                 Box(moving()) {
@@ -177,14 +181,13 @@ fun SummaryList(
                 }
                 if (ag.you.isNotEmpty()) {
                     item(key = "h-recap-you") { Box(moving()) { GroupHeader(stringResource(R.string.recap_you, ag.you.size), CmColors.waiting) } }
-                    ag.you.take(2).forEachIndexed { i, r -> item(key = "recap-you-$i") { Box(moving()) { AgendaRowCard(r) } } }
+                    ag.you.take(2).forEachIndexed { i, r -> item(key = "recap-you-$i") { Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } } } }
                 }
                 if (ag.claude.isNotEmpty()) {
                     item(key = "h-recap-claude") { Box(moving()) { GroupHeader(stringResource(R.string.recap_claude, ag.claude.size), CmColors.actionIcon) } }
                     item(key = "recap-claude-0") {
                         val r = ag.claude.first()
-                        val doText = stringResource(R.string.recap_do_text); val doRef = stringResource(R.string.recap_do_ref)
-                        Box(moving()) { AgendaRowCard(r) { asking = it.pixelbox.cmwatch.rules.RecapAgenda.doIt(r, doText, doRef) } }
+                        Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
                     }
                 }
                 item(key = "recap-all") {
@@ -223,6 +226,7 @@ fun SummaryList(
         footer?.let { f -> item(key = "footer") { f() } }
     }
     asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + sentKey(a); onRecapAction(a) } }
+    AgendaActionsLayer(acts, canWrite, today, onSend = onRecapAction, onTalk = onTalk, onEdit = onEdit)
 }
 
 internal fun groupLabel(g: Summary.Group) = when (g) {
