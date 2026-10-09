@@ -37,7 +37,8 @@ interface Transport {
     suspend fun pair(code: String, deviceName: String): PairingInfo
     /** Contratto 1.19: scrive l'immagine cifrata in /share/<id> prima del comando `report`. */
     /** Contratto 1.28: `name` è il nome originale di un file di qualunque formato; null per le immagini. */
-    suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String? = null)
+    /** Contratto 1.48: `partsMax` non null = il relay accetta i pezzi fino a quel tetto sul file intero. */
+    suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String? = null, partsMax: Long? = null)
     /** Contratto 1.24: legge e cancella /file/<id> dopo il comando `file` riuscito; null se non c'è (la Demo non ha file). */
     suspend fun fetchFile(id: String): FileBlob? = null
 

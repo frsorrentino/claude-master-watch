@@ -23,12 +23,15 @@ object Blob {
     private const val NONCE = 12
     private val rnd = SecureRandom()
 
-    fun seal(plain: String, key: ByteArray): String {
+    fun seal(plain: String, key: ByteArray): String = sealBytes(plain.toByteArray(), key)
+
+    /** Contratto 1.48: un pezzo di file dal dispositivo è una busta dei byte grezzi, senza JSON in chiaro (come /file 1.34). */
+    fun sealBytes(plain: ByteArray, key: ByteArray): String {
         val nonce = ByteArray(NONCE).also { rnd.nextBytes(it) }
         val c = Cipher.getInstance("AES/GCM/NoPadding")
         c.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, nonce))
         c.updateAAD(AAD)
-        val ct = c.doFinal(plain.toByteArray())
+        val ct = c.doFinal(plain)
         val enc = Base64.getEncoder().encodeToString(nonce + ct)
         return Json.encodeToString(JsonObject.serializer(), JsonObject(mapOf("v" to JsonPrimitive(VERSION), "enc" to JsonPrimitive(enc))))
     }

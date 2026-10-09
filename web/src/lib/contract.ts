@@ -80,7 +80,8 @@ export type State = {
   ops?: string[] | null; slash?: string[] | null
   devices?: Device[] | null; recurring?: Recurring[] | null
   choices?: { models: Model[]; efforts: string[] } | null
-  share?: { max_bytes: number; any?: boolean } | null
+  /** Contratto 1.48: `parts` = il relay accetta il file a pezzi fino a `max_parts_bytes`. */
+  share?: { max_bytes: number; any?: boolean; parts?: boolean; max_parts_bytes?: number } | null
   approvals?: Approval[]
 }
 

@@ -207,6 +207,21 @@ class FirebaseTransportTest {
         assertFalse(Json.parseToJsonElement(Blob.open(store.getValue("share/s4"), key)).jsonObject.containsKey("name"))
     }
 
+    // Contratto 1.48: con i pezzi il file va in /share/<id>/parts/0..n-1 da 1 MiB e il manifesto in /share/<id>/meta, per ultimo.
+    @Test fun shareInPartsWritesThePartsThenTheManifest() = runBlocking {
+        val bytes = ByteArray(2 * 1_048_576 + 10) { (it % 251).toByte() }
+        transport().share("p1", "application/pdf", bytes, maxBytes = 10_000_000, name = "big.pdf", partsMax = 52_428_800)
+        val parts = (0 until 3).map { Blob.openBytes(store.getValue("share/p1/parts/$it"), key) }
+        assertArrayEquals(bytes, parts.reduce { a, b -> a + b })
+        val meta = it.pixelbox.cmwatch.contract.ContractJson.json.decodeFromString(it.pixelbox.cmwatch.contract.FileMeta.serializer(), Blob.open(store.getValue("share/p1/meta"), key))
+        assertEquals(3, meta.n); assertEquals(bytes.size.toLong(), meta.size); assertEquals("big.pdf", meta.name)
+        val paths = requests.filter { r -> r.method == "PUT" }.map { r -> r.requestUrl!!.encodedPath }
+        assertTrue(paths.last().endsWith("share/p1/meta.json"))
+        assertFalse(store.containsKey("share/p1"))
+        try { transport().share("p2", "application/pdf", ByteArray(100), maxBytes = 10_000_000, partsMax = 50); fail("expected TooLarge") }
+        catch (e: TransportException.TooLarge) { assertFalse(store.keys.any { k -> k.startsWith("share/p2") }) }
+    }
+
     // Contratto 1.24: il file chiesto con `file` si legge da /file/<id del comando>, si decifra e si cancella.
     @Test fun fetchFileReadsOpensAndDeletes() = runBlocking {
         store["file/c1"] = blobOf("""{"mime":"image/png","data":"AQID"}""")

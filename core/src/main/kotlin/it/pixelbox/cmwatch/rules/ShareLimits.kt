@@ -12,6 +12,13 @@ object ShareLimits {
     /** Le chiavi e le virgolette del JSON, `mime` e un nome fino a 120 caratteri anche non ASCII (4 byte l'uno in UTF-8). */
     private const val JSON_BYTES = 1024
 
+    /** Contratto 1.48: con i pezzi vale il tetto sul file intero; senza, quello del nodo unico. */
+    fun maxFileBytes(share: it.pixelbox.cmwatch.contract.Share?): Long = when {
+        share == null -> 0
+        share.parts && share.maxPartsBytes != null -> share.maxPartsBytes
+        else -> maxFileBytes(share.maxBytes)
+    }
+
     fun maxFileBytes(maxEnc: Int): Long {
         if (maxEnc <= 0) return 0
         val plain = 3L * (maxEnc / 4) - GCM_BYTES - JSON_BYTES

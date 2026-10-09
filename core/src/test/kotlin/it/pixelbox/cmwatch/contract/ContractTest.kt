@@ -142,7 +142,9 @@ class ContractTest {
         // Contratto 1.44: due night, il rapporto e uno rifiutato perché quel giorno non c'è.
         // Contratto 1.46: due agenda, le righe e uno rifiutato senza file.
         // Contratto 1.47: otto agenda_set, quattro riusciti, la key vecchia rifiutata e tre rifiuti di validazione.
-        assertEquals(52, results.size); assertEquals(16, results.count { !it.ok })
+        // Contratto 1.48: due report a pezzi, uno riuscito e uno «bad parts».
+        assertEquals(54, results.size); assertEquals(17, results.count { !it.ok })
+        assertEquals("bad parts", results.first { it.id.endsWith("0481-4000-8000-000000000481") }.text)
         val sets = cmds.filter { it.op == CmdOp.AGENDA_SET }
         assertEquals(8, sets.size); assertTrue(sets.all { it.session == null && !it.arg.isNullOrBlank() && it.action != null })
         assertEquals("2026-10-20", sets.first { it.action == "snooze" }.until); assertEquals("claude", sets.first { it.action == "pass" }.blocks)
@@ -346,8 +348,9 @@ class ContractTest {
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
         val reports = cmds.filter { it.op == CmdOp.REPORT }
-        // Contratto 1.28: il quarto è un file, un PDF.
-        assertEquals(4, reports.size)
+        // Contratto 1.28: il quarto è un file, un PDF. Contratto 1.48: il quinto e il sesto a pezzi, uno riuscito e uno rifiutato.
+        assertEquals(6, reports.size)
+        assertEquals("sent notes.txt to atlas-shop", res.single { it.id == reports[4].id }.text); assertFalse(res.single { it.id == reports[5].id }.ok)
         assertNotNull(reports[0].arg); assertNull(reports[1].arg)
         assertEquals("sent to field-notes", res.single { it.id == reports[1].id }.text)
         assertFalse(res.single { it.id == reports[2].id }.ok)

@@ -864,7 +864,7 @@ class MainActivity : ComponentActivity() {
                                         m?.file != null -> {
                                             val f = m.file!!
                                             val src = java.io.File(f.path)
-                                            if (src.isFile) app.scope.launch { sendFile(session.name, src.readBytes(), f.name, f.mime, f.text, state?.share?.maxBytes ?: 0) }
+                                            if (src.isFile) app.scope.launch { sendFile(session.name, src.readBytes(), f.name, f.mime, f.text, state?.share) }
                                             else android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_gone), android.widget.Toast.LENGTH_LONG).show()
                                         }
                                         // Un file mandato prima del 07/10 sera non ha la copia: rimandare il testo «File: nome» come prompt
@@ -1546,15 +1546,16 @@ class MainActivity : ComponentActivity() {
                 if (c.moveToFirst()) (c.getString(0) ?: "file") to (if (c.isNull(1)) -1L else c.getLong(1)) else null
             }
         }.getOrNull() ?: ("file" to -1L)
-        // La busta codifica il file due volte in base64 (circa 16/9 del file): il conto sta in ShareLimits.
-        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(maxBytes)
+        // Il nodo unico codifica il file due volte in base64 (circa 16/9 del file); con i pezzi (contratto 1.48) vale il tetto sul
+        // file intero, 50 MB: il conto sta in ShareLimits.
+        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(share)
         if (size > limit) {
             android.widget.Toast.makeText(this, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this, limit)), android.widget.Toast.LENGTH_LONG).show()
             return
         }
         app.scope.launch {
             val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() ?: return@launch
-            sendFile(session, bytes, name, mime, text, maxBytes)
+            sendFile(session, bytes, name, mime, text, share)
         }
     }
 
@@ -1562,8 +1563,9 @@ class MainActivity : ComponentActivity() {
      * Un file verso una sessione, con una copia nella cache per «Riprova» (07/10 20:21: senza copia, Riprova rimandava solo
      * il testo «File: nome»). Il messaggio compare subito nella chat; caricamento, invio e rifiuto sono suoi passaggi.
      */
-    private suspend fun sendFile(session: String, bytes: ByteArray, name: String, mime: String, text: String, maxBytes: Int) {
-        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(maxBytes)
+    private suspend fun sendFile(session: String, bytes: ByteArray, name: String, mime: String, text: String, share: it.pixelbox.cmwatch.contract.Share?) {
+        val maxBytes = share?.maxBytes ?: 0
+        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(share)
         if (bytes.size > limit) {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                 android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this@MainActivity, limit)), android.widget.Toast.LENGTH_LONG).show()
@@ -1576,7 +1578,8 @@ class MainActivity : ComponentActivity() {
         }
         val shown = listOfNotNull(getString(R.string.attached_file, name), text.takeIf { it.isNotBlank() }).joinToString("\n")
         app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000, file = copy?.let { c -> it.pixelbox.cmwatch.rules.SentFile(c.path, name, mime, text) }))
-        runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name) }
+        // Contratto 1.48: a pezzi solo se il relay lo dice nello stato.
+        runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name, partsMax = share?.takeIf { it.parts }?.maxPartsBytes) }
     }
 
     private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {

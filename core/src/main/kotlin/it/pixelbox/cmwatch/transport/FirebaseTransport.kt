@@ -136,7 +136,17 @@ class FirebaseTransport(
     }
 
     /** Busta come /cmd, in chiaro {mime, data}; il limite vale sulla stringa `enc` (contratto 1.19). Nulla si scrive oltre il limite. */
-    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String?) {
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String?, partsMax: Long?) {
+        // Contratto 1.48: con i pezzi, 1 MiB per volta e per ultimo il manifesto; il relay li ricompone e controlla lo sha256.
+        if (partsMax != null) {
+            if (data.size > partsMax) throw TransportException.TooLarge(data.size, partsMax.toInt())
+            val parts = it.pixelbox.cmwatch.rules.ShareParts.split(data)
+            if (parts.size > it.pixelbox.cmwatch.rules.ShareParts.MAX_PARTS) throw TransportException.TooLarge(data.size, partsMax.toInt())
+            parts.forEachIndexed { i, part -> rtdb.put("share/$id/parts/$i", it.pixelbox.cmwatch.crypto.Blob.sealBytes(part, k()), slow = true) }
+            val meta = it.pixelbox.cmwatch.rules.ShareParts.meta(data, parts.size, mime, name)
+            rtdb.put("share/$id/meta", seal(ContractJson.json.encodeToString(it.pixelbox.cmwatch.contract.FileMeta.serializer(), meta)), slow = true)
+            return
+        }
         val plain = kotlinx.serialization.json.buildJsonObject {
             put("mime", kotlinx.serialization.json.JsonPrimitive(mime))
             put("data", kotlinx.serialization.json.JsonPrimitive(java.util.Base64.getEncoder().encodeToString(data)))

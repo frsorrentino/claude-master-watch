@@ -226,14 +226,14 @@ class Repo(
      * Contratto 1.19, «Condividi»: prima l'immagine cifrata in /share/<id>, poi `report` con quell'id; senza immagine solo il
      * comando. Senza rete non si accoda: l'immagine non avrebbe dove stare, e il chiamante lo dice all'utente.
      */
-    suspend fun report(session: String, text: String?, mime: String?, image: ByteArray?, maxBytes: Int, id: String = UUID.randomUUID().toString(), name: String? = null): String {
+    suspend fun report(session: String, text: String?, mime: String?, image: ByteArray?, maxBytes: Int, id: String = UUID.randomUUID().toString(), name: String? = null, partsMax: Long? = null): String {
         // Il caricamento dell'immagine è un passaggio visibile, e un rifiuto si dice subito con il motivo (30/09 22:13).
         val fail = { e: Exception -> _uploads.update { it + (id to ChatRules.Upload.Failed(e.message ?: "upload failed")) } }
         if (!online()) { val e = TransportException.Network("offline"); fail(e); throw e }
         val shareId = image?.let { bytes ->
             _uploads.update { it + (id to ChatRules.Upload.Going) }
             val sid = UUID.randomUUID().toString()
-            try { transport.share(sid, mime ?: "image/jpeg", bytes, maxBytes, name) } catch (e: Exception) { fail(e); throw e }
+            try { transport.share(sid, mime ?: "image/jpeg", bytes, maxBytes, name, partsMax) } catch (e: Exception) { fail(e); throw e }
             _uploads.update { it - id }
             sid
         }

@@ -251,7 +251,12 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
  * Contratto 1.19 «Condividi»; 1.28: `any` = il relay accetta file di qualunque formato (non solo JPEG e PNG), con `name`
  * nel blob di /share; false con un relay precedente.
  */
-@Serializable data class Share(@SerialName("max_bytes") val maxBytes: Int, val any: Boolean = false)
+@Serializable data class Share(
+    @SerialName("max_bytes") val maxBytes: Int, val any: Boolean = false,
+    /** Contratto 1.48: il relay accetta il file a pezzi (/share/<id>/parts e meta) fino a `max_parts_bytes` sul file intero. */
+    val parts: Boolean = false,
+    @SerialName("max_parts_bytes") val maxPartsBytes: Long? = null,
+)
 
 @Serializable data class Event(
     val key: String, val kind: EventKind, val session: String? = null, val account: String? = null,

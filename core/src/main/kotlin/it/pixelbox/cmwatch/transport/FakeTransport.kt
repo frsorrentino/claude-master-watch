@@ -166,9 +166,10 @@ class FakeTransport(
 
     /** Demo: l'immagine resta in memoria, basta che `report` la trovi. */
     private val shared = HashSet<String>()
-    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String?) {
+    override suspend fun share(id: String, mime: String, data: ByteArray, maxBytes: Int, name: String?, partsMax: Long?) {
         // Come il canale vero: oltre il limite si rifiuta prima di scrivere.
-        if (data.size > maxBytes) throw TransportException.TooLarge(data.size, maxBytes)
+        val max = partsMax?.toInt() ?: maxBytes
+        if (data.size > max) throw TransportException.TooLarge(data.size, max)
         shared += id
     }
 
