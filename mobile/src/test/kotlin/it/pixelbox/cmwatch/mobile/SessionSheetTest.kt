@@ -40,6 +40,16 @@ class SessionSheetTest {
     }
 
     // La chat dei messaggi mandati nei sei stati (design 30/09, parte 3), con l'esito del turno elaborato.
+    // La riga della testata, variante A (Franz, 09/10 17:50): modello, quota con l'ora in cui si azzera, contesto, tre pillole
+    // uguali; col carattere grande la quota si accorcia invece di andare a capo.
+    private fun headerQuota() = paparazzi.snapshot {
+        val s = st.sessions.first { it.state == SessionState.IDLE }.copy(context = 74)
+        val q = st.quota.getValue(s.account).copy(h5 = 4, resetH5 = st.ts + 3 * 3600, stale = false)
+        CmPhoneTheme(still = true) { SessionSheet(s, st.ts, emptyList(), 120, none, choices = st.choices, ops = st.ops, canAttach = true, accountQuota = q) }
+    }
+    @Test fun sheetHeaderQuota() = headerQuota()
+    @Test fun sheetHeaderQuotaLargeFont() { paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_5.copy(locale = "it", fontScale = 1.3f)); headerQuota() }
+
     @Test fun sheetChat() = paparazzi.snapshot {
         val s = st.sessions.first { it.state == SessionState.IDLE }
         val t = st.ts - 3000

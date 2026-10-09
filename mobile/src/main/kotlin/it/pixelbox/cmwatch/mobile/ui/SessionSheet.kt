@@ -1572,29 +1572,24 @@ private fun SheetHeader(
     // Contratto 1.37: il consiglio di fable-director, dentro il foglio; il puntino solo se la scelta attuale è diversa.
     val advice = it.pixelbox.cmwatch.rules.MasterService.advice(s, choices, now)
     Column(Modifier.fillMaxWidth().background(bg)) {
-        // La larghezza della testata: larga (tablet, finestra, Chromebook) l'ora della quota sta accanto alla percentuale.
-        var headerW by remember { mutableIntStateOf(0) }
-        val wideHeader = with(androidx.compose.ui.platform.LocalDensity.current) { headerW.toDp() } >= QUOTA_INLINE_MIN
-        Row(Modifier.fillMaxWidth().onSizeChanged { headerW = it.width }.padding(start = 16.dp, end = 4.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Una riga sola: modello, effort, contesto e menu. Lo stato e il tempo vanno nella riga dal vivo in fondo alla chat
+        Row(Modifier.fillMaxWidth().padding(start = if (lead != null) 16.dp else 12.dp, end = 0.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Una riga sola: modello, quota, contesto e menu. Lo stato e il tempo vanno nella riga dal vivo in fondo alla chat
             // (Franz, 30/09 23:01: «disordinata», «lavora 5 h potrebbe essere rimosso»).
             // Modello ed effort in una pillola sola, «Opus 5.5 · medium», che apre un foglio con le due scelte (osservazioni del 03/10:
             // troppi comandi in testa).
             val tune = listOfNotNull(ModelText.short(model) ?: stringResource(R.string.model_title), effort).joinToString(" · ")
-            // Sul tablet il nome e lo stato a sinistra, nel posto che resta; la pillola a destra (mockup della plancia).
+            // Sul tablet il nome e lo stato a sinistra, nel posto che resta; le pillole a destra (mockup della plancia).
             if (lead != null) Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { lead() }
-            else {
-                TunePill(tune, tunable, dot = tunable && advice?.dot == true) { picker = "tune" }
-                Spacer(Modifier.weight(1f))
-            }
-            if (lead != null) TunePill(tune, tunable, dot = tunable && advice?.dot == true) { picker = "tune" }
-            // La quota delle 5 ore dell'account con l'ora in cui si azzera, accanto al contesto: due misure uguali, anello ed
-            // etichetta (Franz, 04/10 20:43); il dato vecchio nel colore dell'attesa.
-            quota?.h5?.let { QuotaMeter(it, quota.resetH5, quota.stale, now, inline = wideHeader) }
-            // Tocco sull'anello: il foglio del contesto (proposte approvate da Franz, 01/10 21:19).
-            s.context?.let { Box(Modifier.clip(MaterialTheme.shapes.small).handCursor().clickable(enabled = tunable) { ctxSheet = true }.padding(4.dp)) { ContextRing(it) } }
+            // Tre pillole uguali (variante A, scelta da Franz il 09/10 alle 17:50): modello, quota delle 5 ore con l'ora in cui si
+            // azzera, contesto; ognuna si tocca. Se la riga non ci sta la quota si accorcia (`MeterPills`).
+            MeterPills(
+                fill = lead == null,
+                tune = { TunePill(tune, tunable, dot = tunable && advice?.dot == true) { picker = "tune" } },
+                quota = quota?.h5?.let { pct -> { form -> QuotaPill(pct, quota.resetH5, quota.stale, now, form, onClick = actions.overview) } },
+                context = s.context?.let { pct -> { ContextPill(pct, enabled = tunable) { ctxSheet = true } } },
+            ) {
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
+                IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.more), tint = CmColors.text2) }
                 // Il menu della sessione come quello dell'app (Franz, 03/10 15:26): pannello, voci spiegate.
                 if (menu) MenuPanel(
                     onDismiss = { menu = false },
@@ -1619,6 +1614,7 @@ private fun SheetHeader(
                         maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, modifier = Modifier.weight(1f),
                     )
                 }
+            }
             }
         }
         val notes = listOfNotNull(
@@ -1814,7 +1810,7 @@ private fun TunePill(label: String, enabled: Boolean, dot: Boolean = false, onCl
     Box {
         Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
             Row(Modifier.padding(start = 12.dp, end = if (enabled) 6.dp else 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = MaterialTheme.typography.labelLarge, color = CmColors.text)
+                Text(label, style = PillText, color = CmColors.text, maxLines = 1, softWrap = false)
                 if (enabled) Icon(Icons.Rounded.ArrowDropDown, null, tint = CmColors.text2, modifier = Modifier.size(18.dp))
             }
         }
@@ -1830,27 +1826,81 @@ internal fun AdviceTag() = Text(
     modifier = Modifier.clip(CircleShape).background(CmColors.advice.copy(alpha = .14f)).padding(horizontal = 9.dp, vertical = 3.dp),
 )
 
-/** Il contesto come anellino con la percentuale accanto, nel colore delle soglie (`SessionMeters`). */
+/** Il testo delle pillole della testata: 13 sp, così le tre stanno su una riga di telefono (variante A, 09/10). */
+private val PillText = androidx.compose.ui.text.TextStyle(fontSize = androidx.compose.ui.unit.TextUnit(13f, androidx.compose.ui.unit.TextUnitType.Sp), fontWeight = FontWeight.Medium, letterSpacing = androidx.compose.ui.unit.TextUnit(0.1f, androidx.compose.ui.unit.TextUnitType.Sp))
+
+/** La forma della pillola della quota, dalla più lunga: «5h 4% · 20:00», «4% · 20:00», «4%». */
+internal enum class QuotaForm { FULL, SHORT, TINY }
+
+/**
+ * La riga delle tre pillole (variante A, 09/10 17:50): modello, quota, contesto, poi il menu ⋮ in fondo a destra. La quota
+ * prende la forma più lunga che ci sta: col carattere grande o su uno schermo stretto si accorcia invece di andare a capo.
+ * `fill` = tutta la larghezza (il menu a destra); senza, la larghezza che serve (sul tablet il nome sta a sinistra).
+ */
 @Composable
-private fun ContextRing(pct: Int) {
+private fun MeterPills(
+    fill: Boolean, tune: @Composable () -> Unit, quota: (@Composable (QuotaForm) -> Unit)?, context: (@Composable () -> Unit)?,
+    more: @Composable () -> Unit,
+) {
+    androidx.compose.ui.layout.Layout(
+        content = {
+            Box { tune() }
+            QuotaForm.entries.forEach { f -> Box { quota?.invoke(f) } }
+            Box { context?.invoke() }
+            Box { more() }
+        },
+    ) { ms, c ->
+        val gap = 6.dp.roundToPx()
+        val loose = c.copy(minWidth = 0, minHeight = 0)
+        val tuneP = ms[0].measure(loose)
+        val quotas = (1..3).map { ms[it].measure(loose) }
+        val ctxP = ms[4].measure(loose)
+        val moreP = ms[5].measure(loose)
+        val parts = { q: androidx.compose.ui.layout.Placeable -> listOf(tuneP, q, ctxP).filter { it.width > 0 } }
+        val need = { q: androidx.compose.ui.layout.Placeable -> parts(q).sumOf { it.width } + gap * parts(q).size + moreP.width }
+        // Sul tablet il nome sta a sinistra e prende il resto: le pillole non oltre due terzi della riga.
+        val room = if (fill) c.maxWidth else c.maxWidth * 2 / 3
+        val q = quotas.firstOrNull { need(it) <= room } ?: quotas.last()
+        val shown = parts(q)
+        val h = (shown + moreP).maxOf { it.height }
+        val w = if (fill && c.hasBoundedWidth) c.maxWidth else minOf(need(q), c.maxWidth)
+        layout(w, h) {
+            var x = 0
+            shown.forEach { p -> p.placeRelative(x, (h - p.height) / 2); x += p.width + gap }
+            moreP.placeRelative(w - moreP.width, (h - moreP.height) / 2)
+        }
+    }
+}
+
+/** La pillola del contesto: anellino nel colore delle soglie (`SessionMeters`) e «ctx 74%»; il tocco apre il suo foglio. */
+@Composable
+private fun ContextPill(pct: Int, enabled: Boolean, onClick: () -> Unit) {
     val tone = when (SessionMeters.contextTone(pct)) {
         it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
         it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
         else -> CmColors.briefRing
     }
     val frac = SessionMeters.contextFraction(pct) ?: 0f
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    MeterPill(enabled, onClick) {
         MeterRing(frac, tone)
         // «ctx» davanti alla percentuale (Franz, 04/10 20:43), come «5h» davanti alla quota.
-        Text(stringResource(R.string.ctx_short, pct), style = MaterialTheme.typography.labelLarge, color = CmColors.text2)
+        Text(stringResource(R.string.ctx_short, pct), style = PillText, color = CmColors.text, maxLines = 1, softWrap = false)
     }
 }
 
-/** L'anello delle misure in testata: il binario e l'arco della frazione nel colore del tono. */
+/** Il fondo comune delle pillole: stessa forma, stessa altezza della pillola del modello. */
+@Composable
+private fun MeterPill(enabled: Boolean, onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    Surface(onClick = onClick, enabled = enabled, color = CmColors.surface, shape = CircleShape) {
+        Row(Modifier.padding(start = 8.dp, end = 10.dp, top = 7.dp, bottom = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp), content = content)
+    }
+}
+
+/** L'anello delle misure: il binario e l'arco della frazione nel colore del tono. */
 @Composable
 private fun MeterRing(frac: Float, tone: androidx.compose.ui.graphics.Color) {
-    androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
-        val w = 3.dp.toPx()
+    androidx.compose.foundation.Canvas(Modifier.size(16.dp)) {
+        val w = 2.5.dp.toPx()
         val inset = w / 2
         val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
         drawArc(CmColors.briefTrack, -90f, 360f, false, topLeft = androidx.compose.ui.geometry.Offset(inset, inset), size = sz, style = androidx.compose.ui.graphics.drawscope.Stroke(w))
@@ -1859,11 +1909,11 @@ private fun MeterRing(frac: Float, tone: androidx.compose.ui.graphics.Color) {
 }
 
 /**
- * La quota delle 5 ore in testata (Franz, 04/10 20:43: «manca l'info di data e ora azzeramento»): l'anello come quello del
- * contesto, «5h 1%» e sotto l'ora in cui si azzera, col giorno se non è oggi. Un dato vecchio nel colore dell'attesa.
+ * La quota delle 5 ore in testata (Franz, 04/10 20:43: «manca l'info di data e ora azzeramento»): anellino, «5h 4%» e l'ora in
+ * cui si azzera sulla stessa riga, col giorno se non è oggi. Un dato vecchio nel colore dell'attesa. Il tocco porta a Utilizzo.
  */
 @Composable
-private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long, inline: Boolean = false) {
+private fun QuotaPill(pct: Int, resetAt: Long?, stale: Boolean, now: Long, form: QuotaForm, onClick: () -> Unit) {
     val tone = if (stale) CmColors.waiting else when (SessionMeters.quotaTone(pct)) {
         it.pixelbox.cmwatch.rules.BriefCards.Tone.ALERT -> CmColors.briefAlertRing
         it.pixelbox.cmwatch.rules.BriefCards.Tone.WARN -> CmColors.briefWarn
@@ -1875,28 +1925,20 @@ private fun QuotaMeter(pct: Int, resetAt: Long?, stale: Boolean, now: Long, inli
         java.time.format.DateTimeFormatter.ofPattern(if (SessionMeters.resetNeedsDay(r, now, zone)) "EEE HH:mm" else "HH:mm", locale)
             .format(Instant.ofEpochSecond(r).atZone(zone))
     }
-    val desc = reset?.let { stringResource(R.string.quota_reset_desc, pct, it) }
-    Row(
-        Modifier.then(if (desc != null) Modifier.semantics(mergeDescendants = true) { contentDescription = desc } else Modifier),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        MeterRing((pct / 100f).coerceIn(0f, 1f), tone)
-        // L'ora accanto alla percentuale quando la testata è larga, sotto se è stretta (segnalazione 05/10 16:41).
-        val body: @Composable () -> Unit = {
-            Text(stringResource(R.string.quota_h5_short, pct), style = MaterialTheme.typography.labelLarge, color = if (stale) CmColors.waiting else CmColors.text2, maxLines = 1)
-            reset?.let { r ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Rounded.Update, null, tint = CmColors.text2, modifier = Modifier.size(12.dp))
-                    Text(r, style = MaterialTheme.typography.labelSmall, color = CmColors.text2, maxLines = 1)
-                }
-            }
+    val desc = reset?.let { stringResource(R.string.quota_reset_desc, pct, it) } ?: stringResource(R.string.quota_h5_short, pct)
+    val label = when {
+        form == QuotaForm.FULL && reset != null -> stringResource(R.string.quota_h5_short, pct) + " · " + reset
+        form == QuotaForm.FULL -> stringResource(R.string.quota_h5_short, pct)
+        form == QuotaForm.SHORT && reset != null -> "$pct% · $reset"
+        else -> "$pct%"
+    }
+    Box(Modifier.semantics(mergeDescendants = true) { contentDescription = desc }) {
+        MeterPill(true, onClick) {
+            MeterRing((pct / 100f).coerceIn(0f, 1f), tone)
+            Text(label, style = PillText, color = if (stale) CmColors.waiting else CmColors.text, maxLines = 1, softWrap = false)
         }
-        if (inline) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { body() } else Column { body() }
     }
 }
-
-/** Da questa larghezza della testata l'ora dell'azzeramento sta sulla riga della quota (segnalazione 05/10 16:41). */
-private val QUOTA_INLINE_MIN = 480.dp
 
 /** Quante immagini si possono mandare insieme: ognuna è un `report`, e il relay le esegue una per volta. */
 private const val MAX_IMAGES = 5

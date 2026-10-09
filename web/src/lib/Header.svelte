@@ -10,12 +10,14 @@
   // La testata della sessione (SheetHeader.kt): una riga con modello · effort in una pillola, la quota delle 5 ore con l'ora
   // dell'azzeramento, il contesto ad anello e il menu ⋮; sotto obiettivo, priorità e finestra. Su desktop a sinistra anche
   // badge e nome, come la plancia del tablet.
-  let { st, s, wide, onBack, onCmd, onPrompt, onHandoff }: {
+  let { st, s, wide, onBack, onCmd, onPrompt, onHandoff, onUsage = () => {} }: {
     /** `wide`: badge e nome a sinistra (la testata unica del desktop); in una colonna della plancia li ha la colonna. */
     st: State; s: Session; wide: boolean; onBack?: () => void
     onCmd: (op: CmdOp, arg?: string) => void; onPrompt: (text: string) => void
     /** Contratto 1.37: «Handoff, poi /clear»; lo gestisce App (prompt e /clear a turno finito). */
     onHandoff: () => void
+    /** Il tocco sulla pillola della quota porta a Utilizzo (variante A, 09/10). */
+    onUsage?: () => void
   } = $props()
 
   // La scelta resta in vista finché il PC non la conferma (Tune.model): qui finché si resta sulla sessione.
@@ -32,9 +34,10 @@
   const canExit = $derived(!!st.slash?.includes('exit') && s.state !== 'gone')
   // Contratto 1.37: il consiglio di fable-director, dentro il foglio; il puntino solo se la scelta attuale è diversa.
   const advice = $derived(adviceOf(s, st.choices, st.ts))
-  // L'ora dell'azzeramento accanto alla percentuale quando la testata è larga (480 px, come l'app), sotto se è stretta.
+  // Tre pillole uguali (variante A, scelta da Franz il 09/10 alle 17:50): la quota prende la forma più lunga che ci sta,
+  // «5h 4% · 20:00», «4% · 20:00» o «4%», invece di andare a capo; come MeterPills nell'app.
   let width = $state(0)
-  const inline = $derived(width >= 480)
+  const quotaForm = $derived(width === 0 || width >= 430 ? 'full' : width >= 370 ? 'short' : 'tiny')
   // Una colonna molto stretta: «62%» senza «ctx», così il menu ⋮ resta in vista.
   const compact = $derived(width > 0 && width < 300)
   const ring: Record<Tone, string> = { neutral: 'var(--b-ring)', warn: 'var(--b-warn)', alert: 'var(--b-alert)' }
@@ -89,19 +92,16 @@
     </button>
     {#if !wide}<span class="sp"></span>{/if}
     <!-- In una colonna stretta la quota lascia il posto a modello, contesto e menu (è anche nella home). -->
-    {#if quota?.h5 != null && (width === 0 || width >= 340)}
-      <span class="meter" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined}>
-        <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(quota.h5)} style="stroke:{quota.stale ? 'var(--wait)' : ring[tone(quota.h5)]}" class="arc" /></svg>
-        <span class="mcol" class:inline>
-          <span class="ml" class:stale={quota.stale}>{t.quota5h(quota.h5)}</span>
-          {#if reset}<span class="reset"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{reset}</span>{/if}
-        </span>
-      </span>
+    {#if quota?.h5 != null && (width === 0 || width >= 300)}
+      <button class="mpill" title={reset ? t.quotaResetDesc(quota.h5, reset) : undefined} onclick={onUsage}>
+        <svg viewBox="0 0 20 20" width="16" height="16"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(quota.h5)} style="stroke:{quota.stale ? 'var(--wait)' : ring[tone(quota.h5)]}" class="arc" /></svg>
+        <span class:stale={quota.stale}>{quotaForm === 'full' ? t.quota5h(quota.h5) + (reset ? ` · ${reset}` : '') : quotaForm === 'short' && reset ? `${quota.h5}% · ${reset}` : `${quota.h5}%`}</span>
+      </button>
     {/if}
     {#if s.context != null}
-      <button class="meter ctxb" disabled={!tunable} onclick={() => ctx?.showModal()}>
-        <svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(s.context)} style="stroke:{ring[tone(s.context)]}" class="arc" /></svg>
-        <span class="ml">{compact ? `${s.context}%` : t.ctx(s.context)}</span>
+      <button class="mpill" disabled={!tunable} onclick={() => ctx?.showModal()}>
+        <svg viewBox="0 0 20 20" width="16" height="16"><circle cx="10" cy="10" r="7.5" class="trk" /><circle cx="10" cy="10" r="7.5" pathLength="47.12" stroke-dasharray={arc(s.context)} style="stroke:{ring[tone(s.context)]}" class="arc" /></svg>
+        <span>{compact ? `${s.context}%` : t.ctx(s.context)}</span>
       </button>
     {/if}
     <span class="anchor">
@@ -214,7 +214,12 @@
   .ib { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--text2); flex: none; }
   .ib:hover { background: var(--surface); }
   .back { color: var(--text); width: 36px; }
-  .pill { display: flex; align-items: center; min-width: min-content; overflow: hidden; background: var(--surface); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 1 auto; }
+  .pill { display: flex; align-items: center; min-width: min-content; overflow: hidden; background: var(--surface); border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 13px; font-weight: 500; white-space: nowrap; flex: 0 1 auto; }
+  /* Le pillole di quota e contesto, alte e larghe come quella del modello (variante A, 09/10). */
+  .mpill { display: flex; align-items: center; gap: 5px; background: var(--surface); border-radius: 999px; padding: 7px 10px 7px 8px; font-size: 13px; font-weight: 500; white-space: nowrap; flex: none; color: var(--text); }
+  .mpill:not(:disabled):hover { filter: brightness(1.2); }
+  .mpill:disabled { cursor: default; }
+  .mpill .stale { color: var(--wait); }
   .pill { position: relative; }
   .pill svg { flex: none; }
   /* Il puntino del consiglio, in alto a destra della pillola (mockup 1.37). */
@@ -267,18 +272,9 @@
   .opt small { font-size: 12.5px; font-weight: 400; opacity: .8; margin-top: 2px; }
   .pill:disabled { padding-right: 12px; cursor: default; }
   .pill:not(:disabled):hover { filter: brightness(1.2); }
-  .meter { display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 8px; flex: none; }
-  .ctxb:not(:disabled):hover { background: var(--surface); }
-  .ctxb:disabled { cursor: default; }
   .trk, .arc { fill: none; stroke-width: 3; }
   .trk { stroke: var(--b-track); }
   .arc { stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
-  .mcol { display: flex; flex-direction: column; line-height: 1.2; }
-  /* Su desktop l'ora dell'azzeramento sta accanto alla percentuale (segnalazione 05/10 16:41). */
-  .mcol.inline { flex-direction: row; align-items: center; gap: 8px; }
-  .ml { font-size: 14px; font-weight: 500; color: var(--text2); white-space: nowrap; }
-  .ml.stale { color: var(--wait); }
-  .reset { display: flex; align-items: center; gap: 2px; font-size: 11px; color: var(--text2); }
   .note { padding: 0 16px; font-size: 12px; font-weight: 500; color: var(--b-label); letter-spacing: .03em; }
   .anchor { position: relative; }
   .scrim { position: fixed; inset: 0; z-index: 9; cursor: default; }
