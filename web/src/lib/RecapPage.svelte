@@ -1,21 +1,25 @@
 <script lang="ts">
   import type { AgendaPage } from './contract'
   import type { RecapAction } from './recapActions'
-  import { agendaModel, doIt, SCOPES } from './recapAgenda'
+  import { agendaModel, SCOPES, todayIso, type Edit } from './recapAgenda'
+  import AgendaActions from './AgendaActions.svelte'
   import { t } from './t'
   import AgendaItem from './AgendaItem.svelte'
   import RecapSend from './RecapSend.svelte'
   // La pagina Recap (tavola 2 del mockup approvato l'08/10): dal menu ≡ o da «Tutto il recap». Filtri per ambito in cima;
   // le Azioni; poi chi deve muoversi; in fondo, richiuso, fatto e sospeso. `agenda` null = in arrivo.
-  let { actions, day, agenda, error, loading, onSend }: {
+  let { actions, day, agenda, error, loading, onSend, canWrite = false, onTalk = () => {}, onEdit = () => {}, today = todayIso() }: {
     actions: RecapAction[]; day: string; agenda: AgendaPage | null; error: string | null; loading: boolean; onSend: (a: RecapAction) => void
+    /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
+    canWrite?: boolean; onTalk?: (text: string) => void; onEdit?: (e: Edit) => void; today?: string
   } = $props()
+  let acts: AgendaActions | undefined = $state()
   let scope = $state<string | null>(null)
   let restOpen = $state(false)
   let asking = $state<RecapAction | null>(null)
   let sent = $state(new Set<string>())
   const key = (a: RecapAction) => `${a.to}\n${a.send}`
-  const m = $derived(agendaModel(agenda, scope))
+  const m = $derived(agendaModel(agenda, scope, today))
   const scopeLabel: Record<string, string> = { agenzia: t.recapScopeAgency, personale: t.recapScopePersonal, postazione: t.recapScopeDesk }
 </script>
 
@@ -36,26 +40,27 @@
   {#if error}<p class="note">{error}</p>{:else if !agenda && loading}<p class="note">{t.recapLoading}</p>{/if}
   {#if m.you.length}
     <h2 class="gh" style="--t:var(--b-warn)"><span>{t.recapYou(m.you.length).toUpperCase()}</span><i></i></h2>
-    {#each m.you as r}<AgendaItem row={r} />{/each}
+    {#each m.you as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}
   {/if}
   {#if m.claude.length}
     <h2 class="gh" style="--t:var(--icon)"><span>{t.recapClaude(m.claude.length).toUpperCase()}</span><i></i></h2>
-    {#each m.claude as r}<AgendaItem row={r} onDo={() => (asking = doIt(r, t.recapDoText))} />{/each}
+    {#each m.claude as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}
   {/if}
   {#if m.other.length}
     <h2 class="gh" style="--t:var(--text2)"><span>{t.recapOther(m.other.length).toUpperCase()}</span><i></i></h2>
-    {#each m.other as r}<AgendaItem row={r} other />{/each}
+    {#each m.other as r}<AgendaItem row={r} other onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}
   {/if}
   {#if m.rest.length}
     <button class="fold" aria-expanded={restOpen} onclick={() => (restOpen = !restOpen)}>
       <span>{t.recapRest(m.rest.length)}</span>
       <svg viewBox="0 0 24 24" width="20" height="20"><path d={restOpen ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
     </button>
-    {#if restOpen}{#each m.rest as r}<AgendaItem row={r} />{/each}{/if}
+    {#if restOpen}{#each m.rest as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}{/if}
   {/if}
   {#if agenda && !actions.length && !m.you.length && !m.claude.length && !m.other.length && !m.rest.length}<p class="note">{t.recapEmpty}</p>{/if}
 </div>
 
+<AgendaActions bind:this={acts} {canWrite} {today} {onSend} {onTalk} {onEdit} />
 <RecapSend action={asking} {day} onClose={() => (asking = null)} onSend={(a) => { sent = new Set([...sent, key(a)]); onSend(a) }} />
 
 <style>

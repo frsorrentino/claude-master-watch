@@ -7,7 +7,11 @@ import { MASTER } from './summary'
 export const MAX = 8
 
 /** `text` = quello che si legge, `send` = quello che parte, `to` = chi lo riceve, `from` = da dove viene; `recap` = dal recap. */
-export type RecapAction = { text: string; send: string; to: string; from: string; viaMaster: boolean; recap: boolean; agenda?: boolean }
+export type RecapAction = {
+  text: string; send: string; to: string; from: string; viaMaster: boolean; recap: boolean; agenda?: boolean
+  /** La riga «Da …» del foglio quando quella predefinita non vale (Approfondisci, il file del rimando). */
+  note?: string
+}
 
 const key = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 

@@ -30,3 +30,28 @@ describe('recapAgenda', () => {
     expect(doIt({ state: 'aperto', scope: '', blocks: 'claude', title: 'X', ref: ' ' }).send).toBe("Fai questo lavoro dell'agenda: X")
   })
 })
+
+// Le Azioni sulle schede (piano approvato il 09/10, contratto 1.47): gli stessi casi di RecapAgendaActionsTest.
+import { deepenText, menu, nextWeek, talkText, tomorrow, url } from './recapAgenda'
+describe('azioni del recap', () => {
+  const today = '2026-10-09'
+  const row = (state = 'aperto', blocks = 'franz', ref = '', until: string | null = null) => ({ state, scope: 'agenzia', blocks, title: 'Revoke the API key', ref, detail: null, until })
+  it('le rimandate tornano il loro giorno, le scartate spariscono', () => {
+    const m = agendaModel({ rows: [row('sospeso', 'franz', '', '2026-10-09'), row('sospeso', 'franz', '', '2026-10-10'), row('sospeso'), row('scartato'), row('chiuso'), row('fatto')], more: false }, null, today)
+    expect(m.you).toHaveLength(1)
+    expect(m.rest.map(r => r.state)).toEqual(['sospeso', 'sospeso', 'chiuso', 'fatto'])
+  })
+  it('il menu ha le scritture solo con l\'op e Passa va dall\'altra parte', () => {
+    expect(menu(row(), false)).toEqual(['deepen', 'do', 'talk'])
+    expect(menu(row('aperto', 'franz', 'orbit-docs'), true)).toEqual(['deepen', 'do', 'talk', 'open_ref', 'done', 'postpone', 'pass_claude', 'remove'])
+    expect(menu(row('aperto', 'claude'), true)).toContain('pass_me')
+    expect(menu(row('fatto'), true)).toEqual(['deepen', 'talk', 'remove'])
+  })
+  it('testi, indirizzi e date', () => {
+    expect(deepenText(row('aperto', 'franz', 'console.anthropic.com'))).toBe('Approfondisci: Revoke the API key (console.anthropic.com)')
+    expect(talkText(row('aperto', 'franz', 'x.md'))).toBe('Sulla scheda «Revoke the API key» (x.md): ')
+    expect(url('console.anthropic.com -> API Keys')).toBe('https://console.anthropic.com')
+    expect([url('.claude/DA-DECIDERE-client-id.md'), url('orbit-docs'), url('tag-runtime.json')]).toEqual([null, null, null])
+    expect([tomorrow(today), nextWeek(today), nextWeek('2026-10-12')]).toEqual(['2026-10-10', '2026-10-12', '2026-10-19'])
+  })
+})

@@ -775,7 +775,6 @@ It starts at your last message to the master.</string>
     <string name="agenda_talk_text">About the card «%1$s»</string>
     <string name="agenda_open_ref">Open the reference</string>
     <string name="agenda_file_text">Send me the file «%1$s» of the card «%2$s»</string>
-    <string name="agenda_from">From the agenda</string>
     <string name="agenda_from_scope">From the agenda · %1$s</string>
     <string name="agenda_done">Done</string>
     <string name="agenda_postpone">Postpone</string>

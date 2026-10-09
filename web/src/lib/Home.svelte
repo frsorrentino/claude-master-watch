@@ -11,7 +11,8 @@
   import Badge from './Badge.svelte'
   import Options from './Options.svelte'
   import { recapActions, type RecapAction } from './recapActions'
-  import { agendaModel, doIt } from './recapAgenda'
+  import { agendaModel, todayIso, type Edit } from './recapAgenda'
+  import AgendaActions from './AgendaActions.svelte'
   import AgendaItem from './AgendaItem.svelte'
   import RecapSend from './RecapSend.svelte'
 
@@ -19,7 +20,7 @@
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
   import type { NightPage } from './night'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {} }: {
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {}, canWrite = false, onTalk = () => {}, onEdit = () => {} }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -38,7 +39,11 @@
     onRecapAction?: (a: RecapAction) => void
     /** Contratto 1.46: le righe dell'agenda (null = non ancora arrivate); «Tutto il recap» apre la pagina. */
     agenda?: import('./contract').AgendaPage | null; onRecapPage?: () => void
+    /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
+    canWrite?: boolean; onTalk?: (text: string) => void; onEdit?: (e: Edit) => void
   } = $props()
+  let acts: AgendaActions | undefined = $state()
+  const today = todayIso()
   // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate, anche alla prossima apertura.
   const SEC = 'home-sections'
   let open = $state<Record<string, boolean>>((() => { try { return { night: true, sessions: true, usage: false, other: false, ...JSON.parse(localStorage.getItem(SEC) ?? '{}') } } catch { return { night: true, sessions: true, usage: false, other: false } } })())
@@ -50,7 +55,7 @@
   let sentActions = $state(new Set<string>())
   const actionKey = (a: RecapAction) => `${a.to}\n${a.send}`
   function askSend(a: RecapAction) { asking = a }
-  const ag = $derived(agendaModel(agenda))
+  const ag = $derived(agendaModel(agenda, null, today))
   const hhmm = (s: number) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s * 1000))
   const model = $derived(build(st, [], st.ts, new Set()))
   let expanded = $state<string | null>(null)
@@ -204,11 +209,11 @@
       {/if}
       {#if ag.you.length}
         <h2 class="gh" style="--t:var(--b-warn)"><span>{t.recapYou(ag.you.length).toUpperCase()}</span><i></i></h2>
-        {#each ag.you.slice(0, 2) as r}<AgendaItem row={r} />{/each}
+        {#each ag.you.slice(0, 2) as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}
       {/if}
       {#if ag.claude.length}
         <h2 class="gh" style="--t:var(--icon)"><span>{t.recapClaude(ag.claude.length).toUpperCase()}</span><i></i></h2>
-        <AgendaItem row={ag.claude[0]} onDo={() => askSend(doIt(ag.claude[0], t.recapDoText))} />
+        <AgendaItem row={ag.claude[0]} onOpen={() => acts?.deepen(ag.claude[0])} onActions={() => acts?.menuOf(ag.claude[0])} />
       {/if}
       <button class="all" onclick={onRecapPage}><span>{t.recapAll}</span>
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
@@ -250,6 +255,7 @@
   {/if}
 </dialog>
 
+<AgendaActions bind:this={acts} {canWrite} {today} onSend={onRecapAction} {onTalk} {onEdit} />
 <RecapSend action={asking} day={recapDay} onClose={() => (asking = null)} onSend={(a) => { sentActions = new Set([...sentActions, actionKey(a)]); onRecapAction(a) }} />
 
 <style>

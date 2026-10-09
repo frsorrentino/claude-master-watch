@@ -11,7 +11,7 @@
 <dialog bind:this={dlg} class="sheet" onclose={onClose} onclick={(e) => e.target === e.currentTarget && dlg?.close()}>
   {#if action}
     <h3>{t.recapSendTitle}</h3>
-    <p class="sub">{action.agenda ? t.recapSendFromAgenda : action.recap ? t.recapSendFromRecap(day, action.from) : t.recapSendFromSession(action.from)}</p>
+    <p class="sub">{action.note ? action.note : action.agenda ? t.recapSendFromAgenda : action.recap ? t.recapSendFromRecap(day, action.from) : t.recapSendFromSession(action.from)}</p>
     <p class="what">{action.send}</p>
     <p class="sub">{action.viaMaster ? t.recapGoesMaster : t.recapGoes} <b>{action.to}</b>{action.agenda ? ', ' + t.recapSendToMasterAgenda : action.viaMaster ? ': ' + t.recapSendToMaster : ', ' + t.recapSendToSession}</p>
     <div class="btns">

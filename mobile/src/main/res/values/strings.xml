@@ -786,7 +786,6 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="agenda_talk_text">Sulla scheda «%1$s»</string>
     <string name="agenda_open_ref">Apri il riferimento</string>
     <string name="agenda_file_text">Mandami il file «%1$s» della scheda «%2$s»</string>
-    <string name="agenda_from">Dall\'agenda</string>
     <string name="agenda_from_scope">Dall\'agenda · %1$s</string>
     <string name="agenda_done">Fatto</string>
     <string name="agenda_postpone">Rimanda</string>

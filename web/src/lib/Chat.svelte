@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte'
   import type { Session, State } from './contract'
   import { MASTER } from './summary'
   import MasterHome from './MasterHome.svelte'
@@ -23,7 +24,7 @@
   import { t } from './t'
   import { waitingPc } from './durations'
   import { ctxNudge, decisionDraft, decisionProject, DECISION_MAX } from './masterService'
-  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {}, waitingSince = null }: {
+  let { st, s, entries, mine, onSend, onBack, onPick, onAnswer, onCmd, wide, events, sent, read, onRead, onPromptTo, slots, onAttach, onFile, onHandoff, onDecision, elsewhere = null, onElsewhere = () => {}, onElsewhereDismiss = () => {}, waitingSince = null, inject = null, onInjected = () => {} }: {
     st: State; s: Session; entries: TranscriptEntry[]; mine: [Sent, Status][]; onSend: (text: string) => void; onBack?: () => void
     onPick: (name: string) => void; onAnswer: (session: string, n: number) => void
     onCmd: (op: CmdOp, arg?: string, text?: string) => void; wide: boolean; slots: (string | null)[]
@@ -37,6 +38,8 @@
     elsewhere?: Alert | null; onElsewhere?: () => void; onElsewhereDismiss?: () => void
     /** Da quando (ms) una lettura della conversazione aspetta il PC; null se nessuna è in volo (piano prestazioni, Task 7). */
     waitingSince?: number | null
+    /** Un testo da mettere nel campo, sotto quello che c'è («Parlane con la master» del Recap, 09/10); `n` cambia a ogni richiesta. */
+    inject?: { text: string; n: number } | null; onInjected?: () => void
     events: Event[]; sent: Scheduled[]; read: Set<string>; onRead: (key: string) => void; onPromptTo: (session: string, text: string) => void
   } = $props()
   // Franz, 06/10 08:46: la master si apre sulla conversazione; la sua casa resta a un tocco («Casa»).
@@ -66,6 +69,13 @@
   const stepsBlocking = $derived(blockingOf(s, lastParsed?.blocking ?? new Set()))
 
   let composer: Composer | undefined = $state()
+  let injected = 0
+  $effect(() => {
+    if (!inject || inject.n === injected) return
+    injected = inject.n
+    const x = inject.text
+    untrack(() => { draft = draft.trim() ? `${draft.trimEnd()}\n${x}` : x; onInjected(); queueMicrotask(() => composer?.focus()) })
+  })
   function pick(step: string) { draft = append(draft, step, t.then); composer?.focus() }
   // I box sopra il campo, aperti o chiusi come li hai lasciati: Prossimi aperto, Ricorrenti chiuso.
   const saved = (k: string, d: boolean) => { try { const v = localStorage.getItem(k); return v == null ? d : v === '1' } catch { return d } }

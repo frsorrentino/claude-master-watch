@@ -99,11 +99,11 @@ export const demoNight: import('./night').NightReport = JSON.parse(nightRaw)
 
 /** Contratto 1.46: la demo ha un'agenda inventata, con un gruppo per ognuno di chi deve muoversi (come FakeTransport). */
 export const demoAgenda: import('./contract').AgendaPage = { more: false, rows: [
-  { state: 'aperto', scope: 'agenzia', blocks: 'franz', title: 'Confirm the 6 client ids with a candidate', ref: '.claude/to-decide-client-id.md' },
+  { state: 'aperto', scope: 'agenzia', blocks: 'franz', title: 'Confirm the 6 client ids with a candidate', ref: '.claude/to-decide-client-id.md', detail: 'Six ids have a likely client from the invoices.\nConfirm them one by one, then the import can run.' },
   { state: 'aperto', scope: 'personale', blocks: 'franz', title: 'Renew the domain of the docs site', ref: 'orbit-docs' },
   { state: 'aperto', scope: 'personale', blocks: 'claude', title: 'Move the docs site to the new host', ref: 'orbit-docs' },
   { state: 'aperto', scope: 'postazione', blocks: 'claude', title: 'Clear the orphan plugin caches', ref: 'after restarting every session' },
-  { state: 'sospeso', scope: 'agenzia', blocks: 'terzi', title: 'Staging of atlas-shop not reachable from the CLI', ref: '' },
+  { state: 'sospeso', scope: 'agenzia', blocks: 'terzi', title: 'Staging of atlas-shop not reachable from the CLI', ref: '', until: '2026-10-20' },
   { state: 'aperto', scope: 'agenzia', blocks: 'terzi', title: 'Client answer on the domain', ref: '' },
   { state: 'fatto', scope: 'postazione', blocks: 'nessuno', title: 'Backups of the workstation every night', ref: 'crontab' },
 ] }

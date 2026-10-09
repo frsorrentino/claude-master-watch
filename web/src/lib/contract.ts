@@ -38,7 +38,11 @@ export type NightItem = { id: string; dir: string; name: string; prompt: string;
 export type NightReportRef = { date: string; generated_at: number }
 export type Night = { queued: number; running?: string | null; items?: NightItem[] | null; report?: NightReportRef | null }
 /** Contratto 1.46: una riga dell'agenda, tutta testo libero; le righe nell'ordine del file, `more` = tagliate sopra i 60 KB. */
-export type AgendaRow = { state: string; scope: string; blocks: string; title: string; ref: string }
+export type AgendaRow = {
+  state: string; scope: string; blocks: string; title: string; ref: string
+  /** Contratto 1.47: il dettaglio con gli a capo (null = non scritto) e `AAAA-MM-GG` fino a cui è sospesa. */
+  detail?: string | null; until?: string | null
+}
 export type AgendaPage = { rows: AgendaRow[]; more: boolean }
 export type RecapItem = { project: string; done: string; next?: string | null }
 export type Recap = { date: string; items: RecapItem[] }

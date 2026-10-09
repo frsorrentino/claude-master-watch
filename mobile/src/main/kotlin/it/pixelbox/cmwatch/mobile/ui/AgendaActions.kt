@@ -73,16 +73,17 @@ fun AgendaActionsLayer(
     val doText = stringResource(R.string.recap_do_text); val doRef = stringResource(R.string.recap_do_ref)
     val deepenT = stringResource(R.string.agenda_deepen_text); val talkT = stringResource(R.string.agenda_talk_text)
     val fileT = stringResource(R.string.agenda_file_text)
-    val fromAgenda = stringResource(R.string.agenda_from)
+    val fromScope = stringResource(R.string.agenda_from_scope)
+    fun fromAgenda(r: AgendaRow) = fromScope.format(r.scope.trim())
     fun toMaster(r: AgendaRow, send: String) = RecapActions.Action(r.title, send, ContextActions.MASTER, "agenda", viaMaster = true, agenda = true)
     fun pick(r: AgendaRow, item: Item) {
         s.menuFor = null
         when (item) {
             Item.DEEPEN -> s.deepenFor = r
-            Item.DO -> s.send = RecapAgenda.doIt(r, doText, doRef) to fromAgenda
+            Item.DO -> s.send = RecapAgenda.doIt(r, doText, doRef) to fromAgenda(r)
             Item.TALK -> onTalk(RecapAgenda.talkText(r, talkT))
             Item.OPEN_REF -> RecapAgenda.url(r.ref)?.let { u -> runCatching { uri.openUri(u) } }
-                ?: run { s.send = toMaster(r, fileT.format(r.ref.trim(), r.title)) to fromAgenda }
+                ?: run { s.send = toMaster(r, fileT.format(r.ref.trim(), r.title)) to fromAgenda(r) }
             Item.POSTPONE -> s.postponeFor = r
             Item.DONE, Item.REMOVE, Item.PASS_CLAUDE, Item.PASS_ME -> s.edit = RecapAgenda.Edit(item, r)
         }
@@ -91,7 +92,7 @@ fun AgendaActionsLayer(
     s.deepenFor?.let { r ->
         AgendaDeepenSheet(
             r, onDismiss = { s.deepenFor = null },
-            onAsk = { s.deepenFor = null; s.send = toMaster(r, RecapAgenda.deepenText(r, deepenT)) to fromAgenda },
+            onAsk = { s.deepenFor = null; s.send = toMaster(r, RecapAgenda.deepenText(r, deepenT)) to fromAgenda(r) },
             onActions = { s.deepenFor = null; s.menuFor = r },
         )
     }
