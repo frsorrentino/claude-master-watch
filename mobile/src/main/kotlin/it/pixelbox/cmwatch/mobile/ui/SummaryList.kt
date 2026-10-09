@@ -110,6 +110,11 @@ fun SummaryList(
      * 09/10): a ogni nuovo valore la sezione si apre, la lista ci arriva e i pannelli si illuminano un attimo.
      */
     usageFocus: Int = 0,
+    /**
+     * L'ultimo salto già fatto, tenuto da chi ospita la lista: una lista ricreata (il ritorno da una sessione col volo) non lo
+     * rifà. Senza, la home scappava su Utilizzo sotto il volo (Franz, 09/10 18:27: «il volo è peggiorato»).
+     */
+    usageSeen: Int = 0, onUsageFocused: (Int) -> Unit = {},
     /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
     onSpeak: ((String) -> Unit)? = null,
     /** Dove la lista era arrivata (primo elemento e scarto), tenuto da chi la ospita: ricreata, riparte da lì (09/10 17:23). */
@@ -137,7 +142,8 @@ fun SummaryList(
     }
     var usageFlash by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(usageFocus) {
-        if (usageFocus == 0 || usage == null || !showUsage) return@LaunchedEffect
+        if (usageFocus == 0 || usageFocus == usageSeen || usage == null || !showUsage) return@LaunchedEffect
+        onUsageFocused(usageFocus)
         usageOpen = true; save("usage", true)
         // La sezione può stare sotto lo schermo: dalla cima si scende finché il suo titolo non entra in vista, poi ci si ferma.
         listState.scrollToItem(0)

@@ -21,7 +21,7 @@
   // apre sul posto. La domanda ha le opzioni subito, chi ha finito i consigli come tasti, sotto la barretta del contesto.
   import type { Snippet } from 'svelte'
   import type { NightPage } from './night'
-  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {}, canWrite = false, onTalk = () => {}, onEdit = () => {}, showRecap = true, showUsage = true, usageFocus = 0, onSpeak = null }: {
+  let { st, selected, onPick, onAnswer, onStep, withMaster = false, footer, onApprove = () => {}, onClose = () => {}, night = null, nightTitle = '', onNight = () => {}, usage, justClosed = null, onRecapAction = () => {}, agenda = null, onRecapPage = () => {}, canWrite = false, onTalk = () => {}, onEdit = () => {}, showRecap = true, showUsage = true, usageFocus = 0, onUsageFocused = () => {}, onSpeak = null }: {
     /** `selected`: le sessioni aperte, evidenziate; `withMaster`: la master nella lista come le altre (la plancia). */
     st: State; selected: string[]; onPick: (name: string) => void; withMaster?: boolean
     /** In fondo alla lista: sulla plancia i pannelli della quota (footer di SummaryList). */
@@ -45,7 +45,7 @@
     /** Sulla plancia senza colonne Recap e Utilizzo stanno nel cruscotto (variante B, 09/10): qui non si ripetono. */
     showRecap?: boolean; showUsage?: boolean
     /** «Utilizzo e limiti» dal menu e dalla riga della quota: a ogni nuovo valore la sezione si apre, si vede e si illumina. */
-    usageFocus?: number
+    usageFocus?: number; onUsageFocused?: () => void
     /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
     onSpeak?: ((text: string) => void) | null
   } = $props()
@@ -53,11 +53,11 @@
   const today = todayIso()
   let usageEl: HTMLElement | undefined = $state()
   let usageFlash = $state(false)
-  let usageSeen = 0
   $effect(() => {
-    if (!usageFocus || usageFocus === usageSeen || !usage || !showUsage) return
-    usageSeen = usageFocus
+    if (!usageFocus || !usage || !showUsage) return
+    // Il salto si consuma: una home ricreata (ritorno da una sessione) non lo rifà (Franz, 09/10 18:27).
     untrack(() => {
+      onUsageFocused()
       if (!open.usage) toggleSec('usage')
       tick().then(() => { usageEl?.scrollIntoView({ block: 'start', behavior: 'smooth' }); usageFlash = true; setTimeout(() => (usageFlash = false), 1200) })
     })

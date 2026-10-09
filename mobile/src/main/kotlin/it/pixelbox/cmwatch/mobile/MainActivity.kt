@@ -202,6 +202,7 @@ class MainActivity : ComponentActivity() {
         // riga della quota, l'avviso in una sessione e il Registro portano alla sezione Utilizzo della home, che si apre e si
         // illumina; sul tablet senza colonne è già a destra, nel cruscotto.
         var usageFocus by remember { mutableStateOf(0) }
+        var usageSeen by remember { mutableStateOf(0) }
         val goUsage: () -> Unit = { open = null; tab = StartRoute.Tab.OVERVIEW; masterChat = false; usageFocus += 1 }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
         var nightOpen by rememberSaveable { mutableStateOf(false) }
@@ -1107,7 +1108,7 @@ class MainActivity : ComponentActivity() {
                     canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t }, onEdit = editAgenda,
                     // «Utilizzo» (Franz, 08/10 12:30; unito il 09/10): le schede della quota e «Oggi» in una sezione richiudibile.
                     usage = { Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { usageContent() } },
-                    showRecap = !deskDashboard, showUsage = !deskDashboard, usageFocus = usageFocus, scrollMemo = homeScroll,
+                    showRecap = !deskDashboard, showUsage = !deskDashboard, usageFocus = usageFocus, usageSeen = usageSeen, onUsageFocused = { n -> usageSeen = n }, scrollMemo = homeScroll,
                     onSpeak = { t -> speech.toggle(t) },
                 )
             }
