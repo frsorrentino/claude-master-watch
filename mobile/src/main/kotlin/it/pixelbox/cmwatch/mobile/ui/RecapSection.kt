@@ -200,6 +200,10 @@ fun RecapScreen(
     /** Contratto 1.47: il relay scrive nell'agenda (Fatto, Rimanda, Rimuovi, Passa). */
     canWrite: Boolean = false, onTalk: (String) -> Unit = {}, onEdit: (RecapAgenda.Edit) -> Unit = {},
     today: java.time.LocalDate = java.time.LocalDate.now(),
+    /** false = nel cruscotto del tablet (variante B, 09/10): niente ← né barre di sistema, il titolo come le sezioni. */
+    topBar: Boolean = true,
+    /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     var scope by rememberSaveable { mutableStateOf<String?>(null) }
     var restOpen by rememberSaveable { mutableStateOf(false) }
@@ -208,13 +212,13 @@ fun RecapScreen(
     val day = recapDay(recapDate)
     val m = remember(agenda, scope, today) { RecapAgenda.of(agenda, scope, today) }
     val acts = remember { AgendaActions() }
-    Column(Modifier.fillMaxSize().background(CmColors.bg).systemBarsPadding()) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize().background(CmColors.bg).then(if (topBar) Modifier.systemBarsPadding() else Modifier)) {
+        if (topBar) Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), tint = CmColors.text) }
             Text(stringResource(R.string.home_sec_recap), style = MaterialTheme.typography.titleLarge, color = CmColors.text)
-        }
+        } else DeskSectionTitle(stringResource(R.string.home_sec_recap))
         androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = if (topBar) 16.dp else 0.dp, end = if (topBar) 16.dp else 0.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item(key = "filters") {
@@ -267,7 +271,7 @@ fun RecapScreen(
         }
     }
     asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + sentKey(a); onSend(a) } }
-    AgendaActionsLayer(acts, canWrite, today, onSend = onSend, onTalk = onTalk, onEdit = onEdit)
+    AgendaActionsLayer(acts, canWrite, today, onSend = onSend, onTalk = onTalk, onEdit = onEdit, onSpeak = onSpeak)
 }
 
 @Composable

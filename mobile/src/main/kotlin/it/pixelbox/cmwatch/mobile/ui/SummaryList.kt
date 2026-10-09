@@ -3,6 +3,7 @@ package it.pixelbox.cmwatch.mobile.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -102,6 +103,15 @@ fun SummaryList(
     /** Le Azioni sulle schede (piano del 09/10): scritture con l'op del contratto 1.47, «Parlane» apre la master. */
     canWrite: Boolean = false, onTalk: (String) -> Unit = {}, onEdit: (it.pixelbox.cmwatch.rules.RecapAgenda.Edit) -> Unit = {},
     today: java.time.LocalDate = java.time.LocalDate.now(),
+    /** Sul tablet senza colonne Recap e Utilizzo stanno nel cruscotto a destra (variante B, 09/10): qui non si ripetono. */
+    showRecap: Boolean = true, showUsage: Boolean = true,
+    /**
+     * «Utilizzo e limiti» dal menu, la riga della quota in alto e l'avviso in una sessione portano qui (Utilizzo unito,
+     * 09/10): a ogni nuovo valore la sezione si apre, la lista ci arriva e i pannelli si illuminano un attimo.
+     */
+    usageFocus: Int = 0,
+    /** ▶ sul dettaglio di «Approfondisci» (09/10 16:31). */
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
     // Sezioni richiudibili (Franz, 08/10 12:30): restano come le hai lasciate anche alla prossima apertura.
@@ -118,6 +128,21 @@ fun SummaryList(
     var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
     val day = recapDay(recapDate)
     fun save(key: String, v: Boolean) { runCatching { prefs?.edit()?.putBoolean(key, v)?.apply() } }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var usageFlash by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(usageFocus) {
+        if (usageFocus == 0 || usage == null || !showUsage) return@LaunchedEffect
+        usageOpen = true; save("usage", true)
+        // La sezione può stare sotto lo schermo: dalla cima si scende finché il suo titolo non entra in vista, poi ci si ferma.
+        listState.scrollToItem(0)
+        repeat(30) {
+            androidx.compose.runtime.withFrameNanos { }
+            val at = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == "sec-usage" }
+            if (at != null) { listState.scrollToItem(at.index); usageFlash = true; kotlinx.coroutines.delay(1_200); usageFlash = false; return@LaunchedEffect }
+            if (!listState.canScrollForward) return@LaunchedEffect
+            listState.scrollBy(listState.layoutInfo.viewportSize.height * 0.8f)
+        }
+    }
     // Una lista «pigra» con le card riconosciute dal nome della sessione: quando una sessione cambia gruppo (da «Al lavoro» a
     // «Ha finito») la sua card scivola al posto nuovo e le altre si spostano (osservazioni del 03/10, transizione 4).
     val off = animationsOff()
@@ -132,7 +157,7 @@ fun SummaryList(
         )
     }
     androidx.compose.foundation.lazy.LazyColumn(
-        Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxSize(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (nightDate != null) {
@@ -165,7 +190,7 @@ fun SummaryList(
         // Il Recap (tavola 1): chiuso dice i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due
         // cose che aspettano te, la prima che può fare Claude, e «Tutto il recap».
         val ag = it.pixelbox.cmwatch.rules.RecapAgenda.of(agenda, today = today)
-        if (recapActions.isNotEmpty() || ag.you.isNotEmpty() || ag.claude.isNotEmpty()) {
+        if (showRecap && (recapActions.isNotEmpty() || ag.you.isNotEmpty() || ag.claude.isNotEmpty())) {
             item(key = "sec-recap") {
                 Box(moving()) {
                     HomeSection(
@@ -205,9 +230,12 @@ fun SummaryList(
         }
         // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): un titolo vero che separa le sessioni dal resto, poi le
         // categorie con icona e conteggio, dalla più urgente; ognuna nella sua card.
-        usage?.let { u ->
+        usage?.takeIf { showUsage }?.let { u ->
             item(key = "sec-usage") { Box(moving()) { HomeSection(stringResource(R.string.home_sec_usage), null, usageOpen) { usageOpen = !usageOpen; save("usage", usageOpen) } } }
-            if (usageOpen) item(key = "usage") { Box(moving()) { u() } }
+            if (usageOpen) item(key = "usage") {
+                val glow by androidx.compose.animation.core.animateFloatAsState(if (usageFlash) 1f else 0f, androidx.compose.animation.core.tween(if (usageFlash) 160 else 700), label = "usageFlash")
+                Box(moving().border(2.dp, CmColors.actionIcon.copy(alpha = 0.8f * glow), RoundedCornerShape(18.dp))) { u() }
+            }
         }
         val outside = OutsideSessions.groups(model.service, model.closed)
         if (outside.isNotEmpty()) {
@@ -226,7 +254,7 @@ fun SummaryList(
         footer?.let { f -> item(key = "footer") { f() } }
     }
     asking?.let { a -> RecapSendSheet(a, day, onDismiss = { asking = null }) { asking = null; sent = sent + sentKey(a); onRecapAction(a) } }
-    AgendaActionsLayer(acts, canWrite, today, onSend = onRecapAction, onTalk = onTalk, onEdit = onEdit)
+    AgendaActionsLayer(acts, canWrite, today, onSend = onRecapAction, onTalk = onTalk, onEdit = onEdit, onSpeak = onSpeak)
 }
 
 internal fun groupLabel(g: Summary.Group) = when (g) {

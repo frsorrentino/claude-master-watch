@@ -127,8 +127,32 @@ private fun contextColor(pct: Int): Color = when (SessionMeters.contextTone(pct)
 }
 
 /**
- * Il pannello delle quote in fondo alla colonna: la finestra di 5 ore con la previsione al ritmo di adesso fino alla
- * ripartenza (piena fino a ora, tratteggiata dopo, soglie 80 e 100), poi la settimana con il ritmo medio al rinnovo.
+ * Il doppio anello del polso (Utilizzo unito, approvato da Franz il 09/10 alle 16:17): la finestra di 5 ore fuori, azzurra
+ * (rossa dal 90%), la settimana dentro, lavanda; al centro il segno dell'account. Un dato vecchio non disegna le 5 ore.
+ */
+@Composable
+fun QuotaRing(ring: PhoneOverview.Ring, size: androidx.compose.ui.unit.Dp = 64.dp, stale: Boolean = ring.stale) {
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = this.size.minDimension * 0.1f
+            fun arc(inset: Float, color: Color, sweep: Float) = drawArc(
+                color, -90f, sweep, false, topLeft = Offset(inset, inset),
+                size = Size(this.size.width - 2 * inset, this.size.height - 2 * inset), style = Stroke(w, cap = StrokeCap.Round),
+            )
+            arc(w / 2, CmColors.briefTrack, 360f)
+            ring.h5?.takeIf { !stale }?.let { arc(w / 2, if (it >= 90) CmColors.briefAlertRing else CmColors.briefRing, 360f * it.coerceIn(0, 100) / 100f) }
+            val inner = w / 2 + w + 3.dp.toPx()
+            arc(inner, CmColors.briefTrack, 360f)
+            ring.w7?.let { arc(inner, CmColors.briefWeek, 360f * it.coerceIn(0, 100) / 100f) }
+        }
+        AccountMark(ring.personal, size = size * 0.2f)
+    }
+}
+
+/**
+ * Il pannello di un account, uguale in home, nella colonna del tablet e nel cruscotto (Utilizzo unito, 09/10): in testa
+ * l'anello del polso col numero grande e l'ora di ripartenza; sotto la finestra di 5 ore con la previsione al ritmo di
+ * adesso fino alla ripartenza (piena fino a ora, tratteggiata dopo, soglie 80 e 100), poi la settimana col ritmo medio.
  */
 @Composable
 fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long, dataStale: Boolean = false) {
@@ -137,7 +161,23 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long, dataStale: Boolean = f
         Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.12f), shape).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PanelTitle(stringResource(R.string.tablet_quota_label), ring.account, ring.h5?.let { "$it%" })
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            QuotaRing(ring, 64.dp, stale = ring.stale || dataStale)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                PanelTitle(stringResource(R.string.tablet_quota_label), ring.account, null)
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        ring.h5?.takeIf { !ring.stale }?.let { "$it%" } ?: "–",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum"),
+                        color = if (ring.stale) CmColors.text2 else CmColors.text,
+                    )
+                    ring.resetAt?.let { at ->
+                        Text(stringResource(R.string.quota_resets_at, hhmm(at)), style = MaterialTheme.typography.bodySmall, color = CmColors.text2, modifier = Modifier.padding(bottom = 5.dp))
+                    }
+                }
+                if (ring.stale) Text(stringResource(R.string.quota_old), style = MaterialTheme.typography.bodySmall, color = CmColors.briefWarn)
+            }
+        }
         val reset = ring.resetAt
         val pace = ring.pace
         if (reset != null && pace != null) {
@@ -170,6 +210,78 @@ fun TabletQuotaPanel(ring: PhoneOverview.Ring, now: Long, dataStale: Boolean = f
                     style = MaterialTheme.typography.bodySmall, color = CmColors.text,
                 )
             }
+        }
+    }
+}
+
+/**
+ * «Oggi» (dalla Panoramica tolta il 09/10, l'unica statistica che in home non c'era): gli eventi della giornata per ora, le
+ * ore non ancora arrivate a puntino, il totale a destra.
+ */
+@Composable
+fun TodayPanel(bars: List<it.pixelbox.cmwatch.rules.DayBars.Bar>) {
+    val shape = RoundedCornerShape(16.dp)
+    val total = bars.sumOf { it.count }
+    val peak = it.pixelbox.cmwatch.rules.DayBars.peak(bars).coerceAtLeast(1)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(CmColors.surfaceLow).border(1.dp, Color.White.copy(alpha = 0.12f), shape).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.tablet_today_label).uppercase(), style = MonoLabel, modifier = Modifier.weight(1f))
+            Text(total.toString(), style = Mono.copy(color = CmColors.text))
+        }
+        Canvas(Modifier.fillMaxWidth().height(56.dp)) {
+            val step = size.width / 24f
+            val w = step * 0.6f
+            for (h in 0 until 24) {
+                val x = h * step + (step - w) / 2
+                val count = bars.firstOrNull { it.hour == h }?.count
+                if (count == null) {
+                    drawCircle(CmColors.briefTrack, 2.dp.toPx(), Offset(x + w / 2, size.height - 2.dp.toPx()))
+                    continue
+                }
+                val tall = if (count == 0) 3.dp.toPx() else size.height * count / peak
+                drawRoundRect(
+                    if (count == 0) CmColors.briefTrack else CmColors.briefRing, Offset(x, size.height - tall), Size(w, tall),
+                    androidx.compose.ui.geometry.CornerRadius(w / 2, w / 2),
+                )
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            listOf("0", "6", "12", "18").forEach { Text(it, style = Mono.copy(fontSize = 10.sp), modifier = Modifier.weight(1f)) }
+        }
+    }
+}
+
+/** Il titolo di una parte del cruscotto, come quelli delle sezioni della home: maiuscolo, monospazio, la riga dopo. */
+@Composable
+internal fun DeskSectionTitle(text: String) {
+    Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text.uppercase(), style = Mono.copy(letterSpacing = 1.8.sp))
+        Box(Modifier.weight(1f).height(1.dp).background(CmColors.line))
+    }
+}
+
+/**
+ * Il cruscotto del tablet senza colonne aperte (variante B, approvata da Franz il 09/10 alle 16:17): a destra della home,
+ * Recap e Utilizzo larghi come pagine. Lo spazio stretto (finestra sotto i 720 dp liberi) li mette uno sopra l'altro.
+ */
+@Composable
+fun TabletDashboard(recap: @Composable () -> Unit, usage: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().padding(start = 14.dp, end = 16.dp)) {
+        val usageColumn: @Composable (Modifier) -> Unit = { m ->
+            Column(m.verticalScroll(rememberScrollState()).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DeskSectionTitle(stringResource(R.string.home_sec_usage))
+                usage()
+            }
+        }
+        if (maxWidth >= 720.dp) Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Box(Modifier.weight(1f).fillMaxHeight()) { recap() }
+            usageColumn(Modifier.weight(1f).fillMaxHeight())
+        } else Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(0.6f).fillMaxWidth()) { recap() }
+            usageColumn(Modifier.weight(0.4f).fillMaxWidth())
         }
     }
 }
@@ -497,9 +609,11 @@ private fun DeskBody(
         val at = { left: androidx.compose.ui.unit.Dp, right: androidx.compose.ui.unit.Dp ->
             Modifier.offset { androidx.compose.ui.unit.IntOffset((left + (right - left) * side).roundToPx(), 0) }
         }
-        Box(at(homeW + handleW, detailsW).width(total - homeW - handleW - detailsW).fillMaxHeight().dotGrid()) {
+        // Senza colonne lo spazio è del cruscotto (variante B, 09/10): niente puntini dietro.
+        val dashboard = override == null && columns.isEmpty()
+        Box(at(homeW + handleW, detailsW).width(total - homeW - handleW - detailsW).fillMaxHeight().then(if (dashboard) Modifier else Modifier.dotGrid())) {
             if (override != null) override()
-            else if (columns.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { empty() }
+            else if (columns.isEmpty()) empty()
             else Columns(columns, shares, onSwap, onShares, column)
         }
         inspector?.let { i ->

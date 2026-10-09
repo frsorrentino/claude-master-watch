@@ -536,6 +536,7 @@
     <plurals name="tablet_closed"><item quantity="one">%1$d\u00A0chiusa</item><item quantity="other">%1$d\u00A0chiuse</item></plurals>
     <string name="tablet_quota_label">Quota 5h</string>
     <string name="tablet_week_label">Settimana</string>
+    <string name="tablet_today_label">Oggi · eventi per ora</string>
     <string name="tablet_not_in_column">non in colonna</string>
     <string name="tablet_insp_priority">priorità</string>
     <string name="tablet_priority_active">bassa</string>

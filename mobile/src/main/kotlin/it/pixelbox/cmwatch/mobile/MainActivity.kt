@@ -198,7 +198,11 @@ class MainActivity : ComponentActivity() {
         var nightAdding by rememberSaveable { mutableStateOf(false) }
         var queueOpen by rememberSaveable { mutableStateOf(false) }
         // La Panoramica in un foglio dal basso sopra la scheda (Franz, 01/10 12:34): si guarda la quota e si torna.
-        var overviewSheet by rememberSaveable { mutableStateOf(false) }
+        // «Utilizzo e limiti» (Utilizzo unito, approvato da Franz il 09/10 alle 16:17): niente più foglio dal basso. Il menu, la
+        // riga della quota, l'avviso in una sessione e il Registro portano alla sezione Utilizzo della home, che si apre e si
+        // illumina; sul tablet senza colonne è già a destra, nel cruscotto.
+        var usageFocus by remember { mutableStateOf(0) }
+        val goUsage: () -> Unit = { open = null; tab = StartRoute.Tab.OVERVIEW; masterChat = false; usageFocus += 1 }
         var searchOpen by rememberSaveable { mutableStateOf(false) }
         var nightOpen by rememberSaveable { mutableStateOf(false) }
         var recapPage by rememberSaveable { mutableStateOf(false) }
@@ -467,18 +471,19 @@ class MainActivity : ComponentActivity() {
             if (r.ok || r.text.startsWith("agenda row changed")) askAgenda()
             editId?.let { app.repo.forget(it) }; editId = null
         }
+        val agendaError: String? = when {
+            state != null && !canAgenda -> getString(R.string.recap_agenda_old)
+            agendaResult?.ok == false -> agendaResult.text.let { t -> if (t.startsWith("no agenda file")) getString(R.string.recap_agenda_none) else t }
+            else -> null
+        }
         if (recapPage) {
             LaunchedEffect(Unit) { if (canAgenda) askAgenda() }
             RecapScreen(
                 recapActs, state?.recap?.date.orEmpty(), agenda,
-                error = when {
-                    state != null && !canAgenda -> getString(R.string.recap_agenda_old)
-                    agendaResult?.ok == false -> agendaResult.text.let { t -> if (t.startsWith("no agenda file")) getString(R.string.recap_agenda_none) else t }
-                    else -> null
-                },
+                error = agendaError,
                 loading = agendaId != null && agendaResult == null,
                 onBack = { recapPage = false },
-                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t; recapPage = false }, onEdit = editAgenda,
+                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t; recapPage = false }, onEdit = editAgenda, onSpeak = { t -> speech.toggle(t) },
                 onSend = { a ->
                     scope.launch {
                         runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
@@ -902,7 +907,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 true
                             } ?: false },
-                            overview = { overviewSheet = true },
+                            overview = goUsage,
                             // Proposta approvata (01/10 21:19): la master legge la sessione e risponde nella sua chat.
                             speakFrom = { t, i -> speech.speakBlocks(t, i, session.name) },
                             handoff = {
@@ -1005,7 +1010,7 @@ class MainActivity : ComponentActivity() {
         val menuActions = MenuActions(
             host, updatedLabel(snap.freshness),
             snap.freshness is Freshness.Stale, onLaunch = { launching = true }, onRegister = { tab = StartRoute.Tab.DIARY; open = null },
-            onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
+            onQuadro = goUsage, onSearch = { searchOpen = true }, onSettings = { settingsOpen = true },
             onNight = { nightOpen = true }, onRecap = { recapPage = true },
         )
         val pageHeader: @Composable (String?) -> Unit = { page ->
@@ -1016,7 +1021,7 @@ class MainActivity : ComponentActivity() {
                     val rings = remember(st, events, samples, now, snap.freshness) {
                         PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
                     }
-                    QuotaLine(rings, onOpen = { overviewSheet = true })
+                    QuotaLine(rings, onOpen = goUsage)
                 } },
                 showQuota = !(masterChat && summary?.master != null),
             )
@@ -1031,6 +1036,21 @@ class MainActivity : ComponentActivity() {
         // Dalla chat della master Indietro torna alla lista delle sessioni, sempre nella home.
         BackHandler(enabled = masterChat && open == null && tab == StartRoute.Tab.OVERVIEW && !settingsOpen && terminal == null && !queueOpen && !searchOpen) { masterChat = false; masterHalf = false }
         // La pagina del riepilogo: lista, master agganciata sopra «Scrivi alla master», o «Riapri la master» se non c'è.
+        // Utilizzo unito (approvato da Franz il 09/10 alle 16:17): per account il pannello con l'anello del polso, la previsione
+        // e la settimana, poi «Oggi»; lo stesso contenuto nella sezione della home e nel cruscotto del tablet.
+        val usageContent: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
+            state?.let { st ->
+                val ov = remember(st, events, samples, now, snap.freshness) {
+                    PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
+                }
+                // Un account fermo (dato vecchio) non ha il suo riquadro se l'altro è aggiornato, come nella riga in alto
+                // (Franz, 08/10 20:32: «inutile mostrare anche il suo box»).
+                PhoneOverview.lineRings(ov.rings).forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
+                TodayPanel(ov.today)
+            }
+        }
+        // Il cruscotto del tablet (variante B): senza colonne né Registro, Recap e Utilizzo stanno a destra e non nella home.
+        val deskDashboard = wide && tabletCols.isEmpty() && tab != StartRoute.Tab.DIARY
         val summaryPage: @Composable () -> Unit = summaryPage@{
             val st = state
             if (st == null || summary == null) {
@@ -1073,17 +1093,10 @@ class MainActivity : ComponentActivity() {
                     onRecapAction = { a -> sendPrompt(a.to, a.send) },
                     agenda = agenda, onRecapPage = { recapPage = true },
                     canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t }, onEdit = editAgenda,
-                    // «Utilizzo» (Franz, 08/10 12:30): le schede della quota in una sezione richiudibile, su telefono e tablet.
-                    usage = {
-                        val rings = remember(st, events, samples, now, snap.freshness) {
-                            PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
-                        }
-                        Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            // Un account fermo (dato vecchio) non ha il suo riquadro se l'altro è aggiornato, come nella riga in alto
-                            // (Franz, 08/10 20:32: «inutile mostrare anche il suo box»).
-                            PhoneOverview.lineRings(rings).forEach { r -> TabletQuotaPanel(r, now, dataStale = snap.freshness is Freshness.Stale) }
-                        }
-                    },
+                    // «Utilizzo» (Franz, 08/10 12:30; unito il 09/10): le schede della quota e «Oggi» in una sezione richiudibile.
+                    usage = { Column(Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { usageContent() } },
+                    showRecap = !deskDashboard, showUsage = !deskDashboard, usageFocus = usageFocus,
+                    onSpeak = { t -> speech.toggle(t) },
                 )
             }
             if (master != null) {
@@ -1132,7 +1145,7 @@ class MainActivity : ComponentActivity() {
                     onAdd = { nightAdding = true },
                     onRemove = { id -> scope.launch { app.repo.command(CmdOp.NIGHT_REMOVE, null, id) } },
                     rings = PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings,
-                    onQuadro = { overviewSheet = true },
+                    onQuadro = goUsage,
                     // Una riga del Registro apre la sessione del progetto, se è viva.
                     onSession = { n -> if (st.sessions.any { s -> s.name == n && s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }) { open = n; tab = StartRoute.Tab.OVERVIEW } })
             }
@@ -1253,7 +1266,20 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 },
-                empty = { Text(getString(R.string.tablet_desk_empty), color = it.pixelbox.cmwatch.ui.tokens.CmColors.text2, modifier = Modifier.padding(32.dp)) },
+                // Senza colonne il cruscotto (variante B, approvata da Franz il 09/10 alle 16:17): Recap e Utilizzo larghi.
+                empty = {
+                    it.pixelbox.cmwatch.mobile.ui.TabletDashboard(
+                        recap = {
+                            RecapScreen(
+                                recapActs, st.recap.date, agenda, error = agendaError, loading = agendaId != null && agendaResult == null,
+                                onBack = {}, onSend = { a -> sendPrompt(a.to, a.send) },
+                                canWrite = canAgendaWrite, onTalk = { t -> talkDraft = t }, onEdit = editAgenda, topBar = false,
+                                onSpeak = { t -> speech.toggle(t) },
+                            )
+                        },
+                        usage = usageContent,
+                    )
+                },
                 override = if (tab == StartRoute.Tab.DIARY) ({ diaryPage() }) else null,
                 inspector = if (inspectorOn && first != null) ({
                     TabletInspector(it.pixelbox.cmwatch.rules.Tablet.inspect(first, timeline, now, zone), st.quota[first.account]?.h5, loading = timelineOk && timeline == null)
@@ -1286,7 +1312,7 @@ class MainActivity : ComponentActivity() {
             sessions = state?.let { st -> PhoneBoard.sections(st).flatMap { sec -> sec.sessions } }.orEmpty(),
             // La master dal menu in alto apre la sua chat come le altre (design 03/10); «Tutte le sessioni» torna al riepilogo.
             current = open, onPick = { n -> open = n; if (n == null) tab = StartRoute.Tab.OVERVIEW },
-            onQuadro = { overviewSheet = true }, onSearch = { searchOpen = true }, onLaunch = { launching = true },
+            onQuadro = goUsage, onSearch = { searchOpen = true }, onLaunch = { launching = true },
             onNight = { nightOpen = true }, onRecap = { recapPage = true },
             host = host, stale = snap.freshness is Freshness.Stale,
             staleMinutes = (snap.freshness as? Freshness.Stale)?.minutes.takeIf { state != null },
@@ -1298,7 +1324,7 @@ class MainActivity : ComponentActivity() {
                 val rings = remember(st, events, samples, now, snap.freshness) {
                     PhoneOverview.build(st, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale).rings
                 }
-                QuotaLine(rings, onOpen = { overviewSheet = true })
+                QuotaLine(rings, onOpen = goUsage)
             } },
             // Tirare giù chiede lo stato al PC; la rotella resta finché la risposta arriva o la richiesta fallisce.
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
@@ -1423,16 +1449,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
-        }
-        if (overviewSheet && state != null) {
-            ModalBottomSheet(onDismissRequest = { overviewSheet = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.bg) {
-                val model = remember(state, events, samples, now, snap.freshness) {
-                    PhoneOverview.build(state, events, samples, now, java.time.ZoneId.systemDefault(), stale = snap.freshness is Freshness.Stale)
-                }
-                OverviewScreen(model, snap.freshness,
-                    onQuestion = { overviewSheet = false; queueOpen = true },
-                    onSession = { n -> overviewSheet = false; open = n })
             }
         }
         if (launching && state != null) {

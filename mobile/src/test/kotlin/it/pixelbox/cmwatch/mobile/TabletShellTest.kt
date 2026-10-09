@@ -15,6 +15,7 @@ import com.android.resources.ScreenOrientation
 import it.pixelbox.cmwatch.contract.*
 import it.pixelbox.cmwatch.mobile.ui.*
 import it.pixelbox.cmwatch.rules.ChatFeed
+import it.pixelbox.cmwatch.rules.DayBars
 import it.pixelbox.cmwatch.rules.PhoneOverview
 import it.pixelbox.cmwatch.rules.QuotaHistory
 import it.pixelbox.cmwatch.rules.Summary
@@ -95,6 +96,16 @@ class TabletShellTest {
         emptyList(),
     )
 
+    private val agenda = AgendaPage(listOf(
+        AgendaRow("aperto", "agenzia", "franz", "Confirm the 6 client ids with a candidate", ".claude/to-decide-client-id.md"),
+        AgendaRow("aperto", "personale", "franz", "Renew the domain of the docs site", "orbit-docs"),
+        AgendaRow("aperto", "personale", "claude", "Move the docs site to the new host", "orbit-docs"),
+        AgendaRow("aperto", "agenzia", "terzi", "Client answer on the domain", ""),
+        AgendaRow("fatto", "postazione", "nessuno", "Backups of the workstation every night", "crontab"),
+    ), owner = "franz")
+    private val today = listOf(7 to 2, 8 to 5, 9 to 9, 10 to 7, 11 to 4, 12 to 3, 13 to 6, 14 to 8, 15 to 11, 16 to 6).map { (h, c) -> DayBars.Bar(h, c) } +
+        (0..6).map { DayBars.Bar(it, 0) }
+
     /** La vista unica (Franz, 04/10 16:36): la home del telefono di lato, le colonne, i dettagli se accesi. */
     @Composable
     private fun desk(cols: List<String>, shares: List<Int>, homeRight: Boolean = false, details: Boolean = false) = CmPhoneTheme(still = true) {
@@ -103,12 +114,12 @@ class TabletShellTest {
         val rings = PhoneOverview.build(st, emptyList(), samples, ts, zone, stale = false).rings
         TabletDesk(
             home = {
-                SummaryList(summary, {}, { _, _ -> }, { _, _ -> }, {}, {}, footer = {
+                SummaryList(summary, {}, { _, _ -> }, { _, _ -> }, {}, {}, showRecap = cols.isNotEmpty(), showUsage = cols.isNotEmpty(), footer = if (cols.isEmpty()) null else ({
                     androidx.compose.foundation.layout.Column(
                         androidx.compose.ui.Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
                     ) { rings.forEach { TabletQuotaPanel(it, ts) } }
-                })
+                }))
             },
             homeRight = homeRight, onHomeSide = {}, columns = cols, shares = shares, onSwap = { _, _ -> }, onShares = {},
             column = { name, drag ->
@@ -119,7 +130,18 @@ class TabletShellTest {
                     appBar = { TabletColumnHeader(r, ts, onClose = {}, drag = drag) },
                 )
             },
-            empty = { androidx.compose.material3.Text("Tocca una sessione nella home per aprirla qui; ne stanno fino a quattro, affiancate.") },
+            // Variante B (Franz, 09/10 16:17): senza colonne il cruscotto, Recap e Utilizzo larghi.
+            empty = {
+                TabletDashboard(
+                    recap = {
+                        RecapScreen(
+                            it.pixelbox.cmwatch.rules.RecapActions.of(st), st.recap.date, agenda, error = null, loading = false, onBack = {}, onSend = {},
+                            today = java.time.LocalDate.of(2026, 10, 9), topBar = false,
+                        )
+                    },
+                    usage = { rings.forEach { TabletQuotaPanel(it, ts) }; TodayPanel(today) },
+                )
+            },
             inspector = if (details) ({ TabletInspector(Tablet.inspect(selected, timeline, ts, zone), st.quota[selected.account]?.h5, loading = false) }) else null,
         )
     }

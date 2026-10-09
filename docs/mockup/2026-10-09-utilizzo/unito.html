@@ -1,0 +1,29 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="base.css">
+<style>.board{display:flex;gap:24px;padding:20px;align-items:flex-start}.col{width:412px}.col h2{font:600 13px/1 var(--mono);letter-spacing:.14em;color:var(--text2);margin:0 0 6px}.cap{color:var(--text2);font-size:13px;margin:0 0 12px;min-height:92px}
+.phone{background:var(--bg);border:1px solid #2A2E35;border-radius:28px;padding:14px;height:860px;overflow:hidden;position:relative}
+.hd{display:flex;align-items:center;gap:10px;font-size:22px;margin:2px 4px 8px}.hd small{font-size:15px;color:var(--text2)}
+.map{display:flex;flex-direction:column;gap:8px}.mi{background:var(--surface);border-radius:16px;padding:10px 14px}.mi b{display:block;font-weight:500}.mi span{color:var(--text2);font-size:13.5px}.mi em{font-style:normal;color:var(--good);font-size:12px;font:500 11px var(--mono);letter-spacing:.08em}</style></head><body>
+<div class="board">
+<div class="col"><h2>UTILIZZO UNITO · SOLO IN HOME</h2><p class="cap">Una scheda per account: in testa l'anello doppio del polso (5 ore fuori, settimana dentro) col numero grande, sotto il grafico previsionale e la barra della settimana che hai già. In fondo «Oggi», l'unica statistica che in home non c'era. Il menu ≡ e la riga in alto portano qui.</p>
+<div class="phone"><div class="hd"><b style="font-weight:500">Master</b><small>2 aperte</small></div>
+<div class="ql">○ 5h <span class="tr"><b></b></span> 34% · si azzera alle 20:00</div>
+<div class="sec">› SESSIONI · 2<i></i></div>
+<div class="sec">› RECAP<i></i><small>3 · 13 · 10</small></div>
+<div class="sec" style="color:var(--text)">⌄ UTILIZZO<i></i></div>
+<div id="u"></div>
+</div></div>
+<div class="col"><h2>LE ALTRE STATISTICHE</h2><p class="cap">Niente si perde: della scheda che togliamo, «Oggi» entra in Utilizzo, il resto in home c'era già, nel posto dove serve.</p>
+<div class="map">
+<div class="mi"><em>QUOTA AD ANELLI</em><b>Testa della scheda di ogni account</b><span>stesso anello del polso, numero grande, ora di ripartenza</span></div>
+<div class="mi"><em>RITMO</em><b>Grafico delle 5 ore e barra della settimana</b><span>la previsione al rinnovo, come adesso</span></div>
+<div class="mi"><em>INVII PROGRAMMATI</em><b>Riga sotto il numero dell'account</b><span>«2 invii programmati alla ripartenza…»</span></div>
+<div class="mi"><em>OGGI</em><b>Nuova scheda in fondo a Utilizzo</b><span>gli eventi per ora, le ore future a puntino</span></div>
+<div class="mi"><em>ADESSO</em><b>I gruppi di Sessioni</b><span>«Ti aspetta · 1», «Al lavoro · 1», «Ferma · 1»</span></div>
+<div class="mi"><em>TI ASPETTANO</em><b>Il gruppo in cima a Sessioni</b><span>con le opzioni già pronte</span></div>
+<div class="mi"><em>CONTESTO</em><b>«ctx 62%» e la barretta su ogni scheda</b><span>col colore delle soglie</span></div>
+<div class="mi"><em>NOTTE IN CODA</em><b>Sezione Notte e «Stanotte» in Altro</b><span>i lavori in coda e l'ultima notte</span></div>
+<div class="mi"><em>AGGIORNATO</em><b>In testa al menu ≡</b><span>«collegato a … · aggiornato N min fa», in rosso col PC fermo</span></div>
+</div></div>
+</div>
+<script src="lib.js"></script><script>document.getElementById('u').innerHTML=quotaCard(P,384)+quotaCard(Wk,384)+today(384)</script>
+</body></html>

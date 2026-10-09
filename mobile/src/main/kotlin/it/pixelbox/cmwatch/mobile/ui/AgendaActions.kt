@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SmartToy
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +69,8 @@ class AgendaActions {
 fun AgendaActionsLayer(
     s: AgendaActions, canWrite: Boolean, today: java.time.LocalDate,
     onSend: (RecapActions.Action) -> Unit, onTalk: (String) -> Unit, onEdit: (RecapAgenda.Edit) -> Unit,
+    /** La lettura ad alta voce del dettaglio (Franz, 09/10 16:31: «serve tasto play di lettura anche per le schede»). */
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val uri = androidx.compose.ui.platform.LocalUriHandler.current
     val doText = stringResource(R.string.recap_do_text); val doRef = stringResource(R.string.recap_do_ref)
@@ -91,7 +94,7 @@ fun AgendaActionsLayer(
     s.menuFor?.let { r -> AgendaMenuSheet(r, RecapAgenda.menu(r, canWrite, today), onDismiss = { s.menuFor = null }) { pick(r, it) } }
     s.deepenFor?.let { r ->
         AgendaDeepenSheet(
-            r, onDismiss = { s.deepenFor = null },
+            r, onDismiss = { s.deepenFor = null }, onSpeak = onSpeak,
             onAsk = { s.deepenFor = null; s.send = toMaster(r, RecapAgenda.deepenText(r, deepenT)) to fromAgenda(r) },
             onActions = { s.deepenFor = null; s.menuFor = r },
         )
@@ -158,7 +161,7 @@ private fun AgendaMenuSheet(r: AgendaRow, items: List<Item>, onDismiss: () -> Un
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AgendaDeepenSheet(r: AgendaRow, onDismiss: () -> Unit, onAsk: () -> Unit, onActions: () -> Unit) {
+private fun AgendaDeepenSheet(r: AgendaRow, onDismiss: () -> Unit, onAsk: () -> Unit, onActions: () -> Unit, onSpeak: ((String) -> Unit)? = null) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = CmColors.surface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -180,10 +183,23 @@ private fun AgendaDeepenSheet(r: AgendaRow, onDismiss: () -> Unit, onAsk: () -> 
                 )
             }
             val detail = r.detail?.trim().orEmpty()
-            if (detail.isNotEmpty()) Text(
-                detail, style = MaterialTheme.typography.bodyLarge, color = CmColors.text,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surfaceLow).padding(horizontal = 18.dp, vertical = 14.dp),
-            ) else Text(stringResource(R.string.agenda_no_detail), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
+            if (detail.isNotEmpty()) Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surfaceLow).padding(start = 18.dp, end = 4.dp, top = 14.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Text(detail, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.weight(1f))
+                // ▶ legge titolo e dettaglio; mentre legge diventa ■, come accanto ai messaggi della chat.
+                onSpeak?.let { speak ->
+                    val text = r.title.trim() + ".\n" + detail
+                    val reading = LocalSpeaking.current == text
+                    androidx.compose.material3.IconButton(onClick = { speak(text) }) {
+                        Icon(
+                            if (reading) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                            stringResource(if (reading) R.string.stop_reading else R.string.read_aloud), tint = CmColors.actionIcon,
+                        )
+                    }
+                }
+            } else Text(stringResource(R.string.agenda_no_detail), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.material3.TextButton(onClick = onActions) { Text(stringResource(R.string.agenda_actions), color = CmColors.actionIcon) }
                 if (detail.isEmpty()) androidx.compose.material3.Button(
