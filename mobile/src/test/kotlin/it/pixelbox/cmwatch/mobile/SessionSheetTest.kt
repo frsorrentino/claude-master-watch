@@ -122,6 +122,27 @@ class SessionSheetTest {
         }
     }
 
+    // Poco spazio in altezza, come una colonna del tablet con la tastiera aperta (segnalazione del 09/10 20:38): il campo
+    // resta intero e il box dei Prossimi scorre dentro, invece di schiacciare il campo.
+    @Test fun sheetNextStepsShort() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_5.copy(
+            screenWidth = 1600, screenHeight = 560, xdpi = 320, ydpi = 320, density = com.android.resources.Density.XHIGH,
+            orientation = com.android.resources.ScreenOrientation.LANDSCAPE, locale = "it",
+        ))
+        paparazzi.snapshot {
+            val t = st.ts - 600
+            val entries = listOf(
+                TranscriptEntry("u1.0", "user", text = "Rewrite the README with the three sections", at = t, origin = "pc"),
+                TranscriptEntry("a1.0", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2", at = t + 40),
+            )
+            val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = null)
+            CmPhoneTheme(still = true) {
+                SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()),
+                    draftState = androidx.compose.runtime.mutableStateOf("Controlla anche il changelog"))
+            }
+        }
+    }
+
     // Le azioni ricorrenti della master (contratto 1.33, Franz 04/10 20:24; tasto ⟳ nel campo, 23:55): chiuse, solo il tasto.
     @Test fun masterRecurringClosed() = paparazzi.snapshot {
         val m = st.sessions.first { it.state == SessionState.IDLE }.copy(name = "master", question = null, suggestion = null)

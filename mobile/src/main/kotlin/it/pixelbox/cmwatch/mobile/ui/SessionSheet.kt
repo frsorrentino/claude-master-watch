@@ -327,6 +327,10 @@ fun SessionSheet(
             // La conversazione arriva in dissolvenza (osservazioni del 03/10, transizione 5): mentre si carica la rotella, poi la
             // lista entra in 150 ms invece di comparire a pezzi. Con le animazioni spente, subito.
             val feedOff = animationsOff()
+            // Chat e box dei Prossimi si dividono quello che resta dopo il campo, che si misura prima e resta intero: prima il
+            // box, che se non ci sta scorre dentro, poi la chat (segnalazione del 09/10 20:38: sul tablet, con la tastiera
+            // aperta, il box schiacciava il campo e non si vedeva cosa si scriveva).
+            Column(Modifier.weight(1f).fillMaxWidth()) {
             androidx.compose.animation.AnimatedContent(
                 feed == null && loadingFeed, Modifier.weight(1f).fillMaxWidth(), label = "feed",
                 transitionSpec = {
@@ -428,6 +432,7 @@ fun SessionSheet(
                 onPick = { r -> draft = NextSteps.append(draft, r.text, then) },
                 onSend = { r -> actions.send(PhonePrimary.Target.PROMPT, r.text); follow = true },
             )
+            }
         } }
         if (home == null) { chatArea(); dock?.invoke() } else if (halfStops) {
             // Il tablet (Franz, 08/10 18:15): la home resta sotto, ferma; la conversazione è un foglio che cresce dal basso fino
@@ -837,7 +842,8 @@ private fun PromptBox(
             // Il box sta sopra il campo e si apre verso l'alto: chiuso la freccia sale, aperto scende.
             Icon(if (open) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess, null, tint = CmColors.text2, modifier = Modifier.size(20.dp))
         }
-        if (open) {
+        // Con poco spazio (una colonna del tablet con la tastiera aperta) le righe scorrono dentro il box.
+        if (open) Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             (rows + if (showOld) old else emptyList()).forEach { r ->
                 androidx.compose.material3.HorizontalDivider(color = CmColors.line)
                 PromptBoxRow(r, draftBlank, onPick, onSend, onDismiss, faded = r in old)
