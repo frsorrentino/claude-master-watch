@@ -304,6 +304,12 @@ private fun SummaryCard(
     firstFilled: Boolean = true, canExit: Boolean = false, onClose: () -> Unit = {}, now: Long = System.currentTimeMillis() / 1000,
 ) {
     val s = r.session
+    // La card si segna sullo schermo finché è composta (transizione C): aperta da qui, la sessione vola da lei.
+    val onScreen = LocalCardsOnScreen.current
+    androidx.compose.runtime.DisposableEffect(onScreen, s.name) {
+        onScreen?.let { m -> m[s.name] = (m[s.name] ?: 0) + 1 }
+        onDispose { onScreen?.let { m -> val n = (m[s.name] ?: 1) - 1; if (n <= 0) m.remove(s.name) else m[s.name] = n } }
+    }
     var closeAsk by rememberSaveable(s.name) { mutableStateOf(false) }
     // Il tasto di un passo toccato resta segnato «mandato» finché la sessione non cambia esito (Franz, 06/10 12:32).
     var sentSteps by rememberSaveable(s.name, s.outcome?.at) { mutableStateOf(listOf<String>()) }

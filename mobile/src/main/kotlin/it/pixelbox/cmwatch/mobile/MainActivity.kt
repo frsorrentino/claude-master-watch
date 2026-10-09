@@ -9,6 +9,7 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.rememberTransition
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -282,8 +283,15 @@ class MainActivity : ComponentActivity() {
         var flyTarget by rememberSaveable { mutableStateOf(open) }
         var swipeSet by remember { mutableStateOf(false) }
         val seek = remember { SeekableTransitionState(flyTarget) }
+        // Transizione C (Franz, 09/10 20:15): fra home e sessione il volo, nei due versi; fra sessioni lo scorrimento. La card
+        // vola solo se è sullo schermo; aperta da menu, avviso o ricerca la sessione entra di lato ed esce dallo stesso lato.
+        val cardsOnScreen = remember { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
+        var flyByCard by remember { mutableStateOf(true) }
         LaunchedEffect(open) {
-            if (!swipeSet) { flyTarget = open; return@LaunchedEffect }
+            if (!swipeSet) {
+                if (open != null && flyTarget == null) flyByCard = cardsOnScreen.containsKey(open)
+                flyTarget = open; return@LaunchedEffect
+            }
             swipeSet = false
             // Lo scorrimento non vola, ma il volo deve sapere dove si è arrivati (Franz, 09/10 17:23: «alcune hanno un movimento,
             // altre aprono di colpo»). Dopo un volo e uno scorrimento il bersaglio restava la sessione di prima: tornati alla home
@@ -1318,6 +1326,7 @@ class MainActivity : ComponentActivity() {
             it.pixelbox.cmwatch.mobile.ui.LocalPromptBoxes provides promptBoxes,
             it.pixelbox.cmwatch.mobile.ui.LocalRecurring provides state?.recurring.orEmpty(),
             LocalChatZoom provides chatZoom, LocalSetChatZoom provides { z: Float -> chatZoom = z },
+            it.pixelbox.cmwatch.mobile.ui.LocalCardsOnScreen provides cardsOnScreen,
         ) {
         if (wide && state != null && summary != null) tabletDesk(state, summary) else
         AppShell(
@@ -1348,21 +1357,40 @@ class MainActivity : ComponentActivity() {
                 return@AppShell
             }
             SharedTransitionLayout {
-                flight.AnimatedContent(transitionSpec = { EnterTransition.None togetherWith ExitTransition.None }, contentKey = { it != null }) { name ->
-                    CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent)) {
+                val sideOff = animationsOff()
+                flight.AnimatedContent(
+                    transitionSpec = {
+                        val opening = targetState != null
+                        val ease = androidx.compose.animation.core.tween<androidx.compose.ui.unit.IntOffset>(FLY_MS, easing = it.pixelbox.cmwatch.mobile.ui.CmMotion.easing)
+                        when {
+                            // La card che vola: lo fanno i bordi condivisi, il resto non si muove.
+                            flyByCard || sideOff -> EnterTransition.None togetherWith ExitTransition.None
+                            // Senza card la pagina entra da destra sopra la home, che arretra un poco; esce dallo stesso lato.
+                            opening -> (slideInHorizontally(ease) { w -> w / 3 } + fadeIn(androidx.compose.animation.core.tween(FLY_MS))) togetherWith
+                                (slideOutHorizontally(ease) { w -> -w / 10 } + fadeOut(androidx.compose.animation.core.tween(FLY_MS / 2)))
+                            else -> ((slideInHorizontally(ease) { w -> -w / 10 } + fadeIn(androidx.compose.animation.core.tween(FLY_MS))) togetherWith
+                                (slideOutHorizontally(ease) { w -> w / 3 } + fadeOut(androidx.compose.animation.core.tween(FLY_MS)))).apply { targetContentZIndex = -1f }
+                        }
+                    },
+                    contentKey = { it != null },
+                ) { name ->
+                    CompositionLocalProvider(LocalFly provides Fly(this@SharedTransitionLayout, this@AnimatedContent, enabled = flyByCard)) {
                         // Scorrimento laterale fra riepilogo e sessioni (Franz, 03/10 15:59): il riepilogo è sempre la prima
                         // pagina (`null`), poi le sessioni nell'ordine della regia (Franz, 30/09: «lo scroll laterale tra
                         // sessioni»). La pagina ferma decide la sessione aperta, e il menu in alto la segue.
                         // Solo il contenuto di destinazione segue la pagina: durante l'uscita (gesto indietro, volo verso la
                         // card) quello che se ne va non deve riaprire né spostarsi. Attivo = la sua chiave (sessione aperta sì/no)
                         // è quella di adesso; il nome della sessione può cambiare restando nello stesso contenuto (menu in alto).
+                        // Transizione C: la home non è più la prima pagina della fila; ci si torna col volo (Indietro, o il dito verso
+                        // destra sulla prima sessione), mai scorrendo di lato.
+                        if (name == null) summaryPage() else {
                         val active = (name != null) == (flyTarget != null)
                         val target = if (active) open else name
                         // Mentre si scorre fra le sessioni l'ordine resta quello di prima (Franz, 09/10 15:46: al rilascio la sessione
                         // aperta diventava letta, cambiava gruppo e le pagine si riordinavano sotto il dito); sul riepilogo si rifà.
                         val lastPages = remember { arrayOf<List<String?>>(emptyList()) }
                         val pages = remember(state?.sessions, target) {
-                            val fresh = it.pixelbox.cmwatch.rules.SwipePages.of(state, target)
+                            val fresh = it.pixelbox.cmwatch.rules.SwipePages.of(state, target).filter { p -> p != null }
                             (if (target == null) fresh else it.pixelbox.cmwatch.rules.SwipePages.stable(lastPages[0], fresh)).also { p -> lastPages[0] = p }
                         }
                         val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(target).coerceAtLeast(0)) { pages.size }
@@ -1401,7 +1429,38 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                         }
-                        androidx.compose.foundation.pager.HorizontalPager(pager, key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
+                        // Il dito verso destra sulla prima sessione richiude la pagina nella sua card (o la riporta di lato): guida
+                        // il volo all'indietro come il gesto Indietro; lasciato oltre un terzo, o con uno slancio, arriva alla home.
+                        val widthPx = with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp.toPx() }
+                        val flyNow by rememberUpdatedState(flyTarget)
+                        var dragged by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+                        LaunchedEffect(seek) {
+                            androidx.compose.runtime.snapshotFlow { dragged }.collect { d -> if (d > 0f) seek.seekTo((d / widthPx).coerceIn(0f, 0.999f), targetState = null) }
+                        }
+                        val backDrag = remember(pager) {
+                            object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+                                override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                                    // Il dito torna indietro dopo aver cominciato a richiudere: prima si riapre la pagina.
+                                    if (dragged <= 0f || available.x >= 0f) return androidx.compose.ui.geometry.Offset.Zero
+                                    val use = maxOf(available.x, -dragged)
+                                    dragged += use
+                                    return androidx.compose.ui.geometry.Offset(use, 0f)
+                                }
+                                override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                                    if (source != androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput || available.x <= 0f || pager.currentPage != 0 || flyNow == null) return androidx.compose.ui.geometry.Offset.Zero
+                                    dragged += available.x
+                                    return androidx.compose.ui.geometry.Offset(available.x, 0f)
+                                }
+                                override suspend fun onPreFling(available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
+                                    if (dragged <= 0f) return androidx.compose.ui.unit.Velocity.Zero
+                                    val home = dragged / widthPx > 0.33f || available.x > 1200f
+                                    dragged = 0f
+                                    if (home) open = null else seek.animateTo(flyNow)
+                                    return available
+                                }
+                            }
+                        }
+                        androidx.compose.foundation.pager.HorizontalPager(pager, modifier = Modifier.nestedScroll(backDrag), key = { pages[it] ?: SUMMARY_PAGE }, beyondViewportPageCount = 0) { page ->
                             val n = pages[page]
                             // La sessione aperta appena uscita dallo stato resta com'era, chiusa, sotto il pannello di chiusura.
                             val session = n?.let { x -> state?.sessions?.firstOrNull { it.name == x } ?: lastSeen[x]?.takeIf { x == target }?.copy(state = SessionState.GONE, question = null) }
@@ -1425,6 +1484,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             }
+                        }
                         }
                     }
                 }

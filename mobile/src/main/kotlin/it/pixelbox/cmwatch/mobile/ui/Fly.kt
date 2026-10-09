@@ -9,7 +9,17 @@ import androidx.compose.ui.Modifier
 
 /** Le scene del «volo» card → scheda (design 24/09, «Movimento»); assenti negli snapshot, dove il modificatore non fa nulla. */
 @OptIn(ExperimentalSharedTransitionApi::class)
-class Fly(val shared: SharedTransitionScope, val anim: AnimatedVisibilityScope)
+class Fly(
+    val shared: SharedTransitionScope, val anim: AnimatedVisibilityScope,
+    /** Il volo c'è solo se la card toccata era sullo schermo (transizione C, 09/10); altrimenti la pagina entra di lato. */
+    val enabled: Boolean = true,
+)
+
+/**
+ * Le card delle sessioni sullo schermo della home, per nome (transizione C, Franz 09/10 20:15): una sessione aperta da qui vola
+ * dalla sua card; aperta da menu, avviso o ricerca, senza card in vista, entra di lato come una pagina.
+ */
+val LocalCardsOnScreen = compositionLocalOf<androidx.compose.runtime.snapshots.SnapshotStateMap<String, Int>?> { null }
 
 val LocalFly = compositionLocalOf<Fly?> { null }
 
@@ -20,7 +30,7 @@ const val FLY_MS = 320
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun Modifier.fly(key: String): Modifier {
-    val f = LocalFly.current ?: return this
+    val f = LocalFly.current?.takeIf { it.enabled } ?: return this
     val off = animationsOff()
     return with(f.shared) {
         this@fly.sharedBounds(
