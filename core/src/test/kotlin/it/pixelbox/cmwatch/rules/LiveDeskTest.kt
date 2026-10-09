@@ -159,11 +159,13 @@ class LiveDeskTest {
         val busy = idle.sessions.single().copy(followed = true, name = "pix-news-it", state = it.pixelbox.cmwatch.contract.SessionState.BUSY, outcome = null, toolNote = "Run the tests", turnStarted = 1_789_219_700L)
         val st = idle.copy(sessions = listOf(busy))
         val r = Run(LiveDesk.Desk(recapEveryMs = 240_000), st).state(st, t0)
+        // Franz, 09/10 16:20: «il recap della live dovrebbe partire anche appena si avvia la live»: il primo appena la voce tace.
         r.spoken(t0 + 1_000)
-        assertTrue(r.tick(t0 + 2_000).said().isEmpty())
+        assertEquals(listOf("news lavora da 5 minuti, ora: Run the tests. Obiettivo: Test deploy on staging."), r.tick(t0 + 2_000).said())
+        r.spoken(t0 + 6_000)
         assertTrue(r.tick(t0 + 200_000).said().isEmpty())
-        assertTrue(r.tick(t0 + 241_000).said().isEmpty())   // 239 s dal primo tic, che fa partire il conto
-        assertEquals(listOf("news lavora da 9 minuti, ora: Run the tests. Obiettivo: Test deploy on staging."), r.tick(t0 + 243_000).said())
+        assertTrue(r.tick(t0 + 241_000).said().isEmpty())   // 239 s dal primo recap
+        assertEquals(1, r.tick(t0 + 243_000).said().size)
         r.spoken(t0 + 247_000)
         assertTrue(r.tick(t0 + 300_000).said().isEmpty())
         assertEquals(1, r.tick(t0 + 484_000).said().size)

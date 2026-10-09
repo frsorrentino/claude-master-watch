@@ -92,7 +92,7 @@ object LiveDesk {
         val confirm: DoubleConfirm.Machine = DoubleConfirm.Machine(), val tell: Tell? = null, val pick: Route.Pick? = null,
         val askingFor: String? = null, val ask: Ask? = null, val onlyBlocking: Boolean = false, val linked: Boolean = true,
         val paused: Boolean = false, val card: LiveCard? = null, val seq: Long = 0,
-        /** Ogni quanto il recap (Franz, 08/10 20:15), 0 = spento; `lastRecap` l'ultima volta, o l'accensione. */
+        /** Ogni quanto il recap (Franz, 08/10 20:15), 0 = spento; `lastRecap` l'ultima volta, 0 = mai: il primo all'accensione. */
         val recapEveryMs: Long = 0, val lastRecap: Long = 0,
         /** Le azioni offerte dal tasto Azioni del watch (Franz, 08/10 21:17), nell'ordine dei tasti della scelta. */
         val actions: List<RecapActions.Action> = emptyList(),
@@ -304,8 +304,9 @@ object LiveDesk {
         /** Il recap a intervalli: a voce zitta, senza notizia in corso né interazioni; se non c'è niente da dire, tace. */
         fun recapTick(state: State) {
             if (d.recapEveryMs <= 0) return
-            if (d.lastRecap == 0L) { d = d.copy(lastRecap = now); return }
-            if (now - d.lastRecap < d.recapEveryMs || d.paused || !d.linked || d.speaking || busy() || d.current != null || d.ask != null) return
+            // Il primo appena la live parte e la voce tace (Franz, 09/10 16:20), poi uno ogni intervallo.
+            if (d.lastRecap != 0L && now - d.lastRecap < d.recapEveryMs) return
+            if (d.paused || !d.linked || d.speaking || busy() || d.current != null || d.ask != null) return
             val all = LiveFeed.round(state, lang.feed, d.feed, now / 1000)
             d = d.copy(feed = LiveFeed.heard(d.feed), lastRecap = now)
             if (all.isNotEmpty()) reply(all.joinToString(" "))
