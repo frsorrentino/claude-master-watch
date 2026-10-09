@@ -570,22 +570,28 @@ private fun Columns(
         val over = if (from < 0) -1 else lefts.dropLast(1).indexOfLast { it <= lefts[from] + live[from] / 2 + draggedPx }.coerceIn(0, columns.size - 1)
         val overNow by androidx.compose.runtime.rememberUpdatedState(over)
         val leftsNow by androidx.compose.runtime.rememberUpdatedState(lefts)
+        // Dove va ogni colonna: già il risultato dello scambio, con le larghezze che lo scambio porta con sé (Franz, 09/10
+        // 15:46: al rilascio le colonne si ricollocavano a scatti, perché l'anteprima dava alla colonna scavalcata la larghezza
+        // del posto e non la sua).
+        val (order, orderShares) = Tablet.preview(columns, shares, from, over)
+        val liveP = if (border >= 0) live else orderShares.map { it * unit }
+        val leftsP = liveP.runningFold(0f) { x, w -> x + w + gapPx }
         val spec: androidx.compose.animation.core.AnimationSpec<Float> =
             if (off) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
         columns.forEachIndexed { i, name ->
             androidx.compose.runtime.key(name) {
-                val slot = if (from >= 0 && i == over && over != from) from else i
+                val slot = order.indexOf(name).takeIf { it >= 0 } ?: i
                 val dragging = name == dragged
                 val resizing = border >= 0
                 // Posizione e larghezza scivolano verso il loro posto: dopo uno scambio, al rilascio di un bordo (che scatta al
                 // dodicesimo), quando una colonna arriva o se ne va. Sotto il dito invece seguono senza ritardo.
-                val x = remember { androidx.compose.animation.core.Animatable(lefts[slot]) }
-                val w = remember { androidx.compose.animation.core.Animatable(live[slot]) }
-                androidx.compose.runtime.LaunchedEffect(lefts[slot], live[slot], dragging, resizing) {
+                val x = remember { androidx.compose.animation.core.Animatable(leftsP[slot]) }
+                val w = remember { androidx.compose.animation.core.Animatable(liveP[slot]) }
+                androidx.compose.runtime.LaunchedEffect(leftsP[slot], liveP[slot], dragging, resizing) {
                     when {
-                        dragging -> w.snapTo(live[slot])
-                        resizing -> { x.snapTo(lefts[slot]); w.snapTo(live[slot]) }
-                        else -> { launch { x.animateTo(lefts[slot], spec) }; w.animateTo(live[slot], spec) }
+                        dragging -> w.snapTo(liveP[slot])
+                        resizing -> { x.snapTo(leftsP[slot]); w.snapTo(liveP[slot]) }
+                        else -> { launch { x.animateTo(leftsP[slot], spec) }; w.animateTo(liveP[slot], spec) }
                     }
                 }
                 // Presa per la testata la colonna si alza un poco; una colonna nuova entra sfumando.

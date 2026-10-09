@@ -15,6 +15,14 @@ object SwipePages {
         return listOf<String?>(null) + live + listOfNotNull(open?.takeIf { it !in live })
     }
 
+    /**
+     * Le pagine mentre si scorre fra le sessioni (Franz, 09/10 15:46: al rilascio «una disposizione a scatti»): quelle che
+     * c'erano restano nel loro ordine, le nuove in fondo nell'ordine della regia, quelle sparite escono. La regia si rifà
+     * solo tornando al riepilogo.
+     */
+    fun stable(prev: List<String?>, fresh: List<String?>): List<String?> =
+        prev.filter { it in fresh } + fresh.filter { it !in prev }
+
     /** Che cosa fa una pagina ferma: niente, o aprire una sessione (`null` = il riepilogo). */
     sealed interface Move {
         data object Stay : Move

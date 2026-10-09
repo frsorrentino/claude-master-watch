@@ -113,6 +113,17 @@ object Tablet {
     }
 
     /** Una colonna trascinata sopra un'altra: si scambiano di posto. */
+    /**
+     * L'anteprima di un trascinamento (Franz, 09/10 15:46): l'ordine e le larghezze come saranno dopo lo scambio, così al
+     * rilascio niente si sposta di nuovo. `from` < 0 o uguale a `over` = nessuno scambio.
+     */
+    fun preview(columns: List<String>, shares: List<Int>, from: Int, over: Int): Pair<List<String>, List<Int>> {
+        if (from < 0 || from == over || over !in columns.indices) return columns to shares
+        val s = shares.toMutableList()
+        if (from in s.indices && over in s.indices) { val x = s[from]; s[from] = s[over]; s[over] = x }
+        return swap(columns, from, over) to s
+    }
+
     fun swap(columns: List<String>, from: Int, to: Int): List<String> {
         if (from == to || from !in columns.indices || to !in columns.indices) return columns
         return columns.toMutableList().also { it[from] = columns[to]; it[to] = columns[from] }

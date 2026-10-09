@@ -177,4 +177,13 @@ class TabletTest {
         assertEquals(listOf(6, 6), Tablet.Shares.fromPref("11,1", 2))
         assertEquals(listOf(3, 3, 3, 3), Tablet.Shares.fromPref(null, 4))
     }
+
+    // Franz, 09/10 15:46: al rilascio di una colonna trascinata le altre si ricollocavano a scatti. L'anteprima è già il
+    // risultato dello scambio, larghezze comprese: al rilascio nessuna colonna cambia posto né larghezza.
+    @Test fun thePreviewIsTheSwapWithItsWidths() {
+        val p = Tablet.preview(listOf("a", "b", "c"), listOf(6, 2, 4), from = 0, over = 2)
+        assertEquals(listOf("c", "b", "a"), p.first); assertEquals(listOf(4, 2, 6), p.second)
+        assertEquals(Tablet.swap(listOf("a", "b", "c"), 0, 2), p.first)
+        assertEquals(listOf("a", "b") to listOf(5, 7), Tablet.preview(listOf("a", "b"), listOf(5, 7), from = -1, over = 1))
+    }
 }

@@ -1319,7 +1319,13 @@ class MainActivity : ComponentActivity() {
                         // è quella di adesso; il nome della sessione può cambiare restando nello stesso contenuto (menu in alto).
                         val active = (name != null) == (flyTarget != null)
                         val target = if (active) open else name
-                        val pages = remember(state?.sessions, target) { it.pixelbox.cmwatch.rules.SwipePages.of(state, target) }
+                        // Mentre si scorre fra le sessioni l'ordine resta quello di prima (Franz, 09/10 15:46: al rilascio la sessione
+                        // aperta diventava letta, cambiava gruppo e le pagine si riordinavano sotto il dito); sul riepilogo si rifà.
+                        val lastPages = remember { arrayOf<List<String?>>(emptyList()) }
+                        val pages = remember(state?.sessions, target) {
+                            val fresh = it.pixelbox.cmwatch.rules.SwipePages.of(state, target)
+                            (if (target == null) fresh else it.pixelbox.cmwatch.rules.SwipePages.stable(lastPages[0], fresh)).also { p -> lastPages[0] = p }
+                        }
                         val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = pages.indexOf(target).coerceAtLeast(0)) { pages.size }
                         val currentPages by rememberUpdatedState(pages)
                         // Una decisione sola fra lo scorrimento del dito e il riallineamento alla sessione aperta (`SwipePages.step`).

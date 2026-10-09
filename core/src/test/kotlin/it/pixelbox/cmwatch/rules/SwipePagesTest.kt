@@ -71,4 +71,13 @@ class SwipePagesTest {
 
     @Test fun anOpenSessionThatIsNoPageIsLeftAlone() =
         assertEquals(SwipePages.Step.None, SwipePages.step(prevSettled = 1, settled = 1, scrolling = false, pages = pp, open = "zeta"))
+
+    // Franz, 09/10 15:46: al rilascio la pagina scattava. Aperta, la sessione «ha finito» diventa letta e cambia gruppo: con
+    // la regia rifatta a ogni stato le pagine si riordinavano sotto il dito. Mentre si scorre l'ordine resta quello di prima.
+    @Test fun theOrderStaysWhileSwipingAndNewSessionsGoAtTheEnd() {
+        val prev = listOf(null, "a", "b", "c")
+        assertEquals(listOf(null, "a", "b", "c"), SwipePages.stable(prev, listOf(null, "b", "a", "c")))
+        assertEquals(listOf(null, "a", "c", "d"), SwipePages.stable(prev, listOf(null, "d", "c", "a")))
+        assertEquals(listOf(null, "b", "a"), SwipePages.stable(emptyList(), listOf(null, "b", "a")))
+    }
 }
