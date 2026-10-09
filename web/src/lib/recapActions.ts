@@ -15,9 +15,10 @@ export type RecapAction = {
 
 const key = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 
-export function recapActions(st: State, resume: (project: string, next: string) => string = (p, n) => `Riprendi ${p}: ${n}`): RecapAction[] {
+/** `withSessions` = anche i «Prossimi:» delle sessioni; il Recap no (Franz, 09/10 17:21: senza il loro esito «non sono utili»). */
+export function recapActions(st: State, resume: (project: string, next: string) => string = (p, n) => `Riprendi ${p}: ${n}`, withSessions = true): RecapAction[] {
   const live = st.sessions.filter(s => s.state !== 'gone' && s.name !== MASTER)
-  const fromSessions = live.flatMap(s => (s.next_steps ?? []).map(n => ({ text: n.text, send: n.text, to: s.name, from: s.name, viaMaster: false, recap: false })))
+  const fromSessions = !withSessions ? [] : live.flatMap(s => (s.next_steps ?? []).map(n => ({ text: n.text, send: n.text, to: s.name, from: s.name, viaMaster: false, recap: false })))
   const fromRecap = st.recap.items.flatMap(r => {
     const next = r.next?.trim()
     if (!next) return []

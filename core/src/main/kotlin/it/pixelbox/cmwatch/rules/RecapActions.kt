@@ -21,9 +21,13 @@ object RecapActions {
         val recap: Boolean = false, val agenda: Boolean = false,
     )
 
-    fun of(state: State, resume: String = "Riprendi %1\$s: %2\$s"): List<Action> {
+    /**
+     * `withSessions` = anche i «Prossimi:» delle sessioni vive: li vuole il tasto Azioni della live, dove arrivano subito dopo
+     * l'esito letto a voce; la sezione Recap no (Franz, 09/10 17:21: senza il loro esito accanto «non sono utili»).
+     */
+    fun of(state: State, resume: String = "Riprendi %1\$s: %2\$s", withSessions: Boolean = true): List<Action> {
         val live = state.sessions.filter { it.state != SessionState.GONE && it.name != ContextActions.MASTER }
-        val fromSessions = live.flatMap { s -> s.nextSteps.orEmpty().map { Action(it.text, it.text, s.name, s.name, false) } }
+        val fromSessions = if (!withSessions) emptyList() else live.flatMap { s -> s.nextSteps.orEmpty().map { Action(it.text, it.text, s.name, s.name, false) } }
         val fromRecap = state.recap.items.mapNotNull { r ->
             val next = r.next?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val s = live.firstOrNull { it.name == r.project || it.project.substringAfterLast('/') == r.project }

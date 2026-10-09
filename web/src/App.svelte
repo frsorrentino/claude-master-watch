@@ -307,7 +307,8 @@
   })
   // Il Recap (Franz, 08/10 20:41): le Azioni e le righe dell'agenda (contratto 1.46), chieste quando il relay le conosce, a
   // ogni recap nuovo e all'apertura della pagina; nella demo un'agenda inventata.
-  const actions = $derived(recapActions(st, t.recapResume))
+  // Solo i «prossimo» del recap del giorno (Franz, 09/10 17:21): i «Prossimi:» delle sessioni stanno sulle loro schede.
+  const actions = $derived(recapActions(st, t.recapResume, false))
   const recapDay = $derived(/^\d{4}-\d{2}-\d{2}$/.test(st.recap.date) ? `${st.recap.date.slice(8, 10)}/${st.recap.date.slice(5, 7)}` : '')
   let agenda = $state<{ page: AgendaPage | null; error: string | null; loading: boolean }>({ page: null, error: null, loading: false })
   const canAgenda = $derived(!tr || !!st.ops?.includes('agenda'))

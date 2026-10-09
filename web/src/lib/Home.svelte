@@ -67,7 +67,8 @@
   let open = $state<Record<string, boolean>>((() => { try { return { night: true, sessions: true, usage: false, other: false, ...JSON.parse(localStorage.getItem(SEC) ?? '{}') } } catch { return { night: true, sessions: true, usage: false, other: false } } })())
   function toggleSec(k: string) { open = { ...open, [k]: !open[k] }; try { localStorage.setItem(SEC, JSON.stringify(open)) } catch { /* senza memoria resta per questa visita */ } }
   // La sezione Recap: le Azioni come tasti; il tocco apre «Mandare questa azione?» e «Manda» la fa partire.
-  const actions = $derived(recapActions(st, t.recapResume))
+  // Solo i «prossimo» del recap del giorno (Franz, 09/10 17:21): i «Prossimi:» delle sessioni stanno sulle loro schede.
+  const actions = $derived(recapActions(st, t.recapResume, false))
   const recapDay = $derived(/^\d{4}-\d{2}-\d{2}$/.test(st.recap.date) ? `${st.recap.date.slice(8, 10)}/${st.recap.date.slice(5, 7)}` : '')
   let asking = $state<RecapAction | null>(null)
   let sentActions = $state(new Set<string>())

@@ -432,7 +432,8 @@ class MainActivity : ComponentActivity() {
         }
         // Il Recap (Franz, 08/10 20:41): le Azioni delle sessioni vive e del recap, e le righe dell'agenda (contratto 1.46),
         // chieste quando il relay le conosce, a ogni recap nuovo e all'apertura della pagina.
-        val recapActs = remember(state) { state?.let { st -> it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume)) }.orEmpty() }
+        // Solo i «prossimo» del recap del giorno (Franz, 09/10 17:21): i «Prossimi:» delle sessioni stanno sulle loro schede.
+        val recapActs = remember(state) { state?.let { st -> it.pixelbox.cmwatch.rules.RecapActions.of(st, getString(R.string.recap_resume), withSessions = false) }.orEmpty() }
         val canAgenda = state?.ops?.contains("agenda") == true
         // Contratto 1.47: l'op che scrive nell'agenda (Fatto, Rimanda, Rimuovi, Passa); senza, il menu non le mostra.
         val canAgendaWrite = state?.ops?.contains("agenda_set") == true

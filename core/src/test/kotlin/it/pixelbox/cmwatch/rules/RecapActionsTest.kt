@@ -22,4 +22,13 @@ class RecapActionsTest {
         assertEquals(true, orbit.recap); assertEquals(true, a.first { it.text == "Review the seeds and the admin page" }.recap)
         assertEquals(false, a.first { it.text == "ok to deploy on staging" }.recap)
     }
+
+    // Franz, 09/10 17:21 («queste azioni senza contesto non sono utili», scelta A): nel Recap restano solo i «prossimo» del
+    // recap del giorno; i «Prossimi:» delle sessioni stanno sulla loro scheda, accanto all'esito che li spiega.
+    @Test fun withoutSessionsOnlyTheRecapNextSteps() {
+        val a = RecapActions.of(st, withSessions = false)
+        assertEquals(true, a.isNotEmpty())
+        assertEquals(true, a.all { it.recap })
+        assertEquals(null, a.firstOrNull { it.text == "ok to deploy on staging" })
+    }
 }

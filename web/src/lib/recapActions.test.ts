@@ -17,4 +17,10 @@ describe('recapActions', () => {
     expect(orbit[0].recap).toBe(true); expect(a.find(x => x.text === 'Review the seeds and the admin page')?.recap).toBe(true)
     expect(a.find(x => x.text === 'ok to deploy on staging')?.recap).toBe(false)
   })
+  it('nel Recap solo i «prossimo» del recap del giorno (Franz, 09/10 17:21)', () => {
+    const a = recapActions(st, undefined, false)
+    expect(a.length).toBeGreaterThan(0)
+    expect(a.every(x => x.recap)).toBe(true)
+    expect(a.find(x => x.text === 'ok to deploy on staging')).toBeUndefined()
+  })
 })
