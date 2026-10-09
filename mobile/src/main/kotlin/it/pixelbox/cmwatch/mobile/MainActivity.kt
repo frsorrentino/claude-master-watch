@@ -10,6 +10,13 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -1383,7 +1390,46 @@ class MainActivity : ComponentActivity() {
                         // è quella di adesso; il nome della sessione può cambiare restando nello stesso contenuto (menu in alto).
                         // Transizione C: la home non è più la prima pagina della fila; ci si torna col volo (Indietro, o il dito verso
                         // destra sulla prima sessione), mai scorrendo di lato.
-                        if (name == null) summaryPage() else {
+                        if (name == null) {
+                            // Il dito verso sinistra sulla home apre la prima sessione della fila (Franz, 09/10 20:38: «non si può
+                            // più scorrere le sessioni partendo dalla home?»): guida il volo della sua card, lo specchio del dito
+                            // verso destra che la richiude; lasciato oltre un terzo, o con uno slancio, la sessione si apre, se no
+                            // torna nella card. Senza la card sullo schermo la pagina entra di lato. Con la master aperta no.
+                            val widthPx = with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp.toPx() }
+                            val stateNow by rememberUpdatedState(state)
+                            var pulled by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+                            var first by remember { mutableStateOf<String?>(null) }
+                            LaunchedEffect(seek) {
+                                androidx.compose.runtime.snapshotFlow { pulled }.collect { d ->
+                                    val f = first
+                                    if (d > 0f && f != null) seek.seekTo((d / widthPx).coerceIn(0f, 0.999f), targetState = f)
+                                }
+                            }
+                            Box(Modifier.fillMaxSize().pointerInput(masterChat) {
+                                if (masterChat) return@pointerInput
+                                val speed = androidx.compose.ui.input.pointer.util.VelocityTracker()
+                                awaitEachGesture {
+                                    val down = awaitFirstDown(requireUnconsumed = false)
+                                    // Solo verso sinistra: il dito verso destra resta a quello che sta sotto.
+                                    var over = 0f
+                                    val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, o -> if (o < 0f) { change.consume(); over = o } }
+                                        ?: return@awaitEachGesture
+                                    val f = it.pixelbox.cmwatch.rules.SwipePages.of(stateNow, null).firstOrNull { p -> p != null } ?: return@awaitEachGesture
+                                    flyByCard = cardsOnScreen.containsKey(f)
+                                    first = f
+                                    speed.resetTracking()
+                                    speed.addPointerInputChange(drag)
+                                    pulled = -over
+                                    val done = horizontalDrag(drag.id) { c ->
+                                        speed.addPointerInputChange(c)
+                                        pulled = (pulled - c.positionChange().x).coerceAtLeast(0f)
+                                        c.consume()
+                                    }
+                                    if (done && pulled > 0f && (pulled / widthPx > 0.33f || speed.calculateVelocity().x < -1200f)) { pulled = 0f; open = f }
+                                    else if (pulled > 0f) { pulled = 0f; scope.launch { seek.animateTo(null) } }
+                                }
+                            }) { summaryPage() }
+                        } else {
                         val active = (name != null) == (flyTarget != null)
                         val target = if (active) open else name
                         // Mentre si scorre fra le sessioni l'ordine resta quello di prima (Franz, 09/10 15:46: al rilascio la sessione
