@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.contract
 
 import it.pixelbox.cmwatch.Fixtures
+import it.pixelbox.cmwatch.rules.RecapAgenda
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -142,8 +143,8 @@ class ContractTest {
         // Contratto 1.44: due night, il rapporto e uno rifiutato perché quel giorno non c'è.
         // Contratto 1.46: due agenda, le righe e uno rifiutato senza file.
         // Contratto 1.47: otto agenda_set, quattro riusciti, la key vecchia rifiutata e tre rifiuti di validazione.
-        // Contratto 1.48: due report a pezzi, uno riuscito e uno «bad parts».
-        assertEquals(54, results.size); assertEquals(17, results.count { !it.ok })
+        // Contratto 1.48: due report a pezzi, uno riuscito e uno «bad parts». Contratto 1.49: un night_add alla master riuscito.
+        assertEquals(55, results.size); assertEquals(17, results.count { !it.ok })
         assertEquals("bad parts", results.first { it.id.endsWith("0481-4000-8000-000000000481") }.text)
         val sets = cmds.filter { it.op == CmdOp.AGENDA_SET }
         assertEquals(8, sets.size); assertTrue(sets.all { it.session == null && !it.arg.isNullOrBlank() && it.action != null })
@@ -313,11 +314,11 @@ class ContractTest {
         assertEquals(listOf("a3f09c1e", "7b21d4e8"), items.map { it.id })
         assertEquals("ledger-api", items[1].name); assertNull(items[1].started); assertEquals(1789210620L, items[1].added)
         assertTrue(items.all { !it.prompt.contains("…") && !it.prompt.contains("\n") })
-        assertEquals(emptyList<NightItem>(), ContractJson.decodeState(Fixtures.stateIdle).night.items)
+        assertEquals(emptyList<NightItem>(), ContractJson.decodeState(Fixtures.stateStale).night.items)
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
         val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
-        val add = cmds.single { it.op == CmdOp.NIGHT_ADD }
+        val add = cmds.single { it.op == CmdOp.NIGHT_ADD && it.arg != RecapAgenda.NIGHT_TARGET }
         assertEquals("/home/demo/workspaces/work/clients/ledger-api", add.arg); assertTrue(add.text!!.isNotBlank())
         assertEquals("7b21d4e8", res.single { it.id == add.id }.job)
         val remove = cmds.single { it.op == CmdOp.NIGHT_REMOVE }
@@ -326,8 +327,25 @@ class ContractTest {
     }
 
     @Test fun olderRelayHasNoNightItems() {
-        val old = Fixtures.stateIdle.replace(Regex(",\\s*\"items\"\\s*:\\s*\\[\\s*\\]"), "")
+        val old = Fixtures.stateStale.replace(Regex(",\\s*\"items\"\\s*:\\s*\\[\\s*\\]"), "")
         assertNull(ContractJson.decodeState(old).night.items)
+    }
+
+    // Contratto 1.49 (09/10, scelta A di Franz delle 21:27): la notte della master. `night_add` con arg «master», `night.master`
+    // nello stato, e l'item della master con nome «master» e la radice come cartella; un relay precedente non ha il flag.
+    @Test fun nightToTheMaster() {
+        val idle = ContractJson.decodeState(Fixtures.stateIdle)
+        assertTrue(idle.night.master)
+        val item = idle.night.items!!.single()
+        assertEquals("master", item.name); assertEquals("c41d9e07", item.id); assertNull(item.started)
+        val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
+        val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }
+        val res = root.getValue("result").jsonArray.map { ContractJson.json.decodeFromJsonElement(CmdResult.serializer(), it) }
+        val add = cmds.single { it.op == CmdOp.NIGHT_ADD && it.arg == RecapAgenda.NIGHT_TARGET }
+        val r = res.single { it.id == add.id }
+        assertTrue(r.ok); assertEquals("7b21d4e8", r.job); assertTrue(r.text.startsWith("queued for tonight: master"))
+        val old = Fixtures.stateIdle.replace(Regex(",\\s*\"master\"\\s*:\\s*true"), "")
+        assertTrue(!ContractJson.decodeState(old).night.master)
     }
 
     // Contratto 1.18 (29/09, richiesta R4): diario delle 20:00 e resoconto della notte arrivano anche all'app come eventi.

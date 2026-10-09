@@ -193,6 +193,8 @@ enum class CmdOp {
     val queued: Int = 0, val running: String? = null, val items: List<NightItem>? = null,
     /** Contratto 1.44: l'ultimo rapporto della notte; null senza rapporto o con un relay precedente. */
     val report: NightReportRef? = null,
+    /** Contratto 1.49: `night_add` accetta `master` (`RecapAgenda.NIGHT_TARGET`); false con un relay precedente. */
+    val master: Boolean = false,
 )
 
 /** Contratto 1.44: `date` = giorno ISO del rapporto, `generated_at` = epoch s. */
