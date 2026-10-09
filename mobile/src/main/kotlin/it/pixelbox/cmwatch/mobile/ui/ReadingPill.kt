@@ -204,7 +204,14 @@ fun ReadingPill(
     val lastTouch = overlay?.rateTouched ?: touched
     // Senza tocchi per 3 s lo slider torna pillola.
     LaunchedEffect(open, lastTouch) { if (open) { kotlinx.coroutines.delay(3_000); setOpen(false) } }
-    var draft by remember(open) { mutableFloatStateOf(rate) }
+    // Uno stato solo per tutta la vita della pillola, rimesso alla velocità di adesso a ogni apertura: il gesto qui sotto nasce
+    // una volta e scrive su questo stato; con `remember(open)` l'apertura ne creava uno nuovo, il dito scriveva sul vecchio e
+    // lo slider non si muoveva (Franz, 09/10 09:09).
+    var draft by remember { mutableFloatStateOf(rate) }
+    LaunchedEffect(open) { if (open) draft = rate }
+    // Il gesto legge sempre se lo slider è aperto adesso: con il valore vecchio un tocco sullo slider aperto, dove prima c'era
+    // la pillola, lo prendeva la barra e la scelta andava persa.
+    val openNow by androidx.compose.runtime.rememberUpdatedState(open)
     // Mentre si trascina la voce prende la velocità nuova dalla frase dopo (Franz, 08/10 20:51: «in tempo reale»): il motore
     // non la cambia a metà frase, e ripartire dalla frase detta la ripeteva.
     LaunchedEffect(draft, open) {
@@ -218,11 +225,16 @@ fun ReadingPill(
     var pillWin by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
     var sliderWin by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val gesture = Modifier.onGloballyPositioned { barWin = it.boundsInWindow() }.pointerInput(rate) {
+    // Il gesto nasce una volta (chiave fissa): mentre trascini la velocità cambia dal vivo, e con `rate` come chiave il gesto
+    // ripartiva a metà trascinamento e il dito non muoveva più niente. Velocità e callback le legge aggiornate.
+    val rateNow by androidx.compose.runtime.rememberUpdatedState(rate)
+    val liveNow by androidx.compose.runtime.rememberUpdatedState(onRateLive)
+    val tapNow by androidx.compose.runtime.rememberUpdatedState(onRate)
+    val gesture = Modifier.onGloballyPositioned { barWin = it.boundsInWindow() }.pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
             val pill = pillWin.translate(-barWin.left, -barWin.top)
-            if (open || pillWin == androidx.compose.ui.geometry.Rect.Zero || !pill.contains(down.position)) return@awaitEachGesture
+            if (openNow || pillWin == androidx.compose.ui.geometry.Rect.Zero || !pill.contains(down.position)) return@awaitEachGesture
             down.consume()
             val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                 while (true) {
@@ -232,8 +244,9 @@ fun ReadingPill(
                 }
                 @Suppress("UNREACHABLE_CODE") false
             }
-            if (released == true) { onRate(it.pixelbox.cmwatch.rules.SpeechRate.next(rate)); return@awaitEachGesture }
+            if (released == true) { tapNow(it.pixelbox.cmwatch.rules.SpeechRate.next(rateNow)); return@awaitEachGesture }
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+            draft = rateNow
             setOpen(true)
             while (true) {
                 val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
@@ -247,7 +260,7 @@ fun ReadingPill(
                     if (overlay != null) overlay.rateTouched = System.currentTimeMillis() else touched = System.currentTimeMillis()
                 }
             }
-            it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rate) onRateLive(v) }
+            it.pixelbox.cmwatch.rules.SpeechRate.snap(draft).let { v -> if (v != rateNow) liveNow(v) }
         }
     }
     Surface(modifier.fillMaxWidth().then(gesture), shape = RoundedCornerShape(28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
