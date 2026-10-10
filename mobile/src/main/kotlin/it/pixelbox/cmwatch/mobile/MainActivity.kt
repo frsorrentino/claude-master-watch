@@ -829,7 +829,8 @@ class MainActivity : ComponentActivity() {
         val fileLocal = remember { mutableStateMapOf<String, String>() }
         val fileLoading = remember { androidx.compose.runtime.mutableStateListOf<String>() }
         // Il file in cache se c'è, se no chiesto al PC; poi `ready` con il file locale e il suo tipo.
-        val withFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile, (java.io.File, String?) -> Unit) -> Unit = { name, f, ready ->
+        // `quiet`: l'anteprima che nasce da sola (10/10 09:54) non avvisa se il file non arriva.
+        val withFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile, Boolean, (java.io.File, String?) -> Unit) -> Unit = { name, f, quiet, ready ->
             val known = fileLocal[f.path]
             if (known != null) ready(java.io.File(known), f.mime)
             else if (f.path !in fileLoading) {
@@ -846,7 +847,7 @@ class MainActivity : ComponentActivity() {
                             fileLocal[f.path] = out.path
                             ready(out, r.file.mime)
                         }
-                        is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> {
+                        is it.pixelbox.cmwatch.data.Repo.Opened.Refused -> if (!quiet) {
                             // «too large: <byte>» in chiaro (Franz, 04/10 21:55): la misura del file e, se il PC lo dice, il limite.
                             val size = { b: Long -> android.text.format.Formatter.formatShortFileSize(this@MainActivity, b) }
                             val big = it.pixelbox.cmwatch.rules.FileRefusal.tooLarge(r.reason)
@@ -854,14 +855,14 @@ class MainActivity : ComponentActivity() {
                                 ?: getString(R.string.file_refused, r.reason)
                             android.widget.Toast.makeText(this@MainActivity, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
-                        it.pixelbox.cmwatch.data.Repo.Opened.Failed -> android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_failed), android.widget.Toast.LENGTH_LONG).show()
+                        it.pixelbox.cmwatch.data.Repo.Opened.Failed -> if (!quiet) android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_failed), android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
             }
         }
         // Il tocco sul chip: un'immagine si vede sotto il chip, gli altri file vanno all'app di sistema.
         val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
-            withFile(name, f) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
+            withFile(name, f, false) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
         }
         // «Scarica» (Franz, 10/10 06:50: «andrebbe bene salvataggio diretto in download, però servirebbe conferma download e
         // opzioni apri cartella o apri file»): la copia va subito in Download e un foglio lo conferma, con «Apri», «Apri la
@@ -887,7 +888,7 @@ class MainActivity : ComponentActivity() {
         }
         // I tasti sotto il file (Franz, 07/10 16:07): apri, scarica, copia, condividi.
         val fileAct: (String, it.pixelbox.cmwatch.contract.TranscriptFile, FileAct) -> Unit = { name, f, act ->
-            withFile(name, f) { file, mime ->
+            withFile(name, f, false) { file, mime ->
                 when (act) {
                     FileAct.OPEN -> viewFile(file, mime)
                     FileAct.DOWNLOAD -> scope.launch {
@@ -937,7 +938,7 @@ class MainActivity : ComponentActivity() {
                                 Slash.panel(r.sent, results[r.sent.id])?.let { p -> app.chatLog.markPanel(r.sent.id, p) }
                             }
                         }
-                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) })) {
+                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) }, { f -> withFile(session.name, f, true) { _, _ -> } })) {
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
                             allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },
