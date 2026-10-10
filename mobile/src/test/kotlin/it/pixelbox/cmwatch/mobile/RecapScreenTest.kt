@@ -47,6 +47,21 @@ class RecapScreenTest {
         }
     }
 
+    // Le intestazioni tutte chiuse (Franz, 10/10 20:05: «il formato delle intestazioni andrebbe allineato»): il conteggio
+    // delle sessioni sta in fondo a destra, come quelli di Recap e Altro.
+    @Test fun homeSectionsClosed() = paparazzi.snapshot {
+        val m = Summary.build(st, emptyList(), emptyList(), st.ts, ZoneId.of("Europe/Rome"), emptySet())
+            .copy(closed = st.sessions.take(1).map { it.copy(state = SessionState.GONE) })
+        CmPhoneTheme(still = true) {
+            Column(Modifier.background(CmColors.bg)) {
+                SummaryList(
+                    m, {}, { _, _ -> }, { _, _ -> }, {}, {}, startOpen = emptySet(), usage = { androidx.compose.material3.Text("quota") },
+                    recapActions = actions, recapDate = st.recap.date, agenda = agenda, today = java.time.LocalDate.of(2026, 10, 9),
+                )
+            }
+        }
+    }
+
     // La card aperta come quelle delle sessioni (Franz, 10/10 09:24, variante A): dettaglio, azioni come pillole («Fallo»
     // piena), il riferimento in fondo.
     @Test fun recapCardOpen() = paparazzi.snapshot {
