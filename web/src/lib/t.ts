@@ -116,7 +116,7 @@ export const t = {
   recapEmpty: 'Niente da fare né da decidere.', recapLoading: "Chiedo l'agenda al PC", recapAgendaOld: "Per le righe dell'agenda aggiorna supervisor sul PC.",
   recapAgendaNone: "Sul PC non c'è il file dell'agenda.", agendaActions: 'Azioni', agendaUntil: (d: string) => `rimandata a ${d}`, agendaDeepen: 'Approfondisci', agendaTalk: 'Parlane con la master',
   agendaOpenRef: 'Apri il riferimento', agendaDone: 'Fatto', agendaPostpone: 'Rimanda', agendaPassClaude: 'Passa a Claude', agendaPassMe: 'Passa a me',
-  agendaPass: 'Passa', agendaRemove: 'Rimuovi', agendaNoDetail: "Per questa scheda non c'è ancora un approfondimento salvato.", agendaCardOpen: 'Apri la scheda', agendaCardClose: 'Chiudi la scheda', agendaMore: 'Altre azioni', agendaLess: 'Meno azioni', agendaAskDetail: 'Chiedilo alla master',
+  agendaPass: 'Passa', agendaRemove: 'Rimuovi', agendaNoDetail: "Per questa scheda non c'è ancora un approfondimento salvato.", agendaCardOpen: 'Apri la scheda', agendaCardClose: 'Chiudi la scheda', agendaMore: 'Altre azioni', agendaLess: 'Meno azioni', agendaTalkShort: 'Parlane', agendaMoreShort: 'Altro', agendaAskDetail: 'Chiedilo alla master',
   agendaPostponeTitle: 'Rimandare a quando?', agendaPostponeTomorrow: (d: string) => `Domani, ${d}`, agendaPostponeWeek: (d: string) => `Settimana prossima, ${d}`,
   agendaPostponeDate: 'Scegli un giorno', agendaDoneTitle: 'Segnarla come fatta?', agendaDoneChange: "Nell'agenda del PC lo stato diventa «fatto»: la scheda esce dalle aperte.",
   agendaPostponeConfirm: 'Rimandare la scheda?', agendaPostponeChange: (d: string) => `Nell'agenda del PC diventa «sospeso» fino a ${d}: quel giorno torna fra le aperte.`,

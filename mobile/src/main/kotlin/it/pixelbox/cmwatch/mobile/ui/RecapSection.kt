@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -184,24 +184,18 @@ internal fun AgendaRowCard(
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
             val detail = row.detail?.trim()?.takeIf { it.isNotEmpty() }
             Text(detail ?: stringResource(R.string.agenda_no_detail), style = MaterialTheme.typography.bodyMedium, color = if (detail != null) CmColors.text else CmColors.text2)
-            // I tasti (Franz, 10/10 10:09, variante C): «▶ Fallo ▾» diviso come nel Material 3 Expressive, la freccia apre qui
-            // sotto le altre azioni; a destra Fatto e Rimanda come icone tonde. Senza «Fallo» (scheda non aperta) solo l'elenco.
-            val main = RecapAgenda.Item.DO in items
-            val quick = listOf(RecapAgenda.Item.DONE, RecapAgenda.Item.POSTPONE).filter { it in items }
-            val rest = items.filter { it != RecapAgenda.Item.DEEPEN && it != RecapAgenda.Item.DO && it !in quick }
-            if (main || quick.isNotEmpty()) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (main) AgendaSplit(more = more, onDo = { onItem(RecapAgenda.Item.DO) }, onMore = { more = !more }, hasMore = rest.isNotEmpty())
-                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-                quick.forEach { item ->
-                    androidx.compose.material3.FilledTonalIconButton(
-                        onClick = { onItem(item) }, modifier = Modifier.padding(start = 8.dp).size(48.dp).handCursor(),
-                        colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.actionIcon),
-                    ) {
-                        Icon(if (item == RecapAgenda.Item.DONE) Icons.Rounded.Check else Icons.Rounded.Schedule, label(item))
-                    }
-                }
+            // I tasti (Franz, 10/10 10:36, variante A + C): una barra di icone con l'etichetta sotto, uguali, «Fallo» pieno, per le
+            // azioni più usate; «Altro» apre qui sotto l'elenco delle altre, come nella C. Senza «Fallo» (scheda non aperta) la
+            // barra comincia da quello che c'è.
+            val bar = listOf(RecapAgenda.Item.DO, RecapAgenda.Item.NIGHT, RecapAgenda.Item.TALK, RecapAgenda.Item.DONE).filter { it in items }
+            val rest = items.filter { it != RecapAgenda.Item.DEEPEN && it !in bar }
+            Row(Modifier.fillMaxWidth()) {
+                bar.forEach { item -> AgendaBarKey(barIcon(item), barLabel(item), filled = item == RecapAgenda.Item.DO, lit = false, Modifier.weight(1f)) { onItem(item) } }
+                if (rest.isNotEmpty()) AgendaBarKey(Icons.Rounded.MoreHoriz, stringResource(R.string.agenda_more_short), filled = false, lit = more, Modifier.weight(1f)) { more = !more }
+                // La griglia resta di cinque: con meno tasti stanno a sinistra, della stessa misura.
+                repeat(5 - bar.size - (if (rest.isNotEmpty()) 1 else 0)) { androidx.compose.foundation.layout.Spacer(Modifier.weight(1f)) }
             }
-            if (rest.isNotEmpty() && (more || !main)) Column(
+            if (rest.isNotEmpty() && more) Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surfaceLow).padding(vertical = 6.dp),
             ) {
                 rest.forEach { item ->
@@ -219,29 +213,35 @@ internal fun AgendaRowCard(
     }
 }
 
-/** «▶ Fallo» e «▾» uniti, come il tasto diviso del Material 3 Expressive: il primo fa, il secondo apre le altre azioni. */
+/** Un tasto della barra: la piastrella con l'icona e sotto l'etichetta; `filled` = «Fallo», `lit` = «Altro» aperto. */
 @Composable
-private fun AgendaSplit(more: Boolean, onDo: () -> Unit, onMore: () -> Unit, hasMore: Boolean) {
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        Surface(
-            onClick = onDo, color = CmColors.primary, contentColor = CmColors.onPrimary, modifier = Modifier.height(48.dp).handCursor(),
-            shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = if (hasMore) 6.dp else 24.dp, bottomEnd = if (hasMore) 6.dp else 24.dp),
+private fun AgendaBarKey(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, filled: Boolean, lit: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).handCursor().clickable(onClickLabel = text, onClick = onClick).padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(
+                when { filled -> CmColors.primary; lit -> androidx.compose.ui.graphics.Color(0xFF3A4A66); else -> CmColors.surfaceHigh },
+            ),
+            contentAlignment = Alignment.Center,
         ) {
-            Row(Modifier.padding(start = 18.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Rounded.PlayArrow, null, modifier = Modifier.size(20.dp))
-                Text(label(RecapAgenda.Item.DO), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
-            }
+            Icon(icon, null, tint = when { filled -> CmColors.onPrimary; lit -> CmColors.primary; else -> CmColors.actionIcon }, modifier = Modifier.size(24.dp))
         }
-        if (hasMore) Surface(
-            onClick = onMore, color = CmColors.primary, contentColor = CmColors.onPrimary, modifier = Modifier.height(48.dp).handCursor(),
-            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 24.dp, bottomEnd = 24.dp),
-        ) {
-            androidx.compose.foundation.layout.Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-                Icon(if (more) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(if (more) R.string.agenda_less else R.string.agenda_more))
-            }
-        }
+        Text(text, style = MaterialTheme.typography.labelMedium, color = CmColors.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
     }
 }
+
+/** Le icone della barra: ▶ per «Fallo», la luna per «Stanotte», il fumetto per «Parlane», la spunta per «Fatto». */
+private fun barIcon(i: RecapAgenda.Item): androidx.compose.ui.graphics.vector.ImageVector = when (i) {
+    RecapAgenda.Item.DO -> Icons.Rounded.PlayArrow
+    RecapAgenda.Item.DONE -> Icons.Rounded.Check
+    else -> icon(i)
+}
+
+/** Le etichette brevi della barra: «Parlane» invece di «Parlane con la master», che nell'elenco resta intera. */
+@Composable
+private fun barLabel(i: RecapAgenda.Item): String = if (i == RecapAgenda.Item.TALK) stringResource(R.string.agenda_talk_short) else label(i)
 
 /** «ven 10/10» da `AAAA-MM-GG`; com'è se non si legge. */
 @Composable

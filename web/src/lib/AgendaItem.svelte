@@ -15,11 +15,10 @@
   } = $props()
   const night = getContext<AgendaNight | undefined>('agendaNight')
   const items = $derived(onItem ? menu(row, canWrite, today, !!night?.can) : [])
-  // I tasti (Franz, 10/10 10:09, variante C): «▶ Fallo ▾» diviso, la freccia apre qui sotto le altre azioni; a destra Fatto e
-  // Rimanda come icone tonde. Senza «Fallo» (scheda non aperta) solo l'elenco.
-  const main = $derived(items.includes('do'))
-  const quick = $derived((['done', 'postpone'] as Item[]).filter(i => items.includes(i)))
-  const rest = $derived(items.filter(i => i !== 'deepen' && i !== 'do' && !quick.includes(i)))
+  // I tasti (Franz, 10/10 10:36, variante A + C): una barra di icone con l'etichetta sotto, uguali, «Fallo» pieno, per le
+  // azioni più usate; «Altro» apre qui sotto l'elenco delle altre. Senza «Fallo» la barra comincia da quello che c'è.
+  const bar = $derived((['do', 'night', 'talk', 'done'] as Item[]).filter(i => items.includes(i)))
+  const rest = $derived(items.filter(i => i !== 'deepen' && !bar.includes(i)))
   let open = $state(false)
   let more = $state(false)
   const icon: Record<Item, string> = {
@@ -54,29 +53,22 @@
   {#if open && items.length}
     <div class="more">
       <p class:none={!detail}>{detail || t.agendaNoDetail}</p>
-      {#if main || quick.length}
-        <div class="acts">
-          {#if main}
-            <span class="split">
-              <button class="lead" class:solo={!rest.length} onclick={() => onItem?.('do')}>
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d={icon.do} fill="currentColor" /></svg>{label.do}
-              </button>
-              {#if rest.length}
-                <button class="trail" aria-expanded={more} aria-label={more ? t.agendaLess : t.agendaMore} title={more ? t.agendaLess : t.agendaMore} onclick={() => (more = !more)}>
-                  <svg viewBox="0 0 24 24" width="20" height="20"><path d={more ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                </button>
-              {/if}
-            </span>
-          {/if}
-          <i class="sp"></i>
-          {#each quick as item}
-            <button class="round" aria-label={label[item]} title={label[item]} onclick={() => onItem?.(item)}>
-              <svg viewBox="0 0 24 24" width="22" height="22"><path d={icon[item]} fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </button>
-          {/each}
-        </div>
-      {/if}
-      {#if rest.length && (more || !main)}
+      <div class="bar">
+        {#each bar as item}
+          <button class="key" class:do={item === 'do'} onclick={() => onItem?.(item)}>
+            <i><svg viewBox="0 0 24 24" width="24" height="24"><path d={item === 'done' ? 'M5 12.5l4.5 4.5L19 7.5' : icon[item]} fill={item === 'do' ? 'currentColor' : 'none'} stroke="currentColor" stroke-width={item === 'do' ? 0 : 2.2} stroke-linecap="round" stroke-linejoin="round" /></svg></i>
+            <span>{item === 'talk' ? t.agendaTalkShort : label[item]}</span>
+          </button>
+        {/each}
+        {#if rest.length}
+          <button class="key" class:lit={more} aria-expanded={more} onclick={() => (more = !more)}>
+            <i><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="5" cy="12" r="2" fill="currentColor" /><circle cx="12" cy="12" r="2" fill="currentColor" /><circle cx="19" cy="12" r="2" fill="currentColor" /></svg></i>
+            <span>{t.agendaMoreShort}</span>
+          </button>
+        {/if}
+        {#each { length: Math.max(0, 5 - bar.length - (rest.length ? 1 : 0)) } as _}<span class="key"></span>{/each}
+      </div>
+      {#if rest.length && more}
         <div class="list">
           {#each rest as item}
             <button class:danger={item === 'remove'} onclick={() => onItem?.(item)}>
@@ -108,15 +100,12 @@
   .more { display: flex; flex-direction: column; gap: 12px; padding: 10px 10px 0 0; margin-top: 10px; border-top: 1px solid var(--line); }
   .more p { margin: 0; font-size: 15px; white-space: pre-line; }
   .more p.none { color: var(--text2); }
-  .acts { display: flex; align-items: center; gap: 8px; }
-  .sp { flex: 1; }
-  .split { display: inline-flex; gap: 2px; }
-  .split button { height: 48px; background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
-  .lead { padding: 0 20px 0 18px; border-radius: 24px 6px 6px 24px; }
-  .lead.solo { border-radius: 24px; }
-  .trail { padding: 0 12px; border-radius: 6px 24px 24px 6px; }
-  .split button:hover, .round:hover { filter: brightness(1.12); }
-  .round { width: 48px; height: 48px; border-radius: 50%; background: var(--high); color: var(--icon); display: grid; place-items: center; }
+  .bar { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .key { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; border-radius: 16px; color: var(--text); font-size: 12.5px; }
+  .key i { width: 48px; height: 48px; border-radius: 16px; background: var(--high); color: var(--icon); display: grid; place-items: center; }
+  .key.do i { background: var(--primary); color: var(--on-primary); }
+  .key.lit i { background: #3A4A66; color: var(--primary); }
+  button.key:hover i { filter: brightness(1.12); }
   .list { display: flex; flex-direction: column; background: var(--low); border-radius: 16px; padding: 6px 0; }
   .list button { display: flex; align-items: center; gap: 14px; padding: 12px 16px; font-size: 16px; text-align: left; color: var(--text); }
   .list button svg { color: var(--icon); flex: none; }

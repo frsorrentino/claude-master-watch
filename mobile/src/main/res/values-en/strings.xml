@@ -786,6 +786,8 @@ It starts at your last message to the master.</string>
     <string name="agenda_card_close">Close the card</string>
     <string name="agenda_more">More actions</string>
     <string name="agenda_less">Fewer actions</string>
+    <string name="agenda_talk_short">Talk</string>
+    <string name="agenda_more_short">More</string>
     <string name="agenda_file_text">Send me the file «%1$s» of the card «%2$s»</string>
     <string name="agenda_from_scope">From the agenda · %1$s</string>
     <string name="agenda_done">Done</string>

@@ -797,6 +797,8 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="agenda_card_close">Chiudi la scheda</string>
     <string name="agenda_more">Altre azioni</string>
     <string name="agenda_less">Meno azioni</string>
+    <string name="agenda_talk_short">Parlane</string>
+    <string name="agenda_more_short">Altro</string>
     <string name="agenda_file_text">Mandami il file «%1$s» della scheda «%2$s»</string>
     <string name="agenda_from_scope">Dall\'agenda · %1$s</string>
     <string name="agenda_done">Fatto</string>
