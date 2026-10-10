@@ -26,6 +26,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -148,11 +151,12 @@ internal fun AgendaRowCard(
     row: AgendaRow, other: Boolean = false, onOpen: (() -> Unit)? = null,
     /** Le voci del menu della scheda (`RecapAgenda.menu`); senza voci niente ˅. */
     items: List<RecapAgenda.Item> = emptyList(),
-    /** Solo per i provini: la card già aperta. */
-    startOpen: Boolean = false,
+    /** Solo per i provini: la card già aperta, e con l'elenco delle altre azioni aperto. */
+    startOpen: Boolean = false, startMore: Boolean = false,
     onItem: (RecapAgenda.Item) -> Unit = {},
 ) {
     var open by rememberSaveable(row.key.ifBlank { row.title }) { mutableStateOf(startOpen) }
+    var more by rememberSaveable(row.key.ifBlank { row.title }) { mutableStateOf(startMore) }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CmColors.surface).padding(start = 14.dp, end = 4.dp, top = 12.dp, bottom = 12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             AgendaMark(row.scope)
@@ -180,30 +184,62 @@ internal fun AgendaRowCard(
             androidx.compose.material3.HorizontalDivider(color = CmColors.line)
             val detail = row.detail?.trim()?.takeIf { it.isNotEmpty() }
             Text(detail ?: stringResource(R.string.agenda_no_detail), style = MaterialTheme.typography.bodyMedium, color = if (detail != null) CmColors.text else CmColors.text2)
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items.filter { it != RecapAgenda.Item.DEEPEN && it != RecapAgenda.Item.OPEN_REF }.forEach { item -> AgendaChip(item) { onItem(item) } }
+            // I tasti (Franz, 10/10 10:09, variante C): «▶ Fallo ▾» diviso come nel Material 3 Expressive, la freccia apre qui
+            // sotto le altre azioni; a destra Fatto e Rimanda come icone tonde. Senza «Fallo» (scheda non aperta) solo l'elenco.
+            val main = RecapAgenda.Item.DO in items
+            val quick = listOf(RecapAgenda.Item.DONE, RecapAgenda.Item.POSTPONE).filter { it in items }
+            val rest = items.filter { it != RecapAgenda.Item.DEEPEN && it != RecapAgenda.Item.DO && it !in quick }
+            if (main || quick.isNotEmpty()) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                if (main) AgendaSplit(more = more, onDo = { onItem(RecapAgenda.Item.DO) }, onMore = { more = !more }, hasMore = rest.isNotEmpty())
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                quick.forEach { item ->
+                    androidx.compose.material3.FilledTonalIconButton(
+                        onClick = { onItem(item) }, modifier = Modifier.padding(start = 8.dp).size(48.dp).handCursor(),
+                        colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(containerColor = CmColors.surfaceHigh, contentColor = CmColors.actionIcon),
+                    ) {
+                        Icon(if (item == RecapAgenda.Item.DONE) Icons.Rounded.Check else Icons.Rounded.Schedule, label(item))
+                    }
+                }
             }
-            if (RecapAgenda.Item.OPEN_REF in items) Text(
-                stringResource(R.string.agenda_open_ref) + " ↗", style = MaterialTheme.typography.bodyMedium, color = CmColors.actionIcon,
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)).handCursor().clickable { onItem(RecapAgenda.Item.OPEN_REF) }.padding(vertical = 4.dp),
-            )
+            if (rest.isNotEmpty() && (more || !main)) Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CmColors.surfaceLow).padding(vertical = 6.dp),
+            ) {
+                rest.forEach { item ->
+                    val red = item == RecapAgenda.Item.REMOVE
+                    Row(
+                        Modifier.fillMaxWidth().handCursor().clickable { onItem(item) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Icon(icon(item), null, tint = if (red) CmColors.gone else CmColors.actionIcon, modifier = Modifier.size(22.dp))
+                        Text(label(item), style = MaterialTheme.typography.bodyLarge, color = if (red) CmColors.gone else CmColors.text)
+                    }
+                }
+            }
         }
     }
 }
 
-/** Una voce della card aperta: «Fallo» piena (un solo tasto pieno), le altre col bordo, «Rimuovi» in rosso. */
+/** «▶ Fallo» e «▾» uniti, come il tasto diviso del Material 3 Expressive: il primo fa, il secondo apre le altre azioni. */
 @Composable
-private fun AgendaChip(item: RecapAgenda.Item, onClick: () -> Unit) {
-    val filled = item == RecapAgenda.Item.DO
-    Surface(
-        onClick = onClick, shape = RoundedCornerShape(999.dp), color = if (filled) CmColors.primary else androidx.compose.ui.graphics.Color.Transparent,
-        border = if (filled) null else androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFF3A4150)), modifier = Modifier.handCursor(),
-    ) {
-        Text(
-            label(item), style = MaterialTheme.typography.labelLarge,
-            color = when { filled -> CmColors.onPrimary; item == RecapAgenda.Item.REMOVE -> CmColors.gone; else -> CmColors.text },
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        )
+private fun AgendaSplit(more: Boolean, onDo: () -> Unit, onMore: () -> Unit, hasMore: Boolean) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        Surface(
+            onClick = onDo, color = CmColors.primary, contentColor = CmColors.onPrimary, modifier = Modifier.height(48.dp).handCursor(),
+            shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = if (hasMore) 6.dp else 24.dp, bottomEnd = if (hasMore) 6.dp else 24.dp),
+        ) {
+            Row(Modifier.padding(start = 18.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Rounded.PlayArrow, null, modifier = Modifier.size(20.dp))
+                Text(label(RecapAgenda.Item.DO), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+            }
+        }
+        if (hasMore) Surface(
+            onClick = onMore, color = CmColors.primary, contentColor = CmColors.onPrimary, modifier = Modifier.height(48.dp).handCursor(),
+            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 24.dp, bottomEnd = 24.dp),
+        ) {
+            androidx.compose.foundation.layout.Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Icon(if (more) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(if (more) R.string.agenda_less else R.string.agenda_more))
+            }
+        }
     }
 }
 

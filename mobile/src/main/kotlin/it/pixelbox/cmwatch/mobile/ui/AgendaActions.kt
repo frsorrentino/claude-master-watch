@@ -127,7 +127,7 @@ fun AgendaActionsLayer(
     }
 }
 
-private fun icon(i: Item): ImageVector = when (i) {
+internal fun icon(i: Item): ImageVector = when (i) {
     Item.DEEPEN -> Icons.Rounded.Info
     Item.DO -> Icons.Rounded.PlayArrow
     Item.NIGHT -> Icons.Rounded.Bedtime

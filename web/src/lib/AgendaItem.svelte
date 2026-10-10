@@ -15,8 +15,19 @@
   } = $props()
   const night = getContext<AgendaNight | undefined>('agendaNight')
   const items = $derived(onItem ? menu(row, canWrite, today, !!night?.can) : [])
-  const chips = $derived(items.filter(i => i !== 'deepen' && i !== 'open_ref'))
+  // I tasti (Franz, 10/10 10:09, variante C): «▶ Fallo ▾» diviso, la freccia apre qui sotto le altre azioni; a destra Fatto e
+  // Rimanda come icone tonde. Senza «Fallo» (scheda non aperta) solo l'elenco.
+  const main = $derived(items.includes('do'))
+  const quick = $derived((['done', 'postpone'] as Item[]).filter(i => items.includes(i)))
+  const rest = $derived(items.filter(i => i !== 'deepen' && i !== 'do' && !quick.includes(i)))
   let open = $state(false)
+  let more = $state(false)
+  const icon: Record<Item, string> = {
+    deepen: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', do: 'M8 5v14l11-7z', night: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+    talk: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', open_ref: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
+    done: 'M5 12.5l4.5 4.5L19 7.5', postpone: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5V12l3 2',
+    pass_claude: 'M12 8V4H8M4 8h16v12H4zM9 13h.01M15 13h.01', pass_me: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', remove: 'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14',
+  }
   const label: Record<Item, string> = {
     deepen: t.agendaDeepen, do: t.recapDo, night: t.agendaNight, talk: t.agendaTalk, open_ref: t.agendaOpenRef, done: t.agendaDone,
     postpone: t.agendaPostpone, pass_claude: t.agendaPassClaude, pass_me: t.agendaPassMe, remove: t.agendaRemove,
@@ -43,10 +54,37 @@
   {#if open && items.length}
     <div class="more">
       <p class:none={!detail}>{detail || t.agendaNoDetail}</p>
-      <div class="chips">
-        {#each chips as item}<button class="chip" class:do={item === 'do'} class:danger={item === 'remove'} onclick={() => onItem?.(item)}>{label[item]}</button>{/each}
-      </div>
-      {#if items.includes('open_ref')}<button class="ref" onclick={() => onItem?.('open_ref')}>{t.agendaOpenRef} ↗</button>{/if}
+      {#if main || quick.length}
+        <div class="acts">
+          {#if main}
+            <span class="split">
+              <button class="lead" class:solo={!rest.length} onclick={() => onItem?.('do')}>
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d={icon.do} fill="currentColor" /></svg>{label.do}
+              </button>
+              {#if rest.length}
+                <button class="trail" aria-expanded={more} aria-label={more ? t.agendaLess : t.agendaMore} title={more ? t.agendaLess : t.agendaMore} onclick={() => (more = !more)}>
+                  <svg viewBox="0 0 24 24" width="20" height="20"><path d={more ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+              {/if}
+            </span>
+          {/if}
+          <i class="sp"></i>
+          {#each quick as item}
+            <button class="round" aria-label={label[item]} title={label[item]} onclick={() => onItem?.(item)}>
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d={icon[item]} fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          {/each}
+        </div>
+      {/if}
+      {#if rest.length && (more || !main)}
+        <div class="list">
+          {#each rest as item}
+            <button class:danger={item === 'remove'} onclick={() => onItem?.(item)}>
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d={icon[item]} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{label[item]}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -70,10 +108,18 @@
   .more { display: flex; flex-direction: column; gap: 12px; padding: 10px 10px 0 0; margin-top: 10px; border-top: 1px solid var(--line); }
   .more p { margin: 0; font-size: 15px; white-space: pre-line; }
   .more p.none { color: var(--text2); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { border: 1px solid #3A4150; border-radius: 999px; padding: 7px 14px; font-weight: 500; font-size: 14px; color: var(--text); }
-  .chip.do { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-  .chip.danger { color: var(--gone); }
-  .chip:hover { filter: brightness(1.15); }
-  .ref { align-self: flex-start; color: var(--icon); font-size: 15px; padding: 4px 0; }
+  .acts { display: flex; align-items: center; gap: 8px; }
+  .sp { flex: 1; }
+  .split { display: inline-flex; gap: 2px; }
+  .split button { height: 48px; background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  .lead { padding: 0 20px 0 18px; border-radius: 24px 6px 6px 24px; }
+  .lead.solo { border-radius: 24px; }
+  .trail { padding: 0 12px; border-radius: 6px 24px 24px 6px; }
+  .split button:hover, .round:hover { filter: brightness(1.12); }
+  .round { width: 48px; height: 48px; border-radius: 50%; background: var(--high); color: var(--icon); display: grid; place-items: center; }
+  .list { display: flex; flex-direction: column; background: var(--low); border-radius: 16px; padding: 6px 0; }
+  .list button { display: flex; align-items: center; gap: 14px; padding: 12px 16px; font-size: 16px; text-align: left; color: var(--text); }
+  .list button svg { color: var(--icon); flex: none; }
+  .list button.danger, .list button.danger svg { color: var(--gone); }
+  .list button:hover { background: var(--high); }
 </style>

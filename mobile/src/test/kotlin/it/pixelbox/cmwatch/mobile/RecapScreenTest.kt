@@ -59,6 +59,17 @@ class RecapScreenTest {
         }
     }
 
+    // Variante C dei tasti (Franz, 10/10 10:09): la freccia di «Fallo ▾» apre l'elenco delle altre azioni nella card.
+    @Test fun recapCardOpenMore() = paparazzi.snapshot {
+        val r = AgendaRow("aperto", "personale", "franz", "Revoke the API key found in clear text (May)", "console.anthropic.com -> API Keys",
+            detail = "The key appeared in clear text in a May file. Revoke it from the console and replace it in the projects that use it.", key = "k1")
+        CmPhoneTheme(still = true) {
+            Column(Modifier.background(CmColors.bg).padding(12.dp)) {
+                AgendaRowCard(r, onOpen = {}, items = it.pixelbox.cmwatch.rules.RecapAgenda.menu(r, canWrite = true, today = java.time.LocalDate.of(2026, 10, 10), canNight = true), startOpen = true, startMore = true)
+            }
+        }
+    }
+
     @Test fun recapPage() = paparazzi.snapshot {
         CmPhoneTheme(still = true) { RecapScreen(actions, st.recap.date, agenda, error = null, loading = false, onBack = {}, onSend = {}, today = java.time.LocalDate.of(2026, 10, 9)) }
     }
