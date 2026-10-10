@@ -203,6 +203,13 @@ fun SummaryList(
                 }
             }
         }
+        usage?.takeIf { showUsage }?.let { u ->
+            item(key = "sec-usage") { Box(moving()) { HomeSection(stringResource(R.string.home_sec_usage), null, usageOpen) { usageOpen = !usageOpen; save("usage", usageOpen) } } }
+            if (usageOpen) item(key = "usage") {
+                val glow by androidx.compose.animation.core.animateFloatAsState(if (usageFlash) 1f else 0f, androidx.compose.animation.core.tween(if (usageFlash) 160 else 700), label = "usageFlash")
+                Box(moving().border(2.dp, CmColors.actionIcon.copy(alpha = 0.8f * glow), RoundedCornerShape(18.dp))) { u() }
+            }
+        }
         // Il Recap (tavola 1): chiuso dice i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due
         // cose che aspettano te, la prima che può fare Claude, e «Tutto il recap».
         val ag = it.pixelbox.cmwatch.rules.RecapAgenda.of(agenda, today = today)
@@ -246,13 +253,6 @@ fun SummaryList(
         }
         // «Fuori dalle sessioni» (mockup A, Franz 03/10 22:34): un titolo vero che separa le sessioni dal resto, poi le
         // categorie con icona e conteggio, dalla più urgente; ognuna nella sua card.
-        usage?.takeIf { showUsage }?.let { u ->
-            item(key = "sec-usage") { Box(moving()) { HomeSection(stringResource(R.string.home_sec_usage), null, usageOpen) { usageOpen = !usageOpen; save("usage", usageOpen) } } }
-            if (usageOpen) item(key = "usage") {
-                val glow by androidx.compose.animation.core.animateFloatAsState(if (usageFlash) 1f else 0f, androidx.compose.animation.core.tween(if (usageFlash) 160 else 700), label = "usageFlash")
-                Box(moving().border(2.dp, CmColors.actionIcon.copy(alpha = 0.8f * glow), RoundedCornerShape(18.dp))) { u() }
-            }
-        }
         val outside = OutsideSessions.groups(model.service, model.closed)
         if (outside.isNotEmpty()) {
             item(key = "out-head") {

@@ -209,6 +209,10 @@
   {/each}
 
   {/if}
+  {#if usage && showUsage}
+    <div bind:this={usageEl}>{@render sec('usage', t.homeUsage)}</div>
+    {#if open.usage}<div class="footer" class:flash={usageFlash}>{@render usage()}</div>{/if}
+  {/if}
   <!-- Il Recap (tavola 1): chiuso i conteggi (azioni · aspetta te · può farlo Claude); aperto le Azioni, le prime due cose
        che aspettano te, la prima che può fare Claude, e «Tutto il recap». -->
   {#if showRecap && (actions.length || ag.you.length || ag.claude.length)}
@@ -237,10 +241,6 @@
       <button class="all" onclick={onRecapPage}><span>{t.recapAll}</span>
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
     {/if}
-  {/if}
-  {#if usage && showUsage}
-    <div bind:this={usageEl}>{@render sec('usage', t.homeUsage)}</div>
-    {#if open.usage}<div class="footer" class:flash={usageFlash}>{@render usage()}</div>{/if}
   {/if}
   {#if model.closed.length}
     {@render sec('other', t.homeOther, t.closedCat(model.closed.length))}
