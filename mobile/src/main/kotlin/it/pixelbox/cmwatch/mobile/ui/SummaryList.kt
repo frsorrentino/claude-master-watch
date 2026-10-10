@@ -131,6 +131,9 @@ fun SummaryList(
     var nightOpen by remember { section("night") }
     var recapOpen by remember { section("recap") }
     val acts = remember { AgendaActions() }
+    // Le voci della card aperta (variante A del 10/10): le stesse del menu Azioni, «Stanotte» con un relay 1.49.
+    val canNight = LocalAgendaNight.current != null
+    val cardItems: (it.pixelbox.cmwatch.contract.AgendaRow) -> List<it.pixelbox.cmwatch.rules.RecapAgenda.Item> = { r -> it.pixelbox.cmwatch.rules.RecapAgenda.menu(r, canWrite, today, canNight) }
     var asking by remember { mutableStateOf<it.pixelbox.cmwatch.rules.RecapActions.Action?>(null) }
     var sent by rememberSaveable { mutableStateOf(listOf<String>()) }
     val day = recapDay(recapDate)
@@ -219,13 +222,13 @@ fun SummaryList(
                 }
                 if (ag.you.isNotEmpty()) {
                     item(key = "h-recap-you") { Box(moving()) { GroupHeader(stringResource(R.string.recap_you, ag.you.size), CmColors.waiting) } }
-                    ag.you.take(2).forEachIndexed { i, r -> item(key = "recap-you-$i") { Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } } } }
+                    ag.you.take(2).forEachIndexed { i, r -> item(key = "recap-you-$i") { Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }, items = cardItems(r)) { x -> acts.pick(r, x) } } } }
                 }
                 if (ag.claude.isNotEmpty()) {
                     item(key = "h-recap-claude") { Box(moving()) { GroupHeader(stringResource(R.string.recap_claude, ag.claude.size), CmColors.actionIcon) } }
                     item(key = "recap-claude-0") {
                         val r = ag.claude.first()
-                        Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }) { acts.menu(r) } }
+                        Box(moving()) { AgendaRowCard(r, onOpen = { acts.deepen(r) }, items = cardItems(r)) { x -> acts.pick(r, x) } }
                     }
                 }
                 item(key = "recap-all") {

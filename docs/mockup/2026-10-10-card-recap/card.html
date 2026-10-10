@@ -1,0 +1,44 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=412">
+<style>
+:root{--bg:#000;--surface:#23272E;--low:#1B1F26;--high:#292F3A;--line:#2A2E35;--text:#F2F4F7;--text2:#98A2B3;--icon:#A8C7FA;--primary:#D3E3FD;--onp:#0A2050;--warn:#FFB020;--busy:#7FA1FF;--mono:'DejaVu Sans Mono',monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 'DejaVu Sans',Roboto,sans-serif;width:412px}
+.top{display:flex;align-items:center;gap:10px;padding:18px 18px 6px}.top b{font-size:26px;font-weight:600}.top span{color:var(--text2);font-size:18px}.top i{flex:1}
+.q{display:flex;align-items:center;gap:8px;padding:2px 18px 14px;font:13px var(--mono);color:var(--text2)}.q u{flex:0 0 120px;height:3px;background:#3A4150;border-radius:2px;position:relative;text-decoration:none}.q u:after{content:'';position:absolute;left:0;top:0;bottom:0;width:6%;background:var(--busy)}
+.tag{font:13px var(--mono);letter-spacing:.14em;color:var(--text2);padding:14px 20px 8px;display:flex;align-items:center;gap:10px}.tag:after{content:'';flex:1;height:1px;background:var(--line)}
+.tag.w{color:var(--warn)}.tag.w:after{background:#5A4210}
+.card{background:var(--surface);border-radius:22px;margin:0 12px 10px;padding:14px 14px 12px 16px}
+.h{display:flex;align-items:flex-start;gap:12px}.h .t{flex:1;min-width:0}.h .n{font-size:19px;font-weight:600}.h .m{font:13px var(--mono);color:var(--text2);white-space:nowrap;padding-top:4px}
+.badge{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--mono);color:#000}
+.chev,.more{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--text2);margin:-6px -6px 0 0}
+.body{margin-top:8px;font-size:16px;color:var(--text)}.sub{color:var(--text2);font-size:14.5px;margin-top:2px}
+.bar{height:3px;background:#3A4150;border-radius:2px;margin-top:12px;position:relative}.bar:after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--busy);border-radius:2px}
+.mark{flex:none;width:18px;height:18px;border:2px solid var(--text2);margin-top:4px}.mark.p{border-radius:50%}.mark.a{border-radius:5px}
+.ti{font-size:17px;font-weight:600;line-height:1.35}
+.az{flex:none;background:var(--high);color:var(--primary);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:500;margin-top:2px}
+.detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);color:var(--text);font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.chip{border:1px solid #3A4A3F;color:var(--text);border-radius:999px;padding:7px 13px;font-size:14.5px;white-space:nowrap}.chip.do{background:var(--primary);color:var(--onp);border-color:var(--primary);font-weight:600}
+.link{color:var(--icon);font-size:15px;margin-top:12px;display:inline-block}
+.cap{position:fixed;left:0;right:0;bottom:0;background:#10131A;border-top:1px solid var(--line);padding:12px 16px 16px;font-size:14px;color:var(--text2)}.cap b{color:var(--text);font-size:15px;display:block;margin-bottom:2px}
+</style></head><body><div id="r"></div>
+<script>
+const V=(location.hash||'#attuale').slice(1)
+const chev=`<span class="chev"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>`
+const chevUp=`<span class="chev"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>`
+const more=`<span class="more"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg></span>`
+const tail=V==='b'?more:chev
+const sess=(col,glyph,name,meta,body,w,extra='')=>`<div class="card"><div class="h"><span class="badge" style="background:${col}">${glyph}</span><div class="t"><span class="n">${name}</span></div><span class="m">${meta}</span>${tail}</div><div class="body">${body}</div>${extra}<div class="bar" style="--w:${w}"></div></div>`
+const agenda=(mark,title,sub,open)=>{
+  const right=V==='attuale'?'<span class="az">Azioni</span>':V==='b'?more:(open?chevUp:chev)
+  let x=`<div class="card"><div class="h"><span class="mark ${mark}"></span><div class="t"><div class="ti">${title}</div><div class="sub">${sub}</div></div>${right}</div>`
+  if(V==='a'&&open) x+=`<div class="detail">La chiave è comparsa in chiaro in un file di maggio. Va revocata dalla console e sostituita nei progetti che la usano.</div><div class="chips"><span class="chip do">Fallo</span><span class="chip">Stanotte</span><span class="chip">Parlane</span><span class="chip">Fatto</span><span class="chip">Rimanda</span><span class="chip">Passa a Claude</span></div><span class="link">Apri il riferimento ↗</span>`
+  return x+'</div>'
+}
+const caps={attuale:['Attuale','Card sessione con ˅, card del Recap con il tasto «Azioni»: due modi diversi.'],a:['A · come le card sessione (consiglio)','Il Recap usa lo stesso ˅ delle sessioni. Aperta, la card mostra il dettaglio, le azioni come pillole (una piena) e il riferimento. Il tocco sul titolo apre «Approfondisci».'],b:['B · ⋮ dappertutto','Niente ˅ né «Azioni»: tutte le card hanno ⋮ per il menu delle azioni; il tocco sulla card apre la sessione o «Approfondisci».']}
+document.getElementById('r').innerHTML=`<div class="top"><b>Master</b><span>4 aperte</span><i></i></div><div class="q">○ 5h <u></u> 6% · si azzera alle 12:20</div>
+${sess('#F2C94C','❚❚','legnaia','ctx 7% 5h 6%','12 prolunghe ok; contare manicotti, trovare dima','8%')}
+${sess('#EB5545','❚❚','supervisor','ctx 52% 5h 6%','modello ed effort delle sessioni win provati dal vivo, nome con un solo «win» già attivo','42%')}
+<div class="tag">˅ RECAP</div><div class="tag w">ASPETTA TE · 16</div>
+${agenda('p','Revocare la chiave API Anthropic trovata in chiaro (maggio)','console.anthropic.com -&gt; API Keys',true)}
+${agenda('a','17 client_id residui: 6 con candidato da confermare','.claude/da-decidere-client-id.md',false)}
+<div class="cap"><b>${caps[V][0]}</b>${caps[V][1]}</div>`
+</script></body></html>

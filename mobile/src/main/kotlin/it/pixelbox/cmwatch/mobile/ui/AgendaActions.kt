@@ -67,6 +67,9 @@ class AgendaActions {
     var edit by mutableStateOf<RecapAgenda.Edit?>(null)
     fun menu(r: AgendaRow) { menuFor = r }
     fun deepen(r: AgendaRow) { deepenFor = r }
+    /** Una voce toccata sulla card aperta (variante A del 10/10): la fa il foglio delle Azioni, come dal menu. */
+    var picked by mutableStateOf<Pair<AgendaRow, Item>?>(null)
+    fun pick(r: AgendaRow, item: Item) { picked = r to item }
 }
 
 /**
@@ -104,6 +107,7 @@ fun AgendaActionsLayer(
             Item.DONE, Item.REMOVE, Item.PASS_CLAUDE, Item.PASS_ME, Item.NIGHT -> s.edit = RecapAgenda.Edit(item, r)
         }
     }
+    s.picked?.let { (r, item) -> androidx.compose.runtime.LaunchedEffect(r, item) { s.picked = null; pick(r, item) } }
     s.menuFor?.let { r -> AgendaMenuSheet(r, RecapAgenda.menu(r, canWrite, today, canNight = night != null), onDismiss = { s.menuFor = null }) { pick(r, it) } }
     s.deepenFor?.let { r ->
         AgendaDeepenSheet(
@@ -137,7 +141,7 @@ private fun icon(i: Item): ImageVector = when (i) {
 }
 
 @Composable
-private fun label(i: Item): String = stringResource(
+internal fun label(i: Item): String = stringResource(
     when (i) {
         Item.DEEPEN -> R.string.agenda_deepen
         Item.DO -> R.string.recap_do

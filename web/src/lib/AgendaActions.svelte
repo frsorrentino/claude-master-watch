@@ -25,6 +25,8 @@
   // «Stanotte» (contratto 1.49): c'è quando il relay mette la master nella notte; il contesto lo dà App.
   const night = getContext<AgendaNight | undefined>('agendaNight')
   export function menuOf(r: AgendaRow) { menuFor = r }
+  /** Una voce toccata sulla card aperta (variante A del 10/10): come dal menu. */
+  export function pickOf(r: AgendaRow, item: Item) { pick(r, item) }
   export function deepen(r: AgendaRow) { deepenFor = r }
 
   const toMaster = (r: AgendaRow, text: string): RecapAction => ({ text: r.title, send: text, to: MASTER, from: 'agenda', viaMaster: true, recap: false, agenda: true, note: t.agendaFromScope(r.scope.trim()) })

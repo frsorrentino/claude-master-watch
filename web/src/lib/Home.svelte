@@ -228,11 +228,11 @@
       {/if}
       {#if ag.you.length}
         <h2 class="gh" style="--t:var(--b-warn)"><span>{t.recapYou(ag.you.length).toUpperCase()}</span><i></i></h2>
-        {#each ag.you.slice(0, 2) as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onActions={() => acts?.menuOf(r)} />{/each}
+        {#each ag.you.slice(0, 2) as r}<AgendaItem row={r} onOpen={() => acts?.deepen(r)} onItem={(i) => acts?.pickOf(r, i)} {canWrite} {today} />{/each}
       {/if}
       {#if ag.claude.length}
         <h2 class="gh" style="--t:var(--icon)"><span>{t.recapClaude(ag.claude.length).toUpperCase()}</span><i></i></h2>
-        <AgendaItem row={ag.claude[0]} onOpen={() => acts?.deepen(ag.claude[0])} onActions={() => acts?.menuOf(ag.claude[0])} />
+        <AgendaItem row={ag.claude[0]} onOpen={() => acts?.deepen(ag.claude[0])} onItem={(i) => acts?.pickOf(ag.claude[0], i)} {canWrite} {today} />
       {/if}
       <button class="all" onclick={onRecapPage}><span>{t.recapAll}</span>
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>

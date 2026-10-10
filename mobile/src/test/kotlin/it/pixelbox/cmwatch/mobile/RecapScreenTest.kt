@@ -2,6 +2,8 @@ package it.pixelbox.cmwatch.mobile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
@@ -41,6 +43,18 @@ class RecapScreenTest {
         CmPhoneTheme(still = true) {
             Column(Modifier.background(CmColors.bg)) {
                 SummaryList(m, {}, { _, _ -> }, { _, _ -> }, {}, {}, startOpen = setOf("recap"), recapActions = actions, recapDate = st.recap.date, agenda = agenda, today = java.time.LocalDate.of(2026, 10, 9))
+            }
+        }
+    }
+
+    // La card aperta come quelle delle sessioni (Franz, 10/10 09:24, variante A): dettaglio, azioni come pillole («Fallo»
+    // piena), il riferimento in fondo.
+    @Test fun recapCardOpen() = paparazzi.snapshot {
+        val r = AgendaRow("aperto", "personale", "franz", "Revoke the API key found in clear text (May)", "console.anthropic.com -> API Keys",
+            detail = "The key appeared in clear text in a May file. Revoke it from the console and replace it in the projects that use it.", key = "k1")
+        CmPhoneTheme(still = true) {
+            Column(Modifier.background(CmColors.bg).padding(12.dp)) {
+                AgendaRowCard(r, onOpen = {}, items = it.pixelbox.cmwatch.rules.RecapAgenda.menu(r, canWrite = true, today = java.time.LocalDate.of(2026, 10, 10), canNight = true), startOpen = true)
             }
         }
     }
