@@ -98,6 +98,7 @@
     <string name="file_copy">Copia</string>
     <string name="file_share">Condividi</string>
     <string name="file_saved">%1$s salvato in Download</string>
+    <string name="file_saved_to">%1$s salvato</string>
     <string name="file_save_failed">%1$s non salvato</string>
     <string name="slash_confirm_title">Mandare /%1$s a %2$s?</string>
     <string name="slash_confirm_exit">La sessione si chiude.</string>

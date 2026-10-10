@@ -829,12 +829,29 @@ class MainActivity : ComponentActivity() {
         val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
             withFile(name, f) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
         }
+        // «Scarica» (Franz, 10/10 06:26: «vorrei poter scegliere la cartella e scaricarlo»): il foglio «Salva» di sistema, con
+        // cartella e nome da scegliere. Prima la copia andava da sola in Download e il solo avviso breve non si notava: lo
+        // stesso video era stato scaricato tre volte. Il file in attesa resta salvato anche se l'attività si ricrea.
+        var saving by rememberSaveable { mutableStateOf<List<String>?>(null) }
+        val saveAs = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { res ->
+            val s = saving
+            saving = null
+            val uri = res.data?.data
+            if (res.resultCode == RESULT_OK && uri != null && s != null) scope.launch { saveTo(uri, java.io.File(s[0]), s[1]) }
+        }
         // I tasti sotto il file (Franz, 07/10 16:07): apri, scarica, copia, condividi.
         val fileAct: (String, it.pixelbox.cmwatch.contract.TranscriptFile, FileAct) -> Unit = { name, f, act ->
             withFile(name, f) { file, mime ->
                 when (act) {
                     FileAct.OPEN -> viewFile(file, mime)
-                    FileAct.DOWNLOAD -> scope.launch { saveToDownloads(file, f.path.substringAfterLast('/'), mime) }
+                    FileAct.DOWNLOAD -> {
+                        val title = f.path.substringAfterLast('/')
+                        val pick = Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                            .setType(mime ?: "application/octet-stream").putExtra(Intent.EXTRA_TITLE, title)
+                        saving = listOf(file.path, title)
+                        // Senza un'app per i documenti (non succede sui Pixel) resta la copia in Download.
+                        runCatching { saveAs.launch(pick) }.onFailure { saving = null; scope.launch { saveToDownloads(file, title, mime) } }
+                    }
                     FileAct.COPY -> copyFile(file, f.path.substringAfterLast('/'), mime)
                     FileAct.SHARE -> shareFile(file, mime)
                 }
@@ -1633,7 +1650,15 @@ class MainActivity : ComponentActivity() {
 
     private fun fileUri(file: java.io.File): Uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
 
-    /** «Scarica»: una copia nella cartella Download del telefono, con il nome del file. */
+    /** «Scarica» nella cartella scelta col foglio «Salva» di sistema: il file copiato dove punta `uri`. */
+    private suspend fun saveTo(uri: Uri, file: java.io.File, name: String) {
+        val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("open") }.isSuccess
+        }
+        android.widget.Toast.makeText(this, getString(if (ok) R.string.file_saved_to else R.string.file_save_failed, name), android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    /** La copia in Download, con il nome del file: solo se manca il foglio «Salva» di sistema. */
     private suspend fun saveToDownloads(file: java.io.File, name: String, mime: String?) {
         val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
