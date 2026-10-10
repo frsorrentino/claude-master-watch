@@ -28,6 +28,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import it.pixelbox.cmwatch.contract.CmdOp
 import it.pixelbox.cmwatch.contract.SessionState
 import it.pixelbox.cmwatch.rules.CloseSplash
+import it.pixelbox.cmwatch.rules.ShareLimits
 import it.pixelbox.cmwatch.contract.EventKind
 import it.pixelbox.cmwatch.mobile.pair.Phase
 import it.pixelbox.cmwatch.mobile.ui.*
@@ -977,6 +978,8 @@ class MainActivity : ComponentActivity() {
                                         // direbbe alla sessione di un file che non arriva. Si chiede di allegarlo di nuovo.
                                         m != null && m.attachment == null && m.text.startsWith(getString(R.string.attached_file, "")) ->
                                             android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_gone), android.widget.Toast.LENGTH_LONG).show()
+                                        // Più immagini mandate insieme si rimandano insieme, dalle loro copie (contratto 1.50).
+                                        m != null && m.attachments.isNotEmpty() -> attachMany(session.name, m.attachments.map { p -> Uri.fromFile(java.io.File(p)) }, m.text, state?.share)
                                         // Un'immagine rifiutata si rimanda dalla sua copia locale, con lo stesso testo.
                                         m?.attachment != null -> attachImage(session.name, Uri.fromFile(java.io.File(m.attachment!!)), m.text, state?.share?.maxBytes ?: 0)
                                         m != null -> sendAndLog(PhonePrimary.Target.PROMPT, m.text)
@@ -1008,6 +1011,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             } },
                             attach = { uri, text -> attachAny(session.name, uri, text, state?.share) },
+                            attachMany = if (ShareLimits.together(state?.share, 2)) ({ uris, text -> attachMany(session.name, uris, text, state?.share) }) else null,
                             // Avviso quota (piano 30/09, Task 4): il testo resta nella chat come «parte alle …».
                             sendAtReset = { text -> quotaWarn?.let { w ->
                                 val t = System.currentTimeMillis() / 1000
@@ -1839,6 +1843,52 @@ class MainActivity : ComponentActivity() {
         app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000, file = copy?.let { c -> it.pixelbox.cmwatch.rules.SentFile(c.path, name, mime, text) }))
         // Contratto 1.48: a pezzi solo se il relay lo dice nello stato.
         runCatching { app.repo.report(session, text, mime, bytes, maxBytes, id = id, name = name, partsMax = share?.takeIf { it.parts }?.maxPartsBytes) }
+    }
+
+    /**
+     * Contratto 1.50 (Franz, 10/10 16:52: «due allegati insieme vengono mostrati ancora su 2 post»): più allegati in un
+     * messaggio solo, col testo una volta, a gruppi di `share.multi`. Le immagini ridotte come sempre, con la copia per la
+     * bolla e per «Riprova»; gli altri file così come sono, se il relay li accetta, e nella bolla il loro nome.
+     */
+    private fun attachMany(session: String, uris: List<Uri>, text: String, share: it.pixelbox.cmwatch.contract.Share?) {
+        val per = (share?.multi ?: 1).coerceAtLeast(1)
+        val limit = it.pixelbox.cmwatch.rules.ShareLimits.maxFileBytes(share)
+        app.scope.launch {
+            uris.chunked(per).forEachIndexed { k, group ->
+                val id = java.util.UUID.randomUUID().toString()
+                val parts = mutableListOf<it.pixelbox.cmwatch.data.Repo.SharePart>()
+                val copies = mutableListOf<String>()
+                val names = mutableListOf<String>()
+                group.forEachIndexed { i, uri ->
+                    // Da «Riprova» arrivano le copie (file://), che il sistema non sa tipizzare: sono immagini JPEG.
+                    val mime = contentResolver.getType(uri) ?: "image/jpeg"
+                    if (mime.startsWith("image/") || share?.any != true) {
+                        val bytes = it.pixelbox.cmwatch.mobile.share.ImageShrink.jpeg(this@MainActivity, uri) ?: return@forEachIndexed
+                        val copy = java.io.File(java.io.File(filesDir, "chat").apply { mkdirs() }, "$id-$i.jpg").apply { writeBytes(bytes) }
+                        parts += it.pixelbox.cmwatch.data.Repo.SharePart("image/jpeg", bytes)
+                        copies += copy.path
+                    } else {
+                        val name = runCatching {
+                            contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+                        }.getOrNull() ?: "file"
+                        val bytes = runCatching { contentResolver.openInputStream(uri)?.use { s -> s.readBytes() } }.getOrNull() ?: return@forEachIndexed
+                        if (bytes.size > limit) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                android.widget.Toast.makeText(this@MainActivity, getString(R.string.file_too_big, android.text.format.Formatter.formatShortFileSize(this@MainActivity, limit)), android.widget.Toast.LENGTH_LONG).show()
+                            }
+                            return@forEachIndexed
+                        }
+                        parts += it.pixelbox.cmwatch.data.Repo.SharePart(mime, bytes, name)
+                        names += name
+                    }
+                }
+                if (parts.isEmpty()) return@forEachIndexed
+                val t = if (k == 0) text else ""
+                val shown = (names.map { n -> getString(R.string.attached_file, n) } + listOfNotNull(t.takeIf { x -> x.isNotBlank() })).joinToString("\n")
+                app.chatLog.add(Sent(id, session, shown, System.currentTimeMillis() / 1000, attachments = copies))
+                runCatching { app.repo.reportMany(session, t, parts, share?.maxBytes ?: 0, id = id, partsMax = share?.takeIf { x -> x.parts }?.maxPartsBytes) }
+            }
+        }
     }
 
     private fun attachImage(session: String, uri: Uri, text: String, maxBytes: Int) {

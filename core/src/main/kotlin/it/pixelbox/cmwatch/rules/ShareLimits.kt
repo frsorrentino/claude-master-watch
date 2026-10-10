@@ -24,4 +24,7 @@ object ShareLimits {
         val plain = 3L * (maxEnc / 4) - GCM_BYTES - JSON_BYTES
         return (3L * (plain / 4)).coerceAtLeast(0)
     }
+
+    /** Contratto 1.50: `n` allegati vanno in un `report` solo quando il relay lo dice (`share.multi`) e sono almeno due. */
+    fun together(share: it.pixelbox.cmwatch.contract.Share?, n: Int): Boolean = n >= 2 && n <= (share?.multi ?: 0)
 }

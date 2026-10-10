@@ -262,13 +262,20 @@ class FakeTransport(
                 }
             }
             // Contratto 1.19 (R5): i testi del relay; la sessione deve essere viva.
-            CmdOp.REPORT -> when {
-                ses == null || ses.state == SessionState.GONE -> ko("no session ${cmd.session}")
-                (cmd.text?.length ?: 0) > 4000 -> ko("text too long: at most 4000 characters")
-                cmd.arg != null && cmd.arg !in shared -> ko("image missing or unreadable")
-                cmd.arg == null && cmd.text.isNullOrBlank() -> ko("empty report: nothing to send")
-                cmd.arg != null -> ok("sent to ${ses.name}: image saved as docs/segnalazioni/demo-${cmd.arg.take(8)}.jpg")
-                else -> ok("sent to ${ses.name}")
+            // Contratto 1.50: fino a 5 id separati da virgola, letti tutti prima di salvarne uno.
+            CmdOp.REPORT -> {
+                val ids = cmd.arg?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+                val saved = { i: String -> "docs/segnalazioni/demo-${i.take(8)}.jpg" }
+                when {
+                    ses == null || ses.state == SessionState.GONE -> ko("no session ${cmd.session}")
+                    (cmd.text?.length ?: 0) > 4000 -> ko("text too long: at most 4000 characters")
+                    ids.size > 5 -> ko("too many attachments: at most 5")
+                    ids.any { it !in shared } -> ko("image missing or unreadable")
+                    ids.isEmpty() && cmd.text.isNullOrBlank() -> ko("empty report: nothing to send")
+                    ids.size > 1 -> ok("sent to ${ses.name}: images saved as ${ids.joinToString(", ") { saved(it) }}")
+                    ids.size == 1 -> ok("sent to ${ses.name}: image saved as ${saved(ids[0])}")
+                    else -> ok("sent to ${ses.name}")
+                }
             }
             CmdOp.ALLOW_ALL -> ko("no «don't ask again» option on this question")
             CmdOp.LAST -> ses?.outcome?.full?.takeIf { it.isNotBlank() }?.let { ok(it) } ?: ko("${cmd.session}: nessun messaggio da leggere")

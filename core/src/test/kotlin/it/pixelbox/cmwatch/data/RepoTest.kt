@@ -95,6 +95,17 @@ class RepoTest {
         assertTrue(r.text, r.ok); assertTrue(r.text.startsWith("sent to atlas-shop: image saved as "))
     }
 
+    /** Contratto 1.50 (Franz, 10/10 16:52): due immagini in un report solo, gli id separati da virgola. */
+    @Test fun reportManySendsTwoImagesInOneCommand() = runTest {
+        val tr = fake()
+        val repo = Repo(MemoryStore(), tr, bg(), { clock }, { online }, "test", freshnessTickMs = 0)
+        repo.start(); idle()
+        val parts = listOf(Repo.SharePart("image/jpeg", byteArrayOf(1, 2)), Repo.SharePart("image/png", byteArrayOf(3)))
+        val id = repo.reportMany("atlas-shop", "two screens", parts, maxBytes = 1_500_000); idle()
+        val r = repo.resultsById.value.getValue(id)
+        assertTrue(r.text, r.ok); assertEquals(2, r.text.substringAfter("images saved as ").split(", ").size)
+    }
+
     @Test fun reportWithoutNetworkFailsInsteadOfQueueing() = runTest {
         val repo = Repo(MemoryStore(), fake(), bg(), { clock }, { online }, "test", freshnessTickMs = 0)
         repo.start(); idle(); online = false

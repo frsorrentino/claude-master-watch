@@ -6,6 +6,8 @@ export type Sent = {
   id: string; session: string; text: string; sentAt: number
   startedAt?: number | null; doneAt?: number | null; outcomeShort?: string | null; outcomeFull?: string | null
   attachment?: string | null
+  /** Contratto 1.50: i nomi dei file mandati insieme in un report solo. */
+  attachments?: string[]
   /** Il motivo per cui non è stato consegnato; null finché va bene. */
   failed?: string | null
   /** Invio programmato: finché `sentAt` è prima di quest'ora il messaggio aspetta. */

@@ -186,6 +186,7 @@
     {@const [ic, tone] = status[it.status]}
     <div class="me">
       {#if it.sent.attachment}<span class="att"><Icon name="file" size={16} />{it.sent.attachment}</span>{/if}
+      {#each it.sent.attachments ?? [] as a}<span class="att"><Icon name="file" size={16} />{a}</span>{/each}
       {#if it.sent.text}{@render bubble(it.sent.text, false)}{/if}
       <div class="mrow">
         <span class="mark" style="color:{tone}"><Icon name={ic} size={16} color={tone} />{it.status === 'scheduled' && it.sent.scheduledFor ? t.chatStatus.scheduled(hm(it.sent.scheduledFor)) : t.chatStatus[it.status]('')}</span>

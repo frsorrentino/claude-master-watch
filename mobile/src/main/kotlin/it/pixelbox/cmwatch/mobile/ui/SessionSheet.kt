@@ -138,6 +138,8 @@ data class SheetActions(
     val interrupt: () -> Unit = {},
     /** Un'immagine dalla galleria, con il testo scritto accanto (contratto 1.19, come «Condividi»). */
     val attach: (Uri, String) -> Unit = { _, _ -> },
+    /** Contratto 1.50: più allegati in un messaggio solo, col testo una volta; null se il relay non lo sa fare. */
+    val attachMany: ((List<Uri>, String) -> Unit)? = null,
     /** Avviso quota (piano 30/09, Task 3): il testo scritto parte alla ripartenza della finestra, o va nella notte. */
     /** Vero se il testo è partito (o programmato): solo allora la bozza si svuota (revisione finale 01/10, I5). */
     val sendAtReset: (String) -> Boolean = { false }, val sendTonight: (String) -> Boolean = { false },
@@ -715,7 +717,10 @@ private fun Composer(
                 cmd != null && it.pixelbox.cmwatch.rules.Slash.confirm(cmd.cmd) -> confirm = cmd
                 cmd != null -> { actions.slash(cmd.cmd, cmd.args); onSent() }
                 else -> {
-                    if (images.isNotEmpty()) images.forEachIndexed { i, uri -> actions.attach(uri, if (i == 0) draft.trim() else "") }
+                    // Più allegati in un messaggio solo, se il relay lo sa fare (Franz, 10/10 16:52: «ancora su 2 post»).
+                    val many = actions.attachMany
+                    if (images.size > 1 && many != null) many(images, draft.trim())
+                    else if (images.isNotEmpty()) images.forEachIndexed { i, uri -> actions.attach(uri, if (i == 0) draft.trim() else "") }
                     else PhonePrimary.target(s, draft)?.let { actions.send(it, draft.trim()) }
                     images = emptyList()
                     onSent()
@@ -1235,6 +1240,10 @@ private fun MineBubble(m: Sent, status: ChatRules.Status, reason: String?, actio
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 m.attachment?.let { AttachmentThumb(it) }
+                // Contratto 1.50: le immagini mandate insieme, in fila sopra il testo; più di due scorrono.
+                if (m.attachments.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    m.attachments.forEach { AttachmentThumb(it, maxW = 150.dp, maxH = 150.dp) }
+                }
                 // Pressione lunga = selezione di una parte del testo, con la barra di sistema per copiarla (Franz, 02/10 20:31).
                 if (m.text.isNotBlank()) SelectionContainer { Text(linked(m.text), style = MaterialTheme.typography.bodyLarge, color = CmColors.text) }
             }
@@ -1639,12 +1648,12 @@ private fun SmallAction(icon: androidx.compose.ui.graphics.vector.ImageVector, l
  * tocco = visore a tutto schermo con lo zoom. Niente se il file non c'è più.
  */
 @Composable
-private fun AttachmentThumb(path: String) {
+private fun AttachmentThumb(path: String, maxW: androidx.compose.ui.unit.Dp = 240.dp, maxH: androidx.compose.ui.unit.Dp = 180.dp) {
     var full by remember { mutableStateOf(false) }
     val bmp = remember(path) { decodeScaled(path, 720) } ?: return
     androidx.compose.foundation.Image(
         bmp, stringResource(R.string.attach_image), contentScale = ContentScale.Crop,
-        modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 180.dp).clip(RoundedCornerShape(14.dp)).handCursor().clickable { full = true },
+        modifier = Modifier.widthIn(max = maxW).heightIn(max = maxH).clip(RoundedCornerShape(14.dp)).handCursor().clickable { full = true },
     )
     if (full) ImageViewer(path) { full = false }
 }

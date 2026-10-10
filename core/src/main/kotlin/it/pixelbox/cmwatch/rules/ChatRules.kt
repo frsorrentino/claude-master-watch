@@ -26,6 +26,8 @@ import kotlinx.serialization.Serializable
     val panel: String? = null,
     /** Un file allegato (non un'immagine): quello che serve a «Riprova» per rimandarlo (07/10 20:21); null senza. */
     val file: SentFile? = null,
+    /** Contratto 1.50: le copie locali delle immagini mandate insieme, in fila sopra il testo; vuota con una sola o nessuna. */
+    val attachments: List<String> = emptyList(),
 )
 
 /**

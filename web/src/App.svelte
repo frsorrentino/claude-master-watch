@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as files from './lib/fileActions'
   import { media, mediaKey } from './lib/mediaCache.svelte'
+  import { groups, together } from './lib/shareMulti'
   import type { FileAct, Fetched } from './lib/fileActions'
   import { demoAgenda, demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { setContext, untrack } from 'svelte'
@@ -415,7 +416,12 @@
     } catch { pend = { ...pend, [m.id]: 'failed' } }
   }
   // Allegati: un messaggio per file, il testo con l'ultimo; ogni file va prima in /share/<id>, poi `report` con quell'id.
+  // Contratto 1.50 (Franz, 10/10 16:52): se il relay lo sa fare, un messaggio solo per gruppo, col testo nel primo.
   async function attach(name: string, files: File[], text: string) {
+    if (together(st.share, files.length)) {
+      for (const [g, group] of groups(files, st.share).entries()) await attachTogether(name, group, g === 0 ? text : '')
+      return
+    }
     for (const [i, f] of files.entries()) {
       const m: Sent = { id: crypto.randomUUID(), session: name, text: i === files.length - 1 ? text : '', sentAt: nowS(), attachment: f.name }
       msgs = [...msgs, m]
@@ -435,6 +441,29 @@
         res = { ...res, [m.id]: await tr.send({ ...newCmd('report', name, sid, m.text || undefined), id: m.id }) }
       } catch { pend = { ...pend, [m.id]: 'failed' } }
     }
+  }
+  async function attachTogether(name: string, files: File[], text: string) {
+    const m: Sent = { id: crypto.randomUUID(), session: name, text, sentAt: nowS(), attachments: files.map(f => f.name) }
+    msgs = [...msgs, m]
+    if (!tr) return
+    uploads = { ...uploads, [m.id]: { type: 'going' } }
+    const ids: string[] = []
+    for (const f of files) {
+      const sid = crypto.randomUUID()
+      try {
+        await tr.share(sid, f.type || 'application/octet-stream', new Uint8Array(await f.arrayBuffer()), f.name)
+      } catch (e) {
+        uploads = { ...uploads, [m.id]: { type: 'failed', reason: e instanceof Error ? e.message : String(e) } }
+        return
+      }
+      ids.push(sid)
+    }
+    const { [m.id]: _, ...rest } = uploads
+    uploads = rest
+    pend = { ...pend, [m.id]: 'sending' }
+    try {
+      res = { ...res, [m.id]: await tr.send({ ...newCmd('report', name, ids.join(','), text || undefined), id: m.id }) }
+    } catch { pend = { ...pend, [m.id]: 'failed' } }
   }
   // Un file della chat: il comando `file`, poi i byte da /api/file/<id>; il menu del file li chiede appena si apre
   // («prepare»), così apri, scarica, copia e condividi partono subito dal tocco (copia e condividi lo vogliono fresco).

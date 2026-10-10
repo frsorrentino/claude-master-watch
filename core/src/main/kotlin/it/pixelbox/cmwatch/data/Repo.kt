@@ -240,6 +240,27 @@ class Repo(
         return command(CmdOp.REPORT, session, shareId, text?.takeIf { it.isNotBlank() }, id = id)
     }
 
+    /** Un allegato di `reportMany`: il tipo, i byte e, per un file che non è un'immagine, il nome. */
+    class SharePart(val mime: String, val bytes: ByteArray, val name: String? = null)
+
+    /**
+     * Contratto 1.50 (Franz, 10/10 16:52: «due allegati insieme vengono mostrati ancora su 2 post»): più allegati in un
+     * `report` solo. Ognuno va in /share col suo id, poi il comando con gli id separati da virgola; un id solo è il `report` di
+     * prima. Senza rete non si accoda, come `report`.
+     */
+    suspend fun reportMany(session: String, text: String?, parts: List<SharePart>, maxBytes: Int, id: String = UUID.randomUUID().toString(), partsMax: Long? = null): String {
+        val fail = { e: Exception -> _uploads.update { it + (id to ChatRules.Upload.Failed(e.message ?: "upload failed")) } }
+        if (!online()) { val e = TransportException.Network("offline"); fail(e); throw e }
+        _uploads.update { it + (id to ChatRules.Upload.Going) }
+        val ids = parts.map { p ->
+            val sid = UUID.randomUUID().toString()
+            try { transport.share(sid, p.mime, p.bytes, maxBytes, p.name, partsMax) } catch (e: Exception) { fail(e); throw e }
+            sid
+        }
+        _uploads.update { it - id }
+        return command(CmdOp.REPORT, session, ids.joinToString(",").ifEmpty { null }, text?.takeIf { it.isNotBlank() }, id = id)
+    }
+
     /** Contratto 1.24: l'esito di aprire un file della chat. */
     sealed interface Opened {
         class Ok(val file: it.pixelbox.cmwatch.transport.FileBlob) : Opened

@@ -15,6 +15,12 @@ class ShareMultiTest {
         for (j in listOf(Fixtures.stateQuestion, Fixtures.stateIdle, Fixtures.stateStale)) assertEquals(5, ContractJson.decodeState(j).share?.multi)
     }
 
+    @Test fun moreAttachmentsGoTogetherOnlyWhenTheRelaySaysSo() {
+        val st = ContractJson.decodeState(Fixtures.stateIdle).share
+        assertTrue(it.pixelbox.cmwatch.rules.ShareLimits.together(st, 2)); assertTrue(it.pixelbox.cmwatch.rules.ShareLimits.together(st, 5))
+        assertFalse(it.pixelbox.cmwatch.rules.ShareLimits.together(st, 1)); assertFalse(it.pixelbox.cmwatch.rules.ShareLimits.together(st?.copy(multi = null), 2))
+    }
+
     @Test fun twoIdsTravelInOneReportAndComeBackAsOneResult() {
         val root = Json.parseToJsonElement(Fixtures.cmdResult).jsonObject
         val cmds = root.getValue("cmd").jsonArray.map { ContractJson.json.decodeFromJsonElement(Cmd.serializer(), it) }

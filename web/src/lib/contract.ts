@@ -82,7 +82,8 @@ export type State = {
   devices?: Device[] | null; recurring?: Recurring[] | null
   choices?: { models: Model[]; efforts: string[] } | null
   /** Contratto 1.48: `parts` = il relay accetta il file a pezzi fino a `max_parts_bytes`. */
-  share?: { max_bytes: number; any?: boolean; parts?: boolean; max_parts_bytes?: number } | null
+  /** Contratto 1.50: `multi` = quanti allegati in un `report` solo, id separati da virgola. */
+  share?: { max_bytes: number; any?: boolean; parts?: boolean; max_parts_bytes?: number; multi?: number } | null
   approvals?: Approval[]
 }
 
