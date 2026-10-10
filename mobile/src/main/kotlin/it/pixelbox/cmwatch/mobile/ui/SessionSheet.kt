@@ -1677,7 +1677,8 @@ private fun SheetHeader(
             SessionsText.window(s, stringResource(R.string.no_window)),
         )
         notes.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = CmColors.briefLabel, modifier = Modifier.padding(horizontal = 16.dp)) }
-        Spacer(Modifier.height(8.dp))
+        // Senza note sotto le pillole lo stesso margine di sopra, così stanno al centro della barra (Franz, 10/10 14:32: «riduci barra»).
+        Spacer(Modifier.height(if (notes.isEmpty()) 2.dp else 8.dp))
         HorizontalDivider(color = CmColors.line)
     }
     if (exitAsk) CloseDialog(s, onDismiss = { exitAsk = false }, onConfirm = { exitAsk = false; actions.slash("exit", null) })
