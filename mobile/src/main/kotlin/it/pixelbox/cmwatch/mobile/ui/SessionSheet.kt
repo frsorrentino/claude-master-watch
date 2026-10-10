@@ -328,13 +328,21 @@ fun SessionSheet(
     LaunchedEffect(chat.size, chat.lastOrNull()?.status, feed?.size, feed?.lastOrNull()) {
         if (chat.isEmpty() && feed.isNullOrEmpty()) return@LaunchedEffect
         val count = androidx.compose.runtime.snapshotFlow { list.layoutInfo.totalItemsCount }.first { it > 0 }
-        if (!anchored) { list.scrollToItem(count - 1, Int.MAX_VALUE); anchored = true; follow = true }
+        if (!anchored) { ChatDiag.log("anchor ${s.name} n=$count"); list.scrollToItem(count - 1, Int.MAX_VALUE); anchored = true; follow = true }
     }
     // Ogni testo nuovo o più lungo in fondo (risposta, riga dal vivo, domanda): giù fino alla fine dell'ultima voce.
     LaunchedEffect(list, anchored) {
         if (!anchored) return@LaunchedEffect
         androidx.compose.runtime.snapshotFlow { list.layoutInfo.totalItemsCount to list.canScrollForward }.collect { (n, below) ->
-            if (follow && below && n > 0 && !list.isScrollInProgress) list.scrollToItem(n - 1, Int.MAX_VALUE)
+            if (follow && below && n > 0 && !list.isScrollInProgress) { ChatDiag.log("follow ${s.name} n=$n"); list.scrollToItem(n - 1, Int.MAX_VALUE) }
+        }
+    }
+    // DIAGNOSTICA temporanea (vedi ChatDiag): chat ricreata, lista che salta, conversazione che sparisce.
+    val diagFeed by rememberUpdatedState(feed)
+    DisposableEffect(s.id) { ChatDiag.log("sheet+ ${s.name}"); onDispose { ChatDiag.log("sheet- ${s.name}") } }
+    LaunchedEffect(list) {
+        androidx.compose.runtime.snapshotFlow { Triple(list.firstVisibleItemIndex / 4 * 4, list.layoutInfo.totalItemsCount, diagFeed?.size) }.collect { (i, n, f) ->
+            ChatDiag.changed("list ${s.name}", "first~$i n=$n feed=$f follow=$follow anchored=$anchored")
         }
     }
     Column(Modifier.fly("card-${s.id}").fillMaxSize().background(CmColors.bg).then(if (grid) Modifier.dotGrid() else Modifier)) {
@@ -2234,3 +2242,9 @@ private fun elapsed(s: Long): String = when {
     else -> stringResource(R.string.live_hm, s / 3600, (s % 3600) / 60)
 }
 
+/** DIAGNOSTICA temporanea (salti della chat della master, Franz 10/10 22:19): si toglie con la correzione. */
+internal object ChatDiag {
+    private val last = HashMap<String, String>()
+    fun changed(key: String, value: String) { if (last.put(key, value) != value) android.util.Log.i("CmChatDiag", "$key $value") }
+    fun log(msg: String) { android.util.Log.i("CmChatDiag", msg) }
+}

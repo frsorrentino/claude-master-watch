@@ -950,6 +950,10 @@ class MainActivity : ComponentActivity() {
                                 Slash.panel(r.sent, results[r.sent.id])?.let { p -> app.chatLog.markPanel(r.sent.id, p) }
                             }
                         }
+                        // DIAGNOSTICA temporanea (vedi ChatDiag): da cosa dipende la conversazione della pagina.
+                        androidx.compose.runtime.SideEffect {
+                            it.pixelbox.cmwatch.mobile.ui.ChatDiag.changed("feed ${session.name}", "ok=$transcriptOk uns=$unsupported pe=${pageEntries.size} chat=$chatName owner=$entriesOwner live=${entries.size} cache=${feedCache[session.name]?.size} open=$open tab=$tab more=$more ts=${state?.ts}")
+                        }
                         CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) }, { f -> withFile(session.name, f, true) { _, _ -> } }, unmetered)) {
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
