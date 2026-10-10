@@ -86,6 +86,20 @@ object ChatFeed {
      * ([owner]); se no l'ultima copia letta. Dal vivo 03/10 17:49: appena fermata la pagina, le voci dal vivo erano ancora
      * quelle della sessione di prima e la pagina nuova le mostrava per un attimo.
      */
+    /**
+     * Le sessioni da rileggere in sottofondo (Franz, 10/10 09:47: «così alla loro apertura si vede la risposta già
+     * caricata»): un esito più nuovo dell'ultima voce letta e dell'ultima lettura chiesta (`asked`, per nome), né chiusa né
+     * aperta a schermo, che si legge da sé. Coppie nome ed epoch dell'esito, nell'ordine dello stato.
+     */
+    fun stale(
+        sessions: List<it.pixelbox.cmwatch.contract.Session>, cache: Map<String, List<TranscriptEntry>>, asked: Map<String, Long>, open: String?,
+    ): List<Pair<String, Long>> = sessions.mapNotNull { s ->
+        val at = s.outcome?.at ?: return@mapNotNull null
+        if (s.state == it.pixelbox.cmwatch.contract.SessionState.GONE || s.name == open) return@mapNotNull null
+        val newest = maxOf(cache[s.name].orEmpty().maxOfOrNull { e -> e.at ?: 0L } ?: 0L, asked[s.name] ?: 0L)
+        if (at > newest) s.name to at else null
+    }
+
     fun pageEntries(
         name: String, open: String?, owner: String?, live: List<TranscriptEntry>, cache: Map<String, List<TranscriptEntry>>,
     ): List<TranscriptEntry> = if (name == open && owner == name) live else cache[name].orEmpty()

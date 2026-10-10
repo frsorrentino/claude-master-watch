@@ -193,4 +193,21 @@ class ChatFeedTest {
         assertEquals(11, ChatFeed.waitingPc(true, 39_000, 50_000))
         assertNull(ChatFeed.waitingPc(false, 0, 50_000))
     }
+
+    // Franz, 10/10 09:47: «si potrebbe far aggiornare le sessioni anche quando non sono aperte così alla loro apertura si vede
+    // la risposta già caricata?». Si rilegge in sottofondo chi ha un esito più nuovo dell'ultima voce letta, una volta per
+    // esito; mai la sessione aperta, che si legge da sé, né una chiusa.
+    @Test fun sessionsToReadAgainInTheBackground() {
+        val st = ContractJson.decodeState(Fixtures.stateIdle)
+        val s = st.sessions.first().copy(name = "atlas-shop", state = SessionState.IDLE, outcome = Outcome("done", "Esito: done", 200))
+        val old = listOf(TranscriptEntry("a1", "assistant", "x", at = 100))
+        val fresh = listOf(TranscriptEntry("a2", "assistant", "y", at = 250))
+        assertEquals(listOf("atlas-shop" to 200L), ChatFeed.stale(listOf(s), mapOf("atlas-shop" to old), emptyMap(), open = null))
+        assertEquals(listOf("atlas-shop" to 200L), ChatFeed.stale(listOf(s), emptyMap(), emptyMap(), open = null))
+        assertTrue(ChatFeed.stale(listOf(s), mapOf("atlas-shop" to fresh), emptyMap(), open = null).isEmpty())
+        assertTrue(ChatFeed.stale(listOf(s), mapOf("atlas-shop" to old), mapOf("atlas-shop" to 200L), open = null).isEmpty())
+        assertTrue(ChatFeed.stale(listOf(s), mapOf("atlas-shop" to old), emptyMap(), open = "atlas-shop").isEmpty())
+        assertTrue(ChatFeed.stale(listOf(s.copy(state = SessionState.GONE)), mapOf("atlas-shop" to old), emptyMap(), open = null).isEmpty())
+        assertTrue(ChatFeed.stale(listOf(s.copy(outcome = null)), emptyMap(), emptyMap(), open = null).isEmpty())
+    }
 }

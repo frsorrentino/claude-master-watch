@@ -68,6 +68,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -702,6 +703,30 @@ class MainActivity : ComponentActivity() {
         // Da quando la lettura in volo aspetta il PC: la riga «in attesa del PC» della chat (piano prestazioni, Task 7).
         var readSince by remember { mutableStateOf<Long?>(null) }
         val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+        // Le sessioni che non sono a schermo si rileggono da sole quando finiscono un turno (Franz, 10/10 09:47: «così alla
+        // loro apertura si vede la risposta già caricata»): una lettura per esito nuovo, una alla volta, nella cache delle chat.
+        // La sessione aperta resta del lettore qui sotto; una risposta che arriva dopo si unisce senza doppioni.
+        val shownChat by rememberUpdatedState(chatName)
+        LaunchedEffect(transcriptOk, unsupported) {
+            if (!transcriptOk || unsupported) return@LaunchedEffect
+            val asked = mutableMapOf<String, Long>()
+            lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                app.repo.snapshot.collect { snap ->
+                    val st = snap.state ?: return@collect
+                    for ((name, at) in ChatFeed.stale(st.sessions, feedCache, asked, shownChat)) {
+                        asked[name] = at
+                        val have = feedCache[name].orEmpty()
+                        val id = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(if (have.isEmpty()) null else ChatFeed.anchor(have))) }.getOrNull() ?: continue
+                        val r = kotlinx.coroutines.withTimeoutOrNull(30_000) { app.repo.resultsById.first { m -> m.containsKey(id) }[id] }
+                        app.repo.forget(id)
+                        if (r?.ok == true) runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
+                            val cur = feedCache[name].orEmpty()
+                            feedCache[name] = ChatFeed.append(cur, page, if (cur.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER)
+                        }
+                    }
+                }
+            }
+        }
         LaunchedEffect(chatName, transcriptOk, unsupported) {
             entries = chatName?.let { feedCache[it] }.orEmpty(); entriesOwner = chatName; more = false
             val name = chatName ?: return@LaunchedEffect
