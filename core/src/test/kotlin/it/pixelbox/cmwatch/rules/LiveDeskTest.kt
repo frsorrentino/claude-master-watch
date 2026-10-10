@@ -172,13 +172,24 @@ class LiveDeskTest {
         assertTrue(Run(LiveDesk.Desk(recapEveryMs = 0), st).state(st, t0).also { it.spoken(t0 + 1_000) }.tick(t0 + 900_000).said().isEmpty())
     }
 
+    /** Due sessioni che si leggono uguali (Franz, 10/10 16:26: «1 · supervisor», «2 · supervisor»): nella scelta il nome intero. */
+    @Test fun twoSessionsThatSoundAlikeArePickedByTheirWholeName() {
+        val base = q.sessions.single { it.name == "atlas-shop" }
+        val two = q.copy(sessions = q.sessions + base.copy(name = "atlas-app") + base.copy(name = "atlas-com"))
+        val r = Run(state = two).state(two, t0).spoken(t0 + 6_000)
+        r.tap(Action.SAY, t0 + 7_000, text = "di' a atlas: rivedi i semi")
+        assertEquals(listOf("uno: atlas app, due: atlas com"), r.said())
+        assertEquals(listOf("atlas app", "atlas com"), r.card().options)
+    }
+
     // Il tasto Azioni del watch (Franz, 08/10 21:17): le azioni in attesa come scelta; la scelta parte con Annulla per 5 s.
     @Test fun theActionsButtonOffersThePendingActionsAndSendsThePickedOne() {
         val r = started()
         r.spoken(t0 + 1_000)
         val c = r.tap(Action.ACTIONS, t0 + 2_000).card()
         assertEquals(LiveCard.Kind.PICK, c.kind)
-        val i = c.options.indexOf("Review the seeds and the admin page")
+        // Ogni azione dice di chi è (Franz, 10/10 16:23: «mi ha letto una pista trasversale decontestualizzata»).
+        val i = c.options.indexOf("atlas shop: Review the seeds and the admin page")
         assertTrue(i >= 0)
         r.tap(Action.PICK, t0 + 3_000, index = i + 1)
         assertEquals(LiveCard.Kind.TELL, r.card().kind)

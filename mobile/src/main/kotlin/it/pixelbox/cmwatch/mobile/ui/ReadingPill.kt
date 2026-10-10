@@ -139,13 +139,14 @@ fun readingRoom(): androidx.compose.ui.unit.Dp {
 /**
  * Il controller sopra tutto. Fra più posti vale uno in vista per almeno metà della sua larghezza: quello della sessione che
  * legge, se c'è (le colonne del tablet), se no il più in vista e poi il più a sinistra (le pagine vicine dello scorrimento).
- * Il salto fra un posto e l'altro, o verso il fondo, scivola invece di riapparire. Con la tastiera aperta si fa da parte.
+ * Il salto fra un posto e l'altro, o verso il fondo, scivola invece di riapparire. Con la tastiera aperta resta, sopra di lei
+ * (Franz, 10/10 16:25: «quando si apre la tastiera il controller della live sparisce»): il posto sopra il campo sale con il
+ * campo, e senza posto il fondo è il bordo della tastiera.
  */
 @Composable
 fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
-    val imeOpen = WindowInsets.ime.getBottom(density) > 0
-    val bottomPx = WindowInsets.navigationBars.getBottom(density) + with(density) { 12.dp.roundToPx() }
+    val bottomPx = maxOf(WindowInsets.navigationBars.getBottom(density), WindowInsets.ime.getBottom(density)) + with(density) { 12.dp.roundToPx() }
     var root by remember { mutableStateOf(Rect.Zero) }
     var last by remember { mutableStateOf(o.bar) }
     o.bar?.let { last = it }
@@ -161,7 +162,7 @@ fun ReadingOverlayHost(o: ReadingOverlay, modifier: Modifier = Modifier) {
         LaunchedEffect(moving, lift) { if (!moving) steady = lift }
         val shown by animateIntAsState(if (moving) steady else lift, tween(220, easing = FastOutSlowInEasing), label = "readingLift")
         AnimatedVisibility(
-            o.bar != null && !imeOpen, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            o.bar != null, Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 },
         ) {
             // Largo quanto il suo posto quando il posto è una colonna (la conversazione del tablet, le colonne). Un posto largo

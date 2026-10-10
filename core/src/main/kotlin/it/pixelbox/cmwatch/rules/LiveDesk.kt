@@ -169,7 +169,9 @@ object LiveDesk {
             LiveTap.Action.ACTIONS -> {
                 val acts = RecapActions.of(state)
                 if (acts.isEmpty()) reply(lang.words.nothingNew)
-                else { d = d.copy(actions = acts); route(Route.Pick(LiveRoute.Intent.ACTION, acts.map { it.text }), state) }
+                // Ogni azione con la sessione o il progetto da cui viene (Franz, 10/10 16:23: senza, «una pista trasversale
+                // decontestualizzata»).
+                else { d = d.copy(actions = acts); route(Route.Pick(LiveRoute.Intent.ACTION, acts.map { "${SpeakableName.of(it.from)}: ${it.text}" }), state) }
             }
             LiveTap.Action.ONLY_BLOCKING -> {
                 d = d.copy(onlyBlocking = !d.onlyBlocking)
@@ -394,13 +396,16 @@ object LiveDesk {
                     show(LiveCard(0, LiveCard.Kind.NEWS, title = SpeakableName.of(r.session), text = text))
                 }
                 is Route.Pick -> {
-                    val labels = r.options.map { o ->
+                    val spoken = r.options.map { o ->
                         when (r.intent) {
                             LiveRoute.Intent.APPROVE -> state.approvals.firstOrNull { it.task == o }?.title ?: o
                             LiveRoute.Intent.ACTION -> o
                             else -> SpeakableName.of(o)
                         }
                     }
+                    // Due sessioni che si leggono uguali (supervisor-app e supervisor, Franz 10/10 16:26): il nome intero, a parole.
+                    val names = r.intent != LiveRoute.Intent.APPROVE && r.intent != LiveRoute.Intent.ACTION
+                    val labels = spoken.mapIndexed { i, n -> if (names && spoken.count { it == n } > 1) r.options[i].replace('-', ' ').replace('_', ' ') else n }
                     val text = labels.mapIndexed { i, n -> w.pickItem.format(l.numbers.getOrNull(i) ?: (i + 1).toString(), n) }.joinToString(", ")
                     say(text)
                     d = d.copy(pick = r)
