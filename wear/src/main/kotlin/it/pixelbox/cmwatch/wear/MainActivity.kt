@@ -2,6 +2,7 @@ package it.pixelbox.cmwatch.wear
 
 import it.pixelbox.cmwatch.rules.SpeechText
 import it.pixelbox.cmwatch.rules.AnswerText
+import it.pixelbox.cmwatch.rules.LiveFeed
 import it.pixelbox.cmwatch.wear.push.SpeakService
 import android.content.Intent
 import android.os.Bundle
@@ -301,7 +302,14 @@ class MainActivity : ComponentActivity() {
         SwipeDismissableNavHost(navController = nav, startDestination = Routes.SESSIONS) {
             composable(Routes.SESSIONS) {
                 SessionsScreen(
-                    snapshot, now, onOpen = { nav.go(Screen.Session(it)) }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient,
+                    // Il tocco su una sessione apre la sua scheda e legge a voce il suo stato (Franz, 10/10 16:20): la frase della live
+                    // del telefono, al lavoro con da quanto e cosa fa; il ▶ della scheda la ferma.
+                    snapshot, now, onOpen = { n ->
+                        nav.go(Screen.Session(n))
+                        snapshot.state?.sessions?.firstOrNull { x -> x.name == n }?.let { s ->
+                            SpeakService.say(this@MainActivity, LiveFeed.status(s, SayLabels.of(this@MainActivity), System.currentTimeMillis() / 1000))
+                        }
+                    }, onSettings = { nav.go(Screen.Settings) }, onMenu = { nav.go(it) }, ambient = ambient,
                     // Contratto 1.9: una chiusa si riprende dalla sua riga.
                     onReopen = { n -> reopen(n) },
                     reopenStatus = { n -> reopenStatus(n) },

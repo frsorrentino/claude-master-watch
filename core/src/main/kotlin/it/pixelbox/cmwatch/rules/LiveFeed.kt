@@ -177,11 +177,14 @@ object LiveFeed {
     /** Il giro completo è stato letto: le informazioni non si ripetono al giro dopo. */
     fun heard(feed: Feed): Feed = feed.copy(info = emptyList())
 
-    /** «com'è messa nome»: la domanda aperta, l'esito, al lavoro, chiusa o ferma. */
-    fun status(s: Session, l: Labels): String = when {
+    /**
+     * «com'è messa nome»: la domanda aperta, l'esito, al lavoro, chiusa o ferma. Con `now` (secondi) una sessione al lavoro
+     * dice da quanto e cosa fa, come nel recap: è la frase del tocco su una sessione dell'orologio (Franz, 10/10 16:20).
+     */
+    fun status(s: Session, l: Labels, now: Long? = null): String = when {
         s.question != null -> questionText(s, l)
         s.state == SessionState.GONE -> l.gone.format(SpeakableName.of(s.name))
-        s.state == SessionState.BUSY -> l.busy.format(SpeakableName.of(s.name))
+        s.state == SessionState.BUSY -> if (now != null) busyRecap(s, now, l) else l.busy.format(SpeakableName.of(s.name))
         s.outcome != null -> outcomeText(s, l)
         else -> l.idle.format(SpeakableName.of(s.name))
     }

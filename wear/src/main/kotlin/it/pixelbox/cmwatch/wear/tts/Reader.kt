@@ -41,6 +41,9 @@ class Reader(private val app: CmApp) {
 
     fun toggleText(text: String) { if (busy) stop() else say(text) }
 
+    /** Lo stato di una sessione al tocco (Franz, 10/10 16:20): prende il posto di quello che si stava leggendo. */
+    fun sayNow(text: String) { stop(); say(text) }
+
     /**
      * La Risposta a paragrafi (Franz, 15/09 17:19): `all` è il ▶ in testata, che parte dal primo o ferma; toccare un
      * paragrafo legge da lì in avanti, ritoccare quello che sta leggendo ferma.

@@ -34,6 +34,7 @@ class SpeakService : Service() {
             ACTION_STOP -> app.reader.stop()
             ACTION_LAST -> intent.getStringExtra(SESSION)?.let { app.reader.toggleLast(it, intent.getStringExtra(TEXT)) }
             ACTION_TEXT -> intent.getStringExtra(TEXT)?.let { app.reader.toggleText(it) }
+            ACTION_SAY -> intent.getStringExtra(TEXT)?.let { app.reader.sayNow(it) }
             ACTION_BLOCKS -> intent.getStringArrayListExtra(TEXTS)?.let { app.reader.toggleBlocks(it, intent.getIntExtra(BLOCK, 0), intent.getBooleanExtra(ALL, false)) }
         }
         watch?.cancel()
@@ -83,6 +84,12 @@ class SpeakService : Service() {
 
         fun last(ctx: Context, session: String, fallback: String?) = ContextCompat.startForegroundService(ctx, lastIntent(ctx, session, fallback))
         fun text(ctx: Context, text: String) = ContextCompat.startForegroundService(ctx, textIntent(ctx, text))
+
+        const val ACTION_SAY = "it.pixelbox.cmwatch.speak.SAY"
+        /** Legge `text` subito, al posto di quello che si stava leggendo (lo stato di una sessione al tocco). */
+        fun say(ctx: Context, text: String) = ContextCompat.startForegroundService(
+            ctx, Intent(ctx, SpeakService::class.java).setAction(ACTION_SAY).putExtra(TEXT, text),
+        )
 
         const val ACTION_BLOCKS = "it.pixelbox.cmwatch.speak.BLOCKS"
         const val TEXTS = "texts"

@@ -253,4 +253,28 @@
     <string name="live_talk_label">What do you want to say?</string>
     <string name="question_no_text">Asks you to choose</string>
     <string name="live_actions">Actions</string>
+    <!-- Lo stato di una sessione letto a voce al tocco (Franz, 10/10 16:20): le frasi della live del telefono, copiate. -->
+    <string-array name="say_numbers"><item>one</item><item>two</item><item>three</item><item>four</item><item>five</item><item>six</item><item>seven</item><item>eight</item><item>nine</item><item>ten</item></string-array>
+    <string name="say_q">%1$s asks: %2$s</string>
+    <string name="say_option">%1$s: %2$s.</string>
+    <string name="say_more">More on the watch.</string>
+    <string name="say_approval">Approval request: %1$s. It needs the double confirmation.</string>
+    <string name="say_where">on %1$s</string>
+    <string name="say_outcome">%1$s is done: %2$s.</string>
+    <string name="say_next">Actions: %1$s.</string>
+    <string name="say_step">%1$s. %2$s</string>
+    <string name="say_gone">%1$s has closed.</string>
+    <string name="say_restart_failed">The restart of %1$s failed.</string>
+    <string name="say_quota">Quota %1$s at %2$d percent, resets at %3$s.</string>
+    <string name="say_quota_no_reset">Quota %1$s at %2$d percent.</string>
+    <string name="say_busy">%1$s is working.</string>
+    <string name="say_idle">%1$s is idle.</string>
+    <string name="say_launched">%1$s started.</string>
+    <string name="say_recap">Recap: %1$s.</string>
+    <string name="say_recap_busy">%1$s has been working for %2$s, now: %3$s.</string>
+    <string name="say_recap_task">Goal: %1$s.</string>
+    <string name="say_choices">The choices: %1$s</string>
+    <string name="say_thinking">thinking</string>
+    <string name="say_recap_minute">1 minute</string>
+    <string name="say_recap_minutes">%1$d minutes</string>
 </resources>

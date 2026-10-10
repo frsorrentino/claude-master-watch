@@ -323,6 +323,14 @@ class LiveFeedTest {
         )
     }
 
+    /** Il tocco su una sessione dell'orologio (Franz, 10/10 16:20): al lavoro dice da quanto e cosa fa, come il recap. */
+    @Test fun aTappedSessionAtWorkSaysSinceWhenAndWhat() {
+        val now = 1_789_237_000L
+        val busy = idle.sessions.single().copy(state = SessionState.BUSY, toolNote = "Run the tests", turnStarted = now - 300, goal = null, next = null)
+        assertEquals("atlas shop lavora da 5 minuti, ora: Run the tests.", LiveFeed.status(busy, IT, now))
+        assertEquals("atlas shop è al lavoro.", LiveFeed.status(busy, IT))
+    }
+
     companion object {
         /** Le frasi italiane della specifica (§5), come arriveranno da strings.xml. */
         val IT = LiveFeed.Labels(
