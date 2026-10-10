@@ -4,8 +4,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,6 +72,8 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
                     modifier = Modifier.transformedHeight(this, spec), border = if (blocking) BorderStroke(2.dp, CmColors.waiting) else null,
                 )
             }
+            // Spazio sotto l'ora e il pallino «LIVE» in alto (Franz, 10/10 11:27): senza, la prima riga finiva sotto l'arco.
+            item { Spacer(Modifier.height(10.dp)) }
             if (card == null || kind == Kind.OFF) {
                 item { Text(stringResource(R.string.live_off), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
                 return@TransformingLazyColumn

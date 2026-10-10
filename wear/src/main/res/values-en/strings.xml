@@ -231,6 +231,7 @@
     <!-- Modalità live: la scheda (specifica 06/10, fase 3) -->
     <string name="live_channel_alert">Live: needs you</string>
     <string name="live_title">Live</string>
+    <string name="live_badge">LIVE</string>
     <string name="live_off">Live mode is off: turn it on from the phone menu.</string>
     <string name="live_idle">No news: all quiet.</string>
     <string name="live_row_min">%1$d min</string>

@@ -3,9 +3,13 @@ package it.pixelbox.cmwatch.wear
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.android.resources.Density
+import androidx.compose.runtime.Composable
+import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.TimeSource
 import com.android.resources.ScreenRound
 import it.pixelbox.cmwatch.rules.LiveCard
 import it.pixelbox.cmwatch.rules.LivePanel
+import it.pixelbox.cmwatch.wear.ui.components.CmTimeText
 import it.pixelbox.cmwatch.wear.ui.screens.LiveScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
 import org.junit.Rule
@@ -57,6 +61,21 @@ class LiveScreenSnapshotTest {
                 ),
                 now, {}, {},
             )
+        }
+    }
+
+    // In alto l'ora, chi aspetta e il pallino rosso «LIVE», come nella pillola del telefono (Franz, 10/10 11:27).
+    @Test fun liveTopBadge() = paparazzi.snapshot {
+        val fixed = object : TimeSource {
+            @Composable override fun currentTime() = "10:58"
+        }
+        CmTheme {
+            AppScaffold(timeText = { CmTimeText(waiting = 1, live = true, timeSource = fixed) }) {
+                LiveScreen(
+                    LiveCard(1, LiveCard.Kind.IDLE, rows = listOf(LivePanel.Row("ledger-api", LivePanel.Kind.ASKING, "Deploy now?", at = 1_789_219_700))),
+                    now, {}, {},
+                )
+            }
         }
     }
 }

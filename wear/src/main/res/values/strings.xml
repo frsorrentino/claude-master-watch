@@ -234,6 +234,7 @@
     <!-- Modalità live: la scheda (specifica 06/10, fase 3) -->
     <string name="live_channel_alert">Live: serve te</string>
     <string name="live_title">Live</string>
+    <string name="live_badge">LIVE</string>
     <string name="live_off">Live spenta: accendila dal telefono, dal menu.</string>
     <string name="live_idle">Nessuna notizia: tutto tranquillo.</string>
     <string name="live_row_min">%1$d min</string>

@@ -11,10 +11,13 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.wear.compose.material3.AppScaffold
 import it.pixelbox.cmwatch.R
+import it.pixelbox.cmwatch.contract.Freshness
 import it.pixelbox.cmwatch.rules.LiveTap
 import it.pixelbox.cmwatch.wear.CmApp
 import it.pixelbox.cmwatch.wear.ui.Keyboard
+import it.pixelbox.cmwatch.wear.ui.components.CmTimeText
 import it.pixelbox.cmwatch.wear.ui.screens.LiveScreen
 import it.pixelbox.cmwatch.wear.ui.theme.CmTheme
 import kotlinx.coroutines.delay
@@ -38,7 +41,13 @@ class LiveActivity : ComponentActivity() {
                 val talk = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
                     live.send(LiveTap(LiveTap.Action.SAY, text = Keyboard.result(r.data).orEmpty()))
                 }
-                LiveScreen(card, now, onTap = live::send, onTalk = { talk.launch(Keyboard.intent(getString(R.string.live_talk_label))) })
+                // In alto l'ora, chi aspetta e il pallino rosso «LIVE», come nella pillola del telefono (Franz, 10/10 11:27).
+                AppScaffold(timeText = {
+                    val snap by (application as CmApp).repo.snapshot.collectAsStateWithLifecycle()
+                    CmTimeText(waiting = if (snap.freshness !is Freshness.Stale) snap.state?.sessions?.count { it.question != null } ?: 0 else 0, live = true)
+                }) {
+                    LiveScreen(card, now, onTap = live::send, onTalk = { talk.launch(Keyboard.intent(getString(R.string.live_talk_label))) })
+                }
             }
         }
     }
