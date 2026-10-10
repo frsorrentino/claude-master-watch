@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,6 +88,7 @@ import it.pixelbox.cmwatch.contract.TranscriptEntry
 import it.pixelbox.cmwatch.contract.TranscriptFile
 import it.pixelbox.cmwatch.contract.TranscriptTurn
 import it.pixelbox.cmwatch.rules.ChatFeed
+import it.pixelbox.cmwatch.rules.ChatNews
 import it.pixelbox.cmwatch.rules.ChatRules
 import it.pixelbox.cmwatch.rules.ModelText
 import it.pixelbox.cmwatch.rules.PhonePrimary
@@ -120,6 +122,9 @@ data class FileOpener(
     val unmetered: () -> Boolean = { false },
 )
 val LocalFileOpener = compositionLocalOf { FileOpener() }
+
+/** L'ultima visita di una sessione (secondi) data da fuori, per la riga «Nuovi» negli snapshot, dove le preferenze non ci sono. */
+val LocalChatSeen = staticCompositionLocalOf<((String) -> Long?)?> { null }
 
 data class SheetActions(
     val answer: (Int) -> Unit, val allowAll: () -> Unit, val send: (PhonePrimary.Target, String) -> Unit,
@@ -264,6 +269,19 @@ fun SessionSheet(
     val fieldFocus = LocalFieldFocus.current
     val primary by remember(s, draftHolder) { derivedStateOf { PhonePrimary.button(s, draftHolder.value) } }
     val list = rememberLazyListState()
+    // L'apertura della sessione (Franz, 10/10 16:01, A + B): le ultime voci entrano a cascata, e quelle arrivate dall'ultima
+    // visita hanno sopra la riga «Nuovi» e un fondo che sfuma. L'ultima visita si ricorda lasciando la pagina; la cascata
+    // scaglionata vale nel primo secondo, dopo una voce che arriva entra da sola.
+    val seenPrefs = remember { stepsCtx.getSharedPreferences("chat_seen", android.content.Context.MODE_PRIVATE) }
+    // Negli snapshot (immagini ferme) la visita non si legge e non si ricorda: la dà la prova, se vuole.
+    val still = LocalStill.current
+    val seenFrom = LocalChatSeen.current
+    val seenAt = remember(s.name) { seenFrom?.invoke(s.name) ?: if (still) null else seenPrefs.getLong(s.name, -1L).takeIf { it >= 0L } }
+    val latestAt by rememberUpdatedState(ChatNews.latest(groupedFeed.orEmpty()))
+    DisposableEffect(s.name) { onDispose { if (!still) latestAt?.let { seenPrefs.edit().putLong(s.name, it).apply() } } }
+    val openedAt = remember(s.name) { android.os.SystemClock.uptimeMillis() }
+    val cascaded = remember(s.name) { mutableSetOf<String>() }
+    val tinted = remember(s.name) { mutableSetOf<String>() }
     // Contratto 1.37: «Salva come decisione», dalla risposta di Claude o dal + della master (campo vuoto).
     var decisionDraft by remember { mutableStateOf<String?>(null) }
     val decide: ((String) -> Unit)? = actions.decision?.let { _ -> { t: String -> decisionDraft = it.pixelbox.cmwatch.rules.MasterService.decisionDraft(t) } }
@@ -382,7 +400,15 @@ fun SessionSheet(
                     }
                     // I passaggi di fila diventano un gruppo (Franz, 01/10 15:59: «Gruppi + righe ricche»).
                     val grouped = groupedFeed.orEmpty()
-                    items(grouped, key = { feedKey(it) }) { it ->
+                    val newsFrom = ChatNews.firstNew(grouped, seenAt)
+                    itemsIndexed(grouped, key = { _, i -> feedKey(i) }) { index, it ->
+                        val k = feedKey(it)
+                        val opening = android.os.SystemClock.uptimeMillis() - openedAt < 1_000
+                        Column(
+                            Modifier.fillMaxWidth().cascadeIn(ChatNews.rank(index, grouped.size), opening, cascaded, k)
+                                .newsTint(newsFrom != null && index >= newsFrom && it !is ChatFeed.Item.Mine, tinted, k),
+                        ) {
+                        if (index == newsFrom) NewsDivider()
                         when (it) {
                             // Una voce ancora in coda nel turno (scritta mentre Claude lavora) si dice «in coda».
                             is ChatFeed.Item.Mine -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -397,6 +423,7 @@ fun SessionSheet(
                             )
                             is ChatFeed.Item.Tool -> ToolLine(it.entry)
                             is ChatFeed.Item.Steps -> StepsCard(it)
+                        }
                         }
                     }
                     // A chat già piena la rotella non c'è: una riga sottile dice da quanto la lettura aspetta il PC.
@@ -1350,6 +1377,59 @@ private fun sizeLabel(b: Long): String = when {
     b >= 1_000_000 -> "%.1f MB".format(b / 1_000_000.0)
     b >= 1_000 -> "${b / 1_000} KB"
     else -> "$b B"
+}
+
+/**
+ * A (Franz, 10/10 16:01): la voce sale di 12 dp con una dissolvenza in 200 ms; all'apertura le ultime sei una dopo l'altra,
+ * dall'alto, `rank` × 30 ms dopo la prima, così la cascata finisce col volo della card. Una volta sola per voce e pagina:
+ * tornando a schermo scorrendo resta ferma. Con le animazioni spente nessun movimento.
+ */
+@Composable
+private fun Modifier.cascadeIn(rank: Int?, opening: Boolean, done: MutableSet<String>, key: String): Modifier {
+    val off = animationsOff()
+    val first = remember(key) { rank != null && !off && done.add(key) }
+    if (!first) return this
+    val p = remember(key) { androidx.compose.animation.core.Animatable(0f) }
+    val wait = if (opening) (rank ?: 0) * ChatNews.STAGGER_MS else 0L
+    LaunchedEffect(key) {
+        kotlinx.coroutines.delay(wait)
+        p.animateTo(1f, androidx.compose.animation.core.tween(200, easing = CmMotion.easing))
+    }
+    return graphicsLayer { alpha = p.value; translationY = (1f - p.value) * 12.dp.toPx() }
+}
+
+/** B: il fondo appena tinto delle voci arrivate dall'ultima visita, che sfuma in 2 s dopo la cascata; una volta sola per voce. */
+@Composable
+private fun Modifier.newsTint(isNew: Boolean, done: MutableSet<String>, key: String): Modifier {
+    val off = animationsOff()
+    val first = remember(key) { isNew && !off && done.add(key) }
+    if (!first) return this
+    val a = remember(key) { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(key) {
+        kotlinx.coroutines.delay(600)
+        a.animateTo(0f, androidx.compose.animation.core.tween(2_000))
+    }
+    val tint = CmColors.actionIcon
+    return drawBehind {
+        if (a.value > 0f) {
+            val dx = 6.dp.toPx(); val dy = 4.dp.toPx()
+            drawRoundRect(
+                tint.copy(alpha = .12f * a.value), topLeft = androidx.compose.ui.geometry.Offset(-dx, -dy),
+                size = androidx.compose.ui.geometry.Size(size.width + 2 * dx, size.height + 2 * dy),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
+            )
+        }
+    }
+}
+
+/** B: la riga «Nuovi» sopra la prima voce arrivata dall'ultima visita. */
+@Composable
+private fun NewsDivider() {
+    Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalDivider(Modifier.weight(1f), color = CmColors.actionIcon.copy(alpha = .45f))
+        Text(stringResource(R.string.chat_news), style = MaterialTheme.typography.labelMedium, color = CmColors.actionIcon)
+        HorizontalDivider(Modifier.weight(1f), color = CmColors.actionIcon.copy(alpha = .45f))
+    }
 }
 
 private fun feedKey(i: ChatFeed.Item): String = when (i) {

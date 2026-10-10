@@ -12,6 +12,8 @@
   import Icon from './Icon.svelte'
   import { canShare, type FileAct } from './fileActions'
   import { autoPreview, isImage, isVideo } from './media'
+  import { onDestroy } from 'svelte'
+  import { firstNew, latest, rank, readSeen, saveSeen } from './chatNews'
   import { media, mediaKey } from './mediaCache.svelte'
   import Md from './Md.svelte'
 
@@ -22,6 +24,23 @@
   // Un file: sotto il nome i tasti apri, scarica, copia e condividi (condividi solo dove il browser lo sa fare; Franz, 07/10
   // 15:48). Il file si chiede al PC appena il puntatore ci arriva, così il tocco trova i byte pronti.
   const fileActs: [FileAct, string, IconName][] = [['open', t.fileOpen, 'external'], ['download', t.fileDownload, 'download'], ['copy', t.fileCopy, 'copy'], ...(canShare() ? [['share', t.fileShare, 'share'] as [FileAct, string, IconName]] : [])]
+
+  // A + B (Franz, 10/10 16:01), come sul telefono: all'apertura le ultime sei voci salgono a cascata dall'alto, 30 ms l'una
+  // dall'altra, nel primo secondo; una voce che arriva dopo entra da sola. Le voci arrivate dall'ultima visita hanno sopra la
+  // riga «Nuovi» e un fondo che sfuma; l'ultima visita si ricorda lasciando la chat (Chat rimonta il Feed a ogni sessione).
+  const itemKey = (it: Item) => (it.type === 'steps' ? `s-${it.entries[0].id}` : it.type === 'mine' ? `m-${it.sent.id}` : `${it.type[0]}-${it.entry.id}`)
+  // svelte-ignore state_referenced_locally
+  const seenAt = readSeen(s.name)
+  const newsFrom = $derived(firstNew(items, seenAt))
+  let born: Set<string> | null = null
+  let openedAt = 0
+  function motion(it: Item, i: number, n: number): { cls: string; rank: number } {
+    if (!born) { born = new Set(items.map(itemKey)); openedAt = performance.now() }
+    if (!born.has(itemKey(it))) return { cls: 'rise', rank: 0 }
+    const r = rank(i, n)
+    return r != null && performance.now() - openedAt < 1000 ? { cls: 'rise', rank: r } : { cls: '', rank: 0 }
+  }
+  onDestroy(() => saveSeen(s.name, latest(items)))
 
   // Immagini e video nascono già in anteprima, come sul telefono (Franz, 10/10 15:24): il file si chiede al PC appena la
   // card è a schermo, se `autoPreview` lo vuole; col risparmio dati del browser i video aspettano il tocco.
@@ -159,7 +178,10 @@
   <div class="bubble" class:low><p><Md {text} /></p></div>
 {/snippet}
 
-{#each items as it (it.type === 'steps' ? `s-${it.entries[0].id}` : it.type === 'mine' ? `m-${it.sent.id}` : `${it.type[0]}-${it.entry.id}`)}
+{#each items as it, i (itemKey(it))}
+  {@const m = motion(it, i, items.length)}
+  <div class="it {m.cls}" class:fresh={newsFrom != null && i >= newsFrom && it.type !== 'mine'} style="--rank:{m.rank}">
+  {#if i === newsFrom}<div class="news"><span>{t.chatNews}</span></div>{/if}
   {#if it.type === 'mine'}
     {@const [ic, tone] = status[it.status]}
     <div class="me">
@@ -188,6 +210,7 @@
   {:else}
     {@render steps(it)}
   {/if}
+  </div>
 {/each}
 
 {#if live}
@@ -201,6 +224,15 @@
 
 <style>
   p { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .it { display: flex; flex-direction: column; border-radius: 14px; }
+  .rise { animation: rise 200ms cubic-bezier(0.3, 0, 0.2, 1) both; animation-delay: calc(var(--rank) * 30ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+  .fresh { animation: fresh 2s ease-out 600ms both; }
+  .rise.fresh { animation: rise 200ms cubic-bezier(0.3, 0, 0.2, 1) both, fresh 2s ease-out 600ms both; animation-delay: calc(var(--rank) * 30ms), 600ms; }
+  @keyframes fresh { from { background: rgb(168 199 250 / .12); box-shadow: 0 0 0 6px rgb(168 199 250 / .12); } to { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+  .news { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--icon); font-size: 12px; font-weight: 500; }
+  .news::before, .news::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .45; }
+  @media (prefers-reduced-motion: reduce) { .rise, .fresh, .rise.fresh { animation: none; } }
   .me { align-self: stretch; padding-left: 40px; display: flex; flex-direction: column; align-items: flex-end; }
   .att { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; margin-bottom: 4px; border-radius: 14px; background: var(--surface); color: var(--text2); font-size: 14px; overflow-wrap: anywhere; }
   .bubble { background: var(--high); border-radius: 20px 20px 6px 20px; padding: 12px 16px; font-size: 16px; letter-spacing: .03em; max-width: 760px; }

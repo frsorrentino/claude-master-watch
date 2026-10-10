@@ -173,7 +173,7 @@
       <MasterHome {st} master={s} {entries} onConversation={() => (conversation = true)} onStep={pick} onSendStep={onSend}
         {onAnswer} onSession={onPick} onSpeak={(x) => toggle(x, s.name)} {events} {sent} {read} {onRead} onPrompt={onPromptTo} {onCmd} />
     {:else}
-    <Feed {s} {items} now={st.ts} {onFile} onDecision={canDecide ? openDecision : undefined} />
+    {#key s.name}<Feed {s} {items} now={st.ts} {onFile} onDecision={canDecide ? openDecision : undefined} />{/key}
     <!-- A chat già piena la rotella non c'è: una riga sottile dice da quanto la lettura aspetta il PC. -->
     {#if waitS != null}<p class="waitpc">{t.chatWaitingPc(waitS)}</p>{/if}
     {#if s.question}

@@ -1,6 +1,7 @@
 package it.pixelbox.cmwatch.mobile
 
 import app.cash.paparazzi.DeviceConfig
+import androidx.compose.runtime.CompositionLocalProvider
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import androidx.compose.foundation.background
@@ -93,6 +94,26 @@ class SessionSheetTest {
         val s = st.sessions.first { it.state == SessionState.BUSY }
         CmPhoneTheme(still = true) {
             SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()), waitingSince = 985_000L, clockMs = { 1_000_000L })
+        }
+    }
+
+    // A + B (Franz, 10/10 16:01): la riga «Nuovi» sopra la prima voce arrivata dall'ultima visita, anche se l'hai scritta dal PC;
+    // con le immagini ferme non si vedono la cascata né il fondo che sfuma.
+    @Test fun sheetChatNews() {
+        val t = st.ts - 900
+        val s = st.sessions.first { it.state == SessionState.BUSY }
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Add the Tuesday meeting notes to the draft", at = t, origin = "phone"),
+            TranscriptEntry("a1.0", "assistant", text = "The notes are in the draft, under the Tuesday heading.", at = t + 40, turn = TranscriptTurn(t, t + 45, 4020, 130)),
+            TranscriptEntry("u2.0", "user", text = "Now send the draft to the team", at = t + 300, origin = "pc"),
+            TranscriptEntry("a2.0", "assistant", text = "Sent to the team list, with the notes attached.", at = t + 340, turn = TranscriptTurn(t + 300, t + 345, 3900, 90)),
+        )
+        paparazzi.snapshot {
+            CmPhoneTheme(still = true) {
+                CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalChatSeen provides { _ -> t + 60 }) {
+                    SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
+                }
+            }
         }
     }
 

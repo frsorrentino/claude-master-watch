@@ -339,6 +339,7 @@
     <string name="origin_web">dalla web app</string>
     <string name="text_cut">testo accorciato dal PC</string>
     <string name="chat_waiting_pc">in attesa del PC da %1$d s</string>
+    <string name="chat_news">Nuovi</string>
     <string name="turn_tokens">%1$d token scritti</string>
     <string name="remove_image">Togli l\'immagine</string>
     <string name="close">Chiudi</string>
