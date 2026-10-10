@@ -1,5 +1,6 @@
 package it.pixelbox.cmwatch.wear.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -85,7 +86,8 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
             if (kind == Kind.IDLE && card.text.isBlank()) {
                 item { Text(stringResource(R.string.live_idle), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
                 // Le sessioni come nella pillola aperta del telefono (Franz, 10/10 10:50): chi chiede, chi lavora, chi è ferma.
-                card.rows.forEach { r -> item { LiveRow(r, Modifier.morph(this, spec)) } }
+                // Il tocco su una riga fa leggere alla live lo stato di quella sessione (Franz, 10/10 17:31).
+                card.rows.forEach { r -> item { LiveRow(r, Modifier.morph(this, spec)) { onTap(LiveTap(LiveTap.Action.STATUS, text = r.name)) } } }
             } else if (!body.isNullOrBlank()) {
                 item { Text(body, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             }
@@ -134,7 +136,7 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
  * chiede, blu chi lavora, grigio chi è ferma), il nome, da quanto o a che ora, e sotto cosa fa o cosa ha fatto.
  */
 @Composable
-private fun LiveRow(r: it.pixelbox.cmwatch.rules.LivePanel.Row, modifier: Modifier = Modifier) {
+private fun LiveRow(r: it.pixelbox.cmwatch.rules.LivePanel.Row, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     val tone = when (r.kind) {
         it.pixelbox.cmwatch.rules.LivePanel.Kind.ASKING -> CmColors.advice
         it.pixelbox.cmwatch.rules.LivePanel.Kind.WORKING -> CmColors.busy
@@ -143,7 +145,7 @@ private fun LiveRow(r: it.pixelbox.cmwatch.rules.LivePanel.Row, modifier: Modifi
     val time = r.minutes?.let { stringResource(R.string.live_row_min, it) }
         ?: r.at?.let { java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.Instant.ofEpochSecond(it).atZone(java.time.ZoneId.systemDefault())) }
     androidx.compose.foundation.layout.Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surface).padding(horizontal = 14.dp, vertical = 8.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surface).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
         androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.padding(end = 8.dp).size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(tone))

@@ -173,6 +173,9 @@ object LiveDesk {
                 // decontestualizzata»).
                 else { d = d.copy(actions = acts); route(Route.Pick(LiveRoute.Intent.ACTION, acts.map { "${SpeakableName.of(it.from)}: ${it.text}" }), state) }
             }
+            // Il tocco su una riga della scheda tranquilla del watch (Franz, 10/10 17:31): lo stato di quella sessione, al lavoro
+            // con da quanto e cosa fa, come il tocco sull'elenco delle sessioni del watch.
+            LiveTap.Action.STATUS -> tap.text?.let { n -> state.sessions.firstOrNull { it.name == n } }?.let { s -> reply(LiveFeed.status(s, lang.feed, nowMs / 1000)) }
             LiveTap.Action.ONLY_BLOCKING -> {
                 d = d.copy(onlyBlocking = !d.onlyBlocking)
                 d.card?.let { show(it.copy(buzz = LiveCard.Buzz.NONE)) }

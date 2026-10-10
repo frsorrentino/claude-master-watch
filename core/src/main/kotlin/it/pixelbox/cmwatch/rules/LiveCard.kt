@@ -26,9 +26,12 @@ import kotlinx.serialization.json.Json
     enum class Buzz { NONE, SHORT, LONG, DONE }
 }
 
-/** Un tocco sul watch. `index` = l'opzione, il Prossimo o il candidato, da 1; `text` = il dettato di «Parla». */
+/**
+ * Un tocco sul watch. `index` = l'opzione, il Prossimo o il candidato, da 1; `text` = il dettato di «Parla», o con STATUS il
+ * nome della sessione toccata nella scheda tranquilla (Franz, 10/10 17:31), di cui la live legge lo stato.
+ */
 @Serializable data class LiveTap(val action: Action, val index: Int = 0, val text: String? = null) {
-    enum class Action { OPTION, STEP, PICK, REPEAT, LATER, SKIP, SAY, APPROVE, PRESS, RELEASE, CANCEL, ROUND, ONLY_BLOCKING, STOP, ACTIONS }
+    enum class Action { OPTION, STEP, PICK, REPEAT, LATER, SKIP, SAY, APPROVE, PRESS, RELEASE, CANCEL, ROUND, ONLY_BLOCKING, STOP, ACTIONS, STATUS }
 }
 
 /** I messaggi fra telefono e watch (MessageClient di Wear OS). */

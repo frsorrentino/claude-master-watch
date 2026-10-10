@@ -195,6 +195,16 @@ class LiveDeskTest {
         assertEquals(Send(CmdOp.PROMPT, "atlas-app", "rivedi la pagina", Tag.TELL), r.tick(t0 + 20_000 + 6_000).sent().single())
     }
 
+    /** Il tocco su una riga della live del watch (Franz, 10/10 17:31: «il tocco su una sessione deve leggermi il suo recap»). */
+    @Test fun aTapOnASessionRowReadsItsStatus() {
+        val r = started()
+        r.spoken(t0 + 1_000)
+        r.tap(Action.STATUS, t0 + 2_000, text = "field-notes")
+        assertEquals(listOf("field notes ha finito: README rewritten."), r.said())
+        assertEquals(LiveCard.Kind.NEWS, r.card().kind)
+        assertTrue(r.tap(Action.STATUS, t0 + 3_000, text = "zebra").said().isEmpty())
+    }
+
     // Il tasto Azioni del watch (Franz, 08/10 21:17): le azioni in attesa come scelta; la scelta parte con Annulla per 5 s.
     @Test fun theActionsButtonOffersThePendingActionsAndSendsThePickedOne() {
         val r = started()
