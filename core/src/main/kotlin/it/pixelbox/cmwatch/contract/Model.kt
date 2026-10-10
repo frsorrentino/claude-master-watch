@@ -258,6 +258,8 @@ val State.publishedTs: Long get() = publishedAt?.toLong() ?: ts
     /** Contratto 1.48: il relay accetta il file a pezzi (/share/<id>/parts e meta) fino a `max_parts_bytes` sul file intero. */
     val parts: Boolean = false,
     @SerialName("max_parts_bytes") val maxPartsBytes: Long? = null,
+    /** Contratto 1.50: quanti allegati vanno in un `report` solo, id separati da virgola; null = uno per report. */
+    val multi: Int? = null,
 )
 
 @Serializable data class Event(
