@@ -111,10 +111,16 @@ object LiveRoute {
         val o = orig.substring(lead)
         val f = folded.substring(lead)
         val spoken = names.map { it to fold(SpeakableName.of(it)) }.filter { it.second.isNotEmpty() }
-        val exact = spoken.filter { (_, s) -> f.startsWith(s) && (f.length == s.length || !f[s.length].isLetterOrDigit()) }
-        if (exact.isNotEmpty()) {
-            val len = exact.maxOf { it.second.length }
-            return pick(exact.filter { it.second.length == len }.map { it.first }, rest(o, len))
+        // Anche il nome intero, a parole: «supervisor» è supervisor e «supervisor app» supervisor-app, che a voce si dice
+        // «supervisor» (Franz, 10/10 16:46: «Ok, il nome esatto vince»). A parità di lunghezza vince il nome intero.
+        val whole = names.map { it to fold(it.substringAfter(':').replace('-', ' ').replace('_', ' ').replace('.', ' ')) }.filter { it.second.isNotEmpty() }
+        val starts = { s: String -> f.startsWith(s) && (f.length == s.length || !f[s.length].isLetterOrDigit()) }
+        val exactWhole = whole.filter { starts(it.second) }
+        val exact = spoken.filter { starts(it.second) }
+        if (exactWhole.isNotEmpty() || exact.isNotEmpty()) {
+            val len = (exactWhole + exact).maxOf { it.second.length }
+            val byWhole = exactWhole.filter { it.second.length == len }.map { it.first }.distinct()
+            return pick(byWhole.ifEmpty { exact.filter { it.second.length == len }.map { it.first }.distinct() }, rest(o, len))
         }
         val word = WORD.find(f)?.value ?: return Match.None("")
         if (word.length >= MIN_PART) {

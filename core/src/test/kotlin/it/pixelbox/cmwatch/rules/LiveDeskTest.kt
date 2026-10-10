@@ -182,6 +182,19 @@ class LiveDeskTest {
         assertEquals(listOf("atlas app", "atlas com"), r.card().options)
     }
 
+    /** Il nome detto per intero vince (Franz, 10/10 16:46: «Ok, il nome esatto vince»): niente scelta fra atlas e atlas-app. */
+    @Test fun theWholeNameSaidWinsOverOneThatSoundsAlike() {
+        val base = q.sessions.single { it.name == "atlas-shop" }
+        val two = q.copy(sessions = q.sessions + base.copy(name = "atlas") + base.copy(name = "atlas-app"))
+        val r = Run(state = two).state(two, t0).spoken(t0 + 6_000)
+        r.tap(Action.SAY, t0 + 7_000, text = "di' a atlas: rivedi i semi")
+        assertEquals(LiveCard.Kind.TELL, r.card().kind)
+        assertEquals(Send(CmdOp.PROMPT, "atlas", "rivedi i semi", Tag.TELL), r.tick(t0 + 7_000 + 6_000).sent().single())
+        r.tap(Action.SAY, t0 + 20_000, text = "di' a atlas app: rivedi la pagina")
+        assertEquals(LiveCard.Kind.TELL, r.card().kind)
+        assertEquals(Send(CmdOp.PROMPT, "atlas-app", "rivedi la pagina", Tag.TELL), r.tick(t0 + 20_000 + 6_000).sent().single())
+    }
+
     // Il tasto Azioni del watch (Franz, 08/10 21:17): le azioni in attesa come scelta; la scelta parte con Annulla per 5 s.
     @Test fun theActionsButtonOffersThePendingActionsAndSendsThePickedOne() {
         val r = started()
