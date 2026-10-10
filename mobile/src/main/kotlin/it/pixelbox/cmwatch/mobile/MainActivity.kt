@@ -704,6 +704,9 @@ class MainActivity : ComponentActivity() {
                 var askedAt: Long? = null
                 var pendingId: String? = null
                 var mode = ChatFeed.Page.FRESH
+                // L'ultima voce letta non c'è più (conversazione compattata): si rilegge da capo, ma la chat resta com'è finché la
+                // pagina nuova non arriva (Franz, 10/10 08:18: la conversazione spariva e tornava dal fondo mentre rileggeva).
+                var restart = false
                 var prev = app.repo.snapshot.value.state?.sessions?.firstOrNull { it.name == name }
                 readSince = null
                 while (true) {
@@ -713,10 +716,9 @@ class MainActivity : ComponentActivity() {
                             r.ok -> runCatching { ContractJson.decodeTranscript(r.text) }.onSuccess { page ->
                                 entries = ChatFeed.append(entries, page, mode)
                                 feedCache[name] = entries
-                                if (mode == ChatFeed.Page.FRESH) more = page.more
+                                if (mode == ChatFeed.Page.FRESH) { more = page.more; restart = false }
                             }
-                            // L'ultima voce non c'è più (conversazione compattata): si riparte dalle ultime.
-                            r.text.contains("no entry") -> entries = emptyList()
+                            r.text.contains("no entry") -> { restart = true; askedAt = null }
                             // Relay aggiornato ma servizio ancora vecchio: resta la chat dei messaggi mandati.
                             r.text.contains("not allowed") -> unsupported = true
                         }
@@ -732,10 +734,11 @@ class MainActivity : ComponentActivity() {
                     // Letture diradate: ogni lettura costa al relay 5-8 s (dal vivo 30/09 23:00).
                     if (moved || PhoneTerminal.shouldAskChat(cur, askedAt, answered, t)) {
                         askedAt = t
-                        mode = if (entries.isEmpty()) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
+                        mode = if (entries.isEmpty() || restart) ChatFeed.Page.FRESH else ChatFeed.Page.AFTER
                         // Una lettura persa non resta fra i comandi in sospeso (revisione 30/09).
                         pendingId?.let { app.repo.forget(it) }
-                        pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(ChatFeed.anchor(entries))) }.getOrNull()
+                        val from = if (mode == ChatFeed.Page.FRESH) null else ChatFeed.anchor(entries)
+                        pendingId = runCatching { app.repo.command(CmdOp.TRANSCRIPT, name, ChatFeed.arg(from)) }.getOrNull()
                         // Una lettura persa e richiesta di nuovo non azzera l'attesa: si aspetta il PC dalla prima.
                         readSince = if (pendingId == null) null else readSince ?: t
                     }

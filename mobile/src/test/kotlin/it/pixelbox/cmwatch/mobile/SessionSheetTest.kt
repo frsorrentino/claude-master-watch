@@ -122,6 +122,26 @@ class SessionSheetTest {
         }
     }
 
+    // La nicchia del controller (Franz, 10/10 08:19: la live copriva le righe del box «Azioni»): con il box sopra il campo e
+    // il controller in vista resta uno spazio vuoto fra il box e il campo, dove il controller si posa. Il controller lo disegna
+    // l'host sopra la pagina, dalla posizione del suo segno: in un'immagine ferma non c'è, si vede lo spazio.
+    @Test fun sheetNextStepsWithLive() = paparazzi.snapshot {
+        val t = st.ts - 600
+        val entries = listOf(
+            TranscriptEntry("u1.0", "user", text = "Rewrite the README with the three sections", at = t, origin = "pc"),
+            TranscriptEntry("a1.0", "assistant", text = "README rewritten with the three sections asked for.\n\nEsito: README rewritten\nProssimi: apri la PR · aggiorna il changelog · tagga la v1.2", at = t + 40),
+        )
+        val s = st.sessions.first { it.state == SessionState.IDLE }.copy(suggestion = null)
+        val o = it.pixelbox.cmwatch.mobile.ui.ReadingOverlay().apply {
+            bar = { it.pixelbox.cmwatch.mobile.ui.LivePill("ledger-api ha finito: migrazione committata in locale.", speaking = true, paused = false, noHeadset = false, onlyBlocking = false, onPause = {}, onFilter = {}, onStop = {}) }
+        }
+        CmPhoneTheme(still = true) {
+            androidx.compose.runtime.CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalReadingOverlay provides o) {
+                SessionSheet(s, st.ts, emptyList(), 120, none, feed = it.pixelbox.cmwatch.rules.ChatFeed.merge(entries, emptyList()))
+            }
+        }
+    }
+
     // Poco spazio in altezza, come una colonna del tablet con la tastiera aperta (segnalazione del 09/10 20:38): il campo
     // resta intero e il box dei Prossimi scorre dentro, invece di schiacciare il campo.
     @Test fun sheetNextStepsShort() {

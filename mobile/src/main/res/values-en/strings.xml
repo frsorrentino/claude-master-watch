@@ -97,6 +97,7 @@
     <string name="file_share">Share</string>
     <string name="file_saved">%1$s saved to Downloads</string>
     <string name="file_saved_to">%1$s saved</string>
+    <string name="to_latest">Back to the latest message</string>
     <string name="file_saved_downloads">In the phone\'s Download folder.</string>
     <string name="file_saved_picked">In the folder you chose.</string>
     <string name="file_open_folder">Open the folder</string>

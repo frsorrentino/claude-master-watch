@@ -19,6 +19,9 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -265,6 +268,17 @@ fun SessionSheet(
             actions.decision?.invoke(text, project); decisionDraft = null
         }
     }
+    val recurring = LocalRecurring.current
+    val recurringRows by remember(recurring, home == null, idle, draftHolder) {
+        derivedStateOf {
+            if (home == null) emptyList()
+            else recurring.filterNot { r -> NextSteps.inDraft(draftHolder.value, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
+        }
+    }
+    // La nicchia del controller (Franz, 10/10 08:19: «una nicchia vuota sotto così non nasconde informazioni»): con un box
+    // sopra il campo (Prossimi o Ricorrenti) il controller si posa su uno spazio vuoto suo fra il box e il campo, invece di
+    // coprirne le righe; senza box resta sopra la fine della conversazione, che gli lascia posto in fondo.
+    val niche = stepsSplit.fresh.isNotEmpty() || stepsSplit.old.isNotEmpty() || (boxes.recurringOpen && recurringRows.isNotEmpty())
     // La chat segue l'ultimo testo finché non la si sposta a mano per rileggere (Franz, 01/10 06:52). «Segui» si decide
     // solo quando lo scorrimento si ferma: letto dopo l'arrivo di un testo nuovo, il fondo era già più giù e la chat
     // restava ferma. Un proprio invio torna a seguire; una pagina di messaggi precedenti non rimbalza in fondo.
@@ -272,6 +286,17 @@ fun SessionSheet(
     LaunchedEffect(list) {
         androidx.compose.runtime.snapshotFlow { list.isScrollInProgress }.collect { moving -> if (!moving) follow = !list.canScrollForward }
     }
+    // Il dito che risale la chat la stacca dal fondo subito, non quando lo scorrimento si ferma (Franz, 10/10 08:18: «lo
+    // scorrimento verso l'alto risulta problematico»): un testo arrivato fra un gesto e l'altro la riportava giù.
+    val reading = remember(list) {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (source == androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput && available.y > 0f) follow = false
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
+    val listScope = androidx.compose.runtime.rememberCoroutineScope()
     val reasons = chat.associate { it.sent.id to it.reason }
     // Alla prima apertura, e quando arriva la prima pagina della conversazione vera, la chat parte dal fondo
     // (Franz, 30/09 22:55: «ancorato alla fine»).
@@ -331,8 +356,9 @@ fun SessionSheet(
             // box, che se non ci sta scorre dentro, poi la chat (segnalazione del 09/10 20:38: sul tablet, con la tastiera
             // aperta, il box schiacciava il campo e non si vedeva cosa si scriveva).
             Column(Modifier.weight(1f).fillMaxWidth()) {
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             androidx.compose.animation.AnimatedContent(
-                feed == null && loadingFeed, Modifier.weight(1f).fillMaxWidth(), label = "feed",
+                feed == null && loadingFeed, Modifier.fillMaxSize(), label = "feed",
                 transitionSpec = {
                     androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(if (feedOff) 0 else 150)) togetherWith
                         androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(if (feedOff) 0 else 100))
@@ -341,9 +367,10 @@ fun SessionSheet(
             if (waiting) Box(Modifier.fillMaxSize().padding(vertical = 32.dp), contentAlignment = Alignment.TopCenter) {
                 CircularWavyProgressIndicator(color = CmColors.actionIcon)
             } else ZoomedText { LazyColumn(
-                Modifier.fillMaxSize(), state = list,
-                // Con il controller in vista, in fondo lo spazio per leggere l'ultimo messaggio sopra di lui.
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp + readingRoom()), verticalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.fillMaxSize().nestedScroll(reading), state = list,
+                // Con il controller in vista, in fondo lo spazio per leggere l'ultimo messaggio sopra di lui; con un box sopra il
+                // campo il controller ha la sua nicchia sotto il box, e qui basta il margine.
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp + if (niche) 0.dp else readingRoom()), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (feed != null) {
                     if (more) item(key = "older") {
@@ -421,6 +448,24 @@ fun SessionSheet(
                         }
                     }
             } }
+            }
+            // «Torna all'ultimo messaggio» (Franz, 10/10 08:18: «avevamo deliberato un tasto per tornare in diretta, ma non l'ho
+            // mai visto»): c'è mentre rileggi più su; il tocco scende in fondo e la chat torna a seguire.
+            val behind by remember(list) { derivedStateOf { list.canScrollForward } }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !follow && behind && feed != null,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 12.dp + if (niche) 0.dp else readingRoom()),
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f),
+            ) {
+                androidx.compose.material3.SmallFloatingActionButton(
+                    onClick = {
+                        follow = true
+                        listScope.launch { list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0), Int.MAX_VALUE) }
+                    },
+                    containerColor = CmColors.surfaceHigh, contentColor = CmColors.actionIcon,
+                ) { Icon(Icons.Rounded.ArrowDownward, stringResource(R.string.to_latest)) }
+            }
             }
             // Il box «Prossimi» (variante A del 03/10 15:20, rivista il 04/10 20:21): sopra la barra con la sessione ferma,
             // anche scrivendo; il tocco porta la riga nel campo, accodata con «e poi» se c'è già testo, ↗ la manda subito a
@@ -535,13 +580,6 @@ fun SessionSheet(
         // Le azioni ricorrenti della master (Franz, 04/10 20:24; contratto 1.33). Chiuse non occupano righe: le apre il tasto
         // ⟳ nel campo (Franz, 04/10 23:55), e il pannello sta sopra il campo con gli stessi gesti dei Prossimi; si chiude
         // dall'intestazione o scegliendo un'azione. Una che aspetta un pezzo (`param`) va nel campo col cursore in fondo.
-        val recurring = LocalRecurring.current
-        val recurringRows by remember(recurring, home == null, idle, draftHolder) {
-            derivedStateOf {
-                if (home == null) emptyList()
-                else recurring.filterNot { r -> NextSteps.inDraft(draftHolder.value, r.prompt) }.map { r -> PromptRow(r.label, r.prompt, direct = !r.param && idle) }
-            }
-        }
         if (boxes.recurringOpen && recurringRows.isNotEmpty()) PromptBox(
             stringResource(R.string.recurring), recurringRows,
             open = true, onOpen = { boxes.recurring(false) }, draftBlank = draftBlank,
@@ -561,6 +599,7 @@ fun SessionSheet(
         // sovrapposto, il resto mantiene i colori suoi»): qui solo il segno di dove posarlo, sopra il campo.
         // Con la home aperta il segno sta sopra la barra della master, non qui (Franz, 09/10 16:50: il controller la copriva
         // e la master non si apriva più).
+        if (niche && !imeOpen && !(home != null && homeOpen)) Spacer(Modifier.height(readingRoom()))
         if (!imeOpen && !(home != null && homeOpen)) ReadingSlot(s.name, overlay = true)
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
