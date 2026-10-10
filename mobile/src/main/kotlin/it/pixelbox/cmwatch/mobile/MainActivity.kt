@@ -348,6 +348,12 @@ class MainActivity : ComponentActivity() {
         var sharesRaw by remember { mutableStateOf(tabletPrefs.getString("tablet_shares", null)) }
         var homeRight by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_home_right", false)) }
         var tabletDetails by remember { mutableStateOf(tabletPrefs.getBoolean("tablet_details", false)) }
+        // Le pagine che prendevano lo schermo di colpo entrano da destra (Franz, 10/10 15:59); tornando da una di loro la home
+        // rientra da sinistra. `cameBack` vale solo al primo disegno della home dopo la pagina, quando `PageIn` decide.
+        val pageOpen = settingsOpen || terminal != null || recapPage || nightOpen || searchOpen || (queueOpen && state != null)
+        val pageWas = remember { booleanArrayOf(false) }
+        val cameBack = pageWas[0] && !pageOpen
+        pageWas[0] = pageOpen
         if (settingsOpen) {
             val r = PairingRecord.fromJson(pairingJson)
             val version = remember { packageManager.getPackageInfo(packageName, 0).versionName.orEmpty() }
@@ -384,7 +390,7 @@ class MainActivity : ComponentActivity() {
                     AddDeviceSheet(ui, onRetry = askInvite, onDone = { addDevice = null })
                 }
             }
-            SettingsScreen(
+            it.pixelbox.cmwatch.mobile.ui.PageIn { SettingsScreen(
                 host = host, phoneName = app.phoneName, watchName = r?.watchName, watchPending = r?.watchPending == true, demo = demo,
                 version = version,
                 devices = it.pixelbox.cmwatch.rules.SettingsDevices.build(
@@ -406,7 +412,7 @@ class MainActivity : ComponentActivity() {
                 onTabletDetails = { on -> tabletDetails = on; tabletPrefs.edit().putBoolean("tablet_details", on).apply() },
                 // Contratto 1.32: lo schema dei collegamenti con i dispositivi veri; «questo» è il primo uid dell'accoppiamento.
                 linked = it.pixelbox.cmwatch.rules.SettingsDevices.linked(state, r?.uids?.firstOrNull(), now),
-            )
+            ) }
             return
         }
         terminal?.let { name ->
@@ -434,9 +440,9 @@ class MainActivity : ComponentActivity() {
             } }
             val text = screenId?.let { results[it]?.text }
             LaunchedEffect(text) { if (text != null) shown = text }
-            TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
+            it.pixelbox.cmwatch.mobile.ui.PageIn { TerminalScreen(name, text ?: shown, loading = screenId != null && text == null, onRefresh = {
                 scope.launch { runCatching { app.repo.command(CmdOp.SCREEN, name, null) }.onSuccess { screenId = it } }
-            })
+            }) }
             return
         }
         // Il riquadro Notte in home (mockup approvato l'08/10 alle 12:57): finché il rapporto più recente non è stato aperto;
@@ -530,7 +536,7 @@ class MainActivity : ComponentActivity() {
         }
         if (recapPage) {
             LaunchedEffect(Unit) { if (canAgenda) askAgenda() }
-            CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalAgendaNight provides agendaNight) { RecapScreen(
+            it.pixelbox.cmwatch.mobile.ui.PageIn { CompositionLocalProvider(it.pixelbox.cmwatch.mobile.ui.LocalAgendaNight provides agendaNight) { RecapScreen(
                 recapActs, state?.recap?.date.orEmpty(), agenda,
                 error = agendaError,
                 loading = agendaId != null && agendaResult == null,
@@ -541,7 +547,7 @@ class MainActivity : ComponentActivity() {
                         runCatching { app.repo.prompt(a.to, a.send) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, a.to, a.send, System.currentTimeMillis() / 1000)) }
                     }
                 },
-            ) }
+            ) } }
             return
         }
         if (nightOpen) {
@@ -569,7 +575,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             val zone = java.time.ZoneId.systemDefault()
-            NightScreen(
+            it.pixelbox.cmwatch.mobile.ui.PageIn { NightScreen(
                 // Fra le cose da fare solo quello ancora vero adesso (Franz, 08/10 14:20: /clear chiesto a una sessione chiusa).
                 page = remember(nightReport, state) {
                     nightReport?.let { r -> it.pixelbox.cmwatch.rules.NightPage.of(r, zone, live = state?.sessions?.filter { s -> s.state != it.pixelbox.cmwatch.contract.SessionState.GONE }?.map { s -> s.name }?.toSet(), pending = state?.approvals?.map { a -> a.task }?.toSet()) }
@@ -587,7 +593,7 @@ class MainActivity : ComponentActivity() {
                         runCatching { app.repo.prompt(n, text) }.getOrNull()?.let { id -> app.chatLog.add(Sent(id, n, text, System.currentTimeMillis() / 1000)) }
                     }
                 },
-            )
+            ) }
             return
         }
         if (searchOpen) {
@@ -596,7 +602,7 @@ class MainActivity : ComponentActivity() {
             var searchId by remember { mutableStateOf<String?>(null) }
             val searchResult = searchId?.let { results[it] }
             val searchPage = searchResult?.takeIf { it.ok }?.let { r -> runCatching { ContractJson.decodeSearch(r.text) }.getOrNull() }
-            SearchScreen(
+            it.pixelbox.cmwatch.mobile.ui.PageIn { SearchScreen(
                 chatLog, events, onOpen = { n -> searchOpen = false; if (n != null) { open = n } else { open = null; tab = StartRoute.Tab.DIARY } },
                 remote = state?.ops?.contains("search") == true, page = searchPage, loading = searchId != null && searchResult == null,
                 known = state?.sessions?.map { it.name }?.toSet().orEmpty(),
@@ -606,12 +612,12 @@ class MainActivity : ComponentActivity() {
                         searchId = runCatching { app.repo.command(CmdOp.SEARCH, null, q) }.getOrNull()
                     }
                 },
-            )
+            ) }
             return
         }
         if (queueOpen && state != null) {
             // La coda usa solo la card della domanda: risposta, «Parliamone», «Consenti tutto» e la lettura a voce.
-            QueueScreen(state, now, actionsFor = { s ->
+            it.pixelbox.cmwatch.mobile.ui.PageIn { QueueScreen(state, now, actionsFor = { s ->
                 SheetActions(
                     answer = { n -> scope.launch { app.repo.answer(s.name, n) } },
                     allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, s.name, null) } },
@@ -619,7 +625,7 @@ class MainActivity : ComponentActivity() {
                     speak = { t -> speech.toggle(t, s.name) }, retry = {},
                     chat = { scope.launch { app.repo.chat(s.name) }; queueOpen = false; open = s.name },
                 )
-            }, onSession = { n -> queueOpen = false; open = n })
+            }, onSession = { n -> queueOpen = false; open = n }) }
             return
         }
         // Contratto 1.22: la conversazione della scheda aperta, a pagine, letta dal vivo finché la scheda resta aperta.
@@ -1114,7 +1120,10 @@ class MainActivity : ComponentActivity() {
                     justClosed = x.copy(state = SessionState.GONE, question = null) to getString(R.string.just_closed_line, hm)
                 }
             }
-            if (leaving?.name == o) leaving = null; open = null; tab = StartRoute.Tab.OVERVIEW
+            // Il bersaglio del volo cambia insieme a `open` (Franz, 10/10 15:59: «avviene di schianto»): fra i due la pagina in
+            // uscita si credeva ancora attiva, cercava la sessione aperta, ormai nessuna, e la sessione chiusa, che è una pagina
+            // solo finché è il bersaglio (`SwipePages.of`), spariva dal pager prima del volo verso la sua card.
+            if (leaving?.name == o) leaving = null; flyTarget = null; open = null; tab = StartRoute.Tab.OVERVIEW
         }
         // La testata di ogni pagina della home e delle sessioni (Franz, 03/10 19:19): scorre e vola con la sua pagina.
         val menuActions = MenuActions(
@@ -1425,6 +1434,7 @@ class MainActivity : ComponentActivity() {
             it.pixelbox.cmwatch.mobile.ui.LocalCardsOnScreen provides cardsOnScreen,
             it.pixelbox.cmwatch.mobile.ui.LocalAgendaNight provides agendaNight,
         ) {
+        it.pixelbox.cmwatch.mobile.ui.PageIn(fromStart = true, animate = cameBack) {
         if (wide && state != null && summary != null) tabletDesk(state, summary) else
         AppShell(
             tab, demo, onTab = { tab = it; open = null }, onSettings = { settingsOpen = true },
@@ -1449,10 +1459,16 @@ class MainActivity : ComponentActivity() {
             onRefresh = if (open == null) ({ refreshing = true; scope.launch { app.repo.refresh(); refreshing = false } }) else null,
             refreshing = refreshing,
         ) { page ->
-            if (page == StartRoute.Tab.DIARY && open == null) {
-                diaryPage()
+            // Il Registro entra da destra come le altre pagine; tornando, la home rientra da sinistra (Franz, 10/10 15:59).
+            val diaryNow = page == StartRoute.Tab.DIARY && open == null
+            val diaryWas = remember { booleanArrayOf(false) }
+            val diaryBack = diaryWas[0] && !diaryNow
+            diaryWas[0] = diaryNow
+            if (diaryNow) {
+                it.pixelbox.cmwatch.mobile.ui.PageIn { diaryPage() }
                 return@AppShell
             }
+            it.pixelbox.cmwatch.mobile.ui.PageIn(fromStart = true, animate = diaryBack) {
             SharedTransitionLayout {
                 val sideOff = animationsOff()
                 flight.AnimatedContent(
@@ -1625,6 +1641,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            }
+        }
         }
         }
         // Contratto 1.26 (dal vivo 02/10 17:10: /state porta 5 progetti su 98): all'apertura di Lancia o della notte si chiede
