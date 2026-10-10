@@ -49,7 +49,16 @@ interface Transport {
          * rispondere, e ci mette più di 20 s (dal vivo 02/10 16:30: «in attesa del PC», poi la risposta con Riprova).
          */
         const val SLASH_RESULT_TIMEOUT_MS = 60_000L
+        /**
+         * Un file della chat (contratto 1.34): il relay scrive tutti i pezzi, fino a 25 MB, prima di rispondere. Dal vivo 10/10
+         * 15:10: 39 s per un video di 7 MB con il PC carico, e a 20 s l'app aveva già detto «File non arrivato».
+         */
+        const val FILE_RESULT_TIMEOUT_MS = 180_000L
 
-        fun resultTimeoutMs(op: CmdOp): Long = if (op == CmdOp.SLASH) SLASH_RESULT_TIMEOUT_MS else RESULT_TIMEOUT_MS
+        fun resultTimeoutMs(op: CmdOp): Long = when (op) {
+            CmdOp.SLASH -> SLASH_RESULT_TIMEOUT_MS
+            CmdOp.FILE -> FILE_RESULT_TIMEOUT_MS
+            else -> RESULT_TIMEOUT_MS
+        }
     }
 }

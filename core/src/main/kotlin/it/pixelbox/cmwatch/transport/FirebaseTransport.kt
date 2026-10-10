@@ -31,6 +31,7 @@ class FirebaseTransport(
     private val now: () -> Long,
     private val resultTimeoutMs: Long = Transport.RESULT_TIMEOUT_MS,
     private val slashTimeoutMs: Long = Transport.SLASH_RESULT_TIMEOUT_MS,
+    private val fileTimeoutMs: Long = Transport.FILE_RESULT_TIMEOUT_MS,
     private val pollMs: Long = 1000,
     private val backoffMs: List<Long> = listOf(1000, 2000, 5000, 15000, 30000),
     private val pairTimeoutMs: Long = 30_000,
@@ -189,7 +190,7 @@ class FirebaseTransport(
         k()
         rtdb.put("cmd/${cmd.id}", seal(ContractJson.encode(cmd)))
         onWritten()
-        val r = withTimeoutOrNull(if (cmd.op == CmdOp.SLASH) slashTimeoutMs else resultTimeoutMs) {
+        val r = withTimeoutOrNull(when (cmd.op) { CmdOp.SLASH -> slashTimeoutMs; CmdOp.FILE -> fileTimeoutMs; else -> resultTimeoutMs }) {
             while (true) {
                 rtdb.get("result/${cmd.id}")?.let { return@withTimeoutOrNull ContractJson.decodeResult(open(Json.parseToJsonElement(it))) }
                 delay(pollMs)

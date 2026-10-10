@@ -96,8 +96,9 @@ describe('accesso locale', () => {
     expect(localAccess(new URL('http://localhost:5173/'), new Map())).toBeNull()
   })
 
-  it('attese come l\'app Android: slash 60 s, gli altri 20 s', () => {
+  it('attese come l\'app Android: slash 60 s, file 180 s, gli altri 20 s', () => {
     expect(resultTimeoutMs('slash')).toBe(60_000)
+    expect(resultTimeoutMs('file')).toBe(180_000)
     expect(resultTimeoutMs('prompt')).toBe(20_000)
   })
 

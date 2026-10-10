@@ -62,10 +62,10 @@ class FirebaseTransportTest {
     @After fun down() = server.shutdown()
 
     private fun blobOf(json: String) = Blob.seal(json, key)
-    private fun transport(timeout: Long = 20_000, key: ByteArray? = this.key, slashTimeout: Long = 60_000) = FirebaseTransport(
+    private fun transport(timeout: Long = 20_000, key: ByteArray? = this.key, slashTimeout: Long = 60_000, fileTimeout: Long = 180_000) = FirebaseTransport(
         rtdb = Rtdb(server.url("/").toString().removeSuffix("/"), token = { "t0k" }),
         key = { key }, uid = { "u1" }, deviceKeyPair = { Pairing.newKeyPair() }, now = { clock },
-        resultTimeoutMs = timeout, slashTimeoutMs = slashTimeout, pollMs = 10, backoffMs = listOf(10),
+        resultTimeoutMs = timeout, slashTimeoutMs = slashTimeout, fileTimeoutMs = fileTimeout, pollMs = 10, backoffMs = listOf(10),
     )
 
     @Test fun stateArrivesFromTheStreamDecrypted() = runBlocking {
@@ -133,6 +133,28 @@ class FirebaseTransportTest {
         assertThrows(TransportException.Timeout::class.java) {
             runBlocking { t.send(Cmd("id-4", CmdOp.SCREEN, "x", null, clock, "phone")) }
         }
+    }
+
+    /** 10/10 15:10: il relay ha risposto «file ready» per un video di 7 MB dopo 39 s di pezzi; l'app aveva già smesso a 20 s. */
+    @Test fun aFileCommandWaitsLongerThanTheOthers() {
+        val late = blobOf("""{"id":"id-5","ok":true,"text":"file ready (video/mp4, 7211071 bytes)","at":1}""")
+        val start = System.currentTimeMillis()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                val path = request.requestUrl!!.encodedPath.removePrefix("/").removeSuffix(".json")
+                if (request.method == "PUT") { store[path] = request.body.readUtf8(); return MockResponse().setBody(store[path]!!) }
+                if (path == "result/id-5" && System.currentTimeMillis() - start > 600) return MockResponse().setBody(late)
+                return MockResponse().setBody("null")
+            }
+        }
+        val t = transport(timeout = 200, fileTimeout = 5_000)
+        assertEquals("file ready (video/mp4, 7211071 bytes)", runBlocking { t.send(Cmd("id-5", CmdOp.FILE, "x", "/v.mp4", clock, "phone")) }.text)
+        assertThrows(TransportException.Timeout::class.java) {
+            runBlocking { t.send(Cmd("id-6", CmdOp.SCREEN, "x", null, clock, "phone")) }
+        }
+        // Lo stesso limite per l'attesa del Repo intorno all'invio.
+        assertEquals(Transport.FILE_RESULT_TIMEOUT_MS, Transport.resultTimeoutMs(CmdOp.FILE))
+        assertTrue(Transport.FILE_RESULT_TIMEOUT_MS > Transport.SLASH_RESULT_TIMEOUT_MS)
     }
 
     @Test fun eventsAreListedNewestFirst() = runBlocking {
