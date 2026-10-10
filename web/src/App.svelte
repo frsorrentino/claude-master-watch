@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as files from './lib/fileActions'
+  import { media, mediaKey } from './lib/mediaCache.svelte'
   import type { FileAct, Fetched } from './lib/fileActions'
   import { demoAgenda, demoEvents, demoMine, demoNight, demoSamples, demoSearch, demoState, demoTimeline, demoTranscripts } from './lib/demo'
   import { setContext, untrack } from 'svelte'
@@ -438,17 +439,18 @@
   // Un file della chat: il comando `file`, poi i byte da /api/file/<id>; il menu del file li chiede appena si apre
   // («prepare»), così apri, scarica, copia e condividi partono subito dal tocco (copia e condividi lo vogliono fresco).
   const fileCache = new Map<string, Promise<Fetched | null>>()
-  function getFile(name: string, path: string): Promise<Fetched | null> {
+  function getFile(name: string, path: string, quiet = false): Promise<Fetched | null> {
     const key = `${name}\n${path}`
     let p = fileCache.get(key)
     if (!p) {
       p = (async () => {
         if (!tr) return null
         const c = newCmd('file', name, path)
-        const r = await run(c)
+        // L'anteprima che nasce da sola non avvisa se il file non arriva.
+        const r = quiet ? await tr.send(c).catch(() => null) : await run(c)
         if (!r?.ok) return null
         const f = await tr.fetchFile(c.id).catch(() => null)
-        if (!f) { say(`✗ ${t.noAnswer}`); return null }
+        if (!f) { if (!quiet) say(`✗ ${t.noAnswer}`); return null }
         return { blob: new Blob([f.data as Uint8Array<ArrayBuffer>], { type: f.mime }), name: f.name ?? path.split('/').pop() ?? 'file', mime: f.mime }
       })()
       fileCache.set(key, p)
@@ -456,9 +458,16 @@
     }
     return p
   }
-  async function fileAction(name: string, path: string, act: FileAct | 'prepare') {
-    if (!tr) { if (act !== 'prepare') say(t.fileDemo); return }
+  async function fileAction(name: string, path: string, act: FileAct | 'prepare' | 'preview') {
+    if (!tr) { if (act !== 'prepare' && act !== 'preview') say(t.fileDemo); return }
     if (act === 'prepare') { void getFile(name, path); return }
+    if (act === 'preview') {
+      // Immagini e video in anteprima sotto il loro file (Franz, 10/10 15:24), come sul telefono.
+      const key = mediaKey(name, path)
+      const f = media[key] ? null : await getFile(name, path, true)
+      if (f && !media[key]) media[key] = URL.createObjectURL(f.blob)
+      return
+    }
     const short = path.split('/').pop() ?? path
     say(t.fileOpening(short))
     const f = await getFile(name, path)

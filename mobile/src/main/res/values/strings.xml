@@ -92,6 +92,13 @@
     <string name="file_refused_large">Il file è di %1$s: troppo grande per il trasferimento dal PC</string>
     <string name="file_refused_large_max">Il file è di %1$s: il trasferimento dal PC arriva a %2$s</string>
     <string name="file_failed">File non arrivato: riprova</string>
+    <string name="video_preview">Anteprima del video</string>
+    <string name="video_play">Riproduci</string>
+    <string name="video_pause">Metti in pausa</string>
+    <string name="video_mute">Togli l\'audio</string>
+    <string name="video_unmute">Riattiva l\'audio</string>
+    <string name="video_fullscreen">Schermo intero</string>
+    <string name="video_fullscreen_exit">Esci dallo schermo intero</string>
     <string name="file_no_app">Nessuna app per aprire questo file</string>
     <string name="file_open">Apri</string>
     <string name="file_download">Scarica</string>

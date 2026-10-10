@@ -116,11 +116,10 @@ data class FileOpener(
     val act: (TranscriptFile, FileAct) -> Unit = { _, _ -> },
     /** Chiede il file al PC senza aprirlo e senza avvisi se non arriva: l'anteprima che nasce da sola. */
     val preview: (TranscriptFile) -> Unit = {},
+    /** Una rete senza contatore, come il Wi-Fi: i video arrivano da soli solo lì (`MediaPreview`). */
+    val unmetered: () -> Boolean = { false },
 )
 val LocalFileOpener = compositionLocalOf { FileOpener() }
-
-/** Fin qui un'immagine della chat si scarica da sola per l'anteprima; più grande, la chiede il tocco. */
-private const val AUTO_PREVIEW_MAX = 10_000_000L
 
 data class SheetActions(
     val answer: (Int) -> Unit, val allowAll: () -> Unit, val send: (PhonePrimary.Target, String) -> Unit,
@@ -1313,8 +1312,9 @@ private fun FileChip(f: TranscriptFile) {
     val opener = LocalFileOpener.current
     val local = opener.local[f.path]
     // I media nascono già in anteprima (Franz, 10/10 09:54: «vorrei che nascessero già in anteprima, senza doverle
-    // cliccare»): un'immagine si chiede al PC appena il suo messaggio è a schermo, fino a 10 MB, in silenzio se non arriva.
-    val autoPreview = f.mime?.startsWith("image/") == true && (f.size ?: 0L) <= AUTO_PREVIEW_MAX
+    // cliccare»): un'immagine si chiede al PC appena il suo messaggio è a schermo, fino a 10 MB, in silenzio se non arriva;
+    // un video fino a 25 MB, solo in Wi-Fi (15:24).
+    val autoPreview = it.pixelbox.cmwatch.rules.MediaPreview.auto(f.mime, f.size, opener.unmetered())
     LaunchedEffect(f.path, autoPreview) { if (autoPreview && opener.local[f.path] == null && f.path !in opener.loading) opener.preview(f) }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Surface(color = CmColors.surface, shape = MaterialTheme.shapes.medium, onClick = { opener.open(f) }) {
@@ -1342,6 +1342,7 @@ private fun FileChip(f: TranscriptFile) {
             }
         }
         if (local != null && f.mime?.startsWith("image/") == true) AttachmentThumb(local)
+        if (local != null && it.pixelbox.cmwatch.rules.MediaPreview.isVideo(f.mime)) VideoPreview(local)
     }
 }
 

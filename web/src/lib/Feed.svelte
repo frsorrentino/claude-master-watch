@@ -11,15 +11,24 @@
   import { t } from './t'
   import Icon from './Icon.svelte'
   import { canShare, type FileAct } from './fileActions'
+  import { autoPreview, isImage, isVideo } from './media'
+  import { media, mediaKey } from './mediaCache.svelte'
   import Md from './Md.svelte'
 
   // La conversazione della scheda (SessionSheet.kt): i messaggi a destra con lo stato, Claude a tutta larghezza con Copia
   // e ▶, i passaggi raccolti in una card, i file come chip, il costo del turno, e in fondo la riga dal vivo.
-  let { s, items, now, onFile = () => {}, onDecision }: { s: Session; items: Item[]; now: number; onFile?: (path: string, act: FileAct | 'prepare') => void; onDecision?: (text: string) => void } = $props()
+  let { s, items, now, onFile = () => {}, onDecision }: { s: Session; items: Item[]; now: number; onFile?: (path: string, act: FileAct | 'prepare' | 'preview') => void; onDecision?: (text: string) => void } = $props()
 
   // Un file: sotto il nome i tasti apri, scarica, copia e condividi (condividi solo dove il browser lo sa fare; Franz, 07/10
   // 15:48). Il file si chiede al PC appena il puntatore ci arriva, così il tocco trova i byte pronti.
   const fileActs: [FileAct, string, IconName][] = [['open', t.fileOpen, 'external'], ['download', t.fileDownload, 'download'], ['copy', t.fileCopy, 'copy'], ...(canShare() ? [['share', t.fileShare, 'share'] as [FileAct, string, IconName]] : [])]
+
+  // Immagini e video nascono già in anteprima, come sul telefono (Franz, 10/10 15:24): il file si chiede al PC appena la
+  // card è a schermo, se `autoPreview` lo vuole; col risparmio dati del browser i video aspettano il tocco.
+  function preview(_node: HTMLElement, f: TranscriptFile) {
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true
+    if (!media[mediaKey(s.name, f.path)] && autoPreview(f.mime, f.size, !saveData)) onFile(f.path, 'preview')
+  }
 
   const hm = (at: number) => new Date(at * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   const copy = (x: string) => navigator.clipboard?.writeText(x)
@@ -102,9 +111,12 @@
 {#snippet files(fs: TranscriptFile[])}
   <div class="files">
     {#each fs as f}
-      <div class="fcard" role="group" aria-label={f.path.split('/').pop()} onpointerenter={() => onFile(f.path, 'prepare')} onfocusin={() => onFile(f.path, 'prepare')}>
+      {@const url = media[mediaKey(s.name, f.path)]}
+      <div class="fcard" role="group" aria-label={f.path.split('/').pop()} use:preview={f} onpointerenter={() => onFile(f.path, 'prepare')} onfocusin={() => onFile(f.path, 'prepare')}>
         <button class="fchip" title={f.path} onclick={() => onFile(f.path, 'open')}><Icon name={fileIcon(f)} color="var(--icon)" /><span class="fname">{f.path.split('/').pop()}</span>{#if f.size != null}<span class="fsize">{size(f.size)}</span>{/if}</button>
         <div class="acts">{#each fileActs as [a, label, icon]}<button class="sm" aria-label={label} title={label} onclick={() => onFile(f.path, a)}><Icon name={icon} /></button>{/each}</div>
+        {#if url && isImage(f.mime)}<button class="fthumb" aria-label={t.fileOpen} onclick={() => onFile(f.path, 'open')}><img src={url} alt="" /></button>{/if}
+        {#if url && isVideo(f.mime)}<!-- svelte-ignore a11y_media_has_caption --><video class="fvideo" src={url} controls preload="metadata" playsinline></video>{/if}
       </div>
     {/each}
   </div>
@@ -224,6 +236,9 @@
   .files { display: flex; flex-wrap: wrap; gap: 8px; }
   .fcard { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; max-width: 100%; }
   .fchip { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 12px; padding: 8px 12px; text-align: left; max-width: 100%; }
+  .fthumb { padding: 0; border-radius: 14px; overflow: hidden; background: none; }
+  .fthumb img { display: block; max-width: 240px; max-height: 180px; object-fit: cover; }
+  .fvideo { display: block; max-width: min(100%, 360px); max-height: 320px; border-radius: 14px; background: #000; }
   .steps .fchip { background: rgb(255 255 255 / .06); }
   .fname { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
   .fsize { font-size: 12.5px; color: var(--text2); white-space: nowrap; }

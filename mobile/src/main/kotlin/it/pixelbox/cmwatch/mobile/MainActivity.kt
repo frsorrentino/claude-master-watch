@@ -860,10 +860,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        // Il tocco sul chip: un'immagine si vede sotto il chip, gli altri file vanno all'app di sistema.
+        // Il tocco sul chip: un'immagine o un video si vedono sotto il chip (il video con il suo lettore, 10/10 15:24), gli altri
+        // file vanno all'app di sistema.
         val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
-            withFile(name, f, false) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
+            withFile(name, f, false) { file, mime ->
+                if (mime?.startsWith("image/") != true && !it.pixelbox.cmwatch.rules.MediaPreview.isVideo(mime ?: f.mime)) viewFile(file, mime)
+            }
         }
+        // I video arrivano da soli solo su una rete senza contatore, come il Wi-Fi di casa.
+        val unmetered = { getSystemService(android.net.ConnectivityManager::class.java)?.isActiveNetworkMetered == false }
         // «Scarica» (Franz, 10/10 06:50: «andrebbe bene salvataggio diretto in download, però servirebbe conferma download e
         // opzioni apri cartella o apri file»): la copia va subito in Download e un foglio lo conferma, con «Apri», «Apri la
         // cartella» e «Salva altrove», che apre il foglio «Salva» di sistema per scegliere cartella e nome (06:26). Prima
@@ -938,7 +943,7 @@ class MainActivity : ComponentActivity() {
                                 Slash.panel(r.sent, results[r.sent.id])?.let { p -> app.chatLog.markPanel(r.sent.id, p) }
                             }
                         }
-                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) }, { f -> withFile(session.name, f, true) { _, _ -> } })) {
+                        CompositionLocalProvider(LocalFileOpener provides FileOpener({ f -> openFile(session.name, f) }, fileLoading.toSet(), fileLocal.toMap(), { f, a -> fileAct(session.name, f, a) }, { f -> withFile(session.name, f, true) { _, _ -> } }, unmetered)) {
                         SessionSheet(session, now, snap.pending, ttsMinChars, SheetActions(
                             answer = { n -> scope.launch { app.repo.answer(session.name, n) } },
                             allowAll = { scope.launch { app.repo.command(CmdOp.ALLOW_ALL, session.name, null) } },

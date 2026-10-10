@@ -29,6 +29,8 @@ googleServices = "4.5.0"
 okhttp = "5.4.0"
 junit = "4.13.2"
 paparazzi = "2.0.0-alpha02"
+# Il lettore dei video nella chat del telefono (Franz, 10/10 15:24); 1.8 compila con compileSdk 36.
+media3 = "1.8.0"
 
 [libraries]
 # Contratto 1.31: il QR dell'invito disegnato sul telefono, con lo stesso generatore del relay (Project Nayuki, MIT).
@@ -50,6 +52,8 @@ fragment = { module = "androidx.fragment:fragment", version = "1.8.9" }
 work-runtime = { module = "androidx.work:work-runtime-ktx", version = "2.11.2" }
 glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.2.0" }
 glance-material3 = { module = "androidx.glance:glance-material3", version = "1.2.0" }
+media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 compose-ui = { module = "androidx.compose.ui:ui" }
