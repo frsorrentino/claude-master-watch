@@ -97,6 +97,10 @@
     <string name="file_share">Share</string>
     <string name="file_saved">%1$s saved to Downloads</string>
     <string name="file_saved_to">%1$s saved</string>
+    <string name="file_saved_downloads">In the phone\'s Download folder.</string>
+    <string name="file_saved_picked">In the folder you chose.</string>
+    <string name="file_open_folder">Open the folder</string>
+    <string name="file_save_elsewhere">Save elsewhere</string>
     <string name="file_save_failed">%1$s not saved</string>
     <string name="slash_confirm_title">Send /%1$s to %2$s?</string>
     <string name="slash_confirm_exit">The session closes.</string>

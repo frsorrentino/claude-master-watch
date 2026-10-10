@@ -99,6 +99,10 @@
     <string name="file_share">Condividi</string>
     <string name="file_saved">%1$s salvato in Download</string>
     <string name="file_saved_to">%1$s salvato</string>
+    <string name="file_saved_downloads">Nella cartella Download del telefono.</string>
+    <string name="file_saved_picked">Nella cartella che hai scelto.</string>
+    <string name="file_open_folder">Apri la cartella</string>
+    <string name="file_save_elsewhere">Salva altrove</string>
     <string name="file_save_failed">%1$s non salvato</string>
     <string name="slash_confirm_title">Mandare /%1$s a %2$s?</string>
     <string name="slash_confirm_exit">La sessione si chiude.</string>

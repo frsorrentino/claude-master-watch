@@ -829,28 +829,36 @@ class MainActivity : ComponentActivity() {
         val openFile: (String, it.pixelbox.cmwatch.contract.TranscriptFile) -> Unit = { name, f ->
             withFile(name, f) { file, mime -> if (mime?.startsWith("image/") != true) viewFile(file, mime) }
         }
-        // «Scarica» (Franz, 10/10 06:26: «vorrei poter scegliere la cartella e scaricarlo»): il foglio «Salva» di sistema, con
-        // cartella e nome da scegliere. Prima la copia andava da sola in Download e il solo avviso breve non si notava: lo
-        // stesso video era stato scaricato tre volte. Il file in attesa resta salvato anche se l'attività si ricrea.
+        // «Scarica» (Franz, 10/10 06:50: «andrebbe bene salvataggio diretto in download, però servirebbe conferma download e
+        // opzioni apri cartella o apri file»): la copia va subito in Download e un foglio lo conferma, con «Apri», «Apri la
+        // cartella» e «Salva altrove», che apre il foglio «Salva» di sistema per scegliere cartella e nome (06:26). Prima
+        // l'avviso breve non si notava: lo stesso video era stato scaricato tre volte. Il file in attesa del foglio di sistema
+        // resta salvato anche se l'attività si ricrea.
+        var savedFile by remember { mutableStateOf<it.pixelbox.cmwatch.mobile.ui.SavedFile?>(null) }
         var saving by rememberSaveable { mutableStateOf<List<String>?>(null) }
         val saveAs = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { res ->
             val s = saving
             saving = null
             val uri = res.data?.data
-            if (res.resultCode == RESULT_OK && uri != null && s != null) scope.launch { saveTo(uri, java.io.File(s[0]), s[1]) }
+            if (res.resultCode == RESULT_OK && uri != null && s != null) scope.launch {
+                val mime = s.getOrNull(2)?.takeIf { m -> m.isNotEmpty() }
+                if (saveTo(uri, java.io.File(s[0]), s[1])) savedFile = it.pixelbox.cmwatch.mobile.ui.SavedFile(s[1], uri.toString(), mime, s[0], inDownloads = false)
+            }
+        }
+        val saveElsewhere: (String, String, String?) -> Unit = { path, title, mime ->
+            val pick = Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                .setType(mime ?: "application/octet-stream").putExtra(Intent.EXTRA_TITLE, title)
+            saving = listOf(path, title, mime.orEmpty())
+            runCatching { saveAs.launch(pick) }.onFailure { saving = null }
         }
         // I tasti sotto il file (Franz, 07/10 16:07): apri, scarica, copia, condividi.
         val fileAct: (String, it.pixelbox.cmwatch.contract.TranscriptFile, FileAct) -> Unit = { name, f, act ->
             withFile(name, f) { file, mime ->
                 when (act) {
                     FileAct.OPEN -> viewFile(file, mime)
-                    FileAct.DOWNLOAD -> {
+                    FileAct.DOWNLOAD -> scope.launch {
                         val title = f.path.substringAfterLast('/')
-                        val pick = Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                            .setType(mime ?: "application/octet-stream").putExtra(Intent.EXTRA_TITLE, title)
-                        saving = listOf(file.path, title)
-                        // Senza un'app per i documenti (non succede sui Pixel) resta la copia in Download.
-                        runCatching { saveAs.launch(pick) }.onFailure { saving = null; scope.launch { saveToDownloads(file, title, mime) } }
+                        saveToDownloads(file, title, mime)?.let { u -> savedFile = it.pixelbox.cmwatch.mobile.ui.SavedFile(title, u.toString(), mime, file.path, inDownloads = true) }
                     }
                     FileAct.COPY -> copyFile(file, f.path.substringAfterLast('/'), mime)
                     FileAct.SHARE -> shareFile(file, mime)
@@ -1609,6 +1617,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        // La conferma di «Scarica» (Franz, 10/10 06:50).
+        savedFile?.let { f ->
+            ModalBottomSheet(onDismissRequest = { savedFile = null }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.surface) {
+                it.pixelbox.cmwatch.mobile.ui.FileSavedContent(
+                    f, onOpen = { savedFile = null; openSaved(f) },
+                    onFolder = if (f.inDownloads) ({ savedFile = null; openDownloads() }) else null,
+                    onElsewhere = if (f.inDownloads) ({ savedFile = null; saveElsewhere(f.path, f.name, f.mime) }) else null,
+                )
+            }
+        }
         // «Chiuse · N» del riepilogo: l'elenco delle chiuse con «Riapri».
         if (closedOpen && summary != null) {
             ModalBottomSheet(onDismissRequest = { closedOpen = false }, containerColor = it.pixelbox.cmwatch.ui.tokens.CmColors.surface) {
@@ -1650,27 +1668,42 @@ class MainActivity : ComponentActivity() {
 
     private fun fileUri(file: java.io.File): Uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
 
-    /** «Scarica» nella cartella scelta col foglio «Salva» di sistema: il file copiato dove punta `uri`. */
-    private suspend fun saveTo(uri: Uri, file: java.io.File, name: String) {
+    /** «Salva altrove»: il file copiato dove punta `uri`, scelto col foglio «Salva» di sistema; false se non riesce (lo dice). */
+    private suspend fun saveTo(uri: Uri, file: java.io.File, name: String): Boolean {
         val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching { contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("open") }.isSuccess
         }
-        android.widget.Toast.makeText(this, getString(if (ok) R.string.file_saved_to else R.string.file_save_failed, name), android.widget.Toast.LENGTH_LONG).show()
+        if (!ok) android.widget.Toast.makeText(this, getString(R.string.file_save_failed, name), android.widget.Toast.LENGTH_LONG).show()
+        return ok
     }
 
-    /** La copia in Download, con il nome del file: solo se manca il foglio «Salva» di sistema. */
-    private suspend fun saveToDownloads(file: java.io.File, name: String, mime: String?) {
-        val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    /** «Scarica»: la copia in Download con il nome del file; il suo indirizzo, o null se non riesce (lo dice). */
+    private suspend fun saveToDownloads(file: java.io.File, name: String, mime: String?): Uri? {
+        val uri = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val values = android.content.ContentValues().apply {
                     put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
                     put(android.provider.MediaStore.Downloads.MIME_TYPE, mime ?: "application/octet-stream")
                 }
-                val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("insert")
-                contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("open")
-            }.isSuccess
+                val u = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("insert")
+                contentResolver.openOutputStream(u)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("open")
+                u
+            }.getOrNull()
         }
-        android.widget.Toast.makeText(this, getString(if (ok) R.string.file_saved else R.string.file_save_failed, name), android.widget.Toast.LENGTH_SHORT).show()
+        if (uri == null) android.widget.Toast.makeText(this, getString(R.string.file_save_failed, name), android.widget.Toast.LENGTH_LONG).show()
+        return uri
+    }
+
+    /** «Apri» nella conferma: il file salvato all'app di sistema che lo apre. */
+    private fun openSaved(f: it.pixelbox.cmwatch.mobile.ui.SavedFile) {
+        val view = Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(f.uri), f.mime ?: "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        runCatching { startActivity(view) }.onFailure { android.widget.Toast.makeText(this, getString(R.string.file_no_app), android.widget.Toast.LENGTH_LONG).show() }
+    }
+
+    /** «Apri la cartella»: i download del telefono nell'app File. */
+    private fun openDownloads() {
+        runCatching { startActivity(Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            .onFailure { android.widget.Toast.makeText(this, getString(R.string.file_no_app), android.widget.Toast.LENGTH_LONG).show() }
     }
 
     /** «Copia»: il testo dei file di testo, degli altri il file stesso (si incolla nelle app che lo sanno leggere). */
