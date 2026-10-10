@@ -72,6 +72,8 @@ object LiveFeed {
         val busy: String, val idle: String, val launched: String, val recap: String,
         /** Il recap di una sessione al lavoro (Franz, 08/10 20:15): nome, da quanto, cosa fa adesso. */
         val recapBusy: String = "%1\$s lavora da %2\$s, ora: %3\$s.",
+        /** Le scelte scritte nella risposta, dopo l'esito (Franz, 10/10 08:35). */
+        val choices: String = "Le scelte: %1\$s",
         /** Cosa deve fare: l'obiettivo di /goal, o il prossimo passo detto. */
         val recapTask: String = "Obiettivo: %1\$s.",
         val thinking: String = "sta pensando",
@@ -147,7 +149,9 @@ object LiveFeed {
      */
     fun round(state: State, l: Labels, feed: Feed = Feed(), now: Long? = null): List<String> {
         val open = state.sessions.filter { it.state != SessionState.GONE }
-        val waiting = open.filter { it.question != null || blocking(it) }
+        // Una sessione che lavora alla tua risposta non ti aspetta più, anche con i Prossimi «!» dell'esito di prima (Franz,
+        // 10/10 08:38: il recap continuava a ripetere la domanda già risposta).
+        val waiting = open.filter { it.question != null || (blocking(it) && !working(it)) }
         val working = open.filter { it !in waiting && it.state == SessionState.BUSY && !low(it) }
         val stopped = open.filter { it !in waiting && it.state != SessionState.BUSY && it.followed && !low(it) }
         return waiting.map { if (it.question != null) questionText(it, l) else outcomeText(it, l) } +
@@ -177,14 +181,14 @@ object LiveFeed {
     fun status(s: Session, l: Labels): String = when {
         s.question != null -> questionText(s, l)
         s.state == SessionState.GONE -> l.gone.format(SpeakableName.of(s.name))
-        s.state == SessionState.BUSY && !blocking(s) -> l.busy.format(SpeakableName.of(s.name))
+        s.state == SessionState.BUSY -> l.busy.format(SpeakableName.of(s.name))
         s.outcome != null -> outcomeText(s, l)
         else -> l.idle.format(SpeakableName.of(s.name))
     }
 
     /** «chi mi aspetta»: le domande, i Prossimi con «!» e le richieste di ok; vuota se nessuno aspetta. */
     fun waiting(state: State, l: Labels): List<String> {
-        val open = state.sessions.filter { it.state != SessionState.GONE && (it.question != null || blocking(it)) }
+        val open = state.sessions.filter { it.state != SessionState.GONE && (it.question != null || (blocking(it) && !working(it))) }
         return open.map { if (it.question != null) questionText(it, l) else outcomeText(it, l) } + state.approvals.map { approvalText(it, l) }
     }
 
@@ -239,7 +243,12 @@ object LiveFeed {
 
     /** «nome ha finito: esito breve.» più i Prossimi, prima quelli con «!». */
     private fun outcomeText(s: Session, l: Labels): String {
-        val head = l.outcome.format(SpeakableName.of(s.name), bare(s.outcome?.short.orEmpty(), l))
+        val base = l.outcome.format(SpeakableName.of(s.name), bare(s.outcome?.short.orEmpty(), l))
+        // Le scelte della risposta per intero, dopo l'esito (Franz, 10/10 08:35: «non basta dire scegli 1, 2 o 3»).
+        val rows = choices(s.outcome?.full.orEmpty()).map { line(it, l) }.filter { it.isNotBlank() }
+        val ends = rows.runningFold(0) { n, r -> n + r.length + 1 }.drop(1)
+        val kept = rows.take(ends.count { it <= CHOICES_MAX })
+        val head = if (kept.isEmpty()) base else "$base " + l.choices.format(kept.joinToString(" "))
         val steps = s.nextSteps.orEmpty().sortedBy { !it.blocking }
         if (steps.isEmpty()) return head
         // Un punto fra un'azione e l'altra, e fra numero e azione nel testo di `step`: la voce fa la pausa (Franz, 08/10 20:28).
@@ -265,6 +274,20 @@ object LiveFeed {
     private fun hot(q: QuotaAccount) = maxOf(q.h5 ?: 0, q.w7 ?: 0) >= QUOTA_HOT
     private fun low(s: Session) = s.lowPriority == LOW_ACTIVE
     private fun blocking(s: Session) = s.outcome != null && s.nextSteps.orEmpty().any { it.blocking }
+    /** Al lavoro sulla tua risposta; ferma su una richiesta di ok (AWAITING) ti aspetta ancora. */
+    private fun working(s: Session) = s.state == SessionState.BUSY
+
+    /**
+     * Le scelte scritte in una risposta (Franz, 10/10 08:35: «quando ci sono delle scelte deve leggerle in forma completa»):
+     * le righe numerate del testo intero, anche quelle dentro un punto, nell'ordine; con meno di due non ci sono scelte.
+     */
+    fun choices(full: String): List<String> {
+        val rows = full.lines().map { it.trim() }.filter { NUMBERED.containsMatchIn(it) }
+        return if (rows.size >= 2) rows else emptyList()
+    }
+    private val NUMBERED = Regex("""^\d+(\.\d+)*[.)]\s+\S""")
+    /** Oltre, le scelte si fermano all'ultima riga intera: la voce non legge una pagina. */
+    private const val CHOICES_MAX = 1200
     private fun number(n: Int, l: Labels) = l.numbers.getOrNull(n - 1) ?: n.toString()
 
     /** Il testo pulito per la voce, su una riga. */

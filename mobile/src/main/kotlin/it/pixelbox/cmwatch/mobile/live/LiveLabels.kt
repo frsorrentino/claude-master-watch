@@ -22,6 +22,7 @@ object LiveLabels {
         busy = ctx.getString(R.string.live_busy), idle = ctx.getString(R.string.live_idle),
         launched = ctx.getString(R.string.live_launched), recap = ctx.getString(R.string.live_recap),
         recapBusy = ctx.getString(R.string.live_recap_busy), recapTask = ctx.getString(R.string.live_recap_task),
+        choices = ctx.getString(R.string.live_choices),
         thinking = ctx.getString(R.string.live_thinking), minute = ctx.getString(R.string.live_recap_minute), minutes = ctx.getString(R.string.live_recap_minutes),
     )
 

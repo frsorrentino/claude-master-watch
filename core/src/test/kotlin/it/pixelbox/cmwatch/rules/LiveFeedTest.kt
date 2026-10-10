@@ -65,6 +65,33 @@ class LiveFeedTest {
         assertTrue(plan(Feed(), withOutcome("Old", 50), cur).byKey("s:atlas-shop").text.endsWith("Azioni: uno. ok to deploy. due. review the seeds."))
     }
 
+    // Franz, 10/10 08:38: «quando rispondo in una sessione il recap live dovrebbe aggiornarsi, adesso continua a ripetere la
+    // domanda». Una sessione che lavora alla tua risposta non ti aspetta più, anche se l'esito di prima aveva Prossimi con «!».
+    @Test fun aSessionWorkingOnYourAnswerNoLongerWaits() {
+        val steps = listOf(it.pixelbox.cmwatch.contract.NextStep("ok to deploy", blocking = true))
+        val waiting = withOutcome("Deploy ready", 100).let { s -> s.copy(sessions = s.sessions.map { x -> if (x.name == "atlas-shop") x.copy(nextSteps = steps, state = SessionState.IDLE) else x }) }
+        assertTrue(LiveFeed.round(waiting, IT).any { r -> r.startsWith("atlas shop ha finito: Deploy ready.") })
+        val working = waiting.copy(sessions = waiting.sessions.map { x -> if (x.name == "atlas-shop") x.copy(state = SessionState.BUSY) else x })
+        val r = LiveFeed.round(working, IT)
+        assertTrue(r.none { t -> t.contains("Deploy ready") })
+        assertTrue(r.contains("atlas shop è al lavoro."))
+        assertEquals("atlas shop è al lavoro.", LiveFeed.status(working.sessions.first { x -> x.name == "atlas-shop" }, IT))
+        assertTrue(LiveFeed.waiting(working, IT).none { t -> t.contains("Deploy ready") })
+    }
+
+    // Franz, 10/10 08:35: «quando ci sono delle scelte deve leggerle in forma completa, non basta dire scegli 1, 2 o 3». Le righe
+    // numerate della risposta, anche dentro un punto, dopo l'esito.
+    @Test fun theChoicesInTheReplyAreReadInFull() {
+        val full = "Tre punti da decidere.\n\n1. **Il formato:**\n   1. sedici noni;\n   2. nove sedicesimi.\n2. **La musica:** quella del primo montaggio.\n\nEsito: animatic pronto; aspetta il tuo ok."
+        val s = idle.copy(sessions = idle.sessions.map { x -> if (x.name == "atlas-shop") x.copy(outcome = Outcome("animatic pronto; aspetta il tuo ok", full, 100)) else x })
+        assertEquals(
+            "atlas shop ha finito: animatic pronto; aspetta il tuo ok. Le scelte: 1. Il formato: 1. sedici noni; 2. nove sedicesimi. 2. La musica: quella del primo montaggio.",
+            LiveFeed.status(s.sessions.first { x -> x.name == "atlas-shop" }, IT),
+        )
+        // Una riga numerata sola non fa delle scelte.
+        assertEquals(emptyList<String>(), LiveFeed.choices("Fatto.\n1. una cosa sola"))
+    }
+
     @Test fun anOutcomeWithoutBlockingStepsIsLevelTwo() {
         val n = plan(Feed(), q, idle).byKey("s:atlas-shop")
         assertEquals(2, n.level)
@@ -218,12 +245,12 @@ class LiveFeedTest {
     }
 
     @Test fun theFullRoundGoesWaitingThenWorkingThenFollowedIdle() {
-        // state-1: ledger-api chiede, atlas-shop ha un «!» (bassa priorità, ma serve Franz), poi la richiesta di ok;
+        // state-1: ledger-api chiede, poi la richiesta di ok; atlas-shop ha un «!» nell'esito di prima ma è al lavoro, quindi
+        // non ti aspetta più (Franz, 10/10 08:38), ed è a bassa priorità, quindi non è nemmeno fra quelle al lavoro;
         // field-notes è ferma ma non seguita, orbit-docs è chiusa
         assertEquals(
             listOf(
                 "ledger api chiede: Deploy ready, waiting for the client's ok. Deploy now? Uno: yes. Due: no.",
-                "atlas shop ha finito: Migrations 008-011 applied, tests green. Azioni: uno. ok to deploy on staging. due. review the test seeds.",
                 "Richiesta di ok: Release 2.4 of atlas-shop, tag v2.4 and push to origin main, su production (shop.example.com). Serve la doppia conferma.",
             ),
             LiveFeed.round(q, IT),

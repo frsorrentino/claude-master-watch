@@ -848,6 +848,7 @@ It starts at your last message to the master.</string>
     <string name="live_chip_all">All</string>
     <string name="live_chip_blocking">Blocking</string>
     <string name="live_recap_busy">%1$s has been working for %2$s, now: %3$s.</string>
+    <string name="live_choices">The choices: %1$s</string>
     <string name="live_recap_task">Goal: %1$s.</string>
     <string name="live_recap_minute">1 minute</string>
     <string name="live_recap_minutes">%1$d minutes</string>

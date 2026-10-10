@@ -475,11 +475,19 @@ fun LivePill(
     onSkip: () -> Unit = {}, onStatus: (String) -> Unit = {},
     /** Solo per i provini: la pillola già aperta. */
     startOpen: Boolean = false, onStop: () -> Unit, modifier: Modifier = Modifier,
+    /**
+     * La scheda in corso (Franz, 10/10 08:37): con una domanda o dei Prossimi la pillola si allarga e mostra in breve il testo
+     * e le risposte come tasti; `onOption` riceve il numero, da 1.
+     */
+    card: it.pixelbox.cmwatch.rules.LiveCard? = null, onOption: (Int) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(startOpen) }
     Surface(modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(if (expanded) 24.dp else 28.dp), color = CmColors.surfaceHigh, shadowElevation = 6.dp) {
         if (expanded) LiveOpen(rows, speaking, paused, noHeadset, onlyBlocking, onPause, onFilter, onStop, onRecap, onActions, onRepeat, onSkip, onStatus) { expanded = false }
-        else BoxWithConstraints {
+        else Column {
+            card?.takeIf { c -> c.options.isNotEmpty() && (c.kind == it.pixelbox.cmwatch.rules.LiveCard.Kind.QUESTION || c.kind == it.pixelbox.cmwatch.rules.LiveCard.Kind.OUTCOME) }
+                ?.let { c -> LiveChoice(c, onOption) }
+            BoxWithConstraints {
             val roomy = maxWidth >= 300.dp
             Row(
                 Modifier.heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
@@ -532,6 +540,29 @@ fun LivePill(
                 IconButton(onClick = onStop, modifier = Modifier.size(44.dp)) {
                     Icon(Icons.Rounded.Stop, stringResource(R.string.live_stop), tint = CmColors.actionIcon)
                 }
+            }
+            }
+        }
+    }
+}
+
+/**
+ * La domanda o i Prossimi della notizia in corso, sopra i tasti della pillola (Franz, 10/10 08:37: «vorrei che le risposte
+ * della domanda apparissero anche nella scheda live, che si espande per mostrare in breve domanda e risposte con tasto»): da
+ * chi arriva, il testo in tre righe al massimo, poi una risposta per tasto. Il tocco risponde come dal watch.
+ */
+@Composable
+private fun LiveChoice(card: it.pixelbox.cmwatch.rules.LiveCard, onOption: (Int) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (card.title.isNotBlank()) Text(card.title, style = MonoSmall.copy(color = CmColors.text2), maxLines = 1, overflow = TextOverflow.Clip)
+        if (card.text.isNotBlank()) Text(card.text, style = MaterialTheme.typography.bodyMedium, color = CmColors.text, maxLines = 3, overflow = TextOverflow.Clip)
+        card.options.forEachIndexed { i, o ->
+            androidx.compose.material3.FilledTonalButton(
+                onClick = { onOption(i + 1) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).handCursor(),
+                shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(containerColor = CmColors.surface, contentColor = CmColors.text),
+            ) {
+                Text("${i + 1} · $o", style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Clip, modifier = Modifier.fillMaxWidth())
             }
         }
     }

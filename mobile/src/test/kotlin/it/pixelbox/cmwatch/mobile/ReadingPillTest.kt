@@ -86,6 +86,23 @@ class ReadingPillTest {
         }
     }
 
+    // La domanda nella pillola della live (Franz, 10/10 08:37: «la scheda live si espande per mostrare in breve domanda e
+    // risposte con tasto»): da chi arriva, il testo in tre righe al massimo, una risposta per tasto.
+    @Test fun liveQuestion() = paparazzi.snapshot {
+        CmPhoneTheme(still = true) {
+            Box(Modifier.background(CmColors.bg).padding(12.dp)) {
+                it.pixelbox.cmwatch.mobile.ui.LivePill(
+                    "ledger-api chiede: Deploy ready, waiting for the client's ok. Deploy now?", speaking = true, paused = false, noHeadset = false, onlyBlocking = false,
+                    onPause = {}, onFilter = {}, onStop = {},
+                    card = it.pixelbox.cmwatch.rules.LiveCard(
+                        1, it.pixelbox.cmwatch.rules.LiveCard.Kind.QUESTION, "ledger-api", "Deploy ready, waiting for the client's ok. Deploy now?",
+                        listOf("yes", "no", "wait for the client"),
+                    ),
+                )
+            }
+        }
+    }
+
     // La pillola della live aperta (B2, Franz 08/10 21:47): una riga per sessione, filtro, tasti.
     @Test fun liveOpen() = paparazzi.snapshot {
         val st = it.pixelbox.cmwatch.contract.ContractJson.decodeState(java.io.File("../contract/state-1-question.json").readText())

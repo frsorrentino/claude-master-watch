@@ -132,7 +132,7 @@ class LiveService : Service() {
             ACTION_PAUSE -> { userPaused = !userPaused; inbox.trySend(Input.Audio) }
             ACTION_RECAP -> inbox.trySend(Input.Tap(LiveTap(LiveTap.Action.ROUND)))
             ACTION_TAP -> intent.getStringExtra(EXTRA_TAP)?.let { a -> runCatching { LiveTap.Action.valueOf(a) }.getOrNull() }?.let { a ->
-                inbox.trySend(Input.Tap(LiveTap(a, text = intent.getStringExtra(EXTRA_TEXT))))
+                inbox.trySend(Input.Tap(LiveTap(a, index = intent.getIntExtra(EXTRA_INDEX, 0), text = intent.getStringExtra(EXTRA_TEXT))))
             }
         }
         return START_NOT_STICKY
@@ -224,7 +224,7 @@ class LiveService : Service() {
                     .onFailure { inbox.send(Input.Failed(e.tag, it.message ?: "")) }
             }
         }
-        _panel.value = _panel.value.copy(onlyBlocking = desk.onlyBlocking, paused = paused, noHeadset = !headset)
+        _panel.value = _panel.value.copy(onlyBlocking = desk.onlyBlocking, paused = paused, noHeadset = !headset, card = desk.card)
         updateNote()
     }
 
@@ -304,6 +304,7 @@ class LiveService : Service() {
         private const val ACTION_TAP = "it.pixelbox.cmwatch.live.TAP"
         private const val EXTRA_TAP = "tap"
         private const val EXTRA_TEXT = "text"
+        private const val EXTRA_INDEX = "index"
 
         /**
          * Quello che il pannello della live nell'app mostra (Franz, 08/10 20:03: «un box di controllo proprio come quello
@@ -312,15 +313,20 @@ class LiveService : Service() {
         data class Panel(
             val last: String? = null, val speaking: Boolean = false, val paused: Boolean = false,
             val noHeadset: Boolean = false, val onlyBlocking: Boolean = false,
+            /** La scheda in corso, quella del watch: con una domanda o dei Prossimi la pillola si apre e mostra i tasti. */
+            val card: it.pixelbox.cmwatch.rules.LiveCard? = null,
         )
         private val _panel = MutableStateFlow(Panel())
         val panel: StateFlow<Panel> get() = _panel
 
         /** I tasti del pannello: pausa e ripresa, solo bloccanti o tutte; spegni è `toggle`. */
         fun pause(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_PAUSE)) }
-        /** Un tasto della pillola aperta (Azioni, Ripeti, Salta) o una frase («com'è messa nome»), come dal watch. */
-        fun tap(ctx: Context, action: LiveTap.Action, text: String? = null) {
-            ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_TAP).putExtra(EXTRA_TAP, action.name).putExtra(EXTRA_TEXT, text))
+        /**
+         * Un tasto della pillola (Azioni, Ripeti, Salta, una risposta o un Prossimo con `index` da 1) o una frase («com'è messa
+         * nome»), come dal watch.
+         */
+        fun tap(ctx: Context, action: LiveTap.Action, text: String? = null, index: Int = 0) {
+            ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_TAP).putExtra(EXTRA_TAP, action.name).putExtra(EXTRA_TEXT, text).putExtra(EXTRA_INDEX, index))
         }
         fun recap(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_RECAP)) }
         fun onlyBlocking(ctx: Context) { ctx.startService(Intent(ctx, LiveService::class.java).setAction(ACTION_ONLY_BLOCKING)) }

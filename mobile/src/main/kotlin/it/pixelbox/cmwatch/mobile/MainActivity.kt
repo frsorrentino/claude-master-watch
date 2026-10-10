@@ -256,6 +256,12 @@ class MainActivity : ComponentActivity() {
                 onSkip = { it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.SKIP) },
                 onStatus = { n -> it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, it.pixelbox.cmwatch.rules.LiveTap.Action.SAY, "com'e messa $n") },
                 onStop = { it.pixelbox.cmwatch.mobile.live.LiveService.toggle(ctx) },
+                // La domanda o i Prossimi nella pillola (Franz, 10/10 08:37): il tocco risponde come dal watch.
+                card = p.card,
+                onOption = { i ->
+                    val kind = if (p.card?.kind == it.pixelbox.cmwatch.rules.LiveCard.Kind.QUESTION) it.pixelbox.cmwatch.rules.LiveTap.Action.OPTION else it.pixelbox.cmwatch.rules.LiveTap.Action.STEP
+                    it.pixelbox.cmwatch.mobile.live.LiveService.tap(ctx, kind, index = i)
+                },
             )
         })
         // Nel terminale no, come prima: lì il fondo è del testo dal vivo.
