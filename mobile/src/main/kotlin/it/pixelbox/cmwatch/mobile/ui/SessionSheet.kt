@@ -535,7 +535,7 @@ fun SessionSheet(
                     Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         h({ draft = it }, { t -> actions.send(PhonePrimary.Target.PROMPT, t) })
                     }
-                    if (!sheet && !imeOpenHere()) ReadingSlot(s.name, overlay = true)
+                    if (!sheet) ReadingSlot(s.name, overlay = true)
                     Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = if (sheet) 0f else 1f }) { dock?.invoke() }
                 }
                 if (sheet) {
@@ -598,7 +598,7 @@ fun SessionSheet(
                                 label = "dock",
                             ) { if (it == androidx.compose.animation.EnterExitState.Visible) 1f else 0f }
                             // Il controller della lettura si posa sopra la barra, così la barra resta da toccare (09/10 16:50).
-                            if (!imeOpenHere()) ReadingSlot(s.name, overlay = true)
+                            ReadingSlot(s.name, overlay = true)
                             Box(Modifier.onSizeChanged { dockPx = it.height }.graphicsLayer { alpha = dockAlpha }) { dock?.invoke() }
                         } else chatArea()
                     }
@@ -630,8 +630,10 @@ fun SessionSheet(
         // sovrapposto, il resto mantiene i colori suoi»): qui solo il segno di dove posarlo, sopra il campo.
         // Con la home aperta il segno sta sopra la barra della master, non qui (Franz, 09/10 16:50: il controller la copriva
         // e la master non si apriva più).
-        if (niche && !imeOpen && !(home != null && homeOpen)) Spacer(Modifier.height(readingRoom()))
-        if (!imeOpen && !(home != null && homeOpen)) ReadingSlot(s.name, overlay = true)
+        // Anche con la tastiera aperta: il controller resta e si posa sopra il campo, che sale con lei (Franz, 10/10 16:52:
+        // «posiziona bene live quando apro tastiera»; senza il segno andava sul bordo della tastiera, sopra il campo).
+        if (niche && !(home != null && homeOpen)) Spacer(Modifier.height(readingRoom()))
+        if (!(home != null && homeOpen)) ReadingSlot(s.name, overlay = true)
         if (home != null && LocalMasterLook.current.thread) MasterThread()
         Composer(
             s, draftHolder, onDraft = { draft = it }, ops, canAttach, actions, onSent = { draft = ""; follow = true }, quota, phrases, canTonight, slash,
@@ -2223,7 +2225,3 @@ private fun elapsed(s: Long): String = when {
     else -> stringResource(R.string.live_hm, s / 3600, (s % 3600) / 60)
 }
 
-/** La tastiera è aperta: il controller della lettura si fa da parte e i suoi segni non contano. */
-@Composable
-private fun imeOpenHere(): Boolean =
-    androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
