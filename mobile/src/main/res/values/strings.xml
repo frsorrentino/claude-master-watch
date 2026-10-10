@@ -762,7 +762,7 @@ Parte dal tuo ultimo messaggio alla master.</string>
     <string name="night_kind_session">Sessione</string>
     <string name="night_kind_job">Lavoro della coda</string>
     <string name="home_sec_night">Notte</string>
-    <string name="home_sec_sessions">Sessioni · %1$d</string>
+    <string name="home_sec_sessions">Sessioni</string>
     <string name="home_sec_usage">Utilizzo</string>
     <!-- La sezione Recap (mockup approvato l'08/10, Franz 20:41). -->
     <string name="home_sec_recap">Recap</string>

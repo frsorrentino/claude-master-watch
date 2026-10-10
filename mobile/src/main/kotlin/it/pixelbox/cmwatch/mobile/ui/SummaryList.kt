@@ -181,7 +181,7 @@ fun SummaryList(
             if (nightOpen) item(key = "night-box") { Box(moving()) { NightHomeCard(nightDate, nightPage, onNight) } }
         }
         item(key = "sec-sessions") {
-            Box(moving()) { HomeSection(stringResource(R.string.home_sec_sessions, model.rows.size), null, sessionsOpen) { sessionsOpen = !sessionsOpen; save("sessions", sessionsOpen) } }
+            Box(moving()) { HomeSection(stringResource(R.string.home_sec_sessions), model.rows.size.toString().takeIf { !sessionsOpen }, sessionsOpen) { sessionsOpen = !sessionsOpen; save("sessions", sessionsOpen) } }
         }
         justClosed?.let { (js, line) -> item(key = "just-closed") { Box(moving()) { JustClosedCard(js, line) } } }
         // Contratto 1.37: «Da approvare» prima di «Ti aspetta» (mockup approvato il 05/10 21:07).

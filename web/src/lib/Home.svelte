@@ -127,7 +127,7 @@
       </button>
     {/if}
   {/if}
-  {@render sec('sessions', t.homeSessions(model.rows.length))}
+  {@render sec('sessions', t.homeSessions, String(model.rows.length))}
   {#if justClosed}
     <div class="card just" style:view-transition-name="page-fly">
       <div class="jrow"><Badge s={justClosed.s} size={24} /><span class="jcol"><b>{justClosed.s.name}</b><small>{justClosed.line}</small></span></div>

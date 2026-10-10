@@ -753,7 +753,7 @@ It starts at your last message to the master.</string>
     <string name="night_kind_session">Session</string>
     <string name="night_kind_job">Queued job</string>
     <string name="home_sec_night">Night</string>
-    <string name="home_sec_sessions">Sessions · %1$d</string>
+    <string name="home_sec_sessions">Sessions</string>
     <string name="home_sec_usage">Usage</string>
     <string name="home_sec_recap">Recap</string>
     <string name="recap_actions">Actions · %1$d</string>

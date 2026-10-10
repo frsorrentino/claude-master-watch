@@ -106,7 +106,7 @@ export const t = {
   nightProjectsTitle: (n: number) => `Progetti · ${n}`, nightProjectsExpl: 'parti fatte sul totale',
   nightState: { ok: '✓ finito', running: '▶ in corso', stopped: '✗ fermo', question: '❓ domanda' } as Record<string, string>,
   nightKindSession: 'Sessione', nightKindJob: 'Lavoro della coda',
-  homeNight: 'Notte', homeSessions: (n: number) => `Sessioni · ${n}`, homeUsage: 'Utilizzo', homeRecap: 'Recap', recapActions: (n: number) => `Azioni · ${n}`, recapFrom: (d: string) => `recap ${d}`.trim(),
+  homeNight: 'Notte', homeSessions: 'Sessioni', homeUsage: 'Utilizzo', homeRecap: 'Recap', recapActions: (n: number) => `Azioni · ${n}`, recapFrom: (d: string) => `recap ${d}`.trim(),
   recapSendTitle: 'Mandare questa azione?', recapSendFromRecap: (d: string, p: string) => `Dal recap del ${d} di ${p}`, recapSendFromSession: (s: string) => `Da ${s}`,
   recapSendToSession: 'la sessione aperta sul progetto', recapSendToMaster: 'il progetto non ha una sessione aperta', recapSend: 'Manda', recapSendToMasterAgenda: 'che lo fa partire', recapSendFromAgenda: "Dall'agenda, un lavoro che può fare Claude",
   recapYou: (n: number) => `Aspetta te · ${n}`, recapClaude: (n: number) => `Può farlo Claude · ${n}`, recapOther: (n: number) => `Fermo su altro · ${n}`,
