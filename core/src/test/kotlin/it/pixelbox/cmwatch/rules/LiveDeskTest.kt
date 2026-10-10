@@ -295,6 +295,19 @@ class LiveDeskTest {
         assertTrue(r.said().isEmpty())
     }
 
+    // Con la coda vuota la scheda del watch porta le sessioni come le righe della pillola aperta del telefono (Franz, 10/10
+    // 10:50) e torna quando cambiano: un tick nello stesso minuto non la rimanda, un minuto in più di lavoro sì.
+    @Test fun theQuietCardCarriesTheSessionsAndFollowsThem() {
+        val busy = idle.sessions.single().copy(state = it.pixelbox.cmwatch.contract.SessionState.BUSY, outcome = null, toolNote = "Run the tests", turnStarted = 1_789_219_700L)
+        val st = idle.copy(sessions = listOf(busy))
+        val r = Run(state = st).state(st, t0)
+        val c = r.card()
+        assertEquals(LiveCard.Kind.IDLE, c.kind)
+        assertEquals(listOf(LivePanel.Row(busy.name, LivePanel.Kind.WORKING, "Run the tests", minutes = 5)), c.rows)
+        assertTrue(r.tick(t0 + 30_000).fx.filterIsInstance<Show>().isEmpty())
+        assertEquals(6, r.tick(t0 + 60_000).card().rows.single().minutes)
+    }
+
     @Test fun aServiceNoticeIsSaidAndShown() {
         val r = started()
         r.go(LiveDesk.notice(r.desk, "Batteria al 20 per cento.", t0 + 1_000, lang))

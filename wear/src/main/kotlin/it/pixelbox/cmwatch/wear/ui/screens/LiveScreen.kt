@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -79,6 +80,8 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
             val body = card.text.ifBlank { if (kind == Kind.IDLE) null else card.text }
             if (kind == Kind.IDLE && card.text.isBlank()) {
                 item { Text(stringResource(R.string.live_idle), style = MaterialTheme.typography.bodyLarge, color = CmColors.text2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
+                // Le sessioni come nella pillola aperta del telefono (Franz, 10/10 10:50): chi chiede, chi lavora, chi è ferma.
+                card.rows.forEach { r -> item { LiveRow(r, Modifier.morph(this, spec)) } }
             } else if (!body.isNullOrBlank()) {
                 item { Text(body, style = MaterialTheme.typography.bodyLarge, color = CmColors.text, modifier = Modifier.fillMaxWidth().morph(this, spec)) }
             }
@@ -119,6 +122,34 @@ fun LiveScreen(card: LiveCard?, now: Long, onTap: (LiveTap) -> Unit, onTalk: () 
                 else -> Unit
             }
         }
+    }
+}
+
+/**
+ * Una sessione nella scheda tranquilla, come una riga della pillola aperta del telefono: il pallino del suo stato (viola chi
+ * chiede, blu chi lavora, grigio chi è ferma), il nome, da quanto o a che ora, e sotto cosa fa o cosa ha fatto.
+ */
+@Composable
+private fun LiveRow(r: it.pixelbox.cmwatch.rules.LivePanel.Row, modifier: Modifier = Modifier) {
+    val tone = when (r.kind) {
+        it.pixelbox.cmwatch.rules.LivePanel.Kind.ASKING -> CmColors.advice
+        it.pixelbox.cmwatch.rules.LivePanel.Kind.WORKING -> CmColors.busy
+        it.pixelbox.cmwatch.rules.LivePanel.Kind.STILL -> CmColors.text2
+    }
+    val time = r.minutes?.let { stringResource(R.string.live_row_min, it) }
+        ?: r.at?.let { java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.Instant.ofEpochSecond(it).atZone(java.time.ZoneId.systemDefault())) }
+    androidx.compose.foundation.layout.Column(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CmColors.surface).padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.padding(end = 8.dp).size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(tone))
+            Text(r.name, style = MaterialTheme.typography.titleSmall, color = CmColors.text, maxLines = 1, modifier = Modifier.weight(1f))
+            time?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = CmColors.text2, modifier = Modifier.padding(start = 6.dp)) }
+        }
+        Text(
+            r.what ?: stringResource(if (r.kind == it.pixelbox.cmwatch.rules.LivePanel.Kind.WORKING) R.string.live_row_thinking else R.string.live_row_still),
+            style = MaterialTheme.typography.bodySmall, color = CmColors.text2, maxLines = 2,
+        )
     }
 }
 

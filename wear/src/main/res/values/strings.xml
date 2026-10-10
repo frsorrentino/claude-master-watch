@@ -236,6 +236,9 @@
     <string name="live_title">Live</string>
     <string name="live_off">Live spenta: accendila dal telefono, dal menu.</string>
     <string name="live_idle">Nessuna notizia: tutto tranquillo.</string>
+    <string name="live_row_min">%1$d min</string>
+    <string name="live_row_thinking">sta pensando</string>
+    <string name="live_row_still">ferma</string>
     <string name="live_repeat">Ripeti</string>
     <string name="live_later">Dopo</string>
     <string name="live_skip">Salta</string>

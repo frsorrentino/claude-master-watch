@@ -322,9 +322,10 @@ object LiveDesk {
             val c = d.current
             if (now < d.holdUntil && !(n != null && n.level == 1 && (c?.level ?: Int.MAX_VALUE) > 1)) return
             if (n == null) {
-                if (c != null || d.card == null || d.card?.kind != LiveCard.Kind.IDLE) {
+                val rows = quiet(state)
+                if (c != null || d.card == null || d.card?.kind != LiveCard.Kind.IDLE || d.card?.rows != rows) {
                     d = d.copy(current = null)
-                    show(LiveCard(0, LiveCard.Kind.IDLE))
+                    show(LiveCard(0, LiveCard.Kind.IDLE, rows = rows))
                 }
                 return
             }
@@ -348,8 +349,11 @@ object LiveDesk {
         /** Finita un'interazione, torna la scheda della notizia in corso o quella vuota. */
         fun restore(state: State) {
             val c = d.current
-            if (c != null) show(cardOf(c, state).copy(buzz = LiveCard.Buzz.NONE)) else show(LiveCard(0, LiveCard.Kind.IDLE))
+            if (c != null) show(cardOf(c, state).copy(buzz = LiveCard.Buzz.NONE)) else show(LiveCard(0, LiveCard.Kind.IDLE, rows = quiet(state)))
         }
+
+        /** Le sessioni per la scheda tranquilla del watch, come le righe della pillola aperta: al massimo sei. */
+        fun quiet(state: State) = LivePanel.rows(state, now / 1000).take(6)
 
         fun cancel(state: State) {
             val w = lang.words

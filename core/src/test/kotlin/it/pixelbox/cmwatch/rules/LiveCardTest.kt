@@ -24,6 +24,18 @@ class LiveCardTest {
         }
     }
 
+    // Le sessioni della live tranquilla viaggiano verso il watch (Franz, 10/10 10:50).
+    @Test fun theQuietCardTakesItsSessionsToTheWatch() {
+        val c = LiveCard(
+            seq = 0, kind = Kind.IDLE,
+            rows = listOf(
+                LivePanel.Row("ledger-api", LivePanel.Kind.ASKING, "Deploy now?", at = 1_789_219_700),
+                LivePanel.Row("atlas-shop", LivePanel.Kind.WORKING, null, minutes = 6),
+            ),
+        )
+        assertEquals(c, LiveWire.card(LiveWire.encode(c)))
+    }
+
     // Un watch o un telefono più nuovo può mandare campi in più: si ignorano.
     @Test fun unknownFieldsAreIgnored() {
         val raw = """{"seq":1,"kind":"IDLE","later":"x"}""".toByteArray()

@@ -13,6 +13,11 @@ import kotlinx.serialization.json.Json
     val seq: Long, val kind: Kind, val title: String = "", val text: String = "",
     val options: List<String> = emptyList(), val blocking: List<Boolean> = emptyList(),
     val buzz: Buzz = Buzz.NONE, val until: Long = 0, val onlyBlocking: Boolean = false,
+    /**
+     * Con la live tranquilla, le sessioni come nella pillola aperta del telefono: chi chiede, chi lavora, chi è ferma
+     * (Franz, 10/10 10:50: «la schermata live dell'orologio deve avere informazioni simili a quelle del telefono»).
+     */
+    val rows: List<LivePanel.Row> = emptyList(),
 ) {
     /** OFF = live spenta; IDLE = coda vuota; NEWS = una notizia senza tasti propri. */
     enum class Kind { OFF, IDLE, NEWS, QUESTION, OUTCOME, APPROVAL, CONFIRM, TELL, PICK }

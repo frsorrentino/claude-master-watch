@@ -233,6 +233,9 @@
     <string name="live_title">Live</string>
     <string name="live_off">Live mode is off: turn it on from the phone menu.</string>
     <string name="live_idle">No news: all quiet.</string>
+    <string name="live_row_min">%1$d min</string>
+    <string name="live_row_thinking">thinking</string>
+    <string name="live_row_still">idle</string>
     <string name="live_repeat">Repeat</string>
     <string name="live_later">Later</string>
     <string name="live_skip">Skip</string>
